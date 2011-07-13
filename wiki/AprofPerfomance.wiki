@@ -1,0 +1,28 @@
+= Aprof perfomance =
+We run [http://www.dis.uniroma1.it/~demetres/experim/dsp/README.txt DSP] with [http://code.google.com/p/aprof/source/browse/trunk/benchmark/dsp/scripts/aprof_benchmark1.txt this input]. We measure with the _time_ command.
+
+== Perfomance reference ==
+{{{
+DSP(native): real 0.36 sec
+DSP(callgrind): real 16.08 sec
+DSP(memcheck): real 9.85 sec
+}}}
+
+== Results ==
+Revision 0 (old repo): 
+{{{
+DSP(aprof): real 18.90 sec MEM+FN+INSTR, EMPTY_ANALYSIS
+DSP(aprof): real 12.20 sec ME M+FN, EMPTY_ANALYSIS
+}}}
+
+Rivision 65 (old repo):
+{{{
+DSP(aprof): real 11.38 sec MEM+FN, EMPTY_ANALYSIS
+DSP(aprof): real 18.81 sec MEM+FN+INSTR, EMPTY_ANALYSIS
+DSP(aprof): real 11.31 sec MEM+FN+RDTSC, EMPTY_ANALYSIS
+}}}
+
+Revision 71 (old repo):
+{{{
+DSP(aprof): real 2m8.854s CCT=0, ADDR_MULTIPLE=4, TIME=RDTSC, SUF1
+}}}
