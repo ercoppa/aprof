@@ -1,0 +1,6 @@
+Per compilare, editate il file build.xml, indicando il classpath (in particolare 
+occorre avere jfreechart) con la property: <property name="lib.dir" value="/usr/share/java/" />
+Poi basta dare:
+> ant
+Per far partire il jar, dare:
+> ant run
