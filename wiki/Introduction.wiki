@@ -1,6 +1,17 @@
 = Introduction =
 
-Source code organization:
+== How to use ==
+You need to recompile your program because we need GCC instrumentation, for example:
+{{{
+gcc -Wall your_code.c path/to/aprof/gcc-instrument/instr-gcc.c -finstrument-functions
+}}}
+Or you have to modify your makefile and add to the entry that build your final binary, something like this:
+{{{
+path/to/aprof/gcc-instrument/instr-gcc.c -finstrument-functions
+}}}
+
+
+== Source code organization: ==
   * *aprofplot*: a java GUI for displaying aprof log
   * *benchmark*: tool and results of aprof's benchmarks
   * *valgrind*: [http://valgrind.org/ valgrind code]
