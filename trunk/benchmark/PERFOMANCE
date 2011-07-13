@@ -1,0 +1,20 @@
+##########################
+# r0, EMPTY_ANALYSIS
+##########################
+DSP(native): real 0.36
+DSP(callgrind): real 16.08
+DSP(memcheck): real 9.85
+DSP(aprof): real 18.90 MEM+FN+INSTR
+DSP(aprof): real 12.20 MEM+FN
+#########################
+# r65, EMPTY_ANALYSIS
+#########################
+DSP(aprof): real 11.38 MEM+FN
+DSP(aprof): real 18.81 MEM+FN+INSTR
+DSP(aprof): real 11.31 MEM+FN+RDTSC
+#########################
+# r71, CCT=0, ADDR_MULTIPLE=4
+#########################
+DSP(aprof): real 2m8.854s
+#########################
+
