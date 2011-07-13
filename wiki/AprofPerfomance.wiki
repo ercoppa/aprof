@@ -1,6 +1,12 @@
 = Aprof perfomance =
 We run [http://www.dis.uniroma1.it/~demetres/experim/dsp/README.txt DSP] with [http://code.google.com/p/aprof/source/browse/trunk/benchmark/dsp/scripts/aprof_benchmark1.txt this input]. We measure with the _time_ command.
 
+== Platform ==
+  * Macbook 5,1
+  * Intel(R) Core(TM)2 Duo CPU     P7350  @ 2.00GHz
+  * 2GB DDR3
+  * Ubuntu 11.04 *32bit* 
+
 == Perfomance reference ==
 {{{
 DSP(native): real 0.36 sec
@@ -15,7 +21,7 @@ DSP(aprof): real 18.90 sec MEM+FN+INSTR, EMPTY_ANALYSIS
 DSP(aprof): real 12.20 sec ME M+FN, EMPTY_ANALYSIS
 }}}
 
-Rivision 65 (old repo):
+Revision 65 (old repo):
 {{{
 DSP(aprof): real 11.38 sec MEM+FN, EMPTY_ANALYSIS
 DSP(aprof): real 18.81 sec MEM+FN+INSTR, EMPTY_ANALYSIS
