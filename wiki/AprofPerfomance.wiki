@@ -30,5 +30,5 @@ DSP(aprof): real 11.31 sec MEM+FN+RDTSC, EMPTY_ANALYSIS
 
 Revision 71 (old repo):
 {{{
-DSP(aprof): real 2m8.854s CCT=0, ADDR_MULTIPLE=4, TIME=RDTSC, SUF1
+DSP(aprof): space 235mb; time real 2m8.854s CCT=0, ADDR_MULTIPLE=4, TIME=RDTSC, SUF1
 }}}
