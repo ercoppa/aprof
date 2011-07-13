@@ -1,0 +1,5 @@
+== Source organization ==
+  * *aprofplot*: a java GUI for displaying aprof log
+  * *benchmark*: tools used for aprof's benchmarks
+  * *valgrind*: [http://valgrind.org/ valgrind code]
+  * *valgrind/aprof*: source code of aprof
