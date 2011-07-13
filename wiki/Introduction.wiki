@@ -32,6 +32,6 @@ cd path/to/aprof
 
 == Source code organization: ==
   * *aprofplot*: a java GUI for displaying aprof log
-  * *benchmark*: tool and results of aprof's benchmarks
+  * *benchmark*: tools used for aprof's benchmarks
   * *valgrind*: [http://valgrind.org/ valgrind code]
   * *valgrind/aprof*: source code of aprof
