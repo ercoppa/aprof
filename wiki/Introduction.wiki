@@ -27,9 +27,20 @@ If you prefer, you can use the bash script _aprof-bin_:
 {{{
 cd path/to/aprof
 ./aprof-bin ./your_prog arg1 arg2 arg3... 
+}}} 
+Aprof will produce, in the binary directory, a logfile for each thread of your program. Each log has a name like _your_prog_TID.aprof.
+
+Now you can use aprofplot to understand the results of aprof's analysis.
+
+== Compile and run aprofplot ==
+{{{
+cd path/to/aprof/aprofplot
+ant
 }}}
-
-
+If you have no error, you can run the builded jar with:
+{{{
+ant run
+}}}
 == Source code organization: ==
   * *aprofplot*: a java GUI for displaying aprof log
   * *benchmark*: tools used for aprof's benchmarks
