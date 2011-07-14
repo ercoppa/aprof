@@ -1,8 +1,8 @@
 /*
  * CCT functions
  * 
- * Last changed: $Date: 2011-06-18 21:08:13 +0200 (Sat, 18 Jun 2011) $
- * Revision:     $Rev: 61 $
+ * Last changed: $Date$
+ * Revision:     $Rev$
  */
 
 #include "aprof.h"

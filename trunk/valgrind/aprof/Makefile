@@ -69,16 +69,16 @@ am__objects_1 = aprof_x86_linux-CCT.$(OBJEXT) \
 	aprof_x86_linux-time.$(OBJEXT) \
 	aprof_x86_linux-hashtable.$(OBJEXT) \
 	aprof_x86_linux-pool.$(OBJEXT) \
-	aprof_x86_linux-uf_alloc.$(OBJEXT) \
 	aprof_x86_linux-union_find.$(OBJEXT) \
+	aprof_x86_linux-suf.$(OBJEXT) \
 	aprof_x86_linux-aprof.$(OBJEXT)
 am_aprof_x86_linux_OBJECTS = $(am__objects_1)
 aprof_x86_linux_OBJECTS =  \
 	$(am_aprof_x86_linux_OBJECTS)
 am__aprof__linux_SOURCES_DIST = CCT.c failure.c \
 	fwrite.c thread.c report.c events.c function.c memory.c time.c \
-	./SUF/hashtable.c ./SUF/pool.c ./SUF/uf_alloc.c \
-	./SUF/union_find.c aprof.c
+	./hashtable/hashtable.c ./pool/pool.c ./SUF/union_find.c \
+	./SUF2/suf.c aprof.c
 am__objects_2 = aprof__linux-CCT.$(OBJEXT) \
 	aprof__linux-failure.$(OBJEXT) \
 	aprof__linux-fwrite.$(OBJEXT) \
@@ -90,8 +90,8 @@ am__objects_2 = aprof__linux-CCT.$(OBJEXT) \
 	aprof__linux-time.$(OBJEXT) \
 	aprof__linux-hashtable.$(OBJEXT) \
 	aprof__linux-pool.$(OBJEXT) \
-	aprof__linux-uf_alloc.$(OBJEXT) \
 	aprof__linux-union_find.$(OBJEXT) \
+	aprof__linux-suf.$(OBJEXT) \
 	aprof__linux-aprof.$(OBJEXT)
 #am_aprof__linux_OBJECTS =  \
 #	$(am__objects_2)
@@ -150,12 +150,12 @@ am__relativize = \
     dir1=`echo "$$dir1" | sed -e "$$sed_rest"`; \
   done; \
   reldir="$$dir2"
-ACLOCAL = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run aclocal-1.11
-AMTAR = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run tar
+ACLOCAL = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run aclocal-1.11
+AMTAR = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run tar
 AR = /usr/bin/ar
-AUTOCONF = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run autoconf
-AUTOHEADER = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run autoheader
-AUTOMAKE = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run automake-1.11
+AUTOCONF = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run autoconf
+AUTOHEADER = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run autoheader
+AUTOMAKE = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run automake-1.11
 AWK = mawk
 BOOST_CFLAGS = 
 BOOST_LIBS = 
@@ -207,7 +207,7 @@ LIBS =
 LN_S = ln -s
 LTLIBOBJS = 
 MAINT = #
-MAKEINFO = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run makeinfo
+MAKEINFO = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run makeinfo
 MKDIR_P = /bin/mkdir -p
 MPI_CC = mpicc
 OBJEXT = o
@@ -234,10 +234,10 @@ VGCONF_ARCH_SEC =
 VGCONF_OS = linux
 VGCONF_PLATFORM_PRI_CAPS = X86_LINUX
 VGCONF_PLATFORM_SEC_CAPS = 
-abs_builddir = /home/ercoppa/Desktop/aprof/valgrind/aprof
-abs_srcdir = /home/ercoppa/Desktop/aprof/valgrind/aprof
-abs_top_builddir = /home/ercoppa/Desktop/aprof/valgrind
-abs_top_srcdir = /home/ercoppa/Desktop/aprof/valgrind
+abs_builddir = /home/ercoppa/Desktop/code/aprof/valgrind/aprof
+abs_srcdir = /home/ercoppa/Desktop/code/aprof/valgrind/aprof
+abs_top_builddir = /home/ercoppa/Desktop/code/aprof/valgrind
+abs_top_srcdir = /home/ercoppa/Desktop/code/aprof/valgrind
 ac_ct_CC = gcc
 ac_ct_CXX = g++
 am__include = include
@@ -265,7 +265,7 @@ host_vendor = pc
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/install-sh
+install_sh = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -274,7 +274,7 @@ mandir = ${datarootdir}/man
 mkdir_p = /bin/mkdir -p
 oldincludedir = /usr/include
 pdfdir = ${docdir}
-prefix = /home/ercoppa/Desktop/aprof/valgrind/inst
+prefix = /home/ercoppa/Desktop/code/aprof/valgrind/inst
 program_transform_name = s,x,x,
 psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
@@ -566,8 +566,8 @@ LIBREPLACEMALLOC_LDFLAGS_S390X_LINUX = \
 
 EXTRA_DIST = docs/va-manual.xml
 aprof_SOURCES_COMMON = CCT.c failure.c fwrite.c thread.c report.c \
-						events.c function.c memory.c time.c ./SUF/hashtable.c \
-						./SUF/pool.c ./SUF/uf_alloc.c ./SUF/union_find.c \
+						events.c function.c memory.c time.c ./hashtable/hashtable.c \
+						./pool/pool.c ./SUF/union_find.c ./SUF2/suf.c\
 						aprof.c
 
 aprof_x86_linux_SOURCES = \
@@ -680,9 +680,9 @@ include ./$(DEPDIR)/aprof_x86_linux-hashtable.Po
 include ./$(DEPDIR)/aprof_x86_linux-memory.Po
 include ./$(DEPDIR)/aprof_x86_linux-pool.Po
 include ./$(DEPDIR)/aprof_x86_linux-report.Po
+include ./$(DEPDIR)/aprof_x86_linux-suf.Po
 include ./$(DEPDIR)/aprof_x86_linux-thread.Po
 include ./$(DEPDIR)/aprof_x86_linux-time.Po
-include ./$(DEPDIR)/aprof_x86_linux-uf_alloc.Po
 include ./$(DEPDIR)/aprof_x86_linux-union_find.Po
 include ./$(DEPDIR)/aprof__linux-CCT.Po
 include ./$(DEPDIR)/aprof__linux-aprof.Po
@@ -694,9 +694,9 @@ include ./$(DEPDIR)/aprof__linux-hashtable.Po
 include ./$(DEPDIR)/aprof__linux-memory.Po
 include ./$(DEPDIR)/aprof__linux-pool.Po
 include ./$(DEPDIR)/aprof__linux-report.Po
+include ./$(DEPDIR)/aprof__linux-suf.Po
 include ./$(DEPDIR)/aprof__linux-thread.Po
 include ./$(DEPDIR)/aprof__linux-time.Po
-include ./$(DEPDIR)/aprof__linux-uf_alloc.Po
 include ./$(DEPDIR)/aprof__linux-union_find.Po
 
 .c.o:
@@ -839,47 +839,33 @@ aprof_x86_linux-time.obj: time.c
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
 #	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-time.obj `if test -f 'time.c'; then $(CYGPATH_W) 'time.c'; else $(CYGPATH_W) '$(srcdir)/time.c'; fi`
 
-aprof_x86_linux-hashtable.o: ./SUF/hashtable.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-hashtable.o -MD -MP -MF $(DEPDIR)/aprof_x86_linux-hashtable.Tpo -c -o aprof_x86_linux-hashtable.o `test -f './SUF/hashtable.c' || echo '$(srcdir)/'`./SUF/hashtable.c
+aprof_x86_linux-hashtable.o: ./hashtable/hashtable.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-hashtable.o -MD -MP -MF $(DEPDIR)/aprof_x86_linux-hashtable.Tpo -c -o aprof_x86_linux-hashtable.o `test -f './hashtable/hashtable.c' || echo '$(srcdir)/'`./hashtable/hashtable.c
 	$(am__mv) $(DEPDIR)/aprof_x86_linux-hashtable.Tpo $(DEPDIR)/aprof_x86_linux-hashtable.Po
-#	source='./SUF/hashtable.c' object='aprof_x86_linux-hashtable.o' libtool=no \
+#	source='./hashtable/hashtable.c' object='aprof_x86_linux-hashtable.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-hashtable.o `test -f './SUF/hashtable.c' || echo '$(srcdir)/'`./SUF/hashtable.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-hashtable.o `test -f './hashtable/hashtable.c' || echo '$(srcdir)/'`./hashtable/hashtable.c
 
-aprof_x86_linux-hashtable.obj: ./SUF/hashtable.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-hashtable.obj -MD -MP -MF $(DEPDIR)/aprof_x86_linux-hashtable.Tpo -c -o aprof_x86_linux-hashtable.obj `if test -f './SUF/hashtable.c'; then $(CYGPATH_W) './SUF/hashtable.c'; else $(CYGPATH_W) '$(srcdir)/./SUF/hashtable.c'; fi`
+aprof_x86_linux-hashtable.obj: ./hashtable/hashtable.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-hashtable.obj -MD -MP -MF $(DEPDIR)/aprof_x86_linux-hashtable.Tpo -c -o aprof_x86_linux-hashtable.obj `if test -f './hashtable/hashtable.c'; then $(CYGPATH_W) './hashtable/hashtable.c'; else $(CYGPATH_W) '$(srcdir)/./hashtable/hashtable.c'; fi`
 	$(am__mv) $(DEPDIR)/aprof_x86_linux-hashtable.Tpo $(DEPDIR)/aprof_x86_linux-hashtable.Po
-#	source='./SUF/hashtable.c' object='aprof_x86_linux-hashtable.obj' libtool=no \
+#	source='./hashtable/hashtable.c' object='aprof_x86_linux-hashtable.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-hashtable.obj `if test -f './SUF/hashtable.c'; then $(CYGPATH_W) './SUF/hashtable.c'; else $(CYGPATH_W) '$(srcdir)/./SUF/hashtable.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-hashtable.obj `if test -f './hashtable/hashtable.c'; then $(CYGPATH_W) './hashtable/hashtable.c'; else $(CYGPATH_W) '$(srcdir)/./hashtable/hashtable.c'; fi`
 
-aprof_x86_linux-pool.o: ./SUF/pool.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-pool.o -MD -MP -MF $(DEPDIR)/aprof_x86_linux-pool.Tpo -c -o aprof_x86_linux-pool.o `test -f './SUF/pool.c' || echo '$(srcdir)/'`./SUF/pool.c
+aprof_x86_linux-pool.o: ./pool/pool.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-pool.o -MD -MP -MF $(DEPDIR)/aprof_x86_linux-pool.Tpo -c -o aprof_x86_linux-pool.o `test -f './pool/pool.c' || echo '$(srcdir)/'`./pool/pool.c
 	$(am__mv) $(DEPDIR)/aprof_x86_linux-pool.Tpo $(DEPDIR)/aprof_x86_linux-pool.Po
-#	source='./SUF/pool.c' object='aprof_x86_linux-pool.o' libtool=no \
+#	source='./pool/pool.c' object='aprof_x86_linux-pool.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-pool.o `test -f './SUF/pool.c' || echo '$(srcdir)/'`./SUF/pool.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-pool.o `test -f './pool/pool.c' || echo '$(srcdir)/'`./pool/pool.c
 
-aprof_x86_linux-pool.obj: ./SUF/pool.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-pool.obj -MD -MP -MF $(DEPDIR)/aprof_x86_linux-pool.Tpo -c -o aprof_x86_linux-pool.obj `if test -f './SUF/pool.c'; then $(CYGPATH_W) './SUF/pool.c'; else $(CYGPATH_W) '$(srcdir)/./SUF/pool.c'; fi`
+aprof_x86_linux-pool.obj: ./pool/pool.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-pool.obj -MD -MP -MF $(DEPDIR)/aprof_x86_linux-pool.Tpo -c -o aprof_x86_linux-pool.obj `if test -f './pool/pool.c'; then $(CYGPATH_W) './pool/pool.c'; else $(CYGPATH_W) '$(srcdir)/./pool/pool.c'; fi`
 	$(am__mv) $(DEPDIR)/aprof_x86_linux-pool.Tpo $(DEPDIR)/aprof_x86_linux-pool.Po
-#	source='./SUF/pool.c' object='aprof_x86_linux-pool.obj' libtool=no \
+#	source='./pool/pool.c' object='aprof_x86_linux-pool.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-pool.obj `if test -f './SUF/pool.c'; then $(CYGPATH_W) './SUF/pool.c'; else $(CYGPATH_W) '$(srcdir)/./SUF/pool.c'; fi`
-
-aprof_x86_linux-uf_alloc.o: ./SUF/uf_alloc.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-uf_alloc.o -MD -MP -MF $(DEPDIR)/aprof_x86_linux-uf_alloc.Tpo -c -o aprof_x86_linux-uf_alloc.o `test -f './SUF/uf_alloc.c' || echo '$(srcdir)/'`./SUF/uf_alloc.c
-	$(am__mv) $(DEPDIR)/aprof_x86_linux-uf_alloc.Tpo $(DEPDIR)/aprof_x86_linux-uf_alloc.Po
-#	source='./SUF/uf_alloc.c' object='aprof_x86_linux-uf_alloc.o' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-uf_alloc.o `test -f './SUF/uf_alloc.c' || echo '$(srcdir)/'`./SUF/uf_alloc.c
-
-aprof_x86_linux-uf_alloc.obj: ./SUF/uf_alloc.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-uf_alloc.obj -MD -MP -MF $(DEPDIR)/aprof_x86_linux-uf_alloc.Tpo -c -o aprof_x86_linux-uf_alloc.obj `if test -f './SUF/uf_alloc.c'; then $(CYGPATH_W) './SUF/uf_alloc.c'; else $(CYGPATH_W) '$(srcdir)/./SUF/uf_alloc.c'; fi`
-	$(am__mv) $(DEPDIR)/aprof_x86_linux-uf_alloc.Tpo $(DEPDIR)/aprof_x86_linux-uf_alloc.Po
-#	source='./SUF/uf_alloc.c' object='aprof_x86_linux-uf_alloc.obj' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-uf_alloc.obj `if test -f './SUF/uf_alloc.c'; then $(CYGPATH_W) './SUF/uf_alloc.c'; else $(CYGPATH_W) '$(srcdir)/./SUF/uf_alloc.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-pool.obj `if test -f './pool/pool.c'; then $(CYGPATH_W) './pool/pool.c'; else $(CYGPATH_W) '$(srcdir)/./pool/pool.c'; fi`
 
 aprof_x86_linux-union_find.o: ./SUF/union_find.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-union_find.o -MD -MP -MF $(DEPDIR)/aprof_x86_linux-union_find.Tpo -c -o aprof_x86_linux-union_find.o `test -f './SUF/union_find.c' || echo '$(srcdir)/'`./SUF/union_find.c
@@ -894,6 +880,20 @@ aprof_x86_linux-union_find.obj: ./SUF/union_find.c
 #	source='./SUF/union_find.c' object='aprof_x86_linux-union_find.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
 #	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-union_find.obj `if test -f './SUF/union_find.c'; then $(CYGPATH_W) './SUF/union_find.c'; else $(CYGPATH_W) '$(srcdir)/./SUF/union_find.c'; fi`
+
+aprof_x86_linux-suf.o: ./SUF2/suf.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-suf.o -MD -MP -MF $(DEPDIR)/aprof_x86_linux-suf.Tpo -c -o aprof_x86_linux-suf.o `test -f './SUF2/suf.c' || echo '$(srcdir)/'`./SUF2/suf.c
+	$(am__mv) $(DEPDIR)/aprof_x86_linux-suf.Tpo $(DEPDIR)/aprof_x86_linux-suf.Po
+#	source='./SUF2/suf.c' object='aprof_x86_linux-suf.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-suf.o `test -f './SUF2/suf.c' || echo '$(srcdir)/'`./SUF2/suf.c
+
+aprof_x86_linux-suf.obj: ./SUF2/suf.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-suf.obj -MD -MP -MF $(DEPDIR)/aprof_x86_linux-suf.Tpo -c -o aprof_x86_linux-suf.obj `if test -f './SUF2/suf.c'; then $(CYGPATH_W) './SUF2/suf.c'; else $(CYGPATH_W) '$(srcdir)/./SUF2/suf.c'; fi`
+	$(am__mv) $(DEPDIR)/aprof_x86_linux-suf.Tpo $(DEPDIR)/aprof_x86_linux-suf.Po
+#	source='./SUF2/suf.c' object='aprof_x86_linux-suf.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-suf.obj `if test -f './SUF2/suf.c'; then $(CYGPATH_W) './SUF2/suf.c'; else $(CYGPATH_W) '$(srcdir)/./SUF2/suf.c'; fi`
 
 aprof_x86_linux-aprof.o: aprof.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-aprof.o -MD -MP -MF $(DEPDIR)/aprof_x86_linux-aprof.Tpo -c -o aprof_x86_linux-aprof.o `test -f 'aprof.c' || echo '$(srcdir)/'`aprof.c
@@ -1035,47 +1035,33 @@ aprof__linux-time.obj: time.c
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
 #	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -c -o aprof__linux-time.obj `if test -f 'time.c'; then $(CYGPATH_W) 'time.c'; else $(CYGPATH_W) '$(srcdir)/time.c'; fi`
 
-aprof__linux-hashtable.o: ./SUF/hashtable.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -MT aprof__linux-hashtable.o -MD -MP -MF $(DEPDIR)/aprof__linux-hashtable.Tpo -c -o aprof__linux-hashtable.o `test -f './SUF/hashtable.c' || echo '$(srcdir)/'`./SUF/hashtable.c
+aprof__linux-hashtable.o: ./hashtable/hashtable.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -MT aprof__linux-hashtable.o -MD -MP -MF $(DEPDIR)/aprof__linux-hashtable.Tpo -c -o aprof__linux-hashtable.o `test -f './hashtable/hashtable.c' || echo '$(srcdir)/'`./hashtable/hashtable.c
 	$(am__mv) $(DEPDIR)/aprof__linux-hashtable.Tpo $(DEPDIR)/aprof__linux-hashtable.Po
-#	source='./SUF/hashtable.c' object='aprof__linux-hashtable.o' libtool=no \
+#	source='./hashtable/hashtable.c' object='aprof__linux-hashtable.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -c -o aprof__linux-hashtable.o `test -f './SUF/hashtable.c' || echo '$(srcdir)/'`./SUF/hashtable.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -c -o aprof__linux-hashtable.o `test -f './hashtable/hashtable.c' || echo '$(srcdir)/'`./hashtable/hashtable.c
 
-aprof__linux-hashtable.obj: ./SUF/hashtable.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -MT aprof__linux-hashtable.obj -MD -MP -MF $(DEPDIR)/aprof__linux-hashtable.Tpo -c -o aprof__linux-hashtable.obj `if test -f './SUF/hashtable.c'; then $(CYGPATH_W) './SUF/hashtable.c'; else $(CYGPATH_W) '$(srcdir)/./SUF/hashtable.c'; fi`
+aprof__linux-hashtable.obj: ./hashtable/hashtable.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -MT aprof__linux-hashtable.obj -MD -MP -MF $(DEPDIR)/aprof__linux-hashtable.Tpo -c -o aprof__linux-hashtable.obj `if test -f './hashtable/hashtable.c'; then $(CYGPATH_W) './hashtable/hashtable.c'; else $(CYGPATH_W) '$(srcdir)/./hashtable/hashtable.c'; fi`
 	$(am__mv) $(DEPDIR)/aprof__linux-hashtable.Tpo $(DEPDIR)/aprof__linux-hashtable.Po
-#	source='./SUF/hashtable.c' object='aprof__linux-hashtable.obj' libtool=no \
+#	source='./hashtable/hashtable.c' object='aprof__linux-hashtable.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -c -o aprof__linux-hashtable.obj `if test -f './SUF/hashtable.c'; then $(CYGPATH_W) './SUF/hashtable.c'; else $(CYGPATH_W) '$(srcdir)/./SUF/hashtable.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -c -o aprof__linux-hashtable.obj `if test -f './hashtable/hashtable.c'; then $(CYGPATH_W) './hashtable/hashtable.c'; else $(CYGPATH_W) '$(srcdir)/./hashtable/hashtable.c'; fi`
 
-aprof__linux-pool.o: ./SUF/pool.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -MT aprof__linux-pool.o -MD -MP -MF $(DEPDIR)/aprof__linux-pool.Tpo -c -o aprof__linux-pool.o `test -f './SUF/pool.c' || echo '$(srcdir)/'`./SUF/pool.c
+aprof__linux-pool.o: ./pool/pool.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -MT aprof__linux-pool.o -MD -MP -MF $(DEPDIR)/aprof__linux-pool.Tpo -c -o aprof__linux-pool.o `test -f './pool/pool.c' || echo '$(srcdir)/'`./pool/pool.c
 	$(am__mv) $(DEPDIR)/aprof__linux-pool.Tpo $(DEPDIR)/aprof__linux-pool.Po
-#	source='./SUF/pool.c' object='aprof__linux-pool.o' libtool=no \
+#	source='./pool/pool.c' object='aprof__linux-pool.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -c -o aprof__linux-pool.o `test -f './SUF/pool.c' || echo '$(srcdir)/'`./SUF/pool.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -c -o aprof__linux-pool.o `test -f './pool/pool.c' || echo '$(srcdir)/'`./pool/pool.c
 
-aprof__linux-pool.obj: ./SUF/pool.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -MT aprof__linux-pool.obj -MD -MP -MF $(DEPDIR)/aprof__linux-pool.Tpo -c -o aprof__linux-pool.obj `if test -f './SUF/pool.c'; then $(CYGPATH_W) './SUF/pool.c'; else $(CYGPATH_W) '$(srcdir)/./SUF/pool.c'; fi`
+aprof__linux-pool.obj: ./pool/pool.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -MT aprof__linux-pool.obj -MD -MP -MF $(DEPDIR)/aprof__linux-pool.Tpo -c -o aprof__linux-pool.obj `if test -f './pool/pool.c'; then $(CYGPATH_W) './pool/pool.c'; else $(CYGPATH_W) '$(srcdir)/./pool/pool.c'; fi`
 	$(am__mv) $(DEPDIR)/aprof__linux-pool.Tpo $(DEPDIR)/aprof__linux-pool.Po
-#	source='./SUF/pool.c' object='aprof__linux-pool.obj' libtool=no \
+#	source='./pool/pool.c' object='aprof__linux-pool.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -c -o aprof__linux-pool.obj `if test -f './SUF/pool.c'; then $(CYGPATH_W) './SUF/pool.c'; else $(CYGPATH_W) '$(srcdir)/./SUF/pool.c'; fi`
-
-aprof__linux-uf_alloc.o: ./SUF/uf_alloc.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -MT aprof__linux-uf_alloc.o -MD -MP -MF $(DEPDIR)/aprof__linux-uf_alloc.Tpo -c -o aprof__linux-uf_alloc.o `test -f './SUF/uf_alloc.c' || echo '$(srcdir)/'`./SUF/uf_alloc.c
-	$(am__mv) $(DEPDIR)/aprof__linux-uf_alloc.Tpo $(DEPDIR)/aprof__linux-uf_alloc.Po
-#	source='./SUF/uf_alloc.c' object='aprof__linux-uf_alloc.o' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -c -o aprof__linux-uf_alloc.o `test -f './SUF/uf_alloc.c' || echo '$(srcdir)/'`./SUF/uf_alloc.c
-
-aprof__linux-uf_alloc.obj: ./SUF/uf_alloc.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -MT aprof__linux-uf_alloc.obj -MD -MP -MF $(DEPDIR)/aprof__linux-uf_alloc.Tpo -c -o aprof__linux-uf_alloc.obj `if test -f './SUF/uf_alloc.c'; then $(CYGPATH_W) './SUF/uf_alloc.c'; else $(CYGPATH_W) '$(srcdir)/./SUF/uf_alloc.c'; fi`
-	$(am__mv) $(DEPDIR)/aprof__linux-uf_alloc.Tpo $(DEPDIR)/aprof__linux-uf_alloc.Po
-#	source='./SUF/uf_alloc.c' object='aprof__linux-uf_alloc.obj' libtool=no \
-#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -c -o aprof__linux-uf_alloc.obj `if test -f './SUF/uf_alloc.c'; then $(CYGPATH_W) './SUF/uf_alloc.c'; else $(CYGPATH_W) '$(srcdir)/./SUF/uf_alloc.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -c -o aprof__linux-pool.obj `if test -f './pool/pool.c'; then $(CYGPATH_W) './pool/pool.c'; else $(CYGPATH_W) '$(srcdir)/./pool/pool.c'; fi`
 
 aprof__linux-union_find.o: ./SUF/union_find.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -MT aprof__linux-union_find.o -MD -MP -MF $(DEPDIR)/aprof__linux-union_find.Tpo -c -o aprof__linux-union_find.o `test -f './SUF/union_find.c' || echo '$(srcdir)/'`./SUF/union_find.c
@@ -1090,6 +1076,20 @@ aprof__linux-union_find.obj: ./SUF/union_find.c
 #	source='./SUF/union_find.c' object='aprof__linux-union_find.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
 #	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -c -o aprof__linux-union_find.obj `if test -f './SUF/union_find.c'; then $(CYGPATH_W) './SUF/union_find.c'; else $(CYGPATH_W) '$(srcdir)/./SUF/union_find.c'; fi`
+
+aprof__linux-suf.o: ./SUF2/suf.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -MT aprof__linux-suf.o -MD -MP -MF $(DEPDIR)/aprof__linux-suf.Tpo -c -o aprof__linux-suf.o `test -f './SUF2/suf.c' || echo '$(srcdir)/'`./SUF2/suf.c
+	$(am__mv) $(DEPDIR)/aprof__linux-suf.Tpo $(DEPDIR)/aprof__linux-suf.Po
+#	source='./SUF2/suf.c' object='aprof__linux-suf.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -c -o aprof__linux-suf.o `test -f './SUF2/suf.c' || echo '$(srcdir)/'`./SUF2/suf.c
+
+aprof__linux-suf.obj: ./SUF2/suf.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -MT aprof__linux-suf.obj -MD -MP -MF $(DEPDIR)/aprof__linux-suf.Tpo -c -o aprof__linux-suf.obj `if test -f './SUF2/suf.c'; then $(CYGPATH_W) './SUF2/suf.c'; else $(CYGPATH_W) '$(srcdir)/./SUF2/suf.c'; fi`
+	$(am__mv) $(DEPDIR)/aprof__linux-suf.Tpo $(DEPDIR)/aprof__linux-suf.Po
+#	source='./SUF2/suf.c' object='aprof__linux-suf.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -c -o aprof__linux-suf.obj `if test -f './SUF2/suf.c'; then $(CYGPATH_W) './SUF2/suf.c'; else $(CYGPATH_W) '$(srcdir)/./SUF2/suf.c'; fi`
 
 aprof__linux-aprof.o: aprof.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -MT aprof__linux-aprof.o -MD -MP -MF $(DEPDIR)/aprof__linux-aprof.Tpo -c -o aprof__linux-aprof.o `test -f 'aprof.c' || echo '$(srcdir)/'`aprof.c

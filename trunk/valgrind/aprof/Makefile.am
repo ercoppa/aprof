@@ -12,8 +12,8 @@ noinst_PROGRAMS += aprof-@VGCONF_ARCH_SEC@-@VGCONF_OS@
 endif
 
 aprof_SOURCES_COMMON =  CCT.c failure.c fwrite.c thread.c report.c \
-						events.c function.c memory.c time.c ./SUF/hashtable.c \
-						./SUF/pool.c ./SUF/uf_alloc.c ./SUF/union_find.c \
+						events.c function.c memory.c time.c ./hashtable/hashtable.c \
+						./pool/pool.c ./SUF/union_find.c ./SUF2/suf.c\
 						aprof.c
 
 aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_SOURCES      = \

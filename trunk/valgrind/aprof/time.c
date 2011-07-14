@@ -1,8 +1,8 @@
 /*
  * Time() function and instruction (VEX or Intel) counters
  * 
- * Last changed: $Date: 2011-07-09 16:20:22 +0200 (Sat, 09 Jul 2011) $
- * Revision:     $Rev: 74 $
+ * Last changed: $Date$
+ * Revision:     $Rev$
  */
 
 #include "aprof.h"

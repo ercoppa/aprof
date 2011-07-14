@@ -1,8 +1,8 @@
 /*
  * Aprof global header
  * 
- * Last changed: $Date: 2011-07-09 16:20:22 +0200 (Sat, 09 Jul 2011) $
- * Revision:     $Rev: 74 $
+ * Last changed: $Date$
+ * Revision:     $Rev$
  */
 
 #ifndef APROF_H
@@ -24,11 +24,11 @@
 #include "pub_tool_threadstate.h"
 #include "valgrind.h"
 #include "pub_tool_mallocfree.h"
-#include "SUF/hashtable.h"
-#include "SUF/union_find.h"
+#include "hashtable/hashtable.h"
 
 /* Behaviour macro */
 
+#define SUF					2	// Implementation of stack union find
 #define EMPTY_ANALYSIS		0	// if 1, analysis routines are empty (performance benchmark reference)
 #define TRACER 				0	// Create a trace for testing SUF
 #define DEBUG				0	// Enable some sanity checks
@@ -41,6 +41,12 @@
 #define RDTSC				2	// rdtsc intel instruction
 #define TIME				RDTSC
 
+#if SUF == 1
+#include "SUF/union_find.h"
+#else
+#include "SUF2/suf.h"
+#endif
+
 /* Counter */ 
 #if EVENTCOUNT
 extern UWord read_n;
@@ -52,7 +58,7 @@ extern UWord thread_n;
 #endif
 
 /* Some constants */
-#define STACK_SIZE 64
+#define STACK_SIZE  32
 #define BUFFER_SIZE 32000
 
 /* Data type */
@@ -112,10 +118,18 @@ typedef struct {
 	#if CCT
 	CCTNode * node;						// pointer to the CCT node associated with the call
 	#endif
+	#if SUF == 2
+	UWord aid;
+	UWord old_aid;
+	#endif
 } Activation;
 
 typedef struct {
+	#if SUF == 1
 	UnionFind * accesses;				// stack of sets of addresses
+	#else
+	StackUF * accesses;					// stack of sets of addresses
+	#endif
 	HashTable * routine_hash_table;		// table of all encountered routines
 	int stack_depth;					// stack depth
 	Activation * stack;					// activation stack
@@ -130,6 +144,10 @@ typedef struct {
 	#endif
 	#if TRACER
 	FILE * log;
+	#endif
+	#if SUF == 2
+	UWord next_aid;
+	UWord curr_aid;
 	#endif
 } ThreadData;
 
@@ -164,6 +182,9 @@ void print_cct_info(FILE * f, CCTNode * root, UWord parent_id);
 VG_REGPARM(3) void trace_access(UWord type, Addr addr, SizeT size);
 
 /* Function entry/exit handler */
+#if SUF == 2
+Activation * get_activation_by_aid(ThreadData * tdata, UWord aid);
+#endif
 Activation * get_activation(ThreadData * tdata, unsigned int depth);
 Bool trace_function(ThreadId tid, UWord* arg, UWord* ret);
 void destroy_routine_info(void * data);

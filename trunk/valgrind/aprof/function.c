@@ -1,8 +1,8 @@
 /*
  * Entry and exit function handler, simulated thread stack handler
  * 
- * Last changed: $Date: 2011-07-09 16:20:22 +0200 (Sat, 09 Jul 2011) $
- * Revision:     $Rev: 74 $
+ * Last changed: $Date$
+ * Revision:     $Rev$
  */
 
 #include "aprof.h"
@@ -28,7 +28,7 @@ Activation * get_activation(ThreadData * tdata, unsigned int depth) {
 		VG_(printf)("Relocate stack\n");
 		#endif
 		
-		tdata->stack = VG_(realloc)("stack", tdata->stack, tdata->max_stack_size);
+		tdata->stack = VG_(realloc)("stack", tdata->stack, tdata->max_stack_size * sizeof(Activation));
 		if (tdata->stack == NULL) failure("stack not reallocable");
 	
 	}
@@ -36,6 +36,26 @@ Activation * get_activation(ThreadData * tdata, unsigned int depth) {
 	return tdata->stack + depth - 1;
 
 }
+
+#if SUF == 2
+Activation * get_activation_by_aid(ThreadData * tdata, UWord aid) {
+	
+	Activation * a = get_activation(tdata, tdata->stack_depth);
+
+	//VG_(printf)("(%lu):", tdata->stack_depth);
+	
+	/* Linear search... maybe better binary search */
+	while (a->aid > aid) {
+		//VG_(printf)(".");
+		a--;
+		if (a < tdata->stack) failure("Impossible");
+	}
+	//VG_(printf)("\n");
+
+	return a;
+
+}
+#endif
 
 void destroy_routine_info(void * data) {
 	
@@ -147,6 +167,11 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 		activation->entry_time          = start;
 		activation->sms                 = 0;
 		activation->total_children_time = 0;
+		#if SUF == 2
+		activation->aid                 = tdata->next_aid++;
+		activation->old_aid             = tdata->curr_aid;
+		tdata->curr_aid                 = activation->aid;
+		#endif
 		
 		#if CCT
 		
@@ -265,15 +290,20 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 			#ifdef DEBUG
 			if (parent_activation == NULL) failure("Invalid parent in function exit");
 			#endif
-
+			
+			#if SUF == 1
 			UF_merge(tdata->accesses, tdata->stack_depth);
+			#else
+			tdata->curr_aid = activation->old_aid;
+			#endif
 
 			parent_activation->sms                 += activation->sms;
 			parent_activation->total_children_time += partial_cumulative;
 			
 		}
 		
-		tdata->stack_depth--;
+		if (tdata->stack_depth > 0)
+			tdata->stack_depth--;
 		
 	} else
 		failure("Invalid client req\n");

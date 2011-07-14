@@ -1,8 +1,8 @@
 /*
  * Aprof implementation of libc fopen, fwrite, fclose, fflush functions 
  * 
- * Last changed: $Date: 2011-07-08 00:14:45 +0200 (Fri, 08 Jul 2011) $
- * Revision:     $Rev: 70 $
+ * Last changed: $Date$
+ * Revision:     $Rev$
  */
 
 #include "aprof.h"

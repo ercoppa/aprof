@@ -1,17 +1,17 @@
 /*
  * Thread event handlers (start, exit, running)
  * 
- * Last changed: $Date: 2011-07-08 00:14:45 +0200 (Fri, 08 Jul 2011) $
- * Revision:     $Rev: 70 $
+ * Last changed: $Date$
+ * Revision:     $Rev$
  */
 
 #include "aprof.h"
- 
-/* FixMe:
- * - context_sms_map chi la distrugge? Dove e quando?
- */
 
+/* Most of the program has only one thread so...*/
+static ThreadData * thread_one = NULL; 
+/* More than one thread? */
 static HashTable * thread_pool = NULL;
+
 #if EVENTCOUNT
 UWord thread_n = 0;
 #endif
@@ -39,6 +39,12 @@ ThreadData * thread_init(ThreadId tid){
 	ThreadData * tdata = VG_(malloc)("thread_data", sizeof(ThreadData));
 	if (tdata == NULL) failure("thread data not allocable");
 	
+	if (tid == 1) 
+		thread_one = tdata;
+	
+	else if (thread_pool == NULL) 
+		thread_pool_init();
+	
 	#if TRACER
 	Char filename[150];
 	Char * prog_name = (Char *) VG_(args_the_exename);
@@ -49,7 +55,12 @@ ThreadData * thread_init(ThreadId tid){
 	return tdata;
 	#endif
 
+	#if SUF == 1
 	tdata->accesses = UF_create();
+	#else
+	tdata->accesses = SUF_create();
+	#endif
+	
 	tdata->routine_hash_table = HT_construct(destroy_routine_info);
 	tdata->stack_depth = 0;
 	tdata->max_stack_size = STACK_SIZE;
@@ -67,8 +78,13 @@ ThreadData * thread_init(ThreadId tid){
 	tdata->instr = 0;
 	#endif
 	
-	/* Insert thread data in the thread pool */
-	HT_add_node(thread_pool, tid, tdata);
+	#if SUF == 2
+	tdata->next_aid = 1;
+	tdata->curr_aid = 0;
+	#endif
+	
+	if (tid > 1) /* Insert thread data in the thread pool */
+		HT_add_node(thread_pool, tid, tdata);
 
 	return tdata;
 
@@ -101,7 +117,11 @@ void thread_exit (ThreadId tid){
 	VG_(printf)("Exit thread %d\n", tid);
 	#endif
 
-	ThreadData * tdata = HT_lookup(thread_pool, tid, NULL);
+	ThreadData * tdata = NULL;
+	if (tid == 1)
+		tdata = thread_one;
+	else
+		tdata = HT_lookup(thread_pool, tid, NULL);
 	
 	#if DEBUG
 	if (tdata == NULL) failure("Invalid tdata in thread exit");
@@ -109,7 +129,8 @@ void thread_exit (ThreadId tid){
 	
 	#if TRACER
 	ap_fclose(tdata->log);
-	HT_remove(thread_pool, tid);
+	if (tid > 1)
+		HT_remove(thread_pool, tid);
 	VG_(free)(tdata);
 	return;
 	#endif
@@ -117,7 +138,12 @@ void thread_exit (ThreadId tid){
 	generate_report(tdata);
 	
 	/* destroy all thread data data */
+	#if SUF == 1
 	UF_destroy(tdata->accesses);
+	#else
+	SUF_destroy(tdata->accesses);
+	#endif
+	
 	HT_destruct(tdata->routine_hash_table);
 	#if CCT
 	// deallocate CCT
@@ -125,7 +151,8 @@ void thread_exit (ThreadId tid){
 	#endif
 	
 	VG_(free)(tdata->stack);
-	HT_remove(thread_pool, tid);
+	if (tid > 1)
+		HT_remove(thread_pool, tid);
 	VG_(free)(tdata);
 
 }
@@ -140,10 +167,10 @@ ThreadData * get_thread_data(ThreadId tid) {
 		tid = VG_(get_running_tid)();
 	
 	if (tid == 0) failure("Thread id is zero");
+	if (tid == 1) return thread_one;
 	
 	ThreadData * tdata = HT_lookup(thread_pool, tid, NULL);
-	if (tdata == NULL)
-		return thread_init(tid);
+	if (tdata == NULL) failure("Thread never initializated");
 	
 	return tdata;
 

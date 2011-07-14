@@ -1,44 +1,29 @@
 /*
  * Union Find based on forest
  * 
- * Last changed: $Date: 2011-07-09 16:20:22 +0200 (Sat, 09 Jul 2011) $
- * Revision:     $Rev: 74 $
+ * Last changed: $Date$
+ * Revision:     $Rev$
  */
 
-/* FixMe
- * Check valori di ritorno calloc, uf_alloc_*, ghash_table_*
- */
-
-/* Idee/dubbi:
- * - Capire se un address e' stato gia' acceduto dalla stessa funzione,
- *   richiede il confronto tra la stackdepth attuale (passata ad UF_insert)
- *   e la stackdepth del rappresentante dell'albero in cui si trova
- *   l'eventuale nodo associato ad address. 
- *   Quindi occorre invocare UF_find(). Per migliorare
- *   le prestazioni in tempo si potrebbe assocciare al singolo nodo
- *   l'info sulla stackdepth (e non al suo rappresentante) ovviamente
- *   pagando in spazio...
- * - UF_lookup() e UF_insert() sono spesso chiamate in modo accoppiato (aprof PIN),
- *   ma ognuna di essa effettua una lookup del node nella ht, possiamo
- *   ottimizzare?
- */
+#ifndef GLIBC
+#include "pub_tool_basics.h"
+#include "pub_tool_libcprint.h"
+#include "pub_tool_mallocfree.h"
+#include "pub_tool_libcbase.h"
+#include "pub_tool_libcassert.h"
+#endif
 
 #include "union_find.h"
-#include "uf_alloc.h"
-#include "valgrind.h"
+#include "../glibc-valgrind.h"
 
 #define DEBUG
 
-#ifndef GLIB
-#include "hashtable.h"
-#endif
-
 /* Macro for dealing with bit stealing */
 #define IS_ROOT(e)          ((unsigned long)((e)->parent) & 1)
-#define SET_AS_ROOT(r, rep) do { (r)->parent = (void *)((unsigned long)(rep) | 1); } while(0);
-#define GET_REP(n)          ((Representative *)((unsigned long)(n)->parent & ~1))
-
-/* private functions */
+#define SET_AS_ROOT(r, rep) (r)->parent = (void *)(((unsigned long)((r)->parent) & 2) | ((unsigned long)(rep) | 1));
+#define GET_REP(n)          ((Representative *)((unsigned long)(n)->parent & ~3))
+#define SET_AS_DUMMY(n)     (n)->parent = (void *)((unsigned long)(n) | 2);
+#define IS_DUMMY(n)         ((unsigned long)((n)->parent) & 2)
 
 static void failure(char * c) {
 	
@@ -69,17 +54,7 @@ static Node * UF_find(Node * n) {
 UnionFind * UF_create() {
 
 	UnionFind * uf = (UnionFind *) calloc(1, sizeof(UnionFind));
-	
-	#ifdef GLIB
-	uf->ht = g_hash_table_new(g_direct_hash, g_direct_equal);
-	#else
-	uf->ht = HT_construct(NULL);
-	#endif
-	
-	uf->pool = uf_alloc_init();
-
-	if (uf->ht == NULL) failure("No alloc ht");
-	if (uf->pool == NULL) failure("No pool"); 
+	if (uf == NULL) return NULL;
 
 	return uf;
 
@@ -87,27 +62,30 @@ UnionFind * UF_create() {
 
 void UF_destroy(UnionFind * uf){
 
-	#ifdef GLIB
-	g_hash_table_destroy(uf->ht);
-	#else
-	HT_destruct(uf->ht);
-	#endif
-	
-	uf_alloc_destroy(uf->pool);
-	return;
+	int i = 0;
+	while (i < 65536) {
+		if (uf->table[i] != NULL) 
+			free(uf->table[i]);
+		i++;
+	}
+	free(uf);
 
 }
 
-void UF_insert(UnionFind * uf, ADDRINT addr, int stack_depth){
+int UF_insert(UnionFind * uf, ADDRINT addr, int stack_depth){
 
 	Node * new = NULL;
+	Node * n   = NULL;
+	int depth = 0;
 
-	#ifdef GLIB
-	Node * n = (Node *) g_hash_table_lookup(uf->ht, (void *) addr);
-	#else
-	HashNode * hn;
-	Node * n = HT_lookup(uf->ht, addr, &hn);
-	#endif
+	ADDRINT i = addr >> 16;
+	ADDRINT j = (addr & 0xffff) / 4;
+	if (uf->table[i] != NULL)
+		n = uf->table[i]->node[j];
+	else {
+		uf->table[i] = calloc(sizeof(USM), 1);
+		if (uf->table[i] == NULL) failure("UF sm not allocable");
+	}
 	
 	if (n != NULL) {
 
@@ -124,42 +102,35 @@ void UF_insert(UnionFind * uf, ADDRINT addr, int stack_depth){
 		#endif
 		
 		if (stack_depth == r->stack_depth)
-			return;
+			return stack_depth;
 		
+		depth = r->stack_depth;
 		r->real_nodes--;
 		r->dummies++;
-		n->addr = 0;
 		
-		new = uf_alloc_node(uf->pool);
+		SET_AS_DUMMY(n);
+		
+		new = malloc(sizeof(Node));
 		if (new == NULL) failure("Impossible allocate a node");
 		
-		#ifdef GLIB
-		g_hash_table_replace(uf->ht, (void *) addr, new);
-		#else
-		hn->value = new;
-		#endif
+		uf->table[i]->node[j] = new;
 		
 		if (r->real_nodes < r->dummies)
 			UF_rebalance(uf, r->tree);
 
 	} else {
 		
-		new = uf_alloc_node(uf->pool);
+		new = malloc(sizeof(Node));
 		if (new == NULL) failure("Impossible allocate a node");
 		
-		#ifdef GLIB
-		g_hash_table_insert(uf->ht, (void *) addr, new);
-		#else
-		HT_add_node (uf->ht, addr, new);
-		#endif
+		uf->table[i]->node[j] = new;
+		
 	}
-	
-	new->addr = addr;
 
 	/* Create new representative and insert the new node */
 	if (uf->headRep == NULL || stack_depth != uf->headRep->stack_depth) {
 
-		Representative * new_rep = uf_alloc_rep(uf->pool);
+		Representative * new_rep = malloc(sizeof(Representative));
 		if (new_rep == NULL) failure("Impossible allocate a new rep");
 		new_rep->rank = 0;
 		new_rep->real_nodes = 1;
@@ -168,7 +139,7 @@ void UF_insert(UnionFind * uf, ADDRINT addr, int stack_depth){
 		
 		/* Connect with the node */
 		new_rep->tree = new;
-		new->next = new; /* Loop */
+		new->next = new; /* Loop because circular list*/
 		
 		/* Set the node as root of the tree */
 		SET_AS_ROOT(new, new_rep);
@@ -181,7 +152,7 @@ void UF_insert(UnionFind * uf, ADDRINT addr, int stack_depth){
 		new_rep->next = uf->headRep;
 		uf->headRep = new_rep;
 
-		return;
+		return depth;
 	
 	}
 
@@ -192,6 +163,8 @@ void UF_insert(UnionFind * uf, ADDRINT addr, int stack_depth){
 	uf->headRep->real_nodes++;
 	if (uf->headRep->rank == 0)
 		uf->headRep->rank = 1;
+		
+	return depth;
 
 }
 
@@ -232,7 +205,7 @@ int UF_merge(UnionFind * uf, int current_stack_depth){
 	live->next = uf->headRep->next->next;
 	uf->headRep = live;
 
-	uf_free_rep(uf->pool, dead);
+	free(dead);
 
 	return uf->headRep->real_nodes;
 
@@ -251,18 +224,18 @@ void UF_rebalance(UnionFind * uf, Node * root) {
 	#endif
 	
 	r->dummies = 0;
-	if (root->addr == 0) { /* Find a new root */
+	if (IS_DUMMY(root)) { /* Find a new root */
 	
 		Node * cand = root->next;
-		uf_free_node(uf->pool, root);
+		free(root);
 		root = NULL;
 		
 		while (cand != NULL && cand != head) {
 			
 			root = cand;
-			if (root->addr != 0) break;
+			if (!IS_DUMMY(cand)) break;
 			
-			uf_free_node(uf->pool, root); /* We delete all visited dummies */
+			free(root); /* We delete all visited dummies */
 			cand = cand->next;
 		}
 		
@@ -283,7 +256,7 @@ void UF_rebalance(UnionFind * uf, Node * root) {
 	while (next != NULL && next != head) {
 		
 		node = next;
-		if (node->addr != 0) {
+		if (!IS_DUMMY(node)) {
 			
 			next = node->next;
 			node->parent = root;
@@ -297,7 +270,7 @@ void UF_rebalance(UnionFind * uf, Node * root) {
 		} else {
 			
 			next = node->next;
-			uf_free_node(uf->pool, node);
+			free(node);
 			
 		}
 		
@@ -310,76 +283,14 @@ void UF_rebalance(UnionFind * uf, Node * root) {
 
 int UF_lookup(UnionFind * uf, ADDRINT addr){
 
-	#ifdef GLIB
-	Node * n = (Node *) g_hash_table_lookup(uf->ht, (void *) addr);
-	#else
-	Node * n = HT_lookup (uf->ht, addr, NULL);
-	#endif
+	ADDRINT i = addr >> 16;
+	if (uf->table[i] == NULL) return -1;
+	
+	ADDRINT j = (addr & 0xffff) / 4;
+	Node * n = uf->table[i]->node[j];
 	
 	if (n == NULL) return -1;
 
 	return GET_REP(UF_find(n))->stack_depth;
 
 }
-
-#ifdef DEBUG
-
-void UF_print_count(UnionFind * uf) {
-	Representative * r = uf->headRep;
-	while (r != NULL) {
-		printf("REP: dummies(%u) - real(%u) - rank(%u) - depth(%u)\n",
-				r->dummies, r->real_nodes, r->rank, r->stack_depth);
-		r = r->next;
-	}
-}
-
-void UF_print(UnionFind * uf) {
-
-	printf("\n--------------\n");
-	printf("| Union find |\n");
-	printf("--------------\n");
-	
-	Representative * r = uf->headRep;
-	while (r != NULL) {
-		printf("REP: dummies(%u) - real(%u) - rank(%u) - depth(%u) - addr(%lu)\n",
-				r->dummies, r->real_nodes, r->rank, r->stack_depth, (unsigned long int) r);
-		if (r->tree == NULL) printf("Root is NULL\n");
-		if (!IS_ROOT(r->tree)) printf("Root not set as root");
-		if (GET_REP(r->tree) != (void*)r) printf("Rep & root are not linked\n");
-		UF_print_tree(r->tree, 0, r->real_nodes, r->dummies);
-		r = r->next;
-	}
-}
-
-void UF_print_tree(Node * node, int level, int reals, int dummies) {
-
-	if (node == NULL) return;
-	
-	int real_nodes = 0;
-	int dummy_nodes = 0;
-	
-	Node * head = node;
-	
-	while (node != NULL) {
-		
-		if(IS_ROOT(node)) printf("[0] ");
-		else printf("[1] ");
-		printf("Addr(%lu)\n", node->addr);
-		
-		if (node->addr == 0) dummy_nodes++;
-		else real_nodes++;
-		
-		if (node->next == head) {
-			printf("Linked correctly to head\n");
-			break;
-		}
-		
-		node = node->next;
-		
-	}
-	
-	if (real_nodes != reals) printf("Wrong # real nodes\n");
-	if (dummy_nodes != dummies) printf("Wrong # dummy nodes\n");
-	
-}
-#endif

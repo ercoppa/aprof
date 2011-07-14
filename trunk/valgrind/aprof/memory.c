@@ -1,8 +1,8 @@
 /*
  * Load, store and modify handlers
  * 
- * Last changed: $Date: 2011-07-08 00:14:45 +0200 (Fri, 08 Jul 2011) $
- * Revision:     $Rev: 70 $
+ * Last changed: $Date$
+ * Revision:     $Rev$
  */
 
 #include "aprof.h"
@@ -60,6 +60,7 @@ VG_REGPARM(3) void trace_access(UWord type, Addr addr, SizeT size) {
 	unsigned int i = 0;
 	for (i = 0; i < size; i++) {
 		
+		#if SUF == 1
 		int addr_depth = UF_lookup(tdata->accesses, addr+(ADDR_MULTIPLE*i));
 		
 		if (tdata->stack_depth > addr_depth) {
@@ -73,6 +74,18 @@ VG_REGPARM(3) void trace_access(UWord type, Addr addr, SizeT size) {
 			}
 			
 		}
+		
+		#else
+		UWord old_aid = SUF_insert( tdata->accesses, 
+									addr+(ADDR_MULTIPLE*i), 
+									tdata->curr_aid);
+		
+		if (old_aid < tdata->curr_aid && (type == LOAD || type == MODIFY)) {
+			get_activation(tdata, tdata->stack_depth)->sms++;
+			if (old_aid > 0)
+				get_activation_by_aid(tdata, old_aid)->sms--;
+		}
+		#endif
 		
 	}
 	

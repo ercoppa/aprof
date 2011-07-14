@@ -1,8 +1,8 @@
 /*
  * Header of Union Find based on forest
  * 
- * Last changed: $Date: 2011-07-08 00:14:45 +0200 (Fri, 08 Jul 2011) $
- * Revision:     $Rev: 70 $
+ * Last changed: $Date$
+ * Revision:     $Rev$
  */
 
 #ifndef _UNIONFIND_H_
@@ -11,11 +11,6 @@
 #ifdef GLIBC
 #include <stdlib.h>
 #include <stdio.h>
-
-#ifdef GLIB
-#include <glib.h>
-#endif
-
 #endif
 
 #define ADDRINT unsigned long
@@ -33,15 +28,17 @@ struct Representative {
 };
 
 struct Node {
-	ADDRINT addr;			// (payload) an accessed address
 	Node * next;			// Circular linked list of all nodes in the tree
 	Node * parent;			// If this node is the root (see IS_ROOT macro), its parent is the rep
 };
 
+typedef struct USM {
+	Node * node[16384];
+} USM;
+
 typedef struct {
 	Representative * headRep;	// Last (created) rep
-	void * ht;					// HashTable of < address, node * >
-	void * pool;				// Allocator pool for nodes/reps
+	USM * table[65536];
 } UnionFind;
 
 // ---------------------------------------------------------------------
@@ -69,8 +66,10 @@ void UF_destroy(UnionFind * uf);
 //		UnionFind * uf: address of the union find
 //		ADDRINT addr: accessed address (payload)
 //		int stack_depth: stack depth of the routine that access addr
+// Return the stack depth of the old representative (if the address is
+// already present in the UF. 
 //
-void UF_insert(UnionFind * uf, ADDRINT addr, int stack_depth);
+int UF_insert(UnionFind * uf, ADDRINT addr, int stack_depth);
 
 // ---------------------------------------------------------------------
 // UF_lookup
@@ -101,10 +100,5 @@ int UF_merge(UnionFind * uf, int current_stack_depth);
 //		Node * node: a node of the tree
 //
 void UF_rebalance(UnionFind * uf, Node * root);
-
-/* Debug routines */
-void UF_print(UnionFind * uf);
-void UF_print_tree(Node * node, int level, int reals, int dummies);
-void UF_print_count(UnionFind * uf);
 
 #endif

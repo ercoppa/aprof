@@ -7,15 +7,20 @@
 //  Created:        October 13, 2010
 //  Module:         dc
 
-//  Last changed:   $Date: 2011/01/14 11:57:12 $
+//  Last changed:   $Date$
 //  Changed by:     $Author: demetres $
-//  Revision:       $Revision: 1.7 $
+//  Revision:       $Revision$
 
 
 #ifndef __pool__
 #define __pool__
 
-#include "./valgrind.h"
+#include "pub_tool_basics.h"
+#include "pub_tool_libcprint.h"
+#include "pub_tool_mallocfree.h"
+#include "pub_tool_libcbase.h"
+#include "pub_tool_libcassert.h"
+#define size_t       unsigned int
 
 #ifdef GLIBC
 #include <stddef.h>

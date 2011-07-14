@@ -7,9 +7,9 @@
 //  Created:        October 13, 2010
 //  Module:         dc
 
-//  Last changed:   $Date: 2011/02/10 12:51:18 $
+//  Last changed:   $Date$
 //  Changed by:     $Author: demetres $
-//  Revision:       $Revision: 1.11 $
+//  Revision:       $Revision$
 
 
 #include "pool.h"
@@ -17,8 +17,9 @@
 #ifdef GLIBC
 #include <stdio.h>
 #include <stdlib.h>
+#else
+#include "../glibc-valgrind.h"
 #endif
-
 
 // pool iterator
 struct pool_iterator_t {

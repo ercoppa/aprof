@@ -1,8 +1,8 @@
 /*
  * Setup of valgrind and instrumentation  
  * 
- * Last changed: $Date: 2011-06-25 20:34:03 +0200 (Sat, 25 Jun 2011) $
- * Revision:     $Rev: 64 $
+ * Last changed: $Date$
+ * Revision:     $Rev$
  */
 
 #include "aprof.h"
@@ -173,9 +173,7 @@ IRSB* instrument (  VgCallbackClosure* closure,
 
 /* aprof initialization */
 static void post_clo_init(void) {
-
-	thread_pool_init();
-
+	return;
 }
 
 /* Funzione per presentare risultati in fase finale */

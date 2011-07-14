@@ -29,17 +29,17 @@
 */
 
 #include "hashtable.h"
-
-#ifdef GLIBC
-#include <stdlib.h>
-#else
-#include "./valgrind.h"
+#include "../pool/pool.h"
 #define vg_assert tl_assert
-#endif
 
 /*--------------------------------------------------------------------*/
 /*--- Declarations                                                 ---*/
 /*--------------------------------------------------------------------*/
+
+/* One pool for all hashtables */
+static pool_t * pool = NULL;
+static void * free_list = NULL;
+#define PAGE_NODES 1024
 
 #define CHAIN_NO(key,tbl) (((UWord)(key)) % tbl->n_chains)
 
@@ -50,7 +50,7 @@ struct _HashTable {
    UInt         iterChain;  // next chain to be traversed by the iterator
    HashNode  ** chains;     // expanding array of hash chains
    Bool         iterOK;     // table safe to iterate over?
-   void         (*free_func)(void *);
+   void         (*free_func)(void *); // function invoked on node->value when desctructing the ht
 };
 
 #define N_HASH_PRIMES 20
@@ -72,12 +72,16 @@ HashTable * HT_construct(void * func)
    /* Initialises to zero, ie. all entries NULL */
    SizeT       n_chains = primes[0];
    SizeT       sz       = n_chains * sizeof(HashNode*);
-   HashTable * table    = calloc(1, sizeof(struct _HashTable));
-   table->chains        = calloc(1, sz);
+   HashTable * table    = VG_(calloc)("ht", 1, sizeof(struct _HashTable));
+   table->chains        = VG_(calloc)("chains", 1, sz);
    table->n_chains      = n_chains;
    table->n_elements    = 0;
    table->iterOK        = True;
    table->free_func     = func;
+   
+   if (pool == NULL)
+		pool = pool_init(PAGE_NODES, sizeof(HashNode), &free_list);
+   
    return table;
 }
 
@@ -115,7 +119,7 @@ static void resize (HashTable * table)
 
    table->n_chains = new_chains;
    sz = new_chains * sizeof(HashNode*);
-   chains = calloc(1, sz);
+   chains = VG_(calloc)("chains", 1, sz);
 
    for (i = 0; i < old_chains; i++) {
       node = table->chains[i];
@@ -128,7 +132,7 @@ static void resize (HashTable * table)
       }
    }
 
-   free(table->chains);
+   VG_(free)(table->chains);
    table->chains = chains;
 }
 
@@ -136,7 +140,8 @@ static void resize (HashTable * table)
    the node to the appropriate chain.  No duplicate key detection is done. */
 void HT_add_node (HashTable * table, UWord key, void * value)
 {
-   HashNode * node      = malloc(sizeof(HashNode));
+   HashNode * node = NULL;
+   pool_alloc(pool, free_list, node, HashNode);
    node->key            = key;
    node->value          = value;
    UWord chain          = CHAIN_NO(node->key, table);
@@ -169,8 +174,8 @@ void * HT_lookup (HashTable * table, UWord key, HashNode ** node)
 /* Removes a VgHashNode from the table.  Returns NULL if not found. */
 void* HT_remove (HashTable * table, UWord key)
 {
-   UWord        chain         = CHAIN_NO(key, table);
-   HashNode*  curr          =   table->chains[chain];
+   UWord      chain         = CHAIN_NO(key, table);
+   HashNode*  curr          = table->chains[chain];
    HashNode** prev_next_ptr = &(table->chains[chain]);
 
    /* Table has been modified; hence HT_Next should assert. */
@@ -181,7 +186,7 @@ void* HT_remove (HashTable * table, UWord key)
          *prev_next_ptr = curr->next;
          table->n_elements--;
          void * value = curr->value;
-         free(curr);
+         pool_free(curr, free_list);
          return value;
       }
       prev_next_ptr = &(curr->next);
@@ -238,11 +243,11 @@ void HT_destruct(HashTable * table)
          node_next = node->next;
          if (table->free_func != NULL)
              table->free_func(node->value);
-         free(node);
+         VG_(free)(node);
       }
    }
-   free(table->chains);
-   free(table);
+   VG_(free)(table->chains);
+   VG_(free)(table);
 }
 
 /*--------------------------------------------------------------------*/
