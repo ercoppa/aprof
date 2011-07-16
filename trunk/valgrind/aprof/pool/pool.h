@@ -15,6 +15,7 @@
 #ifndef __pool__
 #define __pool__
 
+#ifndef GLIBC
 #include "pub_tool_basics.h"
 #include "pub_tool_libcprint.h"
 #include "pub_tool_mallocfree.h"
@@ -22,7 +23,7 @@
 #include "pub_tool_libcassert.h"
 #define size_t       unsigned int
 
-#ifdef GLIBC
+#else
 #include <stddef.h>
 #endif
 

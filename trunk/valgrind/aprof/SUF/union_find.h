@@ -13,6 +13,8 @@
 #include <stdio.h>
 #endif
 
+#include "../pool/pool.h"
+
 #define ADDRINT unsigned long
 
 typedef struct Node Node;
@@ -30,6 +32,9 @@ struct Representative {
 struct Node {
 	Node * next;			// Circular linked list of all nodes in the tree
 	Node * parent;			// If this node is the root (see IS_ROOT macro), its parent is the rep
+	#if DEBUG
+	ADDRINT addr;
+	#endif
 };
 
 typedef struct USM {
@@ -39,6 +44,8 @@ typedef struct USM {
 typedef struct {
 	Representative * headRep;	// Last (created) rep
 	USM * table[65536];
+	pool_t * pool;
+	void * free_list;
 } UnionFind;
 
 // ---------------------------------------------------------------------
@@ -100,5 +107,12 @@ int UF_merge(UnionFind * uf, int current_stack_depth);
 //		Node * node: a node of the tree
 //
 void UF_rebalance(UnionFind * uf, Node * root);
+
+#if DEBUG
+void UF_print_tree(Node * node, int level, int reals, int dummies);
+void UF_print(UnionFind * uf);
+#endif
+
+
 
 #endif

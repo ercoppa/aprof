@@ -61,11 +61,9 @@ VG_REGPARM(3) void trace_access(UWord type, Addr addr, SizeT size) {
 	for (i = 0; i < size; i++) {
 		
 		#if SUF == 1
-		int addr_depth = UF_lookup(tdata->accesses, addr+(ADDR_MULTIPLE*i));
+		int addr_depth = UF_insert(tdata->accesses, addr+(ADDR_MULTIPLE*i), tdata->stack_depth);
 		
 		if (tdata->stack_depth > addr_depth) {
-			
-			UF_insert(tdata->accesses, addr+(ADDR_MULTIPLE*i), tdata->stack_depth);
 			
 			if (type == LOAD || type == MODIFY) {
 				get_activation(tdata, tdata->stack_depth)->sms++;

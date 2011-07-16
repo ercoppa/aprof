@@ -16,14 +16,16 @@
 #include "union_find.h"
 #include "../glibc-valgrind.h"
 
-#define DEBUG
+#define PAGE_NODES 1024
 
 /* Macro for dealing with bit stealing */
 #define IS_ROOT(e)          ((unsigned long)((e)->parent) & 1)
 #define SET_AS_ROOT(r, rep) (r)->parent = (void *)(((unsigned long)((r)->parent) & 2) | ((unsigned long)(rep) | 1));
 #define GET_REP(n)          ((Representative *)((unsigned long)(n)->parent & ~3))
-#define SET_AS_DUMMY(n)     (n)->parent = (void *)((unsigned long)(n) | 2);
+#define SET_AS_DUMMY(n)     (n)->parent = (void *)((unsigned long)((n)->parent) | 2);
 #define IS_DUMMY(n)         ((unsigned long)((n)->parent) & 2)
+#define SET_PARENT(n, p)    (n)->parent = (void *)(((unsigned long)((n)->parent) & 2) | (unsigned long)(p));
+#define GET_PARENT(n)       (void *)((unsigned long)(n)->parent & ~3)
 
 static void failure(char * c) {
 	
@@ -43,9 +45,14 @@ static Node * UF_find(Node * n) {
 	if (n == NULL) return NULL;
 	if (IS_ROOT(n)) return n;
 	
-	n->parent = UF_find(n->parent); /* Path Compression */
+	int i = 0;
+	if (IS_DUMMY(n)) i = 1;
+	
+	SET_PARENT(n, UF_find(GET_PARENT(n))); /* Path Compression */
+	if (i && !IS_DUMMY(n)) failure("bad macro");
+	if (UF_find(GET_PARENT(n)) != GET_PARENT(n)) failure("Bad macro");
 
-	return n->parent; /* if n is not root, its n->parent it's clean wrt bit stealing */
+	return GET_PARENT(n);
 
 }
 
@@ -54,7 +61,10 @@ static Node * UF_find(Node * n) {
 UnionFind * UF_create() {
 
 	UnionFind * uf = (UnionFind *) calloc(1, sizeof(UnionFind));
-	if (uf == NULL) return NULL;
+	if (uf == NULL) failure("UF not allocable");
+	
+	uf->pool = pool_init(PAGE_NODES, sizeof(Node), &uf->free_list);
+	if (uf->pool == NULL) failure("UF pool not allocable");
 
 	return uf;
 
@@ -68,6 +78,8 @@ void UF_destroy(UnionFind * uf){
 			free(uf->table[i]);
 		i++;
 	}
+	
+	pool_cleanup(uf->pool);
 	free(uf);
 
 }
@@ -76,7 +88,7 @@ int UF_insert(UnionFind * uf, ADDRINT addr, int stack_depth){
 
 	Node * new = NULL;
 	Node * n   = NULL;
-	int depth = 0;
+	int depth = -1;
 
 	ADDRINT i = addr >> 16;
 	ADDRINT j = (addr & 0xffff) / 4;
@@ -110,7 +122,11 @@ int UF_insert(UnionFind * uf, ADDRINT addr, int stack_depth){
 		
 		SET_AS_DUMMY(n);
 		
-		new = malloc(sizeof(Node));
+		#if DEBUG
+		n->addr = 0;
+		#endif
+		
+		pool_alloc(uf->pool, uf->free_list, new, Node);
 		if (new == NULL) failure("Impossible allocate a node");
 		
 		uf->table[i]->node[j] = new;
@@ -120,18 +136,23 @@ int UF_insert(UnionFind * uf, ADDRINT addr, int stack_depth){
 
 	} else {
 		
-		new = malloc(sizeof(Node));
+		pool_alloc(uf->pool, uf->free_list, new, Node);
 		if (new == NULL) failure("Impossible allocate a node");
 		
 		uf->table[i]->node[j] = new;
 		
 	}
+	
+	#if DEBUG
+	new->addr = addr;
+	#endif
 
 	/* Create new representative and insert the new node */
 	if (uf->headRep == NULL || stack_depth != uf->headRep->stack_depth) {
 
 		Representative * new_rep = malloc(sizeof(Representative));
 		if (new_rep == NULL) failure("Impossible allocate a new rep");
+
 		new_rep->rank = 0;
 		new_rep->real_nodes = 1;
 		new_rep->dummies = 0;
@@ -155,7 +176,7 @@ int UF_insert(UnionFind * uf, ADDRINT addr, int stack_depth){
 		return depth;
 	
 	}
-
+	
 	/* Insert node into the current tree and update current rep info */
 	new->parent = uf->headRep->tree;
 	new->next = uf->headRep->tree->next;
@@ -193,7 +214,8 @@ int UF_merge(UnionFind * uf, int current_stack_depth){
 		dead = uf->headRep;
 	}
 
-	dead->tree->parent = live->tree; /* Implicitly we clear the last bit! */
+	SET_PARENT(dead->tree, live->tree);
+
 	/* Merge the two node lists */
 	Node * head = live->tree->next;
 	live->tree->next = dead->tree->next;
@@ -215,28 +237,28 @@ void UF_rebalance(UnionFind * uf, Node * root) {
 
 	if (root == NULL) return;
 
-	//printf("Rebalancing...\n");
-
 	Node * head = root;
 	Representative * r = GET_REP(root);
 	#ifdef DEBUG
 	if (r == NULL) failure("Invalid rep during rebalancing");
 	#endif
 	
+	if (r->dummies == 0) return;
+	
 	r->dummies = 0;
 	if (IS_DUMMY(root)) { /* Find a new root */
 	
 		Node * cand = root->next;
-		free(root);
+		pool_free(root, uf->free_list);
 		root = NULL;
 		
 		while (cand != NULL && cand != head) {
 			
 			root = cand;
-			if (!IS_DUMMY(cand)) break;
+			if (!IS_DUMMY(root)) break; 
 			
-			free(root); /* We delete all visited dummies */
 			cand = cand->next;
+			pool_free(root, uf->free_list); /* We delete all visited dummies */
 		}
 		
 		#ifdef DEBUG
@@ -270,7 +292,7 @@ void UF_rebalance(UnionFind * uf, Node * root) {
 		} else {
 			
 			next = node->next;
-			free(node);
+			pool_free(node, uf->free_list);
 			
 		}
 		
@@ -294,3 +316,58 @@ int UF_lookup(UnionFind * uf, ADDRINT addr){
 	return GET_REP(UF_find(n))->stack_depth;
 
 }
+
+#if DEBUG
+void UF_print(UnionFind * uf) {
+
+	printf("\n--------------\n");
+	printf("| Union find |\n");
+	printf("--------------\n");
+	
+	Representative * r = uf->headRep;
+	while (r != NULL) {
+		printf("REP: dummies(%u) - real(%u) - rank(%u) - depth(%u) - addr(%lu)\n",
+				r->dummies, r->real_nodes, r->rank, r->stack_depth, (unsigned long int) r);
+		if (r->tree == NULL) printf("Root is NULL\n");
+		if (!IS_ROOT(r->tree)) printf("Root not set as root\n");
+		if (GET_REP(r->tree) != (void*)r) printf("Rep & root are not linked\n");
+		UF_print_tree(r->tree, 0, r->real_nodes, r->dummies);
+		r = r->next;
+	}
+}
+
+void UF_print_tree(Node * node, int level, int reals, int dummies) {
+
+	if (node == NULL) return;
+	
+	int real_nodes = 0;
+	int dummy_nodes = 0;
+	
+	Node * head = node;
+	
+	while (node != NULL) {
+		
+		if(IS_ROOT(node)) printf("[0] ");
+		else printf("[1] ");
+		printf("Addr(%lu)\n", node->addr);
+		
+		if (node->addr == 0 && !IS_DUMMY(node)) failure("Dummy not marked as dummy");
+		if (IS_DUMMY(node) && node->addr != 0) failure("Dummy with not zero addr");
+		
+		if (IS_DUMMY(node)) dummy_nodes++;
+		else real_nodes++;
+		
+		if (node->next == head) {
+			printf("Linked correctly to head\n");
+			break;
+		}
+		
+		node = node->next;
+		
+	}
+	
+	if (real_nodes != reals) printf("Wrong # real nodes\n");
+	if (dummy_nodes != dummies) printf("Wrong # dummy nodes\n");
+	
+}
+#endif

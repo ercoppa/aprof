@@ -11,8 +11,8 @@ driver_glib:	driver.c union_find.c pool.c uf_alloc.c
 hash:	hashtable.c hash_test.c
 	gcc -Wall hashtable.c hash_test.c -o hash -DGLIBC
 
-test:	union_test.c union_find.c pool.c uf_alloc.c hashtable.c
-	gcc -Wall union_test.c union_find.c pool.c uf_alloc.c hashtable.c -o test -DGLIBC -DDEBUG
+test:	union_test.c union_find.c ../pool/pool.c
+	gcc -Wall union_test.c union_find.c ../pool/pool.c -o test -DGLIBC -DDEBUG
 
 clean:
 	rm driver; rm test; rm driver_glib; rm hash; rm *.o

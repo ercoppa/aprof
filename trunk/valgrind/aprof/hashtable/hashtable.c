@@ -243,11 +243,15 @@ void HT_destruct(HashTable * table)
          node_next = node->next;
          if (table->free_func != NULL)
              table->free_func(node->value);
-         VG_(free)(node);
+         pool_free(node, free_list);
       }
    }
    VG_(free)(table->chains);
    VG_(free)(table);
+}
+
+void  HT_destroy_pool(void) {
+	pool_cleanup(pool);
 }
 
 /*--------------------------------------------------------------------*/

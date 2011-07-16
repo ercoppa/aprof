@@ -105,6 +105,8 @@ extern void * HT_Next (HashTable * table,  UWord * key, void ** value);
 /* Destroy a table. */
 extern void HT_destruct (HashTable * t);
 
+extern void HT_destroy_pool(void);
+
 
 #endif 
 

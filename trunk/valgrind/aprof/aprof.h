@@ -27,8 +27,7 @@
 #include "hashtable/hashtable.h"
 
 /* Behaviour macro */
-
-#define SUF					2	// Implementation of stack union find
+#define SUF					1	// Implementation of stack union find
 #define EMPTY_ANALYSIS		0	// if 1, analysis routines are empty (performance benchmark reference)
 #define TRACER 				0	// Create a trace for testing SUF
 #define DEBUG				0	// Enable some sanity checks
