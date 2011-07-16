@@ -17,24 +17,24 @@ DSP(memcheck): real 9.85 sec
 == Results ==
 Revision 0 (old repo): 
 {{{
-DSP(aprof): real 18.90 sec MEM+FN+INSTR, EMPTY_ANALYSIS
-DSP(aprof): real 12.20 sec ME M+FN, EMPTY_ANALYSIS
+DSP(aprof): real 18.90 sec ~ MEM+FN+INSTR, EMPTY_ANALYSIS
+DSP(aprof): real 12.20 sec ~ MEM+FN, EMPTY_ANALYSIS
 }}}
 
 Revision 65 (old repo):
 {{{
-DSP(aprof): real 11.38 sec MEM+FN, EMPTY_ANALYSIS
-DSP(aprof): real 18.81 sec MEM+FN+INSTR, EMPTY_ANALYSIS
-DSP(aprof): real 11.31 sec MEM+FN+RDTSC, EMPTY_ANALYSIS
+DSP(aprof): real 11.38 sec ~ MEM+FN, EMPTY_ANALYSIS
+DSP(aprof): real 18.81 sec ~ MEM+FN+INSTR, EMPTY_ANALYSIS
+DSP(aprof): real 11.31 sec ~ MEM+FN+RDTSC, EMPTY_ANALYSIS
 }}}
 
 Revision 71 (old repo):
 {{{
-DSP(aprof): space 235mb; time real 2m8.854s CCT=0, ADDR_MULTIPLE=4, TIME=RDTSC, SUF=1
+DSP(aprof): space 235mb ~ time real 2m8.854s ~ CCT=0, ADDR_MULTIPLE=4, TIME=RDTSC, SUF=1
 }}}
 
 Revision 26:
 {{{
-DSP(aprof): space 100mb; time real 1m33s CCT=0, ADDR_MULTIPLE=4, TIME=RDTSC, SUF=1
-DSP(aprof): space 51mb; time real 43s CCT=0, ADDR_MULTIPLE=4, TIME=RDTSC, SUF=2
+DSP(aprof): space 100mb ~ time real 1m33s ~ CCT=0, ADDR_MULTIPLE=4, TIME=RDTSC, SUF=1
+DSP(aprof): space 51mb ~ time real 43s ~ CCT=0, ADDR_MULTIPLE=4, TIME=RDTSC, SUF=2
 }}}
