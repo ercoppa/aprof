@@ -65,6 +65,8 @@ UnionFind * UF_create() {
 	
 	uf->pool = pool_init(PAGE_NODES, sizeof(Node), &uf->free_list);
 	if (uf->pool == NULL) failure("UF pool not allocable");
+	
+	uf->free_list = NULL;
 
 	return uf;
 
@@ -128,6 +130,8 @@ int UF_insert(UnionFind * uf, ADDRINT addr, int stack_depth){
 		
 		pool_alloc(uf->pool, uf->free_list, new, Node);
 		if (new == NULL) failure("Impossible allocate a node");
+		new->parent = NULL;
+		new->next = NULL;
 		
 		uf->table[i]->node[j] = new;
 		
@@ -138,6 +142,8 @@ int UF_insert(UnionFind * uf, ADDRINT addr, int stack_depth){
 		
 		pool_alloc(uf->pool, uf->free_list, new, Node);
 		if (new == NULL) failure("Impossible allocate a node");
+		new->parent = NULL;
+		new->next = NULL;
 		
 		uf->table[i]->node[j] = new;
 		
