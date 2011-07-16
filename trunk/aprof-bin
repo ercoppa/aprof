@@ -1,3 +1,4 @@
 #!/bin/bash
 
-valgrind/inst/bin/valgrind --tool=aprof $1 $2 $3 $4 $5 $6 $7
+
+`dirname $0`/valgrind/inst/bin/valgrind --tool=aprof $1 $2 $3 $4 $5 $6 $7

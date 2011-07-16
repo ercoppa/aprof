@@ -75,7 +75,7 @@ UnionFind * UF_create() {
 void UF_destroy(UnionFind * uf){
 
 	int i = 0;
-	while (i < 65536) {
+	while (i < USM_SIZE) {
 		if (uf->table[i] != NULL) 
 			free(uf->table[i]);
 		i++;

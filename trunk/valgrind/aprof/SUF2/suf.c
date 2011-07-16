@@ -12,7 +12,7 @@ void SUF_destroy(StackUF * suf)
 {
 
 	UWord i = 0;
-	while (i < 65536) {
+	while (i < SSM_SIZE) {
 		if (suf->table[i] != NULL) 
 			VG_(free)(suf->table[i]);
 		i++;

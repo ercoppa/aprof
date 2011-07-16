@@ -11,11 +11,20 @@
 #ifdef GLIBC
 #include <stdlib.h>
 #include <stdio.h>
+#else
+#include "valgrind.h"
 #endif
 
 #include "../pool/pool.h"
 
 #define ADDRINT unsigned long
+
+#ifdef __i386__
+#define USM_SIZE 65536 // 4GB
+#else
+#define USM_SIZE 65536 * 4 // 16GB address space
+#endif
+
 
 typedef struct Node Node;
 typedef struct Representative Representative;
@@ -43,7 +52,7 @@ typedef struct USM {
 
 typedef struct {
 	Representative * headRep;	// Last (created) rep
-	USM * table[65536];
+	USM * table[USM_SIZE];
 	pool_t * pool;
 	void * free_list;
 } UnionFind;

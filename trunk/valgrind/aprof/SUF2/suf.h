@@ -6,15 +6,22 @@
 #include "pub_tool_mallocfree.h"
 #include "pub_tool_libcbase.h"
 #include "pub_tool_libcassert.h"
+#include "valgrind.h"
 
 extern void failure(char * msg);
+
+#ifdef __i386__
+#define SSM_SIZE 65536 // 4GB
+#else
+#define SSM_SIZE 65536 * 4 // 16GB address space
+#endif
 
 typedef struct SSM {
 	UWord table[16384];
 } SSM;
 
 typedef struct SPM {
-	SSM * table[65536];
+	SSM * table[SSM_SIZE];
 } StackUF;
 
 StackUF * SUF_create(void);

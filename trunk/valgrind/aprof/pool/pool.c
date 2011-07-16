@@ -165,7 +165,7 @@ void pool_dump(pool_t* p, void* free_list, int dump_heap) {
     printf(". number allocated blocks: %u\n", 
                                     num_pages*p->page_size - num_free);
     printf(". number free blocks: %u\n", num_free);
-    printf(". overall size of pool in bytes: %lu "
+    printf(". overall size of pool in bytes: %u "
            "(+%u libc malloc block headers)\n",
         sizeof(pool_t) + num_pages * (sizeof(void*) + 
                          p->page_size * p->block_size),
