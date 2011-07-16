@@ -179,6 +179,8 @@ static void post_clo_init(void) {
 /* Funzione per presentare risultati in fase finale */
 static void fini(Int exitcode) {
 	
+	HT_destroy_pool();
+	
 	#if EVENTCOUNT && !TRACER
 	VG_(printf)("Load: %lu\nStore: %lu\nModify: %lu\n", read_n, write_n, modify_n);
 	VG_(printf)("Function entry: %lu\nFunction exit: %lu\n", fn_in_n, fn_out_n);
