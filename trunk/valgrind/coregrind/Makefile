@@ -46,8 +46,8 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-build_triplet = i686-pc-linux-gnu
-host_triplet = i686-pc-linux-gnu
+build_triplet = x86_64-unknown-linux-gnu
+host_triplet = x86_64-unknown-linux-gnu
 DIST_COMMON = $(noinst_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/link_tool_exe_aix5.in \
 	$(srcdir)/link_tool_exe_darwin.in \
@@ -83,7 +83,7 @@ bin_PROGRAMS = valgrind$(EXEEXT) vgdb$(EXEEXT) \
 #am__append_7 = libcoregrind--linux.a
 #am__append_8 = libreplacemalloc_toolpreload--linux.a
 noinst_PROGRAMS =  \
-	vgpreload_core-x86-linux.so$(EXEEXT) \
+	vgpreload_core-amd64-linux.so$(EXEEXT) \
 	$(am__EXEEXT_1)
 #am__append_9 = vgpreload_core--linux.so
 #am__append_10 = m_gdbserver/arm-core-valgrind-s1.xml \
@@ -95,32 +95,32 @@ noinst_PROGRAMS =  \
 #		m_gdbserver/arm-with-vfpv3-valgrind.xml \
 #		m_gdbserver/arm-with-vfpv3.xml
 
-am__append_11 = m_gdbserver/32bit-core-valgrind-s1.xml \
-		m_gdbserver/32bit-core-valgrind-s2.xml \
-		m_gdbserver/32bit-core.xml \
-		m_gdbserver/32bit-sse-valgrind-s1.xml \
-		m_gdbserver/32bit-sse-valgrind-s2.xml \
-		m_gdbserver/32bit-sse.xml
+#am__append_11 = m_gdbserver/32bit-core-valgrind-s1.xml \
+#		m_gdbserver/32bit-core-valgrind-s2.xml \
+#		m_gdbserver/32bit-core.xml \
+#		m_gdbserver/32bit-sse-valgrind-s1.xml \
+#		m_gdbserver/32bit-sse-valgrind-s2.xml \
+#		m_gdbserver/32bit-sse.xml
 
-am__append_12 = m_gdbserver/32bit-linux-valgrind-s1.xml \
-		m_gdbserver/32bit-linux-valgrind-s2.xml \
-		m_gdbserver/32bit-linux.xml \
-		m_gdbserver/i386-linux-valgrind.xml
+#am__append_12 = m_gdbserver/32bit-linux-valgrind-s1.xml \
+#		m_gdbserver/32bit-linux-valgrind-s2.xml \
+#		m_gdbserver/32bit-linux.xml \
+#		m_gdbserver/i386-linux-valgrind.xml
 
-#am__append_13 = m_gdbserver/i386-coresse-valgrind.xml
-#am__append_14 = m_gdbserver/64bit-core-valgrind-s1.xml \
-#		m_gdbserver/64bit-core-valgrind-s2.xml \
-#		m_gdbserver/64bit-core.xml \
-#		m_gdbserver/64bit-sse-valgrind-s1.xml \
-#		m_gdbserver/64bit-sse-valgrind-s2.xml \
-#		m_gdbserver/64bit-sse.xml
+##am__append_13 = m_gdbserver/i386-coresse-valgrind.xml
+am__append_14 = m_gdbserver/64bit-core-valgrind-s1.xml \
+		m_gdbserver/64bit-core-valgrind-s2.xml \
+		m_gdbserver/64bit-core.xml \
+		m_gdbserver/64bit-sse-valgrind-s1.xml \
+		m_gdbserver/64bit-sse-valgrind-s2.xml \
+		m_gdbserver/64bit-sse.xml
 
-#am__append_15 = m_gdbserver/64bit-linux-valgrind-s1.xml \
-#		m_gdbserver/64bit-linux-valgrind-s2.xml \
-#		m_gdbserver/64bit-linux.xml \
-#		m_gdbserver/amd64-linux-valgrind.xml
+am__append_15 = m_gdbserver/64bit-linux-valgrind-s1.xml \
+		m_gdbserver/64bit-linux-valgrind-s2.xml \
+		m_gdbserver/64bit-linux.xml \
+		m_gdbserver/amd64-linux-valgrind.xml
 
-##am__append_16 = m_gdbserver/amd64-coresse-valgrind.xml
+#am__append_16 = m_gdbserver/amd64-coresse-valgrind.xml
 #am__append_17 = m_gdbserver/power-altivec-valgrind-s1.xml \
 #		m_gdbserver/power-altivec-valgrind-s2.xml \
 #		m_gdbserver/power-altivec.xml \
@@ -191,160 +191,160 @@ am__installdirs = "$(DESTDIR)$(pkglibdir)" "$(DESTDIR)$(bindir)" \
 	"$(DESTDIR)$(pkglibdir)"
 LIBRARIES = $(pkglib_LIBRARIES)
 ARFLAGS = cru
-libcoregrind_x86_linux_a_AR = $(AR) $(ARFLAGS)
-libcoregrind_x86_linux_a_LIBADD =
-am__objects_1 = libcoregrind_x86_linux_a-m_commandline.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_clientstate.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_cpuid.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_debugger.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_debuglog.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_errormgr.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_execontext.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_hashtable.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_libcbase.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_libcassert.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_libcfile.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_libcprint.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_libcproc.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_libcsetjmp.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_libcsignal.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_machine.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_main.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_mallocfree.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_options.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_oset.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_redir.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_seqmatch.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_signals.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_sparsewa.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_stacks.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_stacktrace.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_syscall.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_threadstate.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_tooliface.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_trampoline.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_translate.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_transtab.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_vki.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_vkiscnums.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_wordfm.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_xarray.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_aspacehl.$(OBJEXT) \
-	libcoregrind_x86_linux_a-aspacemgr-common.$(OBJEXT) \
-	libcoregrind_x86_linux_a-aspacemgr-linux.$(OBJEXT) \
-	libcoregrind_x86_linux_a-aspacemgr-aix5.$(OBJEXT) \
-	libcoregrind_x86_linux_a-coredump-elf.$(OBJEXT) \
-	libcoregrind_x86_linux_a-coredump-macho.$(OBJEXT) \
-	libcoregrind_x86_linux_a-coredump-xcoff.$(OBJEXT) \
-	libcoregrind_x86_linux_a-misc.$(OBJEXT) \
-	libcoregrind_x86_linux_a-d3basics.$(OBJEXT) \
-	libcoregrind_x86_linux_a-debuginfo.$(OBJEXT) \
-	libcoregrind_x86_linux_a-readdwarf.$(OBJEXT) \
-	libcoregrind_x86_linux_a-readdwarf3.$(OBJEXT) \
-	libcoregrind_x86_linux_a-readelf.$(OBJEXT) \
-	libcoregrind_x86_linux_a-readmacho.$(OBJEXT) \
-	libcoregrind_x86_linux_a-readpdb.$(OBJEXT) \
-	libcoregrind_x86_linux_a-readstabs.$(OBJEXT) \
-	libcoregrind_x86_linux_a-readxcoff.$(OBJEXT) \
-	libcoregrind_x86_linux_a-storage.$(OBJEXT) \
-	libcoregrind_x86_linux_a-tytypes.$(OBJEXT) \
-	libcoregrind_x86_linux_a-cp-demangle.$(OBJEXT) \
-	libcoregrind_x86_linux_a-cplus-dem.$(OBJEXT) \
-	libcoregrind_x86_linux_a-demangle.$(OBJEXT) \
-	libcoregrind_x86_linux_a-dyn-string.$(OBJEXT) \
-	libcoregrind_x86_linux_a-safe-ctype.$(OBJEXT) \
-	libcoregrind_x86_linux_a-dispatch-x86-linux.$(OBJEXT) \
-	libcoregrind_x86_linux_a-dispatch-amd64-linux.$(OBJEXT) \
-	libcoregrind_x86_linux_a-dispatch-ppc32-linux.$(OBJEXT) \
-	libcoregrind_x86_linux_a-dispatch-ppc64-linux.$(OBJEXT) \
-	libcoregrind_x86_linux_a-dispatch-arm-linux.$(OBJEXT) \
-	libcoregrind_x86_linux_a-dispatch-s390x-linux.$(OBJEXT) \
-	libcoregrind_x86_linux_a-dispatch-ppc32-aix5.$(OBJEXT) \
-	libcoregrind_x86_linux_a-dispatch-ppc64-aix5.$(OBJEXT) \
-	libcoregrind_x86_linux_a-dispatch-x86-darwin.$(OBJEXT) \
-	libcoregrind_x86_linux_a-dispatch-amd64-darwin.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_gdbserver.$(OBJEXT) \
-	libcoregrind_x86_linux_a-inferiors.$(OBJEXT) \
-	libcoregrind_x86_linux_a-m_gdbserver.$(OBJEXT) \
-	libcoregrind_x86_linux_a-regcache.$(OBJEXT) \
-	libcoregrind_x86_linux_a-remote-utils.$(OBJEXT) \
-	libcoregrind_x86_linux_a-server.$(OBJEXT) \
-	libcoregrind_x86_linux_a-signals.$(OBJEXT) \
-	libcoregrind_x86_linux_a-target.$(OBJEXT) \
-	libcoregrind_x86_linux_a-utils.$(OBJEXT) \
-	libcoregrind_x86_linux_a-valgrind-low.$(OBJEXT) \
-	libcoregrind_x86_linux_a-valgrind-low-x86.$(OBJEXT) \
-	libcoregrind_x86_linux_a-valgrind-low-amd64.$(OBJEXT) \
-	libcoregrind_x86_linux_a-valgrind-low-arm.$(OBJEXT) \
-	libcoregrind_x86_linux_a-valgrind-low-ppc32.$(OBJEXT) \
-	libcoregrind_x86_linux_a-valgrind-low-ppc64.$(OBJEXT) \
-	libcoregrind_x86_linux_a-valgrind-low-s390x.$(OBJEXT) \
-	libcoregrind_x86_linux_a-version.$(OBJEXT) \
-	libcoregrind_x86_linux_a-initimg-linux.$(OBJEXT) \
-	libcoregrind_x86_linux_a-initimg-aix5.$(OBJEXT) \
-	libcoregrind_x86_linux_a-initimg-darwin.$(OBJEXT) \
-	libcoregrind_x86_linux_a-initimg-pathscan.$(OBJEXT) \
-	libcoregrind_x86_linux_a-mach_basics.$(OBJEXT) \
-	libcoregrind_x86_linux_a-mach_msg.$(OBJEXT) \
-	libcoregrind_x86_linux_a-mach_traps-x86-darwin.$(OBJEXT) \
-	libcoregrind_x86_linux_a-mach_traps-amd64-darwin.$(OBJEXT) \
-	libcoregrind_x86_linux_a-replacemalloc_core.$(OBJEXT) \
-	libcoregrind_x86_linux_a-scheduler.$(OBJEXT) \
-	libcoregrind_x86_linux_a-sema.$(OBJEXT) \
-	libcoregrind_x86_linux_a-sigframe-x86-linux.$(OBJEXT) \
-	libcoregrind_x86_linux_a-sigframe-amd64-linux.$(OBJEXT) \
-	libcoregrind_x86_linux_a-sigframe-ppc32-linux.$(OBJEXT) \
-	libcoregrind_x86_linux_a-sigframe-ppc64-linux.$(OBJEXT) \
-	libcoregrind_x86_linux_a-sigframe-arm-linux.$(OBJEXT) \
-	libcoregrind_x86_linux_a-sigframe-s390x-linux.$(OBJEXT) \
-	libcoregrind_x86_linux_a-sigframe-ppc32-aix5.$(OBJEXT) \
-	libcoregrind_x86_linux_a-sigframe-ppc64-aix5.$(OBJEXT) \
-	libcoregrind_x86_linux_a-sigframe-x86-darwin.$(OBJEXT) \
-	libcoregrind_x86_linux_a-sigframe-amd64-darwin.$(OBJEXT) \
-	libcoregrind_x86_linux_a-syscall-x86-linux.$(OBJEXT) \
-	libcoregrind_x86_linux_a-syscall-amd64-linux.$(OBJEXT) \
-	libcoregrind_x86_linux_a-syscall-ppc32-linux.$(OBJEXT) \
-	libcoregrind_x86_linux_a-syscall-ppc64-linux.$(OBJEXT) \
-	libcoregrind_x86_linux_a-syscall-arm-linux.$(OBJEXT) \
-	libcoregrind_x86_linux_a-syscall-s390x-linux.$(OBJEXT) \
-	libcoregrind_x86_linux_a-syscall-ppc32-aix5.$(OBJEXT) \
-	libcoregrind_x86_linux_a-syscall-ppc64-aix5.$(OBJEXT) \
-	libcoregrind_x86_linux_a-syscall-x86-darwin.$(OBJEXT) \
-	libcoregrind_x86_linux_a-syscall-amd64-darwin.$(OBJEXT) \
-	libcoregrind_x86_linux_a-syswrap-main.$(OBJEXT) \
-	libcoregrind_x86_linux_a-syswrap-generic.$(OBJEXT) \
-	libcoregrind_x86_linux_a-syswrap-linux.$(OBJEXT) \
-	libcoregrind_x86_linux_a-syswrap-linux-variants.$(OBJEXT) \
-	libcoregrind_x86_linux_a-syswrap-aix5.$(OBJEXT) \
-	libcoregrind_x86_linux_a-syswrap-darwin.$(OBJEXT) \
-	libcoregrind_x86_linux_a-syswrap-x86-linux.$(OBJEXT) \
-	libcoregrind_x86_linux_a-syswrap-amd64-linux.$(OBJEXT) \
-	libcoregrind_x86_linux_a-syswrap-ppc32-linux.$(OBJEXT) \
-	libcoregrind_x86_linux_a-syswrap-ppc64-linux.$(OBJEXT) \
-	libcoregrind_x86_linux_a-syswrap-arm-linux.$(OBJEXT) \
-	libcoregrind_x86_linux_a-syswrap-s390x-linux.$(OBJEXT) \
-	libcoregrind_x86_linux_a-syswrap-ppc32-aix5.$(OBJEXT) \
-	libcoregrind_x86_linux_a-syswrap-ppc64-aix5.$(OBJEXT) \
-	libcoregrind_x86_linux_a-syswrap-x86-darwin.$(OBJEXT) \
-	libcoregrind_x86_linux_a-syswrap-amd64-darwin.$(OBJEXT) \
-	libcoregrind_x86_linux_a-elf.$(OBJEXT) \
-	libcoregrind_x86_linux_a-macho.$(OBJEXT) \
-	libcoregrind_x86_linux_a-main.$(OBJEXT) \
-	libcoregrind_x86_linux_a-script.$(OBJEXT)
-am_libcoregrind_x86_linux_a_OBJECTS =  \
+libcoregrind_amd64_linux_a_AR = $(AR) $(ARFLAGS)
+libcoregrind_amd64_linux_a_LIBADD =
+am__objects_1 = libcoregrind_amd64_linux_a-m_commandline.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_clientstate.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_cpuid.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_debugger.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_debuglog.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_errormgr.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_execontext.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_hashtable.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_libcbase.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_libcassert.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_libcfile.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_libcprint.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_libcproc.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_libcsetjmp.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_libcsignal.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_machine.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_main.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_mallocfree.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_options.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_oset.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_redir.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_seqmatch.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_signals.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_sparsewa.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_stacks.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_stacktrace.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_syscall.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_threadstate.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_tooliface.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_trampoline.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_translate.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_transtab.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_vki.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_vkiscnums.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_wordfm.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_xarray.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_aspacehl.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-aspacemgr-common.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-aspacemgr-linux.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-aspacemgr-aix5.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-coredump-elf.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-coredump-macho.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-coredump-xcoff.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-misc.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-d3basics.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-debuginfo.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-readdwarf.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-readdwarf3.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-readelf.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-readmacho.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-readpdb.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-readstabs.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-readxcoff.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-storage.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-tytypes.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-cp-demangle.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-cplus-dem.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-demangle.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-dyn-string.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-safe-ctype.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-dispatch-x86-linux.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-dispatch-amd64-linux.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-dispatch-ppc32-linux.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-dispatch-ppc64-linux.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-dispatch-arm-linux.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-dispatch-s390x-linux.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-dispatch-ppc32-aix5.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-dispatch-ppc64-aix5.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-dispatch-x86-darwin.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-dispatch-amd64-darwin.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_gdbserver.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-inferiors.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-m_gdbserver.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-regcache.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-remote-utils.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-server.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-signals.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-target.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-utils.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-valgrind-low.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-valgrind-low-x86.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-valgrind-low-amd64.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-valgrind-low-arm.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-valgrind-low-ppc32.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-valgrind-low-ppc64.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-valgrind-low-s390x.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-version.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-initimg-linux.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-initimg-aix5.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-initimg-darwin.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-initimg-pathscan.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-mach_basics.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-mach_msg.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-mach_traps-x86-darwin.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-mach_traps-amd64-darwin.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-replacemalloc_core.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-scheduler.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-sema.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-sigframe-x86-linux.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-sigframe-amd64-linux.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-sigframe-ppc32-linux.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-sigframe-ppc64-linux.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-sigframe-arm-linux.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-sigframe-s390x-linux.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-sigframe-ppc32-aix5.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-sigframe-ppc64-aix5.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-sigframe-x86-darwin.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-sigframe-amd64-darwin.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-syscall-x86-linux.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-syscall-amd64-linux.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-syscall-ppc32-linux.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-syscall-ppc64-linux.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-syscall-arm-linux.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-syscall-s390x-linux.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-syscall-ppc32-aix5.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-syscall-ppc64-aix5.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-syscall-x86-darwin.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-syscall-amd64-darwin.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-syswrap-main.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-syswrap-generic.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-syswrap-linux.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-syswrap-linux-variants.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-syswrap-aix5.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-syswrap-darwin.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-syswrap-x86-linux.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-syswrap-amd64-linux.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-syswrap-ppc32-linux.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-syswrap-ppc64-linux.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-syswrap-arm-linux.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-syswrap-s390x-linux.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-syswrap-ppc32-aix5.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-syswrap-ppc64-aix5.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-syswrap-x86-darwin.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-syswrap-amd64-darwin.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-elf.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-macho.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-main.$(OBJEXT) \
+	libcoregrind_amd64_linux_a-script.$(OBJEXT)
+am_libcoregrind_amd64_linux_a_OBJECTS =  \
 	$(am__objects_1)
-#am__objects_2 = libcoregrind_x86_linux_a-mach_vmUser.$(OBJEXT) \
-#	libcoregrind_x86_linux_a-taskUser.$(OBJEXT) \
-#	libcoregrind_x86_linux_a-thread_actUser.$(OBJEXT) \
-#	libcoregrind_x86_linux_a-vm_mapUser.$(OBJEXT)
+#am__objects_2 = libcoregrind_amd64_linux_a-mach_vmUser.$(OBJEXT) \
+#	libcoregrind_amd64_linux_a-taskUser.$(OBJEXT) \
+#	libcoregrind_amd64_linux_a-thread_actUser.$(OBJEXT) \
+#	libcoregrind_amd64_linux_a-vm_mapUser.$(OBJEXT)
 am__objects_3 = $(am__objects_2)
 am__objects_4 =
 am__objects_5 = $(am__objects_3) $(am__objects_4)
-nodist_libcoregrind_x86_linux_a_OBJECTS =  \
+nodist_libcoregrind_amd64_linux_a_OBJECTS =  \
 	$(am__objects_5)
-libcoregrind_x86_linux_a_OBJECTS =  \
-	$(am_libcoregrind_x86_linux_a_OBJECTS) \
-	$(nodist_libcoregrind_x86_linux_a_OBJECTS)
+libcoregrind_amd64_linux_a_OBJECTS =  \
+	$(am_libcoregrind_amd64_linux_a_OBJECTS) \
+	$(nodist_libcoregrind_amd64_linux_a_OBJECTS)
 libcoregrind__linux_a_AR = $(AR) $(ARFLAGS)
 libcoregrind__linux_a_LIBADD =
 am__libcoregrind__linux_a_SOURCES_DIST =  \
@@ -570,11 +570,11 @@ am__objects_9 = $(am__objects_8) $(am__objects_4)
 libcoregrind__linux_a_OBJECTS =  \
 	$(am_libcoregrind__linux_a_OBJECTS) \
 	$(nodist_libcoregrind__linux_a_OBJECTS)
-libreplacemalloc_toolpreload_x86_linux_a_AR =  \
+libreplacemalloc_toolpreload_amd64_linux_a_AR =  \
 	$(AR) $(ARFLAGS)
-libreplacemalloc_toolpreload_x86_linux_a_LIBADD =
-am_libreplacemalloc_toolpreload_x86_linux_a_OBJECTS = libreplacemalloc_toolpreload_x86_linux_a-vg_replace_malloc.$(OBJEXT)
-libreplacemalloc_toolpreload_x86_linux_a_OBJECTS = $(am_libreplacemalloc_toolpreload_x86_linux_a_OBJECTS)
+libreplacemalloc_toolpreload_amd64_linux_a_LIBADD =
+am_libreplacemalloc_toolpreload_amd64_linux_a_OBJECTS = libreplacemalloc_toolpreload_amd64_linux_a-vg_replace_malloc.$(OBJEXT)
+libreplacemalloc_toolpreload_amd64_linux_a_OBJECTS = $(am_libreplacemalloc_toolpreload_amd64_linux_a_OBJECTS)
 libreplacemalloc_toolpreload__linux_a_AR =  \
 	$(AR) $(ARFLAGS)
 libreplacemalloc_toolpreload__linux_a_LIBADD =
@@ -611,14 +611,14 @@ vgdb_OBJECTS = $(am_vgdb_OBJECTS)
 vgdb_LDADD = $(LDADD)
 vgdb_LINK = $(CCLD) $(vgdb_CFLAGS) $(CFLAGS) $(vgdb_LDFLAGS) \
 	$(LDFLAGS) -o $@
-am_vgpreload_core_x86_linux_so_OBJECTS = vgpreload_core_x86_linux_so-vg_preloaded.$(OBJEXT)
-vgpreload_core_x86_linux_so_OBJECTS =  \
-	$(am_vgpreload_core_x86_linux_so_OBJECTS)
-vgpreload_core_x86_linux_so_LDADD = $(LDADD)
-vgpreload_core_x86_linux_so_LINK = $(CCLD) \
-	$(vgpreload_core_x86_linux_so_CFLAGS) \
+am_vgpreload_core_amd64_linux_so_OBJECTS = vgpreload_core_amd64_linux_so-vg_preloaded.$(OBJEXT)
+vgpreload_core_amd64_linux_so_OBJECTS =  \
+	$(am_vgpreload_core_amd64_linux_so_OBJECTS)
+vgpreload_core_amd64_linux_so_LDADD = $(LDADD)
+vgpreload_core_amd64_linux_so_LINK = $(CCLD) \
+	$(vgpreload_core_amd64_linux_so_CFLAGS) \
 	$(CFLAGS) \
-	$(vgpreload_core_x86_linux_so_LDFLAGS) \
+	$(vgpreload_core_amd64_linux_so_LDFLAGS) \
 	$(LDFLAGS) -o $@
 am__vgpreload_core__linux_so_SOURCES_DIST =  \
 	vg_preloaded.c
@@ -641,36 +641,36 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libcoregrind_x86_linux_a_SOURCES) \
-	$(nodist_libcoregrind_x86_linux_a_SOURCES) \
+SOURCES = $(libcoregrind_amd64_linux_a_SOURCES) \
+	$(nodist_libcoregrind_amd64_linux_a_SOURCES) \
 	$(libcoregrind__linux_a_SOURCES) \
 	$(nodist_libcoregrind__linux_a_SOURCES) \
-	$(libreplacemalloc_toolpreload_x86_linux_a_SOURCES) \
+	$(libreplacemalloc_toolpreload_amd64_linux_a_SOURCES) \
 	$(libreplacemalloc_toolpreload__linux_a_SOURCES) \
 	$(no_op_client_for_valgrind_SOURCES) $(valgrind_SOURCES) \
 	$(vgdb_SOURCES) \
-	$(vgpreload_core_x86_linux_so_SOURCES) \
+	$(vgpreload_core_amd64_linux_so_SOURCES) \
 	$(vgpreload_core__linux_so_SOURCES)
 DIST_SOURCES =  \
-	$(libcoregrind_x86_linux_a_SOURCES) \
+	$(libcoregrind_amd64_linux_a_SOURCES) \
 	$(am__libcoregrind__linux_a_SOURCES_DIST) \
-	$(libreplacemalloc_toolpreload_x86_linux_a_SOURCES) \
+	$(libreplacemalloc_toolpreload_amd64_linux_a_SOURCES) \
 	$(am__libreplacemalloc_toolpreload__linux_a_SOURCES_DIST) \
 	$(no_op_client_for_valgrind_SOURCES) \
 	$(am__valgrind_SOURCES_DIST) $(vgdb_SOURCES) \
-	$(vgpreload_core_x86_linux_so_SOURCES) \
+	$(vgpreload_core_amd64_linux_so_SOURCES) \
 	$(am__vgpreload_core__linux_so_SOURCES_DIST)
 DATA = $(pkglib_DATA)
 HEADERS = $(noinst_HEADERS)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run aclocal-1.11
-AMTAR = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run tar
+ACLOCAL = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run aclocal-1.11
+AMTAR = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run tar
 AR = /usr/bin/ar
-AUTOCONF = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run autoconf
-AUTOHEADER = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run autoheader
-AUTOMAKE = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run automake-1.11
+AUTOCONF = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run autoconf
+AUTOHEADER = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run autoheader
+AUTOMAKE = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run automake-1.11
 AWK = mawk
 BOOST_CFLAGS = 
 BOOST_LIBS = 
@@ -722,7 +722,7 @@ LIBS =
 LN_S = ln -s
 LTLIBOBJS = 
 MAINT = #
-MAKEINFO = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run makeinfo
+MAKEINFO = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run makeinfo
 MKDIR_P = /bin/mkdir -p
 MPI_CC = mpicc
 OBJEXT = o
@@ -735,7 +735,7 @@ PACKAGE_URL =
 PACKAGE_VERSION = 3.7.0.SVN
 PATH_SEPARATOR = :
 PERL = /usr/bin/perl
-PREFERRED_STACK_BOUNDARY = -mpreferred-stack-boundary=2
+PREFERRED_STACK_BOUNDARY = 
 RANLIB = ranlib
 SED = /bin/sed
 SET_MAKE = 
@@ -744,15 +744,15 @@ STRIP =
 VALT_LOAD_ADDRESS_PRI = 0x38000000
 VALT_LOAD_ADDRESS_SEC = 0xUNSET
 VERSION = 3.7.0.SVN
-VGCONF_ARCH_PRI = x86
+VGCONF_ARCH_PRI = amd64
 VGCONF_ARCH_SEC = 
 VGCONF_OS = linux
-VGCONF_PLATFORM_PRI_CAPS = X86_LINUX
+VGCONF_PLATFORM_PRI_CAPS = AMD64_LINUX
 VGCONF_PLATFORM_SEC_CAPS = 
-abs_builddir = /home/ercoppa/Desktop/code/aprof/valgrind/coregrind
-abs_srcdir = /home/ercoppa/Desktop/code/aprof/valgrind/coregrind
-abs_top_builddir = /home/ercoppa/Desktop/code/aprof/valgrind
-abs_top_srcdir = /home/ercoppa/Desktop/code/aprof/valgrind
+abs_builddir = /home/ercoppa/Desktop/aprof/valgrind/coregrind
+abs_srcdir = /home/ercoppa/Desktop/aprof/valgrind/coregrind
+abs_top_builddir = /home/ercoppa/Desktop/aprof/valgrind
+abs_top_srcdir = /home/ercoppa/Desktop/aprof/valgrind
 ac_ct_CC = gcc
 ac_ct_CXX = g++
 am__include = include
@@ -761,26 +761,26 @@ am__quote =
 am__tar = ${AMTAR} chof - "$$tardir"
 am__untar = ${AMTAR} xf -
 bindir = ${exec_prefix}/bin
-build = i686-pc-linux-gnu
+build = x86_64-unknown-linux-gnu
 build_alias = 
-build_cpu = i686
+build_cpu = x86_64
 build_os = linux-gnu
-build_vendor = pc
+build_vendor = unknown
 builddir = .
 datadir = ${datarootdir}
 datarootdir = ${prefix}/share
 docdir = ${datarootdir}/doc/${PACKAGE_TARNAME}
 dvidir = ${docdir}
 exec_prefix = ${prefix}
-host = i686-pc-linux-gnu
+host = x86_64-unknown-linux-gnu
 host_alias = 
-host_cpu = i686
+host_cpu = x86_64
 host_os = linux-gnu
-host_vendor = pc
+host_vendor = unknown
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/install-sh
+install_sh = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -789,7 +789,7 @@ mandir = ${datarootdir}/man
 mkdir_p = /bin/mkdir -p
 oldincludedir = /usr/include
 pdfdir = ${docdir}
-prefix = /home/ercoppa/Desktop/code/aprof/valgrind/inst
+prefix = /home/ercoppa/Desktop/aprof/valgrind/inst
 program_transform_name = s,x,x,
 psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
@@ -845,12 +845,12 @@ AM_CFLAGS_PIC = -fpic -O -g -fno-omit-frame-pointer -fno-strict-aliasing
 #----------------------------------------------------------------------------
 # Basics, flags
 #----------------------------------------------------------------------------
-AM_CPPFLAGS_X86_LINUX = -I$(top_srcdir) \
+AM_CPPFLAGS_AMD64_LINUX = -I$(top_srcdir) \
 	-I$(top_srcdir)/include -I$(top_srcdir)/VEX/pub \
-	-DVGA_x86=1 -DVGO_linux=1 \
-	-DVGP_x86_linux=1 \
+	-DVGA_amd64=1 -DVGO_linux=1 \
+	-DVGP_amd64_linux=1 \
 	-I$(top_srcdir)/coregrind -DVG_LIBDIR="\"$(pkglibdir)"\" \
-	-DVG_PLATFORM="\"x86-linux\""
+	-DVG_PLATFORM="\"amd64-linux\""
 #AM_CPPFLAGS_ =  \
 #	-I$(top_srcdir) \
 #	-I$(top_srcdir)/include \
@@ -862,13 +862,13 @@ AM_CPPFLAGS_X86_LINUX = -I$(top_srcdir) \
 #	-DVG_LIBDIR="\"$(pkglibdir)"\" \
 #	-DVG_PLATFORM="\"-linux\""
 AM_FLAG_M3264_X86_LINUX = -m32
-AM_CFLAGS_X86_LINUX = -m32 -mpreferred-stack-boundary=2 \
+AM_CFLAGS_X86_LINUX = -m32  \
 			 	$(AM_CFLAGS_BASE)
 
 AM_CCASFLAGS_X86_LINUX = $(AM_CPPFLAGS_X86_LINUX) -m32 -g
 AM_FLAG_M3264_AMD64_LINUX = -m64
 AM_CFLAGS_AMD64_LINUX = -m64 -fomit-frame-pointer \
-				-mpreferred-stack-boundary=2 $(AM_CFLAGS_BASE)
+				 $(AM_CFLAGS_BASE)
 
 AM_CCASFLAGS_AMD64_LINUX = $(AM_CPPFLAGS_AMD64_LINUX) -m64 -g
 AM_FLAG_M3264_PPC32_LINUX = -m32
@@ -878,7 +878,7 @@ AM_FLAG_M3264_PPC64_LINUX = -m64
 AM_CFLAGS_PPC64_LINUX = -m64 $(AM_CFLAGS_BASE)
 AM_CCASFLAGS_PPC64_LINUX = $(AM_CPPFLAGS_PPC64_LINUX) -m64 -g
 AM_FLAG_M3264_ARM_LINUX = -m32
-AM_CFLAGS_ARM_LINUX = -m32 -mpreferred-stack-boundary=2 \
+AM_CFLAGS_ARM_LINUX = -m32  \
 			 	$(AM_CFLAGS_BASE) -marm
 
 AM_CCASFLAGS_ARM_LINUX = $(AM_CPPFLAGS_ARM_LINUX) -m32 -marm -g
@@ -913,10 +913,10 @@ AM_CCASFLAGS_S390X_LINUX = $(AM_CPPFLAGS_S390X_LINUX) -mzarch -march=z900 \
 # regtests and performance tests.  In fact, these must be used to
 # build anything which is built only once on a dual-arch build.
 #
-AM_FLAG_M3264_PRI = $(AM_FLAG_M3264_X86_LINUX)
-AM_CPPFLAGS_PRI = $(AM_CPPFLAGS_X86_LINUX)
-AM_CFLAGS_PRI = $(AM_CFLAGS_X86_LINUX)
-AM_CCASFLAGS_PRI = $(AM_CCASFLAGS_X86_LINUX)
+AM_FLAG_M3264_PRI = $(AM_FLAG_M3264_AMD64_LINUX)
+AM_CPPFLAGS_PRI = $(AM_CPPFLAGS_AMD64_LINUX)
+AM_CFLAGS_PRI = $(AM_CFLAGS_AMD64_LINUX)
+AM_CCASFLAGS_PRI = $(AM_CCASFLAGS_AMD64_LINUX)
 AM_FLAG_M3264_SEC = 
 #AM_FLAG_M3264_SEC = $(AM_FLAG_M3264_)
 
@@ -1098,9 +1098,9 @@ CLEANFILES = $(mach_user_srcs) $(mach_server_srcs) $(mach_hdrs) \
 #----------------------------------------------------------------------------
 # libreplacemalloc_toolpreload-<platform>.a
 #----------------------------------------------------------------------------
-pkglib_LIBRARIES = libcoregrind-x86-linux.a \
+pkglib_LIBRARIES = libcoregrind-amd64-linux.a \
 	$(am__append_7) \
-	libreplacemalloc_toolpreload-x86-linux.a \
+	libreplacemalloc_toolpreload-amd64-linux.a \
 	$(am__append_8)
 COREGRIND_SOURCES_COMMON = \
 	m_commandline.c \
@@ -1242,20 +1242,20 @@ COREGRIND_SOURCES_COMMON = \
 	m_ume/main.c \
 	m_ume/script.c
 
-libcoregrind_x86_linux_a_SOURCES = \
+libcoregrind_amd64_linux_a_SOURCES = \
     $(COREGRIND_SOURCES_COMMON)
 
-nodist_libcoregrind_x86_linux_a_SOURCES = \
+nodist_libcoregrind_amd64_linux_a_SOURCES = \
     $(BUILT_SOURCES)
 
-libcoregrind_x86_linux_a_CPPFLAGS = \
-    $(AM_CPPFLAGS_X86_LINUX)
+libcoregrind_amd64_linux_a_CPPFLAGS = \
+    $(AM_CPPFLAGS_AMD64_LINUX)
 
-libcoregrind_x86_linux_a_CFLAGS = \
-    $(AM_CFLAGS_X86_LINUX)
+libcoregrind_amd64_linux_a_CFLAGS = \
+    $(AM_CFLAGS_AMD64_LINUX)
 
-libcoregrind_x86_linux_a_CCASFLAGS = \
-    $(AM_CCASFLAGS_X86_LINUX)
+libcoregrind_amd64_linux_a_CCASFLAGS = \
+    $(AM_CCASFLAGS_AMD64_LINUX)
 
 #libcoregrind__linux_a_SOURCES = \
 #    $(COREGRIND_SOURCES_COMMON)
@@ -1274,14 +1274,14 @@ libcoregrind_x86_linux_a_CCASFLAGS = \
 
 libcoregrind_ppc32_aix5_a_AR = $(AR) -X32 cru
 libcoregrind_ppc64_aix5_a_AR = $(AR) -X64 cru
-libreplacemalloc_toolpreload_x86_linux_a_SOURCES = \
+libreplacemalloc_toolpreload_amd64_linux_a_SOURCES = \
 	m_replacemalloc/vg_replace_malloc.c
 
-libreplacemalloc_toolpreload_x86_linux_a_CPPFLAGS = \
-	$(AM_CPPFLAGS_X86_LINUX)
+libreplacemalloc_toolpreload_amd64_linux_a_CPPFLAGS = \
+	$(AM_CPPFLAGS_AMD64_LINUX)
 
-libreplacemalloc_toolpreload_x86_linux_a_CFLAGS = \
-	$(AM_CFLAGS_X86_LINUX) $(AM_CFLAGS_PIC)
+libreplacemalloc_toolpreload_amd64_linux_a_CFLAGS = \
+	$(AM_CFLAGS_AMD64_LINUX) $(AM_CFLAGS_PIC)
 
 #libreplacemalloc_toolpreload__linux_a_SOURCES = \
 #	m_replacemalloc/vg_replace_malloc.c
@@ -1297,15 +1297,15 @@ libreplacemalloc_toolpreload_x86_linux_a_CFLAGS = \
 libreplacemalloc_toolpreload_ppc32_aix5_a_AR = $(AR) -X32 cru
 libreplacemalloc_toolpreload_ppc64_aix5_a_AR = $(AR) -X64 cru
 #noinst_DSYMS = $(noinst_PROGRAMS)
-vgpreload_core_x86_linux_so_SOURCES = vg_preloaded.c
-vgpreload_core_x86_linux_so_CPPFLAGS = \
-	$(AM_CPPFLAGS_X86_LINUX)
+vgpreload_core_amd64_linux_so_SOURCES = vg_preloaded.c
+vgpreload_core_amd64_linux_so_CPPFLAGS = \
+	$(AM_CPPFLAGS_AMD64_LINUX)
 
-vgpreload_core_x86_linux_so_CFLAGS = \
-	$(AM_CFLAGS_X86_LINUX) $(AM_CFLAGS_PIC)
+vgpreload_core_amd64_linux_so_CFLAGS = \
+	$(AM_CFLAGS_AMD64_LINUX) $(AM_CFLAGS_PIC)
 
-vgpreload_core_x86_linux_so_LDFLAGS = \
-	$(PRELOAD_LDFLAGS_X86_LINUX)
+vgpreload_core_amd64_linux_so_LDFLAGS = \
+	$(PRELOAD_LDFLAGS_AMD64_LINUX)
 
 #vgpreload_core__linux_so_SOURCES = vg_preloaded.c
 #vgpreload_core__linux_so_CPPFLAGS = \
@@ -1398,18 +1398,18 @@ uninstall-pkglibLIBRARIES:
 
 clean-pkglibLIBRARIES:
 	-test -z "$(pkglib_LIBRARIES)" || rm -f $(pkglib_LIBRARIES)
-libcoregrind-x86-linux.a: $(libcoregrind_x86_linux_a_OBJECTS) $(libcoregrind_x86_linux_a_DEPENDENCIES) 
-	-rm -f libcoregrind-x86-linux.a
-	$(libcoregrind_x86_linux_a_AR) libcoregrind-x86-linux.a $(libcoregrind_x86_linux_a_OBJECTS) $(libcoregrind_x86_linux_a_LIBADD)
-	$(RANLIB) libcoregrind-x86-linux.a
+libcoregrind-amd64-linux.a: $(libcoregrind_amd64_linux_a_OBJECTS) $(libcoregrind_amd64_linux_a_DEPENDENCIES) 
+	-rm -f libcoregrind-amd64-linux.a
+	$(libcoregrind_amd64_linux_a_AR) libcoregrind-amd64-linux.a $(libcoregrind_amd64_linux_a_OBJECTS) $(libcoregrind_amd64_linux_a_LIBADD)
+	$(RANLIB) libcoregrind-amd64-linux.a
 libcoregrind--linux.a: $(libcoregrind__linux_a_OBJECTS) $(libcoregrind__linux_a_DEPENDENCIES) 
 	-rm -f libcoregrind--linux.a
 	$(libcoregrind__linux_a_AR) libcoregrind--linux.a $(libcoregrind__linux_a_OBJECTS) $(libcoregrind__linux_a_LIBADD)
 	$(RANLIB) libcoregrind--linux.a
-libreplacemalloc_toolpreload-x86-linux.a: $(libreplacemalloc_toolpreload_x86_linux_a_OBJECTS) $(libreplacemalloc_toolpreload_x86_linux_a_DEPENDENCIES) 
-	-rm -f libreplacemalloc_toolpreload-x86-linux.a
-	$(libreplacemalloc_toolpreload_x86_linux_a_AR) libreplacemalloc_toolpreload-x86-linux.a $(libreplacemalloc_toolpreload_x86_linux_a_OBJECTS) $(libreplacemalloc_toolpreload_x86_linux_a_LIBADD)
-	$(RANLIB) libreplacemalloc_toolpreload-x86-linux.a
+libreplacemalloc_toolpreload-amd64-linux.a: $(libreplacemalloc_toolpreload_amd64_linux_a_OBJECTS) $(libreplacemalloc_toolpreload_amd64_linux_a_DEPENDENCIES) 
+	-rm -f libreplacemalloc_toolpreload-amd64-linux.a
+	$(libreplacemalloc_toolpreload_amd64_linux_a_AR) libreplacemalloc_toolpreload-amd64-linux.a $(libreplacemalloc_toolpreload_amd64_linux_a_OBJECTS) $(libreplacemalloc_toolpreload_amd64_linux_a_LIBADD)
+	$(RANLIB) libreplacemalloc_toolpreload-amd64-linux.a
 libreplacemalloc_toolpreload--linux.a: $(libreplacemalloc_toolpreload__linux_a_OBJECTS) $(libreplacemalloc_toolpreload__linux_a_DEPENDENCIES) 
 	-rm -f libreplacemalloc_toolpreload--linux.a
 	$(libreplacemalloc_toolpreload__linux_a_AR) libreplacemalloc_toolpreload--linux.a $(libreplacemalloc_toolpreload__linux_a_OBJECTS) $(libreplacemalloc_toolpreload__linux_a_LIBADD)
@@ -1463,9 +1463,9 @@ valgrind$(EXEEXT): $(valgrind_OBJECTS) $(valgrind_DEPENDENCIES)
 vgdb$(EXEEXT): $(vgdb_OBJECTS) $(vgdb_DEPENDENCIES) 
 	@rm -f vgdb$(EXEEXT)
 	$(vgdb_LINK) $(vgdb_OBJECTS) $(vgdb_LDADD) $(LIBS)
-vgpreload_core-x86-linux.so$(EXEEXT): $(vgpreload_core_x86_linux_so_OBJECTS) $(vgpreload_core_x86_linux_so_DEPENDENCIES) 
-	@rm -f vgpreload_core-x86-linux.so$(EXEEXT)
-	$(vgpreload_core_x86_linux_so_LINK) $(vgpreload_core_x86_linux_so_OBJECTS) $(vgpreload_core_x86_linux_so_LDADD) $(LIBS)
+vgpreload_core-amd64-linux.so$(EXEEXT): $(vgpreload_core_amd64_linux_so_OBJECTS) $(vgpreload_core_amd64_linux_so_DEPENDENCIES) 
+	@rm -f vgpreload_core-amd64-linux.so$(EXEEXT)
+	$(vgpreload_core_amd64_linux_so_LINK) $(vgpreload_core_amd64_linux_so_OBJECTS) $(vgpreload_core_amd64_linux_so_LDADD) $(LIBS)
 vgpreload_core--linux.so$(EXEEXT): $(vgpreload_core__linux_so_OBJECTS) $(vgpreload_core__linux_so_DEPENDENCIES) 
 	@rm -f vgpreload_core--linux.so$(EXEEXT)
 	$(vgpreload_core__linux_so_LINK) $(vgpreload_core__linux_so_OBJECTS) $(vgpreload_core__linux_so_LDADD) $(LIBS)
@@ -1476,147 +1476,147 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-aspacemgr-aix5.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-aspacemgr-common.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-aspacemgr-linux.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-coredump-elf.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-coredump-macho.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-coredump-xcoff.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-cp-demangle.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-cplus-dem.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-d3basics.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-debuginfo.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-demangle.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-dispatch-amd64-darwin.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-dispatch-amd64-linux.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-dispatch-arm-linux.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-dispatch-ppc32-aix5.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-dispatch-ppc32-linux.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-dispatch-ppc64-aix5.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-dispatch-ppc64-linux.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-dispatch-s390x-linux.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-dispatch-x86-darwin.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-dispatch-x86-linux.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-dyn-string.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-elf.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-inferiors.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-initimg-aix5.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-initimg-darwin.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-initimg-linux.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-initimg-pathscan.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_aspacehl.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_clientstate.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_commandline.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_cpuid.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_debugger.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_debuglog.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_errormgr.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_execontext.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_gdbserver.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_hashtable.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_libcassert.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_libcbase.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_libcfile.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_libcprint.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_libcproc.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_libcsetjmp.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_libcsignal.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_machine.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_main.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_mallocfree.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_options.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_oset.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_redir.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_seqmatch.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_signals.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_sparsewa.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_stacks.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_stacktrace.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_syscall.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_threadstate.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_tooliface.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_trampoline.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_translate.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_transtab.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_vki.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_vkiscnums.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_wordfm.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-m_xarray.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-mach_basics.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-mach_msg.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-mach_traps-amd64-darwin.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-mach_traps-x86-darwin.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-mach_vmUser.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-macho.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-main.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-misc.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-readdwarf.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-readdwarf3.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-readelf.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-readmacho.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-readpdb.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-readstabs.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-readxcoff.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-regcache.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-remote-utils.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-replacemalloc_core.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-safe-ctype.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-scheduler.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-script.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-sema.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-server.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-sigframe-amd64-darwin.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-sigframe-amd64-linux.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-sigframe-arm-linux.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-sigframe-ppc32-aix5.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-sigframe-ppc32-linux.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-sigframe-ppc64-aix5.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-sigframe-ppc64-linux.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-sigframe-s390x-linux.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-sigframe-x86-darwin.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-sigframe-x86-linux.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-signals.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-storage.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-syscall-amd64-darwin.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-syscall-amd64-linux.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-syscall-arm-linux.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-syscall-ppc32-aix5.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-syscall-ppc32-linux.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-syscall-ppc64-aix5.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-syscall-ppc64-linux.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-syscall-s390x-linux.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-syscall-x86-darwin.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-syscall-x86-linux.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-syswrap-aix5.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-syswrap-amd64-darwin.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-syswrap-amd64-linux.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-syswrap-arm-linux.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-syswrap-darwin.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-syswrap-generic.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-syswrap-linux-variants.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-syswrap-linux.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-syswrap-main.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-syswrap-ppc32-aix5.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-syswrap-ppc32-linux.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-syswrap-ppc64-aix5.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-syswrap-ppc64-linux.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-syswrap-s390x-linux.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-syswrap-x86-darwin.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-syswrap-x86-linux.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-target.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-taskUser.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-thread_actUser.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-tytypes.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-utils.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-amd64.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-arm.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-ppc32.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-ppc64.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-s390x.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-x86.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-version.Po
-include ./$(DEPDIR)/libcoregrind_x86_linux_a-vm_mapUser.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-aspacemgr-aix5.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-aspacemgr-common.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-aspacemgr-linux.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-coredump-elf.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-coredump-macho.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-coredump-xcoff.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-cp-demangle.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-cplus-dem.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-d3basics.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-debuginfo.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-demangle.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-amd64-darwin.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-amd64-linux.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-arm-linux.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-ppc32-aix5.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-ppc32-linux.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-ppc64-aix5.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-ppc64-linux.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-s390x-linux.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-x86-darwin.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-x86-linux.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-dyn-string.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-elf.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-inferiors.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-initimg-aix5.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-initimg-darwin.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-initimg-linux.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-initimg-pathscan.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_aspacehl.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_clientstate.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_commandline.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_cpuid.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_debugger.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_debuglog.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_errormgr.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_execontext.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_gdbserver.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_hashtable.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_libcassert.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_libcbase.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_libcfile.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_libcprint.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_libcproc.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_libcsetjmp.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_libcsignal.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_machine.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_main.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_mallocfree.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_options.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_oset.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_redir.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_seqmatch.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_signals.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_sparsewa.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_stacks.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_stacktrace.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_syscall.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_threadstate.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_tooliface.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_trampoline.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_translate.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_transtab.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_vki.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_vkiscnums.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_wordfm.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-m_xarray.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-mach_basics.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-mach_msg.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-mach_traps-amd64-darwin.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-mach_traps-x86-darwin.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-mach_vmUser.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-macho.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-main.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-misc.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-readdwarf.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-readdwarf3.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-readelf.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-readmacho.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-readpdb.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-readstabs.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-readxcoff.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-regcache.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-remote-utils.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-replacemalloc_core.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-safe-ctype.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-scheduler.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-script.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-sema.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-server.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-amd64-darwin.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-amd64-linux.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-arm-linux.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-ppc32-aix5.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-ppc32-linux.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-ppc64-aix5.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-ppc64-linux.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-s390x-linux.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-x86-darwin.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-x86-linux.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-signals.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-storage.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-syscall-amd64-darwin.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-syscall-amd64-linux.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-syscall-arm-linux.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-syscall-ppc32-aix5.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-syscall-ppc32-linux.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-syscall-ppc64-aix5.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-syscall-ppc64-linux.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-syscall-s390x-linux.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-syscall-x86-darwin.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-syscall-x86-linux.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-aix5.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-amd64-darwin.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-amd64-linux.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-arm-linux.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-darwin.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-generic.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-linux-variants.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-linux.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-main.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-ppc32-aix5.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-ppc32-linux.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-ppc64-aix5.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-ppc64-linux.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-s390x-linux.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-x86-darwin.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-x86-linux.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-target.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-taskUser.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-thread_actUser.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-tytypes.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-utils.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-amd64.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-arm.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-ppc32.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-ppc64.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-s390x.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-x86.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-version.Po
+include ./$(DEPDIR)/libcoregrind_amd64_linux_a-vm_mapUser.Po
 include ./$(DEPDIR)/libcoregrind__linux_a-aspacemgr-aix5.Po
 include ./$(DEPDIR)/libcoregrind__linux_a-aspacemgr-common.Po
 include ./$(DEPDIR)/libcoregrind__linux_a-aspacemgr-linux.Po
@@ -1758,7 +1758,7 @@ include ./$(DEPDIR)/libcoregrind__linux_a-valgrind-low-x86.Po
 include ./$(DEPDIR)/libcoregrind__linux_a-valgrind-low.Po
 include ./$(DEPDIR)/libcoregrind__linux_a-version.Po
 include ./$(DEPDIR)/libcoregrind__linux_a-vm_mapUser.Po
-include ./$(DEPDIR)/libreplacemalloc_toolpreload_x86_linux_a-vg_replace_malloc.Po
+include ./$(DEPDIR)/libreplacemalloc_toolpreload_amd64_linux_a-vg_replace_malloc.Po
 include ./$(DEPDIR)/libreplacemalloc_toolpreload__linux_a-vg_replace_malloc.Po
 include ./$(DEPDIR)/no_op_client_for_valgrind-no_op_client_for_valgrind.Po
 include ./$(DEPDIR)/valgrind-launcher-aix5.Po
@@ -1767,7 +1767,7 @@ include ./$(DEPDIR)/valgrind-launcher-linux.Po
 include ./$(DEPDIR)/valgrind-m_debuglog.Po
 include ./$(DEPDIR)/valgrind-m_vkiscnums.Po
 include ./$(DEPDIR)/vgdb-vgdb.Po
-include ./$(DEPDIR)/vgpreload_core_x86_linux_so-vg_preloaded.Po
+include ./$(DEPDIR)/vgpreload_core_amd64_linux_so-vg_preloaded.Po
 include ./$(DEPDIR)/vgpreload_core__linux_so-vg_preloaded.Po
 
 .S.o:
@@ -1784,341 +1784,341 @@ include ./$(DEPDIR)/vgpreload_core__linux_so-vg_preloaded.Po
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
 #	$(CPPASCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-libcoregrind_x86_linux_a-m_cpuid.o: m_cpuid.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-m_cpuid.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_cpuid.Tpo -c -o libcoregrind_x86_linux_a-m_cpuid.o `test -f 'm_cpuid.S' || echo '$(srcdir)/'`m_cpuid.S
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_cpuid.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_cpuid.Po
-#	source='m_cpuid.S' object='libcoregrind_x86_linux_a-m_cpuid.o' libtool=no \
+libcoregrind_amd64_linux_a-m_cpuid.o: m_cpuid.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-m_cpuid.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_cpuid.Tpo -c -o libcoregrind_amd64_linux_a-m_cpuid.o `test -f 'm_cpuid.S' || echo '$(srcdir)/'`m_cpuid.S
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_cpuid.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_cpuid.Po
+#	source='m_cpuid.S' object='libcoregrind_amd64_linux_a-m_cpuid.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-m_cpuid.o `test -f 'm_cpuid.S' || echo '$(srcdir)/'`m_cpuid.S
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-m_cpuid.o `test -f 'm_cpuid.S' || echo '$(srcdir)/'`m_cpuid.S
 
-libcoregrind_x86_linux_a-m_cpuid.obj: m_cpuid.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-m_cpuid.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_cpuid.Tpo -c -o libcoregrind_x86_linux_a-m_cpuid.obj `if test -f 'm_cpuid.S'; then $(CYGPATH_W) 'm_cpuid.S'; else $(CYGPATH_W) '$(srcdir)/m_cpuid.S'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_cpuid.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_cpuid.Po
-#	source='m_cpuid.S' object='libcoregrind_x86_linux_a-m_cpuid.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_cpuid.obj: m_cpuid.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-m_cpuid.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_cpuid.Tpo -c -o libcoregrind_amd64_linux_a-m_cpuid.obj `if test -f 'm_cpuid.S'; then $(CYGPATH_W) 'm_cpuid.S'; else $(CYGPATH_W) '$(srcdir)/m_cpuid.S'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_cpuid.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_cpuid.Po
+#	source='m_cpuid.S' object='libcoregrind_amd64_linux_a-m_cpuid.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-m_cpuid.obj `if test -f 'm_cpuid.S'; then $(CYGPATH_W) 'm_cpuid.S'; else $(CYGPATH_W) '$(srcdir)/m_cpuid.S'; fi`
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-m_cpuid.obj `if test -f 'm_cpuid.S'; then $(CYGPATH_W) 'm_cpuid.S'; else $(CYGPATH_W) '$(srcdir)/m_cpuid.S'; fi`
 
-libcoregrind_x86_linux_a-m_trampoline.o: m_trampoline.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-m_trampoline.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_trampoline.Tpo -c -o libcoregrind_x86_linux_a-m_trampoline.o `test -f 'm_trampoline.S' || echo '$(srcdir)/'`m_trampoline.S
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_trampoline.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_trampoline.Po
-#	source='m_trampoline.S' object='libcoregrind_x86_linux_a-m_trampoline.o' libtool=no \
+libcoregrind_amd64_linux_a-m_trampoline.o: m_trampoline.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-m_trampoline.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_trampoline.Tpo -c -o libcoregrind_amd64_linux_a-m_trampoline.o `test -f 'm_trampoline.S' || echo '$(srcdir)/'`m_trampoline.S
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_trampoline.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_trampoline.Po
+#	source='m_trampoline.S' object='libcoregrind_amd64_linux_a-m_trampoline.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-m_trampoline.o `test -f 'm_trampoline.S' || echo '$(srcdir)/'`m_trampoline.S
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-m_trampoline.o `test -f 'm_trampoline.S' || echo '$(srcdir)/'`m_trampoline.S
 
-libcoregrind_x86_linux_a-m_trampoline.obj: m_trampoline.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-m_trampoline.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_trampoline.Tpo -c -o libcoregrind_x86_linux_a-m_trampoline.obj `if test -f 'm_trampoline.S'; then $(CYGPATH_W) 'm_trampoline.S'; else $(CYGPATH_W) '$(srcdir)/m_trampoline.S'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_trampoline.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_trampoline.Po
-#	source='m_trampoline.S' object='libcoregrind_x86_linux_a-m_trampoline.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_trampoline.obj: m_trampoline.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-m_trampoline.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_trampoline.Tpo -c -o libcoregrind_amd64_linux_a-m_trampoline.obj `if test -f 'm_trampoline.S'; then $(CYGPATH_W) 'm_trampoline.S'; else $(CYGPATH_W) '$(srcdir)/m_trampoline.S'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_trampoline.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_trampoline.Po
+#	source='m_trampoline.S' object='libcoregrind_amd64_linux_a-m_trampoline.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-m_trampoline.obj `if test -f 'm_trampoline.S'; then $(CYGPATH_W) 'm_trampoline.S'; else $(CYGPATH_W) '$(srcdir)/m_trampoline.S'; fi`
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-m_trampoline.obj `if test -f 'm_trampoline.S'; then $(CYGPATH_W) 'm_trampoline.S'; else $(CYGPATH_W) '$(srcdir)/m_trampoline.S'; fi`
 
-libcoregrind_x86_linux_a-dispatch-x86-linux.o: m_dispatch/dispatch-x86-linux.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-dispatch-x86-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-x86-linux.Tpo -c -o libcoregrind_x86_linux_a-dispatch-x86-linux.o `test -f 'm_dispatch/dispatch-x86-linux.S' || echo '$(srcdir)/'`m_dispatch/dispatch-x86-linux.S
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-x86-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-x86-linux.Po
-#	source='m_dispatch/dispatch-x86-linux.S' object='libcoregrind_x86_linux_a-dispatch-x86-linux.o' libtool=no \
+libcoregrind_amd64_linux_a-dispatch-x86-linux.o: m_dispatch/dispatch-x86-linux.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-dispatch-x86-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-x86-linux.Tpo -c -o libcoregrind_amd64_linux_a-dispatch-x86-linux.o `test -f 'm_dispatch/dispatch-x86-linux.S' || echo '$(srcdir)/'`m_dispatch/dispatch-x86-linux.S
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-x86-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-x86-linux.Po
+#	source='m_dispatch/dispatch-x86-linux.S' object='libcoregrind_amd64_linux_a-dispatch-x86-linux.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-dispatch-x86-linux.o `test -f 'm_dispatch/dispatch-x86-linux.S' || echo '$(srcdir)/'`m_dispatch/dispatch-x86-linux.S
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-dispatch-x86-linux.o `test -f 'm_dispatch/dispatch-x86-linux.S' || echo '$(srcdir)/'`m_dispatch/dispatch-x86-linux.S
 
-libcoregrind_x86_linux_a-dispatch-x86-linux.obj: m_dispatch/dispatch-x86-linux.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-dispatch-x86-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-x86-linux.Tpo -c -o libcoregrind_x86_linux_a-dispatch-x86-linux.obj `if test -f 'm_dispatch/dispatch-x86-linux.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-x86-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-x86-linux.S'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-x86-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-x86-linux.Po
-#	source='m_dispatch/dispatch-x86-linux.S' object='libcoregrind_x86_linux_a-dispatch-x86-linux.obj' libtool=no \
+libcoregrind_amd64_linux_a-dispatch-x86-linux.obj: m_dispatch/dispatch-x86-linux.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-dispatch-x86-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-x86-linux.Tpo -c -o libcoregrind_amd64_linux_a-dispatch-x86-linux.obj `if test -f 'm_dispatch/dispatch-x86-linux.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-x86-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-x86-linux.S'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-x86-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-x86-linux.Po
+#	source='m_dispatch/dispatch-x86-linux.S' object='libcoregrind_amd64_linux_a-dispatch-x86-linux.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-dispatch-x86-linux.obj `if test -f 'm_dispatch/dispatch-x86-linux.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-x86-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-x86-linux.S'; fi`
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-dispatch-x86-linux.obj `if test -f 'm_dispatch/dispatch-x86-linux.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-x86-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-x86-linux.S'; fi`
 
-libcoregrind_x86_linux_a-dispatch-amd64-linux.o: m_dispatch/dispatch-amd64-linux.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-dispatch-amd64-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-amd64-linux.Tpo -c -o libcoregrind_x86_linux_a-dispatch-amd64-linux.o `test -f 'm_dispatch/dispatch-amd64-linux.S' || echo '$(srcdir)/'`m_dispatch/dispatch-amd64-linux.S
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-amd64-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-amd64-linux.Po
-#	source='m_dispatch/dispatch-amd64-linux.S' object='libcoregrind_x86_linux_a-dispatch-amd64-linux.o' libtool=no \
+libcoregrind_amd64_linux_a-dispatch-amd64-linux.o: m_dispatch/dispatch-amd64-linux.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-dispatch-amd64-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-amd64-linux.Tpo -c -o libcoregrind_amd64_linux_a-dispatch-amd64-linux.o `test -f 'm_dispatch/dispatch-amd64-linux.S' || echo '$(srcdir)/'`m_dispatch/dispatch-amd64-linux.S
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-amd64-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-amd64-linux.Po
+#	source='m_dispatch/dispatch-amd64-linux.S' object='libcoregrind_amd64_linux_a-dispatch-amd64-linux.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-dispatch-amd64-linux.o `test -f 'm_dispatch/dispatch-amd64-linux.S' || echo '$(srcdir)/'`m_dispatch/dispatch-amd64-linux.S
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-dispatch-amd64-linux.o `test -f 'm_dispatch/dispatch-amd64-linux.S' || echo '$(srcdir)/'`m_dispatch/dispatch-amd64-linux.S
 
-libcoregrind_x86_linux_a-dispatch-amd64-linux.obj: m_dispatch/dispatch-amd64-linux.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-dispatch-amd64-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-amd64-linux.Tpo -c -o libcoregrind_x86_linux_a-dispatch-amd64-linux.obj `if test -f 'm_dispatch/dispatch-amd64-linux.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-amd64-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-amd64-linux.S'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-amd64-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-amd64-linux.Po
-#	source='m_dispatch/dispatch-amd64-linux.S' object='libcoregrind_x86_linux_a-dispatch-amd64-linux.obj' libtool=no \
+libcoregrind_amd64_linux_a-dispatch-amd64-linux.obj: m_dispatch/dispatch-amd64-linux.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-dispatch-amd64-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-amd64-linux.Tpo -c -o libcoregrind_amd64_linux_a-dispatch-amd64-linux.obj `if test -f 'm_dispatch/dispatch-amd64-linux.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-amd64-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-amd64-linux.S'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-amd64-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-amd64-linux.Po
+#	source='m_dispatch/dispatch-amd64-linux.S' object='libcoregrind_amd64_linux_a-dispatch-amd64-linux.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-dispatch-amd64-linux.obj `if test -f 'm_dispatch/dispatch-amd64-linux.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-amd64-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-amd64-linux.S'; fi`
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-dispatch-amd64-linux.obj `if test -f 'm_dispatch/dispatch-amd64-linux.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-amd64-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-amd64-linux.S'; fi`
 
-libcoregrind_x86_linux_a-dispatch-ppc32-linux.o: m_dispatch/dispatch-ppc32-linux.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-dispatch-ppc32-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-ppc32-linux.Tpo -c -o libcoregrind_x86_linux_a-dispatch-ppc32-linux.o `test -f 'm_dispatch/dispatch-ppc32-linux.S' || echo '$(srcdir)/'`m_dispatch/dispatch-ppc32-linux.S
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-ppc32-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-ppc32-linux.Po
-#	source='m_dispatch/dispatch-ppc32-linux.S' object='libcoregrind_x86_linux_a-dispatch-ppc32-linux.o' libtool=no \
+libcoregrind_amd64_linux_a-dispatch-ppc32-linux.o: m_dispatch/dispatch-ppc32-linux.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-dispatch-ppc32-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-ppc32-linux.Tpo -c -o libcoregrind_amd64_linux_a-dispatch-ppc32-linux.o `test -f 'm_dispatch/dispatch-ppc32-linux.S' || echo '$(srcdir)/'`m_dispatch/dispatch-ppc32-linux.S
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-ppc32-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-ppc32-linux.Po
+#	source='m_dispatch/dispatch-ppc32-linux.S' object='libcoregrind_amd64_linux_a-dispatch-ppc32-linux.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-dispatch-ppc32-linux.o `test -f 'm_dispatch/dispatch-ppc32-linux.S' || echo '$(srcdir)/'`m_dispatch/dispatch-ppc32-linux.S
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-dispatch-ppc32-linux.o `test -f 'm_dispatch/dispatch-ppc32-linux.S' || echo '$(srcdir)/'`m_dispatch/dispatch-ppc32-linux.S
 
-libcoregrind_x86_linux_a-dispatch-ppc32-linux.obj: m_dispatch/dispatch-ppc32-linux.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-dispatch-ppc32-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-ppc32-linux.Tpo -c -o libcoregrind_x86_linux_a-dispatch-ppc32-linux.obj `if test -f 'm_dispatch/dispatch-ppc32-linux.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-ppc32-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-ppc32-linux.S'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-ppc32-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-ppc32-linux.Po
-#	source='m_dispatch/dispatch-ppc32-linux.S' object='libcoregrind_x86_linux_a-dispatch-ppc32-linux.obj' libtool=no \
+libcoregrind_amd64_linux_a-dispatch-ppc32-linux.obj: m_dispatch/dispatch-ppc32-linux.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-dispatch-ppc32-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-ppc32-linux.Tpo -c -o libcoregrind_amd64_linux_a-dispatch-ppc32-linux.obj `if test -f 'm_dispatch/dispatch-ppc32-linux.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-ppc32-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-ppc32-linux.S'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-ppc32-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-ppc32-linux.Po
+#	source='m_dispatch/dispatch-ppc32-linux.S' object='libcoregrind_amd64_linux_a-dispatch-ppc32-linux.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-dispatch-ppc32-linux.obj `if test -f 'm_dispatch/dispatch-ppc32-linux.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-ppc32-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-ppc32-linux.S'; fi`
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-dispatch-ppc32-linux.obj `if test -f 'm_dispatch/dispatch-ppc32-linux.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-ppc32-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-ppc32-linux.S'; fi`
 
-libcoregrind_x86_linux_a-dispatch-ppc64-linux.o: m_dispatch/dispatch-ppc64-linux.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-dispatch-ppc64-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-ppc64-linux.Tpo -c -o libcoregrind_x86_linux_a-dispatch-ppc64-linux.o `test -f 'm_dispatch/dispatch-ppc64-linux.S' || echo '$(srcdir)/'`m_dispatch/dispatch-ppc64-linux.S
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-ppc64-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-ppc64-linux.Po
-#	source='m_dispatch/dispatch-ppc64-linux.S' object='libcoregrind_x86_linux_a-dispatch-ppc64-linux.o' libtool=no \
+libcoregrind_amd64_linux_a-dispatch-ppc64-linux.o: m_dispatch/dispatch-ppc64-linux.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-dispatch-ppc64-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-ppc64-linux.Tpo -c -o libcoregrind_amd64_linux_a-dispatch-ppc64-linux.o `test -f 'm_dispatch/dispatch-ppc64-linux.S' || echo '$(srcdir)/'`m_dispatch/dispatch-ppc64-linux.S
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-ppc64-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-ppc64-linux.Po
+#	source='m_dispatch/dispatch-ppc64-linux.S' object='libcoregrind_amd64_linux_a-dispatch-ppc64-linux.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-dispatch-ppc64-linux.o `test -f 'm_dispatch/dispatch-ppc64-linux.S' || echo '$(srcdir)/'`m_dispatch/dispatch-ppc64-linux.S
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-dispatch-ppc64-linux.o `test -f 'm_dispatch/dispatch-ppc64-linux.S' || echo '$(srcdir)/'`m_dispatch/dispatch-ppc64-linux.S
 
-libcoregrind_x86_linux_a-dispatch-ppc64-linux.obj: m_dispatch/dispatch-ppc64-linux.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-dispatch-ppc64-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-ppc64-linux.Tpo -c -o libcoregrind_x86_linux_a-dispatch-ppc64-linux.obj `if test -f 'm_dispatch/dispatch-ppc64-linux.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-ppc64-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-ppc64-linux.S'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-ppc64-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-ppc64-linux.Po
-#	source='m_dispatch/dispatch-ppc64-linux.S' object='libcoregrind_x86_linux_a-dispatch-ppc64-linux.obj' libtool=no \
+libcoregrind_amd64_linux_a-dispatch-ppc64-linux.obj: m_dispatch/dispatch-ppc64-linux.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-dispatch-ppc64-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-ppc64-linux.Tpo -c -o libcoregrind_amd64_linux_a-dispatch-ppc64-linux.obj `if test -f 'm_dispatch/dispatch-ppc64-linux.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-ppc64-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-ppc64-linux.S'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-ppc64-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-ppc64-linux.Po
+#	source='m_dispatch/dispatch-ppc64-linux.S' object='libcoregrind_amd64_linux_a-dispatch-ppc64-linux.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-dispatch-ppc64-linux.obj `if test -f 'm_dispatch/dispatch-ppc64-linux.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-ppc64-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-ppc64-linux.S'; fi`
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-dispatch-ppc64-linux.obj `if test -f 'm_dispatch/dispatch-ppc64-linux.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-ppc64-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-ppc64-linux.S'; fi`
 
-libcoregrind_x86_linux_a-dispatch-arm-linux.o: m_dispatch/dispatch-arm-linux.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-dispatch-arm-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-arm-linux.Tpo -c -o libcoregrind_x86_linux_a-dispatch-arm-linux.o `test -f 'm_dispatch/dispatch-arm-linux.S' || echo '$(srcdir)/'`m_dispatch/dispatch-arm-linux.S
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-arm-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-arm-linux.Po
-#	source='m_dispatch/dispatch-arm-linux.S' object='libcoregrind_x86_linux_a-dispatch-arm-linux.o' libtool=no \
+libcoregrind_amd64_linux_a-dispatch-arm-linux.o: m_dispatch/dispatch-arm-linux.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-dispatch-arm-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-arm-linux.Tpo -c -o libcoregrind_amd64_linux_a-dispatch-arm-linux.o `test -f 'm_dispatch/dispatch-arm-linux.S' || echo '$(srcdir)/'`m_dispatch/dispatch-arm-linux.S
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-arm-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-arm-linux.Po
+#	source='m_dispatch/dispatch-arm-linux.S' object='libcoregrind_amd64_linux_a-dispatch-arm-linux.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-dispatch-arm-linux.o `test -f 'm_dispatch/dispatch-arm-linux.S' || echo '$(srcdir)/'`m_dispatch/dispatch-arm-linux.S
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-dispatch-arm-linux.o `test -f 'm_dispatch/dispatch-arm-linux.S' || echo '$(srcdir)/'`m_dispatch/dispatch-arm-linux.S
 
-libcoregrind_x86_linux_a-dispatch-arm-linux.obj: m_dispatch/dispatch-arm-linux.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-dispatch-arm-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-arm-linux.Tpo -c -o libcoregrind_x86_linux_a-dispatch-arm-linux.obj `if test -f 'm_dispatch/dispatch-arm-linux.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-arm-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-arm-linux.S'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-arm-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-arm-linux.Po
-#	source='m_dispatch/dispatch-arm-linux.S' object='libcoregrind_x86_linux_a-dispatch-arm-linux.obj' libtool=no \
+libcoregrind_amd64_linux_a-dispatch-arm-linux.obj: m_dispatch/dispatch-arm-linux.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-dispatch-arm-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-arm-linux.Tpo -c -o libcoregrind_amd64_linux_a-dispatch-arm-linux.obj `if test -f 'm_dispatch/dispatch-arm-linux.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-arm-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-arm-linux.S'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-arm-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-arm-linux.Po
+#	source='m_dispatch/dispatch-arm-linux.S' object='libcoregrind_amd64_linux_a-dispatch-arm-linux.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-dispatch-arm-linux.obj `if test -f 'm_dispatch/dispatch-arm-linux.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-arm-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-arm-linux.S'; fi`
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-dispatch-arm-linux.obj `if test -f 'm_dispatch/dispatch-arm-linux.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-arm-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-arm-linux.S'; fi`
 
-libcoregrind_x86_linux_a-dispatch-s390x-linux.o: m_dispatch/dispatch-s390x-linux.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-dispatch-s390x-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-s390x-linux.Tpo -c -o libcoregrind_x86_linux_a-dispatch-s390x-linux.o `test -f 'm_dispatch/dispatch-s390x-linux.S' || echo '$(srcdir)/'`m_dispatch/dispatch-s390x-linux.S
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-s390x-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-s390x-linux.Po
-#	source='m_dispatch/dispatch-s390x-linux.S' object='libcoregrind_x86_linux_a-dispatch-s390x-linux.o' libtool=no \
+libcoregrind_amd64_linux_a-dispatch-s390x-linux.o: m_dispatch/dispatch-s390x-linux.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-dispatch-s390x-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-s390x-linux.Tpo -c -o libcoregrind_amd64_linux_a-dispatch-s390x-linux.o `test -f 'm_dispatch/dispatch-s390x-linux.S' || echo '$(srcdir)/'`m_dispatch/dispatch-s390x-linux.S
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-s390x-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-s390x-linux.Po
+#	source='m_dispatch/dispatch-s390x-linux.S' object='libcoregrind_amd64_linux_a-dispatch-s390x-linux.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-dispatch-s390x-linux.o `test -f 'm_dispatch/dispatch-s390x-linux.S' || echo '$(srcdir)/'`m_dispatch/dispatch-s390x-linux.S
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-dispatch-s390x-linux.o `test -f 'm_dispatch/dispatch-s390x-linux.S' || echo '$(srcdir)/'`m_dispatch/dispatch-s390x-linux.S
 
-libcoregrind_x86_linux_a-dispatch-s390x-linux.obj: m_dispatch/dispatch-s390x-linux.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-dispatch-s390x-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-s390x-linux.Tpo -c -o libcoregrind_x86_linux_a-dispatch-s390x-linux.obj `if test -f 'm_dispatch/dispatch-s390x-linux.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-s390x-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-s390x-linux.S'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-s390x-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-s390x-linux.Po
-#	source='m_dispatch/dispatch-s390x-linux.S' object='libcoregrind_x86_linux_a-dispatch-s390x-linux.obj' libtool=no \
+libcoregrind_amd64_linux_a-dispatch-s390x-linux.obj: m_dispatch/dispatch-s390x-linux.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-dispatch-s390x-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-s390x-linux.Tpo -c -o libcoregrind_amd64_linux_a-dispatch-s390x-linux.obj `if test -f 'm_dispatch/dispatch-s390x-linux.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-s390x-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-s390x-linux.S'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-s390x-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-s390x-linux.Po
+#	source='m_dispatch/dispatch-s390x-linux.S' object='libcoregrind_amd64_linux_a-dispatch-s390x-linux.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-dispatch-s390x-linux.obj `if test -f 'm_dispatch/dispatch-s390x-linux.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-s390x-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-s390x-linux.S'; fi`
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-dispatch-s390x-linux.obj `if test -f 'm_dispatch/dispatch-s390x-linux.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-s390x-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-s390x-linux.S'; fi`
 
-libcoregrind_x86_linux_a-dispatch-ppc32-aix5.o: m_dispatch/dispatch-ppc32-aix5.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-dispatch-ppc32-aix5.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-ppc32-aix5.Tpo -c -o libcoregrind_x86_linux_a-dispatch-ppc32-aix5.o `test -f 'm_dispatch/dispatch-ppc32-aix5.S' || echo '$(srcdir)/'`m_dispatch/dispatch-ppc32-aix5.S
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-ppc32-aix5.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-ppc32-aix5.Po
-#	source='m_dispatch/dispatch-ppc32-aix5.S' object='libcoregrind_x86_linux_a-dispatch-ppc32-aix5.o' libtool=no \
+libcoregrind_amd64_linux_a-dispatch-ppc32-aix5.o: m_dispatch/dispatch-ppc32-aix5.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-dispatch-ppc32-aix5.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-ppc32-aix5.Tpo -c -o libcoregrind_amd64_linux_a-dispatch-ppc32-aix5.o `test -f 'm_dispatch/dispatch-ppc32-aix5.S' || echo '$(srcdir)/'`m_dispatch/dispatch-ppc32-aix5.S
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-ppc32-aix5.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-ppc32-aix5.Po
+#	source='m_dispatch/dispatch-ppc32-aix5.S' object='libcoregrind_amd64_linux_a-dispatch-ppc32-aix5.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-dispatch-ppc32-aix5.o `test -f 'm_dispatch/dispatch-ppc32-aix5.S' || echo '$(srcdir)/'`m_dispatch/dispatch-ppc32-aix5.S
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-dispatch-ppc32-aix5.o `test -f 'm_dispatch/dispatch-ppc32-aix5.S' || echo '$(srcdir)/'`m_dispatch/dispatch-ppc32-aix5.S
 
-libcoregrind_x86_linux_a-dispatch-ppc32-aix5.obj: m_dispatch/dispatch-ppc32-aix5.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-dispatch-ppc32-aix5.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-ppc32-aix5.Tpo -c -o libcoregrind_x86_linux_a-dispatch-ppc32-aix5.obj `if test -f 'm_dispatch/dispatch-ppc32-aix5.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-ppc32-aix5.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-ppc32-aix5.S'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-ppc32-aix5.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-ppc32-aix5.Po
-#	source='m_dispatch/dispatch-ppc32-aix5.S' object='libcoregrind_x86_linux_a-dispatch-ppc32-aix5.obj' libtool=no \
+libcoregrind_amd64_linux_a-dispatch-ppc32-aix5.obj: m_dispatch/dispatch-ppc32-aix5.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-dispatch-ppc32-aix5.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-ppc32-aix5.Tpo -c -o libcoregrind_amd64_linux_a-dispatch-ppc32-aix5.obj `if test -f 'm_dispatch/dispatch-ppc32-aix5.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-ppc32-aix5.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-ppc32-aix5.S'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-ppc32-aix5.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-ppc32-aix5.Po
+#	source='m_dispatch/dispatch-ppc32-aix5.S' object='libcoregrind_amd64_linux_a-dispatch-ppc32-aix5.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-dispatch-ppc32-aix5.obj `if test -f 'm_dispatch/dispatch-ppc32-aix5.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-ppc32-aix5.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-ppc32-aix5.S'; fi`
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-dispatch-ppc32-aix5.obj `if test -f 'm_dispatch/dispatch-ppc32-aix5.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-ppc32-aix5.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-ppc32-aix5.S'; fi`
 
-libcoregrind_x86_linux_a-dispatch-ppc64-aix5.o: m_dispatch/dispatch-ppc64-aix5.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-dispatch-ppc64-aix5.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-ppc64-aix5.Tpo -c -o libcoregrind_x86_linux_a-dispatch-ppc64-aix5.o `test -f 'm_dispatch/dispatch-ppc64-aix5.S' || echo '$(srcdir)/'`m_dispatch/dispatch-ppc64-aix5.S
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-ppc64-aix5.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-ppc64-aix5.Po
-#	source='m_dispatch/dispatch-ppc64-aix5.S' object='libcoregrind_x86_linux_a-dispatch-ppc64-aix5.o' libtool=no \
+libcoregrind_amd64_linux_a-dispatch-ppc64-aix5.o: m_dispatch/dispatch-ppc64-aix5.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-dispatch-ppc64-aix5.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-ppc64-aix5.Tpo -c -o libcoregrind_amd64_linux_a-dispatch-ppc64-aix5.o `test -f 'm_dispatch/dispatch-ppc64-aix5.S' || echo '$(srcdir)/'`m_dispatch/dispatch-ppc64-aix5.S
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-ppc64-aix5.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-ppc64-aix5.Po
+#	source='m_dispatch/dispatch-ppc64-aix5.S' object='libcoregrind_amd64_linux_a-dispatch-ppc64-aix5.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-dispatch-ppc64-aix5.o `test -f 'm_dispatch/dispatch-ppc64-aix5.S' || echo '$(srcdir)/'`m_dispatch/dispatch-ppc64-aix5.S
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-dispatch-ppc64-aix5.o `test -f 'm_dispatch/dispatch-ppc64-aix5.S' || echo '$(srcdir)/'`m_dispatch/dispatch-ppc64-aix5.S
 
-libcoregrind_x86_linux_a-dispatch-ppc64-aix5.obj: m_dispatch/dispatch-ppc64-aix5.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-dispatch-ppc64-aix5.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-ppc64-aix5.Tpo -c -o libcoregrind_x86_linux_a-dispatch-ppc64-aix5.obj `if test -f 'm_dispatch/dispatch-ppc64-aix5.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-ppc64-aix5.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-ppc64-aix5.S'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-ppc64-aix5.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-ppc64-aix5.Po
-#	source='m_dispatch/dispatch-ppc64-aix5.S' object='libcoregrind_x86_linux_a-dispatch-ppc64-aix5.obj' libtool=no \
+libcoregrind_amd64_linux_a-dispatch-ppc64-aix5.obj: m_dispatch/dispatch-ppc64-aix5.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-dispatch-ppc64-aix5.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-ppc64-aix5.Tpo -c -o libcoregrind_amd64_linux_a-dispatch-ppc64-aix5.obj `if test -f 'm_dispatch/dispatch-ppc64-aix5.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-ppc64-aix5.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-ppc64-aix5.S'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-ppc64-aix5.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-ppc64-aix5.Po
+#	source='m_dispatch/dispatch-ppc64-aix5.S' object='libcoregrind_amd64_linux_a-dispatch-ppc64-aix5.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-dispatch-ppc64-aix5.obj `if test -f 'm_dispatch/dispatch-ppc64-aix5.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-ppc64-aix5.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-ppc64-aix5.S'; fi`
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-dispatch-ppc64-aix5.obj `if test -f 'm_dispatch/dispatch-ppc64-aix5.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-ppc64-aix5.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-ppc64-aix5.S'; fi`
 
-libcoregrind_x86_linux_a-dispatch-x86-darwin.o: m_dispatch/dispatch-x86-darwin.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-dispatch-x86-darwin.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-x86-darwin.Tpo -c -o libcoregrind_x86_linux_a-dispatch-x86-darwin.o `test -f 'm_dispatch/dispatch-x86-darwin.S' || echo '$(srcdir)/'`m_dispatch/dispatch-x86-darwin.S
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-x86-darwin.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-x86-darwin.Po
-#	source='m_dispatch/dispatch-x86-darwin.S' object='libcoregrind_x86_linux_a-dispatch-x86-darwin.o' libtool=no \
+libcoregrind_amd64_linux_a-dispatch-x86-darwin.o: m_dispatch/dispatch-x86-darwin.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-dispatch-x86-darwin.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-x86-darwin.Tpo -c -o libcoregrind_amd64_linux_a-dispatch-x86-darwin.o `test -f 'm_dispatch/dispatch-x86-darwin.S' || echo '$(srcdir)/'`m_dispatch/dispatch-x86-darwin.S
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-x86-darwin.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-x86-darwin.Po
+#	source='m_dispatch/dispatch-x86-darwin.S' object='libcoregrind_amd64_linux_a-dispatch-x86-darwin.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-dispatch-x86-darwin.o `test -f 'm_dispatch/dispatch-x86-darwin.S' || echo '$(srcdir)/'`m_dispatch/dispatch-x86-darwin.S
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-dispatch-x86-darwin.o `test -f 'm_dispatch/dispatch-x86-darwin.S' || echo '$(srcdir)/'`m_dispatch/dispatch-x86-darwin.S
 
-libcoregrind_x86_linux_a-dispatch-x86-darwin.obj: m_dispatch/dispatch-x86-darwin.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-dispatch-x86-darwin.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-x86-darwin.Tpo -c -o libcoregrind_x86_linux_a-dispatch-x86-darwin.obj `if test -f 'm_dispatch/dispatch-x86-darwin.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-x86-darwin.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-x86-darwin.S'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-x86-darwin.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-x86-darwin.Po
-#	source='m_dispatch/dispatch-x86-darwin.S' object='libcoregrind_x86_linux_a-dispatch-x86-darwin.obj' libtool=no \
+libcoregrind_amd64_linux_a-dispatch-x86-darwin.obj: m_dispatch/dispatch-x86-darwin.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-dispatch-x86-darwin.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-x86-darwin.Tpo -c -o libcoregrind_amd64_linux_a-dispatch-x86-darwin.obj `if test -f 'm_dispatch/dispatch-x86-darwin.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-x86-darwin.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-x86-darwin.S'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-x86-darwin.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-x86-darwin.Po
+#	source='m_dispatch/dispatch-x86-darwin.S' object='libcoregrind_amd64_linux_a-dispatch-x86-darwin.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-dispatch-x86-darwin.obj `if test -f 'm_dispatch/dispatch-x86-darwin.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-x86-darwin.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-x86-darwin.S'; fi`
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-dispatch-x86-darwin.obj `if test -f 'm_dispatch/dispatch-x86-darwin.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-x86-darwin.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-x86-darwin.S'; fi`
 
-libcoregrind_x86_linux_a-dispatch-amd64-darwin.o: m_dispatch/dispatch-amd64-darwin.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-dispatch-amd64-darwin.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-amd64-darwin.Tpo -c -o libcoregrind_x86_linux_a-dispatch-amd64-darwin.o `test -f 'm_dispatch/dispatch-amd64-darwin.S' || echo '$(srcdir)/'`m_dispatch/dispatch-amd64-darwin.S
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-amd64-darwin.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-amd64-darwin.Po
-#	source='m_dispatch/dispatch-amd64-darwin.S' object='libcoregrind_x86_linux_a-dispatch-amd64-darwin.o' libtool=no \
+libcoregrind_amd64_linux_a-dispatch-amd64-darwin.o: m_dispatch/dispatch-amd64-darwin.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-dispatch-amd64-darwin.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-amd64-darwin.Tpo -c -o libcoregrind_amd64_linux_a-dispatch-amd64-darwin.o `test -f 'm_dispatch/dispatch-amd64-darwin.S' || echo '$(srcdir)/'`m_dispatch/dispatch-amd64-darwin.S
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-amd64-darwin.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-amd64-darwin.Po
+#	source='m_dispatch/dispatch-amd64-darwin.S' object='libcoregrind_amd64_linux_a-dispatch-amd64-darwin.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-dispatch-amd64-darwin.o `test -f 'm_dispatch/dispatch-amd64-darwin.S' || echo '$(srcdir)/'`m_dispatch/dispatch-amd64-darwin.S
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-dispatch-amd64-darwin.o `test -f 'm_dispatch/dispatch-amd64-darwin.S' || echo '$(srcdir)/'`m_dispatch/dispatch-amd64-darwin.S
 
-libcoregrind_x86_linux_a-dispatch-amd64-darwin.obj: m_dispatch/dispatch-amd64-darwin.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-dispatch-amd64-darwin.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-amd64-darwin.Tpo -c -o libcoregrind_x86_linux_a-dispatch-amd64-darwin.obj `if test -f 'm_dispatch/dispatch-amd64-darwin.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-amd64-darwin.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-amd64-darwin.S'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-amd64-darwin.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-dispatch-amd64-darwin.Po
-#	source='m_dispatch/dispatch-amd64-darwin.S' object='libcoregrind_x86_linux_a-dispatch-amd64-darwin.obj' libtool=no \
+libcoregrind_amd64_linux_a-dispatch-amd64-darwin.obj: m_dispatch/dispatch-amd64-darwin.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-dispatch-amd64-darwin.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-amd64-darwin.Tpo -c -o libcoregrind_amd64_linux_a-dispatch-amd64-darwin.obj `if test -f 'm_dispatch/dispatch-amd64-darwin.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-amd64-darwin.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-amd64-darwin.S'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-amd64-darwin.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-dispatch-amd64-darwin.Po
+#	source='m_dispatch/dispatch-amd64-darwin.S' object='libcoregrind_amd64_linux_a-dispatch-amd64-darwin.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-dispatch-amd64-darwin.obj `if test -f 'm_dispatch/dispatch-amd64-darwin.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-amd64-darwin.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-amd64-darwin.S'; fi`
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-dispatch-amd64-darwin.obj `if test -f 'm_dispatch/dispatch-amd64-darwin.S'; then $(CYGPATH_W) 'm_dispatch/dispatch-amd64-darwin.S'; else $(CYGPATH_W) '$(srcdir)/m_dispatch/dispatch-amd64-darwin.S'; fi`
 
-libcoregrind_x86_linux_a-mach_traps-x86-darwin.o: m_mach/mach_traps-x86-darwin.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-mach_traps-x86-darwin.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-mach_traps-x86-darwin.Tpo -c -o libcoregrind_x86_linux_a-mach_traps-x86-darwin.o `test -f 'm_mach/mach_traps-x86-darwin.S' || echo '$(srcdir)/'`m_mach/mach_traps-x86-darwin.S
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-mach_traps-x86-darwin.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-mach_traps-x86-darwin.Po
-#	source='m_mach/mach_traps-x86-darwin.S' object='libcoregrind_x86_linux_a-mach_traps-x86-darwin.o' libtool=no \
+libcoregrind_amd64_linux_a-mach_traps-x86-darwin.o: m_mach/mach_traps-x86-darwin.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-mach_traps-x86-darwin.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-mach_traps-x86-darwin.Tpo -c -o libcoregrind_amd64_linux_a-mach_traps-x86-darwin.o `test -f 'm_mach/mach_traps-x86-darwin.S' || echo '$(srcdir)/'`m_mach/mach_traps-x86-darwin.S
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-mach_traps-x86-darwin.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-mach_traps-x86-darwin.Po
+#	source='m_mach/mach_traps-x86-darwin.S' object='libcoregrind_amd64_linux_a-mach_traps-x86-darwin.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-mach_traps-x86-darwin.o `test -f 'm_mach/mach_traps-x86-darwin.S' || echo '$(srcdir)/'`m_mach/mach_traps-x86-darwin.S
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-mach_traps-x86-darwin.o `test -f 'm_mach/mach_traps-x86-darwin.S' || echo '$(srcdir)/'`m_mach/mach_traps-x86-darwin.S
 
-libcoregrind_x86_linux_a-mach_traps-x86-darwin.obj: m_mach/mach_traps-x86-darwin.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-mach_traps-x86-darwin.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-mach_traps-x86-darwin.Tpo -c -o libcoregrind_x86_linux_a-mach_traps-x86-darwin.obj `if test -f 'm_mach/mach_traps-x86-darwin.S'; then $(CYGPATH_W) 'm_mach/mach_traps-x86-darwin.S'; else $(CYGPATH_W) '$(srcdir)/m_mach/mach_traps-x86-darwin.S'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-mach_traps-x86-darwin.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-mach_traps-x86-darwin.Po
-#	source='m_mach/mach_traps-x86-darwin.S' object='libcoregrind_x86_linux_a-mach_traps-x86-darwin.obj' libtool=no \
+libcoregrind_amd64_linux_a-mach_traps-x86-darwin.obj: m_mach/mach_traps-x86-darwin.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-mach_traps-x86-darwin.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-mach_traps-x86-darwin.Tpo -c -o libcoregrind_amd64_linux_a-mach_traps-x86-darwin.obj `if test -f 'm_mach/mach_traps-x86-darwin.S'; then $(CYGPATH_W) 'm_mach/mach_traps-x86-darwin.S'; else $(CYGPATH_W) '$(srcdir)/m_mach/mach_traps-x86-darwin.S'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-mach_traps-x86-darwin.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-mach_traps-x86-darwin.Po
+#	source='m_mach/mach_traps-x86-darwin.S' object='libcoregrind_amd64_linux_a-mach_traps-x86-darwin.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-mach_traps-x86-darwin.obj `if test -f 'm_mach/mach_traps-x86-darwin.S'; then $(CYGPATH_W) 'm_mach/mach_traps-x86-darwin.S'; else $(CYGPATH_W) '$(srcdir)/m_mach/mach_traps-x86-darwin.S'; fi`
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-mach_traps-x86-darwin.obj `if test -f 'm_mach/mach_traps-x86-darwin.S'; then $(CYGPATH_W) 'm_mach/mach_traps-x86-darwin.S'; else $(CYGPATH_W) '$(srcdir)/m_mach/mach_traps-x86-darwin.S'; fi`
 
-libcoregrind_x86_linux_a-mach_traps-amd64-darwin.o: m_mach/mach_traps-amd64-darwin.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-mach_traps-amd64-darwin.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-mach_traps-amd64-darwin.Tpo -c -o libcoregrind_x86_linux_a-mach_traps-amd64-darwin.o `test -f 'm_mach/mach_traps-amd64-darwin.S' || echo '$(srcdir)/'`m_mach/mach_traps-amd64-darwin.S
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-mach_traps-amd64-darwin.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-mach_traps-amd64-darwin.Po
-#	source='m_mach/mach_traps-amd64-darwin.S' object='libcoregrind_x86_linux_a-mach_traps-amd64-darwin.o' libtool=no \
+libcoregrind_amd64_linux_a-mach_traps-amd64-darwin.o: m_mach/mach_traps-amd64-darwin.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-mach_traps-amd64-darwin.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-mach_traps-amd64-darwin.Tpo -c -o libcoregrind_amd64_linux_a-mach_traps-amd64-darwin.o `test -f 'm_mach/mach_traps-amd64-darwin.S' || echo '$(srcdir)/'`m_mach/mach_traps-amd64-darwin.S
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-mach_traps-amd64-darwin.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-mach_traps-amd64-darwin.Po
+#	source='m_mach/mach_traps-amd64-darwin.S' object='libcoregrind_amd64_linux_a-mach_traps-amd64-darwin.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-mach_traps-amd64-darwin.o `test -f 'm_mach/mach_traps-amd64-darwin.S' || echo '$(srcdir)/'`m_mach/mach_traps-amd64-darwin.S
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-mach_traps-amd64-darwin.o `test -f 'm_mach/mach_traps-amd64-darwin.S' || echo '$(srcdir)/'`m_mach/mach_traps-amd64-darwin.S
 
-libcoregrind_x86_linux_a-mach_traps-amd64-darwin.obj: m_mach/mach_traps-amd64-darwin.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-mach_traps-amd64-darwin.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-mach_traps-amd64-darwin.Tpo -c -o libcoregrind_x86_linux_a-mach_traps-amd64-darwin.obj `if test -f 'm_mach/mach_traps-amd64-darwin.S'; then $(CYGPATH_W) 'm_mach/mach_traps-amd64-darwin.S'; else $(CYGPATH_W) '$(srcdir)/m_mach/mach_traps-amd64-darwin.S'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-mach_traps-amd64-darwin.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-mach_traps-amd64-darwin.Po
-#	source='m_mach/mach_traps-amd64-darwin.S' object='libcoregrind_x86_linux_a-mach_traps-amd64-darwin.obj' libtool=no \
+libcoregrind_amd64_linux_a-mach_traps-amd64-darwin.obj: m_mach/mach_traps-amd64-darwin.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-mach_traps-amd64-darwin.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-mach_traps-amd64-darwin.Tpo -c -o libcoregrind_amd64_linux_a-mach_traps-amd64-darwin.obj `if test -f 'm_mach/mach_traps-amd64-darwin.S'; then $(CYGPATH_W) 'm_mach/mach_traps-amd64-darwin.S'; else $(CYGPATH_W) '$(srcdir)/m_mach/mach_traps-amd64-darwin.S'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-mach_traps-amd64-darwin.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-mach_traps-amd64-darwin.Po
+#	source='m_mach/mach_traps-amd64-darwin.S' object='libcoregrind_amd64_linux_a-mach_traps-amd64-darwin.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-mach_traps-amd64-darwin.obj `if test -f 'm_mach/mach_traps-amd64-darwin.S'; then $(CYGPATH_W) 'm_mach/mach_traps-amd64-darwin.S'; else $(CYGPATH_W) '$(srcdir)/m_mach/mach_traps-amd64-darwin.S'; fi`
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-mach_traps-amd64-darwin.obj `if test -f 'm_mach/mach_traps-amd64-darwin.S'; then $(CYGPATH_W) 'm_mach/mach_traps-amd64-darwin.S'; else $(CYGPATH_W) '$(srcdir)/m_mach/mach_traps-amd64-darwin.S'; fi`
 
-libcoregrind_x86_linux_a-syscall-x86-linux.o: m_syswrap/syscall-x86-linux.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-syscall-x86-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syscall-x86-linux.Tpo -c -o libcoregrind_x86_linux_a-syscall-x86-linux.o `test -f 'm_syswrap/syscall-x86-linux.S' || echo '$(srcdir)/'`m_syswrap/syscall-x86-linux.S
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syscall-x86-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syscall-x86-linux.Po
-#	source='m_syswrap/syscall-x86-linux.S' object='libcoregrind_x86_linux_a-syscall-x86-linux.o' libtool=no \
+libcoregrind_amd64_linux_a-syscall-x86-linux.o: m_syswrap/syscall-x86-linux.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-syscall-x86-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-x86-linux.Tpo -c -o libcoregrind_amd64_linux_a-syscall-x86-linux.o `test -f 'm_syswrap/syscall-x86-linux.S' || echo '$(srcdir)/'`m_syswrap/syscall-x86-linux.S
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-x86-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-x86-linux.Po
+#	source='m_syswrap/syscall-x86-linux.S' object='libcoregrind_amd64_linux_a-syscall-x86-linux.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-syscall-x86-linux.o `test -f 'm_syswrap/syscall-x86-linux.S' || echo '$(srcdir)/'`m_syswrap/syscall-x86-linux.S
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-syscall-x86-linux.o `test -f 'm_syswrap/syscall-x86-linux.S' || echo '$(srcdir)/'`m_syswrap/syscall-x86-linux.S
 
-libcoregrind_x86_linux_a-syscall-x86-linux.obj: m_syswrap/syscall-x86-linux.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-syscall-x86-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syscall-x86-linux.Tpo -c -o libcoregrind_x86_linux_a-syscall-x86-linux.obj `if test -f 'm_syswrap/syscall-x86-linux.S'; then $(CYGPATH_W) 'm_syswrap/syscall-x86-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-x86-linux.S'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syscall-x86-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syscall-x86-linux.Po
-#	source='m_syswrap/syscall-x86-linux.S' object='libcoregrind_x86_linux_a-syscall-x86-linux.obj' libtool=no \
+libcoregrind_amd64_linux_a-syscall-x86-linux.obj: m_syswrap/syscall-x86-linux.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-syscall-x86-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-x86-linux.Tpo -c -o libcoregrind_amd64_linux_a-syscall-x86-linux.obj `if test -f 'm_syswrap/syscall-x86-linux.S'; then $(CYGPATH_W) 'm_syswrap/syscall-x86-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-x86-linux.S'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-x86-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-x86-linux.Po
+#	source='m_syswrap/syscall-x86-linux.S' object='libcoregrind_amd64_linux_a-syscall-x86-linux.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-syscall-x86-linux.obj `if test -f 'm_syswrap/syscall-x86-linux.S'; then $(CYGPATH_W) 'm_syswrap/syscall-x86-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-x86-linux.S'; fi`
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-syscall-x86-linux.obj `if test -f 'm_syswrap/syscall-x86-linux.S'; then $(CYGPATH_W) 'm_syswrap/syscall-x86-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-x86-linux.S'; fi`
 
-libcoregrind_x86_linux_a-syscall-amd64-linux.o: m_syswrap/syscall-amd64-linux.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-syscall-amd64-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syscall-amd64-linux.Tpo -c -o libcoregrind_x86_linux_a-syscall-amd64-linux.o `test -f 'm_syswrap/syscall-amd64-linux.S' || echo '$(srcdir)/'`m_syswrap/syscall-amd64-linux.S
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syscall-amd64-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syscall-amd64-linux.Po
-#	source='m_syswrap/syscall-amd64-linux.S' object='libcoregrind_x86_linux_a-syscall-amd64-linux.o' libtool=no \
+libcoregrind_amd64_linux_a-syscall-amd64-linux.o: m_syswrap/syscall-amd64-linux.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-syscall-amd64-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-amd64-linux.Tpo -c -o libcoregrind_amd64_linux_a-syscall-amd64-linux.o `test -f 'm_syswrap/syscall-amd64-linux.S' || echo '$(srcdir)/'`m_syswrap/syscall-amd64-linux.S
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-amd64-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-amd64-linux.Po
+#	source='m_syswrap/syscall-amd64-linux.S' object='libcoregrind_amd64_linux_a-syscall-amd64-linux.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-syscall-amd64-linux.o `test -f 'm_syswrap/syscall-amd64-linux.S' || echo '$(srcdir)/'`m_syswrap/syscall-amd64-linux.S
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-syscall-amd64-linux.o `test -f 'm_syswrap/syscall-amd64-linux.S' || echo '$(srcdir)/'`m_syswrap/syscall-amd64-linux.S
 
-libcoregrind_x86_linux_a-syscall-amd64-linux.obj: m_syswrap/syscall-amd64-linux.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-syscall-amd64-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syscall-amd64-linux.Tpo -c -o libcoregrind_x86_linux_a-syscall-amd64-linux.obj `if test -f 'm_syswrap/syscall-amd64-linux.S'; then $(CYGPATH_W) 'm_syswrap/syscall-amd64-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-amd64-linux.S'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syscall-amd64-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syscall-amd64-linux.Po
-#	source='m_syswrap/syscall-amd64-linux.S' object='libcoregrind_x86_linux_a-syscall-amd64-linux.obj' libtool=no \
+libcoregrind_amd64_linux_a-syscall-amd64-linux.obj: m_syswrap/syscall-amd64-linux.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-syscall-amd64-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-amd64-linux.Tpo -c -o libcoregrind_amd64_linux_a-syscall-amd64-linux.obj `if test -f 'm_syswrap/syscall-amd64-linux.S'; then $(CYGPATH_W) 'm_syswrap/syscall-amd64-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-amd64-linux.S'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-amd64-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-amd64-linux.Po
+#	source='m_syswrap/syscall-amd64-linux.S' object='libcoregrind_amd64_linux_a-syscall-amd64-linux.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-syscall-amd64-linux.obj `if test -f 'm_syswrap/syscall-amd64-linux.S'; then $(CYGPATH_W) 'm_syswrap/syscall-amd64-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-amd64-linux.S'; fi`
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-syscall-amd64-linux.obj `if test -f 'm_syswrap/syscall-amd64-linux.S'; then $(CYGPATH_W) 'm_syswrap/syscall-amd64-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-amd64-linux.S'; fi`
 
-libcoregrind_x86_linux_a-syscall-ppc32-linux.o: m_syswrap/syscall-ppc32-linux.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-syscall-ppc32-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syscall-ppc32-linux.Tpo -c -o libcoregrind_x86_linux_a-syscall-ppc32-linux.o `test -f 'm_syswrap/syscall-ppc32-linux.S' || echo '$(srcdir)/'`m_syswrap/syscall-ppc32-linux.S
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syscall-ppc32-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syscall-ppc32-linux.Po
-#	source='m_syswrap/syscall-ppc32-linux.S' object='libcoregrind_x86_linux_a-syscall-ppc32-linux.o' libtool=no \
+libcoregrind_amd64_linux_a-syscall-ppc32-linux.o: m_syswrap/syscall-ppc32-linux.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-syscall-ppc32-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-ppc32-linux.Tpo -c -o libcoregrind_amd64_linux_a-syscall-ppc32-linux.o `test -f 'm_syswrap/syscall-ppc32-linux.S' || echo '$(srcdir)/'`m_syswrap/syscall-ppc32-linux.S
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-ppc32-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-ppc32-linux.Po
+#	source='m_syswrap/syscall-ppc32-linux.S' object='libcoregrind_amd64_linux_a-syscall-ppc32-linux.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-syscall-ppc32-linux.o `test -f 'm_syswrap/syscall-ppc32-linux.S' || echo '$(srcdir)/'`m_syswrap/syscall-ppc32-linux.S
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-syscall-ppc32-linux.o `test -f 'm_syswrap/syscall-ppc32-linux.S' || echo '$(srcdir)/'`m_syswrap/syscall-ppc32-linux.S
 
-libcoregrind_x86_linux_a-syscall-ppc32-linux.obj: m_syswrap/syscall-ppc32-linux.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-syscall-ppc32-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syscall-ppc32-linux.Tpo -c -o libcoregrind_x86_linux_a-syscall-ppc32-linux.obj `if test -f 'm_syswrap/syscall-ppc32-linux.S'; then $(CYGPATH_W) 'm_syswrap/syscall-ppc32-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-ppc32-linux.S'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syscall-ppc32-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syscall-ppc32-linux.Po
-#	source='m_syswrap/syscall-ppc32-linux.S' object='libcoregrind_x86_linux_a-syscall-ppc32-linux.obj' libtool=no \
+libcoregrind_amd64_linux_a-syscall-ppc32-linux.obj: m_syswrap/syscall-ppc32-linux.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-syscall-ppc32-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-ppc32-linux.Tpo -c -o libcoregrind_amd64_linux_a-syscall-ppc32-linux.obj `if test -f 'm_syswrap/syscall-ppc32-linux.S'; then $(CYGPATH_W) 'm_syswrap/syscall-ppc32-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-ppc32-linux.S'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-ppc32-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-ppc32-linux.Po
+#	source='m_syswrap/syscall-ppc32-linux.S' object='libcoregrind_amd64_linux_a-syscall-ppc32-linux.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-syscall-ppc32-linux.obj `if test -f 'm_syswrap/syscall-ppc32-linux.S'; then $(CYGPATH_W) 'm_syswrap/syscall-ppc32-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-ppc32-linux.S'; fi`
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-syscall-ppc32-linux.obj `if test -f 'm_syswrap/syscall-ppc32-linux.S'; then $(CYGPATH_W) 'm_syswrap/syscall-ppc32-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-ppc32-linux.S'; fi`
 
-libcoregrind_x86_linux_a-syscall-ppc64-linux.o: m_syswrap/syscall-ppc64-linux.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-syscall-ppc64-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syscall-ppc64-linux.Tpo -c -o libcoregrind_x86_linux_a-syscall-ppc64-linux.o `test -f 'm_syswrap/syscall-ppc64-linux.S' || echo '$(srcdir)/'`m_syswrap/syscall-ppc64-linux.S
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syscall-ppc64-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syscall-ppc64-linux.Po
-#	source='m_syswrap/syscall-ppc64-linux.S' object='libcoregrind_x86_linux_a-syscall-ppc64-linux.o' libtool=no \
+libcoregrind_amd64_linux_a-syscall-ppc64-linux.o: m_syswrap/syscall-ppc64-linux.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-syscall-ppc64-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-ppc64-linux.Tpo -c -o libcoregrind_amd64_linux_a-syscall-ppc64-linux.o `test -f 'm_syswrap/syscall-ppc64-linux.S' || echo '$(srcdir)/'`m_syswrap/syscall-ppc64-linux.S
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-ppc64-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-ppc64-linux.Po
+#	source='m_syswrap/syscall-ppc64-linux.S' object='libcoregrind_amd64_linux_a-syscall-ppc64-linux.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-syscall-ppc64-linux.o `test -f 'm_syswrap/syscall-ppc64-linux.S' || echo '$(srcdir)/'`m_syswrap/syscall-ppc64-linux.S
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-syscall-ppc64-linux.o `test -f 'm_syswrap/syscall-ppc64-linux.S' || echo '$(srcdir)/'`m_syswrap/syscall-ppc64-linux.S
 
-libcoregrind_x86_linux_a-syscall-ppc64-linux.obj: m_syswrap/syscall-ppc64-linux.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-syscall-ppc64-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syscall-ppc64-linux.Tpo -c -o libcoregrind_x86_linux_a-syscall-ppc64-linux.obj `if test -f 'm_syswrap/syscall-ppc64-linux.S'; then $(CYGPATH_W) 'm_syswrap/syscall-ppc64-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-ppc64-linux.S'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syscall-ppc64-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syscall-ppc64-linux.Po
-#	source='m_syswrap/syscall-ppc64-linux.S' object='libcoregrind_x86_linux_a-syscall-ppc64-linux.obj' libtool=no \
+libcoregrind_amd64_linux_a-syscall-ppc64-linux.obj: m_syswrap/syscall-ppc64-linux.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-syscall-ppc64-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-ppc64-linux.Tpo -c -o libcoregrind_amd64_linux_a-syscall-ppc64-linux.obj `if test -f 'm_syswrap/syscall-ppc64-linux.S'; then $(CYGPATH_W) 'm_syswrap/syscall-ppc64-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-ppc64-linux.S'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-ppc64-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-ppc64-linux.Po
+#	source='m_syswrap/syscall-ppc64-linux.S' object='libcoregrind_amd64_linux_a-syscall-ppc64-linux.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-syscall-ppc64-linux.obj `if test -f 'm_syswrap/syscall-ppc64-linux.S'; then $(CYGPATH_W) 'm_syswrap/syscall-ppc64-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-ppc64-linux.S'; fi`
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-syscall-ppc64-linux.obj `if test -f 'm_syswrap/syscall-ppc64-linux.S'; then $(CYGPATH_W) 'm_syswrap/syscall-ppc64-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-ppc64-linux.S'; fi`
 
-libcoregrind_x86_linux_a-syscall-arm-linux.o: m_syswrap/syscall-arm-linux.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-syscall-arm-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syscall-arm-linux.Tpo -c -o libcoregrind_x86_linux_a-syscall-arm-linux.o `test -f 'm_syswrap/syscall-arm-linux.S' || echo '$(srcdir)/'`m_syswrap/syscall-arm-linux.S
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syscall-arm-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syscall-arm-linux.Po
-#	source='m_syswrap/syscall-arm-linux.S' object='libcoregrind_x86_linux_a-syscall-arm-linux.o' libtool=no \
+libcoregrind_amd64_linux_a-syscall-arm-linux.o: m_syswrap/syscall-arm-linux.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-syscall-arm-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-arm-linux.Tpo -c -o libcoregrind_amd64_linux_a-syscall-arm-linux.o `test -f 'm_syswrap/syscall-arm-linux.S' || echo '$(srcdir)/'`m_syswrap/syscall-arm-linux.S
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-arm-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-arm-linux.Po
+#	source='m_syswrap/syscall-arm-linux.S' object='libcoregrind_amd64_linux_a-syscall-arm-linux.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-syscall-arm-linux.o `test -f 'm_syswrap/syscall-arm-linux.S' || echo '$(srcdir)/'`m_syswrap/syscall-arm-linux.S
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-syscall-arm-linux.o `test -f 'm_syswrap/syscall-arm-linux.S' || echo '$(srcdir)/'`m_syswrap/syscall-arm-linux.S
 
-libcoregrind_x86_linux_a-syscall-arm-linux.obj: m_syswrap/syscall-arm-linux.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-syscall-arm-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syscall-arm-linux.Tpo -c -o libcoregrind_x86_linux_a-syscall-arm-linux.obj `if test -f 'm_syswrap/syscall-arm-linux.S'; then $(CYGPATH_W) 'm_syswrap/syscall-arm-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-arm-linux.S'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syscall-arm-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syscall-arm-linux.Po
-#	source='m_syswrap/syscall-arm-linux.S' object='libcoregrind_x86_linux_a-syscall-arm-linux.obj' libtool=no \
+libcoregrind_amd64_linux_a-syscall-arm-linux.obj: m_syswrap/syscall-arm-linux.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-syscall-arm-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-arm-linux.Tpo -c -o libcoregrind_amd64_linux_a-syscall-arm-linux.obj `if test -f 'm_syswrap/syscall-arm-linux.S'; then $(CYGPATH_W) 'm_syswrap/syscall-arm-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-arm-linux.S'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-arm-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-arm-linux.Po
+#	source='m_syswrap/syscall-arm-linux.S' object='libcoregrind_amd64_linux_a-syscall-arm-linux.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-syscall-arm-linux.obj `if test -f 'm_syswrap/syscall-arm-linux.S'; then $(CYGPATH_W) 'm_syswrap/syscall-arm-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-arm-linux.S'; fi`
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-syscall-arm-linux.obj `if test -f 'm_syswrap/syscall-arm-linux.S'; then $(CYGPATH_W) 'm_syswrap/syscall-arm-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-arm-linux.S'; fi`
 
-libcoregrind_x86_linux_a-syscall-s390x-linux.o: m_syswrap/syscall-s390x-linux.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-syscall-s390x-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syscall-s390x-linux.Tpo -c -o libcoregrind_x86_linux_a-syscall-s390x-linux.o `test -f 'm_syswrap/syscall-s390x-linux.S' || echo '$(srcdir)/'`m_syswrap/syscall-s390x-linux.S
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syscall-s390x-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syscall-s390x-linux.Po
-#	source='m_syswrap/syscall-s390x-linux.S' object='libcoregrind_x86_linux_a-syscall-s390x-linux.o' libtool=no \
+libcoregrind_amd64_linux_a-syscall-s390x-linux.o: m_syswrap/syscall-s390x-linux.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-syscall-s390x-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-s390x-linux.Tpo -c -o libcoregrind_amd64_linux_a-syscall-s390x-linux.o `test -f 'm_syswrap/syscall-s390x-linux.S' || echo '$(srcdir)/'`m_syswrap/syscall-s390x-linux.S
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-s390x-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-s390x-linux.Po
+#	source='m_syswrap/syscall-s390x-linux.S' object='libcoregrind_amd64_linux_a-syscall-s390x-linux.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-syscall-s390x-linux.o `test -f 'm_syswrap/syscall-s390x-linux.S' || echo '$(srcdir)/'`m_syswrap/syscall-s390x-linux.S
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-syscall-s390x-linux.o `test -f 'm_syswrap/syscall-s390x-linux.S' || echo '$(srcdir)/'`m_syswrap/syscall-s390x-linux.S
 
-libcoregrind_x86_linux_a-syscall-s390x-linux.obj: m_syswrap/syscall-s390x-linux.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-syscall-s390x-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syscall-s390x-linux.Tpo -c -o libcoregrind_x86_linux_a-syscall-s390x-linux.obj `if test -f 'm_syswrap/syscall-s390x-linux.S'; then $(CYGPATH_W) 'm_syswrap/syscall-s390x-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-s390x-linux.S'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syscall-s390x-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syscall-s390x-linux.Po
-#	source='m_syswrap/syscall-s390x-linux.S' object='libcoregrind_x86_linux_a-syscall-s390x-linux.obj' libtool=no \
+libcoregrind_amd64_linux_a-syscall-s390x-linux.obj: m_syswrap/syscall-s390x-linux.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-syscall-s390x-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-s390x-linux.Tpo -c -o libcoregrind_amd64_linux_a-syscall-s390x-linux.obj `if test -f 'm_syswrap/syscall-s390x-linux.S'; then $(CYGPATH_W) 'm_syswrap/syscall-s390x-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-s390x-linux.S'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-s390x-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-s390x-linux.Po
+#	source='m_syswrap/syscall-s390x-linux.S' object='libcoregrind_amd64_linux_a-syscall-s390x-linux.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-syscall-s390x-linux.obj `if test -f 'm_syswrap/syscall-s390x-linux.S'; then $(CYGPATH_W) 'm_syswrap/syscall-s390x-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-s390x-linux.S'; fi`
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-syscall-s390x-linux.obj `if test -f 'm_syswrap/syscall-s390x-linux.S'; then $(CYGPATH_W) 'm_syswrap/syscall-s390x-linux.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-s390x-linux.S'; fi`
 
-libcoregrind_x86_linux_a-syscall-ppc32-aix5.o: m_syswrap/syscall-ppc32-aix5.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-syscall-ppc32-aix5.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syscall-ppc32-aix5.Tpo -c -o libcoregrind_x86_linux_a-syscall-ppc32-aix5.o `test -f 'm_syswrap/syscall-ppc32-aix5.S' || echo '$(srcdir)/'`m_syswrap/syscall-ppc32-aix5.S
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syscall-ppc32-aix5.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syscall-ppc32-aix5.Po
-#	source='m_syswrap/syscall-ppc32-aix5.S' object='libcoregrind_x86_linux_a-syscall-ppc32-aix5.o' libtool=no \
+libcoregrind_amd64_linux_a-syscall-ppc32-aix5.o: m_syswrap/syscall-ppc32-aix5.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-syscall-ppc32-aix5.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-ppc32-aix5.Tpo -c -o libcoregrind_amd64_linux_a-syscall-ppc32-aix5.o `test -f 'm_syswrap/syscall-ppc32-aix5.S' || echo '$(srcdir)/'`m_syswrap/syscall-ppc32-aix5.S
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-ppc32-aix5.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-ppc32-aix5.Po
+#	source='m_syswrap/syscall-ppc32-aix5.S' object='libcoregrind_amd64_linux_a-syscall-ppc32-aix5.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-syscall-ppc32-aix5.o `test -f 'm_syswrap/syscall-ppc32-aix5.S' || echo '$(srcdir)/'`m_syswrap/syscall-ppc32-aix5.S
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-syscall-ppc32-aix5.o `test -f 'm_syswrap/syscall-ppc32-aix5.S' || echo '$(srcdir)/'`m_syswrap/syscall-ppc32-aix5.S
 
-libcoregrind_x86_linux_a-syscall-ppc32-aix5.obj: m_syswrap/syscall-ppc32-aix5.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-syscall-ppc32-aix5.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syscall-ppc32-aix5.Tpo -c -o libcoregrind_x86_linux_a-syscall-ppc32-aix5.obj `if test -f 'm_syswrap/syscall-ppc32-aix5.S'; then $(CYGPATH_W) 'm_syswrap/syscall-ppc32-aix5.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-ppc32-aix5.S'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syscall-ppc32-aix5.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syscall-ppc32-aix5.Po
-#	source='m_syswrap/syscall-ppc32-aix5.S' object='libcoregrind_x86_linux_a-syscall-ppc32-aix5.obj' libtool=no \
+libcoregrind_amd64_linux_a-syscall-ppc32-aix5.obj: m_syswrap/syscall-ppc32-aix5.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-syscall-ppc32-aix5.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-ppc32-aix5.Tpo -c -o libcoregrind_amd64_linux_a-syscall-ppc32-aix5.obj `if test -f 'm_syswrap/syscall-ppc32-aix5.S'; then $(CYGPATH_W) 'm_syswrap/syscall-ppc32-aix5.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-ppc32-aix5.S'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-ppc32-aix5.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-ppc32-aix5.Po
+#	source='m_syswrap/syscall-ppc32-aix5.S' object='libcoregrind_amd64_linux_a-syscall-ppc32-aix5.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-syscall-ppc32-aix5.obj `if test -f 'm_syswrap/syscall-ppc32-aix5.S'; then $(CYGPATH_W) 'm_syswrap/syscall-ppc32-aix5.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-ppc32-aix5.S'; fi`
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-syscall-ppc32-aix5.obj `if test -f 'm_syswrap/syscall-ppc32-aix5.S'; then $(CYGPATH_W) 'm_syswrap/syscall-ppc32-aix5.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-ppc32-aix5.S'; fi`
 
-libcoregrind_x86_linux_a-syscall-ppc64-aix5.o: m_syswrap/syscall-ppc64-aix5.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-syscall-ppc64-aix5.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syscall-ppc64-aix5.Tpo -c -o libcoregrind_x86_linux_a-syscall-ppc64-aix5.o `test -f 'm_syswrap/syscall-ppc64-aix5.S' || echo '$(srcdir)/'`m_syswrap/syscall-ppc64-aix5.S
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syscall-ppc64-aix5.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syscall-ppc64-aix5.Po
-#	source='m_syswrap/syscall-ppc64-aix5.S' object='libcoregrind_x86_linux_a-syscall-ppc64-aix5.o' libtool=no \
+libcoregrind_amd64_linux_a-syscall-ppc64-aix5.o: m_syswrap/syscall-ppc64-aix5.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-syscall-ppc64-aix5.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-ppc64-aix5.Tpo -c -o libcoregrind_amd64_linux_a-syscall-ppc64-aix5.o `test -f 'm_syswrap/syscall-ppc64-aix5.S' || echo '$(srcdir)/'`m_syswrap/syscall-ppc64-aix5.S
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-ppc64-aix5.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-ppc64-aix5.Po
+#	source='m_syswrap/syscall-ppc64-aix5.S' object='libcoregrind_amd64_linux_a-syscall-ppc64-aix5.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-syscall-ppc64-aix5.o `test -f 'm_syswrap/syscall-ppc64-aix5.S' || echo '$(srcdir)/'`m_syswrap/syscall-ppc64-aix5.S
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-syscall-ppc64-aix5.o `test -f 'm_syswrap/syscall-ppc64-aix5.S' || echo '$(srcdir)/'`m_syswrap/syscall-ppc64-aix5.S
 
-libcoregrind_x86_linux_a-syscall-ppc64-aix5.obj: m_syswrap/syscall-ppc64-aix5.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-syscall-ppc64-aix5.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syscall-ppc64-aix5.Tpo -c -o libcoregrind_x86_linux_a-syscall-ppc64-aix5.obj `if test -f 'm_syswrap/syscall-ppc64-aix5.S'; then $(CYGPATH_W) 'm_syswrap/syscall-ppc64-aix5.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-ppc64-aix5.S'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syscall-ppc64-aix5.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syscall-ppc64-aix5.Po
-#	source='m_syswrap/syscall-ppc64-aix5.S' object='libcoregrind_x86_linux_a-syscall-ppc64-aix5.obj' libtool=no \
+libcoregrind_amd64_linux_a-syscall-ppc64-aix5.obj: m_syswrap/syscall-ppc64-aix5.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-syscall-ppc64-aix5.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-ppc64-aix5.Tpo -c -o libcoregrind_amd64_linux_a-syscall-ppc64-aix5.obj `if test -f 'm_syswrap/syscall-ppc64-aix5.S'; then $(CYGPATH_W) 'm_syswrap/syscall-ppc64-aix5.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-ppc64-aix5.S'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-ppc64-aix5.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-ppc64-aix5.Po
+#	source='m_syswrap/syscall-ppc64-aix5.S' object='libcoregrind_amd64_linux_a-syscall-ppc64-aix5.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-syscall-ppc64-aix5.obj `if test -f 'm_syswrap/syscall-ppc64-aix5.S'; then $(CYGPATH_W) 'm_syswrap/syscall-ppc64-aix5.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-ppc64-aix5.S'; fi`
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-syscall-ppc64-aix5.obj `if test -f 'm_syswrap/syscall-ppc64-aix5.S'; then $(CYGPATH_W) 'm_syswrap/syscall-ppc64-aix5.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-ppc64-aix5.S'; fi`
 
-libcoregrind_x86_linux_a-syscall-x86-darwin.o: m_syswrap/syscall-x86-darwin.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-syscall-x86-darwin.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syscall-x86-darwin.Tpo -c -o libcoregrind_x86_linux_a-syscall-x86-darwin.o `test -f 'm_syswrap/syscall-x86-darwin.S' || echo '$(srcdir)/'`m_syswrap/syscall-x86-darwin.S
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syscall-x86-darwin.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syscall-x86-darwin.Po
-#	source='m_syswrap/syscall-x86-darwin.S' object='libcoregrind_x86_linux_a-syscall-x86-darwin.o' libtool=no \
+libcoregrind_amd64_linux_a-syscall-x86-darwin.o: m_syswrap/syscall-x86-darwin.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-syscall-x86-darwin.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-x86-darwin.Tpo -c -o libcoregrind_amd64_linux_a-syscall-x86-darwin.o `test -f 'm_syswrap/syscall-x86-darwin.S' || echo '$(srcdir)/'`m_syswrap/syscall-x86-darwin.S
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-x86-darwin.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-x86-darwin.Po
+#	source='m_syswrap/syscall-x86-darwin.S' object='libcoregrind_amd64_linux_a-syscall-x86-darwin.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-syscall-x86-darwin.o `test -f 'm_syswrap/syscall-x86-darwin.S' || echo '$(srcdir)/'`m_syswrap/syscall-x86-darwin.S
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-syscall-x86-darwin.o `test -f 'm_syswrap/syscall-x86-darwin.S' || echo '$(srcdir)/'`m_syswrap/syscall-x86-darwin.S
 
-libcoregrind_x86_linux_a-syscall-x86-darwin.obj: m_syswrap/syscall-x86-darwin.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-syscall-x86-darwin.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syscall-x86-darwin.Tpo -c -o libcoregrind_x86_linux_a-syscall-x86-darwin.obj `if test -f 'm_syswrap/syscall-x86-darwin.S'; then $(CYGPATH_W) 'm_syswrap/syscall-x86-darwin.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-x86-darwin.S'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syscall-x86-darwin.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syscall-x86-darwin.Po
-#	source='m_syswrap/syscall-x86-darwin.S' object='libcoregrind_x86_linux_a-syscall-x86-darwin.obj' libtool=no \
+libcoregrind_amd64_linux_a-syscall-x86-darwin.obj: m_syswrap/syscall-x86-darwin.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-syscall-x86-darwin.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-x86-darwin.Tpo -c -o libcoregrind_amd64_linux_a-syscall-x86-darwin.obj `if test -f 'm_syswrap/syscall-x86-darwin.S'; then $(CYGPATH_W) 'm_syswrap/syscall-x86-darwin.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-x86-darwin.S'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-x86-darwin.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-x86-darwin.Po
+#	source='m_syswrap/syscall-x86-darwin.S' object='libcoregrind_amd64_linux_a-syscall-x86-darwin.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-syscall-x86-darwin.obj `if test -f 'm_syswrap/syscall-x86-darwin.S'; then $(CYGPATH_W) 'm_syswrap/syscall-x86-darwin.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-x86-darwin.S'; fi`
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-syscall-x86-darwin.obj `if test -f 'm_syswrap/syscall-x86-darwin.S'; then $(CYGPATH_W) 'm_syswrap/syscall-x86-darwin.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-x86-darwin.S'; fi`
 
-libcoregrind_x86_linux_a-syscall-amd64-darwin.o: m_syswrap/syscall-amd64-darwin.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-syscall-amd64-darwin.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syscall-amd64-darwin.Tpo -c -o libcoregrind_x86_linux_a-syscall-amd64-darwin.o `test -f 'm_syswrap/syscall-amd64-darwin.S' || echo '$(srcdir)/'`m_syswrap/syscall-amd64-darwin.S
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syscall-amd64-darwin.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syscall-amd64-darwin.Po
-#	source='m_syswrap/syscall-amd64-darwin.S' object='libcoregrind_x86_linux_a-syscall-amd64-darwin.o' libtool=no \
+libcoregrind_amd64_linux_a-syscall-amd64-darwin.o: m_syswrap/syscall-amd64-darwin.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-syscall-amd64-darwin.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-amd64-darwin.Tpo -c -o libcoregrind_amd64_linux_a-syscall-amd64-darwin.o `test -f 'm_syswrap/syscall-amd64-darwin.S' || echo '$(srcdir)/'`m_syswrap/syscall-amd64-darwin.S
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-amd64-darwin.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-amd64-darwin.Po
+#	source='m_syswrap/syscall-amd64-darwin.S' object='libcoregrind_amd64_linux_a-syscall-amd64-darwin.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-syscall-amd64-darwin.o `test -f 'm_syswrap/syscall-amd64-darwin.S' || echo '$(srcdir)/'`m_syswrap/syscall-amd64-darwin.S
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-syscall-amd64-darwin.o `test -f 'm_syswrap/syscall-amd64-darwin.S' || echo '$(srcdir)/'`m_syswrap/syscall-amd64-darwin.S
 
-libcoregrind_x86_linux_a-syscall-amd64-darwin.obj: m_syswrap/syscall-amd64-darwin.S
-	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_x86_linux_a-syscall-amd64-darwin.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syscall-amd64-darwin.Tpo -c -o libcoregrind_x86_linux_a-syscall-amd64-darwin.obj `if test -f 'm_syswrap/syscall-amd64-darwin.S'; then $(CYGPATH_W) 'm_syswrap/syscall-amd64-darwin.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-amd64-darwin.S'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syscall-amd64-darwin.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syscall-amd64-darwin.Po
-#	source='m_syswrap/syscall-amd64-darwin.S' object='libcoregrind_x86_linux_a-syscall-amd64-darwin.obj' libtool=no \
+libcoregrind_amd64_linux_a-syscall-amd64-darwin.obj: m_syswrap/syscall-amd64-darwin.S
+	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind_amd64_linux_a-syscall-amd64-darwin.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-amd64-darwin.Tpo -c -o libcoregrind_amd64_linux_a-syscall-amd64-darwin.obj `if test -f 'm_syswrap/syscall-amd64-darwin.S'; then $(CYGPATH_W) 'm_syswrap/syscall-amd64-darwin.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-amd64-darwin.S'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-amd64-darwin.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syscall-amd64-darwin.Po
+#	source='m_syswrap/syscall-amd64-darwin.S' object='libcoregrind_amd64_linux_a-syscall-amd64-darwin.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCASDEPMODE) $(depcomp) \
-#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_x86_linux_a-syscall-amd64-darwin.obj `if test -f 'm_syswrap/syscall-amd64-darwin.S'; then $(CYGPATH_W) 'm_syswrap/syscall-amd64-darwin.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-amd64-darwin.S'; fi`
+#	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CCASFLAGS) $(CCASFLAGS) -c -o libcoregrind_amd64_linux_a-syscall-amd64-darwin.obj `if test -f 'm_syswrap/syscall-amd64-darwin.S'; then $(CYGPATH_W) 'm_syswrap/syscall-amd64-darwin.S'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syscall-amd64-darwin.S'; fi`
 
 libcoregrind__linux_a-m_cpuid.o: m_cpuid.S
 	$(CCAS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind__linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind__linux_a_CCASFLAGS) $(CCASFLAGS) -MT libcoregrind__linux_a-m_cpuid.o -MD -MP -MF $(DEPDIR)/libcoregrind__linux_a-m_cpuid.Tpo -c -o libcoregrind__linux_a-m_cpuid.o `test -f 'm_cpuid.S' || echo '$(srcdir)/'`m_cpuid.S
@@ -2470,1643 +2470,1643 @@ libcoregrind__linux_a-syscall-amd64-darwin.obj: m_syswrap/syscall-amd64-darwin.S
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
 #	$(COMPILE) -c `$(CYGPATH_W) '$<'`
 
-libcoregrind_x86_linux_a-m_commandline.o: m_commandline.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_commandline.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_commandline.Tpo -c -o libcoregrind_x86_linux_a-m_commandline.o `test -f 'm_commandline.c' || echo '$(srcdir)/'`m_commandline.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_commandline.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_commandline.Po
-#	source='m_commandline.c' object='libcoregrind_x86_linux_a-m_commandline.o' libtool=no \
+libcoregrind_amd64_linux_a-m_commandline.o: m_commandline.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_commandline.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_commandline.Tpo -c -o libcoregrind_amd64_linux_a-m_commandline.o `test -f 'm_commandline.c' || echo '$(srcdir)/'`m_commandline.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_commandline.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_commandline.Po
+#	source='m_commandline.c' object='libcoregrind_amd64_linux_a-m_commandline.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_commandline.o `test -f 'm_commandline.c' || echo '$(srcdir)/'`m_commandline.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_commandline.o `test -f 'm_commandline.c' || echo '$(srcdir)/'`m_commandline.c
 
-libcoregrind_x86_linux_a-m_commandline.obj: m_commandline.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_commandline.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_commandline.Tpo -c -o libcoregrind_x86_linux_a-m_commandline.obj `if test -f 'm_commandline.c'; then $(CYGPATH_W) 'm_commandline.c'; else $(CYGPATH_W) '$(srcdir)/m_commandline.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_commandline.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_commandline.Po
-#	source='m_commandline.c' object='libcoregrind_x86_linux_a-m_commandline.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_commandline.obj: m_commandline.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_commandline.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_commandline.Tpo -c -o libcoregrind_amd64_linux_a-m_commandline.obj `if test -f 'm_commandline.c'; then $(CYGPATH_W) 'm_commandline.c'; else $(CYGPATH_W) '$(srcdir)/m_commandline.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_commandline.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_commandline.Po
+#	source='m_commandline.c' object='libcoregrind_amd64_linux_a-m_commandline.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_commandline.obj `if test -f 'm_commandline.c'; then $(CYGPATH_W) 'm_commandline.c'; else $(CYGPATH_W) '$(srcdir)/m_commandline.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_commandline.obj `if test -f 'm_commandline.c'; then $(CYGPATH_W) 'm_commandline.c'; else $(CYGPATH_W) '$(srcdir)/m_commandline.c'; fi`
 
-libcoregrind_x86_linux_a-m_clientstate.o: m_clientstate.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_clientstate.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_clientstate.Tpo -c -o libcoregrind_x86_linux_a-m_clientstate.o `test -f 'm_clientstate.c' || echo '$(srcdir)/'`m_clientstate.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_clientstate.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_clientstate.Po
-#	source='m_clientstate.c' object='libcoregrind_x86_linux_a-m_clientstate.o' libtool=no \
+libcoregrind_amd64_linux_a-m_clientstate.o: m_clientstate.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_clientstate.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_clientstate.Tpo -c -o libcoregrind_amd64_linux_a-m_clientstate.o `test -f 'm_clientstate.c' || echo '$(srcdir)/'`m_clientstate.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_clientstate.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_clientstate.Po
+#	source='m_clientstate.c' object='libcoregrind_amd64_linux_a-m_clientstate.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_clientstate.o `test -f 'm_clientstate.c' || echo '$(srcdir)/'`m_clientstate.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_clientstate.o `test -f 'm_clientstate.c' || echo '$(srcdir)/'`m_clientstate.c
 
-libcoregrind_x86_linux_a-m_clientstate.obj: m_clientstate.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_clientstate.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_clientstate.Tpo -c -o libcoregrind_x86_linux_a-m_clientstate.obj `if test -f 'm_clientstate.c'; then $(CYGPATH_W) 'm_clientstate.c'; else $(CYGPATH_W) '$(srcdir)/m_clientstate.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_clientstate.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_clientstate.Po
-#	source='m_clientstate.c' object='libcoregrind_x86_linux_a-m_clientstate.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_clientstate.obj: m_clientstate.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_clientstate.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_clientstate.Tpo -c -o libcoregrind_amd64_linux_a-m_clientstate.obj `if test -f 'm_clientstate.c'; then $(CYGPATH_W) 'm_clientstate.c'; else $(CYGPATH_W) '$(srcdir)/m_clientstate.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_clientstate.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_clientstate.Po
+#	source='m_clientstate.c' object='libcoregrind_amd64_linux_a-m_clientstate.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_clientstate.obj `if test -f 'm_clientstate.c'; then $(CYGPATH_W) 'm_clientstate.c'; else $(CYGPATH_W) '$(srcdir)/m_clientstate.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_clientstate.obj `if test -f 'm_clientstate.c'; then $(CYGPATH_W) 'm_clientstate.c'; else $(CYGPATH_W) '$(srcdir)/m_clientstate.c'; fi`
 
-libcoregrind_x86_linux_a-m_debugger.o: m_debugger.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_debugger.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_debugger.Tpo -c -o libcoregrind_x86_linux_a-m_debugger.o `test -f 'm_debugger.c' || echo '$(srcdir)/'`m_debugger.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_debugger.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_debugger.Po
-#	source='m_debugger.c' object='libcoregrind_x86_linux_a-m_debugger.o' libtool=no \
+libcoregrind_amd64_linux_a-m_debugger.o: m_debugger.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_debugger.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_debugger.Tpo -c -o libcoregrind_amd64_linux_a-m_debugger.o `test -f 'm_debugger.c' || echo '$(srcdir)/'`m_debugger.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_debugger.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_debugger.Po
+#	source='m_debugger.c' object='libcoregrind_amd64_linux_a-m_debugger.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_debugger.o `test -f 'm_debugger.c' || echo '$(srcdir)/'`m_debugger.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_debugger.o `test -f 'm_debugger.c' || echo '$(srcdir)/'`m_debugger.c
 
-libcoregrind_x86_linux_a-m_debugger.obj: m_debugger.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_debugger.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_debugger.Tpo -c -o libcoregrind_x86_linux_a-m_debugger.obj `if test -f 'm_debugger.c'; then $(CYGPATH_W) 'm_debugger.c'; else $(CYGPATH_W) '$(srcdir)/m_debugger.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_debugger.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_debugger.Po
-#	source='m_debugger.c' object='libcoregrind_x86_linux_a-m_debugger.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_debugger.obj: m_debugger.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_debugger.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_debugger.Tpo -c -o libcoregrind_amd64_linux_a-m_debugger.obj `if test -f 'm_debugger.c'; then $(CYGPATH_W) 'm_debugger.c'; else $(CYGPATH_W) '$(srcdir)/m_debugger.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_debugger.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_debugger.Po
+#	source='m_debugger.c' object='libcoregrind_amd64_linux_a-m_debugger.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_debugger.obj `if test -f 'm_debugger.c'; then $(CYGPATH_W) 'm_debugger.c'; else $(CYGPATH_W) '$(srcdir)/m_debugger.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_debugger.obj `if test -f 'm_debugger.c'; then $(CYGPATH_W) 'm_debugger.c'; else $(CYGPATH_W) '$(srcdir)/m_debugger.c'; fi`
 
-libcoregrind_x86_linux_a-m_debuglog.o: m_debuglog.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_debuglog.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_debuglog.Tpo -c -o libcoregrind_x86_linux_a-m_debuglog.o `test -f 'm_debuglog.c' || echo '$(srcdir)/'`m_debuglog.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_debuglog.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_debuglog.Po
-#	source='m_debuglog.c' object='libcoregrind_x86_linux_a-m_debuglog.o' libtool=no \
+libcoregrind_amd64_linux_a-m_debuglog.o: m_debuglog.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_debuglog.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_debuglog.Tpo -c -o libcoregrind_amd64_linux_a-m_debuglog.o `test -f 'm_debuglog.c' || echo '$(srcdir)/'`m_debuglog.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_debuglog.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_debuglog.Po
+#	source='m_debuglog.c' object='libcoregrind_amd64_linux_a-m_debuglog.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_debuglog.o `test -f 'm_debuglog.c' || echo '$(srcdir)/'`m_debuglog.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_debuglog.o `test -f 'm_debuglog.c' || echo '$(srcdir)/'`m_debuglog.c
 
-libcoregrind_x86_linux_a-m_debuglog.obj: m_debuglog.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_debuglog.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_debuglog.Tpo -c -o libcoregrind_x86_linux_a-m_debuglog.obj `if test -f 'm_debuglog.c'; then $(CYGPATH_W) 'm_debuglog.c'; else $(CYGPATH_W) '$(srcdir)/m_debuglog.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_debuglog.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_debuglog.Po
-#	source='m_debuglog.c' object='libcoregrind_x86_linux_a-m_debuglog.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_debuglog.obj: m_debuglog.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_debuglog.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_debuglog.Tpo -c -o libcoregrind_amd64_linux_a-m_debuglog.obj `if test -f 'm_debuglog.c'; then $(CYGPATH_W) 'm_debuglog.c'; else $(CYGPATH_W) '$(srcdir)/m_debuglog.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_debuglog.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_debuglog.Po
+#	source='m_debuglog.c' object='libcoregrind_amd64_linux_a-m_debuglog.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_debuglog.obj `if test -f 'm_debuglog.c'; then $(CYGPATH_W) 'm_debuglog.c'; else $(CYGPATH_W) '$(srcdir)/m_debuglog.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_debuglog.obj `if test -f 'm_debuglog.c'; then $(CYGPATH_W) 'm_debuglog.c'; else $(CYGPATH_W) '$(srcdir)/m_debuglog.c'; fi`
 
-libcoregrind_x86_linux_a-m_errormgr.o: m_errormgr.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_errormgr.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_errormgr.Tpo -c -o libcoregrind_x86_linux_a-m_errormgr.o `test -f 'm_errormgr.c' || echo '$(srcdir)/'`m_errormgr.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_errormgr.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_errormgr.Po
-#	source='m_errormgr.c' object='libcoregrind_x86_linux_a-m_errormgr.o' libtool=no \
+libcoregrind_amd64_linux_a-m_errormgr.o: m_errormgr.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_errormgr.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_errormgr.Tpo -c -o libcoregrind_amd64_linux_a-m_errormgr.o `test -f 'm_errormgr.c' || echo '$(srcdir)/'`m_errormgr.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_errormgr.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_errormgr.Po
+#	source='m_errormgr.c' object='libcoregrind_amd64_linux_a-m_errormgr.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_errormgr.o `test -f 'm_errormgr.c' || echo '$(srcdir)/'`m_errormgr.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_errormgr.o `test -f 'm_errormgr.c' || echo '$(srcdir)/'`m_errormgr.c
 
-libcoregrind_x86_linux_a-m_errormgr.obj: m_errormgr.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_errormgr.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_errormgr.Tpo -c -o libcoregrind_x86_linux_a-m_errormgr.obj `if test -f 'm_errormgr.c'; then $(CYGPATH_W) 'm_errormgr.c'; else $(CYGPATH_W) '$(srcdir)/m_errormgr.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_errormgr.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_errormgr.Po
-#	source='m_errormgr.c' object='libcoregrind_x86_linux_a-m_errormgr.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_errormgr.obj: m_errormgr.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_errormgr.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_errormgr.Tpo -c -o libcoregrind_amd64_linux_a-m_errormgr.obj `if test -f 'm_errormgr.c'; then $(CYGPATH_W) 'm_errormgr.c'; else $(CYGPATH_W) '$(srcdir)/m_errormgr.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_errormgr.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_errormgr.Po
+#	source='m_errormgr.c' object='libcoregrind_amd64_linux_a-m_errormgr.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_errormgr.obj `if test -f 'm_errormgr.c'; then $(CYGPATH_W) 'm_errormgr.c'; else $(CYGPATH_W) '$(srcdir)/m_errormgr.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_errormgr.obj `if test -f 'm_errormgr.c'; then $(CYGPATH_W) 'm_errormgr.c'; else $(CYGPATH_W) '$(srcdir)/m_errormgr.c'; fi`
 
-libcoregrind_x86_linux_a-m_execontext.o: m_execontext.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_execontext.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_execontext.Tpo -c -o libcoregrind_x86_linux_a-m_execontext.o `test -f 'm_execontext.c' || echo '$(srcdir)/'`m_execontext.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_execontext.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_execontext.Po
-#	source='m_execontext.c' object='libcoregrind_x86_linux_a-m_execontext.o' libtool=no \
+libcoregrind_amd64_linux_a-m_execontext.o: m_execontext.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_execontext.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_execontext.Tpo -c -o libcoregrind_amd64_linux_a-m_execontext.o `test -f 'm_execontext.c' || echo '$(srcdir)/'`m_execontext.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_execontext.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_execontext.Po
+#	source='m_execontext.c' object='libcoregrind_amd64_linux_a-m_execontext.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_execontext.o `test -f 'm_execontext.c' || echo '$(srcdir)/'`m_execontext.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_execontext.o `test -f 'm_execontext.c' || echo '$(srcdir)/'`m_execontext.c
 
-libcoregrind_x86_linux_a-m_execontext.obj: m_execontext.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_execontext.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_execontext.Tpo -c -o libcoregrind_x86_linux_a-m_execontext.obj `if test -f 'm_execontext.c'; then $(CYGPATH_W) 'm_execontext.c'; else $(CYGPATH_W) '$(srcdir)/m_execontext.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_execontext.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_execontext.Po
-#	source='m_execontext.c' object='libcoregrind_x86_linux_a-m_execontext.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_execontext.obj: m_execontext.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_execontext.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_execontext.Tpo -c -o libcoregrind_amd64_linux_a-m_execontext.obj `if test -f 'm_execontext.c'; then $(CYGPATH_W) 'm_execontext.c'; else $(CYGPATH_W) '$(srcdir)/m_execontext.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_execontext.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_execontext.Po
+#	source='m_execontext.c' object='libcoregrind_amd64_linux_a-m_execontext.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_execontext.obj `if test -f 'm_execontext.c'; then $(CYGPATH_W) 'm_execontext.c'; else $(CYGPATH_W) '$(srcdir)/m_execontext.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_execontext.obj `if test -f 'm_execontext.c'; then $(CYGPATH_W) 'm_execontext.c'; else $(CYGPATH_W) '$(srcdir)/m_execontext.c'; fi`
 
-libcoregrind_x86_linux_a-m_hashtable.o: m_hashtable.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_hashtable.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_hashtable.Tpo -c -o libcoregrind_x86_linux_a-m_hashtable.o `test -f 'm_hashtable.c' || echo '$(srcdir)/'`m_hashtable.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_hashtable.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_hashtable.Po
-#	source='m_hashtable.c' object='libcoregrind_x86_linux_a-m_hashtable.o' libtool=no \
+libcoregrind_amd64_linux_a-m_hashtable.o: m_hashtable.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_hashtable.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_hashtable.Tpo -c -o libcoregrind_amd64_linux_a-m_hashtable.o `test -f 'm_hashtable.c' || echo '$(srcdir)/'`m_hashtable.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_hashtable.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_hashtable.Po
+#	source='m_hashtable.c' object='libcoregrind_amd64_linux_a-m_hashtable.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_hashtable.o `test -f 'm_hashtable.c' || echo '$(srcdir)/'`m_hashtable.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_hashtable.o `test -f 'm_hashtable.c' || echo '$(srcdir)/'`m_hashtable.c
 
-libcoregrind_x86_linux_a-m_hashtable.obj: m_hashtable.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_hashtable.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_hashtable.Tpo -c -o libcoregrind_x86_linux_a-m_hashtable.obj `if test -f 'm_hashtable.c'; then $(CYGPATH_W) 'm_hashtable.c'; else $(CYGPATH_W) '$(srcdir)/m_hashtable.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_hashtable.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_hashtable.Po
-#	source='m_hashtable.c' object='libcoregrind_x86_linux_a-m_hashtable.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_hashtable.obj: m_hashtable.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_hashtable.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_hashtable.Tpo -c -o libcoregrind_amd64_linux_a-m_hashtable.obj `if test -f 'm_hashtable.c'; then $(CYGPATH_W) 'm_hashtable.c'; else $(CYGPATH_W) '$(srcdir)/m_hashtable.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_hashtable.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_hashtable.Po
+#	source='m_hashtable.c' object='libcoregrind_amd64_linux_a-m_hashtable.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_hashtable.obj `if test -f 'm_hashtable.c'; then $(CYGPATH_W) 'm_hashtable.c'; else $(CYGPATH_W) '$(srcdir)/m_hashtable.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_hashtable.obj `if test -f 'm_hashtable.c'; then $(CYGPATH_W) 'm_hashtable.c'; else $(CYGPATH_W) '$(srcdir)/m_hashtable.c'; fi`
 
-libcoregrind_x86_linux_a-m_libcbase.o: m_libcbase.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_libcbase.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_libcbase.Tpo -c -o libcoregrind_x86_linux_a-m_libcbase.o `test -f 'm_libcbase.c' || echo '$(srcdir)/'`m_libcbase.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_libcbase.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_libcbase.Po
-#	source='m_libcbase.c' object='libcoregrind_x86_linux_a-m_libcbase.o' libtool=no \
+libcoregrind_amd64_linux_a-m_libcbase.o: m_libcbase.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_libcbase.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcbase.Tpo -c -o libcoregrind_amd64_linux_a-m_libcbase.o `test -f 'm_libcbase.c' || echo '$(srcdir)/'`m_libcbase.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcbase.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcbase.Po
+#	source='m_libcbase.c' object='libcoregrind_amd64_linux_a-m_libcbase.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_libcbase.o `test -f 'm_libcbase.c' || echo '$(srcdir)/'`m_libcbase.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_libcbase.o `test -f 'm_libcbase.c' || echo '$(srcdir)/'`m_libcbase.c
 
-libcoregrind_x86_linux_a-m_libcbase.obj: m_libcbase.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_libcbase.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_libcbase.Tpo -c -o libcoregrind_x86_linux_a-m_libcbase.obj `if test -f 'm_libcbase.c'; then $(CYGPATH_W) 'm_libcbase.c'; else $(CYGPATH_W) '$(srcdir)/m_libcbase.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_libcbase.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_libcbase.Po
-#	source='m_libcbase.c' object='libcoregrind_x86_linux_a-m_libcbase.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_libcbase.obj: m_libcbase.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_libcbase.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcbase.Tpo -c -o libcoregrind_amd64_linux_a-m_libcbase.obj `if test -f 'm_libcbase.c'; then $(CYGPATH_W) 'm_libcbase.c'; else $(CYGPATH_W) '$(srcdir)/m_libcbase.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcbase.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcbase.Po
+#	source='m_libcbase.c' object='libcoregrind_amd64_linux_a-m_libcbase.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_libcbase.obj `if test -f 'm_libcbase.c'; then $(CYGPATH_W) 'm_libcbase.c'; else $(CYGPATH_W) '$(srcdir)/m_libcbase.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_libcbase.obj `if test -f 'm_libcbase.c'; then $(CYGPATH_W) 'm_libcbase.c'; else $(CYGPATH_W) '$(srcdir)/m_libcbase.c'; fi`
 
-libcoregrind_x86_linux_a-m_libcassert.o: m_libcassert.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_libcassert.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_libcassert.Tpo -c -o libcoregrind_x86_linux_a-m_libcassert.o `test -f 'm_libcassert.c' || echo '$(srcdir)/'`m_libcassert.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_libcassert.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_libcassert.Po
-#	source='m_libcassert.c' object='libcoregrind_x86_linux_a-m_libcassert.o' libtool=no \
+libcoregrind_amd64_linux_a-m_libcassert.o: m_libcassert.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_libcassert.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcassert.Tpo -c -o libcoregrind_amd64_linux_a-m_libcassert.o `test -f 'm_libcassert.c' || echo '$(srcdir)/'`m_libcassert.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcassert.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcassert.Po
+#	source='m_libcassert.c' object='libcoregrind_amd64_linux_a-m_libcassert.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_libcassert.o `test -f 'm_libcassert.c' || echo '$(srcdir)/'`m_libcassert.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_libcassert.o `test -f 'm_libcassert.c' || echo '$(srcdir)/'`m_libcassert.c
 
-libcoregrind_x86_linux_a-m_libcassert.obj: m_libcassert.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_libcassert.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_libcassert.Tpo -c -o libcoregrind_x86_linux_a-m_libcassert.obj `if test -f 'm_libcassert.c'; then $(CYGPATH_W) 'm_libcassert.c'; else $(CYGPATH_W) '$(srcdir)/m_libcassert.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_libcassert.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_libcassert.Po
-#	source='m_libcassert.c' object='libcoregrind_x86_linux_a-m_libcassert.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_libcassert.obj: m_libcassert.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_libcassert.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcassert.Tpo -c -o libcoregrind_amd64_linux_a-m_libcassert.obj `if test -f 'm_libcassert.c'; then $(CYGPATH_W) 'm_libcassert.c'; else $(CYGPATH_W) '$(srcdir)/m_libcassert.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcassert.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcassert.Po
+#	source='m_libcassert.c' object='libcoregrind_amd64_linux_a-m_libcassert.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_libcassert.obj `if test -f 'm_libcassert.c'; then $(CYGPATH_W) 'm_libcassert.c'; else $(CYGPATH_W) '$(srcdir)/m_libcassert.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_libcassert.obj `if test -f 'm_libcassert.c'; then $(CYGPATH_W) 'm_libcassert.c'; else $(CYGPATH_W) '$(srcdir)/m_libcassert.c'; fi`
 
-libcoregrind_x86_linux_a-m_libcfile.o: m_libcfile.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_libcfile.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_libcfile.Tpo -c -o libcoregrind_x86_linux_a-m_libcfile.o `test -f 'm_libcfile.c' || echo '$(srcdir)/'`m_libcfile.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_libcfile.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_libcfile.Po
-#	source='m_libcfile.c' object='libcoregrind_x86_linux_a-m_libcfile.o' libtool=no \
+libcoregrind_amd64_linux_a-m_libcfile.o: m_libcfile.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_libcfile.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcfile.Tpo -c -o libcoregrind_amd64_linux_a-m_libcfile.o `test -f 'm_libcfile.c' || echo '$(srcdir)/'`m_libcfile.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcfile.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcfile.Po
+#	source='m_libcfile.c' object='libcoregrind_amd64_linux_a-m_libcfile.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_libcfile.o `test -f 'm_libcfile.c' || echo '$(srcdir)/'`m_libcfile.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_libcfile.o `test -f 'm_libcfile.c' || echo '$(srcdir)/'`m_libcfile.c
 
-libcoregrind_x86_linux_a-m_libcfile.obj: m_libcfile.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_libcfile.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_libcfile.Tpo -c -o libcoregrind_x86_linux_a-m_libcfile.obj `if test -f 'm_libcfile.c'; then $(CYGPATH_W) 'm_libcfile.c'; else $(CYGPATH_W) '$(srcdir)/m_libcfile.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_libcfile.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_libcfile.Po
-#	source='m_libcfile.c' object='libcoregrind_x86_linux_a-m_libcfile.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_libcfile.obj: m_libcfile.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_libcfile.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcfile.Tpo -c -o libcoregrind_amd64_linux_a-m_libcfile.obj `if test -f 'm_libcfile.c'; then $(CYGPATH_W) 'm_libcfile.c'; else $(CYGPATH_W) '$(srcdir)/m_libcfile.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcfile.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcfile.Po
+#	source='m_libcfile.c' object='libcoregrind_amd64_linux_a-m_libcfile.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_libcfile.obj `if test -f 'm_libcfile.c'; then $(CYGPATH_W) 'm_libcfile.c'; else $(CYGPATH_W) '$(srcdir)/m_libcfile.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_libcfile.obj `if test -f 'm_libcfile.c'; then $(CYGPATH_W) 'm_libcfile.c'; else $(CYGPATH_W) '$(srcdir)/m_libcfile.c'; fi`
 
-libcoregrind_x86_linux_a-m_libcprint.o: m_libcprint.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_libcprint.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_libcprint.Tpo -c -o libcoregrind_x86_linux_a-m_libcprint.o `test -f 'm_libcprint.c' || echo '$(srcdir)/'`m_libcprint.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_libcprint.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_libcprint.Po
-#	source='m_libcprint.c' object='libcoregrind_x86_linux_a-m_libcprint.o' libtool=no \
+libcoregrind_amd64_linux_a-m_libcprint.o: m_libcprint.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_libcprint.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcprint.Tpo -c -o libcoregrind_amd64_linux_a-m_libcprint.o `test -f 'm_libcprint.c' || echo '$(srcdir)/'`m_libcprint.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcprint.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcprint.Po
+#	source='m_libcprint.c' object='libcoregrind_amd64_linux_a-m_libcprint.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_libcprint.o `test -f 'm_libcprint.c' || echo '$(srcdir)/'`m_libcprint.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_libcprint.o `test -f 'm_libcprint.c' || echo '$(srcdir)/'`m_libcprint.c
 
-libcoregrind_x86_linux_a-m_libcprint.obj: m_libcprint.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_libcprint.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_libcprint.Tpo -c -o libcoregrind_x86_linux_a-m_libcprint.obj `if test -f 'm_libcprint.c'; then $(CYGPATH_W) 'm_libcprint.c'; else $(CYGPATH_W) '$(srcdir)/m_libcprint.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_libcprint.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_libcprint.Po
-#	source='m_libcprint.c' object='libcoregrind_x86_linux_a-m_libcprint.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_libcprint.obj: m_libcprint.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_libcprint.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcprint.Tpo -c -o libcoregrind_amd64_linux_a-m_libcprint.obj `if test -f 'm_libcprint.c'; then $(CYGPATH_W) 'm_libcprint.c'; else $(CYGPATH_W) '$(srcdir)/m_libcprint.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcprint.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcprint.Po
+#	source='m_libcprint.c' object='libcoregrind_amd64_linux_a-m_libcprint.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_libcprint.obj `if test -f 'm_libcprint.c'; then $(CYGPATH_W) 'm_libcprint.c'; else $(CYGPATH_W) '$(srcdir)/m_libcprint.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_libcprint.obj `if test -f 'm_libcprint.c'; then $(CYGPATH_W) 'm_libcprint.c'; else $(CYGPATH_W) '$(srcdir)/m_libcprint.c'; fi`
 
-libcoregrind_x86_linux_a-m_libcproc.o: m_libcproc.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_libcproc.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_libcproc.Tpo -c -o libcoregrind_x86_linux_a-m_libcproc.o `test -f 'm_libcproc.c' || echo '$(srcdir)/'`m_libcproc.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_libcproc.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_libcproc.Po
-#	source='m_libcproc.c' object='libcoregrind_x86_linux_a-m_libcproc.o' libtool=no \
+libcoregrind_amd64_linux_a-m_libcproc.o: m_libcproc.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_libcproc.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcproc.Tpo -c -o libcoregrind_amd64_linux_a-m_libcproc.o `test -f 'm_libcproc.c' || echo '$(srcdir)/'`m_libcproc.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcproc.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcproc.Po
+#	source='m_libcproc.c' object='libcoregrind_amd64_linux_a-m_libcproc.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_libcproc.o `test -f 'm_libcproc.c' || echo '$(srcdir)/'`m_libcproc.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_libcproc.o `test -f 'm_libcproc.c' || echo '$(srcdir)/'`m_libcproc.c
 
-libcoregrind_x86_linux_a-m_libcproc.obj: m_libcproc.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_libcproc.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_libcproc.Tpo -c -o libcoregrind_x86_linux_a-m_libcproc.obj `if test -f 'm_libcproc.c'; then $(CYGPATH_W) 'm_libcproc.c'; else $(CYGPATH_W) '$(srcdir)/m_libcproc.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_libcproc.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_libcproc.Po
-#	source='m_libcproc.c' object='libcoregrind_x86_linux_a-m_libcproc.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_libcproc.obj: m_libcproc.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_libcproc.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcproc.Tpo -c -o libcoregrind_amd64_linux_a-m_libcproc.obj `if test -f 'm_libcproc.c'; then $(CYGPATH_W) 'm_libcproc.c'; else $(CYGPATH_W) '$(srcdir)/m_libcproc.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcproc.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcproc.Po
+#	source='m_libcproc.c' object='libcoregrind_amd64_linux_a-m_libcproc.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_libcproc.obj `if test -f 'm_libcproc.c'; then $(CYGPATH_W) 'm_libcproc.c'; else $(CYGPATH_W) '$(srcdir)/m_libcproc.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_libcproc.obj `if test -f 'm_libcproc.c'; then $(CYGPATH_W) 'm_libcproc.c'; else $(CYGPATH_W) '$(srcdir)/m_libcproc.c'; fi`
 
-libcoregrind_x86_linux_a-m_libcsetjmp.o: m_libcsetjmp.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_libcsetjmp.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_libcsetjmp.Tpo -c -o libcoregrind_x86_linux_a-m_libcsetjmp.o `test -f 'm_libcsetjmp.c' || echo '$(srcdir)/'`m_libcsetjmp.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_libcsetjmp.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_libcsetjmp.Po
-#	source='m_libcsetjmp.c' object='libcoregrind_x86_linux_a-m_libcsetjmp.o' libtool=no \
+libcoregrind_amd64_linux_a-m_libcsetjmp.o: m_libcsetjmp.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_libcsetjmp.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcsetjmp.Tpo -c -o libcoregrind_amd64_linux_a-m_libcsetjmp.o `test -f 'm_libcsetjmp.c' || echo '$(srcdir)/'`m_libcsetjmp.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcsetjmp.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcsetjmp.Po
+#	source='m_libcsetjmp.c' object='libcoregrind_amd64_linux_a-m_libcsetjmp.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_libcsetjmp.o `test -f 'm_libcsetjmp.c' || echo '$(srcdir)/'`m_libcsetjmp.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_libcsetjmp.o `test -f 'm_libcsetjmp.c' || echo '$(srcdir)/'`m_libcsetjmp.c
 
-libcoregrind_x86_linux_a-m_libcsetjmp.obj: m_libcsetjmp.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_libcsetjmp.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_libcsetjmp.Tpo -c -o libcoregrind_x86_linux_a-m_libcsetjmp.obj `if test -f 'm_libcsetjmp.c'; then $(CYGPATH_W) 'm_libcsetjmp.c'; else $(CYGPATH_W) '$(srcdir)/m_libcsetjmp.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_libcsetjmp.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_libcsetjmp.Po
-#	source='m_libcsetjmp.c' object='libcoregrind_x86_linux_a-m_libcsetjmp.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_libcsetjmp.obj: m_libcsetjmp.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_libcsetjmp.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcsetjmp.Tpo -c -o libcoregrind_amd64_linux_a-m_libcsetjmp.obj `if test -f 'm_libcsetjmp.c'; then $(CYGPATH_W) 'm_libcsetjmp.c'; else $(CYGPATH_W) '$(srcdir)/m_libcsetjmp.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcsetjmp.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcsetjmp.Po
+#	source='m_libcsetjmp.c' object='libcoregrind_amd64_linux_a-m_libcsetjmp.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_libcsetjmp.obj `if test -f 'm_libcsetjmp.c'; then $(CYGPATH_W) 'm_libcsetjmp.c'; else $(CYGPATH_W) '$(srcdir)/m_libcsetjmp.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_libcsetjmp.obj `if test -f 'm_libcsetjmp.c'; then $(CYGPATH_W) 'm_libcsetjmp.c'; else $(CYGPATH_W) '$(srcdir)/m_libcsetjmp.c'; fi`
 
-libcoregrind_x86_linux_a-m_libcsignal.o: m_libcsignal.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_libcsignal.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_libcsignal.Tpo -c -o libcoregrind_x86_linux_a-m_libcsignal.o `test -f 'm_libcsignal.c' || echo '$(srcdir)/'`m_libcsignal.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_libcsignal.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_libcsignal.Po
-#	source='m_libcsignal.c' object='libcoregrind_x86_linux_a-m_libcsignal.o' libtool=no \
+libcoregrind_amd64_linux_a-m_libcsignal.o: m_libcsignal.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_libcsignal.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcsignal.Tpo -c -o libcoregrind_amd64_linux_a-m_libcsignal.o `test -f 'm_libcsignal.c' || echo '$(srcdir)/'`m_libcsignal.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcsignal.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcsignal.Po
+#	source='m_libcsignal.c' object='libcoregrind_amd64_linux_a-m_libcsignal.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_libcsignal.o `test -f 'm_libcsignal.c' || echo '$(srcdir)/'`m_libcsignal.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_libcsignal.o `test -f 'm_libcsignal.c' || echo '$(srcdir)/'`m_libcsignal.c
 
-libcoregrind_x86_linux_a-m_libcsignal.obj: m_libcsignal.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_libcsignal.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_libcsignal.Tpo -c -o libcoregrind_x86_linux_a-m_libcsignal.obj `if test -f 'm_libcsignal.c'; then $(CYGPATH_W) 'm_libcsignal.c'; else $(CYGPATH_W) '$(srcdir)/m_libcsignal.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_libcsignal.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_libcsignal.Po
-#	source='m_libcsignal.c' object='libcoregrind_x86_linux_a-m_libcsignal.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_libcsignal.obj: m_libcsignal.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_libcsignal.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcsignal.Tpo -c -o libcoregrind_amd64_linux_a-m_libcsignal.obj `if test -f 'm_libcsignal.c'; then $(CYGPATH_W) 'm_libcsignal.c'; else $(CYGPATH_W) '$(srcdir)/m_libcsignal.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcsignal.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_libcsignal.Po
+#	source='m_libcsignal.c' object='libcoregrind_amd64_linux_a-m_libcsignal.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_libcsignal.obj `if test -f 'm_libcsignal.c'; then $(CYGPATH_W) 'm_libcsignal.c'; else $(CYGPATH_W) '$(srcdir)/m_libcsignal.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_libcsignal.obj `if test -f 'm_libcsignal.c'; then $(CYGPATH_W) 'm_libcsignal.c'; else $(CYGPATH_W) '$(srcdir)/m_libcsignal.c'; fi`
 
-libcoregrind_x86_linux_a-m_machine.o: m_machine.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_machine.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_machine.Tpo -c -o libcoregrind_x86_linux_a-m_machine.o `test -f 'm_machine.c' || echo '$(srcdir)/'`m_machine.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_machine.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_machine.Po
-#	source='m_machine.c' object='libcoregrind_x86_linux_a-m_machine.o' libtool=no \
+libcoregrind_amd64_linux_a-m_machine.o: m_machine.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_machine.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_machine.Tpo -c -o libcoregrind_amd64_linux_a-m_machine.o `test -f 'm_machine.c' || echo '$(srcdir)/'`m_machine.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_machine.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_machine.Po
+#	source='m_machine.c' object='libcoregrind_amd64_linux_a-m_machine.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_machine.o `test -f 'm_machine.c' || echo '$(srcdir)/'`m_machine.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_machine.o `test -f 'm_machine.c' || echo '$(srcdir)/'`m_machine.c
 
-libcoregrind_x86_linux_a-m_machine.obj: m_machine.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_machine.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_machine.Tpo -c -o libcoregrind_x86_linux_a-m_machine.obj `if test -f 'm_machine.c'; then $(CYGPATH_W) 'm_machine.c'; else $(CYGPATH_W) '$(srcdir)/m_machine.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_machine.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_machine.Po
-#	source='m_machine.c' object='libcoregrind_x86_linux_a-m_machine.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_machine.obj: m_machine.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_machine.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_machine.Tpo -c -o libcoregrind_amd64_linux_a-m_machine.obj `if test -f 'm_machine.c'; then $(CYGPATH_W) 'm_machine.c'; else $(CYGPATH_W) '$(srcdir)/m_machine.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_machine.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_machine.Po
+#	source='m_machine.c' object='libcoregrind_amd64_linux_a-m_machine.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_machine.obj `if test -f 'm_machine.c'; then $(CYGPATH_W) 'm_machine.c'; else $(CYGPATH_W) '$(srcdir)/m_machine.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_machine.obj `if test -f 'm_machine.c'; then $(CYGPATH_W) 'm_machine.c'; else $(CYGPATH_W) '$(srcdir)/m_machine.c'; fi`
 
-libcoregrind_x86_linux_a-m_main.o: m_main.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_main.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_main.Tpo -c -o libcoregrind_x86_linux_a-m_main.o `test -f 'm_main.c' || echo '$(srcdir)/'`m_main.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_main.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_main.Po
-#	source='m_main.c' object='libcoregrind_x86_linux_a-m_main.o' libtool=no \
+libcoregrind_amd64_linux_a-m_main.o: m_main.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_main.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_main.Tpo -c -o libcoregrind_amd64_linux_a-m_main.o `test -f 'm_main.c' || echo '$(srcdir)/'`m_main.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_main.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_main.Po
+#	source='m_main.c' object='libcoregrind_amd64_linux_a-m_main.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_main.o `test -f 'm_main.c' || echo '$(srcdir)/'`m_main.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_main.o `test -f 'm_main.c' || echo '$(srcdir)/'`m_main.c
 
-libcoregrind_x86_linux_a-m_main.obj: m_main.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_main.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_main.Tpo -c -o libcoregrind_x86_linux_a-m_main.obj `if test -f 'm_main.c'; then $(CYGPATH_W) 'm_main.c'; else $(CYGPATH_W) '$(srcdir)/m_main.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_main.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_main.Po
-#	source='m_main.c' object='libcoregrind_x86_linux_a-m_main.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_main.obj: m_main.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_main.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_main.Tpo -c -o libcoregrind_amd64_linux_a-m_main.obj `if test -f 'm_main.c'; then $(CYGPATH_W) 'm_main.c'; else $(CYGPATH_W) '$(srcdir)/m_main.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_main.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_main.Po
+#	source='m_main.c' object='libcoregrind_amd64_linux_a-m_main.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_main.obj `if test -f 'm_main.c'; then $(CYGPATH_W) 'm_main.c'; else $(CYGPATH_W) '$(srcdir)/m_main.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_main.obj `if test -f 'm_main.c'; then $(CYGPATH_W) 'm_main.c'; else $(CYGPATH_W) '$(srcdir)/m_main.c'; fi`
 
-libcoregrind_x86_linux_a-m_mallocfree.o: m_mallocfree.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_mallocfree.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_mallocfree.Tpo -c -o libcoregrind_x86_linux_a-m_mallocfree.o `test -f 'm_mallocfree.c' || echo '$(srcdir)/'`m_mallocfree.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_mallocfree.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_mallocfree.Po
-#	source='m_mallocfree.c' object='libcoregrind_x86_linux_a-m_mallocfree.o' libtool=no \
+libcoregrind_amd64_linux_a-m_mallocfree.o: m_mallocfree.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_mallocfree.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_mallocfree.Tpo -c -o libcoregrind_amd64_linux_a-m_mallocfree.o `test -f 'm_mallocfree.c' || echo '$(srcdir)/'`m_mallocfree.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_mallocfree.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_mallocfree.Po
+#	source='m_mallocfree.c' object='libcoregrind_amd64_linux_a-m_mallocfree.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_mallocfree.o `test -f 'm_mallocfree.c' || echo '$(srcdir)/'`m_mallocfree.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_mallocfree.o `test -f 'm_mallocfree.c' || echo '$(srcdir)/'`m_mallocfree.c
 
-libcoregrind_x86_linux_a-m_mallocfree.obj: m_mallocfree.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_mallocfree.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_mallocfree.Tpo -c -o libcoregrind_x86_linux_a-m_mallocfree.obj `if test -f 'm_mallocfree.c'; then $(CYGPATH_W) 'm_mallocfree.c'; else $(CYGPATH_W) '$(srcdir)/m_mallocfree.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_mallocfree.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_mallocfree.Po
-#	source='m_mallocfree.c' object='libcoregrind_x86_linux_a-m_mallocfree.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_mallocfree.obj: m_mallocfree.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_mallocfree.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_mallocfree.Tpo -c -o libcoregrind_amd64_linux_a-m_mallocfree.obj `if test -f 'm_mallocfree.c'; then $(CYGPATH_W) 'm_mallocfree.c'; else $(CYGPATH_W) '$(srcdir)/m_mallocfree.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_mallocfree.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_mallocfree.Po
+#	source='m_mallocfree.c' object='libcoregrind_amd64_linux_a-m_mallocfree.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_mallocfree.obj `if test -f 'm_mallocfree.c'; then $(CYGPATH_W) 'm_mallocfree.c'; else $(CYGPATH_W) '$(srcdir)/m_mallocfree.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_mallocfree.obj `if test -f 'm_mallocfree.c'; then $(CYGPATH_W) 'm_mallocfree.c'; else $(CYGPATH_W) '$(srcdir)/m_mallocfree.c'; fi`
 
-libcoregrind_x86_linux_a-m_options.o: m_options.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_options.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_options.Tpo -c -o libcoregrind_x86_linux_a-m_options.o `test -f 'm_options.c' || echo '$(srcdir)/'`m_options.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_options.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_options.Po
-#	source='m_options.c' object='libcoregrind_x86_linux_a-m_options.o' libtool=no \
+libcoregrind_amd64_linux_a-m_options.o: m_options.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_options.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_options.Tpo -c -o libcoregrind_amd64_linux_a-m_options.o `test -f 'm_options.c' || echo '$(srcdir)/'`m_options.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_options.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_options.Po
+#	source='m_options.c' object='libcoregrind_amd64_linux_a-m_options.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_options.o `test -f 'm_options.c' || echo '$(srcdir)/'`m_options.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_options.o `test -f 'm_options.c' || echo '$(srcdir)/'`m_options.c
 
-libcoregrind_x86_linux_a-m_options.obj: m_options.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_options.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_options.Tpo -c -o libcoregrind_x86_linux_a-m_options.obj `if test -f 'm_options.c'; then $(CYGPATH_W) 'm_options.c'; else $(CYGPATH_W) '$(srcdir)/m_options.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_options.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_options.Po
-#	source='m_options.c' object='libcoregrind_x86_linux_a-m_options.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_options.obj: m_options.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_options.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_options.Tpo -c -o libcoregrind_amd64_linux_a-m_options.obj `if test -f 'm_options.c'; then $(CYGPATH_W) 'm_options.c'; else $(CYGPATH_W) '$(srcdir)/m_options.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_options.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_options.Po
+#	source='m_options.c' object='libcoregrind_amd64_linux_a-m_options.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_options.obj `if test -f 'm_options.c'; then $(CYGPATH_W) 'm_options.c'; else $(CYGPATH_W) '$(srcdir)/m_options.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_options.obj `if test -f 'm_options.c'; then $(CYGPATH_W) 'm_options.c'; else $(CYGPATH_W) '$(srcdir)/m_options.c'; fi`
 
-libcoregrind_x86_linux_a-m_oset.o: m_oset.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_oset.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_oset.Tpo -c -o libcoregrind_x86_linux_a-m_oset.o `test -f 'm_oset.c' || echo '$(srcdir)/'`m_oset.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_oset.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_oset.Po
-#	source='m_oset.c' object='libcoregrind_x86_linux_a-m_oset.o' libtool=no \
+libcoregrind_amd64_linux_a-m_oset.o: m_oset.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_oset.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_oset.Tpo -c -o libcoregrind_amd64_linux_a-m_oset.o `test -f 'm_oset.c' || echo '$(srcdir)/'`m_oset.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_oset.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_oset.Po
+#	source='m_oset.c' object='libcoregrind_amd64_linux_a-m_oset.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_oset.o `test -f 'm_oset.c' || echo '$(srcdir)/'`m_oset.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_oset.o `test -f 'm_oset.c' || echo '$(srcdir)/'`m_oset.c
 
-libcoregrind_x86_linux_a-m_oset.obj: m_oset.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_oset.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_oset.Tpo -c -o libcoregrind_x86_linux_a-m_oset.obj `if test -f 'm_oset.c'; then $(CYGPATH_W) 'm_oset.c'; else $(CYGPATH_W) '$(srcdir)/m_oset.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_oset.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_oset.Po
-#	source='m_oset.c' object='libcoregrind_x86_linux_a-m_oset.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_oset.obj: m_oset.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_oset.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_oset.Tpo -c -o libcoregrind_amd64_linux_a-m_oset.obj `if test -f 'm_oset.c'; then $(CYGPATH_W) 'm_oset.c'; else $(CYGPATH_W) '$(srcdir)/m_oset.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_oset.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_oset.Po
+#	source='m_oset.c' object='libcoregrind_amd64_linux_a-m_oset.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_oset.obj `if test -f 'm_oset.c'; then $(CYGPATH_W) 'm_oset.c'; else $(CYGPATH_W) '$(srcdir)/m_oset.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_oset.obj `if test -f 'm_oset.c'; then $(CYGPATH_W) 'm_oset.c'; else $(CYGPATH_W) '$(srcdir)/m_oset.c'; fi`
 
-libcoregrind_x86_linux_a-m_redir.o: m_redir.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_redir.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_redir.Tpo -c -o libcoregrind_x86_linux_a-m_redir.o `test -f 'm_redir.c' || echo '$(srcdir)/'`m_redir.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_redir.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_redir.Po
-#	source='m_redir.c' object='libcoregrind_x86_linux_a-m_redir.o' libtool=no \
+libcoregrind_amd64_linux_a-m_redir.o: m_redir.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_redir.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_redir.Tpo -c -o libcoregrind_amd64_linux_a-m_redir.o `test -f 'm_redir.c' || echo '$(srcdir)/'`m_redir.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_redir.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_redir.Po
+#	source='m_redir.c' object='libcoregrind_amd64_linux_a-m_redir.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_redir.o `test -f 'm_redir.c' || echo '$(srcdir)/'`m_redir.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_redir.o `test -f 'm_redir.c' || echo '$(srcdir)/'`m_redir.c
 
-libcoregrind_x86_linux_a-m_redir.obj: m_redir.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_redir.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_redir.Tpo -c -o libcoregrind_x86_linux_a-m_redir.obj `if test -f 'm_redir.c'; then $(CYGPATH_W) 'm_redir.c'; else $(CYGPATH_W) '$(srcdir)/m_redir.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_redir.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_redir.Po
-#	source='m_redir.c' object='libcoregrind_x86_linux_a-m_redir.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_redir.obj: m_redir.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_redir.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_redir.Tpo -c -o libcoregrind_amd64_linux_a-m_redir.obj `if test -f 'm_redir.c'; then $(CYGPATH_W) 'm_redir.c'; else $(CYGPATH_W) '$(srcdir)/m_redir.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_redir.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_redir.Po
+#	source='m_redir.c' object='libcoregrind_amd64_linux_a-m_redir.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_redir.obj `if test -f 'm_redir.c'; then $(CYGPATH_W) 'm_redir.c'; else $(CYGPATH_W) '$(srcdir)/m_redir.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_redir.obj `if test -f 'm_redir.c'; then $(CYGPATH_W) 'm_redir.c'; else $(CYGPATH_W) '$(srcdir)/m_redir.c'; fi`
 
-libcoregrind_x86_linux_a-m_seqmatch.o: m_seqmatch.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_seqmatch.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_seqmatch.Tpo -c -o libcoregrind_x86_linux_a-m_seqmatch.o `test -f 'm_seqmatch.c' || echo '$(srcdir)/'`m_seqmatch.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_seqmatch.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_seqmatch.Po
-#	source='m_seqmatch.c' object='libcoregrind_x86_linux_a-m_seqmatch.o' libtool=no \
+libcoregrind_amd64_linux_a-m_seqmatch.o: m_seqmatch.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_seqmatch.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_seqmatch.Tpo -c -o libcoregrind_amd64_linux_a-m_seqmatch.o `test -f 'm_seqmatch.c' || echo '$(srcdir)/'`m_seqmatch.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_seqmatch.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_seqmatch.Po
+#	source='m_seqmatch.c' object='libcoregrind_amd64_linux_a-m_seqmatch.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_seqmatch.o `test -f 'm_seqmatch.c' || echo '$(srcdir)/'`m_seqmatch.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_seqmatch.o `test -f 'm_seqmatch.c' || echo '$(srcdir)/'`m_seqmatch.c
 
-libcoregrind_x86_linux_a-m_seqmatch.obj: m_seqmatch.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_seqmatch.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_seqmatch.Tpo -c -o libcoregrind_x86_linux_a-m_seqmatch.obj `if test -f 'm_seqmatch.c'; then $(CYGPATH_W) 'm_seqmatch.c'; else $(CYGPATH_W) '$(srcdir)/m_seqmatch.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_seqmatch.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_seqmatch.Po
-#	source='m_seqmatch.c' object='libcoregrind_x86_linux_a-m_seqmatch.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_seqmatch.obj: m_seqmatch.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_seqmatch.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_seqmatch.Tpo -c -o libcoregrind_amd64_linux_a-m_seqmatch.obj `if test -f 'm_seqmatch.c'; then $(CYGPATH_W) 'm_seqmatch.c'; else $(CYGPATH_W) '$(srcdir)/m_seqmatch.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_seqmatch.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_seqmatch.Po
+#	source='m_seqmatch.c' object='libcoregrind_amd64_linux_a-m_seqmatch.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_seqmatch.obj `if test -f 'm_seqmatch.c'; then $(CYGPATH_W) 'm_seqmatch.c'; else $(CYGPATH_W) '$(srcdir)/m_seqmatch.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_seqmatch.obj `if test -f 'm_seqmatch.c'; then $(CYGPATH_W) 'm_seqmatch.c'; else $(CYGPATH_W) '$(srcdir)/m_seqmatch.c'; fi`
 
-libcoregrind_x86_linux_a-m_signals.o: m_signals.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_signals.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_signals.Tpo -c -o libcoregrind_x86_linux_a-m_signals.o `test -f 'm_signals.c' || echo '$(srcdir)/'`m_signals.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_signals.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_signals.Po
-#	source='m_signals.c' object='libcoregrind_x86_linux_a-m_signals.o' libtool=no \
+libcoregrind_amd64_linux_a-m_signals.o: m_signals.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_signals.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_signals.Tpo -c -o libcoregrind_amd64_linux_a-m_signals.o `test -f 'm_signals.c' || echo '$(srcdir)/'`m_signals.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_signals.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_signals.Po
+#	source='m_signals.c' object='libcoregrind_amd64_linux_a-m_signals.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_signals.o `test -f 'm_signals.c' || echo '$(srcdir)/'`m_signals.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_signals.o `test -f 'm_signals.c' || echo '$(srcdir)/'`m_signals.c
 
-libcoregrind_x86_linux_a-m_signals.obj: m_signals.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_signals.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_signals.Tpo -c -o libcoregrind_x86_linux_a-m_signals.obj `if test -f 'm_signals.c'; then $(CYGPATH_W) 'm_signals.c'; else $(CYGPATH_W) '$(srcdir)/m_signals.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_signals.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_signals.Po
-#	source='m_signals.c' object='libcoregrind_x86_linux_a-m_signals.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_signals.obj: m_signals.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_signals.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_signals.Tpo -c -o libcoregrind_amd64_linux_a-m_signals.obj `if test -f 'm_signals.c'; then $(CYGPATH_W) 'm_signals.c'; else $(CYGPATH_W) '$(srcdir)/m_signals.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_signals.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_signals.Po
+#	source='m_signals.c' object='libcoregrind_amd64_linux_a-m_signals.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_signals.obj `if test -f 'm_signals.c'; then $(CYGPATH_W) 'm_signals.c'; else $(CYGPATH_W) '$(srcdir)/m_signals.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_signals.obj `if test -f 'm_signals.c'; then $(CYGPATH_W) 'm_signals.c'; else $(CYGPATH_W) '$(srcdir)/m_signals.c'; fi`
 
-libcoregrind_x86_linux_a-m_sparsewa.o: m_sparsewa.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_sparsewa.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_sparsewa.Tpo -c -o libcoregrind_x86_linux_a-m_sparsewa.o `test -f 'm_sparsewa.c' || echo '$(srcdir)/'`m_sparsewa.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_sparsewa.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_sparsewa.Po
-#	source='m_sparsewa.c' object='libcoregrind_x86_linux_a-m_sparsewa.o' libtool=no \
+libcoregrind_amd64_linux_a-m_sparsewa.o: m_sparsewa.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_sparsewa.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_sparsewa.Tpo -c -o libcoregrind_amd64_linux_a-m_sparsewa.o `test -f 'm_sparsewa.c' || echo '$(srcdir)/'`m_sparsewa.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_sparsewa.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_sparsewa.Po
+#	source='m_sparsewa.c' object='libcoregrind_amd64_linux_a-m_sparsewa.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_sparsewa.o `test -f 'm_sparsewa.c' || echo '$(srcdir)/'`m_sparsewa.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_sparsewa.o `test -f 'm_sparsewa.c' || echo '$(srcdir)/'`m_sparsewa.c
 
-libcoregrind_x86_linux_a-m_sparsewa.obj: m_sparsewa.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_sparsewa.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_sparsewa.Tpo -c -o libcoregrind_x86_linux_a-m_sparsewa.obj `if test -f 'm_sparsewa.c'; then $(CYGPATH_W) 'm_sparsewa.c'; else $(CYGPATH_W) '$(srcdir)/m_sparsewa.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_sparsewa.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_sparsewa.Po
-#	source='m_sparsewa.c' object='libcoregrind_x86_linux_a-m_sparsewa.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_sparsewa.obj: m_sparsewa.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_sparsewa.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_sparsewa.Tpo -c -o libcoregrind_amd64_linux_a-m_sparsewa.obj `if test -f 'm_sparsewa.c'; then $(CYGPATH_W) 'm_sparsewa.c'; else $(CYGPATH_W) '$(srcdir)/m_sparsewa.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_sparsewa.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_sparsewa.Po
+#	source='m_sparsewa.c' object='libcoregrind_amd64_linux_a-m_sparsewa.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_sparsewa.obj `if test -f 'm_sparsewa.c'; then $(CYGPATH_W) 'm_sparsewa.c'; else $(CYGPATH_W) '$(srcdir)/m_sparsewa.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_sparsewa.obj `if test -f 'm_sparsewa.c'; then $(CYGPATH_W) 'm_sparsewa.c'; else $(CYGPATH_W) '$(srcdir)/m_sparsewa.c'; fi`
 
-libcoregrind_x86_linux_a-m_stacks.o: m_stacks.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_stacks.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_stacks.Tpo -c -o libcoregrind_x86_linux_a-m_stacks.o `test -f 'm_stacks.c' || echo '$(srcdir)/'`m_stacks.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_stacks.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_stacks.Po
-#	source='m_stacks.c' object='libcoregrind_x86_linux_a-m_stacks.o' libtool=no \
+libcoregrind_amd64_linux_a-m_stacks.o: m_stacks.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_stacks.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_stacks.Tpo -c -o libcoregrind_amd64_linux_a-m_stacks.o `test -f 'm_stacks.c' || echo '$(srcdir)/'`m_stacks.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_stacks.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_stacks.Po
+#	source='m_stacks.c' object='libcoregrind_amd64_linux_a-m_stacks.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_stacks.o `test -f 'm_stacks.c' || echo '$(srcdir)/'`m_stacks.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_stacks.o `test -f 'm_stacks.c' || echo '$(srcdir)/'`m_stacks.c
 
-libcoregrind_x86_linux_a-m_stacks.obj: m_stacks.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_stacks.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_stacks.Tpo -c -o libcoregrind_x86_linux_a-m_stacks.obj `if test -f 'm_stacks.c'; then $(CYGPATH_W) 'm_stacks.c'; else $(CYGPATH_W) '$(srcdir)/m_stacks.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_stacks.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_stacks.Po
-#	source='m_stacks.c' object='libcoregrind_x86_linux_a-m_stacks.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_stacks.obj: m_stacks.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_stacks.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_stacks.Tpo -c -o libcoregrind_amd64_linux_a-m_stacks.obj `if test -f 'm_stacks.c'; then $(CYGPATH_W) 'm_stacks.c'; else $(CYGPATH_W) '$(srcdir)/m_stacks.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_stacks.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_stacks.Po
+#	source='m_stacks.c' object='libcoregrind_amd64_linux_a-m_stacks.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_stacks.obj `if test -f 'm_stacks.c'; then $(CYGPATH_W) 'm_stacks.c'; else $(CYGPATH_W) '$(srcdir)/m_stacks.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_stacks.obj `if test -f 'm_stacks.c'; then $(CYGPATH_W) 'm_stacks.c'; else $(CYGPATH_W) '$(srcdir)/m_stacks.c'; fi`
 
-libcoregrind_x86_linux_a-m_stacktrace.o: m_stacktrace.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_stacktrace.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_stacktrace.Tpo -c -o libcoregrind_x86_linux_a-m_stacktrace.o `test -f 'm_stacktrace.c' || echo '$(srcdir)/'`m_stacktrace.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_stacktrace.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_stacktrace.Po
-#	source='m_stacktrace.c' object='libcoregrind_x86_linux_a-m_stacktrace.o' libtool=no \
+libcoregrind_amd64_linux_a-m_stacktrace.o: m_stacktrace.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_stacktrace.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_stacktrace.Tpo -c -o libcoregrind_amd64_linux_a-m_stacktrace.o `test -f 'm_stacktrace.c' || echo '$(srcdir)/'`m_stacktrace.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_stacktrace.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_stacktrace.Po
+#	source='m_stacktrace.c' object='libcoregrind_amd64_linux_a-m_stacktrace.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_stacktrace.o `test -f 'm_stacktrace.c' || echo '$(srcdir)/'`m_stacktrace.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_stacktrace.o `test -f 'm_stacktrace.c' || echo '$(srcdir)/'`m_stacktrace.c
 
-libcoregrind_x86_linux_a-m_stacktrace.obj: m_stacktrace.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_stacktrace.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_stacktrace.Tpo -c -o libcoregrind_x86_linux_a-m_stacktrace.obj `if test -f 'm_stacktrace.c'; then $(CYGPATH_W) 'm_stacktrace.c'; else $(CYGPATH_W) '$(srcdir)/m_stacktrace.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_stacktrace.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_stacktrace.Po
-#	source='m_stacktrace.c' object='libcoregrind_x86_linux_a-m_stacktrace.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_stacktrace.obj: m_stacktrace.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_stacktrace.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_stacktrace.Tpo -c -o libcoregrind_amd64_linux_a-m_stacktrace.obj `if test -f 'm_stacktrace.c'; then $(CYGPATH_W) 'm_stacktrace.c'; else $(CYGPATH_W) '$(srcdir)/m_stacktrace.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_stacktrace.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_stacktrace.Po
+#	source='m_stacktrace.c' object='libcoregrind_amd64_linux_a-m_stacktrace.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_stacktrace.obj `if test -f 'm_stacktrace.c'; then $(CYGPATH_W) 'm_stacktrace.c'; else $(CYGPATH_W) '$(srcdir)/m_stacktrace.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_stacktrace.obj `if test -f 'm_stacktrace.c'; then $(CYGPATH_W) 'm_stacktrace.c'; else $(CYGPATH_W) '$(srcdir)/m_stacktrace.c'; fi`
 
-libcoregrind_x86_linux_a-m_syscall.o: m_syscall.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_syscall.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_syscall.Tpo -c -o libcoregrind_x86_linux_a-m_syscall.o `test -f 'm_syscall.c' || echo '$(srcdir)/'`m_syscall.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_syscall.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_syscall.Po
-#	source='m_syscall.c' object='libcoregrind_x86_linux_a-m_syscall.o' libtool=no \
+libcoregrind_amd64_linux_a-m_syscall.o: m_syscall.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_syscall.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_syscall.Tpo -c -o libcoregrind_amd64_linux_a-m_syscall.o `test -f 'm_syscall.c' || echo '$(srcdir)/'`m_syscall.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_syscall.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_syscall.Po
+#	source='m_syscall.c' object='libcoregrind_amd64_linux_a-m_syscall.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_syscall.o `test -f 'm_syscall.c' || echo '$(srcdir)/'`m_syscall.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_syscall.o `test -f 'm_syscall.c' || echo '$(srcdir)/'`m_syscall.c
 
-libcoregrind_x86_linux_a-m_syscall.obj: m_syscall.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_syscall.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_syscall.Tpo -c -o libcoregrind_x86_linux_a-m_syscall.obj `if test -f 'm_syscall.c'; then $(CYGPATH_W) 'm_syscall.c'; else $(CYGPATH_W) '$(srcdir)/m_syscall.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_syscall.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_syscall.Po
-#	source='m_syscall.c' object='libcoregrind_x86_linux_a-m_syscall.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_syscall.obj: m_syscall.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_syscall.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_syscall.Tpo -c -o libcoregrind_amd64_linux_a-m_syscall.obj `if test -f 'm_syscall.c'; then $(CYGPATH_W) 'm_syscall.c'; else $(CYGPATH_W) '$(srcdir)/m_syscall.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_syscall.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_syscall.Po
+#	source='m_syscall.c' object='libcoregrind_amd64_linux_a-m_syscall.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_syscall.obj `if test -f 'm_syscall.c'; then $(CYGPATH_W) 'm_syscall.c'; else $(CYGPATH_W) '$(srcdir)/m_syscall.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_syscall.obj `if test -f 'm_syscall.c'; then $(CYGPATH_W) 'm_syscall.c'; else $(CYGPATH_W) '$(srcdir)/m_syscall.c'; fi`
 
-libcoregrind_x86_linux_a-m_threadstate.o: m_threadstate.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_threadstate.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_threadstate.Tpo -c -o libcoregrind_x86_linux_a-m_threadstate.o `test -f 'm_threadstate.c' || echo '$(srcdir)/'`m_threadstate.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_threadstate.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_threadstate.Po
-#	source='m_threadstate.c' object='libcoregrind_x86_linux_a-m_threadstate.o' libtool=no \
+libcoregrind_amd64_linux_a-m_threadstate.o: m_threadstate.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_threadstate.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_threadstate.Tpo -c -o libcoregrind_amd64_linux_a-m_threadstate.o `test -f 'm_threadstate.c' || echo '$(srcdir)/'`m_threadstate.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_threadstate.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_threadstate.Po
+#	source='m_threadstate.c' object='libcoregrind_amd64_linux_a-m_threadstate.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_threadstate.o `test -f 'm_threadstate.c' || echo '$(srcdir)/'`m_threadstate.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_threadstate.o `test -f 'm_threadstate.c' || echo '$(srcdir)/'`m_threadstate.c
 
-libcoregrind_x86_linux_a-m_threadstate.obj: m_threadstate.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_threadstate.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_threadstate.Tpo -c -o libcoregrind_x86_linux_a-m_threadstate.obj `if test -f 'm_threadstate.c'; then $(CYGPATH_W) 'm_threadstate.c'; else $(CYGPATH_W) '$(srcdir)/m_threadstate.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_threadstate.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_threadstate.Po
-#	source='m_threadstate.c' object='libcoregrind_x86_linux_a-m_threadstate.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_threadstate.obj: m_threadstate.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_threadstate.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_threadstate.Tpo -c -o libcoregrind_amd64_linux_a-m_threadstate.obj `if test -f 'm_threadstate.c'; then $(CYGPATH_W) 'm_threadstate.c'; else $(CYGPATH_W) '$(srcdir)/m_threadstate.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_threadstate.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_threadstate.Po
+#	source='m_threadstate.c' object='libcoregrind_amd64_linux_a-m_threadstate.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_threadstate.obj `if test -f 'm_threadstate.c'; then $(CYGPATH_W) 'm_threadstate.c'; else $(CYGPATH_W) '$(srcdir)/m_threadstate.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_threadstate.obj `if test -f 'm_threadstate.c'; then $(CYGPATH_W) 'm_threadstate.c'; else $(CYGPATH_W) '$(srcdir)/m_threadstate.c'; fi`
 
-libcoregrind_x86_linux_a-m_tooliface.o: m_tooliface.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_tooliface.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_tooliface.Tpo -c -o libcoregrind_x86_linux_a-m_tooliface.o `test -f 'm_tooliface.c' || echo '$(srcdir)/'`m_tooliface.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_tooliface.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_tooliface.Po
-#	source='m_tooliface.c' object='libcoregrind_x86_linux_a-m_tooliface.o' libtool=no \
+libcoregrind_amd64_linux_a-m_tooliface.o: m_tooliface.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_tooliface.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_tooliface.Tpo -c -o libcoregrind_amd64_linux_a-m_tooliface.o `test -f 'm_tooliface.c' || echo '$(srcdir)/'`m_tooliface.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_tooliface.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_tooliface.Po
+#	source='m_tooliface.c' object='libcoregrind_amd64_linux_a-m_tooliface.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_tooliface.o `test -f 'm_tooliface.c' || echo '$(srcdir)/'`m_tooliface.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_tooliface.o `test -f 'm_tooliface.c' || echo '$(srcdir)/'`m_tooliface.c
 
-libcoregrind_x86_linux_a-m_tooliface.obj: m_tooliface.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_tooliface.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_tooliface.Tpo -c -o libcoregrind_x86_linux_a-m_tooliface.obj `if test -f 'm_tooliface.c'; then $(CYGPATH_W) 'm_tooliface.c'; else $(CYGPATH_W) '$(srcdir)/m_tooliface.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_tooliface.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_tooliface.Po
-#	source='m_tooliface.c' object='libcoregrind_x86_linux_a-m_tooliface.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_tooliface.obj: m_tooliface.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_tooliface.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_tooliface.Tpo -c -o libcoregrind_amd64_linux_a-m_tooliface.obj `if test -f 'm_tooliface.c'; then $(CYGPATH_W) 'm_tooliface.c'; else $(CYGPATH_W) '$(srcdir)/m_tooliface.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_tooliface.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_tooliface.Po
+#	source='m_tooliface.c' object='libcoregrind_amd64_linux_a-m_tooliface.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_tooliface.obj `if test -f 'm_tooliface.c'; then $(CYGPATH_W) 'm_tooliface.c'; else $(CYGPATH_W) '$(srcdir)/m_tooliface.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_tooliface.obj `if test -f 'm_tooliface.c'; then $(CYGPATH_W) 'm_tooliface.c'; else $(CYGPATH_W) '$(srcdir)/m_tooliface.c'; fi`
 
-libcoregrind_x86_linux_a-m_translate.o: m_translate.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_translate.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_translate.Tpo -c -o libcoregrind_x86_linux_a-m_translate.o `test -f 'm_translate.c' || echo '$(srcdir)/'`m_translate.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_translate.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_translate.Po
-#	source='m_translate.c' object='libcoregrind_x86_linux_a-m_translate.o' libtool=no \
+libcoregrind_amd64_linux_a-m_translate.o: m_translate.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_translate.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_translate.Tpo -c -o libcoregrind_amd64_linux_a-m_translate.o `test -f 'm_translate.c' || echo '$(srcdir)/'`m_translate.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_translate.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_translate.Po
+#	source='m_translate.c' object='libcoregrind_amd64_linux_a-m_translate.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_translate.o `test -f 'm_translate.c' || echo '$(srcdir)/'`m_translate.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_translate.o `test -f 'm_translate.c' || echo '$(srcdir)/'`m_translate.c
 
-libcoregrind_x86_linux_a-m_translate.obj: m_translate.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_translate.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_translate.Tpo -c -o libcoregrind_x86_linux_a-m_translate.obj `if test -f 'm_translate.c'; then $(CYGPATH_W) 'm_translate.c'; else $(CYGPATH_W) '$(srcdir)/m_translate.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_translate.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_translate.Po
-#	source='m_translate.c' object='libcoregrind_x86_linux_a-m_translate.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_translate.obj: m_translate.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_translate.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_translate.Tpo -c -o libcoregrind_amd64_linux_a-m_translate.obj `if test -f 'm_translate.c'; then $(CYGPATH_W) 'm_translate.c'; else $(CYGPATH_W) '$(srcdir)/m_translate.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_translate.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_translate.Po
+#	source='m_translate.c' object='libcoregrind_amd64_linux_a-m_translate.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_translate.obj `if test -f 'm_translate.c'; then $(CYGPATH_W) 'm_translate.c'; else $(CYGPATH_W) '$(srcdir)/m_translate.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_translate.obj `if test -f 'm_translate.c'; then $(CYGPATH_W) 'm_translate.c'; else $(CYGPATH_W) '$(srcdir)/m_translate.c'; fi`
 
-libcoregrind_x86_linux_a-m_transtab.o: m_transtab.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_transtab.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_transtab.Tpo -c -o libcoregrind_x86_linux_a-m_transtab.o `test -f 'm_transtab.c' || echo '$(srcdir)/'`m_transtab.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_transtab.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_transtab.Po
-#	source='m_transtab.c' object='libcoregrind_x86_linux_a-m_transtab.o' libtool=no \
+libcoregrind_amd64_linux_a-m_transtab.o: m_transtab.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_transtab.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_transtab.Tpo -c -o libcoregrind_amd64_linux_a-m_transtab.o `test -f 'm_transtab.c' || echo '$(srcdir)/'`m_transtab.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_transtab.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_transtab.Po
+#	source='m_transtab.c' object='libcoregrind_amd64_linux_a-m_transtab.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_transtab.o `test -f 'm_transtab.c' || echo '$(srcdir)/'`m_transtab.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_transtab.o `test -f 'm_transtab.c' || echo '$(srcdir)/'`m_transtab.c
 
-libcoregrind_x86_linux_a-m_transtab.obj: m_transtab.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_transtab.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_transtab.Tpo -c -o libcoregrind_x86_linux_a-m_transtab.obj `if test -f 'm_transtab.c'; then $(CYGPATH_W) 'm_transtab.c'; else $(CYGPATH_W) '$(srcdir)/m_transtab.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_transtab.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_transtab.Po
-#	source='m_transtab.c' object='libcoregrind_x86_linux_a-m_transtab.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_transtab.obj: m_transtab.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_transtab.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_transtab.Tpo -c -o libcoregrind_amd64_linux_a-m_transtab.obj `if test -f 'm_transtab.c'; then $(CYGPATH_W) 'm_transtab.c'; else $(CYGPATH_W) '$(srcdir)/m_transtab.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_transtab.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_transtab.Po
+#	source='m_transtab.c' object='libcoregrind_amd64_linux_a-m_transtab.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_transtab.obj `if test -f 'm_transtab.c'; then $(CYGPATH_W) 'm_transtab.c'; else $(CYGPATH_W) '$(srcdir)/m_transtab.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_transtab.obj `if test -f 'm_transtab.c'; then $(CYGPATH_W) 'm_transtab.c'; else $(CYGPATH_W) '$(srcdir)/m_transtab.c'; fi`
 
-libcoregrind_x86_linux_a-m_vki.o: m_vki.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_vki.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_vki.Tpo -c -o libcoregrind_x86_linux_a-m_vki.o `test -f 'm_vki.c' || echo '$(srcdir)/'`m_vki.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_vki.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_vki.Po
-#	source='m_vki.c' object='libcoregrind_x86_linux_a-m_vki.o' libtool=no \
+libcoregrind_amd64_linux_a-m_vki.o: m_vki.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_vki.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_vki.Tpo -c -o libcoregrind_amd64_linux_a-m_vki.o `test -f 'm_vki.c' || echo '$(srcdir)/'`m_vki.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_vki.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_vki.Po
+#	source='m_vki.c' object='libcoregrind_amd64_linux_a-m_vki.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_vki.o `test -f 'm_vki.c' || echo '$(srcdir)/'`m_vki.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_vki.o `test -f 'm_vki.c' || echo '$(srcdir)/'`m_vki.c
 
-libcoregrind_x86_linux_a-m_vki.obj: m_vki.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_vki.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_vki.Tpo -c -o libcoregrind_x86_linux_a-m_vki.obj `if test -f 'm_vki.c'; then $(CYGPATH_W) 'm_vki.c'; else $(CYGPATH_W) '$(srcdir)/m_vki.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_vki.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_vki.Po
-#	source='m_vki.c' object='libcoregrind_x86_linux_a-m_vki.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_vki.obj: m_vki.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_vki.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_vki.Tpo -c -o libcoregrind_amd64_linux_a-m_vki.obj `if test -f 'm_vki.c'; then $(CYGPATH_W) 'm_vki.c'; else $(CYGPATH_W) '$(srcdir)/m_vki.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_vki.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_vki.Po
+#	source='m_vki.c' object='libcoregrind_amd64_linux_a-m_vki.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_vki.obj `if test -f 'm_vki.c'; then $(CYGPATH_W) 'm_vki.c'; else $(CYGPATH_W) '$(srcdir)/m_vki.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_vki.obj `if test -f 'm_vki.c'; then $(CYGPATH_W) 'm_vki.c'; else $(CYGPATH_W) '$(srcdir)/m_vki.c'; fi`
 
-libcoregrind_x86_linux_a-m_vkiscnums.o: m_vkiscnums.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_vkiscnums.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_vkiscnums.Tpo -c -o libcoregrind_x86_linux_a-m_vkiscnums.o `test -f 'm_vkiscnums.c' || echo '$(srcdir)/'`m_vkiscnums.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_vkiscnums.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_vkiscnums.Po
-#	source='m_vkiscnums.c' object='libcoregrind_x86_linux_a-m_vkiscnums.o' libtool=no \
+libcoregrind_amd64_linux_a-m_vkiscnums.o: m_vkiscnums.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_vkiscnums.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_vkiscnums.Tpo -c -o libcoregrind_amd64_linux_a-m_vkiscnums.o `test -f 'm_vkiscnums.c' || echo '$(srcdir)/'`m_vkiscnums.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_vkiscnums.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_vkiscnums.Po
+#	source='m_vkiscnums.c' object='libcoregrind_amd64_linux_a-m_vkiscnums.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_vkiscnums.o `test -f 'm_vkiscnums.c' || echo '$(srcdir)/'`m_vkiscnums.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_vkiscnums.o `test -f 'm_vkiscnums.c' || echo '$(srcdir)/'`m_vkiscnums.c
 
-libcoregrind_x86_linux_a-m_vkiscnums.obj: m_vkiscnums.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_vkiscnums.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_vkiscnums.Tpo -c -o libcoregrind_x86_linux_a-m_vkiscnums.obj `if test -f 'm_vkiscnums.c'; then $(CYGPATH_W) 'm_vkiscnums.c'; else $(CYGPATH_W) '$(srcdir)/m_vkiscnums.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_vkiscnums.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_vkiscnums.Po
-#	source='m_vkiscnums.c' object='libcoregrind_x86_linux_a-m_vkiscnums.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_vkiscnums.obj: m_vkiscnums.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_vkiscnums.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_vkiscnums.Tpo -c -o libcoregrind_amd64_linux_a-m_vkiscnums.obj `if test -f 'm_vkiscnums.c'; then $(CYGPATH_W) 'm_vkiscnums.c'; else $(CYGPATH_W) '$(srcdir)/m_vkiscnums.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_vkiscnums.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_vkiscnums.Po
+#	source='m_vkiscnums.c' object='libcoregrind_amd64_linux_a-m_vkiscnums.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_vkiscnums.obj `if test -f 'm_vkiscnums.c'; then $(CYGPATH_W) 'm_vkiscnums.c'; else $(CYGPATH_W) '$(srcdir)/m_vkiscnums.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_vkiscnums.obj `if test -f 'm_vkiscnums.c'; then $(CYGPATH_W) 'm_vkiscnums.c'; else $(CYGPATH_W) '$(srcdir)/m_vkiscnums.c'; fi`
 
-libcoregrind_x86_linux_a-m_wordfm.o: m_wordfm.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_wordfm.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_wordfm.Tpo -c -o libcoregrind_x86_linux_a-m_wordfm.o `test -f 'm_wordfm.c' || echo '$(srcdir)/'`m_wordfm.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_wordfm.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_wordfm.Po
-#	source='m_wordfm.c' object='libcoregrind_x86_linux_a-m_wordfm.o' libtool=no \
+libcoregrind_amd64_linux_a-m_wordfm.o: m_wordfm.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_wordfm.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_wordfm.Tpo -c -o libcoregrind_amd64_linux_a-m_wordfm.o `test -f 'm_wordfm.c' || echo '$(srcdir)/'`m_wordfm.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_wordfm.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_wordfm.Po
+#	source='m_wordfm.c' object='libcoregrind_amd64_linux_a-m_wordfm.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_wordfm.o `test -f 'm_wordfm.c' || echo '$(srcdir)/'`m_wordfm.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_wordfm.o `test -f 'm_wordfm.c' || echo '$(srcdir)/'`m_wordfm.c
 
-libcoregrind_x86_linux_a-m_wordfm.obj: m_wordfm.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_wordfm.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_wordfm.Tpo -c -o libcoregrind_x86_linux_a-m_wordfm.obj `if test -f 'm_wordfm.c'; then $(CYGPATH_W) 'm_wordfm.c'; else $(CYGPATH_W) '$(srcdir)/m_wordfm.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_wordfm.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_wordfm.Po
-#	source='m_wordfm.c' object='libcoregrind_x86_linux_a-m_wordfm.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_wordfm.obj: m_wordfm.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_wordfm.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_wordfm.Tpo -c -o libcoregrind_amd64_linux_a-m_wordfm.obj `if test -f 'm_wordfm.c'; then $(CYGPATH_W) 'm_wordfm.c'; else $(CYGPATH_W) '$(srcdir)/m_wordfm.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_wordfm.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_wordfm.Po
+#	source='m_wordfm.c' object='libcoregrind_amd64_linux_a-m_wordfm.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_wordfm.obj `if test -f 'm_wordfm.c'; then $(CYGPATH_W) 'm_wordfm.c'; else $(CYGPATH_W) '$(srcdir)/m_wordfm.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_wordfm.obj `if test -f 'm_wordfm.c'; then $(CYGPATH_W) 'm_wordfm.c'; else $(CYGPATH_W) '$(srcdir)/m_wordfm.c'; fi`
 
-libcoregrind_x86_linux_a-m_xarray.o: m_xarray.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_xarray.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_xarray.Tpo -c -o libcoregrind_x86_linux_a-m_xarray.o `test -f 'm_xarray.c' || echo '$(srcdir)/'`m_xarray.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_xarray.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_xarray.Po
-#	source='m_xarray.c' object='libcoregrind_x86_linux_a-m_xarray.o' libtool=no \
+libcoregrind_amd64_linux_a-m_xarray.o: m_xarray.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_xarray.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_xarray.Tpo -c -o libcoregrind_amd64_linux_a-m_xarray.o `test -f 'm_xarray.c' || echo '$(srcdir)/'`m_xarray.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_xarray.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_xarray.Po
+#	source='m_xarray.c' object='libcoregrind_amd64_linux_a-m_xarray.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_xarray.o `test -f 'm_xarray.c' || echo '$(srcdir)/'`m_xarray.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_xarray.o `test -f 'm_xarray.c' || echo '$(srcdir)/'`m_xarray.c
 
-libcoregrind_x86_linux_a-m_xarray.obj: m_xarray.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_xarray.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_xarray.Tpo -c -o libcoregrind_x86_linux_a-m_xarray.obj `if test -f 'm_xarray.c'; then $(CYGPATH_W) 'm_xarray.c'; else $(CYGPATH_W) '$(srcdir)/m_xarray.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_xarray.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_xarray.Po
-#	source='m_xarray.c' object='libcoregrind_x86_linux_a-m_xarray.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_xarray.obj: m_xarray.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_xarray.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_xarray.Tpo -c -o libcoregrind_amd64_linux_a-m_xarray.obj `if test -f 'm_xarray.c'; then $(CYGPATH_W) 'm_xarray.c'; else $(CYGPATH_W) '$(srcdir)/m_xarray.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_xarray.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_xarray.Po
+#	source='m_xarray.c' object='libcoregrind_amd64_linux_a-m_xarray.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_xarray.obj `if test -f 'm_xarray.c'; then $(CYGPATH_W) 'm_xarray.c'; else $(CYGPATH_W) '$(srcdir)/m_xarray.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_xarray.obj `if test -f 'm_xarray.c'; then $(CYGPATH_W) 'm_xarray.c'; else $(CYGPATH_W) '$(srcdir)/m_xarray.c'; fi`
 
-libcoregrind_x86_linux_a-m_aspacehl.o: m_aspacehl.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_aspacehl.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_aspacehl.Tpo -c -o libcoregrind_x86_linux_a-m_aspacehl.o `test -f 'm_aspacehl.c' || echo '$(srcdir)/'`m_aspacehl.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_aspacehl.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_aspacehl.Po
-#	source='m_aspacehl.c' object='libcoregrind_x86_linux_a-m_aspacehl.o' libtool=no \
+libcoregrind_amd64_linux_a-m_aspacehl.o: m_aspacehl.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_aspacehl.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_aspacehl.Tpo -c -o libcoregrind_amd64_linux_a-m_aspacehl.o `test -f 'm_aspacehl.c' || echo '$(srcdir)/'`m_aspacehl.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_aspacehl.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_aspacehl.Po
+#	source='m_aspacehl.c' object='libcoregrind_amd64_linux_a-m_aspacehl.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_aspacehl.o `test -f 'm_aspacehl.c' || echo '$(srcdir)/'`m_aspacehl.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_aspacehl.o `test -f 'm_aspacehl.c' || echo '$(srcdir)/'`m_aspacehl.c
 
-libcoregrind_x86_linux_a-m_aspacehl.obj: m_aspacehl.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_aspacehl.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_aspacehl.Tpo -c -o libcoregrind_x86_linux_a-m_aspacehl.obj `if test -f 'm_aspacehl.c'; then $(CYGPATH_W) 'm_aspacehl.c'; else $(CYGPATH_W) '$(srcdir)/m_aspacehl.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_aspacehl.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_aspacehl.Po
-#	source='m_aspacehl.c' object='libcoregrind_x86_linux_a-m_aspacehl.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_aspacehl.obj: m_aspacehl.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_aspacehl.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_aspacehl.Tpo -c -o libcoregrind_amd64_linux_a-m_aspacehl.obj `if test -f 'm_aspacehl.c'; then $(CYGPATH_W) 'm_aspacehl.c'; else $(CYGPATH_W) '$(srcdir)/m_aspacehl.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_aspacehl.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_aspacehl.Po
+#	source='m_aspacehl.c' object='libcoregrind_amd64_linux_a-m_aspacehl.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_aspacehl.obj `if test -f 'm_aspacehl.c'; then $(CYGPATH_W) 'm_aspacehl.c'; else $(CYGPATH_W) '$(srcdir)/m_aspacehl.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_aspacehl.obj `if test -f 'm_aspacehl.c'; then $(CYGPATH_W) 'm_aspacehl.c'; else $(CYGPATH_W) '$(srcdir)/m_aspacehl.c'; fi`
 
-libcoregrind_x86_linux_a-aspacemgr-common.o: m_aspacemgr/aspacemgr-common.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-aspacemgr-common.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-aspacemgr-common.Tpo -c -o libcoregrind_x86_linux_a-aspacemgr-common.o `test -f 'm_aspacemgr/aspacemgr-common.c' || echo '$(srcdir)/'`m_aspacemgr/aspacemgr-common.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-aspacemgr-common.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-aspacemgr-common.Po
-#	source='m_aspacemgr/aspacemgr-common.c' object='libcoregrind_x86_linux_a-aspacemgr-common.o' libtool=no \
+libcoregrind_amd64_linux_a-aspacemgr-common.o: m_aspacemgr/aspacemgr-common.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-aspacemgr-common.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-aspacemgr-common.Tpo -c -o libcoregrind_amd64_linux_a-aspacemgr-common.o `test -f 'm_aspacemgr/aspacemgr-common.c' || echo '$(srcdir)/'`m_aspacemgr/aspacemgr-common.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-aspacemgr-common.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-aspacemgr-common.Po
+#	source='m_aspacemgr/aspacemgr-common.c' object='libcoregrind_amd64_linux_a-aspacemgr-common.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-aspacemgr-common.o `test -f 'm_aspacemgr/aspacemgr-common.c' || echo '$(srcdir)/'`m_aspacemgr/aspacemgr-common.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-aspacemgr-common.o `test -f 'm_aspacemgr/aspacemgr-common.c' || echo '$(srcdir)/'`m_aspacemgr/aspacemgr-common.c
 
-libcoregrind_x86_linux_a-aspacemgr-common.obj: m_aspacemgr/aspacemgr-common.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-aspacemgr-common.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-aspacemgr-common.Tpo -c -o libcoregrind_x86_linux_a-aspacemgr-common.obj `if test -f 'm_aspacemgr/aspacemgr-common.c'; then $(CYGPATH_W) 'm_aspacemgr/aspacemgr-common.c'; else $(CYGPATH_W) '$(srcdir)/m_aspacemgr/aspacemgr-common.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-aspacemgr-common.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-aspacemgr-common.Po
-#	source='m_aspacemgr/aspacemgr-common.c' object='libcoregrind_x86_linux_a-aspacemgr-common.obj' libtool=no \
+libcoregrind_amd64_linux_a-aspacemgr-common.obj: m_aspacemgr/aspacemgr-common.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-aspacemgr-common.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-aspacemgr-common.Tpo -c -o libcoregrind_amd64_linux_a-aspacemgr-common.obj `if test -f 'm_aspacemgr/aspacemgr-common.c'; then $(CYGPATH_W) 'm_aspacemgr/aspacemgr-common.c'; else $(CYGPATH_W) '$(srcdir)/m_aspacemgr/aspacemgr-common.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-aspacemgr-common.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-aspacemgr-common.Po
+#	source='m_aspacemgr/aspacemgr-common.c' object='libcoregrind_amd64_linux_a-aspacemgr-common.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-aspacemgr-common.obj `if test -f 'm_aspacemgr/aspacemgr-common.c'; then $(CYGPATH_W) 'm_aspacemgr/aspacemgr-common.c'; else $(CYGPATH_W) '$(srcdir)/m_aspacemgr/aspacemgr-common.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-aspacemgr-common.obj `if test -f 'm_aspacemgr/aspacemgr-common.c'; then $(CYGPATH_W) 'm_aspacemgr/aspacemgr-common.c'; else $(CYGPATH_W) '$(srcdir)/m_aspacemgr/aspacemgr-common.c'; fi`
 
-libcoregrind_x86_linux_a-aspacemgr-linux.o: m_aspacemgr/aspacemgr-linux.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-aspacemgr-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-aspacemgr-linux.Tpo -c -o libcoregrind_x86_linux_a-aspacemgr-linux.o `test -f 'm_aspacemgr/aspacemgr-linux.c' || echo '$(srcdir)/'`m_aspacemgr/aspacemgr-linux.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-aspacemgr-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-aspacemgr-linux.Po
-#	source='m_aspacemgr/aspacemgr-linux.c' object='libcoregrind_x86_linux_a-aspacemgr-linux.o' libtool=no \
+libcoregrind_amd64_linux_a-aspacemgr-linux.o: m_aspacemgr/aspacemgr-linux.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-aspacemgr-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-aspacemgr-linux.Tpo -c -o libcoregrind_amd64_linux_a-aspacemgr-linux.o `test -f 'm_aspacemgr/aspacemgr-linux.c' || echo '$(srcdir)/'`m_aspacemgr/aspacemgr-linux.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-aspacemgr-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-aspacemgr-linux.Po
+#	source='m_aspacemgr/aspacemgr-linux.c' object='libcoregrind_amd64_linux_a-aspacemgr-linux.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-aspacemgr-linux.o `test -f 'm_aspacemgr/aspacemgr-linux.c' || echo '$(srcdir)/'`m_aspacemgr/aspacemgr-linux.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-aspacemgr-linux.o `test -f 'm_aspacemgr/aspacemgr-linux.c' || echo '$(srcdir)/'`m_aspacemgr/aspacemgr-linux.c
 
-libcoregrind_x86_linux_a-aspacemgr-linux.obj: m_aspacemgr/aspacemgr-linux.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-aspacemgr-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-aspacemgr-linux.Tpo -c -o libcoregrind_x86_linux_a-aspacemgr-linux.obj `if test -f 'm_aspacemgr/aspacemgr-linux.c'; then $(CYGPATH_W) 'm_aspacemgr/aspacemgr-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_aspacemgr/aspacemgr-linux.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-aspacemgr-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-aspacemgr-linux.Po
-#	source='m_aspacemgr/aspacemgr-linux.c' object='libcoregrind_x86_linux_a-aspacemgr-linux.obj' libtool=no \
+libcoregrind_amd64_linux_a-aspacemgr-linux.obj: m_aspacemgr/aspacemgr-linux.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-aspacemgr-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-aspacemgr-linux.Tpo -c -o libcoregrind_amd64_linux_a-aspacemgr-linux.obj `if test -f 'm_aspacemgr/aspacemgr-linux.c'; then $(CYGPATH_W) 'm_aspacemgr/aspacemgr-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_aspacemgr/aspacemgr-linux.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-aspacemgr-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-aspacemgr-linux.Po
+#	source='m_aspacemgr/aspacemgr-linux.c' object='libcoregrind_amd64_linux_a-aspacemgr-linux.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-aspacemgr-linux.obj `if test -f 'm_aspacemgr/aspacemgr-linux.c'; then $(CYGPATH_W) 'm_aspacemgr/aspacemgr-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_aspacemgr/aspacemgr-linux.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-aspacemgr-linux.obj `if test -f 'm_aspacemgr/aspacemgr-linux.c'; then $(CYGPATH_W) 'm_aspacemgr/aspacemgr-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_aspacemgr/aspacemgr-linux.c'; fi`
 
-libcoregrind_x86_linux_a-aspacemgr-aix5.o: m_aspacemgr/aspacemgr-aix5.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-aspacemgr-aix5.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-aspacemgr-aix5.Tpo -c -o libcoregrind_x86_linux_a-aspacemgr-aix5.o `test -f 'm_aspacemgr/aspacemgr-aix5.c' || echo '$(srcdir)/'`m_aspacemgr/aspacemgr-aix5.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-aspacemgr-aix5.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-aspacemgr-aix5.Po
-#	source='m_aspacemgr/aspacemgr-aix5.c' object='libcoregrind_x86_linux_a-aspacemgr-aix5.o' libtool=no \
+libcoregrind_amd64_linux_a-aspacemgr-aix5.o: m_aspacemgr/aspacemgr-aix5.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-aspacemgr-aix5.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-aspacemgr-aix5.Tpo -c -o libcoregrind_amd64_linux_a-aspacemgr-aix5.o `test -f 'm_aspacemgr/aspacemgr-aix5.c' || echo '$(srcdir)/'`m_aspacemgr/aspacemgr-aix5.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-aspacemgr-aix5.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-aspacemgr-aix5.Po
+#	source='m_aspacemgr/aspacemgr-aix5.c' object='libcoregrind_amd64_linux_a-aspacemgr-aix5.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-aspacemgr-aix5.o `test -f 'm_aspacemgr/aspacemgr-aix5.c' || echo '$(srcdir)/'`m_aspacemgr/aspacemgr-aix5.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-aspacemgr-aix5.o `test -f 'm_aspacemgr/aspacemgr-aix5.c' || echo '$(srcdir)/'`m_aspacemgr/aspacemgr-aix5.c
 
-libcoregrind_x86_linux_a-aspacemgr-aix5.obj: m_aspacemgr/aspacemgr-aix5.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-aspacemgr-aix5.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-aspacemgr-aix5.Tpo -c -o libcoregrind_x86_linux_a-aspacemgr-aix5.obj `if test -f 'm_aspacemgr/aspacemgr-aix5.c'; then $(CYGPATH_W) 'm_aspacemgr/aspacemgr-aix5.c'; else $(CYGPATH_W) '$(srcdir)/m_aspacemgr/aspacemgr-aix5.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-aspacemgr-aix5.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-aspacemgr-aix5.Po
-#	source='m_aspacemgr/aspacemgr-aix5.c' object='libcoregrind_x86_linux_a-aspacemgr-aix5.obj' libtool=no \
+libcoregrind_amd64_linux_a-aspacemgr-aix5.obj: m_aspacemgr/aspacemgr-aix5.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-aspacemgr-aix5.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-aspacemgr-aix5.Tpo -c -o libcoregrind_amd64_linux_a-aspacemgr-aix5.obj `if test -f 'm_aspacemgr/aspacemgr-aix5.c'; then $(CYGPATH_W) 'm_aspacemgr/aspacemgr-aix5.c'; else $(CYGPATH_W) '$(srcdir)/m_aspacemgr/aspacemgr-aix5.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-aspacemgr-aix5.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-aspacemgr-aix5.Po
+#	source='m_aspacemgr/aspacemgr-aix5.c' object='libcoregrind_amd64_linux_a-aspacemgr-aix5.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-aspacemgr-aix5.obj `if test -f 'm_aspacemgr/aspacemgr-aix5.c'; then $(CYGPATH_W) 'm_aspacemgr/aspacemgr-aix5.c'; else $(CYGPATH_W) '$(srcdir)/m_aspacemgr/aspacemgr-aix5.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-aspacemgr-aix5.obj `if test -f 'm_aspacemgr/aspacemgr-aix5.c'; then $(CYGPATH_W) 'm_aspacemgr/aspacemgr-aix5.c'; else $(CYGPATH_W) '$(srcdir)/m_aspacemgr/aspacemgr-aix5.c'; fi`
 
-libcoregrind_x86_linux_a-coredump-elf.o: m_coredump/coredump-elf.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-coredump-elf.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-coredump-elf.Tpo -c -o libcoregrind_x86_linux_a-coredump-elf.o `test -f 'm_coredump/coredump-elf.c' || echo '$(srcdir)/'`m_coredump/coredump-elf.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-coredump-elf.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-coredump-elf.Po
-#	source='m_coredump/coredump-elf.c' object='libcoregrind_x86_linux_a-coredump-elf.o' libtool=no \
+libcoregrind_amd64_linux_a-coredump-elf.o: m_coredump/coredump-elf.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-coredump-elf.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-coredump-elf.Tpo -c -o libcoregrind_amd64_linux_a-coredump-elf.o `test -f 'm_coredump/coredump-elf.c' || echo '$(srcdir)/'`m_coredump/coredump-elf.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-coredump-elf.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-coredump-elf.Po
+#	source='m_coredump/coredump-elf.c' object='libcoregrind_amd64_linux_a-coredump-elf.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-coredump-elf.o `test -f 'm_coredump/coredump-elf.c' || echo '$(srcdir)/'`m_coredump/coredump-elf.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-coredump-elf.o `test -f 'm_coredump/coredump-elf.c' || echo '$(srcdir)/'`m_coredump/coredump-elf.c
 
-libcoregrind_x86_linux_a-coredump-elf.obj: m_coredump/coredump-elf.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-coredump-elf.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-coredump-elf.Tpo -c -o libcoregrind_x86_linux_a-coredump-elf.obj `if test -f 'm_coredump/coredump-elf.c'; then $(CYGPATH_W) 'm_coredump/coredump-elf.c'; else $(CYGPATH_W) '$(srcdir)/m_coredump/coredump-elf.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-coredump-elf.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-coredump-elf.Po
-#	source='m_coredump/coredump-elf.c' object='libcoregrind_x86_linux_a-coredump-elf.obj' libtool=no \
+libcoregrind_amd64_linux_a-coredump-elf.obj: m_coredump/coredump-elf.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-coredump-elf.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-coredump-elf.Tpo -c -o libcoregrind_amd64_linux_a-coredump-elf.obj `if test -f 'm_coredump/coredump-elf.c'; then $(CYGPATH_W) 'm_coredump/coredump-elf.c'; else $(CYGPATH_W) '$(srcdir)/m_coredump/coredump-elf.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-coredump-elf.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-coredump-elf.Po
+#	source='m_coredump/coredump-elf.c' object='libcoregrind_amd64_linux_a-coredump-elf.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-coredump-elf.obj `if test -f 'm_coredump/coredump-elf.c'; then $(CYGPATH_W) 'm_coredump/coredump-elf.c'; else $(CYGPATH_W) '$(srcdir)/m_coredump/coredump-elf.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-coredump-elf.obj `if test -f 'm_coredump/coredump-elf.c'; then $(CYGPATH_W) 'm_coredump/coredump-elf.c'; else $(CYGPATH_W) '$(srcdir)/m_coredump/coredump-elf.c'; fi`
 
-libcoregrind_x86_linux_a-coredump-macho.o: m_coredump/coredump-macho.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-coredump-macho.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-coredump-macho.Tpo -c -o libcoregrind_x86_linux_a-coredump-macho.o `test -f 'm_coredump/coredump-macho.c' || echo '$(srcdir)/'`m_coredump/coredump-macho.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-coredump-macho.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-coredump-macho.Po
-#	source='m_coredump/coredump-macho.c' object='libcoregrind_x86_linux_a-coredump-macho.o' libtool=no \
+libcoregrind_amd64_linux_a-coredump-macho.o: m_coredump/coredump-macho.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-coredump-macho.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-coredump-macho.Tpo -c -o libcoregrind_amd64_linux_a-coredump-macho.o `test -f 'm_coredump/coredump-macho.c' || echo '$(srcdir)/'`m_coredump/coredump-macho.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-coredump-macho.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-coredump-macho.Po
+#	source='m_coredump/coredump-macho.c' object='libcoregrind_amd64_linux_a-coredump-macho.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-coredump-macho.o `test -f 'm_coredump/coredump-macho.c' || echo '$(srcdir)/'`m_coredump/coredump-macho.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-coredump-macho.o `test -f 'm_coredump/coredump-macho.c' || echo '$(srcdir)/'`m_coredump/coredump-macho.c
 
-libcoregrind_x86_linux_a-coredump-macho.obj: m_coredump/coredump-macho.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-coredump-macho.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-coredump-macho.Tpo -c -o libcoregrind_x86_linux_a-coredump-macho.obj `if test -f 'm_coredump/coredump-macho.c'; then $(CYGPATH_W) 'm_coredump/coredump-macho.c'; else $(CYGPATH_W) '$(srcdir)/m_coredump/coredump-macho.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-coredump-macho.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-coredump-macho.Po
-#	source='m_coredump/coredump-macho.c' object='libcoregrind_x86_linux_a-coredump-macho.obj' libtool=no \
+libcoregrind_amd64_linux_a-coredump-macho.obj: m_coredump/coredump-macho.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-coredump-macho.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-coredump-macho.Tpo -c -o libcoregrind_amd64_linux_a-coredump-macho.obj `if test -f 'm_coredump/coredump-macho.c'; then $(CYGPATH_W) 'm_coredump/coredump-macho.c'; else $(CYGPATH_W) '$(srcdir)/m_coredump/coredump-macho.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-coredump-macho.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-coredump-macho.Po
+#	source='m_coredump/coredump-macho.c' object='libcoregrind_amd64_linux_a-coredump-macho.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-coredump-macho.obj `if test -f 'm_coredump/coredump-macho.c'; then $(CYGPATH_W) 'm_coredump/coredump-macho.c'; else $(CYGPATH_W) '$(srcdir)/m_coredump/coredump-macho.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-coredump-macho.obj `if test -f 'm_coredump/coredump-macho.c'; then $(CYGPATH_W) 'm_coredump/coredump-macho.c'; else $(CYGPATH_W) '$(srcdir)/m_coredump/coredump-macho.c'; fi`
 
-libcoregrind_x86_linux_a-coredump-xcoff.o: m_coredump/coredump-xcoff.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-coredump-xcoff.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-coredump-xcoff.Tpo -c -o libcoregrind_x86_linux_a-coredump-xcoff.o `test -f 'm_coredump/coredump-xcoff.c' || echo '$(srcdir)/'`m_coredump/coredump-xcoff.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-coredump-xcoff.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-coredump-xcoff.Po
-#	source='m_coredump/coredump-xcoff.c' object='libcoregrind_x86_linux_a-coredump-xcoff.o' libtool=no \
+libcoregrind_amd64_linux_a-coredump-xcoff.o: m_coredump/coredump-xcoff.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-coredump-xcoff.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-coredump-xcoff.Tpo -c -o libcoregrind_amd64_linux_a-coredump-xcoff.o `test -f 'm_coredump/coredump-xcoff.c' || echo '$(srcdir)/'`m_coredump/coredump-xcoff.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-coredump-xcoff.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-coredump-xcoff.Po
+#	source='m_coredump/coredump-xcoff.c' object='libcoregrind_amd64_linux_a-coredump-xcoff.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-coredump-xcoff.o `test -f 'm_coredump/coredump-xcoff.c' || echo '$(srcdir)/'`m_coredump/coredump-xcoff.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-coredump-xcoff.o `test -f 'm_coredump/coredump-xcoff.c' || echo '$(srcdir)/'`m_coredump/coredump-xcoff.c
 
-libcoregrind_x86_linux_a-coredump-xcoff.obj: m_coredump/coredump-xcoff.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-coredump-xcoff.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-coredump-xcoff.Tpo -c -o libcoregrind_x86_linux_a-coredump-xcoff.obj `if test -f 'm_coredump/coredump-xcoff.c'; then $(CYGPATH_W) 'm_coredump/coredump-xcoff.c'; else $(CYGPATH_W) '$(srcdir)/m_coredump/coredump-xcoff.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-coredump-xcoff.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-coredump-xcoff.Po
-#	source='m_coredump/coredump-xcoff.c' object='libcoregrind_x86_linux_a-coredump-xcoff.obj' libtool=no \
+libcoregrind_amd64_linux_a-coredump-xcoff.obj: m_coredump/coredump-xcoff.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-coredump-xcoff.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-coredump-xcoff.Tpo -c -o libcoregrind_amd64_linux_a-coredump-xcoff.obj `if test -f 'm_coredump/coredump-xcoff.c'; then $(CYGPATH_W) 'm_coredump/coredump-xcoff.c'; else $(CYGPATH_W) '$(srcdir)/m_coredump/coredump-xcoff.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-coredump-xcoff.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-coredump-xcoff.Po
+#	source='m_coredump/coredump-xcoff.c' object='libcoregrind_amd64_linux_a-coredump-xcoff.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-coredump-xcoff.obj `if test -f 'm_coredump/coredump-xcoff.c'; then $(CYGPATH_W) 'm_coredump/coredump-xcoff.c'; else $(CYGPATH_W) '$(srcdir)/m_coredump/coredump-xcoff.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-coredump-xcoff.obj `if test -f 'm_coredump/coredump-xcoff.c'; then $(CYGPATH_W) 'm_coredump/coredump-xcoff.c'; else $(CYGPATH_W) '$(srcdir)/m_coredump/coredump-xcoff.c'; fi`
 
-libcoregrind_x86_linux_a-misc.o: m_debuginfo/misc.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-misc.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-misc.Tpo -c -o libcoregrind_x86_linux_a-misc.o `test -f 'm_debuginfo/misc.c' || echo '$(srcdir)/'`m_debuginfo/misc.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-misc.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-misc.Po
-#	source='m_debuginfo/misc.c' object='libcoregrind_x86_linux_a-misc.o' libtool=no \
+libcoregrind_amd64_linux_a-misc.o: m_debuginfo/misc.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-misc.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-misc.Tpo -c -o libcoregrind_amd64_linux_a-misc.o `test -f 'm_debuginfo/misc.c' || echo '$(srcdir)/'`m_debuginfo/misc.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-misc.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-misc.Po
+#	source='m_debuginfo/misc.c' object='libcoregrind_amd64_linux_a-misc.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-misc.o `test -f 'm_debuginfo/misc.c' || echo '$(srcdir)/'`m_debuginfo/misc.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-misc.o `test -f 'm_debuginfo/misc.c' || echo '$(srcdir)/'`m_debuginfo/misc.c
 
-libcoregrind_x86_linux_a-misc.obj: m_debuginfo/misc.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-misc.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-misc.Tpo -c -o libcoregrind_x86_linux_a-misc.obj `if test -f 'm_debuginfo/misc.c'; then $(CYGPATH_W) 'm_debuginfo/misc.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/misc.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-misc.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-misc.Po
-#	source='m_debuginfo/misc.c' object='libcoregrind_x86_linux_a-misc.obj' libtool=no \
+libcoregrind_amd64_linux_a-misc.obj: m_debuginfo/misc.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-misc.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-misc.Tpo -c -o libcoregrind_amd64_linux_a-misc.obj `if test -f 'm_debuginfo/misc.c'; then $(CYGPATH_W) 'm_debuginfo/misc.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/misc.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-misc.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-misc.Po
+#	source='m_debuginfo/misc.c' object='libcoregrind_amd64_linux_a-misc.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-misc.obj `if test -f 'm_debuginfo/misc.c'; then $(CYGPATH_W) 'm_debuginfo/misc.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/misc.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-misc.obj `if test -f 'm_debuginfo/misc.c'; then $(CYGPATH_W) 'm_debuginfo/misc.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/misc.c'; fi`
 
-libcoregrind_x86_linux_a-d3basics.o: m_debuginfo/d3basics.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-d3basics.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-d3basics.Tpo -c -o libcoregrind_x86_linux_a-d3basics.o `test -f 'm_debuginfo/d3basics.c' || echo '$(srcdir)/'`m_debuginfo/d3basics.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-d3basics.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-d3basics.Po
-#	source='m_debuginfo/d3basics.c' object='libcoregrind_x86_linux_a-d3basics.o' libtool=no \
+libcoregrind_amd64_linux_a-d3basics.o: m_debuginfo/d3basics.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-d3basics.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-d3basics.Tpo -c -o libcoregrind_amd64_linux_a-d3basics.o `test -f 'm_debuginfo/d3basics.c' || echo '$(srcdir)/'`m_debuginfo/d3basics.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-d3basics.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-d3basics.Po
+#	source='m_debuginfo/d3basics.c' object='libcoregrind_amd64_linux_a-d3basics.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-d3basics.o `test -f 'm_debuginfo/d3basics.c' || echo '$(srcdir)/'`m_debuginfo/d3basics.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-d3basics.o `test -f 'm_debuginfo/d3basics.c' || echo '$(srcdir)/'`m_debuginfo/d3basics.c
 
-libcoregrind_x86_linux_a-d3basics.obj: m_debuginfo/d3basics.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-d3basics.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-d3basics.Tpo -c -o libcoregrind_x86_linux_a-d3basics.obj `if test -f 'm_debuginfo/d3basics.c'; then $(CYGPATH_W) 'm_debuginfo/d3basics.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/d3basics.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-d3basics.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-d3basics.Po
-#	source='m_debuginfo/d3basics.c' object='libcoregrind_x86_linux_a-d3basics.obj' libtool=no \
+libcoregrind_amd64_linux_a-d3basics.obj: m_debuginfo/d3basics.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-d3basics.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-d3basics.Tpo -c -o libcoregrind_amd64_linux_a-d3basics.obj `if test -f 'm_debuginfo/d3basics.c'; then $(CYGPATH_W) 'm_debuginfo/d3basics.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/d3basics.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-d3basics.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-d3basics.Po
+#	source='m_debuginfo/d3basics.c' object='libcoregrind_amd64_linux_a-d3basics.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-d3basics.obj `if test -f 'm_debuginfo/d3basics.c'; then $(CYGPATH_W) 'm_debuginfo/d3basics.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/d3basics.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-d3basics.obj `if test -f 'm_debuginfo/d3basics.c'; then $(CYGPATH_W) 'm_debuginfo/d3basics.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/d3basics.c'; fi`
 
-libcoregrind_x86_linux_a-debuginfo.o: m_debuginfo/debuginfo.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-debuginfo.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-debuginfo.Tpo -c -o libcoregrind_x86_linux_a-debuginfo.o `test -f 'm_debuginfo/debuginfo.c' || echo '$(srcdir)/'`m_debuginfo/debuginfo.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-debuginfo.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-debuginfo.Po
-#	source='m_debuginfo/debuginfo.c' object='libcoregrind_x86_linux_a-debuginfo.o' libtool=no \
+libcoregrind_amd64_linux_a-debuginfo.o: m_debuginfo/debuginfo.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-debuginfo.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-debuginfo.Tpo -c -o libcoregrind_amd64_linux_a-debuginfo.o `test -f 'm_debuginfo/debuginfo.c' || echo '$(srcdir)/'`m_debuginfo/debuginfo.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-debuginfo.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-debuginfo.Po
+#	source='m_debuginfo/debuginfo.c' object='libcoregrind_amd64_linux_a-debuginfo.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-debuginfo.o `test -f 'm_debuginfo/debuginfo.c' || echo '$(srcdir)/'`m_debuginfo/debuginfo.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-debuginfo.o `test -f 'm_debuginfo/debuginfo.c' || echo '$(srcdir)/'`m_debuginfo/debuginfo.c
 
-libcoregrind_x86_linux_a-debuginfo.obj: m_debuginfo/debuginfo.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-debuginfo.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-debuginfo.Tpo -c -o libcoregrind_x86_linux_a-debuginfo.obj `if test -f 'm_debuginfo/debuginfo.c'; then $(CYGPATH_W) 'm_debuginfo/debuginfo.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/debuginfo.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-debuginfo.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-debuginfo.Po
-#	source='m_debuginfo/debuginfo.c' object='libcoregrind_x86_linux_a-debuginfo.obj' libtool=no \
+libcoregrind_amd64_linux_a-debuginfo.obj: m_debuginfo/debuginfo.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-debuginfo.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-debuginfo.Tpo -c -o libcoregrind_amd64_linux_a-debuginfo.obj `if test -f 'm_debuginfo/debuginfo.c'; then $(CYGPATH_W) 'm_debuginfo/debuginfo.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/debuginfo.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-debuginfo.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-debuginfo.Po
+#	source='m_debuginfo/debuginfo.c' object='libcoregrind_amd64_linux_a-debuginfo.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-debuginfo.obj `if test -f 'm_debuginfo/debuginfo.c'; then $(CYGPATH_W) 'm_debuginfo/debuginfo.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/debuginfo.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-debuginfo.obj `if test -f 'm_debuginfo/debuginfo.c'; then $(CYGPATH_W) 'm_debuginfo/debuginfo.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/debuginfo.c'; fi`
 
-libcoregrind_x86_linux_a-readdwarf.o: m_debuginfo/readdwarf.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-readdwarf.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-readdwarf.Tpo -c -o libcoregrind_x86_linux_a-readdwarf.o `test -f 'm_debuginfo/readdwarf.c' || echo '$(srcdir)/'`m_debuginfo/readdwarf.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-readdwarf.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-readdwarf.Po
-#	source='m_debuginfo/readdwarf.c' object='libcoregrind_x86_linux_a-readdwarf.o' libtool=no \
+libcoregrind_amd64_linux_a-readdwarf.o: m_debuginfo/readdwarf.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-readdwarf.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-readdwarf.Tpo -c -o libcoregrind_amd64_linux_a-readdwarf.o `test -f 'm_debuginfo/readdwarf.c' || echo '$(srcdir)/'`m_debuginfo/readdwarf.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-readdwarf.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-readdwarf.Po
+#	source='m_debuginfo/readdwarf.c' object='libcoregrind_amd64_linux_a-readdwarf.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-readdwarf.o `test -f 'm_debuginfo/readdwarf.c' || echo '$(srcdir)/'`m_debuginfo/readdwarf.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-readdwarf.o `test -f 'm_debuginfo/readdwarf.c' || echo '$(srcdir)/'`m_debuginfo/readdwarf.c
 
-libcoregrind_x86_linux_a-readdwarf.obj: m_debuginfo/readdwarf.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-readdwarf.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-readdwarf.Tpo -c -o libcoregrind_x86_linux_a-readdwarf.obj `if test -f 'm_debuginfo/readdwarf.c'; then $(CYGPATH_W) 'm_debuginfo/readdwarf.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/readdwarf.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-readdwarf.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-readdwarf.Po
-#	source='m_debuginfo/readdwarf.c' object='libcoregrind_x86_linux_a-readdwarf.obj' libtool=no \
+libcoregrind_amd64_linux_a-readdwarf.obj: m_debuginfo/readdwarf.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-readdwarf.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-readdwarf.Tpo -c -o libcoregrind_amd64_linux_a-readdwarf.obj `if test -f 'm_debuginfo/readdwarf.c'; then $(CYGPATH_W) 'm_debuginfo/readdwarf.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/readdwarf.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-readdwarf.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-readdwarf.Po
+#	source='m_debuginfo/readdwarf.c' object='libcoregrind_amd64_linux_a-readdwarf.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-readdwarf.obj `if test -f 'm_debuginfo/readdwarf.c'; then $(CYGPATH_W) 'm_debuginfo/readdwarf.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/readdwarf.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-readdwarf.obj `if test -f 'm_debuginfo/readdwarf.c'; then $(CYGPATH_W) 'm_debuginfo/readdwarf.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/readdwarf.c'; fi`
 
-libcoregrind_x86_linux_a-readdwarf3.o: m_debuginfo/readdwarf3.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-readdwarf3.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-readdwarf3.Tpo -c -o libcoregrind_x86_linux_a-readdwarf3.o `test -f 'm_debuginfo/readdwarf3.c' || echo '$(srcdir)/'`m_debuginfo/readdwarf3.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-readdwarf3.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-readdwarf3.Po
-#	source='m_debuginfo/readdwarf3.c' object='libcoregrind_x86_linux_a-readdwarf3.o' libtool=no \
+libcoregrind_amd64_linux_a-readdwarf3.o: m_debuginfo/readdwarf3.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-readdwarf3.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-readdwarf3.Tpo -c -o libcoregrind_amd64_linux_a-readdwarf3.o `test -f 'm_debuginfo/readdwarf3.c' || echo '$(srcdir)/'`m_debuginfo/readdwarf3.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-readdwarf3.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-readdwarf3.Po
+#	source='m_debuginfo/readdwarf3.c' object='libcoregrind_amd64_linux_a-readdwarf3.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-readdwarf3.o `test -f 'm_debuginfo/readdwarf3.c' || echo '$(srcdir)/'`m_debuginfo/readdwarf3.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-readdwarf3.o `test -f 'm_debuginfo/readdwarf3.c' || echo '$(srcdir)/'`m_debuginfo/readdwarf3.c
 
-libcoregrind_x86_linux_a-readdwarf3.obj: m_debuginfo/readdwarf3.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-readdwarf3.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-readdwarf3.Tpo -c -o libcoregrind_x86_linux_a-readdwarf3.obj `if test -f 'm_debuginfo/readdwarf3.c'; then $(CYGPATH_W) 'm_debuginfo/readdwarf3.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/readdwarf3.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-readdwarf3.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-readdwarf3.Po
-#	source='m_debuginfo/readdwarf3.c' object='libcoregrind_x86_linux_a-readdwarf3.obj' libtool=no \
+libcoregrind_amd64_linux_a-readdwarf3.obj: m_debuginfo/readdwarf3.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-readdwarf3.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-readdwarf3.Tpo -c -o libcoregrind_amd64_linux_a-readdwarf3.obj `if test -f 'm_debuginfo/readdwarf3.c'; then $(CYGPATH_W) 'm_debuginfo/readdwarf3.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/readdwarf3.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-readdwarf3.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-readdwarf3.Po
+#	source='m_debuginfo/readdwarf3.c' object='libcoregrind_amd64_linux_a-readdwarf3.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-readdwarf3.obj `if test -f 'm_debuginfo/readdwarf3.c'; then $(CYGPATH_W) 'm_debuginfo/readdwarf3.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/readdwarf3.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-readdwarf3.obj `if test -f 'm_debuginfo/readdwarf3.c'; then $(CYGPATH_W) 'm_debuginfo/readdwarf3.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/readdwarf3.c'; fi`
 
-libcoregrind_x86_linux_a-readelf.o: m_debuginfo/readelf.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-readelf.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-readelf.Tpo -c -o libcoregrind_x86_linux_a-readelf.o `test -f 'm_debuginfo/readelf.c' || echo '$(srcdir)/'`m_debuginfo/readelf.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-readelf.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-readelf.Po
-#	source='m_debuginfo/readelf.c' object='libcoregrind_x86_linux_a-readelf.o' libtool=no \
+libcoregrind_amd64_linux_a-readelf.o: m_debuginfo/readelf.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-readelf.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-readelf.Tpo -c -o libcoregrind_amd64_linux_a-readelf.o `test -f 'm_debuginfo/readelf.c' || echo '$(srcdir)/'`m_debuginfo/readelf.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-readelf.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-readelf.Po
+#	source='m_debuginfo/readelf.c' object='libcoregrind_amd64_linux_a-readelf.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-readelf.o `test -f 'm_debuginfo/readelf.c' || echo '$(srcdir)/'`m_debuginfo/readelf.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-readelf.o `test -f 'm_debuginfo/readelf.c' || echo '$(srcdir)/'`m_debuginfo/readelf.c
 
-libcoregrind_x86_linux_a-readelf.obj: m_debuginfo/readelf.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-readelf.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-readelf.Tpo -c -o libcoregrind_x86_linux_a-readelf.obj `if test -f 'm_debuginfo/readelf.c'; then $(CYGPATH_W) 'm_debuginfo/readelf.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/readelf.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-readelf.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-readelf.Po
-#	source='m_debuginfo/readelf.c' object='libcoregrind_x86_linux_a-readelf.obj' libtool=no \
+libcoregrind_amd64_linux_a-readelf.obj: m_debuginfo/readelf.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-readelf.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-readelf.Tpo -c -o libcoregrind_amd64_linux_a-readelf.obj `if test -f 'm_debuginfo/readelf.c'; then $(CYGPATH_W) 'm_debuginfo/readelf.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/readelf.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-readelf.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-readelf.Po
+#	source='m_debuginfo/readelf.c' object='libcoregrind_amd64_linux_a-readelf.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-readelf.obj `if test -f 'm_debuginfo/readelf.c'; then $(CYGPATH_W) 'm_debuginfo/readelf.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/readelf.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-readelf.obj `if test -f 'm_debuginfo/readelf.c'; then $(CYGPATH_W) 'm_debuginfo/readelf.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/readelf.c'; fi`
 
-libcoregrind_x86_linux_a-readmacho.o: m_debuginfo/readmacho.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-readmacho.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-readmacho.Tpo -c -o libcoregrind_x86_linux_a-readmacho.o `test -f 'm_debuginfo/readmacho.c' || echo '$(srcdir)/'`m_debuginfo/readmacho.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-readmacho.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-readmacho.Po
-#	source='m_debuginfo/readmacho.c' object='libcoregrind_x86_linux_a-readmacho.o' libtool=no \
+libcoregrind_amd64_linux_a-readmacho.o: m_debuginfo/readmacho.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-readmacho.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-readmacho.Tpo -c -o libcoregrind_amd64_linux_a-readmacho.o `test -f 'm_debuginfo/readmacho.c' || echo '$(srcdir)/'`m_debuginfo/readmacho.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-readmacho.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-readmacho.Po
+#	source='m_debuginfo/readmacho.c' object='libcoregrind_amd64_linux_a-readmacho.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-readmacho.o `test -f 'm_debuginfo/readmacho.c' || echo '$(srcdir)/'`m_debuginfo/readmacho.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-readmacho.o `test -f 'm_debuginfo/readmacho.c' || echo '$(srcdir)/'`m_debuginfo/readmacho.c
 
-libcoregrind_x86_linux_a-readmacho.obj: m_debuginfo/readmacho.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-readmacho.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-readmacho.Tpo -c -o libcoregrind_x86_linux_a-readmacho.obj `if test -f 'm_debuginfo/readmacho.c'; then $(CYGPATH_W) 'm_debuginfo/readmacho.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/readmacho.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-readmacho.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-readmacho.Po
-#	source='m_debuginfo/readmacho.c' object='libcoregrind_x86_linux_a-readmacho.obj' libtool=no \
+libcoregrind_amd64_linux_a-readmacho.obj: m_debuginfo/readmacho.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-readmacho.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-readmacho.Tpo -c -o libcoregrind_amd64_linux_a-readmacho.obj `if test -f 'm_debuginfo/readmacho.c'; then $(CYGPATH_W) 'm_debuginfo/readmacho.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/readmacho.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-readmacho.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-readmacho.Po
+#	source='m_debuginfo/readmacho.c' object='libcoregrind_amd64_linux_a-readmacho.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-readmacho.obj `if test -f 'm_debuginfo/readmacho.c'; then $(CYGPATH_W) 'm_debuginfo/readmacho.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/readmacho.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-readmacho.obj `if test -f 'm_debuginfo/readmacho.c'; then $(CYGPATH_W) 'm_debuginfo/readmacho.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/readmacho.c'; fi`
 
-libcoregrind_x86_linux_a-readpdb.o: m_debuginfo/readpdb.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-readpdb.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-readpdb.Tpo -c -o libcoregrind_x86_linux_a-readpdb.o `test -f 'm_debuginfo/readpdb.c' || echo '$(srcdir)/'`m_debuginfo/readpdb.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-readpdb.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-readpdb.Po
-#	source='m_debuginfo/readpdb.c' object='libcoregrind_x86_linux_a-readpdb.o' libtool=no \
+libcoregrind_amd64_linux_a-readpdb.o: m_debuginfo/readpdb.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-readpdb.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-readpdb.Tpo -c -o libcoregrind_amd64_linux_a-readpdb.o `test -f 'm_debuginfo/readpdb.c' || echo '$(srcdir)/'`m_debuginfo/readpdb.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-readpdb.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-readpdb.Po
+#	source='m_debuginfo/readpdb.c' object='libcoregrind_amd64_linux_a-readpdb.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-readpdb.o `test -f 'm_debuginfo/readpdb.c' || echo '$(srcdir)/'`m_debuginfo/readpdb.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-readpdb.o `test -f 'm_debuginfo/readpdb.c' || echo '$(srcdir)/'`m_debuginfo/readpdb.c
 
-libcoregrind_x86_linux_a-readpdb.obj: m_debuginfo/readpdb.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-readpdb.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-readpdb.Tpo -c -o libcoregrind_x86_linux_a-readpdb.obj `if test -f 'm_debuginfo/readpdb.c'; then $(CYGPATH_W) 'm_debuginfo/readpdb.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/readpdb.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-readpdb.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-readpdb.Po
-#	source='m_debuginfo/readpdb.c' object='libcoregrind_x86_linux_a-readpdb.obj' libtool=no \
+libcoregrind_amd64_linux_a-readpdb.obj: m_debuginfo/readpdb.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-readpdb.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-readpdb.Tpo -c -o libcoregrind_amd64_linux_a-readpdb.obj `if test -f 'm_debuginfo/readpdb.c'; then $(CYGPATH_W) 'm_debuginfo/readpdb.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/readpdb.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-readpdb.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-readpdb.Po
+#	source='m_debuginfo/readpdb.c' object='libcoregrind_amd64_linux_a-readpdb.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-readpdb.obj `if test -f 'm_debuginfo/readpdb.c'; then $(CYGPATH_W) 'm_debuginfo/readpdb.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/readpdb.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-readpdb.obj `if test -f 'm_debuginfo/readpdb.c'; then $(CYGPATH_W) 'm_debuginfo/readpdb.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/readpdb.c'; fi`
 
-libcoregrind_x86_linux_a-readstabs.o: m_debuginfo/readstabs.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-readstabs.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-readstabs.Tpo -c -o libcoregrind_x86_linux_a-readstabs.o `test -f 'm_debuginfo/readstabs.c' || echo '$(srcdir)/'`m_debuginfo/readstabs.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-readstabs.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-readstabs.Po
-#	source='m_debuginfo/readstabs.c' object='libcoregrind_x86_linux_a-readstabs.o' libtool=no \
+libcoregrind_amd64_linux_a-readstabs.o: m_debuginfo/readstabs.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-readstabs.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-readstabs.Tpo -c -o libcoregrind_amd64_linux_a-readstabs.o `test -f 'm_debuginfo/readstabs.c' || echo '$(srcdir)/'`m_debuginfo/readstabs.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-readstabs.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-readstabs.Po
+#	source='m_debuginfo/readstabs.c' object='libcoregrind_amd64_linux_a-readstabs.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-readstabs.o `test -f 'm_debuginfo/readstabs.c' || echo '$(srcdir)/'`m_debuginfo/readstabs.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-readstabs.o `test -f 'm_debuginfo/readstabs.c' || echo '$(srcdir)/'`m_debuginfo/readstabs.c
 
-libcoregrind_x86_linux_a-readstabs.obj: m_debuginfo/readstabs.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-readstabs.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-readstabs.Tpo -c -o libcoregrind_x86_linux_a-readstabs.obj `if test -f 'm_debuginfo/readstabs.c'; then $(CYGPATH_W) 'm_debuginfo/readstabs.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/readstabs.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-readstabs.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-readstabs.Po
-#	source='m_debuginfo/readstabs.c' object='libcoregrind_x86_linux_a-readstabs.obj' libtool=no \
+libcoregrind_amd64_linux_a-readstabs.obj: m_debuginfo/readstabs.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-readstabs.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-readstabs.Tpo -c -o libcoregrind_amd64_linux_a-readstabs.obj `if test -f 'm_debuginfo/readstabs.c'; then $(CYGPATH_W) 'm_debuginfo/readstabs.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/readstabs.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-readstabs.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-readstabs.Po
+#	source='m_debuginfo/readstabs.c' object='libcoregrind_amd64_linux_a-readstabs.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-readstabs.obj `if test -f 'm_debuginfo/readstabs.c'; then $(CYGPATH_W) 'm_debuginfo/readstabs.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/readstabs.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-readstabs.obj `if test -f 'm_debuginfo/readstabs.c'; then $(CYGPATH_W) 'm_debuginfo/readstabs.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/readstabs.c'; fi`
 
-libcoregrind_x86_linux_a-readxcoff.o: m_debuginfo/readxcoff.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-readxcoff.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-readxcoff.Tpo -c -o libcoregrind_x86_linux_a-readxcoff.o `test -f 'm_debuginfo/readxcoff.c' || echo '$(srcdir)/'`m_debuginfo/readxcoff.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-readxcoff.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-readxcoff.Po
-#	source='m_debuginfo/readxcoff.c' object='libcoregrind_x86_linux_a-readxcoff.o' libtool=no \
+libcoregrind_amd64_linux_a-readxcoff.o: m_debuginfo/readxcoff.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-readxcoff.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-readxcoff.Tpo -c -o libcoregrind_amd64_linux_a-readxcoff.o `test -f 'm_debuginfo/readxcoff.c' || echo '$(srcdir)/'`m_debuginfo/readxcoff.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-readxcoff.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-readxcoff.Po
+#	source='m_debuginfo/readxcoff.c' object='libcoregrind_amd64_linux_a-readxcoff.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-readxcoff.o `test -f 'm_debuginfo/readxcoff.c' || echo '$(srcdir)/'`m_debuginfo/readxcoff.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-readxcoff.o `test -f 'm_debuginfo/readxcoff.c' || echo '$(srcdir)/'`m_debuginfo/readxcoff.c
 
-libcoregrind_x86_linux_a-readxcoff.obj: m_debuginfo/readxcoff.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-readxcoff.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-readxcoff.Tpo -c -o libcoregrind_x86_linux_a-readxcoff.obj `if test -f 'm_debuginfo/readxcoff.c'; then $(CYGPATH_W) 'm_debuginfo/readxcoff.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/readxcoff.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-readxcoff.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-readxcoff.Po
-#	source='m_debuginfo/readxcoff.c' object='libcoregrind_x86_linux_a-readxcoff.obj' libtool=no \
+libcoregrind_amd64_linux_a-readxcoff.obj: m_debuginfo/readxcoff.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-readxcoff.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-readxcoff.Tpo -c -o libcoregrind_amd64_linux_a-readxcoff.obj `if test -f 'm_debuginfo/readxcoff.c'; then $(CYGPATH_W) 'm_debuginfo/readxcoff.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/readxcoff.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-readxcoff.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-readxcoff.Po
+#	source='m_debuginfo/readxcoff.c' object='libcoregrind_amd64_linux_a-readxcoff.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-readxcoff.obj `if test -f 'm_debuginfo/readxcoff.c'; then $(CYGPATH_W) 'm_debuginfo/readxcoff.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/readxcoff.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-readxcoff.obj `if test -f 'm_debuginfo/readxcoff.c'; then $(CYGPATH_W) 'm_debuginfo/readxcoff.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/readxcoff.c'; fi`
 
-libcoregrind_x86_linux_a-storage.o: m_debuginfo/storage.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-storage.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-storage.Tpo -c -o libcoregrind_x86_linux_a-storage.o `test -f 'm_debuginfo/storage.c' || echo '$(srcdir)/'`m_debuginfo/storage.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-storage.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-storage.Po
-#	source='m_debuginfo/storage.c' object='libcoregrind_x86_linux_a-storage.o' libtool=no \
+libcoregrind_amd64_linux_a-storage.o: m_debuginfo/storage.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-storage.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-storage.Tpo -c -o libcoregrind_amd64_linux_a-storage.o `test -f 'm_debuginfo/storage.c' || echo '$(srcdir)/'`m_debuginfo/storage.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-storage.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-storage.Po
+#	source='m_debuginfo/storage.c' object='libcoregrind_amd64_linux_a-storage.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-storage.o `test -f 'm_debuginfo/storage.c' || echo '$(srcdir)/'`m_debuginfo/storage.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-storage.o `test -f 'm_debuginfo/storage.c' || echo '$(srcdir)/'`m_debuginfo/storage.c
 
-libcoregrind_x86_linux_a-storage.obj: m_debuginfo/storage.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-storage.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-storage.Tpo -c -o libcoregrind_x86_linux_a-storage.obj `if test -f 'm_debuginfo/storage.c'; then $(CYGPATH_W) 'm_debuginfo/storage.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/storage.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-storage.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-storage.Po
-#	source='m_debuginfo/storage.c' object='libcoregrind_x86_linux_a-storage.obj' libtool=no \
+libcoregrind_amd64_linux_a-storage.obj: m_debuginfo/storage.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-storage.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-storage.Tpo -c -o libcoregrind_amd64_linux_a-storage.obj `if test -f 'm_debuginfo/storage.c'; then $(CYGPATH_W) 'm_debuginfo/storage.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/storage.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-storage.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-storage.Po
+#	source='m_debuginfo/storage.c' object='libcoregrind_amd64_linux_a-storage.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-storage.obj `if test -f 'm_debuginfo/storage.c'; then $(CYGPATH_W) 'm_debuginfo/storage.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/storage.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-storage.obj `if test -f 'm_debuginfo/storage.c'; then $(CYGPATH_W) 'm_debuginfo/storage.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/storage.c'; fi`
 
-libcoregrind_x86_linux_a-tytypes.o: m_debuginfo/tytypes.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-tytypes.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-tytypes.Tpo -c -o libcoregrind_x86_linux_a-tytypes.o `test -f 'm_debuginfo/tytypes.c' || echo '$(srcdir)/'`m_debuginfo/tytypes.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-tytypes.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-tytypes.Po
-#	source='m_debuginfo/tytypes.c' object='libcoregrind_x86_linux_a-tytypes.o' libtool=no \
+libcoregrind_amd64_linux_a-tytypes.o: m_debuginfo/tytypes.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-tytypes.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-tytypes.Tpo -c -o libcoregrind_amd64_linux_a-tytypes.o `test -f 'm_debuginfo/tytypes.c' || echo '$(srcdir)/'`m_debuginfo/tytypes.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-tytypes.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-tytypes.Po
+#	source='m_debuginfo/tytypes.c' object='libcoregrind_amd64_linux_a-tytypes.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-tytypes.o `test -f 'm_debuginfo/tytypes.c' || echo '$(srcdir)/'`m_debuginfo/tytypes.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-tytypes.o `test -f 'm_debuginfo/tytypes.c' || echo '$(srcdir)/'`m_debuginfo/tytypes.c
 
-libcoregrind_x86_linux_a-tytypes.obj: m_debuginfo/tytypes.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-tytypes.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-tytypes.Tpo -c -o libcoregrind_x86_linux_a-tytypes.obj `if test -f 'm_debuginfo/tytypes.c'; then $(CYGPATH_W) 'm_debuginfo/tytypes.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/tytypes.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-tytypes.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-tytypes.Po
-#	source='m_debuginfo/tytypes.c' object='libcoregrind_x86_linux_a-tytypes.obj' libtool=no \
+libcoregrind_amd64_linux_a-tytypes.obj: m_debuginfo/tytypes.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-tytypes.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-tytypes.Tpo -c -o libcoregrind_amd64_linux_a-tytypes.obj `if test -f 'm_debuginfo/tytypes.c'; then $(CYGPATH_W) 'm_debuginfo/tytypes.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/tytypes.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-tytypes.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-tytypes.Po
+#	source='m_debuginfo/tytypes.c' object='libcoregrind_amd64_linux_a-tytypes.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-tytypes.obj `if test -f 'm_debuginfo/tytypes.c'; then $(CYGPATH_W) 'm_debuginfo/tytypes.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/tytypes.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-tytypes.obj `if test -f 'm_debuginfo/tytypes.c'; then $(CYGPATH_W) 'm_debuginfo/tytypes.c'; else $(CYGPATH_W) '$(srcdir)/m_debuginfo/tytypes.c'; fi`
 
-libcoregrind_x86_linux_a-cp-demangle.o: m_demangle/cp-demangle.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-cp-demangle.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-cp-demangle.Tpo -c -o libcoregrind_x86_linux_a-cp-demangle.o `test -f 'm_demangle/cp-demangle.c' || echo '$(srcdir)/'`m_demangle/cp-demangle.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-cp-demangle.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-cp-demangle.Po
-#	source='m_demangle/cp-demangle.c' object='libcoregrind_x86_linux_a-cp-demangle.o' libtool=no \
+libcoregrind_amd64_linux_a-cp-demangle.o: m_demangle/cp-demangle.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-cp-demangle.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-cp-demangle.Tpo -c -o libcoregrind_amd64_linux_a-cp-demangle.o `test -f 'm_demangle/cp-demangle.c' || echo '$(srcdir)/'`m_demangle/cp-demangle.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-cp-demangle.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-cp-demangle.Po
+#	source='m_demangle/cp-demangle.c' object='libcoregrind_amd64_linux_a-cp-demangle.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-cp-demangle.o `test -f 'm_demangle/cp-demangle.c' || echo '$(srcdir)/'`m_demangle/cp-demangle.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-cp-demangle.o `test -f 'm_demangle/cp-demangle.c' || echo '$(srcdir)/'`m_demangle/cp-demangle.c
 
-libcoregrind_x86_linux_a-cp-demangle.obj: m_demangle/cp-demangle.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-cp-demangle.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-cp-demangle.Tpo -c -o libcoregrind_x86_linux_a-cp-demangle.obj `if test -f 'm_demangle/cp-demangle.c'; then $(CYGPATH_W) 'm_demangle/cp-demangle.c'; else $(CYGPATH_W) '$(srcdir)/m_demangle/cp-demangle.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-cp-demangle.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-cp-demangle.Po
-#	source='m_demangle/cp-demangle.c' object='libcoregrind_x86_linux_a-cp-demangle.obj' libtool=no \
+libcoregrind_amd64_linux_a-cp-demangle.obj: m_demangle/cp-demangle.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-cp-demangle.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-cp-demangle.Tpo -c -o libcoregrind_amd64_linux_a-cp-demangle.obj `if test -f 'm_demangle/cp-demangle.c'; then $(CYGPATH_W) 'm_demangle/cp-demangle.c'; else $(CYGPATH_W) '$(srcdir)/m_demangle/cp-demangle.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-cp-demangle.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-cp-demangle.Po
+#	source='m_demangle/cp-demangle.c' object='libcoregrind_amd64_linux_a-cp-demangle.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-cp-demangle.obj `if test -f 'm_demangle/cp-demangle.c'; then $(CYGPATH_W) 'm_demangle/cp-demangle.c'; else $(CYGPATH_W) '$(srcdir)/m_demangle/cp-demangle.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-cp-demangle.obj `if test -f 'm_demangle/cp-demangle.c'; then $(CYGPATH_W) 'm_demangle/cp-demangle.c'; else $(CYGPATH_W) '$(srcdir)/m_demangle/cp-demangle.c'; fi`
 
-libcoregrind_x86_linux_a-cplus-dem.o: m_demangle/cplus-dem.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-cplus-dem.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-cplus-dem.Tpo -c -o libcoregrind_x86_linux_a-cplus-dem.o `test -f 'm_demangle/cplus-dem.c' || echo '$(srcdir)/'`m_demangle/cplus-dem.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-cplus-dem.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-cplus-dem.Po
-#	source='m_demangle/cplus-dem.c' object='libcoregrind_x86_linux_a-cplus-dem.o' libtool=no \
+libcoregrind_amd64_linux_a-cplus-dem.o: m_demangle/cplus-dem.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-cplus-dem.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-cplus-dem.Tpo -c -o libcoregrind_amd64_linux_a-cplus-dem.o `test -f 'm_demangle/cplus-dem.c' || echo '$(srcdir)/'`m_demangle/cplus-dem.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-cplus-dem.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-cplus-dem.Po
+#	source='m_demangle/cplus-dem.c' object='libcoregrind_amd64_linux_a-cplus-dem.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-cplus-dem.o `test -f 'm_demangle/cplus-dem.c' || echo '$(srcdir)/'`m_demangle/cplus-dem.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-cplus-dem.o `test -f 'm_demangle/cplus-dem.c' || echo '$(srcdir)/'`m_demangle/cplus-dem.c
 
-libcoregrind_x86_linux_a-cplus-dem.obj: m_demangle/cplus-dem.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-cplus-dem.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-cplus-dem.Tpo -c -o libcoregrind_x86_linux_a-cplus-dem.obj `if test -f 'm_demangle/cplus-dem.c'; then $(CYGPATH_W) 'm_demangle/cplus-dem.c'; else $(CYGPATH_W) '$(srcdir)/m_demangle/cplus-dem.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-cplus-dem.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-cplus-dem.Po
-#	source='m_demangle/cplus-dem.c' object='libcoregrind_x86_linux_a-cplus-dem.obj' libtool=no \
+libcoregrind_amd64_linux_a-cplus-dem.obj: m_demangle/cplus-dem.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-cplus-dem.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-cplus-dem.Tpo -c -o libcoregrind_amd64_linux_a-cplus-dem.obj `if test -f 'm_demangle/cplus-dem.c'; then $(CYGPATH_W) 'm_demangle/cplus-dem.c'; else $(CYGPATH_W) '$(srcdir)/m_demangle/cplus-dem.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-cplus-dem.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-cplus-dem.Po
+#	source='m_demangle/cplus-dem.c' object='libcoregrind_amd64_linux_a-cplus-dem.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-cplus-dem.obj `if test -f 'm_demangle/cplus-dem.c'; then $(CYGPATH_W) 'm_demangle/cplus-dem.c'; else $(CYGPATH_W) '$(srcdir)/m_demangle/cplus-dem.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-cplus-dem.obj `if test -f 'm_demangle/cplus-dem.c'; then $(CYGPATH_W) 'm_demangle/cplus-dem.c'; else $(CYGPATH_W) '$(srcdir)/m_demangle/cplus-dem.c'; fi`
 
-libcoregrind_x86_linux_a-demangle.o: m_demangle/demangle.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-demangle.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-demangle.Tpo -c -o libcoregrind_x86_linux_a-demangle.o `test -f 'm_demangle/demangle.c' || echo '$(srcdir)/'`m_demangle/demangle.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-demangle.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-demangle.Po
-#	source='m_demangle/demangle.c' object='libcoregrind_x86_linux_a-demangle.o' libtool=no \
+libcoregrind_amd64_linux_a-demangle.o: m_demangle/demangle.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-demangle.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-demangle.Tpo -c -o libcoregrind_amd64_linux_a-demangle.o `test -f 'm_demangle/demangle.c' || echo '$(srcdir)/'`m_demangle/demangle.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-demangle.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-demangle.Po
+#	source='m_demangle/demangle.c' object='libcoregrind_amd64_linux_a-demangle.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-demangle.o `test -f 'm_demangle/demangle.c' || echo '$(srcdir)/'`m_demangle/demangle.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-demangle.o `test -f 'm_demangle/demangle.c' || echo '$(srcdir)/'`m_demangle/demangle.c
 
-libcoregrind_x86_linux_a-demangle.obj: m_demangle/demangle.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-demangle.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-demangle.Tpo -c -o libcoregrind_x86_linux_a-demangle.obj `if test -f 'm_demangle/demangle.c'; then $(CYGPATH_W) 'm_demangle/demangle.c'; else $(CYGPATH_W) '$(srcdir)/m_demangle/demangle.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-demangle.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-demangle.Po
-#	source='m_demangle/demangle.c' object='libcoregrind_x86_linux_a-demangle.obj' libtool=no \
+libcoregrind_amd64_linux_a-demangle.obj: m_demangle/demangle.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-demangle.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-demangle.Tpo -c -o libcoregrind_amd64_linux_a-demangle.obj `if test -f 'm_demangle/demangle.c'; then $(CYGPATH_W) 'm_demangle/demangle.c'; else $(CYGPATH_W) '$(srcdir)/m_demangle/demangle.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-demangle.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-demangle.Po
+#	source='m_demangle/demangle.c' object='libcoregrind_amd64_linux_a-demangle.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-demangle.obj `if test -f 'm_demangle/demangle.c'; then $(CYGPATH_W) 'm_demangle/demangle.c'; else $(CYGPATH_W) '$(srcdir)/m_demangle/demangle.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-demangle.obj `if test -f 'm_demangle/demangle.c'; then $(CYGPATH_W) 'm_demangle/demangle.c'; else $(CYGPATH_W) '$(srcdir)/m_demangle/demangle.c'; fi`
 
-libcoregrind_x86_linux_a-dyn-string.o: m_demangle/dyn-string.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-dyn-string.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-dyn-string.Tpo -c -o libcoregrind_x86_linux_a-dyn-string.o `test -f 'm_demangle/dyn-string.c' || echo '$(srcdir)/'`m_demangle/dyn-string.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-dyn-string.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-dyn-string.Po
-#	source='m_demangle/dyn-string.c' object='libcoregrind_x86_linux_a-dyn-string.o' libtool=no \
+libcoregrind_amd64_linux_a-dyn-string.o: m_demangle/dyn-string.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-dyn-string.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-dyn-string.Tpo -c -o libcoregrind_amd64_linux_a-dyn-string.o `test -f 'm_demangle/dyn-string.c' || echo '$(srcdir)/'`m_demangle/dyn-string.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-dyn-string.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-dyn-string.Po
+#	source='m_demangle/dyn-string.c' object='libcoregrind_amd64_linux_a-dyn-string.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-dyn-string.o `test -f 'm_demangle/dyn-string.c' || echo '$(srcdir)/'`m_demangle/dyn-string.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-dyn-string.o `test -f 'm_demangle/dyn-string.c' || echo '$(srcdir)/'`m_demangle/dyn-string.c
 
-libcoregrind_x86_linux_a-dyn-string.obj: m_demangle/dyn-string.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-dyn-string.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-dyn-string.Tpo -c -o libcoregrind_x86_linux_a-dyn-string.obj `if test -f 'm_demangle/dyn-string.c'; then $(CYGPATH_W) 'm_demangle/dyn-string.c'; else $(CYGPATH_W) '$(srcdir)/m_demangle/dyn-string.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-dyn-string.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-dyn-string.Po
-#	source='m_demangle/dyn-string.c' object='libcoregrind_x86_linux_a-dyn-string.obj' libtool=no \
+libcoregrind_amd64_linux_a-dyn-string.obj: m_demangle/dyn-string.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-dyn-string.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-dyn-string.Tpo -c -o libcoregrind_amd64_linux_a-dyn-string.obj `if test -f 'm_demangle/dyn-string.c'; then $(CYGPATH_W) 'm_demangle/dyn-string.c'; else $(CYGPATH_W) '$(srcdir)/m_demangle/dyn-string.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-dyn-string.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-dyn-string.Po
+#	source='m_demangle/dyn-string.c' object='libcoregrind_amd64_linux_a-dyn-string.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-dyn-string.obj `if test -f 'm_demangle/dyn-string.c'; then $(CYGPATH_W) 'm_demangle/dyn-string.c'; else $(CYGPATH_W) '$(srcdir)/m_demangle/dyn-string.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-dyn-string.obj `if test -f 'm_demangle/dyn-string.c'; then $(CYGPATH_W) 'm_demangle/dyn-string.c'; else $(CYGPATH_W) '$(srcdir)/m_demangle/dyn-string.c'; fi`
 
-libcoregrind_x86_linux_a-safe-ctype.o: m_demangle/safe-ctype.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-safe-ctype.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-safe-ctype.Tpo -c -o libcoregrind_x86_linux_a-safe-ctype.o `test -f 'm_demangle/safe-ctype.c' || echo '$(srcdir)/'`m_demangle/safe-ctype.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-safe-ctype.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-safe-ctype.Po
-#	source='m_demangle/safe-ctype.c' object='libcoregrind_x86_linux_a-safe-ctype.o' libtool=no \
+libcoregrind_amd64_linux_a-safe-ctype.o: m_demangle/safe-ctype.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-safe-ctype.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-safe-ctype.Tpo -c -o libcoregrind_amd64_linux_a-safe-ctype.o `test -f 'm_demangle/safe-ctype.c' || echo '$(srcdir)/'`m_demangle/safe-ctype.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-safe-ctype.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-safe-ctype.Po
+#	source='m_demangle/safe-ctype.c' object='libcoregrind_amd64_linux_a-safe-ctype.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-safe-ctype.o `test -f 'm_demangle/safe-ctype.c' || echo '$(srcdir)/'`m_demangle/safe-ctype.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-safe-ctype.o `test -f 'm_demangle/safe-ctype.c' || echo '$(srcdir)/'`m_demangle/safe-ctype.c
 
-libcoregrind_x86_linux_a-safe-ctype.obj: m_demangle/safe-ctype.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-safe-ctype.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-safe-ctype.Tpo -c -o libcoregrind_x86_linux_a-safe-ctype.obj `if test -f 'm_demangle/safe-ctype.c'; then $(CYGPATH_W) 'm_demangle/safe-ctype.c'; else $(CYGPATH_W) '$(srcdir)/m_demangle/safe-ctype.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-safe-ctype.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-safe-ctype.Po
-#	source='m_demangle/safe-ctype.c' object='libcoregrind_x86_linux_a-safe-ctype.obj' libtool=no \
+libcoregrind_amd64_linux_a-safe-ctype.obj: m_demangle/safe-ctype.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-safe-ctype.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-safe-ctype.Tpo -c -o libcoregrind_amd64_linux_a-safe-ctype.obj `if test -f 'm_demangle/safe-ctype.c'; then $(CYGPATH_W) 'm_demangle/safe-ctype.c'; else $(CYGPATH_W) '$(srcdir)/m_demangle/safe-ctype.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-safe-ctype.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-safe-ctype.Po
+#	source='m_demangle/safe-ctype.c' object='libcoregrind_amd64_linux_a-safe-ctype.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-safe-ctype.obj `if test -f 'm_demangle/safe-ctype.c'; then $(CYGPATH_W) 'm_demangle/safe-ctype.c'; else $(CYGPATH_W) '$(srcdir)/m_demangle/safe-ctype.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-safe-ctype.obj `if test -f 'm_demangle/safe-ctype.c'; then $(CYGPATH_W) 'm_demangle/safe-ctype.c'; else $(CYGPATH_W) '$(srcdir)/m_demangle/safe-ctype.c'; fi`
 
-libcoregrind_x86_linux_a-m_gdbserver.o: m_gdbserver/m_gdbserver.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_gdbserver.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_gdbserver.Tpo -c -o libcoregrind_x86_linux_a-m_gdbserver.o `test -f 'm_gdbserver/m_gdbserver.c' || echo '$(srcdir)/'`m_gdbserver/m_gdbserver.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_gdbserver.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_gdbserver.Po
-#	source='m_gdbserver/m_gdbserver.c' object='libcoregrind_x86_linux_a-m_gdbserver.o' libtool=no \
+libcoregrind_amd64_linux_a-m_gdbserver.o: m_gdbserver/m_gdbserver.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_gdbserver.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_gdbserver.Tpo -c -o libcoregrind_amd64_linux_a-m_gdbserver.o `test -f 'm_gdbserver/m_gdbserver.c' || echo '$(srcdir)/'`m_gdbserver/m_gdbserver.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_gdbserver.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_gdbserver.Po
+#	source='m_gdbserver/m_gdbserver.c' object='libcoregrind_amd64_linux_a-m_gdbserver.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_gdbserver.o `test -f 'm_gdbserver/m_gdbserver.c' || echo '$(srcdir)/'`m_gdbserver/m_gdbserver.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_gdbserver.o `test -f 'm_gdbserver/m_gdbserver.c' || echo '$(srcdir)/'`m_gdbserver/m_gdbserver.c
 
-libcoregrind_x86_linux_a-m_gdbserver.obj: m_gdbserver/m_gdbserver.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-m_gdbserver.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-m_gdbserver.Tpo -c -o libcoregrind_x86_linux_a-m_gdbserver.obj `if test -f 'm_gdbserver/m_gdbserver.c'; then $(CYGPATH_W) 'm_gdbserver/m_gdbserver.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/m_gdbserver.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-m_gdbserver.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-m_gdbserver.Po
-#	source='m_gdbserver/m_gdbserver.c' object='libcoregrind_x86_linux_a-m_gdbserver.obj' libtool=no \
+libcoregrind_amd64_linux_a-m_gdbserver.obj: m_gdbserver/m_gdbserver.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-m_gdbserver.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-m_gdbserver.Tpo -c -o libcoregrind_amd64_linux_a-m_gdbserver.obj `if test -f 'm_gdbserver/m_gdbserver.c'; then $(CYGPATH_W) 'm_gdbserver/m_gdbserver.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/m_gdbserver.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-m_gdbserver.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-m_gdbserver.Po
+#	source='m_gdbserver/m_gdbserver.c' object='libcoregrind_amd64_linux_a-m_gdbserver.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-m_gdbserver.obj `if test -f 'm_gdbserver/m_gdbserver.c'; then $(CYGPATH_W) 'm_gdbserver/m_gdbserver.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/m_gdbserver.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-m_gdbserver.obj `if test -f 'm_gdbserver/m_gdbserver.c'; then $(CYGPATH_W) 'm_gdbserver/m_gdbserver.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/m_gdbserver.c'; fi`
 
-libcoregrind_x86_linux_a-inferiors.o: m_gdbserver/inferiors.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-inferiors.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-inferiors.Tpo -c -o libcoregrind_x86_linux_a-inferiors.o `test -f 'm_gdbserver/inferiors.c' || echo '$(srcdir)/'`m_gdbserver/inferiors.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-inferiors.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-inferiors.Po
-#	source='m_gdbserver/inferiors.c' object='libcoregrind_x86_linux_a-inferiors.o' libtool=no \
+libcoregrind_amd64_linux_a-inferiors.o: m_gdbserver/inferiors.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-inferiors.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-inferiors.Tpo -c -o libcoregrind_amd64_linux_a-inferiors.o `test -f 'm_gdbserver/inferiors.c' || echo '$(srcdir)/'`m_gdbserver/inferiors.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-inferiors.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-inferiors.Po
+#	source='m_gdbserver/inferiors.c' object='libcoregrind_amd64_linux_a-inferiors.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-inferiors.o `test -f 'm_gdbserver/inferiors.c' || echo '$(srcdir)/'`m_gdbserver/inferiors.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-inferiors.o `test -f 'm_gdbserver/inferiors.c' || echo '$(srcdir)/'`m_gdbserver/inferiors.c
 
-libcoregrind_x86_linux_a-inferiors.obj: m_gdbserver/inferiors.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-inferiors.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-inferiors.Tpo -c -o libcoregrind_x86_linux_a-inferiors.obj `if test -f 'm_gdbserver/inferiors.c'; then $(CYGPATH_W) 'm_gdbserver/inferiors.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/inferiors.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-inferiors.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-inferiors.Po
-#	source='m_gdbserver/inferiors.c' object='libcoregrind_x86_linux_a-inferiors.obj' libtool=no \
+libcoregrind_amd64_linux_a-inferiors.obj: m_gdbserver/inferiors.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-inferiors.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-inferiors.Tpo -c -o libcoregrind_amd64_linux_a-inferiors.obj `if test -f 'm_gdbserver/inferiors.c'; then $(CYGPATH_W) 'm_gdbserver/inferiors.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/inferiors.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-inferiors.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-inferiors.Po
+#	source='m_gdbserver/inferiors.c' object='libcoregrind_amd64_linux_a-inferiors.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-inferiors.obj `if test -f 'm_gdbserver/inferiors.c'; then $(CYGPATH_W) 'm_gdbserver/inferiors.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/inferiors.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-inferiors.obj `if test -f 'm_gdbserver/inferiors.c'; then $(CYGPATH_W) 'm_gdbserver/inferiors.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/inferiors.c'; fi`
 
-libcoregrind_x86_linux_a-regcache.o: m_gdbserver/regcache.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-regcache.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-regcache.Tpo -c -o libcoregrind_x86_linux_a-regcache.o `test -f 'm_gdbserver/regcache.c' || echo '$(srcdir)/'`m_gdbserver/regcache.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-regcache.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-regcache.Po
-#	source='m_gdbserver/regcache.c' object='libcoregrind_x86_linux_a-regcache.o' libtool=no \
+libcoregrind_amd64_linux_a-regcache.o: m_gdbserver/regcache.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-regcache.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-regcache.Tpo -c -o libcoregrind_amd64_linux_a-regcache.o `test -f 'm_gdbserver/regcache.c' || echo '$(srcdir)/'`m_gdbserver/regcache.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-regcache.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-regcache.Po
+#	source='m_gdbserver/regcache.c' object='libcoregrind_amd64_linux_a-regcache.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-regcache.o `test -f 'm_gdbserver/regcache.c' || echo '$(srcdir)/'`m_gdbserver/regcache.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-regcache.o `test -f 'm_gdbserver/regcache.c' || echo '$(srcdir)/'`m_gdbserver/regcache.c
 
-libcoregrind_x86_linux_a-regcache.obj: m_gdbserver/regcache.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-regcache.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-regcache.Tpo -c -o libcoregrind_x86_linux_a-regcache.obj `if test -f 'm_gdbserver/regcache.c'; then $(CYGPATH_W) 'm_gdbserver/regcache.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/regcache.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-regcache.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-regcache.Po
-#	source='m_gdbserver/regcache.c' object='libcoregrind_x86_linux_a-regcache.obj' libtool=no \
+libcoregrind_amd64_linux_a-regcache.obj: m_gdbserver/regcache.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-regcache.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-regcache.Tpo -c -o libcoregrind_amd64_linux_a-regcache.obj `if test -f 'm_gdbserver/regcache.c'; then $(CYGPATH_W) 'm_gdbserver/regcache.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/regcache.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-regcache.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-regcache.Po
+#	source='m_gdbserver/regcache.c' object='libcoregrind_amd64_linux_a-regcache.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-regcache.obj `if test -f 'm_gdbserver/regcache.c'; then $(CYGPATH_W) 'm_gdbserver/regcache.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/regcache.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-regcache.obj `if test -f 'm_gdbserver/regcache.c'; then $(CYGPATH_W) 'm_gdbserver/regcache.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/regcache.c'; fi`
 
-libcoregrind_x86_linux_a-remote-utils.o: m_gdbserver/remote-utils.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-remote-utils.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-remote-utils.Tpo -c -o libcoregrind_x86_linux_a-remote-utils.o `test -f 'm_gdbserver/remote-utils.c' || echo '$(srcdir)/'`m_gdbserver/remote-utils.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-remote-utils.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-remote-utils.Po
-#	source='m_gdbserver/remote-utils.c' object='libcoregrind_x86_linux_a-remote-utils.o' libtool=no \
+libcoregrind_amd64_linux_a-remote-utils.o: m_gdbserver/remote-utils.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-remote-utils.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-remote-utils.Tpo -c -o libcoregrind_amd64_linux_a-remote-utils.o `test -f 'm_gdbserver/remote-utils.c' || echo '$(srcdir)/'`m_gdbserver/remote-utils.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-remote-utils.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-remote-utils.Po
+#	source='m_gdbserver/remote-utils.c' object='libcoregrind_amd64_linux_a-remote-utils.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-remote-utils.o `test -f 'm_gdbserver/remote-utils.c' || echo '$(srcdir)/'`m_gdbserver/remote-utils.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-remote-utils.o `test -f 'm_gdbserver/remote-utils.c' || echo '$(srcdir)/'`m_gdbserver/remote-utils.c
 
-libcoregrind_x86_linux_a-remote-utils.obj: m_gdbserver/remote-utils.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-remote-utils.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-remote-utils.Tpo -c -o libcoregrind_x86_linux_a-remote-utils.obj `if test -f 'm_gdbserver/remote-utils.c'; then $(CYGPATH_W) 'm_gdbserver/remote-utils.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/remote-utils.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-remote-utils.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-remote-utils.Po
-#	source='m_gdbserver/remote-utils.c' object='libcoregrind_x86_linux_a-remote-utils.obj' libtool=no \
+libcoregrind_amd64_linux_a-remote-utils.obj: m_gdbserver/remote-utils.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-remote-utils.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-remote-utils.Tpo -c -o libcoregrind_amd64_linux_a-remote-utils.obj `if test -f 'm_gdbserver/remote-utils.c'; then $(CYGPATH_W) 'm_gdbserver/remote-utils.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/remote-utils.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-remote-utils.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-remote-utils.Po
+#	source='m_gdbserver/remote-utils.c' object='libcoregrind_amd64_linux_a-remote-utils.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-remote-utils.obj `if test -f 'm_gdbserver/remote-utils.c'; then $(CYGPATH_W) 'm_gdbserver/remote-utils.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/remote-utils.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-remote-utils.obj `if test -f 'm_gdbserver/remote-utils.c'; then $(CYGPATH_W) 'm_gdbserver/remote-utils.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/remote-utils.c'; fi`
 
-libcoregrind_x86_linux_a-server.o: m_gdbserver/server.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-server.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-server.Tpo -c -o libcoregrind_x86_linux_a-server.o `test -f 'm_gdbserver/server.c' || echo '$(srcdir)/'`m_gdbserver/server.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-server.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-server.Po
-#	source='m_gdbserver/server.c' object='libcoregrind_x86_linux_a-server.o' libtool=no \
+libcoregrind_amd64_linux_a-server.o: m_gdbserver/server.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-server.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-server.Tpo -c -o libcoregrind_amd64_linux_a-server.o `test -f 'm_gdbserver/server.c' || echo '$(srcdir)/'`m_gdbserver/server.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-server.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-server.Po
+#	source='m_gdbserver/server.c' object='libcoregrind_amd64_linux_a-server.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-server.o `test -f 'm_gdbserver/server.c' || echo '$(srcdir)/'`m_gdbserver/server.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-server.o `test -f 'm_gdbserver/server.c' || echo '$(srcdir)/'`m_gdbserver/server.c
 
-libcoregrind_x86_linux_a-server.obj: m_gdbserver/server.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-server.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-server.Tpo -c -o libcoregrind_x86_linux_a-server.obj `if test -f 'm_gdbserver/server.c'; then $(CYGPATH_W) 'm_gdbserver/server.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/server.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-server.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-server.Po
-#	source='m_gdbserver/server.c' object='libcoregrind_x86_linux_a-server.obj' libtool=no \
+libcoregrind_amd64_linux_a-server.obj: m_gdbserver/server.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-server.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-server.Tpo -c -o libcoregrind_amd64_linux_a-server.obj `if test -f 'm_gdbserver/server.c'; then $(CYGPATH_W) 'm_gdbserver/server.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/server.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-server.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-server.Po
+#	source='m_gdbserver/server.c' object='libcoregrind_amd64_linux_a-server.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-server.obj `if test -f 'm_gdbserver/server.c'; then $(CYGPATH_W) 'm_gdbserver/server.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/server.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-server.obj `if test -f 'm_gdbserver/server.c'; then $(CYGPATH_W) 'm_gdbserver/server.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/server.c'; fi`
 
-libcoregrind_x86_linux_a-signals.o: m_gdbserver/signals.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-signals.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-signals.Tpo -c -o libcoregrind_x86_linux_a-signals.o `test -f 'm_gdbserver/signals.c' || echo '$(srcdir)/'`m_gdbserver/signals.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-signals.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-signals.Po
-#	source='m_gdbserver/signals.c' object='libcoregrind_x86_linux_a-signals.o' libtool=no \
+libcoregrind_amd64_linux_a-signals.o: m_gdbserver/signals.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-signals.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-signals.Tpo -c -o libcoregrind_amd64_linux_a-signals.o `test -f 'm_gdbserver/signals.c' || echo '$(srcdir)/'`m_gdbserver/signals.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-signals.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-signals.Po
+#	source='m_gdbserver/signals.c' object='libcoregrind_amd64_linux_a-signals.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-signals.o `test -f 'm_gdbserver/signals.c' || echo '$(srcdir)/'`m_gdbserver/signals.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-signals.o `test -f 'm_gdbserver/signals.c' || echo '$(srcdir)/'`m_gdbserver/signals.c
 
-libcoregrind_x86_linux_a-signals.obj: m_gdbserver/signals.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-signals.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-signals.Tpo -c -o libcoregrind_x86_linux_a-signals.obj `if test -f 'm_gdbserver/signals.c'; then $(CYGPATH_W) 'm_gdbserver/signals.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/signals.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-signals.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-signals.Po
-#	source='m_gdbserver/signals.c' object='libcoregrind_x86_linux_a-signals.obj' libtool=no \
+libcoregrind_amd64_linux_a-signals.obj: m_gdbserver/signals.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-signals.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-signals.Tpo -c -o libcoregrind_amd64_linux_a-signals.obj `if test -f 'm_gdbserver/signals.c'; then $(CYGPATH_W) 'm_gdbserver/signals.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/signals.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-signals.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-signals.Po
+#	source='m_gdbserver/signals.c' object='libcoregrind_amd64_linux_a-signals.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-signals.obj `if test -f 'm_gdbserver/signals.c'; then $(CYGPATH_W) 'm_gdbserver/signals.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/signals.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-signals.obj `if test -f 'm_gdbserver/signals.c'; then $(CYGPATH_W) 'm_gdbserver/signals.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/signals.c'; fi`
 
-libcoregrind_x86_linux_a-target.o: m_gdbserver/target.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-target.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-target.Tpo -c -o libcoregrind_x86_linux_a-target.o `test -f 'm_gdbserver/target.c' || echo '$(srcdir)/'`m_gdbserver/target.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-target.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-target.Po
-#	source='m_gdbserver/target.c' object='libcoregrind_x86_linux_a-target.o' libtool=no \
+libcoregrind_amd64_linux_a-target.o: m_gdbserver/target.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-target.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-target.Tpo -c -o libcoregrind_amd64_linux_a-target.o `test -f 'm_gdbserver/target.c' || echo '$(srcdir)/'`m_gdbserver/target.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-target.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-target.Po
+#	source='m_gdbserver/target.c' object='libcoregrind_amd64_linux_a-target.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-target.o `test -f 'm_gdbserver/target.c' || echo '$(srcdir)/'`m_gdbserver/target.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-target.o `test -f 'm_gdbserver/target.c' || echo '$(srcdir)/'`m_gdbserver/target.c
 
-libcoregrind_x86_linux_a-target.obj: m_gdbserver/target.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-target.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-target.Tpo -c -o libcoregrind_x86_linux_a-target.obj `if test -f 'm_gdbserver/target.c'; then $(CYGPATH_W) 'm_gdbserver/target.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/target.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-target.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-target.Po
-#	source='m_gdbserver/target.c' object='libcoregrind_x86_linux_a-target.obj' libtool=no \
+libcoregrind_amd64_linux_a-target.obj: m_gdbserver/target.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-target.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-target.Tpo -c -o libcoregrind_amd64_linux_a-target.obj `if test -f 'm_gdbserver/target.c'; then $(CYGPATH_W) 'm_gdbserver/target.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/target.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-target.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-target.Po
+#	source='m_gdbserver/target.c' object='libcoregrind_amd64_linux_a-target.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-target.obj `if test -f 'm_gdbserver/target.c'; then $(CYGPATH_W) 'm_gdbserver/target.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/target.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-target.obj `if test -f 'm_gdbserver/target.c'; then $(CYGPATH_W) 'm_gdbserver/target.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/target.c'; fi`
 
-libcoregrind_x86_linux_a-utils.o: m_gdbserver/utils.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-utils.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-utils.Tpo -c -o libcoregrind_x86_linux_a-utils.o `test -f 'm_gdbserver/utils.c' || echo '$(srcdir)/'`m_gdbserver/utils.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-utils.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-utils.Po
-#	source='m_gdbserver/utils.c' object='libcoregrind_x86_linux_a-utils.o' libtool=no \
+libcoregrind_amd64_linux_a-utils.o: m_gdbserver/utils.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-utils.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-utils.Tpo -c -o libcoregrind_amd64_linux_a-utils.o `test -f 'm_gdbserver/utils.c' || echo '$(srcdir)/'`m_gdbserver/utils.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-utils.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-utils.Po
+#	source='m_gdbserver/utils.c' object='libcoregrind_amd64_linux_a-utils.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-utils.o `test -f 'm_gdbserver/utils.c' || echo '$(srcdir)/'`m_gdbserver/utils.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-utils.o `test -f 'm_gdbserver/utils.c' || echo '$(srcdir)/'`m_gdbserver/utils.c
 
-libcoregrind_x86_linux_a-utils.obj: m_gdbserver/utils.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-utils.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-utils.Tpo -c -o libcoregrind_x86_linux_a-utils.obj `if test -f 'm_gdbserver/utils.c'; then $(CYGPATH_W) 'm_gdbserver/utils.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/utils.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-utils.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-utils.Po
-#	source='m_gdbserver/utils.c' object='libcoregrind_x86_linux_a-utils.obj' libtool=no \
+libcoregrind_amd64_linux_a-utils.obj: m_gdbserver/utils.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-utils.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-utils.Tpo -c -o libcoregrind_amd64_linux_a-utils.obj `if test -f 'm_gdbserver/utils.c'; then $(CYGPATH_W) 'm_gdbserver/utils.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/utils.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-utils.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-utils.Po
+#	source='m_gdbserver/utils.c' object='libcoregrind_amd64_linux_a-utils.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-utils.obj `if test -f 'm_gdbserver/utils.c'; then $(CYGPATH_W) 'm_gdbserver/utils.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/utils.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-utils.obj `if test -f 'm_gdbserver/utils.c'; then $(CYGPATH_W) 'm_gdbserver/utils.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/utils.c'; fi`
 
-libcoregrind_x86_linux_a-valgrind-low.o: m_gdbserver/valgrind-low.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-valgrind-low.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low.Tpo -c -o libcoregrind_x86_linux_a-valgrind-low.o `test -f 'm_gdbserver/valgrind-low.c' || echo '$(srcdir)/'`m_gdbserver/valgrind-low.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low.Po
-#	source='m_gdbserver/valgrind-low.c' object='libcoregrind_x86_linux_a-valgrind-low.o' libtool=no \
+libcoregrind_amd64_linux_a-valgrind-low.o: m_gdbserver/valgrind-low.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-valgrind-low.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low.Tpo -c -o libcoregrind_amd64_linux_a-valgrind-low.o `test -f 'm_gdbserver/valgrind-low.c' || echo '$(srcdir)/'`m_gdbserver/valgrind-low.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low.Po
+#	source='m_gdbserver/valgrind-low.c' object='libcoregrind_amd64_linux_a-valgrind-low.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-valgrind-low.o `test -f 'm_gdbserver/valgrind-low.c' || echo '$(srcdir)/'`m_gdbserver/valgrind-low.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-valgrind-low.o `test -f 'm_gdbserver/valgrind-low.c' || echo '$(srcdir)/'`m_gdbserver/valgrind-low.c
 
-libcoregrind_x86_linux_a-valgrind-low.obj: m_gdbserver/valgrind-low.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-valgrind-low.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low.Tpo -c -o libcoregrind_x86_linux_a-valgrind-low.obj `if test -f 'm_gdbserver/valgrind-low.c'; then $(CYGPATH_W) 'm_gdbserver/valgrind-low.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/valgrind-low.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low.Po
-#	source='m_gdbserver/valgrind-low.c' object='libcoregrind_x86_linux_a-valgrind-low.obj' libtool=no \
+libcoregrind_amd64_linux_a-valgrind-low.obj: m_gdbserver/valgrind-low.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-valgrind-low.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low.Tpo -c -o libcoregrind_amd64_linux_a-valgrind-low.obj `if test -f 'm_gdbserver/valgrind-low.c'; then $(CYGPATH_W) 'm_gdbserver/valgrind-low.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/valgrind-low.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low.Po
+#	source='m_gdbserver/valgrind-low.c' object='libcoregrind_amd64_linux_a-valgrind-low.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-valgrind-low.obj `if test -f 'm_gdbserver/valgrind-low.c'; then $(CYGPATH_W) 'm_gdbserver/valgrind-low.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/valgrind-low.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-valgrind-low.obj `if test -f 'm_gdbserver/valgrind-low.c'; then $(CYGPATH_W) 'm_gdbserver/valgrind-low.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/valgrind-low.c'; fi`
 
-libcoregrind_x86_linux_a-valgrind-low-x86.o: m_gdbserver/valgrind-low-x86.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-valgrind-low-x86.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-x86.Tpo -c -o libcoregrind_x86_linux_a-valgrind-low-x86.o `test -f 'm_gdbserver/valgrind-low-x86.c' || echo '$(srcdir)/'`m_gdbserver/valgrind-low-x86.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-x86.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-x86.Po
-#	source='m_gdbserver/valgrind-low-x86.c' object='libcoregrind_x86_linux_a-valgrind-low-x86.o' libtool=no \
+libcoregrind_amd64_linux_a-valgrind-low-x86.o: m_gdbserver/valgrind-low-x86.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-valgrind-low-x86.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-x86.Tpo -c -o libcoregrind_amd64_linux_a-valgrind-low-x86.o `test -f 'm_gdbserver/valgrind-low-x86.c' || echo '$(srcdir)/'`m_gdbserver/valgrind-low-x86.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-x86.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-x86.Po
+#	source='m_gdbserver/valgrind-low-x86.c' object='libcoregrind_amd64_linux_a-valgrind-low-x86.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-valgrind-low-x86.o `test -f 'm_gdbserver/valgrind-low-x86.c' || echo '$(srcdir)/'`m_gdbserver/valgrind-low-x86.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-valgrind-low-x86.o `test -f 'm_gdbserver/valgrind-low-x86.c' || echo '$(srcdir)/'`m_gdbserver/valgrind-low-x86.c
 
-libcoregrind_x86_linux_a-valgrind-low-x86.obj: m_gdbserver/valgrind-low-x86.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-valgrind-low-x86.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-x86.Tpo -c -o libcoregrind_x86_linux_a-valgrind-low-x86.obj `if test -f 'm_gdbserver/valgrind-low-x86.c'; then $(CYGPATH_W) 'm_gdbserver/valgrind-low-x86.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/valgrind-low-x86.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-x86.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-x86.Po
-#	source='m_gdbserver/valgrind-low-x86.c' object='libcoregrind_x86_linux_a-valgrind-low-x86.obj' libtool=no \
+libcoregrind_amd64_linux_a-valgrind-low-x86.obj: m_gdbserver/valgrind-low-x86.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-valgrind-low-x86.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-x86.Tpo -c -o libcoregrind_amd64_linux_a-valgrind-low-x86.obj `if test -f 'm_gdbserver/valgrind-low-x86.c'; then $(CYGPATH_W) 'm_gdbserver/valgrind-low-x86.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/valgrind-low-x86.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-x86.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-x86.Po
+#	source='m_gdbserver/valgrind-low-x86.c' object='libcoregrind_amd64_linux_a-valgrind-low-x86.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-valgrind-low-x86.obj `if test -f 'm_gdbserver/valgrind-low-x86.c'; then $(CYGPATH_W) 'm_gdbserver/valgrind-low-x86.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/valgrind-low-x86.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-valgrind-low-x86.obj `if test -f 'm_gdbserver/valgrind-low-x86.c'; then $(CYGPATH_W) 'm_gdbserver/valgrind-low-x86.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/valgrind-low-x86.c'; fi`
 
-libcoregrind_x86_linux_a-valgrind-low-amd64.o: m_gdbserver/valgrind-low-amd64.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-valgrind-low-amd64.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-amd64.Tpo -c -o libcoregrind_x86_linux_a-valgrind-low-amd64.o `test -f 'm_gdbserver/valgrind-low-amd64.c' || echo '$(srcdir)/'`m_gdbserver/valgrind-low-amd64.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-amd64.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-amd64.Po
-#	source='m_gdbserver/valgrind-low-amd64.c' object='libcoregrind_x86_linux_a-valgrind-low-amd64.o' libtool=no \
+libcoregrind_amd64_linux_a-valgrind-low-amd64.o: m_gdbserver/valgrind-low-amd64.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-valgrind-low-amd64.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-amd64.Tpo -c -o libcoregrind_amd64_linux_a-valgrind-low-amd64.o `test -f 'm_gdbserver/valgrind-low-amd64.c' || echo '$(srcdir)/'`m_gdbserver/valgrind-low-amd64.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-amd64.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-amd64.Po
+#	source='m_gdbserver/valgrind-low-amd64.c' object='libcoregrind_amd64_linux_a-valgrind-low-amd64.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-valgrind-low-amd64.o `test -f 'm_gdbserver/valgrind-low-amd64.c' || echo '$(srcdir)/'`m_gdbserver/valgrind-low-amd64.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-valgrind-low-amd64.o `test -f 'm_gdbserver/valgrind-low-amd64.c' || echo '$(srcdir)/'`m_gdbserver/valgrind-low-amd64.c
 
-libcoregrind_x86_linux_a-valgrind-low-amd64.obj: m_gdbserver/valgrind-low-amd64.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-valgrind-low-amd64.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-amd64.Tpo -c -o libcoregrind_x86_linux_a-valgrind-low-amd64.obj `if test -f 'm_gdbserver/valgrind-low-amd64.c'; then $(CYGPATH_W) 'm_gdbserver/valgrind-low-amd64.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/valgrind-low-amd64.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-amd64.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-amd64.Po
-#	source='m_gdbserver/valgrind-low-amd64.c' object='libcoregrind_x86_linux_a-valgrind-low-amd64.obj' libtool=no \
+libcoregrind_amd64_linux_a-valgrind-low-amd64.obj: m_gdbserver/valgrind-low-amd64.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-valgrind-low-amd64.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-amd64.Tpo -c -o libcoregrind_amd64_linux_a-valgrind-low-amd64.obj `if test -f 'm_gdbserver/valgrind-low-amd64.c'; then $(CYGPATH_W) 'm_gdbserver/valgrind-low-amd64.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/valgrind-low-amd64.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-amd64.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-amd64.Po
+#	source='m_gdbserver/valgrind-low-amd64.c' object='libcoregrind_amd64_linux_a-valgrind-low-amd64.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-valgrind-low-amd64.obj `if test -f 'm_gdbserver/valgrind-low-amd64.c'; then $(CYGPATH_W) 'm_gdbserver/valgrind-low-amd64.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/valgrind-low-amd64.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-valgrind-low-amd64.obj `if test -f 'm_gdbserver/valgrind-low-amd64.c'; then $(CYGPATH_W) 'm_gdbserver/valgrind-low-amd64.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/valgrind-low-amd64.c'; fi`
 
-libcoregrind_x86_linux_a-valgrind-low-arm.o: m_gdbserver/valgrind-low-arm.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-valgrind-low-arm.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-arm.Tpo -c -o libcoregrind_x86_linux_a-valgrind-low-arm.o `test -f 'm_gdbserver/valgrind-low-arm.c' || echo '$(srcdir)/'`m_gdbserver/valgrind-low-arm.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-arm.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-arm.Po
-#	source='m_gdbserver/valgrind-low-arm.c' object='libcoregrind_x86_linux_a-valgrind-low-arm.o' libtool=no \
+libcoregrind_amd64_linux_a-valgrind-low-arm.o: m_gdbserver/valgrind-low-arm.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-valgrind-low-arm.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-arm.Tpo -c -o libcoregrind_amd64_linux_a-valgrind-low-arm.o `test -f 'm_gdbserver/valgrind-low-arm.c' || echo '$(srcdir)/'`m_gdbserver/valgrind-low-arm.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-arm.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-arm.Po
+#	source='m_gdbserver/valgrind-low-arm.c' object='libcoregrind_amd64_linux_a-valgrind-low-arm.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-valgrind-low-arm.o `test -f 'm_gdbserver/valgrind-low-arm.c' || echo '$(srcdir)/'`m_gdbserver/valgrind-low-arm.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-valgrind-low-arm.o `test -f 'm_gdbserver/valgrind-low-arm.c' || echo '$(srcdir)/'`m_gdbserver/valgrind-low-arm.c
 
-libcoregrind_x86_linux_a-valgrind-low-arm.obj: m_gdbserver/valgrind-low-arm.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-valgrind-low-arm.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-arm.Tpo -c -o libcoregrind_x86_linux_a-valgrind-low-arm.obj `if test -f 'm_gdbserver/valgrind-low-arm.c'; then $(CYGPATH_W) 'm_gdbserver/valgrind-low-arm.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/valgrind-low-arm.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-arm.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-arm.Po
-#	source='m_gdbserver/valgrind-low-arm.c' object='libcoregrind_x86_linux_a-valgrind-low-arm.obj' libtool=no \
+libcoregrind_amd64_linux_a-valgrind-low-arm.obj: m_gdbserver/valgrind-low-arm.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-valgrind-low-arm.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-arm.Tpo -c -o libcoregrind_amd64_linux_a-valgrind-low-arm.obj `if test -f 'm_gdbserver/valgrind-low-arm.c'; then $(CYGPATH_W) 'm_gdbserver/valgrind-low-arm.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/valgrind-low-arm.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-arm.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-arm.Po
+#	source='m_gdbserver/valgrind-low-arm.c' object='libcoregrind_amd64_linux_a-valgrind-low-arm.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-valgrind-low-arm.obj `if test -f 'm_gdbserver/valgrind-low-arm.c'; then $(CYGPATH_W) 'm_gdbserver/valgrind-low-arm.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/valgrind-low-arm.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-valgrind-low-arm.obj `if test -f 'm_gdbserver/valgrind-low-arm.c'; then $(CYGPATH_W) 'm_gdbserver/valgrind-low-arm.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/valgrind-low-arm.c'; fi`
 
-libcoregrind_x86_linux_a-valgrind-low-ppc32.o: m_gdbserver/valgrind-low-ppc32.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-valgrind-low-ppc32.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-ppc32.Tpo -c -o libcoregrind_x86_linux_a-valgrind-low-ppc32.o `test -f 'm_gdbserver/valgrind-low-ppc32.c' || echo '$(srcdir)/'`m_gdbserver/valgrind-low-ppc32.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-ppc32.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-ppc32.Po
-#	source='m_gdbserver/valgrind-low-ppc32.c' object='libcoregrind_x86_linux_a-valgrind-low-ppc32.o' libtool=no \
+libcoregrind_amd64_linux_a-valgrind-low-ppc32.o: m_gdbserver/valgrind-low-ppc32.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-valgrind-low-ppc32.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-ppc32.Tpo -c -o libcoregrind_amd64_linux_a-valgrind-low-ppc32.o `test -f 'm_gdbserver/valgrind-low-ppc32.c' || echo '$(srcdir)/'`m_gdbserver/valgrind-low-ppc32.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-ppc32.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-ppc32.Po
+#	source='m_gdbserver/valgrind-low-ppc32.c' object='libcoregrind_amd64_linux_a-valgrind-low-ppc32.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-valgrind-low-ppc32.o `test -f 'm_gdbserver/valgrind-low-ppc32.c' || echo '$(srcdir)/'`m_gdbserver/valgrind-low-ppc32.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-valgrind-low-ppc32.o `test -f 'm_gdbserver/valgrind-low-ppc32.c' || echo '$(srcdir)/'`m_gdbserver/valgrind-low-ppc32.c
 
-libcoregrind_x86_linux_a-valgrind-low-ppc32.obj: m_gdbserver/valgrind-low-ppc32.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-valgrind-low-ppc32.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-ppc32.Tpo -c -o libcoregrind_x86_linux_a-valgrind-low-ppc32.obj `if test -f 'm_gdbserver/valgrind-low-ppc32.c'; then $(CYGPATH_W) 'm_gdbserver/valgrind-low-ppc32.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/valgrind-low-ppc32.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-ppc32.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-ppc32.Po
-#	source='m_gdbserver/valgrind-low-ppc32.c' object='libcoregrind_x86_linux_a-valgrind-low-ppc32.obj' libtool=no \
+libcoregrind_amd64_linux_a-valgrind-low-ppc32.obj: m_gdbserver/valgrind-low-ppc32.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-valgrind-low-ppc32.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-ppc32.Tpo -c -o libcoregrind_amd64_linux_a-valgrind-low-ppc32.obj `if test -f 'm_gdbserver/valgrind-low-ppc32.c'; then $(CYGPATH_W) 'm_gdbserver/valgrind-low-ppc32.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/valgrind-low-ppc32.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-ppc32.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-ppc32.Po
+#	source='m_gdbserver/valgrind-low-ppc32.c' object='libcoregrind_amd64_linux_a-valgrind-low-ppc32.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-valgrind-low-ppc32.obj `if test -f 'm_gdbserver/valgrind-low-ppc32.c'; then $(CYGPATH_W) 'm_gdbserver/valgrind-low-ppc32.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/valgrind-low-ppc32.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-valgrind-low-ppc32.obj `if test -f 'm_gdbserver/valgrind-low-ppc32.c'; then $(CYGPATH_W) 'm_gdbserver/valgrind-low-ppc32.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/valgrind-low-ppc32.c'; fi`
 
-libcoregrind_x86_linux_a-valgrind-low-ppc64.o: m_gdbserver/valgrind-low-ppc64.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-valgrind-low-ppc64.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-ppc64.Tpo -c -o libcoregrind_x86_linux_a-valgrind-low-ppc64.o `test -f 'm_gdbserver/valgrind-low-ppc64.c' || echo '$(srcdir)/'`m_gdbserver/valgrind-low-ppc64.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-ppc64.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-ppc64.Po
-#	source='m_gdbserver/valgrind-low-ppc64.c' object='libcoregrind_x86_linux_a-valgrind-low-ppc64.o' libtool=no \
+libcoregrind_amd64_linux_a-valgrind-low-ppc64.o: m_gdbserver/valgrind-low-ppc64.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-valgrind-low-ppc64.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-ppc64.Tpo -c -o libcoregrind_amd64_linux_a-valgrind-low-ppc64.o `test -f 'm_gdbserver/valgrind-low-ppc64.c' || echo '$(srcdir)/'`m_gdbserver/valgrind-low-ppc64.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-ppc64.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-ppc64.Po
+#	source='m_gdbserver/valgrind-low-ppc64.c' object='libcoregrind_amd64_linux_a-valgrind-low-ppc64.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-valgrind-low-ppc64.o `test -f 'm_gdbserver/valgrind-low-ppc64.c' || echo '$(srcdir)/'`m_gdbserver/valgrind-low-ppc64.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-valgrind-low-ppc64.o `test -f 'm_gdbserver/valgrind-low-ppc64.c' || echo '$(srcdir)/'`m_gdbserver/valgrind-low-ppc64.c
 
-libcoregrind_x86_linux_a-valgrind-low-ppc64.obj: m_gdbserver/valgrind-low-ppc64.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-valgrind-low-ppc64.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-ppc64.Tpo -c -o libcoregrind_x86_linux_a-valgrind-low-ppc64.obj `if test -f 'm_gdbserver/valgrind-low-ppc64.c'; then $(CYGPATH_W) 'm_gdbserver/valgrind-low-ppc64.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/valgrind-low-ppc64.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-ppc64.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-ppc64.Po
-#	source='m_gdbserver/valgrind-low-ppc64.c' object='libcoregrind_x86_linux_a-valgrind-low-ppc64.obj' libtool=no \
+libcoregrind_amd64_linux_a-valgrind-low-ppc64.obj: m_gdbserver/valgrind-low-ppc64.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-valgrind-low-ppc64.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-ppc64.Tpo -c -o libcoregrind_amd64_linux_a-valgrind-low-ppc64.obj `if test -f 'm_gdbserver/valgrind-low-ppc64.c'; then $(CYGPATH_W) 'm_gdbserver/valgrind-low-ppc64.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/valgrind-low-ppc64.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-ppc64.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-ppc64.Po
+#	source='m_gdbserver/valgrind-low-ppc64.c' object='libcoregrind_amd64_linux_a-valgrind-low-ppc64.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-valgrind-low-ppc64.obj `if test -f 'm_gdbserver/valgrind-low-ppc64.c'; then $(CYGPATH_W) 'm_gdbserver/valgrind-low-ppc64.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/valgrind-low-ppc64.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-valgrind-low-ppc64.obj `if test -f 'm_gdbserver/valgrind-low-ppc64.c'; then $(CYGPATH_W) 'm_gdbserver/valgrind-low-ppc64.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/valgrind-low-ppc64.c'; fi`
 
-libcoregrind_x86_linux_a-valgrind-low-s390x.o: m_gdbserver/valgrind-low-s390x.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-valgrind-low-s390x.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-s390x.Tpo -c -o libcoregrind_x86_linux_a-valgrind-low-s390x.o `test -f 'm_gdbserver/valgrind-low-s390x.c' || echo '$(srcdir)/'`m_gdbserver/valgrind-low-s390x.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-s390x.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-s390x.Po
-#	source='m_gdbserver/valgrind-low-s390x.c' object='libcoregrind_x86_linux_a-valgrind-low-s390x.o' libtool=no \
+libcoregrind_amd64_linux_a-valgrind-low-s390x.o: m_gdbserver/valgrind-low-s390x.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-valgrind-low-s390x.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-s390x.Tpo -c -o libcoregrind_amd64_linux_a-valgrind-low-s390x.o `test -f 'm_gdbserver/valgrind-low-s390x.c' || echo '$(srcdir)/'`m_gdbserver/valgrind-low-s390x.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-s390x.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-s390x.Po
+#	source='m_gdbserver/valgrind-low-s390x.c' object='libcoregrind_amd64_linux_a-valgrind-low-s390x.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-valgrind-low-s390x.o `test -f 'm_gdbserver/valgrind-low-s390x.c' || echo '$(srcdir)/'`m_gdbserver/valgrind-low-s390x.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-valgrind-low-s390x.o `test -f 'm_gdbserver/valgrind-low-s390x.c' || echo '$(srcdir)/'`m_gdbserver/valgrind-low-s390x.c
 
-libcoregrind_x86_linux_a-valgrind-low-s390x.obj: m_gdbserver/valgrind-low-s390x.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-valgrind-low-s390x.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-s390x.Tpo -c -o libcoregrind_x86_linux_a-valgrind-low-s390x.obj `if test -f 'm_gdbserver/valgrind-low-s390x.c'; then $(CYGPATH_W) 'm_gdbserver/valgrind-low-s390x.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/valgrind-low-s390x.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-s390x.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-valgrind-low-s390x.Po
-#	source='m_gdbserver/valgrind-low-s390x.c' object='libcoregrind_x86_linux_a-valgrind-low-s390x.obj' libtool=no \
+libcoregrind_amd64_linux_a-valgrind-low-s390x.obj: m_gdbserver/valgrind-low-s390x.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-valgrind-low-s390x.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-s390x.Tpo -c -o libcoregrind_amd64_linux_a-valgrind-low-s390x.obj `if test -f 'm_gdbserver/valgrind-low-s390x.c'; then $(CYGPATH_W) 'm_gdbserver/valgrind-low-s390x.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/valgrind-low-s390x.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-s390x.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-valgrind-low-s390x.Po
+#	source='m_gdbserver/valgrind-low-s390x.c' object='libcoregrind_amd64_linux_a-valgrind-low-s390x.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-valgrind-low-s390x.obj `if test -f 'm_gdbserver/valgrind-low-s390x.c'; then $(CYGPATH_W) 'm_gdbserver/valgrind-low-s390x.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/valgrind-low-s390x.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-valgrind-low-s390x.obj `if test -f 'm_gdbserver/valgrind-low-s390x.c'; then $(CYGPATH_W) 'm_gdbserver/valgrind-low-s390x.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/valgrind-low-s390x.c'; fi`
 
-libcoregrind_x86_linux_a-version.o: m_gdbserver/version.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-version.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-version.Tpo -c -o libcoregrind_x86_linux_a-version.o `test -f 'm_gdbserver/version.c' || echo '$(srcdir)/'`m_gdbserver/version.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-version.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-version.Po
-#	source='m_gdbserver/version.c' object='libcoregrind_x86_linux_a-version.o' libtool=no \
+libcoregrind_amd64_linux_a-version.o: m_gdbserver/version.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-version.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-version.Tpo -c -o libcoregrind_amd64_linux_a-version.o `test -f 'm_gdbserver/version.c' || echo '$(srcdir)/'`m_gdbserver/version.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-version.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-version.Po
+#	source='m_gdbserver/version.c' object='libcoregrind_amd64_linux_a-version.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-version.o `test -f 'm_gdbserver/version.c' || echo '$(srcdir)/'`m_gdbserver/version.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-version.o `test -f 'm_gdbserver/version.c' || echo '$(srcdir)/'`m_gdbserver/version.c
 
-libcoregrind_x86_linux_a-version.obj: m_gdbserver/version.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-version.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-version.Tpo -c -o libcoregrind_x86_linux_a-version.obj `if test -f 'm_gdbserver/version.c'; then $(CYGPATH_W) 'm_gdbserver/version.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/version.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-version.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-version.Po
-#	source='m_gdbserver/version.c' object='libcoregrind_x86_linux_a-version.obj' libtool=no \
+libcoregrind_amd64_linux_a-version.obj: m_gdbserver/version.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-version.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-version.Tpo -c -o libcoregrind_amd64_linux_a-version.obj `if test -f 'm_gdbserver/version.c'; then $(CYGPATH_W) 'm_gdbserver/version.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/version.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-version.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-version.Po
+#	source='m_gdbserver/version.c' object='libcoregrind_amd64_linux_a-version.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-version.obj `if test -f 'm_gdbserver/version.c'; then $(CYGPATH_W) 'm_gdbserver/version.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/version.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-version.obj `if test -f 'm_gdbserver/version.c'; then $(CYGPATH_W) 'm_gdbserver/version.c'; else $(CYGPATH_W) '$(srcdir)/m_gdbserver/version.c'; fi`
 
-libcoregrind_x86_linux_a-initimg-linux.o: m_initimg/initimg-linux.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-initimg-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-initimg-linux.Tpo -c -o libcoregrind_x86_linux_a-initimg-linux.o `test -f 'm_initimg/initimg-linux.c' || echo '$(srcdir)/'`m_initimg/initimg-linux.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-initimg-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-initimg-linux.Po
-#	source='m_initimg/initimg-linux.c' object='libcoregrind_x86_linux_a-initimg-linux.o' libtool=no \
+libcoregrind_amd64_linux_a-initimg-linux.o: m_initimg/initimg-linux.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-initimg-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-initimg-linux.Tpo -c -o libcoregrind_amd64_linux_a-initimg-linux.o `test -f 'm_initimg/initimg-linux.c' || echo '$(srcdir)/'`m_initimg/initimg-linux.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-initimg-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-initimg-linux.Po
+#	source='m_initimg/initimg-linux.c' object='libcoregrind_amd64_linux_a-initimg-linux.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-initimg-linux.o `test -f 'm_initimg/initimg-linux.c' || echo '$(srcdir)/'`m_initimg/initimg-linux.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-initimg-linux.o `test -f 'm_initimg/initimg-linux.c' || echo '$(srcdir)/'`m_initimg/initimg-linux.c
 
-libcoregrind_x86_linux_a-initimg-linux.obj: m_initimg/initimg-linux.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-initimg-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-initimg-linux.Tpo -c -o libcoregrind_x86_linux_a-initimg-linux.obj `if test -f 'm_initimg/initimg-linux.c'; then $(CYGPATH_W) 'm_initimg/initimg-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_initimg/initimg-linux.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-initimg-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-initimg-linux.Po
-#	source='m_initimg/initimg-linux.c' object='libcoregrind_x86_linux_a-initimg-linux.obj' libtool=no \
+libcoregrind_amd64_linux_a-initimg-linux.obj: m_initimg/initimg-linux.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-initimg-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-initimg-linux.Tpo -c -o libcoregrind_amd64_linux_a-initimg-linux.obj `if test -f 'm_initimg/initimg-linux.c'; then $(CYGPATH_W) 'm_initimg/initimg-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_initimg/initimg-linux.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-initimg-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-initimg-linux.Po
+#	source='m_initimg/initimg-linux.c' object='libcoregrind_amd64_linux_a-initimg-linux.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-initimg-linux.obj `if test -f 'm_initimg/initimg-linux.c'; then $(CYGPATH_W) 'm_initimg/initimg-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_initimg/initimg-linux.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-initimg-linux.obj `if test -f 'm_initimg/initimg-linux.c'; then $(CYGPATH_W) 'm_initimg/initimg-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_initimg/initimg-linux.c'; fi`
 
-libcoregrind_x86_linux_a-initimg-aix5.o: m_initimg/initimg-aix5.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-initimg-aix5.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-initimg-aix5.Tpo -c -o libcoregrind_x86_linux_a-initimg-aix5.o `test -f 'm_initimg/initimg-aix5.c' || echo '$(srcdir)/'`m_initimg/initimg-aix5.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-initimg-aix5.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-initimg-aix5.Po
-#	source='m_initimg/initimg-aix5.c' object='libcoregrind_x86_linux_a-initimg-aix5.o' libtool=no \
+libcoregrind_amd64_linux_a-initimg-aix5.o: m_initimg/initimg-aix5.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-initimg-aix5.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-initimg-aix5.Tpo -c -o libcoregrind_amd64_linux_a-initimg-aix5.o `test -f 'm_initimg/initimg-aix5.c' || echo '$(srcdir)/'`m_initimg/initimg-aix5.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-initimg-aix5.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-initimg-aix5.Po
+#	source='m_initimg/initimg-aix5.c' object='libcoregrind_amd64_linux_a-initimg-aix5.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-initimg-aix5.o `test -f 'm_initimg/initimg-aix5.c' || echo '$(srcdir)/'`m_initimg/initimg-aix5.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-initimg-aix5.o `test -f 'm_initimg/initimg-aix5.c' || echo '$(srcdir)/'`m_initimg/initimg-aix5.c
 
-libcoregrind_x86_linux_a-initimg-aix5.obj: m_initimg/initimg-aix5.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-initimg-aix5.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-initimg-aix5.Tpo -c -o libcoregrind_x86_linux_a-initimg-aix5.obj `if test -f 'm_initimg/initimg-aix5.c'; then $(CYGPATH_W) 'm_initimg/initimg-aix5.c'; else $(CYGPATH_W) '$(srcdir)/m_initimg/initimg-aix5.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-initimg-aix5.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-initimg-aix5.Po
-#	source='m_initimg/initimg-aix5.c' object='libcoregrind_x86_linux_a-initimg-aix5.obj' libtool=no \
+libcoregrind_amd64_linux_a-initimg-aix5.obj: m_initimg/initimg-aix5.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-initimg-aix5.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-initimg-aix5.Tpo -c -o libcoregrind_amd64_linux_a-initimg-aix5.obj `if test -f 'm_initimg/initimg-aix5.c'; then $(CYGPATH_W) 'm_initimg/initimg-aix5.c'; else $(CYGPATH_W) '$(srcdir)/m_initimg/initimg-aix5.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-initimg-aix5.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-initimg-aix5.Po
+#	source='m_initimg/initimg-aix5.c' object='libcoregrind_amd64_linux_a-initimg-aix5.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-initimg-aix5.obj `if test -f 'm_initimg/initimg-aix5.c'; then $(CYGPATH_W) 'm_initimg/initimg-aix5.c'; else $(CYGPATH_W) '$(srcdir)/m_initimg/initimg-aix5.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-initimg-aix5.obj `if test -f 'm_initimg/initimg-aix5.c'; then $(CYGPATH_W) 'm_initimg/initimg-aix5.c'; else $(CYGPATH_W) '$(srcdir)/m_initimg/initimg-aix5.c'; fi`
 
-libcoregrind_x86_linux_a-initimg-darwin.o: m_initimg/initimg-darwin.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-initimg-darwin.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-initimg-darwin.Tpo -c -o libcoregrind_x86_linux_a-initimg-darwin.o `test -f 'm_initimg/initimg-darwin.c' || echo '$(srcdir)/'`m_initimg/initimg-darwin.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-initimg-darwin.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-initimg-darwin.Po
-#	source='m_initimg/initimg-darwin.c' object='libcoregrind_x86_linux_a-initimg-darwin.o' libtool=no \
+libcoregrind_amd64_linux_a-initimg-darwin.o: m_initimg/initimg-darwin.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-initimg-darwin.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-initimg-darwin.Tpo -c -o libcoregrind_amd64_linux_a-initimg-darwin.o `test -f 'm_initimg/initimg-darwin.c' || echo '$(srcdir)/'`m_initimg/initimg-darwin.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-initimg-darwin.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-initimg-darwin.Po
+#	source='m_initimg/initimg-darwin.c' object='libcoregrind_amd64_linux_a-initimg-darwin.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-initimg-darwin.o `test -f 'm_initimg/initimg-darwin.c' || echo '$(srcdir)/'`m_initimg/initimg-darwin.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-initimg-darwin.o `test -f 'm_initimg/initimg-darwin.c' || echo '$(srcdir)/'`m_initimg/initimg-darwin.c
 
-libcoregrind_x86_linux_a-initimg-darwin.obj: m_initimg/initimg-darwin.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-initimg-darwin.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-initimg-darwin.Tpo -c -o libcoregrind_x86_linux_a-initimg-darwin.obj `if test -f 'm_initimg/initimg-darwin.c'; then $(CYGPATH_W) 'm_initimg/initimg-darwin.c'; else $(CYGPATH_W) '$(srcdir)/m_initimg/initimg-darwin.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-initimg-darwin.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-initimg-darwin.Po
-#	source='m_initimg/initimg-darwin.c' object='libcoregrind_x86_linux_a-initimg-darwin.obj' libtool=no \
+libcoregrind_amd64_linux_a-initimg-darwin.obj: m_initimg/initimg-darwin.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-initimg-darwin.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-initimg-darwin.Tpo -c -o libcoregrind_amd64_linux_a-initimg-darwin.obj `if test -f 'm_initimg/initimg-darwin.c'; then $(CYGPATH_W) 'm_initimg/initimg-darwin.c'; else $(CYGPATH_W) '$(srcdir)/m_initimg/initimg-darwin.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-initimg-darwin.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-initimg-darwin.Po
+#	source='m_initimg/initimg-darwin.c' object='libcoregrind_amd64_linux_a-initimg-darwin.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-initimg-darwin.obj `if test -f 'm_initimg/initimg-darwin.c'; then $(CYGPATH_W) 'm_initimg/initimg-darwin.c'; else $(CYGPATH_W) '$(srcdir)/m_initimg/initimg-darwin.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-initimg-darwin.obj `if test -f 'm_initimg/initimg-darwin.c'; then $(CYGPATH_W) 'm_initimg/initimg-darwin.c'; else $(CYGPATH_W) '$(srcdir)/m_initimg/initimg-darwin.c'; fi`
 
-libcoregrind_x86_linux_a-initimg-pathscan.o: m_initimg/initimg-pathscan.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-initimg-pathscan.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-initimg-pathscan.Tpo -c -o libcoregrind_x86_linux_a-initimg-pathscan.o `test -f 'm_initimg/initimg-pathscan.c' || echo '$(srcdir)/'`m_initimg/initimg-pathscan.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-initimg-pathscan.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-initimg-pathscan.Po
-#	source='m_initimg/initimg-pathscan.c' object='libcoregrind_x86_linux_a-initimg-pathscan.o' libtool=no \
+libcoregrind_amd64_linux_a-initimg-pathscan.o: m_initimg/initimg-pathscan.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-initimg-pathscan.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-initimg-pathscan.Tpo -c -o libcoregrind_amd64_linux_a-initimg-pathscan.o `test -f 'm_initimg/initimg-pathscan.c' || echo '$(srcdir)/'`m_initimg/initimg-pathscan.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-initimg-pathscan.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-initimg-pathscan.Po
+#	source='m_initimg/initimg-pathscan.c' object='libcoregrind_amd64_linux_a-initimg-pathscan.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-initimg-pathscan.o `test -f 'm_initimg/initimg-pathscan.c' || echo '$(srcdir)/'`m_initimg/initimg-pathscan.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-initimg-pathscan.o `test -f 'm_initimg/initimg-pathscan.c' || echo '$(srcdir)/'`m_initimg/initimg-pathscan.c
 
-libcoregrind_x86_linux_a-initimg-pathscan.obj: m_initimg/initimg-pathscan.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-initimg-pathscan.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-initimg-pathscan.Tpo -c -o libcoregrind_x86_linux_a-initimg-pathscan.obj `if test -f 'm_initimg/initimg-pathscan.c'; then $(CYGPATH_W) 'm_initimg/initimg-pathscan.c'; else $(CYGPATH_W) '$(srcdir)/m_initimg/initimg-pathscan.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-initimg-pathscan.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-initimg-pathscan.Po
-#	source='m_initimg/initimg-pathscan.c' object='libcoregrind_x86_linux_a-initimg-pathscan.obj' libtool=no \
+libcoregrind_amd64_linux_a-initimg-pathscan.obj: m_initimg/initimg-pathscan.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-initimg-pathscan.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-initimg-pathscan.Tpo -c -o libcoregrind_amd64_linux_a-initimg-pathscan.obj `if test -f 'm_initimg/initimg-pathscan.c'; then $(CYGPATH_W) 'm_initimg/initimg-pathscan.c'; else $(CYGPATH_W) '$(srcdir)/m_initimg/initimg-pathscan.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-initimg-pathscan.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-initimg-pathscan.Po
+#	source='m_initimg/initimg-pathscan.c' object='libcoregrind_amd64_linux_a-initimg-pathscan.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-initimg-pathscan.obj `if test -f 'm_initimg/initimg-pathscan.c'; then $(CYGPATH_W) 'm_initimg/initimg-pathscan.c'; else $(CYGPATH_W) '$(srcdir)/m_initimg/initimg-pathscan.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-initimg-pathscan.obj `if test -f 'm_initimg/initimg-pathscan.c'; then $(CYGPATH_W) 'm_initimg/initimg-pathscan.c'; else $(CYGPATH_W) '$(srcdir)/m_initimg/initimg-pathscan.c'; fi`
 
-libcoregrind_x86_linux_a-mach_basics.o: m_mach/mach_basics.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-mach_basics.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-mach_basics.Tpo -c -o libcoregrind_x86_linux_a-mach_basics.o `test -f 'm_mach/mach_basics.c' || echo '$(srcdir)/'`m_mach/mach_basics.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-mach_basics.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-mach_basics.Po
-#	source='m_mach/mach_basics.c' object='libcoregrind_x86_linux_a-mach_basics.o' libtool=no \
+libcoregrind_amd64_linux_a-mach_basics.o: m_mach/mach_basics.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-mach_basics.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-mach_basics.Tpo -c -o libcoregrind_amd64_linux_a-mach_basics.o `test -f 'm_mach/mach_basics.c' || echo '$(srcdir)/'`m_mach/mach_basics.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-mach_basics.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-mach_basics.Po
+#	source='m_mach/mach_basics.c' object='libcoregrind_amd64_linux_a-mach_basics.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-mach_basics.o `test -f 'm_mach/mach_basics.c' || echo '$(srcdir)/'`m_mach/mach_basics.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-mach_basics.o `test -f 'm_mach/mach_basics.c' || echo '$(srcdir)/'`m_mach/mach_basics.c
 
-libcoregrind_x86_linux_a-mach_basics.obj: m_mach/mach_basics.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-mach_basics.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-mach_basics.Tpo -c -o libcoregrind_x86_linux_a-mach_basics.obj `if test -f 'm_mach/mach_basics.c'; then $(CYGPATH_W) 'm_mach/mach_basics.c'; else $(CYGPATH_W) '$(srcdir)/m_mach/mach_basics.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-mach_basics.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-mach_basics.Po
-#	source='m_mach/mach_basics.c' object='libcoregrind_x86_linux_a-mach_basics.obj' libtool=no \
+libcoregrind_amd64_linux_a-mach_basics.obj: m_mach/mach_basics.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-mach_basics.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-mach_basics.Tpo -c -o libcoregrind_amd64_linux_a-mach_basics.obj `if test -f 'm_mach/mach_basics.c'; then $(CYGPATH_W) 'm_mach/mach_basics.c'; else $(CYGPATH_W) '$(srcdir)/m_mach/mach_basics.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-mach_basics.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-mach_basics.Po
+#	source='m_mach/mach_basics.c' object='libcoregrind_amd64_linux_a-mach_basics.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-mach_basics.obj `if test -f 'm_mach/mach_basics.c'; then $(CYGPATH_W) 'm_mach/mach_basics.c'; else $(CYGPATH_W) '$(srcdir)/m_mach/mach_basics.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-mach_basics.obj `if test -f 'm_mach/mach_basics.c'; then $(CYGPATH_W) 'm_mach/mach_basics.c'; else $(CYGPATH_W) '$(srcdir)/m_mach/mach_basics.c'; fi`
 
-libcoregrind_x86_linux_a-mach_msg.o: m_mach/mach_msg.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-mach_msg.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-mach_msg.Tpo -c -o libcoregrind_x86_linux_a-mach_msg.o `test -f 'm_mach/mach_msg.c' || echo '$(srcdir)/'`m_mach/mach_msg.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-mach_msg.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-mach_msg.Po
-#	source='m_mach/mach_msg.c' object='libcoregrind_x86_linux_a-mach_msg.o' libtool=no \
+libcoregrind_amd64_linux_a-mach_msg.o: m_mach/mach_msg.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-mach_msg.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-mach_msg.Tpo -c -o libcoregrind_amd64_linux_a-mach_msg.o `test -f 'm_mach/mach_msg.c' || echo '$(srcdir)/'`m_mach/mach_msg.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-mach_msg.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-mach_msg.Po
+#	source='m_mach/mach_msg.c' object='libcoregrind_amd64_linux_a-mach_msg.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-mach_msg.o `test -f 'm_mach/mach_msg.c' || echo '$(srcdir)/'`m_mach/mach_msg.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-mach_msg.o `test -f 'm_mach/mach_msg.c' || echo '$(srcdir)/'`m_mach/mach_msg.c
 
-libcoregrind_x86_linux_a-mach_msg.obj: m_mach/mach_msg.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-mach_msg.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-mach_msg.Tpo -c -o libcoregrind_x86_linux_a-mach_msg.obj `if test -f 'm_mach/mach_msg.c'; then $(CYGPATH_W) 'm_mach/mach_msg.c'; else $(CYGPATH_W) '$(srcdir)/m_mach/mach_msg.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-mach_msg.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-mach_msg.Po
-#	source='m_mach/mach_msg.c' object='libcoregrind_x86_linux_a-mach_msg.obj' libtool=no \
+libcoregrind_amd64_linux_a-mach_msg.obj: m_mach/mach_msg.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-mach_msg.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-mach_msg.Tpo -c -o libcoregrind_amd64_linux_a-mach_msg.obj `if test -f 'm_mach/mach_msg.c'; then $(CYGPATH_W) 'm_mach/mach_msg.c'; else $(CYGPATH_W) '$(srcdir)/m_mach/mach_msg.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-mach_msg.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-mach_msg.Po
+#	source='m_mach/mach_msg.c' object='libcoregrind_amd64_linux_a-mach_msg.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-mach_msg.obj `if test -f 'm_mach/mach_msg.c'; then $(CYGPATH_W) 'm_mach/mach_msg.c'; else $(CYGPATH_W) '$(srcdir)/m_mach/mach_msg.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-mach_msg.obj `if test -f 'm_mach/mach_msg.c'; then $(CYGPATH_W) 'm_mach/mach_msg.c'; else $(CYGPATH_W) '$(srcdir)/m_mach/mach_msg.c'; fi`
 
-libcoregrind_x86_linux_a-replacemalloc_core.o: m_replacemalloc/replacemalloc_core.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-replacemalloc_core.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-replacemalloc_core.Tpo -c -o libcoregrind_x86_linux_a-replacemalloc_core.o `test -f 'm_replacemalloc/replacemalloc_core.c' || echo '$(srcdir)/'`m_replacemalloc/replacemalloc_core.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-replacemalloc_core.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-replacemalloc_core.Po
-#	source='m_replacemalloc/replacemalloc_core.c' object='libcoregrind_x86_linux_a-replacemalloc_core.o' libtool=no \
+libcoregrind_amd64_linux_a-replacemalloc_core.o: m_replacemalloc/replacemalloc_core.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-replacemalloc_core.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-replacemalloc_core.Tpo -c -o libcoregrind_amd64_linux_a-replacemalloc_core.o `test -f 'm_replacemalloc/replacemalloc_core.c' || echo '$(srcdir)/'`m_replacemalloc/replacemalloc_core.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-replacemalloc_core.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-replacemalloc_core.Po
+#	source='m_replacemalloc/replacemalloc_core.c' object='libcoregrind_amd64_linux_a-replacemalloc_core.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-replacemalloc_core.o `test -f 'm_replacemalloc/replacemalloc_core.c' || echo '$(srcdir)/'`m_replacemalloc/replacemalloc_core.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-replacemalloc_core.o `test -f 'm_replacemalloc/replacemalloc_core.c' || echo '$(srcdir)/'`m_replacemalloc/replacemalloc_core.c
 
-libcoregrind_x86_linux_a-replacemalloc_core.obj: m_replacemalloc/replacemalloc_core.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-replacemalloc_core.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-replacemalloc_core.Tpo -c -o libcoregrind_x86_linux_a-replacemalloc_core.obj `if test -f 'm_replacemalloc/replacemalloc_core.c'; then $(CYGPATH_W) 'm_replacemalloc/replacemalloc_core.c'; else $(CYGPATH_W) '$(srcdir)/m_replacemalloc/replacemalloc_core.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-replacemalloc_core.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-replacemalloc_core.Po
-#	source='m_replacemalloc/replacemalloc_core.c' object='libcoregrind_x86_linux_a-replacemalloc_core.obj' libtool=no \
+libcoregrind_amd64_linux_a-replacemalloc_core.obj: m_replacemalloc/replacemalloc_core.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-replacemalloc_core.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-replacemalloc_core.Tpo -c -o libcoregrind_amd64_linux_a-replacemalloc_core.obj `if test -f 'm_replacemalloc/replacemalloc_core.c'; then $(CYGPATH_W) 'm_replacemalloc/replacemalloc_core.c'; else $(CYGPATH_W) '$(srcdir)/m_replacemalloc/replacemalloc_core.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-replacemalloc_core.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-replacemalloc_core.Po
+#	source='m_replacemalloc/replacemalloc_core.c' object='libcoregrind_amd64_linux_a-replacemalloc_core.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-replacemalloc_core.obj `if test -f 'm_replacemalloc/replacemalloc_core.c'; then $(CYGPATH_W) 'm_replacemalloc/replacemalloc_core.c'; else $(CYGPATH_W) '$(srcdir)/m_replacemalloc/replacemalloc_core.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-replacemalloc_core.obj `if test -f 'm_replacemalloc/replacemalloc_core.c'; then $(CYGPATH_W) 'm_replacemalloc/replacemalloc_core.c'; else $(CYGPATH_W) '$(srcdir)/m_replacemalloc/replacemalloc_core.c'; fi`
 
-libcoregrind_x86_linux_a-scheduler.o: m_scheduler/scheduler.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-scheduler.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-scheduler.Tpo -c -o libcoregrind_x86_linux_a-scheduler.o `test -f 'm_scheduler/scheduler.c' || echo '$(srcdir)/'`m_scheduler/scheduler.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-scheduler.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-scheduler.Po
-#	source='m_scheduler/scheduler.c' object='libcoregrind_x86_linux_a-scheduler.o' libtool=no \
+libcoregrind_amd64_linux_a-scheduler.o: m_scheduler/scheduler.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-scheduler.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-scheduler.Tpo -c -o libcoregrind_amd64_linux_a-scheduler.o `test -f 'm_scheduler/scheduler.c' || echo '$(srcdir)/'`m_scheduler/scheduler.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-scheduler.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-scheduler.Po
+#	source='m_scheduler/scheduler.c' object='libcoregrind_amd64_linux_a-scheduler.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-scheduler.o `test -f 'm_scheduler/scheduler.c' || echo '$(srcdir)/'`m_scheduler/scheduler.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-scheduler.o `test -f 'm_scheduler/scheduler.c' || echo '$(srcdir)/'`m_scheduler/scheduler.c
 
-libcoregrind_x86_linux_a-scheduler.obj: m_scheduler/scheduler.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-scheduler.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-scheduler.Tpo -c -o libcoregrind_x86_linux_a-scheduler.obj `if test -f 'm_scheduler/scheduler.c'; then $(CYGPATH_W) 'm_scheduler/scheduler.c'; else $(CYGPATH_W) '$(srcdir)/m_scheduler/scheduler.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-scheduler.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-scheduler.Po
-#	source='m_scheduler/scheduler.c' object='libcoregrind_x86_linux_a-scheduler.obj' libtool=no \
+libcoregrind_amd64_linux_a-scheduler.obj: m_scheduler/scheduler.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-scheduler.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-scheduler.Tpo -c -o libcoregrind_amd64_linux_a-scheduler.obj `if test -f 'm_scheduler/scheduler.c'; then $(CYGPATH_W) 'm_scheduler/scheduler.c'; else $(CYGPATH_W) '$(srcdir)/m_scheduler/scheduler.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-scheduler.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-scheduler.Po
+#	source='m_scheduler/scheduler.c' object='libcoregrind_amd64_linux_a-scheduler.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-scheduler.obj `if test -f 'm_scheduler/scheduler.c'; then $(CYGPATH_W) 'm_scheduler/scheduler.c'; else $(CYGPATH_W) '$(srcdir)/m_scheduler/scheduler.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-scheduler.obj `if test -f 'm_scheduler/scheduler.c'; then $(CYGPATH_W) 'm_scheduler/scheduler.c'; else $(CYGPATH_W) '$(srcdir)/m_scheduler/scheduler.c'; fi`
 
-libcoregrind_x86_linux_a-sema.o: m_scheduler/sema.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-sema.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-sema.Tpo -c -o libcoregrind_x86_linux_a-sema.o `test -f 'm_scheduler/sema.c' || echo '$(srcdir)/'`m_scheduler/sema.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-sema.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-sema.Po
-#	source='m_scheduler/sema.c' object='libcoregrind_x86_linux_a-sema.o' libtool=no \
+libcoregrind_amd64_linux_a-sema.o: m_scheduler/sema.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-sema.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-sema.Tpo -c -o libcoregrind_amd64_linux_a-sema.o `test -f 'm_scheduler/sema.c' || echo '$(srcdir)/'`m_scheduler/sema.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-sema.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-sema.Po
+#	source='m_scheduler/sema.c' object='libcoregrind_amd64_linux_a-sema.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-sema.o `test -f 'm_scheduler/sema.c' || echo '$(srcdir)/'`m_scheduler/sema.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-sema.o `test -f 'm_scheduler/sema.c' || echo '$(srcdir)/'`m_scheduler/sema.c
 
-libcoregrind_x86_linux_a-sema.obj: m_scheduler/sema.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-sema.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-sema.Tpo -c -o libcoregrind_x86_linux_a-sema.obj `if test -f 'm_scheduler/sema.c'; then $(CYGPATH_W) 'm_scheduler/sema.c'; else $(CYGPATH_W) '$(srcdir)/m_scheduler/sema.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-sema.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-sema.Po
-#	source='m_scheduler/sema.c' object='libcoregrind_x86_linux_a-sema.obj' libtool=no \
+libcoregrind_amd64_linux_a-sema.obj: m_scheduler/sema.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-sema.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-sema.Tpo -c -o libcoregrind_amd64_linux_a-sema.obj `if test -f 'm_scheduler/sema.c'; then $(CYGPATH_W) 'm_scheduler/sema.c'; else $(CYGPATH_W) '$(srcdir)/m_scheduler/sema.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-sema.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-sema.Po
+#	source='m_scheduler/sema.c' object='libcoregrind_amd64_linux_a-sema.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-sema.obj `if test -f 'm_scheduler/sema.c'; then $(CYGPATH_W) 'm_scheduler/sema.c'; else $(CYGPATH_W) '$(srcdir)/m_scheduler/sema.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-sema.obj `if test -f 'm_scheduler/sema.c'; then $(CYGPATH_W) 'm_scheduler/sema.c'; else $(CYGPATH_W) '$(srcdir)/m_scheduler/sema.c'; fi`
 
-libcoregrind_x86_linux_a-sigframe-x86-linux.o: m_sigframe/sigframe-x86-linux.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-sigframe-x86-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-x86-linux.Tpo -c -o libcoregrind_x86_linux_a-sigframe-x86-linux.o `test -f 'm_sigframe/sigframe-x86-linux.c' || echo '$(srcdir)/'`m_sigframe/sigframe-x86-linux.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-x86-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-x86-linux.Po
-#	source='m_sigframe/sigframe-x86-linux.c' object='libcoregrind_x86_linux_a-sigframe-x86-linux.o' libtool=no \
+libcoregrind_amd64_linux_a-sigframe-x86-linux.o: m_sigframe/sigframe-x86-linux.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-sigframe-x86-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-x86-linux.Tpo -c -o libcoregrind_amd64_linux_a-sigframe-x86-linux.o `test -f 'm_sigframe/sigframe-x86-linux.c' || echo '$(srcdir)/'`m_sigframe/sigframe-x86-linux.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-x86-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-x86-linux.Po
+#	source='m_sigframe/sigframe-x86-linux.c' object='libcoregrind_amd64_linux_a-sigframe-x86-linux.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-sigframe-x86-linux.o `test -f 'm_sigframe/sigframe-x86-linux.c' || echo '$(srcdir)/'`m_sigframe/sigframe-x86-linux.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-sigframe-x86-linux.o `test -f 'm_sigframe/sigframe-x86-linux.c' || echo '$(srcdir)/'`m_sigframe/sigframe-x86-linux.c
 
-libcoregrind_x86_linux_a-sigframe-x86-linux.obj: m_sigframe/sigframe-x86-linux.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-sigframe-x86-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-x86-linux.Tpo -c -o libcoregrind_x86_linux_a-sigframe-x86-linux.obj `if test -f 'm_sigframe/sigframe-x86-linux.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-x86-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-x86-linux.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-x86-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-x86-linux.Po
-#	source='m_sigframe/sigframe-x86-linux.c' object='libcoregrind_x86_linux_a-sigframe-x86-linux.obj' libtool=no \
+libcoregrind_amd64_linux_a-sigframe-x86-linux.obj: m_sigframe/sigframe-x86-linux.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-sigframe-x86-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-x86-linux.Tpo -c -o libcoregrind_amd64_linux_a-sigframe-x86-linux.obj `if test -f 'm_sigframe/sigframe-x86-linux.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-x86-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-x86-linux.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-x86-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-x86-linux.Po
+#	source='m_sigframe/sigframe-x86-linux.c' object='libcoregrind_amd64_linux_a-sigframe-x86-linux.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-sigframe-x86-linux.obj `if test -f 'm_sigframe/sigframe-x86-linux.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-x86-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-x86-linux.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-sigframe-x86-linux.obj `if test -f 'm_sigframe/sigframe-x86-linux.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-x86-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-x86-linux.c'; fi`
 
-libcoregrind_x86_linux_a-sigframe-amd64-linux.o: m_sigframe/sigframe-amd64-linux.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-sigframe-amd64-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-amd64-linux.Tpo -c -o libcoregrind_x86_linux_a-sigframe-amd64-linux.o `test -f 'm_sigframe/sigframe-amd64-linux.c' || echo '$(srcdir)/'`m_sigframe/sigframe-amd64-linux.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-amd64-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-amd64-linux.Po
-#	source='m_sigframe/sigframe-amd64-linux.c' object='libcoregrind_x86_linux_a-sigframe-amd64-linux.o' libtool=no \
+libcoregrind_amd64_linux_a-sigframe-amd64-linux.o: m_sigframe/sigframe-amd64-linux.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-sigframe-amd64-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-amd64-linux.Tpo -c -o libcoregrind_amd64_linux_a-sigframe-amd64-linux.o `test -f 'm_sigframe/sigframe-amd64-linux.c' || echo '$(srcdir)/'`m_sigframe/sigframe-amd64-linux.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-amd64-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-amd64-linux.Po
+#	source='m_sigframe/sigframe-amd64-linux.c' object='libcoregrind_amd64_linux_a-sigframe-amd64-linux.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-sigframe-amd64-linux.o `test -f 'm_sigframe/sigframe-amd64-linux.c' || echo '$(srcdir)/'`m_sigframe/sigframe-amd64-linux.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-sigframe-amd64-linux.o `test -f 'm_sigframe/sigframe-amd64-linux.c' || echo '$(srcdir)/'`m_sigframe/sigframe-amd64-linux.c
 
-libcoregrind_x86_linux_a-sigframe-amd64-linux.obj: m_sigframe/sigframe-amd64-linux.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-sigframe-amd64-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-amd64-linux.Tpo -c -o libcoregrind_x86_linux_a-sigframe-amd64-linux.obj `if test -f 'm_sigframe/sigframe-amd64-linux.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-amd64-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-amd64-linux.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-amd64-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-amd64-linux.Po
-#	source='m_sigframe/sigframe-amd64-linux.c' object='libcoregrind_x86_linux_a-sigframe-amd64-linux.obj' libtool=no \
+libcoregrind_amd64_linux_a-sigframe-amd64-linux.obj: m_sigframe/sigframe-amd64-linux.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-sigframe-amd64-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-amd64-linux.Tpo -c -o libcoregrind_amd64_linux_a-sigframe-amd64-linux.obj `if test -f 'm_sigframe/sigframe-amd64-linux.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-amd64-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-amd64-linux.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-amd64-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-amd64-linux.Po
+#	source='m_sigframe/sigframe-amd64-linux.c' object='libcoregrind_amd64_linux_a-sigframe-amd64-linux.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-sigframe-amd64-linux.obj `if test -f 'm_sigframe/sigframe-amd64-linux.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-amd64-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-amd64-linux.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-sigframe-amd64-linux.obj `if test -f 'm_sigframe/sigframe-amd64-linux.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-amd64-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-amd64-linux.c'; fi`
 
-libcoregrind_x86_linux_a-sigframe-ppc32-linux.o: m_sigframe/sigframe-ppc32-linux.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-sigframe-ppc32-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-ppc32-linux.Tpo -c -o libcoregrind_x86_linux_a-sigframe-ppc32-linux.o `test -f 'm_sigframe/sigframe-ppc32-linux.c' || echo '$(srcdir)/'`m_sigframe/sigframe-ppc32-linux.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-ppc32-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-ppc32-linux.Po
-#	source='m_sigframe/sigframe-ppc32-linux.c' object='libcoregrind_x86_linux_a-sigframe-ppc32-linux.o' libtool=no \
+libcoregrind_amd64_linux_a-sigframe-ppc32-linux.o: m_sigframe/sigframe-ppc32-linux.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-sigframe-ppc32-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-ppc32-linux.Tpo -c -o libcoregrind_amd64_linux_a-sigframe-ppc32-linux.o `test -f 'm_sigframe/sigframe-ppc32-linux.c' || echo '$(srcdir)/'`m_sigframe/sigframe-ppc32-linux.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-ppc32-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-ppc32-linux.Po
+#	source='m_sigframe/sigframe-ppc32-linux.c' object='libcoregrind_amd64_linux_a-sigframe-ppc32-linux.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-sigframe-ppc32-linux.o `test -f 'm_sigframe/sigframe-ppc32-linux.c' || echo '$(srcdir)/'`m_sigframe/sigframe-ppc32-linux.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-sigframe-ppc32-linux.o `test -f 'm_sigframe/sigframe-ppc32-linux.c' || echo '$(srcdir)/'`m_sigframe/sigframe-ppc32-linux.c
 
-libcoregrind_x86_linux_a-sigframe-ppc32-linux.obj: m_sigframe/sigframe-ppc32-linux.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-sigframe-ppc32-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-ppc32-linux.Tpo -c -o libcoregrind_x86_linux_a-sigframe-ppc32-linux.obj `if test -f 'm_sigframe/sigframe-ppc32-linux.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-ppc32-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-ppc32-linux.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-ppc32-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-ppc32-linux.Po
-#	source='m_sigframe/sigframe-ppc32-linux.c' object='libcoregrind_x86_linux_a-sigframe-ppc32-linux.obj' libtool=no \
+libcoregrind_amd64_linux_a-sigframe-ppc32-linux.obj: m_sigframe/sigframe-ppc32-linux.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-sigframe-ppc32-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-ppc32-linux.Tpo -c -o libcoregrind_amd64_linux_a-sigframe-ppc32-linux.obj `if test -f 'm_sigframe/sigframe-ppc32-linux.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-ppc32-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-ppc32-linux.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-ppc32-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-ppc32-linux.Po
+#	source='m_sigframe/sigframe-ppc32-linux.c' object='libcoregrind_amd64_linux_a-sigframe-ppc32-linux.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-sigframe-ppc32-linux.obj `if test -f 'm_sigframe/sigframe-ppc32-linux.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-ppc32-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-ppc32-linux.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-sigframe-ppc32-linux.obj `if test -f 'm_sigframe/sigframe-ppc32-linux.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-ppc32-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-ppc32-linux.c'; fi`
 
-libcoregrind_x86_linux_a-sigframe-ppc64-linux.o: m_sigframe/sigframe-ppc64-linux.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-sigframe-ppc64-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-ppc64-linux.Tpo -c -o libcoregrind_x86_linux_a-sigframe-ppc64-linux.o `test -f 'm_sigframe/sigframe-ppc64-linux.c' || echo '$(srcdir)/'`m_sigframe/sigframe-ppc64-linux.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-ppc64-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-ppc64-linux.Po
-#	source='m_sigframe/sigframe-ppc64-linux.c' object='libcoregrind_x86_linux_a-sigframe-ppc64-linux.o' libtool=no \
+libcoregrind_amd64_linux_a-sigframe-ppc64-linux.o: m_sigframe/sigframe-ppc64-linux.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-sigframe-ppc64-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-ppc64-linux.Tpo -c -o libcoregrind_amd64_linux_a-sigframe-ppc64-linux.o `test -f 'm_sigframe/sigframe-ppc64-linux.c' || echo '$(srcdir)/'`m_sigframe/sigframe-ppc64-linux.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-ppc64-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-ppc64-linux.Po
+#	source='m_sigframe/sigframe-ppc64-linux.c' object='libcoregrind_amd64_linux_a-sigframe-ppc64-linux.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-sigframe-ppc64-linux.o `test -f 'm_sigframe/sigframe-ppc64-linux.c' || echo '$(srcdir)/'`m_sigframe/sigframe-ppc64-linux.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-sigframe-ppc64-linux.o `test -f 'm_sigframe/sigframe-ppc64-linux.c' || echo '$(srcdir)/'`m_sigframe/sigframe-ppc64-linux.c
 
-libcoregrind_x86_linux_a-sigframe-ppc64-linux.obj: m_sigframe/sigframe-ppc64-linux.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-sigframe-ppc64-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-ppc64-linux.Tpo -c -o libcoregrind_x86_linux_a-sigframe-ppc64-linux.obj `if test -f 'm_sigframe/sigframe-ppc64-linux.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-ppc64-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-ppc64-linux.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-ppc64-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-ppc64-linux.Po
-#	source='m_sigframe/sigframe-ppc64-linux.c' object='libcoregrind_x86_linux_a-sigframe-ppc64-linux.obj' libtool=no \
+libcoregrind_amd64_linux_a-sigframe-ppc64-linux.obj: m_sigframe/sigframe-ppc64-linux.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-sigframe-ppc64-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-ppc64-linux.Tpo -c -o libcoregrind_amd64_linux_a-sigframe-ppc64-linux.obj `if test -f 'm_sigframe/sigframe-ppc64-linux.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-ppc64-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-ppc64-linux.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-ppc64-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-ppc64-linux.Po
+#	source='m_sigframe/sigframe-ppc64-linux.c' object='libcoregrind_amd64_linux_a-sigframe-ppc64-linux.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-sigframe-ppc64-linux.obj `if test -f 'm_sigframe/sigframe-ppc64-linux.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-ppc64-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-ppc64-linux.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-sigframe-ppc64-linux.obj `if test -f 'm_sigframe/sigframe-ppc64-linux.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-ppc64-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-ppc64-linux.c'; fi`
 
-libcoregrind_x86_linux_a-sigframe-arm-linux.o: m_sigframe/sigframe-arm-linux.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-sigframe-arm-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-arm-linux.Tpo -c -o libcoregrind_x86_linux_a-sigframe-arm-linux.o `test -f 'm_sigframe/sigframe-arm-linux.c' || echo '$(srcdir)/'`m_sigframe/sigframe-arm-linux.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-arm-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-arm-linux.Po
-#	source='m_sigframe/sigframe-arm-linux.c' object='libcoregrind_x86_linux_a-sigframe-arm-linux.o' libtool=no \
+libcoregrind_amd64_linux_a-sigframe-arm-linux.o: m_sigframe/sigframe-arm-linux.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-sigframe-arm-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-arm-linux.Tpo -c -o libcoregrind_amd64_linux_a-sigframe-arm-linux.o `test -f 'm_sigframe/sigframe-arm-linux.c' || echo '$(srcdir)/'`m_sigframe/sigframe-arm-linux.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-arm-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-arm-linux.Po
+#	source='m_sigframe/sigframe-arm-linux.c' object='libcoregrind_amd64_linux_a-sigframe-arm-linux.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-sigframe-arm-linux.o `test -f 'm_sigframe/sigframe-arm-linux.c' || echo '$(srcdir)/'`m_sigframe/sigframe-arm-linux.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-sigframe-arm-linux.o `test -f 'm_sigframe/sigframe-arm-linux.c' || echo '$(srcdir)/'`m_sigframe/sigframe-arm-linux.c
 
-libcoregrind_x86_linux_a-sigframe-arm-linux.obj: m_sigframe/sigframe-arm-linux.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-sigframe-arm-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-arm-linux.Tpo -c -o libcoregrind_x86_linux_a-sigframe-arm-linux.obj `if test -f 'm_sigframe/sigframe-arm-linux.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-arm-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-arm-linux.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-arm-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-arm-linux.Po
-#	source='m_sigframe/sigframe-arm-linux.c' object='libcoregrind_x86_linux_a-sigframe-arm-linux.obj' libtool=no \
+libcoregrind_amd64_linux_a-sigframe-arm-linux.obj: m_sigframe/sigframe-arm-linux.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-sigframe-arm-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-arm-linux.Tpo -c -o libcoregrind_amd64_linux_a-sigframe-arm-linux.obj `if test -f 'm_sigframe/sigframe-arm-linux.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-arm-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-arm-linux.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-arm-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-arm-linux.Po
+#	source='m_sigframe/sigframe-arm-linux.c' object='libcoregrind_amd64_linux_a-sigframe-arm-linux.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-sigframe-arm-linux.obj `if test -f 'm_sigframe/sigframe-arm-linux.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-arm-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-arm-linux.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-sigframe-arm-linux.obj `if test -f 'm_sigframe/sigframe-arm-linux.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-arm-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-arm-linux.c'; fi`
 
-libcoregrind_x86_linux_a-sigframe-s390x-linux.o: m_sigframe/sigframe-s390x-linux.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-sigframe-s390x-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-s390x-linux.Tpo -c -o libcoregrind_x86_linux_a-sigframe-s390x-linux.o `test -f 'm_sigframe/sigframe-s390x-linux.c' || echo '$(srcdir)/'`m_sigframe/sigframe-s390x-linux.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-s390x-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-s390x-linux.Po
-#	source='m_sigframe/sigframe-s390x-linux.c' object='libcoregrind_x86_linux_a-sigframe-s390x-linux.o' libtool=no \
+libcoregrind_amd64_linux_a-sigframe-s390x-linux.o: m_sigframe/sigframe-s390x-linux.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-sigframe-s390x-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-s390x-linux.Tpo -c -o libcoregrind_amd64_linux_a-sigframe-s390x-linux.o `test -f 'm_sigframe/sigframe-s390x-linux.c' || echo '$(srcdir)/'`m_sigframe/sigframe-s390x-linux.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-s390x-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-s390x-linux.Po
+#	source='m_sigframe/sigframe-s390x-linux.c' object='libcoregrind_amd64_linux_a-sigframe-s390x-linux.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-sigframe-s390x-linux.o `test -f 'm_sigframe/sigframe-s390x-linux.c' || echo '$(srcdir)/'`m_sigframe/sigframe-s390x-linux.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-sigframe-s390x-linux.o `test -f 'm_sigframe/sigframe-s390x-linux.c' || echo '$(srcdir)/'`m_sigframe/sigframe-s390x-linux.c
 
-libcoregrind_x86_linux_a-sigframe-s390x-linux.obj: m_sigframe/sigframe-s390x-linux.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-sigframe-s390x-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-s390x-linux.Tpo -c -o libcoregrind_x86_linux_a-sigframe-s390x-linux.obj `if test -f 'm_sigframe/sigframe-s390x-linux.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-s390x-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-s390x-linux.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-s390x-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-s390x-linux.Po
-#	source='m_sigframe/sigframe-s390x-linux.c' object='libcoregrind_x86_linux_a-sigframe-s390x-linux.obj' libtool=no \
+libcoregrind_amd64_linux_a-sigframe-s390x-linux.obj: m_sigframe/sigframe-s390x-linux.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-sigframe-s390x-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-s390x-linux.Tpo -c -o libcoregrind_amd64_linux_a-sigframe-s390x-linux.obj `if test -f 'm_sigframe/sigframe-s390x-linux.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-s390x-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-s390x-linux.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-s390x-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-s390x-linux.Po
+#	source='m_sigframe/sigframe-s390x-linux.c' object='libcoregrind_amd64_linux_a-sigframe-s390x-linux.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-sigframe-s390x-linux.obj `if test -f 'm_sigframe/sigframe-s390x-linux.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-s390x-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-s390x-linux.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-sigframe-s390x-linux.obj `if test -f 'm_sigframe/sigframe-s390x-linux.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-s390x-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-s390x-linux.c'; fi`
 
-libcoregrind_x86_linux_a-sigframe-ppc32-aix5.o: m_sigframe/sigframe-ppc32-aix5.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-sigframe-ppc32-aix5.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-ppc32-aix5.Tpo -c -o libcoregrind_x86_linux_a-sigframe-ppc32-aix5.o `test -f 'm_sigframe/sigframe-ppc32-aix5.c' || echo '$(srcdir)/'`m_sigframe/sigframe-ppc32-aix5.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-ppc32-aix5.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-ppc32-aix5.Po
-#	source='m_sigframe/sigframe-ppc32-aix5.c' object='libcoregrind_x86_linux_a-sigframe-ppc32-aix5.o' libtool=no \
+libcoregrind_amd64_linux_a-sigframe-ppc32-aix5.o: m_sigframe/sigframe-ppc32-aix5.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-sigframe-ppc32-aix5.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-ppc32-aix5.Tpo -c -o libcoregrind_amd64_linux_a-sigframe-ppc32-aix5.o `test -f 'm_sigframe/sigframe-ppc32-aix5.c' || echo '$(srcdir)/'`m_sigframe/sigframe-ppc32-aix5.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-ppc32-aix5.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-ppc32-aix5.Po
+#	source='m_sigframe/sigframe-ppc32-aix5.c' object='libcoregrind_amd64_linux_a-sigframe-ppc32-aix5.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-sigframe-ppc32-aix5.o `test -f 'm_sigframe/sigframe-ppc32-aix5.c' || echo '$(srcdir)/'`m_sigframe/sigframe-ppc32-aix5.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-sigframe-ppc32-aix5.o `test -f 'm_sigframe/sigframe-ppc32-aix5.c' || echo '$(srcdir)/'`m_sigframe/sigframe-ppc32-aix5.c
 
-libcoregrind_x86_linux_a-sigframe-ppc32-aix5.obj: m_sigframe/sigframe-ppc32-aix5.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-sigframe-ppc32-aix5.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-ppc32-aix5.Tpo -c -o libcoregrind_x86_linux_a-sigframe-ppc32-aix5.obj `if test -f 'm_sigframe/sigframe-ppc32-aix5.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-ppc32-aix5.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-ppc32-aix5.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-ppc32-aix5.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-ppc32-aix5.Po
-#	source='m_sigframe/sigframe-ppc32-aix5.c' object='libcoregrind_x86_linux_a-sigframe-ppc32-aix5.obj' libtool=no \
+libcoregrind_amd64_linux_a-sigframe-ppc32-aix5.obj: m_sigframe/sigframe-ppc32-aix5.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-sigframe-ppc32-aix5.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-ppc32-aix5.Tpo -c -o libcoregrind_amd64_linux_a-sigframe-ppc32-aix5.obj `if test -f 'm_sigframe/sigframe-ppc32-aix5.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-ppc32-aix5.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-ppc32-aix5.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-ppc32-aix5.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-ppc32-aix5.Po
+#	source='m_sigframe/sigframe-ppc32-aix5.c' object='libcoregrind_amd64_linux_a-sigframe-ppc32-aix5.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-sigframe-ppc32-aix5.obj `if test -f 'm_sigframe/sigframe-ppc32-aix5.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-ppc32-aix5.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-ppc32-aix5.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-sigframe-ppc32-aix5.obj `if test -f 'm_sigframe/sigframe-ppc32-aix5.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-ppc32-aix5.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-ppc32-aix5.c'; fi`
 
-libcoregrind_x86_linux_a-sigframe-ppc64-aix5.o: m_sigframe/sigframe-ppc64-aix5.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-sigframe-ppc64-aix5.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-ppc64-aix5.Tpo -c -o libcoregrind_x86_linux_a-sigframe-ppc64-aix5.o `test -f 'm_sigframe/sigframe-ppc64-aix5.c' || echo '$(srcdir)/'`m_sigframe/sigframe-ppc64-aix5.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-ppc64-aix5.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-ppc64-aix5.Po
-#	source='m_sigframe/sigframe-ppc64-aix5.c' object='libcoregrind_x86_linux_a-sigframe-ppc64-aix5.o' libtool=no \
+libcoregrind_amd64_linux_a-sigframe-ppc64-aix5.o: m_sigframe/sigframe-ppc64-aix5.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-sigframe-ppc64-aix5.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-ppc64-aix5.Tpo -c -o libcoregrind_amd64_linux_a-sigframe-ppc64-aix5.o `test -f 'm_sigframe/sigframe-ppc64-aix5.c' || echo '$(srcdir)/'`m_sigframe/sigframe-ppc64-aix5.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-ppc64-aix5.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-ppc64-aix5.Po
+#	source='m_sigframe/sigframe-ppc64-aix5.c' object='libcoregrind_amd64_linux_a-sigframe-ppc64-aix5.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-sigframe-ppc64-aix5.o `test -f 'm_sigframe/sigframe-ppc64-aix5.c' || echo '$(srcdir)/'`m_sigframe/sigframe-ppc64-aix5.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-sigframe-ppc64-aix5.o `test -f 'm_sigframe/sigframe-ppc64-aix5.c' || echo '$(srcdir)/'`m_sigframe/sigframe-ppc64-aix5.c
 
-libcoregrind_x86_linux_a-sigframe-ppc64-aix5.obj: m_sigframe/sigframe-ppc64-aix5.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-sigframe-ppc64-aix5.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-ppc64-aix5.Tpo -c -o libcoregrind_x86_linux_a-sigframe-ppc64-aix5.obj `if test -f 'm_sigframe/sigframe-ppc64-aix5.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-ppc64-aix5.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-ppc64-aix5.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-ppc64-aix5.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-ppc64-aix5.Po
-#	source='m_sigframe/sigframe-ppc64-aix5.c' object='libcoregrind_x86_linux_a-sigframe-ppc64-aix5.obj' libtool=no \
+libcoregrind_amd64_linux_a-sigframe-ppc64-aix5.obj: m_sigframe/sigframe-ppc64-aix5.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-sigframe-ppc64-aix5.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-ppc64-aix5.Tpo -c -o libcoregrind_amd64_linux_a-sigframe-ppc64-aix5.obj `if test -f 'm_sigframe/sigframe-ppc64-aix5.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-ppc64-aix5.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-ppc64-aix5.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-ppc64-aix5.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-ppc64-aix5.Po
+#	source='m_sigframe/sigframe-ppc64-aix5.c' object='libcoregrind_amd64_linux_a-sigframe-ppc64-aix5.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-sigframe-ppc64-aix5.obj `if test -f 'm_sigframe/sigframe-ppc64-aix5.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-ppc64-aix5.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-ppc64-aix5.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-sigframe-ppc64-aix5.obj `if test -f 'm_sigframe/sigframe-ppc64-aix5.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-ppc64-aix5.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-ppc64-aix5.c'; fi`
 
-libcoregrind_x86_linux_a-sigframe-x86-darwin.o: m_sigframe/sigframe-x86-darwin.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-sigframe-x86-darwin.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-x86-darwin.Tpo -c -o libcoregrind_x86_linux_a-sigframe-x86-darwin.o `test -f 'm_sigframe/sigframe-x86-darwin.c' || echo '$(srcdir)/'`m_sigframe/sigframe-x86-darwin.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-x86-darwin.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-x86-darwin.Po
-#	source='m_sigframe/sigframe-x86-darwin.c' object='libcoregrind_x86_linux_a-sigframe-x86-darwin.o' libtool=no \
+libcoregrind_amd64_linux_a-sigframe-x86-darwin.o: m_sigframe/sigframe-x86-darwin.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-sigframe-x86-darwin.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-x86-darwin.Tpo -c -o libcoregrind_amd64_linux_a-sigframe-x86-darwin.o `test -f 'm_sigframe/sigframe-x86-darwin.c' || echo '$(srcdir)/'`m_sigframe/sigframe-x86-darwin.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-x86-darwin.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-x86-darwin.Po
+#	source='m_sigframe/sigframe-x86-darwin.c' object='libcoregrind_amd64_linux_a-sigframe-x86-darwin.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-sigframe-x86-darwin.o `test -f 'm_sigframe/sigframe-x86-darwin.c' || echo '$(srcdir)/'`m_sigframe/sigframe-x86-darwin.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-sigframe-x86-darwin.o `test -f 'm_sigframe/sigframe-x86-darwin.c' || echo '$(srcdir)/'`m_sigframe/sigframe-x86-darwin.c
 
-libcoregrind_x86_linux_a-sigframe-x86-darwin.obj: m_sigframe/sigframe-x86-darwin.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-sigframe-x86-darwin.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-x86-darwin.Tpo -c -o libcoregrind_x86_linux_a-sigframe-x86-darwin.obj `if test -f 'm_sigframe/sigframe-x86-darwin.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-x86-darwin.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-x86-darwin.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-x86-darwin.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-x86-darwin.Po
-#	source='m_sigframe/sigframe-x86-darwin.c' object='libcoregrind_x86_linux_a-sigframe-x86-darwin.obj' libtool=no \
+libcoregrind_amd64_linux_a-sigframe-x86-darwin.obj: m_sigframe/sigframe-x86-darwin.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-sigframe-x86-darwin.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-x86-darwin.Tpo -c -o libcoregrind_amd64_linux_a-sigframe-x86-darwin.obj `if test -f 'm_sigframe/sigframe-x86-darwin.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-x86-darwin.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-x86-darwin.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-x86-darwin.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-x86-darwin.Po
+#	source='m_sigframe/sigframe-x86-darwin.c' object='libcoregrind_amd64_linux_a-sigframe-x86-darwin.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-sigframe-x86-darwin.obj `if test -f 'm_sigframe/sigframe-x86-darwin.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-x86-darwin.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-x86-darwin.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-sigframe-x86-darwin.obj `if test -f 'm_sigframe/sigframe-x86-darwin.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-x86-darwin.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-x86-darwin.c'; fi`
 
-libcoregrind_x86_linux_a-sigframe-amd64-darwin.o: m_sigframe/sigframe-amd64-darwin.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-sigframe-amd64-darwin.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-amd64-darwin.Tpo -c -o libcoregrind_x86_linux_a-sigframe-amd64-darwin.o `test -f 'm_sigframe/sigframe-amd64-darwin.c' || echo '$(srcdir)/'`m_sigframe/sigframe-amd64-darwin.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-amd64-darwin.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-amd64-darwin.Po
-#	source='m_sigframe/sigframe-amd64-darwin.c' object='libcoregrind_x86_linux_a-sigframe-amd64-darwin.o' libtool=no \
+libcoregrind_amd64_linux_a-sigframe-amd64-darwin.o: m_sigframe/sigframe-amd64-darwin.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-sigframe-amd64-darwin.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-amd64-darwin.Tpo -c -o libcoregrind_amd64_linux_a-sigframe-amd64-darwin.o `test -f 'm_sigframe/sigframe-amd64-darwin.c' || echo '$(srcdir)/'`m_sigframe/sigframe-amd64-darwin.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-amd64-darwin.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-amd64-darwin.Po
+#	source='m_sigframe/sigframe-amd64-darwin.c' object='libcoregrind_amd64_linux_a-sigframe-amd64-darwin.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-sigframe-amd64-darwin.o `test -f 'm_sigframe/sigframe-amd64-darwin.c' || echo '$(srcdir)/'`m_sigframe/sigframe-amd64-darwin.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-sigframe-amd64-darwin.o `test -f 'm_sigframe/sigframe-amd64-darwin.c' || echo '$(srcdir)/'`m_sigframe/sigframe-amd64-darwin.c
 
-libcoregrind_x86_linux_a-sigframe-amd64-darwin.obj: m_sigframe/sigframe-amd64-darwin.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-sigframe-amd64-darwin.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-amd64-darwin.Tpo -c -o libcoregrind_x86_linux_a-sigframe-amd64-darwin.obj `if test -f 'm_sigframe/sigframe-amd64-darwin.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-amd64-darwin.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-amd64-darwin.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-amd64-darwin.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-sigframe-amd64-darwin.Po
-#	source='m_sigframe/sigframe-amd64-darwin.c' object='libcoregrind_x86_linux_a-sigframe-amd64-darwin.obj' libtool=no \
+libcoregrind_amd64_linux_a-sigframe-amd64-darwin.obj: m_sigframe/sigframe-amd64-darwin.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-sigframe-amd64-darwin.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-amd64-darwin.Tpo -c -o libcoregrind_amd64_linux_a-sigframe-amd64-darwin.obj `if test -f 'm_sigframe/sigframe-amd64-darwin.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-amd64-darwin.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-amd64-darwin.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-amd64-darwin.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-sigframe-amd64-darwin.Po
+#	source='m_sigframe/sigframe-amd64-darwin.c' object='libcoregrind_amd64_linux_a-sigframe-amd64-darwin.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-sigframe-amd64-darwin.obj `if test -f 'm_sigframe/sigframe-amd64-darwin.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-amd64-darwin.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-amd64-darwin.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-sigframe-amd64-darwin.obj `if test -f 'm_sigframe/sigframe-amd64-darwin.c'; then $(CYGPATH_W) 'm_sigframe/sigframe-amd64-darwin.c'; else $(CYGPATH_W) '$(srcdir)/m_sigframe/sigframe-amd64-darwin.c'; fi`
 
-libcoregrind_x86_linux_a-syswrap-main.o: m_syswrap/syswrap-main.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-syswrap-main.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-main.Tpo -c -o libcoregrind_x86_linux_a-syswrap-main.o `test -f 'm_syswrap/syswrap-main.c' || echo '$(srcdir)/'`m_syswrap/syswrap-main.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-main.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-main.Po
-#	source='m_syswrap/syswrap-main.c' object='libcoregrind_x86_linux_a-syswrap-main.o' libtool=no \
+libcoregrind_amd64_linux_a-syswrap-main.o: m_syswrap/syswrap-main.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-syswrap-main.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-main.Tpo -c -o libcoregrind_amd64_linux_a-syswrap-main.o `test -f 'm_syswrap/syswrap-main.c' || echo '$(srcdir)/'`m_syswrap/syswrap-main.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-main.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-main.Po
+#	source='m_syswrap/syswrap-main.c' object='libcoregrind_amd64_linux_a-syswrap-main.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-syswrap-main.o `test -f 'm_syswrap/syswrap-main.c' || echo '$(srcdir)/'`m_syswrap/syswrap-main.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-syswrap-main.o `test -f 'm_syswrap/syswrap-main.c' || echo '$(srcdir)/'`m_syswrap/syswrap-main.c
 
-libcoregrind_x86_linux_a-syswrap-main.obj: m_syswrap/syswrap-main.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-syswrap-main.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-main.Tpo -c -o libcoregrind_x86_linux_a-syswrap-main.obj `if test -f 'm_syswrap/syswrap-main.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-main.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-main.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-main.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-main.Po
-#	source='m_syswrap/syswrap-main.c' object='libcoregrind_x86_linux_a-syswrap-main.obj' libtool=no \
+libcoregrind_amd64_linux_a-syswrap-main.obj: m_syswrap/syswrap-main.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-syswrap-main.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-main.Tpo -c -o libcoregrind_amd64_linux_a-syswrap-main.obj `if test -f 'm_syswrap/syswrap-main.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-main.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-main.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-main.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-main.Po
+#	source='m_syswrap/syswrap-main.c' object='libcoregrind_amd64_linux_a-syswrap-main.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-syswrap-main.obj `if test -f 'm_syswrap/syswrap-main.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-main.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-main.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-syswrap-main.obj `if test -f 'm_syswrap/syswrap-main.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-main.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-main.c'; fi`
 
-libcoregrind_x86_linux_a-syswrap-generic.o: m_syswrap/syswrap-generic.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-syswrap-generic.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-generic.Tpo -c -o libcoregrind_x86_linux_a-syswrap-generic.o `test -f 'm_syswrap/syswrap-generic.c' || echo '$(srcdir)/'`m_syswrap/syswrap-generic.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-generic.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-generic.Po
-#	source='m_syswrap/syswrap-generic.c' object='libcoregrind_x86_linux_a-syswrap-generic.o' libtool=no \
+libcoregrind_amd64_linux_a-syswrap-generic.o: m_syswrap/syswrap-generic.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-syswrap-generic.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-generic.Tpo -c -o libcoregrind_amd64_linux_a-syswrap-generic.o `test -f 'm_syswrap/syswrap-generic.c' || echo '$(srcdir)/'`m_syswrap/syswrap-generic.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-generic.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-generic.Po
+#	source='m_syswrap/syswrap-generic.c' object='libcoregrind_amd64_linux_a-syswrap-generic.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-syswrap-generic.o `test -f 'm_syswrap/syswrap-generic.c' || echo '$(srcdir)/'`m_syswrap/syswrap-generic.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-syswrap-generic.o `test -f 'm_syswrap/syswrap-generic.c' || echo '$(srcdir)/'`m_syswrap/syswrap-generic.c
 
-libcoregrind_x86_linux_a-syswrap-generic.obj: m_syswrap/syswrap-generic.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-syswrap-generic.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-generic.Tpo -c -o libcoregrind_x86_linux_a-syswrap-generic.obj `if test -f 'm_syswrap/syswrap-generic.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-generic.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-generic.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-generic.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-generic.Po
-#	source='m_syswrap/syswrap-generic.c' object='libcoregrind_x86_linux_a-syswrap-generic.obj' libtool=no \
+libcoregrind_amd64_linux_a-syswrap-generic.obj: m_syswrap/syswrap-generic.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-syswrap-generic.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-generic.Tpo -c -o libcoregrind_amd64_linux_a-syswrap-generic.obj `if test -f 'm_syswrap/syswrap-generic.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-generic.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-generic.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-generic.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-generic.Po
+#	source='m_syswrap/syswrap-generic.c' object='libcoregrind_amd64_linux_a-syswrap-generic.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-syswrap-generic.obj `if test -f 'm_syswrap/syswrap-generic.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-generic.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-generic.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-syswrap-generic.obj `if test -f 'm_syswrap/syswrap-generic.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-generic.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-generic.c'; fi`
 
-libcoregrind_x86_linux_a-syswrap-linux.o: m_syswrap/syswrap-linux.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-syswrap-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-linux.Tpo -c -o libcoregrind_x86_linux_a-syswrap-linux.o `test -f 'm_syswrap/syswrap-linux.c' || echo '$(srcdir)/'`m_syswrap/syswrap-linux.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-linux.Po
-#	source='m_syswrap/syswrap-linux.c' object='libcoregrind_x86_linux_a-syswrap-linux.o' libtool=no \
+libcoregrind_amd64_linux_a-syswrap-linux.o: m_syswrap/syswrap-linux.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-syswrap-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-linux.Tpo -c -o libcoregrind_amd64_linux_a-syswrap-linux.o `test -f 'm_syswrap/syswrap-linux.c' || echo '$(srcdir)/'`m_syswrap/syswrap-linux.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-linux.Po
+#	source='m_syswrap/syswrap-linux.c' object='libcoregrind_amd64_linux_a-syswrap-linux.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-syswrap-linux.o `test -f 'm_syswrap/syswrap-linux.c' || echo '$(srcdir)/'`m_syswrap/syswrap-linux.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-syswrap-linux.o `test -f 'm_syswrap/syswrap-linux.c' || echo '$(srcdir)/'`m_syswrap/syswrap-linux.c
 
-libcoregrind_x86_linux_a-syswrap-linux.obj: m_syswrap/syswrap-linux.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-syswrap-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-linux.Tpo -c -o libcoregrind_x86_linux_a-syswrap-linux.obj `if test -f 'm_syswrap/syswrap-linux.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-linux.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-linux.Po
-#	source='m_syswrap/syswrap-linux.c' object='libcoregrind_x86_linux_a-syswrap-linux.obj' libtool=no \
+libcoregrind_amd64_linux_a-syswrap-linux.obj: m_syswrap/syswrap-linux.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-syswrap-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-linux.Tpo -c -o libcoregrind_amd64_linux_a-syswrap-linux.obj `if test -f 'm_syswrap/syswrap-linux.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-linux.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-linux.Po
+#	source='m_syswrap/syswrap-linux.c' object='libcoregrind_amd64_linux_a-syswrap-linux.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-syswrap-linux.obj `if test -f 'm_syswrap/syswrap-linux.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-linux.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-syswrap-linux.obj `if test -f 'm_syswrap/syswrap-linux.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-linux.c'; fi`
 
-libcoregrind_x86_linux_a-syswrap-linux-variants.o: m_syswrap/syswrap-linux-variants.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-syswrap-linux-variants.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-linux-variants.Tpo -c -o libcoregrind_x86_linux_a-syswrap-linux-variants.o `test -f 'm_syswrap/syswrap-linux-variants.c' || echo '$(srcdir)/'`m_syswrap/syswrap-linux-variants.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-linux-variants.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-linux-variants.Po
-#	source='m_syswrap/syswrap-linux-variants.c' object='libcoregrind_x86_linux_a-syswrap-linux-variants.o' libtool=no \
+libcoregrind_amd64_linux_a-syswrap-linux-variants.o: m_syswrap/syswrap-linux-variants.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-syswrap-linux-variants.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-linux-variants.Tpo -c -o libcoregrind_amd64_linux_a-syswrap-linux-variants.o `test -f 'm_syswrap/syswrap-linux-variants.c' || echo '$(srcdir)/'`m_syswrap/syswrap-linux-variants.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-linux-variants.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-linux-variants.Po
+#	source='m_syswrap/syswrap-linux-variants.c' object='libcoregrind_amd64_linux_a-syswrap-linux-variants.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-syswrap-linux-variants.o `test -f 'm_syswrap/syswrap-linux-variants.c' || echo '$(srcdir)/'`m_syswrap/syswrap-linux-variants.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-syswrap-linux-variants.o `test -f 'm_syswrap/syswrap-linux-variants.c' || echo '$(srcdir)/'`m_syswrap/syswrap-linux-variants.c
 
-libcoregrind_x86_linux_a-syswrap-linux-variants.obj: m_syswrap/syswrap-linux-variants.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-syswrap-linux-variants.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-linux-variants.Tpo -c -o libcoregrind_x86_linux_a-syswrap-linux-variants.obj `if test -f 'm_syswrap/syswrap-linux-variants.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-linux-variants.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-linux-variants.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-linux-variants.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-linux-variants.Po
-#	source='m_syswrap/syswrap-linux-variants.c' object='libcoregrind_x86_linux_a-syswrap-linux-variants.obj' libtool=no \
+libcoregrind_amd64_linux_a-syswrap-linux-variants.obj: m_syswrap/syswrap-linux-variants.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-syswrap-linux-variants.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-linux-variants.Tpo -c -o libcoregrind_amd64_linux_a-syswrap-linux-variants.obj `if test -f 'm_syswrap/syswrap-linux-variants.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-linux-variants.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-linux-variants.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-linux-variants.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-linux-variants.Po
+#	source='m_syswrap/syswrap-linux-variants.c' object='libcoregrind_amd64_linux_a-syswrap-linux-variants.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-syswrap-linux-variants.obj `if test -f 'm_syswrap/syswrap-linux-variants.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-linux-variants.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-linux-variants.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-syswrap-linux-variants.obj `if test -f 'm_syswrap/syswrap-linux-variants.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-linux-variants.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-linux-variants.c'; fi`
 
-libcoregrind_x86_linux_a-syswrap-aix5.o: m_syswrap/syswrap-aix5.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-syswrap-aix5.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-aix5.Tpo -c -o libcoregrind_x86_linux_a-syswrap-aix5.o `test -f 'm_syswrap/syswrap-aix5.c' || echo '$(srcdir)/'`m_syswrap/syswrap-aix5.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-aix5.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-aix5.Po
-#	source='m_syswrap/syswrap-aix5.c' object='libcoregrind_x86_linux_a-syswrap-aix5.o' libtool=no \
+libcoregrind_amd64_linux_a-syswrap-aix5.o: m_syswrap/syswrap-aix5.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-syswrap-aix5.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-aix5.Tpo -c -o libcoregrind_amd64_linux_a-syswrap-aix5.o `test -f 'm_syswrap/syswrap-aix5.c' || echo '$(srcdir)/'`m_syswrap/syswrap-aix5.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-aix5.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-aix5.Po
+#	source='m_syswrap/syswrap-aix5.c' object='libcoregrind_amd64_linux_a-syswrap-aix5.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-syswrap-aix5.o `test -f 'm_syswrap/syswrap-aix5.c' || echo '$(srcdir)/'`m_syswrap/syswrap-aix5.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-syswrap-aix5.o `test -f 'm_syswrap/syswrap-aix5.c' || echo '$(srcdir)/'`m_syswrap/syswrap-aix5.c
 
-libcoregrind_x86_linux_a-syswrap-aix5.obj: m_syswrap/syswrap-aix5.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-syswrap-aix5.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-aix5.Tpo -c -o libcoregrind_x86_linux_a-syswrap-aix5.obj `if test -f 'm_syswrap/syswrap-aix5.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-aix5.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-aix5.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-aix5.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-aix5.Po
-#	source='m_syswrap/syswrap-aix5.c' object='libcoregrind_x86_linux_a-syswrap-aix5.obj' libtool=no \
+libcoregrind_amd64_linux_a-syswrap-aix5.obj: m_syswrap/syswrap-aix5.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-syswrap-aix5.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-aix5.Tpo -c -o libcoregrind_amd64_linux_a-syswrap-aix5.obj `if test -f 'm_syswrap/syswrap-aix5.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-aix5.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-aix5.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-aix5.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-aix5.Po
+#	source='m_syswrap/syswrap-aix5.c' object='libcoregrind_amd64_linux_a-syswrap-aix5.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-syswrap-aix5.obj `if test -f 'm_syswrap/syswrap-aix5.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-aix5.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-aix5.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-syswrap-aix5.obj `if test -f 'm_syswrap/syswrap-aix5.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-aix5.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-aix5.c'; fi`
 
-libcoregrind_x86_linux_a-syswrap-darwin.o: m_syswrap/syswrap-darwin.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-syswrap-darwin.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-darwin.Tpo -c -o libcoregrind_x86_linux_a-syswrap-darwin.o `test -f 'm_syswrap/syswrap-darwin.c' || echo '$(srcdir)/'`m_syswrap/syswrap-darwin.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-darwin.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-darwin.Po
-#	source='m_syswrap/syswrap-darwin.c' object='libcoregrind_x86_linux_a-syswrap-darwin.o' libtool=no \
+libcoregrind_amd64_linux_a-syswrap-darwin.o: m_syswrap/syswrap-darwin.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-syswrap-darwin.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-darwin.Tpo -c -o libcoregrind_amd64_linux_a-syswrap-darwin.o `test -f 'm_syswrap/syswrap-darwin.c' || echo '$(srcdir)/'`m_syswrap/syswrap-darwin.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-darwin.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-darwin.Po
+#	source='m_syswrap/syswrap-darwin.c' object='libcoregrind_amd64_linux_a-syswrap-darwin.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-syswrap-darwin.o `test -f 'm_syswrap/syswrap-darwin.c' || echo '$(srcdir)/'`m_syswrap/syswrap-darwin.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-syswrap-darwin.o `test -f 'm_syswrap/syswrap-darwin.c' || echo '$(srcdir)/'`m_syswrap/syswrap-darwin.c
 
-libcoregrind_x86_linux_a-syswrap-darwin.obj: m_syswrap/syswrap-darwin.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-syswrap-darwin.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-darwin.Tpo -c -o libcoregrind_x86_linux_a-syswrap-darwin.obj `if test -f 'm_syswrap/syswrap-darwin.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-darwin.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-darwin.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-darwin.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-darwin.Po
-#	source='m_syswrap/syswrap-darwin.c' object='libcoregrind_x86_linux_a-syswrap-darwin.obj' libtool=no \
+libcoregrind_amd64_linux_a-syswrap-darwin.obj: m_syswrap/syswrap-darwin.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-syswrap-darwin.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-darwin.Tpo -c -o libcoregrind_amd64_linux_a-syswrap-darwin.obj `if test -f 'm_syswrap/syswrap-darwin.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-darwin.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-darwin.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-darwin.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-darwin.Po
+#	source='m_syswrap/syswrap-darwin.c' object='libcoregrind_amd64_linux_a-syswrap-darwin.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-syswrap-darwin.obj `if test -f 'm_syswrap/syswrap-darwin.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-darwin.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-darwin.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-syswrap-darwin.obj `if test -f 'm_syswrap/syswrap-darwin.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-darwin.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-darwin.c'; fi`
 
-libcoregrind_x86_linux_a-syswrap-x86-linux.o: m_syswrap/syswrap-x86-linux.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-syswrap-x86-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-x86-linux.Tpo -c -o libcoregrind_x86_linux_a-syswrap-x86-linux.o `test -f 'm_syswrap/syswrap-x86-linux.c' || echo '$(srcdir)/'`m_syswrap/syswrap-x86-linux.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-x86-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-x86-linux.Po
-#	source='m_syswrap/syswrap-x86-linux.c' object='libcoregrind_x86_linux_a-syswrap-x86-linux.o' libtool=no \
+libcoregrind_amd64_linux_a-syswrap-x86-linux.o: m_syswrap/syswrap-x86-linux.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-syswrap-x86-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-x86-linux.Tpo -c -o libcoregrind_amd64_linux_a-syswrap-x86-linux.o `test -f 'm_syswrap/syswrap-x86-linux.c' || echo '$(srcdir)/'`m_syswrap/syswrap-x86-linux.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-x86-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-x86-linux.Po
+#	source='m_syswrap/syswrap-x86-linux.c' object='libcoregrind_amd64_linux_a-syswrap-x86-linux.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-syswrap-x86-linux.o `test -f 'm_syswrap/syswrap-x86-linux.c' || echo '$(srcdir)/'`m_syswrap/syswrap-x86-linux.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-syswrap-x86-linux.o `test -f 'm_syswrap/syswrap-x86-linux.c' || echo '$(srcdir)/'`m_syswrap/syswrap-x86-linux.c
 
-libcoregrind_x86_linux_a-syswrap-x86-linux.obj: m_syswrap/syswrap-x86-linux.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-syswrap-x86-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-x86-linux.Tpo -c -o libcoregrind_x86_linux_a-syswrap-x86-linux.obj `if test -f 'm_syswrap/syswrap-x86-linux.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-x86-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-x86-linux.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-x86-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-x86-linux.Po
-#	source='m_syswrap/syswrap-x86-linux.c' object='libcoregrind_x86_linux_a-syswrap-x86-linux.obj' libtool=no \
+libcoregrind_amd64_linux_a-syswrap-x86-linux.obj: m_syswrap/syswrap-x86-linux.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-syswrap-x86-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-x86-linux.Tpo -c -o libcoregrind_amd64_linux_a-syswrap-x86-linux.obj `if test -f 'm_syswrap/syswrap-x86-linux.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-x86-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-x86-linux.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-x86-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-x86-linux.Po
+#	source='m_syswrap/syswrap-x86-linux.c' object='libcoregrind_amd64_linux_a-syswrap-x86-linux.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-syswrap-x86-linux.obj `if test -f 'm_syswrap/syswrap-x86-linux.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-x86-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-x86-linux.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-syswrap-x86-linux.obj `if test -f 'm_syswrap/syswrap-x86-linux.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-x86-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-x86-linux.c'; fi`
 
-libcoregrind_x86_linux_a-syswrap-amd64-linux.o: m_syswrap/syswrap-amd64-linux.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-syswrap-amd64-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-amd64-linux.Tpo -c -o libcoregrind_x86_linux_a-syswrap-amd64-linux.o `test -f 'm_syswrap/syswrap-amd64-linux.c' || echo '$(srcdir)/'`m_syswrap/syswrap-amd64-linux.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-amd64-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-amd64-linux.Po
-#	source='m_syswrap/syswrap-amd64-linux.c' object='libcoregrind_x86_linux_a-syswrap-amd64-linux.o' libtool=no \
+libcoregrind_amd64_linux_a-syswrap-amd64-linux.o: m_syswrap/syswrap-amd64-linux.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-syswrap-amd64-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-amd64-linux.Tpo -c -o libcoregrind_amd64_linux_a-syswrap-amd64-linux.o `test -f 'm_syswrap/syswrap-amd64-linux.c' || echo '$(srcdir)/'`m_syswrap/syswrap-amd64-linux.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-amd64-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-amd64-linux.Po
+#	source='m_syswrap/syswrap-amd64-linux.c' object='libcoregrind_amd64_linux_a-syswrap-amd64-linux.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-syswrap-amd64-linux.o `test -f 'm_syswrap/syswrap-amd64-linux.c' || echo '$(srcdir)/'`m_syswrap/syswrap-amd64-linux.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-syswrap-amd64-linux.o `test -f 'm_syswrap/syswrap-amd64-linux.c' || echo '$(srcdir)/'`m_syswrap/syswrap-amd64-linux.c
 
-libcoregrind_x86_linux_a-syswrap-amd64-linux.obj: m_syswrap/syswrap-amd64-linux.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-syswrap-amd64-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-amd64-linux.Tpo -c -o libcoregrind_x86_linux_a-syswrap-amd64-linux.obj `if test -f 'm_syswrap/syswrap-amd64-linux.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-amd64-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-amd64-linux.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-amd64-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-amd64-linux.Po
-#	source='m_syswrap/syswrap-amd64-linux.c' object='libcoregrind_x86_linux_a-syswrap-amd64-linux.obj' libtool=no \
+libcoregrind_amd64_linux_a-syswrap-amd64-linux.obj: m_syswrap/syswrap-amd64-linux.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-syswrap-amd64-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-amd64-linux.Tpo -c -o libcoregrind_amd64_linux_a-syswrap-amd64-linux.obj `if test -f 'm_syswrap/syswrap-amd64-linux.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-amd64-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-amd64-linux.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-amd64-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-amd64-linux.Po
+#	source='m_syswrap/syswrap-amd64-linux.c' object='libcoregrind_amd64_linux_a-syswrap-amd64-linux.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-syswrap-amd64-linux.obj `if test -f 'm_syswrap/syswrap-amd64-linux.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-amd64-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-amd64-linux.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-syswrap-amd64-linux.obj `if test -f 'm_syswrap/syswrap-amd64-linux.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-amd64-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-amd64-linux.c'; fi`
 
-libcoregrind_x86_linux_a-syswrap-ppc32-linux.o: m_syswrap/syswrap-ppc32-linux.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-syswrap-ppc32-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-ppc32-linux.Tpo -c -o libcoregrind_x86_linux_a-syswrap-ppc32-linux.o `test -f 'm_syswrap/syswrap-ppc32-linux.c' || echo '$(srcdir)/'`m_syswrap/syswrap-ppc32-linux.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-ppc32-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-ppc32-linux.Po
-#	source='m_syswrap/syswrap-ppc32-linux.c' object='libcoregrind_x86_linux_a-syswrap-ppc32-linux.o' libtool=no \
+libcoregrind_amd64_linux_a-syswrap-ppc32-linux.o: m_syswrap/syswrap-ppc32-linux.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-syswrap-ppc32-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-ppc32-linux.Tpo -c -o libcoregrind_amd64_linux_a-syswrap-ppc32-linux.o `test -f 'm_syswrap/syswrap-ppc32-linux.c' || echo '$(srcdir)/'`m_syswrap/syswrap-ppc32-linux.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-ppc32-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-ppc32-linux.Po
+#	source='m_syswrap/syswrap-ppc32-linux.c' object='libcoregrind_amd64_linux_a-syswrap-ppc32-linux.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-syswrap-ppc32-linux.o `test -f 'm_syswrap/syswrap-ppc32-linux.c' || echo '$(srcdir)/'`m_syswrap/syswrap-ppc32-linux.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-syswrap-ppc32-linux.o `test -f 'm_syswrap/syswrap-ppc32-linux.c' || echo '$(srcdir)/'`m_syswrap/syswrap-ppc32-linux.c
 
-libcoregrind_x86_linux_a-syswrap-ppc32-linux.obj: m_syswrap/syswrap-ppc32-linux.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-syswrap-ppc32-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-ppc32-linux.Tpo -c -o libcoregrind_x86_linux_a-syswrap-ppc32-linux.obj `if test -f 'm_syswrap/syswrap-ppc32-linux.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-ppc32-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-ppc32-linux.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-ppc32-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-ppc32-linux.Po
-#	source='m_syswrap/syswrap-ppc32-linux.c' object='libcoregrind_x86_linux_a-syswrap-ppc32-linux.obj' libtool=no \
+libcoregrind_amd64_linux_a-syswrap-ppc32-linux.obj: m_syswrap/syswrap-ppc32-linux.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-syswrap-ppc32-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-ppc32-linux.Tpo -c -o libcoregrind_amd64_linux_a-syswrap-ppc32-linux.obj `if test -f 'm_syswrap/syswrap-ppc32-linux.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-ppc32-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-ppc32-linux.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-ppc32-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-ppc32-linux.Po
+#	source='m_syswrap/syswrap-ppc32-linux.c' object='libcoregrind_amd64_linux_a-syswrap-ppc32-linux.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-syswrap-ppc32-linux.obj `if test -f 'm_syswrap/syswrap-ppc32-linux.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-ppc32-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-ppc32-linux.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-syswrap-ppc32-linux.obj `if test -f 'm_syswrap/syswrap-ppc32-linux.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-ppc32-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-ppc32-linux.c'; fi`
 
-libcoregrind_x86_linux_a-syswrap-ppc64-linux.o: m_syswrap/syswrap-ppc64-linux.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-syswrap-ppc64-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-ppc64-linux.Tpo -c -o libcoregrind_x86_linux_a-syswrap-ppc64-linux.o `test -f 'm_syswrap/syswrap-ppc64-linux.c' || echo '$(srcdir)/'`m_syswrap/syswrap-ppc64-linux.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-ppc64-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-ppc64-linux.Po
-#	source='m_syswrap/syswrap-ppc64-linux.c' object='libcoregrind_x86_linux_a-syswrap-ppc64-linux.o' libtool=no \
+libcoregrind_amd64_linux_a-syswrap-ppc64-linux.o: m_syswrap/syswrap-ppc64-linux.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-syswrap-ppc64-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-ppc64-linux.Tpo -c -o libcoregrind_amd64_linux_a-syswrap-ppc64-linux.o `test -f 'm_syswrap/syswrap-ppc64-linux.c' || echo '$(srcdir)/'`m_syswrap/syswrap-ppc64-linux.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-ppc64-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-ppc64-linux.Po
+#	source='m_syswrap/syswrap-ppc64-linux.c' object='libcoregrind_amd64_linux_a-syswrap-ppc64-linux.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-syswrap-ppc64-linux.o `test -f 'm_syswrap/syswrap-ppc64-linux.c' || echo '$(srcdir)/'`m_syswrap/syswrap-ppc64-linux.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-syswrap-ppc64-linux.o `test -f 'm_syswrap/syswrap-ppc64-linux.c' || echo '$(srcdir)/'`m_syswrap/syswrap-ppc64-linux.c
 
-libcoregrind_x86_linux_a-syswrap-ppc64-linux.obj: m_syswrap/syswrap-ppc64-linux.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-syswrap-ppc64-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-ppc64-linux.Tpo -c -o libcoregrind_x86_linux_a-syswrap-ppc64-linux.obj `if test -f 'm_syswrap/syswrap-ppc64-linux.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-ppc64-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-ppc64-linux.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-ppc64-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-ppc64-linux.Po
-#	source='m_syswrap/syswrap-ppc64-linux.c' object='libcoregrind_x86_linux_a-syswrap-ppc64-linux.obj' libtool=no \
+libcoregrind_amd64_linux_a-syswrap-ppc64-linux.obj: m_syswrap/syswrap-ppc64-linux.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-syswrap-ppc64-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-ppc64-linux.Tpo -c -o libcoregrind_amd64_linux_a-syswrap-ppc64-linux.obj `if test -f 'm_syswrap/syswrap-ppc64-linux.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-ppc64-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-ppc64-linux.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-ppc64-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-ppc64-linux.Po
+#	source='m_syswrap/syswrap-ppc64-linux.c' object='libcoregrind_amd64_linux_a-syswrap-ppc64-linux.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-syswrap-ppc64-linux.obj `if test -f 'm_syswrap/syswrap-ppc64-linux.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-ppc64-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-ppc64-linux.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-syswrap-ppc64-linux.obj `if test -f 'm_syswrap/syswrap-ppc64-linux.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-ppc64-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-ppc64-linux.c'; fi`
 
-libcoregrind_x86_linux_a-syswrap-arm-linux.o: m_syswrap/syswrap-arm-linux.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-syswrap-arm-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-arm-linux.Tpo -c -o libcoregrind_x86_linux_a-syswrap-arm-linux.o `test -f 'm_syswrap/syswrap-arm-linux.c' || echo '$(srcdir)/'`m_syswrap/syswrap-arm-linux.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-arm-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-arm-linux.Po
-#	source='m_syswrap/syswrap-arm-linux.c' object='libcoregrind_x86_linux_a-syswrap-arm-linux.o' libtool=no \
+libcoregrind_amd64_linux_a-syswrap-arm-linux.o: m_syswrap/syswrap-arm-linux.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-syswrap-arm-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-arm-linux.Tpo -c -o libcoregrind_amd64_linux_a-syswrap-arm-linux.o `test -f 'm_syswrap/syswrap-arm-linux.c' || echo '$(srcdir)/'`m_syswrap/syswrap-arm-linux.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-arm-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-arm-linux.Po
+#	source='m_syswrap/syswrap-arm-linux.c' object='libcoregrind_amd64_linux_a-syswrap-arm-linux.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-syswrap-arm-linux.o `test -f 'm_syswrap/syswrap-arm-linux.c' || echo '$(srcdir)/'`m_syswrap/syswrap-arm-linux.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-syswrap-arm-linux.o `test -f 'm_syswrap/syswrap-arm-linux.c' || echo '$(srcdir)/'`m_syswrap/syswrap-arm-linux.c
 
-libcoregrind_x86_linux_a-syswrap-arm-linux.obj: m_syswrap/syswrap-arm-linux.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-syswrap-arm-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-arm-linux.Tpo -c -o libcoregrind_x86_linux_a-syswrap-arm-linux.obj `if test -f 'm_syswrap/syswrap-arm-linux.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-arm-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-arm-linux.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-arm-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-arm-linux.Po
-#	source='m_syswrap/syswrap-arm-linux.c' object='libcoregrind_x86_linux_a-syswrap-arm-linux.obj' libtool=no \
+libcoregrind_amd64_linux_a-syswrap-arm-linux.obj: m_syswrap/syswrap-arm-linux.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-syswrap-arm-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-arm-linux.Tpo -c -o libcoregrind_amd64_linux_a-syswrap-arm-linux.obj `if test -f 'm_syswrap/syswrap-arm-linux.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-arm-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-arm-linux.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-arm-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-arm-linux.Po
+#	source='m_syswrap/syswrap-arm-linux.c' object='libcoregrind_amd64_linux_a-syswrap-arm-linux.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-syswrap-arm-linux.obj `if test -f 'm_syswrap/syswrap-arm-linux.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-arm-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-arm-linux.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-syswrap-arm-linux.obj `if test -f 'm_syswrap/syswrap-arm-linux.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-arm-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-arm-linux.c'; fi`
 
-libcoregrind_x86_linux_a-syswrap-s390x-linux.o: m_syswrap/syswrap-s390x-linux.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-syswrap-s390x-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-s390x-linux.Tpo -c -o libcoregrind_x86_linux_a-syswrap-s390x-linux.o `test -f 'm_syswrap/syswrap-s390x-linux.c' || echo '$(srcdir)/'`m_syswrap/syswrap-s390x-linux.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-s390x-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-s390x-linux.Po
-#	source='m_syswrap/syswrap-s390x-linux.c' object='libcoregrind_x86_linux_a-syswrap-s390x-linux.o' libtool=no \
+libcoregrind_amd64_linux_a-syswrap-s390x-linux.o: m_syswrap/syswrap-s390x-linux.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-syswrap-s390x-linux.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-s390x-linux.Tpo -c -o libcoregrind_amd64_linux_a-syswrap-s390x-linux.o `test -f 'm_syswrap/syswrap-s390x-linux.c' || echo '$(srcdir)/'`m_syswrap/syswrap-s390x-linux.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-s390x-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-s390x-linux.Po
+#	source='m_syswrap/syswrap-s390x-linux.c' object='libcoregrind_amd64_linux_a-syswrap-s390x-linux.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-syswrap-s390x-linux.o `test -f 'm_syswrap/syswrap-s390x-linux.c' || echo '$(srcdir)/'`m_syswrap/syswrap-s390x-linux.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-syswrap-s390x-linux.o `test -f 'm_syswrap/syswrap-s390x-linux.c' || echo '$(srcdir)/'`m_syswrap/syswrap-s390x-linux.c
 
-libcoregrind_x86_linux_a-syswrap-s390x-linux.obj: m_syswrap/syswrap-s390x-linux.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-syswrap-s390x-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-s390x-linux.Tpo -c -o libcoregrind_x86_linux_a-syswrap-s390x-linux.obj `if test -f 'm_syswrap/syswrap-s390x-linux.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-s390x-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-s390x-linux.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-s390x-linux.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-s390x-linux.Po
-#	source='m_syswrap/syswrap-s390x-linux.c' object='libcoregrind_x86_linux_a-syswrap-s390x-linux.obj' libtool=no \
+libcoregrind_amd64_linux_a-syswrap-s390x-linux.obj: m_syswrap/syswrap-s390x-linux.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-syswrap-s390x-linux.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-s390x-linux.Tpo -c -o libcoregrind_amd64_linux_a-syswrap-s390x-linux.obj `if test -f 'm_syswrap/syswrap-s390x-linux.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-s390x-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-s390x-linux.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-s390x-linux.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-s390x-linux.Po
+#	source='m_syswrap/syswrap-s390x-linux.c' object='libcoregrind_amd64_linux_a-syswrap-s390x-linux.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-syswrap-s390x-linux.obj `if test -f 'm_syswrap/syswrap-s390x-linux.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-s390x-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-s390x-linux.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-syswrap-s390x-linux.obj `if test -f 'm_syswrap/syswrap-s390x-linux.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-s390x-linux.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-s390x-linux.c'; fi`
 
-libcoregrind_x86_linux_a-syswrap-ppc32-aix5.o: m_syswrap/syswrap-ppc32-aix5.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-syswrap-ppc32-aix5.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-ppc32-aix5.Tpo -c -o libcoregrind_x86_linux_a-syswrap-ppc32-aix5.o `test -f 'm_syswrap/syswrap-ppc32-aix5.c' || echo '$(srcdir)/'`m_syswrap/syswrap-ppc32-aix5.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-ppc32-aix5.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-ppc32-aix5.Po
-#	source='m_syswrap/syswrap-ppc32-aix5.c' object='libcoregrind_x86_linux_a-syswrap-ppc32-aix5.o' libtool=no \
+libcoregrind_amd64_linux_a-syswrap-ppc32-aix5.o: m_syswrap/syswrap-ppc32-aix5.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-syswrap-ppc32-aix5.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-ppc32-aix5.Tpo -c -o libcoregrind_amd64_linux_a-syswrap-ppc32-aix5.o `test -f 'm_syswrap/syswrap-ppc32-aix5.c' || echo '$(srcdir)/'`m_syswrap/syswrap-ppc32-aix5.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-ppc32-aix5.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-ppc32-aix5.Po
+#	source='m_syswrap/syswrap-ppc32-aix5.c' object='libcoregrind_amd64_linux_a-syswrap-ppc32-aix5.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-syswrap-ppc32-aix5.o `test -f 'm_syswrap/syswrap-ppc32-aix5.c' || echo '$(srcdir)/'`m_syswrap/syswrap-ppc32-aix5.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-syswrap-ppc32-aix5.o `test -f 'm_syswrap/syswrap-ppc32-aix5.c' || echo '$(srcdir)/'`m_syswrap/syswrap-ppc32-aix5.c
 
-libcoregrind_x86_linux_a-syswrap-ppc32-aix5.obj: m_syswrap/syswrap-ppc32-aix5.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-syswrap-ppc32-aix5.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-ppc32-aix5.Tpo -c -o libcoregrind_x86_linux_a-syswrap-ppc32-aix5.obj `if test -f 'm_syswrap/syswrap-ppc32-aix5.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-ppc32-aix5.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-ppc32-aix5.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-ppc32-aix5.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-ppc32-aix5.Po
-#	source='m_syswrap/syswrap-ppc32-aix5.c' object='libcoregrind_x86_linux_a-syswrap-ppc32-aix5.obj' libtool=no \
+libcoregrind_amd64_linux_a-syswrap-ppc32-aix5.obj: m_syswrap/syswrap-ppc32-aix5.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-syswrap-ppc32-aix5.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-ppc32-aix5.Tpo -c -o libcoregrind_amd64_linux_a-syswrap-ppc32-aix5.obj `if test -f 'm_syswrap/syswrap-ppc32-aix5.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-ppc32-aix5.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-ppc32-aix5.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-ppc32-aix5.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-ppc32-aix5.Po
+#	source='m_syswrap/syswrap-ppc32-aix5.c' object='libcoregrind_amd64_linux_a-syswrap-ppc32-aix5.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-syswrap-ppc32-aix5.obj `if test -f 'm_syswrap/syswrap-ppc32-aix5.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-ppc32-aix5.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-ppc32-aix5.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-syswrap-ppc32-aix5.obj `if test -f 'm_syswrap/syswrap-ppc32-aix5.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-ppc32-aix5.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-ppc32-aix5.c'; fi`
 
-libcoregrind_x86_linux_a-syswrap-ppc64-aix5.o: m_syswrap/syswrap-ppc64-aix5.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-syswrap-ppc64-aix5.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-ppc64-aix5.Tpo -c -o libcoregrind_x86_linux_a-syswrap-ppc64-aix5.o `test -f 'm_syswrap/syswrap-ppc64-aix5.c' || echo '$(srcdir)/'`m_syswrap/syswrap-ppc64-aix5.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-ppc64-aix5.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-ppc64-aix5.Po
-#	source='m_syswrap/syswrap-ppc64-aix5.c' object='libcoregrind_x86_linux_a-syswrap-ppc64-aix5.o' libtool=no \
+libcoregrind_amd64_linux_a-syswrap-ppc64-aix5.o: m_syswrap/syswrap-ppc64-aix5.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-syswrap-ppc64-aix5.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-ppc64-aix5.Tpo -c -o libcoregrind_amd64_linux_a-syswrap-ppc64-aix5.o `test -f 'm_syswrap/syswrap-ppc64-aix5.c' || echo '$(srcdir)/'`m_syswrap/syswrap-ppc64-aix5.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-ppc64-aix5.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-ppc64-aix5.Po
+#	source='m_syswrap/syswrap-ppc64-aix5.c' object='libcoregrind_amd64_linux_a-syswrap-ppc64-aix5.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-syswrap-ppc64-aix5.o `test -f 'm_syswrap/syswrap-ppc64-aix5.c' || echo '$(srcdir)/'`m_syswrap/syswrap-ppc64-aix5.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-syswrap-ppc64-aix5.o `test -f 'm_syswrap/syswrap-ppc64-aix5.c' || echo '$(srcdir)/'`m_syswrap/syswrap-ppc64-aix5.c
 
-libcoregrind_x86_linux_a-syswrap-ppc64-aix5.obj: m_syswrap/syswrap-ppc64-aix5.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-syswrap-ppc64-aix5.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-ppc64-aix5.Tpo -c -o libcoregrind_x86_linux_a-syswrap-ppc64-aix5.obj `if test -f 'm_syswrap/syswrap-ppc64-aix5.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-ppc64-aix5.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-ppc64-aix5.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-ppc64-aix5.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-ppc64-aix5.Po
-#	source='m_syswrap/syswrap-ppc64-aix5.c' object='libcoregrind_x86_linux_a-syswrap-ppc64-aix5.obj' libtool=no \
+libcoregrind_amd64_linux_a-syswrap-ppc64-aix5.obj: m_syswrap/syswrap-ppc64-aix5.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-syswrap-ppc64-aix5.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-ppc64-aix5.Tpo -c -o libcoregrind_amd64_linux_a-syswrap-ppc64-aix5.obj `if test -f 'm_syswrap/syswrap-ppc64-aix5.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-ppc64-aix5.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-ppc64-aix5.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-ppc64-aix5.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-ppc64-aix5.Po
+#	source='m_syswrap/syswrap-ppc64-aix5.c' object='libcoregrind_amd64_linux_a-syswrap-ppc64-aix5.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-syswrap-ppc64-aix5.obj `if test -f 'm_syswrap/syswrap-ppc64-aix5.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-ppc64-aix5.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-ppc64-aix5.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-syswrap-ppc64-aix5.obj `if test -f 'm_syswrap/syswrap-ppc64-aix5.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-ppc64-aix5.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-ppc64-aix5.c'; fi`
 
-libcoregrind_x86_linux_a-syswrap-x86-darwin.o: m_syswrap/syswrap-x86-darwin.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-syswrap-x86-darwin.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-x86-darwin.Tpo -c -o libcoregrind_x86_linux_a-syswrap-x86-darwin.o `test -f 'm_syswrap/syswrap-x86-darwin.c' || echo '$(srcdir)/'`m_syswrap/syswrap-x86-darwin.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-x86-darwin.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-x86-darwin.Po
-#	source='m_syswrap/syswrap-x86-darwin.c' object='libcoregrind_x86_linux_a-syswrap-x86-darwin.o' libtool=no \
+libcoregrind_amd64_linux_a-syswrap-x86-darwin.o: m_syswrap/syswrap-x86-darwin.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-syswrap-x86-darwin.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-x86-darwin.Tpo -c -o libcoregrind_amd64_linux_a-syswrap-x86-darwin.o `test -f 'm_syswrap/syswrap-x86-darwin.c' || echo '$(srcdir)/'`m_syswrap/syswrap-x86-darwin.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-x86-darwin.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-x86-darwin.Po
+#	source='m_syswrap/syswrap-x86-darwin.c' object='libcoregrind_amd64_linux_a-syswrap-x86-darwin.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-syswrap-x86-darwin.o `test -f 'm_syswrap/syswrap-x86-darwin.c' || echo '$(srcdir)/'`m_syswrap/syswrap-x86-darwin.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-syswrap-x86-darwin.o `test -f 'm_syswrap/syswrap-x86-darwin.c' || echo '$(srcdir)/'`m_syswrap/syswrap-x86-darwin.c
 
-libcoregrind_x86_linux_a-syswrap-x86-darwin.obj: m_syswrap/syswrap-x86-darwin.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-syswrap-x86-darwin.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-x86-darwin.Tpo -c -o libcoregrind_x86_linux_a-syswrap-x86-darwin.obj `if test -f 'm_syswrap/syswrap-x86-darwin.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-x86-darwin.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-x86-darwin.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-x86-darwin.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-x86-darwin.Po
-#	source='m_syswrap/syswrap-x86-darwin.c' object='libcoregrind_x86_linux_a-syswrap-x86-darwin.obj' libtool=no \
+libcoregrind_amd64_linux_a-syswrap-x86-darwin.obj: m_syswrap/syswrap-x86-darwin.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-syswrap-x86-darwin.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-x86-darwin.Tpo -c -o libcoregrind_amd64_linux_a-syswrap-x86-darwin.obj `if test -f 'm_syswrap/syswrap-x86-darwin.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-x86-darwin.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-x86-darwin.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-x86-darwin.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-x86-darwin.Po
+#	source='m_syswrap/syswrap-x86-darwin.c' object='libcoregrind_amd64_linux_a-syswrap-x86-darwin.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-syswrap-x86-darwin.obj `if test -f 'm_syswrap/syswrap-x86-darwin.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-x86-darwin.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-x86-darwin.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-syswrap-x86-darwin.obj `if test -f 'm_syswrap/syswrap-x86-darwin.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-x86-darwin.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-x86-darwin.c'; fi`
 
-libcoregrind_x86_linux_a-syswrap-amd64-darwin.o: m_syswrap/syswrap-amd64-darwin.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-syswrap-amd64-darwin.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-amd64-darwin.Tpo -c -o libcoregrind_x86_linux_a-syswrap-amd64-darwin.o `test -f 'm_syswrap/syswrap-amd64-darwin.c' || echo '$(srcdir)/'`m_syswrap/syswrap-amd64-darwin.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-amd64-darwin.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-amd64-darwin.Po
-#	source='m_syswrap/syswrap-amd64-darwin.c' object='libcoregrind_x86_linux_a-syswrap-amd64-darwin.o' libtool=no \
+libcoregrind_amd64_linux_a-syswrap-amd64-darwin.o: m_syswrap/syswrap-amd64-darwin.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-syswrap-amd64-darwin.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-amd64-darwin.Tpo -c -o libcoregrind_amd64_linux_a-syswrap-amd64-darwin.o `test -f 'm_syswrap/syswrap-amd64-darwin.c' || echo '$(srcdir)/'`m_syswrap/syswrap-amd64-darwin.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-amd64-darwin.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-amd64-darwin.Po
+#	source='m_syswrap/syswrap-amd64-darwin.c' object='libcoregrind_amd64_linux_a-syswrap-amd64-darwin.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-syswrap-amd64-darwin.o `test -f 'm_syswrap/syswrap-amd64-darwin.c' || echo '$(srcdir)/'`m_syswrap/syswrap-amd64-darwin.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-syswrap-amd64-darwin.o `test -f 'm_syswrap/syswrap-amd64-darwin.c' || echo '$(srcdir)/'`m_syswrap/syswrap-amd64-darwin.c
 
-libcoregrind_x86_linux_a-syswrap-amd64-darwin.obj: m_syswrap/syswrap-amd64-darwin.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-syswrap-amd64-darwin.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-amd64-darwin.Tpo -c -o libcoregrind_x86_linux_a-syswrap-amd64-darwin.obj `if test -f 'm_syswrap/syswrap-amd64-darwin.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-amd64-darwin.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-amd64-darwin.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-amd64-darwin.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-syswrap-amd64-darwin.Po
-#	source='m_syswrap/syswrap-amd64-darwin.c' object='libcoregrind_x86_linux_a-syswrap-amd64-darwin.obj' libtool=no \
+libcoregrind_amd64_linux_a-syswrap-amd64-darwin.obj: m_syswrap/syswrap-amd64-darwin.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-syswrap-amd64-darwin.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-amd64-darwin.Tpo -c -o libcoregrind_amd64_linux_a-syswrap-amd64-darwin.obj `if test -f 'm_syswrap/syswrap-amd64-darwin.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-amd64-darwin.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-amd64-darwin.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-amd64-darwin.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-syswrap-amd64-darwin.Po
+#	source='m_syswrap/syswrap-amd64-darwin.c' object='libcoregrind_amd64_linux_a-syswrap-amd64-darwin.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-syswrap-amd64-darwin.obj `if test -f 'm_syswrap/syswrap-amd64-darwin.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-amd64-darwin.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-amd64-darwin.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-syswrap-amd64-darwin.obj `if test -f 'm_syswrap/syswrap-amd64-darwin.c'; then $(CYGPATH_W) 'm_syswrap/syswrap-amd64-darwin.c'; else $(CYGPATH_W) '$(srcdir)/m_syswrap/syswrap-amd64-darwin.c'; fi`
 
-libcoregrind_x86_linux_a-elf.o: m_ume/elf.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-elf.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-elf.Tpo -c -o libcoregrind_x86_linux_a-elf.o `test -f 'm_ume/elf.c' || echo '$(srcdir)/'`m_ume/elf.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-elf.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-elf.Po
-#	source='m_ume/elf.c' object='libcoregrind_x86_linux_a-elf.o' libtool=no \
+libcoregrind_amd64_linux_a-elf.o: m_ume/elf.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-elf.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-elf.Tpo -c -o libcoregrind_amd64_linux_a-elf.o `test -f 'm_ume/elf.c' || echo '$(srcdir)/'`m_ume/elf.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-elf.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-elf.Po
+#	source='m_ume/elf.c' object='libcoregrind_amd64_linux_a-elf.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-elf.o `test -f 'm_ume/elf.c' || echo '$(srcdir)/'`m_ume/elf.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-elf.o `test -f 'm_ume/elf.c' || echo '$(srcdir)/'`m_ume/elf.c
 
-libcoregrind_x86_linux_a-elf.obj: m_ume/elf.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-elf.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-elf.Tpo -c -o libcoregrind_x86_linux_a-elf.obj `if test -f 'm_ume/elf.c'; then $(CYGPATH_W) 'm_ume/elf.c'; else $(CYGPATH_W) '$(srcdir)/m_ume/elf.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-elf.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-elf.Po
-#	source='m_ume/elf.c' object='libcoregrind_x86_linux_a-elf.obj' libtool=no \
+libcoregrind_amd64_linux_a-elf.obj: m_ume/elf.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-elf.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-elf.Tpo -c -o libcoregrind_amd64_linux_a-elf.obj `if test -f 'm_ume/elf.c'; then $(CYGPATH_W) 'm_ume/elf.c'; else $(CYGPATH_W) '$(srcdir)/m_ume/elf.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-elf.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-elf.Po
+#	source='m_ume/elf.c' object='libcoregrind_amd64_linux_a-elf.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-elf.obj `if test -f 'm_ume/elf.c'; then $(CYGPATH_W) 'm_ume/elf.c'; else $(CYGPATH_W) '$(srcdir)/m_ume/elf.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-elf.obj `if test -f 'm_ume/elf.c'; then $(CYGPATH_W) 'm_ume/elf.c'; else $(CYGPATH_W) '$(srcdir)/m_ume/elf.c'; fi`
 
-libcoregrind_x86_linux_a-macho.o: m_ume/macho.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-macho.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-macho.Tpo -c -o libcoregrind_x86_linux_a-macho.o `test -f 'm_ume/macho.c' || echo '$(srcdir)/'`m_ume/macho.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-macho.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-macho.Po
-#	source='m_ume/macho.c' object='libcoregrind_x86_linux_a-macho.o' libtool=no \
+libcoregrind_amd64_linux_a-macho.o: m_ume/macho.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-macho.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-macho.Tpo -c -o libcoregrind_amd64_linux_a-macho.o `test -f 'm_ume/macho.c' || echo '$(srcdir)/'`m_ume/macho.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-macho.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-macho.Po
+#	source='m_ume/macho.c' object='libcoregrind_amd64_linux_a-macho.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-macho.o `test -f 'm_ume/macho.c' || echo '$(srcdir)/'`m_ume/macho.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-macho.o `test -f 'm_ume/macho.c' || echo '$(srcdir)/'`m_ume/macho.c
 
-libcoregrind_x86_linux_a-macho.obj: m_ume/macho.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-macho.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-macho.Tpo -c -o libcoregrind_x86_linux_a-macho.obj `if test -f 'm_ume/macho.c'; then $(CYGPATH_W) 'm_ume/macho.c'; else $(CYGPATH_W) '$(srcdir)/m_ume/macho.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-macho.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-macho.Po
-#	source='m_ume/macho.c' object='libcoregrind_x86_linux_a-macho.obj' libtool=no \
+libcoregrind_amd64_linux_a-macho.obj: m_ume/macho.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-macho.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-macho.Tpo -c -o libcoregrind_amd64_linux_a-macho.obj `if test -f 'm_ume/macho.c'; then $(CYGPATH_W) 'm_ume/macho.c'; else $(CYGPATH_W) '$(srcdir)/m_ume/macho.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-macho.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-macho.Po
+#	source='m_ume/macho.c' object='libcoregrind_amd64_linux_a-macho.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-macho.obj `if test -f 'm_ume/macho.c'; then $(CYGPATH_W) 'm_ume/macho.c'; else $(CYGPATH_W) '$(srcdir)/m_ume/macho.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-macho.obj `if test -f 'm_ume/macho.c'; then $(CYGPATH_W) 'm_ume/macho.c'; else $(CYGPATH_W) '$(srcdir)/m_ume/macho.c'; fi`
 
-libcoregrind_x86_linux_a-main.o: m_ume/main.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-main.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-main.Tpo -c -o libcoregrind_x86_linux_a-main.o `test -f 'm_ume/main.c' || echo '$(srcdir)/'`m_ume/main.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-main.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-main.Po
-#	source='m_ume/main.c' object='libcoregrind_x86_linux_a-main.o' libtool=no \
+libcoregrind_amd64_linux_a-main.o: m_ume/main.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-main.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-main.Tpo -c -o libcoregrind_amd64_linux_a-main.o `test -f 'm_ume/main.c' || echo '$(srcdir)/'`m_ume/main.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-main.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-main.Po
+#	source='m_ume/main.c' object='libcoregrind_amd64_linux_a-main.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-main.o `test -f 'm_ume/main.c' || echo '$(srcdir)/'`m_ume/main.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-main.o `test -f 'm_ume/main.c' || echo '$(srcdir)/'`m_ume/main.c
 
-libcoregrind_x86_linux_a-main.obj: m_ume/main.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-main.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-main.Tpo -c -o libcoregrind_x86_linux_a-main.obj `if test -f 'm_ume/main.c'; then $(CYGPATH_W) 'm_ume/main.c'; else $(CYGPATH_W) '$(srcdir)/m_ume/main.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-main.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-main.Po
-#	source='m_ume/main.c' object='libcoregrind_x86_linux_a-main.obj' libtool=no \
+libcoregrind_amd64_linux_a-main.obj: m_ume/main.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-main.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-main.Tpo -c -o libcoregrind_amd64_linux_a-main.obj `if test -f 'm_ume/main.c'; then $(CYGPATH_W) 'm_ume/main.c'; else $(CYGPATH_W) '$(srcdir)/m_ume/main.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-main.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-main.Po
+#	source='m_ume/main.c' object='libcoregrind_amd64_linux_a-main.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-main.obj `if test -f 'm_ume/main.c'; then $(CYGPATH_W) 'm_ume/main.c'; else $(CYGPATH_W) '$(srcdir)/m_ume/main.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-main.obj `if test -f 'm_ume/main.c'; then $(CYGPATH_W) 'm_ume/main.c'; else $(CYGPATH_W) '$(srcdir)/m_ume/main.c'; fi`
 
-libcoregrind_x86_linux_a-script.o: m_ume/script.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-script.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-script.Tpo -c -o libcoregrind_x86_linux_a-script.o `test -f 'm_ume/script.c' || echo '$(srcdir)/'`m_ume/script.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-script.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-script.Po
-#	source='m_ume/script.c' object='libcoregrind_x86_linux_a-script.o' libtool=no \
+libcoregrind_amd64_linux_a-script.o: m_ume/script.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-script.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-script.Tpo -c -o libcoregrind_amd64_linux_a-script.o `test -f 'm_ume/script.c' || echo '$(srcdir)/'`m_ume/script.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-script.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-script.Po
+#	source='m_ume/script.c' object='libcoregrind_amd64_linux_a-script.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-script.o `test -f 'm_ume/script.c' || echo '$(srcdir)/'`m_ume/script.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-script.o `test -f 'm_ume/script.c' || echo '$(srcdir)/'`m_ume/script.c
 
-libcoregrind_x86_linux_a-script.obj: m_ume/script.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-script.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-script.Tpo -c -o libcoregrind_x86_linux_a-script.obj `if test -f 'm_ume/script.c'; then $(CYGPATH_W) 'm_ume/script.c'; else $(CYGPATH_W) '$(srcdir)/m_ume/script.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-script.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-script.Po
-#	source='m_ume/script.c' object='libcoregrind_x86_linux_a-script.obj' libtool=no \
+libcoregrind_amd64_linux_a-script.obj: m_ume/script.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-script.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-script.Tpo -c -o libcoregrind_amd64_linux_a-script.obj `if test -f 'm_ume/script.c'; then $(CYGPATH_W) 'm_ume/script.c'; else $(CYGPATH_W) '$(srcdir)/m_ume/script.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-script.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-script.Po
+#	source='m_ume/script.c' object='libcoregrind_amd64_linux_a-script.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-script.obj `if test -f 'm_ume/script.c'; then $(CYGPATH_W) 'm_ume/script.c'; else $(CYGPATH_W) '$(srcdir)/m_ume/script.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-script.obj `if test -f 'm_ume/script.c'; then $(CYGPATH_W) 'm_ume/script.c'; else $(CYGPATH_W) '$(srcdir)/m_ume/script.c'; fi`
 
-libcoregrind_x86_linux_a-mach_vmUser.o: m_mach/mach_vmUser.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-mach_vmUser.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-mach_vmUser.Tpo -c -o libcoregrind_x86_linux_a-mach_vmUser.o `test -f 'm_mach/mach_vmUser.c' || echo '$(srcdir)/'`m_mach/mach_vmUser.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-mach_vmUser.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-mach_vmUser.Po
-#	source='m_mach/mach_vmUser.c' object='libcoregrind_x86_linux_a-mach_vmUser.o' libtool=no \
+libcoregrind_amd64_linux_a-mach_vmUser.o: m_mach/mach_vmUser.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-mach_vmUser.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-mach_vmUser.Tpo -c -o libcoregrind_amd64_linux_a-mach_vmUser.o `test -f 'm_mach/mach_vmUser.c' || echo '$(srcdir)/'`m_mach/mach_vmUser.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-mach_vmUser.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-mach_vmUser.Po
+#	source='m_mach/mach_vmUser.c' object='libcoregrind_amd64_linux_a-mach_vmUser.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-mach_vmUser.o `test -f 'm_mach/mach_vmUser.c' || echo '$(srcdir)/'`m_mach/mach_vmUser.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-mach_vmUser.o `test -f 'm_mach/mach_vmUser.c' || echo '$(srcdir)/'`m_mach/mach_vmUser.c
 
-libcoregrind_x86_linux_a-mach_vmUser.obj: m_mach/mach_vmUser.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-mach_vmUser.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-mach_vmUser.Tpo -c -o libcoregrind_x86_linux_a-mach_vmUser.obj `if test -f 'm_mach/mach_vmUser.c'; then $(CYGPATH_W) 'm_mach/mach_vmUser.c'; else $(CYGPATH_W) '$(srcdir)/m_mach/mach_vmUser.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-mach_vmUser.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-mach_vmUser.Po
-#	source='m_mach/mach_vmUser.c' object='libcoregrind_x86_linux_a-mach_vmUser.obj' libtool=no \
+libcoregrind_amd64_linux_a-mach_vmUser.obj: m_mach/mach_vmUser.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-mach_vmUser.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-mach_vmUser.Tpo -c -o libcoregrind_amd64_linux_a-mach_vmUser.obj `if test -f 'm_mach/mach_vmUser.c'; then $(CYGPATH_W) 'm_mach/mach_vmUser.c'; else $(CYGPATH_W) '$(srcdir)/m_mach/mach_vmUser.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-mach_vmUser.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-mach_vmUser.Po
+#	source='m_mach/mach_vmUser.c' object='libcoregrind_amd64_linux_a-mach_vmUser.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-mach_vmUser.obj `if test -f 'm_mach/mach_vmUser.c'; then $(CYGPATH_W) 'm_mach/mach_vmUser.c'; else $(CYGPATH_W) '$(srcdir)/m_mach/mach_vmUser.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-mach_vmUser.obj `if test -f 'm_mach/mach_vmUser.c'; then $(CYGPATH_W) 'm_mach/mach_vmUser.c'; else $(CYGPATH_W) '$(srcdir)/m_mach/mach_vmUser.c'; fi`
 
-libcoregrind_x86_linux_a-taskUser.o: m_mach/taskUser.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-taskUser.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-taskUser.Tpo -c -o libcoregrind_x86_linux_a-taskUser.o `test -f 'm_mach/taskUser.c' || echo '$(srcdir)/'`m_mach/taskUser.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-taskUser.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-taskUser.Po
-#	source='m_mach/taskUser.c' object='libcoregrind_x86_linux_a-taskUser.o' libtool=no \
+libcoregrind_amd64_linux_a-taskUser.o: m_mach/taskUser.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-taskUser.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-taskUser.Tpo -c -o libcoregrind_amd64_linux_a-taskUser.o `test -f 'm_mach/taskUser.c' || echo '$(srcdir)/'`m_mach/taskUser.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-taskUser.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-taskUser.Po
+#	source='m_mach/taskUser.c' object='libcoregrind_amd64_linux_a-taskUser.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-taskUser.o `test -f 'm_mach/taskUser.c' || echo '$(srcdir)/'`m_mach/taskUser.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-taskUser.o `test -f 'm_mach/taskUser.c' || echo '$(srcdir)/'`m_mach/taskUser.c
 
-libcoregrind_x86_linux_a-taskUser.obj: m_mach/taskUser.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-taskUser.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-taskUser.Tpo -c -o libcoregrind_x86_linux_a-taskUser.obj `if test -f 'm_mach/taskUser.c'; then $(CYGPATH_W) 'm_mach/taskUser.c'; else $(CYGPATH_W) '$(srcdir)/m_mach/taskUser.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-taskUser.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-taskUser.Po
-#	source='m_mach/taskUser.c' object='libcoregrind_x86_linux_a-taskUser.obj' libtool=no \
+libcoregrind_amd64_linux_a-taskUser.obj: m_mach/taskUser.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-taskUser.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-taskUser.Tpo -c -o libcoregrind_amd64_linux_a-taskUser.obj `if test -f 'm_mach/taskUser.c'; then $(CYGPATH_W) 'm_mach/taskUser.c'; else $(CYGPATH_W) '$(srcdir)/m_mach/taskUser.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-taskUser.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-taskUser.Po
+#	source='m_mach/taskUser.c' object='libcoregrind_amd64_linux_a-taskUser.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-taskUser.obj `if test -f 'm_mach/taskUser.c'; then $(CYGPATH_W) 'm_mach/taskUser.c'; else $(CYGPATH_W) '$(srcdir)/m_mach/taskUser.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-taskUser.obj `if test -f 'm_mach/taskUser.c'; then $(CYGPATH_W) 'm_mach/taskUser.c'; else $(CYGPATH_W) '$(srcdir)/m_mach/taskUser.c'; fi`
 
-libcoregrind_x86_linux_a-thread_actUser.o: m_mach/thread_actUser.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-thread_actUser.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-thread_actUser.Tpo -c -o libcoregrind_x86_linux_a-thread_actUser.o `test -f 'm_mach/thread_actUser.c' || echo '$(srcdir)/'`m_mach/thread_actUser.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-thread_actUser.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-thread_actUser.Po
-#	source='m_mach/thread_actUser.c' object='libcoregrind_x86_linux_a-thread_actUser.o' libtool=no \
+libcoregrind_amd64_linux_a-thread_actUser.o: m_mach/thread_actUser.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-thread_actUser.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-thread_actUser.Tpo -c -o libcoregrind_amd64_linux_a-thread_actUser.o `test -f 'm_mach/thread_actUser.c' || echo '$(srcdir)/'`m_mach/thread_actUser.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-thread_actUser.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-thread_actUser.Po
+#	source='m_mach/thread_actUser.c' object='libcoregrind_amd64_linux_a-thread_actUser.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-thread_actUser.o `test -f 'm_mach/thread_actUser.c' || echo '$(srcdir)/'`m_mach/thread_actUser.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-thread_actUser.o `test -f 'm_mach/thread_actUser.c' || echo '$(srcdir)/'`m_mach/thread_actUser.c
 
-libcoregrind_x86_linux_a-thread_actUser.obj: m_mach/thread_actUser.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-thread_actUser.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-thread_actUser.Tpo -c -o libcoregrind_x86_linux_a-thread_actUser.obj `if test -f 'm_mach/thread_actUser.c'; then $(CYGPATH_W) 'm_mach/thread_actUser.c'; else $(CYGPATH_W) '$(srcdir)/m_mach/thread_actUser.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-thread_actUser.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-thread_actUser.Po
-#	source='m_mach/thread_actUser.c' object='libcoregrind_x86_linux_a-thread_actUser.obj' libtool=no \
+libcoregrind_amd64_linux_a-thread_actUser.obj: m_mach/thread_actUser.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-thread_actUser.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-thread_actUser.Tpo -c -o libcoregrind_amd64_linux_a-thread_actUser.obj `if test -f 'm_mach/thread_actUser.c'; then $(CYGPATH_W) 'm_mach/thread_actUser.c'; else $(CYGPATH_W) '$(srcdir)/m_mach/thread_actUser.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-thread_actUser.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-thread_actUser.Po
+#	source='m_mach/thread_actUser.c' object='libcoregrind_amd64_linux_a-thread_actUser.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-thread_actUser.obj `if test -f 'm_mach/thread_actUser.c'; then $(CYGPATH_W) 'm_mach/thread_actUser.c'; else $(CYGPATH_W) '$(srcdir)/m_mach/thread_actUser.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-thread_actUser.obj `if test -f 'm_mach/thread_actUser.c'; then $(CYGPATH_W) 'm_mach/thread_actUser.c'; else $(CYGPATH_W) '$(srcdir)/m_mach/thread_actUser.c'; fi`
 
-libcoregrind_x86_linux_a-vm_mapUser.o: m_mach/vm_mapUser.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-vm_mapUser.o -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-vm_mapUser.Tpo -c -o libcoregrind_x86_linux_a-vm_mapUser.o `test -f 'm_mach/vm_mapUser.c' || echo '$(srcdir)/'`m_mach/vm_mapUser.c
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-vm_mapUser.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-vm_mapUser.Po
-#	source='m_mach/vm_mapUser.c' object='libcoregrind_x86_linux_a-vm_mapUser.o' libtool=no \
+libcoregrind_amd64_linux_a-vm_mapUser.o: m_mach/vm_mapUser.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-vm_mapUser.o -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-vm_mapUser.Tpo -c -o libcoregrind_amd64_linux_a-vm_mapUser.o `test -f 'm_mach/vm_mapUser.c' || echo '$(srcdir)/'`m_mach/vm_mapUser.c
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-vm_mapUser.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-vm_mapUser.Po
+#	source='m_mach/vm_mapUser.c' object='libcoregrind_amd64_linux_a-vm_mapUser.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-vm_mapUser.o `test -f 'm_mach/vm_mapUser.c' || echo '$(srcdir)/'`m_mach/vm_mapUser.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-vm_mapUser.o `test -f 'm_mach/vm_mapUser.c' || echo '$(srcdir)/'`m_mach/vm_mapUser.c
 
-libcoregrind_x86_linux_a-vm_mapUser.obj: m_mach/vm_mapUser.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_x86_linux_a-vm_mapUser.obj -MD -MP -MF $(DEPDIR)/libcoregrind_x86_linux_a-vm_mapUser.Tpo -c -o libcoregrind_x86_linux_a-vm_mapUser.obj `if test -f 'm_mach/vm_mapUser.c'; then $(CYGPATH_W) 'm_mach/vm_mapUser.c'; else $(CYGPATH_W) '$(srcdir)/m_mach/vm_mapUser.c'; fi`
-	$(am__mv) $(DEPDIR)/libcoregrind_x86_linux_a-vm_mapUser.Tpo $(DEPDIR)/libcoregrind_x86_linux_a-vm_mapUser.Po
-#	source='m_mach/vm_mapUser.c' object='libcoregrind_x86_linux_a-vm_mapUser.obj' libtool=no \
+libcoregrind_amd64_linux_a-vm_mapUser.obj: m_mach/vm_mapUser.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind_amd64_linux_a-vm_mapUser.obj -MD -MP -MF $(DEPDIR)/libcoregrind_amd64_linux_a-vm_mapUser.Tpo -c -o libcoregrind_amd64_linux_a-vm_mapUser.obj `if test -f 'm_mach/vm_mapUser.c'; then $(CYGPATH_W) 'm_mach/vm_mapUser.c'; else $(CYGPATH_W) '$(srcdir)/m_mach/vm_mapUser.c'; fi`
+	$(am__mv) $(DEPDIR)/libcoregrind_amd64_linux_a-vm_mapUser.Tpo $(DEPDIR)/libcoregrind_amd64_linux_a-vm_mapUser.Po
+#	source='m_mach/vm_mapUser.c' object='libcoregrind_amd64_linux_a-vm_mapUser.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_x86_linux_a-vm_mapUser.obj `if test -f 'm_mach/vm_mapUser.c'; then $(CYGPATH_W) 'm_mach/vm_mapUser.c'; else $(CYGPATH_W) '$(srcdir)/m_mach/vm_mapUser.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind_amd64_linux_a-vm_mapUser.obj `if test -f 'm_mach/vm_mapUser.c'; then $(CYGPATH_W) 'm_mach/vm_mapUser.c'; else $(CYGPATH_W) '$(srcdir)/m_mach/vm_mapUser.c'; fi`
 
 libcoregrind__linux_a-m_commandline.o: m_commandline.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind__linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind__linux_a_CFLAGS) $(CFLAGS) -MT libcoregrind__linux_a-m_commandline.o -MD -MP -MF $(DEPDIR)/libcoregrind__linux_a-m_commandline.Tpo -c -o libcoregrind__linux_a-m_commandline.o `test -f 'm_commandline.c' || echo '$(srcdir)/'`m_commandline.c
@@ -5746,19 +5746,19 @@ libcoregrind__linux_a-vm_mapUser.obj: m_mach/vm_mapUser.c
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
 #	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcoregrind__linux_a_CPPFLAGS) $(CPPFLAGS) $(libcoregrind__linux_a_CFLAGS) $(CFLAGS) -c -o libcoregrind__linux_a-vm_mapUser.obj `if test -f 'm_mach/vm_mapUser.c'; then $(CYGPATH_W) 'm_mach/vm_mapUser.c'; else $(CYGPATH_W) '$(srcdir)/m_mach/vm_mapUser.c'; fi`
 
-libreplacemalloc_toolpreload_x86_linux_a-vg_replace_malloc.o: m_replacemalloc/vg_replace_malloc.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libreplacemalloc_toolpreload_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libreplacemalloc_toolpreload_x86_linux_a_CFLAGS) $(CFLAGS) -MT libreplacemalloc_toolpreload_x86_linux_a-vg_replace_malloc.o -MD -MP -MF $(DEPDIR)/libreplacemalloc_toolpreload_x86_linux_a-vg_replace_malloc.Tpo -c -o libreplacemalloc_toolpreload_x86_linux_a-vg_replace_malloc.o `test -f 'm_replacemalloc/vg_replace_malloc.c' || echo '$(srcdir)/'`m_replacemalloc/vg_replace_malloc.c
-	$(am__mv) $(DEPDIR)/libreplacemalloc_toolpreload_x86_linux_a-vg_replace_malloc.Tpo $(DEPDIR)/libreplacemalloc_toolpreload_x86_linux_a-vg_replace_malloc.Po
-#	source='m_replacemalloc/vg_replace_malloc.c' object='libreplacemalloc_toolpreload_x86_linux_a-vg_replace_malloc.o' libtool=no \
+libreplacemalloc_toolpreload_amd64_linux_a-vg_replace_malloc.o: m_replacemalloc/vg_replace_malloc.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libreplacemalloc_toolpreload_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libreplacemalloc_toolpreload_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libreplacemalloc_toolpreload_amd64_linux_a-vg_replace_malloc.o -MD -MP -MF $(DEPDIR)/libreplacemalloc_toolpreload_amd64_linux_a-vg_replace_malloc.Tpo -c -o libreplacemalloc_toolpreload_amd64_linux_a-vg_replace_malloc.o `test -f 'm_replacemalloc/vg_replace_malloc.c' || echo '$(srcdir)/'`m_replacemalloc/vg_replace_malloc.c
+	$(am__mv) $(DEPDIR)/libreplacemalloc_toolpreload_amd64_linux_a-vg_replace_malloc.Tpo $(DEPDIR)/libreplacemalloc_toolpreload_amd64_linux_a-vg_replace_malloc.Po
+#	source='m_replacemalloc/vg_replace_malloc.c' object='libreplacemalloc_toolpreload_amd64_linux_a-vg_replace_malloc.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libreplacemalloc_toolpreload_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libreplacemalloc_toolpreload_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libreplacemalloc_toolpreload_x86_linux_a-vg_replace_malloc.o `test -f 'm_replacemalloc/vg_replace_malloc.c' || echo '$(srcdir)/'`m_replacemalloc/vg_replace_malloc.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libreplacemalloc_toolpreload_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libreplacemalloc_toolpreload_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libreplacemalloc_toolpreload_amd64_linux_a-vg_replace_malloc.o `test -f 'm_replacemalloc/vg_replace_malloc.c' || echo '$(srcdir)/'`m_replacemalloc/vg_replace_malloc.c
 
-libreplacemalloc_toolpreload_x86_linux_a-vg_replace_malloc.obj: m_replacemalloc/vg_replace_malloc.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libreplacemalloc_toolpreload_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libreplacemalloc_toolpreload_x86_linux_a_CFLAGS) $(CFLAGS) -MT libreplacemalloc_toolpreload_x86_linux_a-vg_replace_malloc.obj -MD -MP -MF $(DEPDIR)/libreplacemalloc_toolpreload_x86_linux_a-vg_replace_malloc.Tpo -c -o libreplacemalloc_toolpreload_x86_linux_a-vg_replace_malloc.obj `if test -f 'm_replacemalloc/vg_replace_malloc.c'; then $(CYGPATH_W) 'm_replacemalloc/vg_replace_malloc.c'; else $(CYGPATH_W) '$(srcdir)/m_replacemalloc/vg_replace_malloc.c'; fi`
-	$(am__mv) $(DEPDIR)/libreplacemalloc_toolpreload_x86_linux_a-vg_replace_malloc.Tpo $(DEPDIR)/libreplacemalloc_toolpreload_x86_linux_a-vg_replace_malloc.Po
-#	source='m_replacemalloc/vg_replace_malloc.c' object='libreplacemalloc_toolpreload_x86_linux_a-vg_replace_malloc.obj' libtool=no \
+libreplacemalloc_toolpreload_amd64_linux_a-vg_replace_malloc.obj: m_replacemalloc/vg_replace_malloc.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libreplacemalloc_toolpreload_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libreplacemalloc_toolpreload_amd64_linux_a_CFLAGS) $(CFLAGS) -MT libreplacemalloc_toolpreload_amd64_linux_a-vg_replace_malloc.obj -MD -MP -MF $(DEPDIR)/libreplacemalloc_toolpreload_amd64_linux_a-vg_replace_malloc.Tpo -c -o libreplacemalloc_toolpreload_amd64_linux_a-vg_replace_malloc.obj `if test -f 'm_replacemalloc/vg_replace_malloc.c'; then $(CYGPATH_W) 'm_replacemalloc/vg_replace_malloc.c'; else $(CYGPATH_W) '$(srcdir)/m_replacemalloc/vg_replace_malloc.c'; fi`
+	$(am__mv) $(DEPDIR)/libreplacemalloc_toolpreload_amd64_linux_a-vg_replace_malloc.Tpo $(DEPDIR)/libreplacemalloc_toolpreload_amd64_linux_a-vg_replace_malloc.Po
+#	source='m_replacemalloc/vg_replace_malloc.c' object='libreplacemalloc_toolpreload_amd64_linux_a-vg_replace_malloc.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libreplacemalloc_toolpreload_x86_linux_a_CPPFLAGS) $(CPPFLAGS) $(libreplacemalloc_toolpreload_x86_linux_a_CFLAGS) $(CFLAGS) -c -o libreplacemalloc_toolpreload_x86_linux_a-vg_replace_malloc.obj `if test -f 'm_replacemalloc/vg_replace_malloc.c'; then $(CYGPATH_W) 'm_replacemalloc/vg_replace_malloc.c'; else $(CYGPATH_W) '$(srcdir)/m_replacemalloc/vg_replace_malloc.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libreplacemalloc_toolpreload_amd64_linux_a_CPPFLAGS) $(CPPFLAGS) $(libreplacemalloc_toolpreload_amd64_linux_a_CFLAGS) $(CFLAGS) -c -o libreplacemalloc_toolpreload_amd64_linux_a-vg_replace_malloc.obj `if test -f 'm_replacemalloc/vg_replace_malloc.c'; then $(CYGPATH_W) 'm_replacemalloc/vg_replace_malloc.c'; else $(CYGPATH_W) '$(srcdir)/m_replacemalloc/vg_replace_malloc.c'; fi`
 
 libreplacemalloc_toolpreload__linux_a-vg_replace_malloc.o: m_replacemalloc/vg_replace_malloc.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libreplacemalloc_toolpreload__linux_a_CPPFLAGS) $(CPPFLAGS) $(libreplacemalloc_toolpreload__linux_a_CFLAGS) $(CFLAGS) -MT libreplacemalloc_toolpreload__linux_a-vg_replace_malloc.o -MD -MP -MF $(DEPDIR)/libreplacemalloc_toolpreload__linux_a-vg_replace_malloc.Tpo -c -o libreplacemalloc_toolpreload__linux_a-vg_replace_malloc.o `test -f 'm_replacemalloc/vg_replace_malloc.c' || echo '$(srcdir)/'`m_replacemalloc/vg_replace_malloc.c
@@ -5872,19 +5872,19 @@ vgdb-vgdb.obj: vgdb.c
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
 #	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgdb_CPPFLAGS) $(CPPFLAGS) $(vgdb_CFLAGS) $(CFLAGS) -c -o vgdb-vgdb.obj `if test -f 'vgdb.c'; then $(CYGPATH_W) 'vgdb.c'; else $(CYGPATH_W) '$(srcdir)/vgdb.c'; fi`
 
-vgpreload_core_x86_linux_so-vg_preloaded.o: vg_preloaded.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_core_x86_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_core_x86_linux_so_CFLAGS) $(CFLAGS) -MT vgpreload_core_x86_linux_so-vg_preloaded.o -MD -MP -MF $(DEPDIR)/vgpreload_core_x86_linux_so-vg_preloaded.Tpo -c -o vgpreload_core_x86_linux_so-vg_preloaded.o `test -f 'vg_preloaded.c' || echo '$(srcdir)/'`vg_preloaded.c
-	$(am__mv) $(DEPDIR)/vgpreload_core_x86_linux_so-vg_preloaded.Tpo $(DEPDIR)/vgpreload_core_x86_linux_so-vg_preloaded.Po
-#	source='vg_preloaded.c' object='vgpreload_core_x86_linux_so-vg_preloaded.o' libtool=no \
+vgpreload_core_amd64_linux_so-vg_preloaded.o: vg_preloaded.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_core_amd64_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_core_amd64_linux_so_CFLAGS) $(CFLAGS) -MT vgpreload_core_amd64_linux_so-vg_preloaded.o -MD -MP -MF $(DEPDIR)/vgpreload_core_amd64_linux_so-vg_preloaded.Tpo -c -o vgpreload_core_amd64_linux_so-vg_preloaded.o `test -f 'vg_preloaded.c' || echo '$(srcdir)/'`vg_preloaded.c
+	$(am__mv) $(DEPDIR)/vgpreload_core_amd64_linux_so-vg_preloaded.Tpo $(DEPDIR)/vgpreload_core_amd64_linux_so-vg_preloaded.Po
+#	source='vg_preloaded.c' object='vgpreload_core_amd64_linux_so-vg_preloaded.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_core_x86_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_core_x86_linux_so_CFLAGS) $(CFLAGS) -c -o vgpreload_core_x86_linux_so-vg_preloaded.o `test -f 'vg_preloaded.c' || echo '$(srcdir)/'`vg_preloaded.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_core_amd64_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_core_amd64_linux_so_CFLAGS) $(CFLAGS) -c -o vgpreload_core_amd64_linux_so-vg_preloaded.o `test -f 'vg_preloaded.c' || echo '$(srcdir)/'`vg_preloaded.c
 
-vgpreload_core_x86_linux_so-vg_preloaded.obj: vg_preloaded.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_core_x86_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_core_x86_linux_so_CFLAGS) $(CFLAGS) -MT vgpreload_core_x86_linux_so-vg_preloaded.obj -MD -MP -MF $(DEPDIR)/vgpreload_core_x86_linux_so-vg_preloaded.Tpo -c -o vgpreload_core_x86_linux_so-vg_preloaded.obj `if test -f 'vg_preloaded.c'; then $(CYGPATH_W) 'vg_preloaded.c'; else $(CYGPATH_W) '$(srcdir)/vg_preloaded.c'; fi`
-	$(am__mv) $(DEPDIR)/vgpreload_core_x86_linux_so-vg_preloaded.Tpo $(DEPDIR)/vgpreload_core_x86_linux_so-vg_preloaded.Po
-#	source='vg_preloaded.c' object='vgpreload_core_x86_linux_so-vg_preloaded.obj' libtool=no \
+vgpreload_core_amd64_linux_so-vg_preloaded.obj: vg_preloaded.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_core_amd64_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_core_amd64_linux_so_CFLAGS) $(CFLAGS) -MT vgpreload_core_amd64_linux_so-vg_preloaded.obj -MD -MP -MF $(DEPDIR)/vgpreload_core_amd64_linux_so-vg_preloaded.Tpo -c -o vgpreload_core_amd64_linux_so-vg_preloaded.obj `if test -f 'vg_preloaded.c'; then $(CYGPATH_W) 'vg_preloaded.c'; else $(CYGPATH_W) '$(srcdir)/vg_preloaded.c'; fi`
+	$(am__mv) $(DEPDIR)/vgpreload_core_amd64_linux_so-vg_preloaded.Tpo $(DEPDIR)/vgpreload_core_amd64_linux_so-vg_preloaded.Po
+#	source='vg_preloaded.c' object='vgpreload_core_amd64_linux_so-vg_preloaded.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_core_x86_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_core_x86_linux_so_CFLAGS) $(CFLAGS) -c -o vgpreload_core_x86_linux_so-vg_preloaded.obj `if test -f 'vg_preloaded.c'; then $(CYGPATH_W) 'vg_preloaded.c'; else $(CYGPATH_W) '$(srcdir)/vg_preloaded.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_core_amd64_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_core_amd64_linux_so_CFLAGS) $(CFLAGS) -c -o vgpreload_core_amd64_linux_so-vg_preloaded.obj `if test -f 'vg_preloaded.c'; then $(CYGPATH_W) 'vg_preloaded.c'; else $(CYGPATH_W) '$(srcdir)/vg_preloaded.c'; fi`
 
 vgpreload_core__linux_so-vg_preloaded.o: vg_preloaded.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_core__linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_core__linux_so_CFLAGS) $(CFLAGS) -MT vgpreload_core__linux_so-vg_preloaded.o -MD -MP -MF $(DEPDIR)/vgpreload_core__linux_so-vg_preloaded.Tpo -c -o vgpreload_core__linux_so-vg_preloaded.o `test -f 'vg_preloaded.c' || echo '$(srcdir)/'`vg_preloaded.c

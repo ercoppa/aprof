@@ -1,5 +1,10 @@
 #include "suf.h"
 
+#define CHECK_ADDR_OVERFLOW(x) do { \
+									if ((x) > (unsigned long long) SSM_SIZE * 65536) \
+										failure("Address overflow"); \
+									} while (0);
+
 StackUF * SUF_create(void)
 {
 	StackUF * s = VG_(calloc)("suf pm", sizeof(struct SPM), 1);
@@ -22,6 +27,10 @@ void SUF_destroy(StackUF * suf)
 
 UWord SUF_insert(StackUF * suf, UWord addr, UWord rid)
 {
+	#if !defined(__i386__) && CHECK_SUF_OVERFLOW
+	CHECK_ADDR_OVERFLOW(addr);
+	#endif
+	
 	UWord i = addr >> 16;
 	UWord j = (addr & 0xffff) / 4;
 	if (suf->table[i] == NULL) {
@@ -43,6 +52,10 @@ UWord SUF_insert(StackUF * suf, UWord addr, UWord rid)
 
 UWord SUF_lookup(StackUF * suf, UWord addr)
 {
+	#if !defined(__i386__) && CHECK_SUF_OVERFLOW
+	CHECK_ADDR_OVERFLOW(addr);
+	#endif
+	
 	UWord i = addr >> 16;
 	if (suf->table[i] == NULL) return 0;
 	

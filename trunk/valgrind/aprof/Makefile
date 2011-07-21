@@ -39,11 +39,11 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-build_triplet = i686-pc-linux-gnu
-host_triplet = i686-pc-linux-gnu
+build_triplet = x86_64-unknown-linux-gnu
+host_triplet = x86_64-unknown-linux-gnu
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(top_srcdir)/Makefile.all.am $(top_srcdir)/Makefile.tool.am
-noinst_PROGRAMS = aprof-x86-linux$(EXEEXT) \
+noinst_PROGRAMS = aprof-amd64-linux$(EXEEXT) \
 	$(am__EXEEXT_1)
 #am__append_1 = aprof--linux
 aprof__linux_DEPENDENCIES =
@@ -58,23 +58,23 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 #am__EXEEXT_1 = aprof--linux$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-am__objects_1 = aprof_x86_linux-CCT.$(OBJEXT) \
-	aprof_x86_linux-failure.$(OBJEXT) \
-	aprof_x86_linux-fwrite.$(OBJEXT) \
-	aprof_x86_linux-thread.$(OBJEXT) \
-	aprof_x86_linux-report.$(OBJEXT) \
-	aprof_x86_linux-events.$(OBJEXT) \
-	aprof_x86_linux-function.$(OBJEXT) \
-	aprof_x86_linux-memory.$(OBJEXT) \
-	aprof_x86_linux-time.$(OBJEXT) \
-	aprof_x86_linux-hashtable.$(OBJEXT) \
-	aprof_x86_linux-pool.$(OBJEXT) \
-	aprof_x86_linux-union_find.$(OBJEXT) \
-	aprof_x86_linux-suf.$(OBJEXT) \
-	aprof_x86_linux-aprof.$(OBJEXT)
-am_aprof_x86_linux_OBJECTS = $(am__objects_1)
-aprof_x86_linux_OBJECTS =  \
-	$(am_aprof_x86_linux_OBJECTS)
+am__objects_1 = aprof_amd64_linux-CCT.$(OBJEXT) \
+	aprof_amd64_linux-failure.$(OBJEXT) \
+	aprof_amd64_linux-fwrite.$(OBJEXT) \
+	aprof_amd64_linux-thread.$(OBJEXT) \
+	aprof_amd64_linux-report.$(OBJEXT) \
+	aprof_amd64_linux-events.$(OBJEXT) \
+	aprof_amd64_linux-function.$(OBJEXT) \
+	aprof_amd64_linux-memory.$(OBJEXT) \
+	aprof_amd64_linux-time.$(OBJEXT) \
+	aprof_amd64_linux-hashtable.$(OBJEXT) \
+	aprof_amd64_linux-pool.$(OBJEXT) \
+	aprof_amd64_linux-union_find.$(OBJEXT) \
+	aprof_amd64_linux-suf.$(OBJEXT) \
+	aprof_amd64_linux-aprof.$(OBJEXT)
+am_aprof_amd64_linux_OBJECTS = $(am__objects_1)
+aprof_amd64_linux_OBJECTS =  \
+	$(am_aprof_amd64_linux_OBJECTS)
 am__aprof__linux_SOURCES_DIST = CCT.c failure.c \
 	fwrite.c thread.c report.c events.c function.c memory.c time.c \
 	./hashtable/hashtable.c ./pool/pool.c ./SUF/union_find.c \
@@ -105,9 +105,9 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(aprof_x86_linux_SOURCES) \
+SOURCES = $(aprof_amd64_linux_SOURCES) \
 	$(aprof__linux_SOURCES)
-DIST_SOURCES = $(aprof_x86_linux_SOURCES) \
+DIST_SOURCES = $(aprof_amd64_linux_SOURCES) \
 	$(am__aprof__linux_SOURCES_DIST)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
@@ -150,12 +150,12 @@ am__relativize = \
     dir1=`echo "$$dir1" | sed -e "$$sed_rest"`; \
   done; \
   reldir="$$dir2"
-ACLOCAL = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run aclocal-1.11
-AMTAR = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run tar
+ACLOCAL = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run aclocal-1.11
+AMTAR = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run tar
 AR = /usr/bin/ar
-AUTOCONF = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run autoconf
-AUTOHEADER = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run autoheader
-AUTOMAKE = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run automake-1.11
+AUTOCONF = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run autoconf
+AUTOHEADER = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run autoheader
+AUTOMAKE = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run automake-1.11
 AWK = mawk
 BOOST_CFLAGS = 
 BOOST_LIBS = 
@@ -207,7 +207,7 @@ LIBS =
 LN_S = ln -s
 LTLIBOBJS = 
 MAINT = #
-MAKEINFO = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run makeinfo
+MAKEINFO = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run makeinfo
 MKDIR_P = /bin/mkdir -p
 MPI_CC = mpicc
 OBJEXT = o
@@ -220,7 +220,7 @@ PACKAGE_URL =
 PACKAGE_VERSION = 3.7.0.SVN
 PATH_SEPARATOR = :
 PERL = /usr/bin/perl
-PREFERRED_STACK_BOUNDARY = -mpreferred-stack-boundary=2
+PREFERRED_STACK_BOUNDARY = 
 RANLIB = ranlib
 SED = /bin/sed
 SET_MAKE = 
@@ -229,15 +229,15 @@ STRIP =
 VALT_LOAD_ADDRESS_PRI = 0x38000000
 VALT_LOAD_ADDRESS_SEC = 0xUNSET
 VERSION = 3.7.0.SVN
-VGCONF_ARCH_PRI = x86
+VGCONF_ARCH_PRI = amd64
 VGCONF_ARCH_SEC = 
 VGCONF_OS = linux
-VGCONF_PLATFORM_PRI_CAPS = X86_LINUX
+VGCONF_PLATFORM_PRI_CAPS = AMD64_LINUX
 VGCONF_PLATFORM_SEC_CAPS = 
-abs_builddir = /home/ercoppa/Desktop/code/aprof/valgrind/aprof
-abs_srcdir = /home/ercoppa/Desktop/code/aprof/valgrind/aprof
-abs_top_builddir = /home/ercoppa/Desktop/code/aprof/valgrind
-abs_top_srcdir = /home/ercoppa/Desktop/code/aprof/valgrind
+abs_builddir = /home/ercoppa/Desktop/aprof/valgrind/aprof
+abs_srcdir = /home/ercoppa/Desktop/aprof/valgrind/aprof
+abs_top_builddir = /home/ercoppa/Desktop/aprof/valgrind
+abs_top_srcdir = /home/ercoppa/Desktop/aprof/valgrind
 ac_ct_CC = gcc
 ac_ct_CXX = g++
 am__include = include
@@ -246,26 +246,26 @@ am__quote =
 am__tar = ${AMTAR} chof - "$$tardir"
 am__untar = ${AMTAR} xf -
 bindir = ${exec_prefix}/bin
-build = i686-pc-linux-gnu
+build = x86_64-unknown-linux-gnu
 build_alias = 
-build_cpu = i686
+build_cpu = x86_64
 build_os = linux-gnu
-build_vendor = pc
+build_vendor = unknown
 builddir = .
 datadir = ${datarootdir}
 datarootdir = ${prefix}/share
 docdir = ${datarootdir}/doc/${PACKAGE_TARNAME}
 dvidir = ${docdir}
 exec_prefix = ${prefix}
-host = i686-pc-linux-gnu
+host = x86_64-unknown-linux-gnu
 host_alias = 
-host_cpu = i686
+host_cpu = x86_64
 host_os = linux-gnu
-host_vendor = pc
+host_vendor = unknown
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/install-sh
+install_sh = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -274,7 +274,7 @@ mandir = ${datarootdir}/man
 mkdir_p = /bin/mkdir -p
 oldincludedir = /usr/include
 pdfdir = ${docdir}
-prefix = /home/ercoppa/Desktop/code/aprof/valgrind/inst
+prefix = /home/ercoppa/Desktop/aprof/valgrind/inst
 program_transform_name = s,x,x,
 psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
@@ -327,13 +327,13 @@ AM_CFLAGS_PIC = -fpic -O -g -fno-omit-frame-pointer -fno-strict-aliasing
 # AM_CPPFLAGS_<PLATFORM> in each AM_CCASFLAGS_<PLATFORM> variable.  This
 # means some of the flags are duplicated on systems with newer versions of
 # automake, but this does not really matter and seems hard to avoid.
-AM_CPPFLAGS_X86_LINUX = \
+AM_CPPFLAGS_AMD64_LINUX = \
 	-I$(top_srcdir) \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/VEX/pub \
-	-DVGA_x86=1 \
+	-DVGA_amd64=1 \
 	-DVGO_linux=1 \
-	-DVGP_x86_linux=1
+	-DVGP_amd64_linux=1
 
 #AM_CPPFLAGS_ = \
 #	-I$(top_srcdir) \
@@ -344,13 +344,13 @@ AM_CPPFLAGS_X86_LINUX = \
 #	-DVGP__linux=1
 
 AM_FLAG_M3264_X86_LINUX = -m32
-AM_CFLAGS_X86_LINUX = -m32 -mpreferred-stack-boundary=2 \
+AM_CFLAGS_X86_LINUX = -m32  \
 			 	$(AM_CFLAGS_BASE)
 
 AM_CCASFLAGS_X86_LINUX = $(AM_CPPFLAGS_X86_LINUX) -m32 -g
 AM_FLAG_M3264_AMD64_LINUX = -m64
 AM_CFLAGS_AMD64_LINUX = -m64 -fomit-frame-pointer \
-				-mpreferred-stack-boundary=2 $(AM_CFLAGS_BASE)
+				 $(AM_CFLAGS_BASE)
 
 AM_CCASFLAGS_AMD64_LINUX = $(AM_CPPFLAGS_AMD64_LINUX) -m64 -g
 AM_FLAG_M3264_PPC32_LINUX = -m32
@@ -360,7 +360,7 @@ AM_FLAG_M3264_PPC64_LINUX = -m64
 AM_CFLAGS_PPC64_LINUX = -m64 $(AM_CFLAGS_BASE)
 AM_CCASFLAGS_PPC64_LINUX = $(AM_CPPFLAGS_PPC64_LINUX) -m64 -g
 AM_FLAG_M3264_ARM_LINUX = -m32
-AM_CFLAGS_ARM_LINUX = -m32 -mpreferred-stack-boundary=2 \
+AM_CFLAGS_ARM_LINUX = -m32  \
 			 	$(AM_CFLAGS_BASE) -marm
 
 AM_CCASFLAGS_ARM_LINUX = $(AM_CPPFLAGS_ARM_LINUX) -m32 -marm -g
@@ -395,10 +395,10 @@ AM_CCASFLAGS_S390X_LINUX = $(AM_CPPFLAGS_S390X_LINUX) -mzarch -march=z900 \
 # regtests and performance tests.  In fact, these must be used to
 # build anything which is built only once on a dual-arch build.
 #
-AM_FLAG_M3264_PRI = $(AM_FLAG_M3264_X86_LINUX)
-AM_CPPFLAGS_PRI = $(AM_CPPFLAGS_X86_LINUX)
-AM_CFLAGS_PRI = $(AM_CFLAGS_X86_LINUX)
-AM_CCASFLAGS_PRI = $(AM_CCASFLAGS_X86_LINUX)
+AM_FLAG_M3264_PRI = $(AM_FLAG_M3264_AMD64_LINUX)
+AM_CPPFLAGS_PRI = $(AM_CPPFLAGS_AMD64_LINUX)
+AM_CFLAGS_PRI = $(AM_CFLAGS_AMD64_LINUX)
+AM_CCASFLAGS_PRI = $(AM_CCASFLAGS_AMD64_LINUX)
 AM_FLAG_M3264_SEC = 
 #AM_FLAG_M3264_SEC = $(AM_FLAG_M3264_)
 
@@ -421,17 +421,17 @@ PRELOAD_LDFLAGS_S390X_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) -m64
 #----------------------------------------------------------------------------
 # <tool>-<platform> stuff
 #----------------------------------------------------------------------------
-TOOL_DEPENDENCIES_X86_LINUX = \
-	$(top_builddir)/coregrind/libcoregrind-x86-linux.a \
-	$(top_builddir)/VEX/libvex-x86-linux.a
+TOOL_DEPENDENCIES_AMD64_LINUX = \
+	$(top_builddir)/coregrind/libcoregrind-amd64-linux.a \
+	$(top_builddir)/VEX/libvex-amd64-linux.a
 
 #TOOL_DEPENDENCIES_ = \
 #	$(top_builddir)/coregrind/libcoregrind--linux.a \
 #	$(top_builddir)/VEX/libvex--linux.a
 
 TOOL_LDADD_COMMON = -lgcc
-TOOL_LDADD_X86_LINUX = \
-	$(TOOL_DEPENDENCIES_X86_LINUX) $(TOOL_LDADD_COMMON)
+TOOL_LDADD_AMD64_LINUX = \
+	$(TOOL_DEPENDENCIES_AMD64_LINUX) $(TOOL_LDADD_COMMON)
 
 #TOOL_LDADD_ = \
 #	$(TOOL_DEPENDENCIES_) $(TOOL_LDADD_COMMON)
@@ -570,30 +570,30 @@ aprof_SOURCES_COMMON = CCT.c failure.c fwrite.c thread.c report.c \
 						./pool/pool.c ./SUF/union_find.c ./SUF2/suf.c\
 						aprof.c
 
-aprof_x86_linux_SOURCES = \
+aprof_amd64_linux_SOURCES = \
 	$(aprof_SOURCES_COMMON)
 
-aprof_x86_linux_CPPFLAGS = \
-	$(AM_CPPFLAGS_X86_LINUX)
+aprof_amd64_linux_CPPFLAGS = \
+	$(AM_CPPFLAGS_AMD64_LINUX)
 
-aprof_x86_linux_CFLAGS = \
-	$(AM_CFLAGS_X86_LINUX)
+aprof_amd64_linux_CFLAGS = \
+	$(AM_CFLAGS_AMD64_LINUX)
 
-aprof_x86_linux_DEPENDENCIES = \
-	$(TOOL_DEPENDENCIES_X86_LINUX)
+aprof_amd64_linux_DEPENDENCIES = \
+	$(TOOL_DEPENDENCIES_AMD64_LINUX)
 
-aprof_x86_linux_LDADD = \
-	$(TOOL_LDADD_X86_LINUX)
+aprof_amd64_linux_LDADD = \
+	$(TOOL_LDADD_AMD64_LINUX)
 
-aprof_x86_linux_LDFLAGS = \
-	$(TOOL_LDFLAGS_X86_LINUX)
+aprof_amd64_linux_LDFLAGS = \
+	$(TOOL_LDFLAGS_AMD64_LINUX)
 
-aprof_x86_linux_LINK = \
+aprof_amd64_linux_LINK = \
 	$(top_builddir)/coregrind/link_tool_exe_linux \
 	0x38000000 \
 	$(LINK) \
-	$(aprof_x86_linux_CFLAGS) \
-	$(aprof_x86_linux_LDFLAGS)
+	$(aprof_amd64_linux_CFLAGS) \
+	$(aprof_amd64_linux_LDFLAGS)
 
 #aprof__linux_SOURCES = \
 #	$(aprof_SOURCES_COMMON)
@@ -657,9 +657,9 @@ $(am__aclocal_m4_deps):
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-aprof-x86-linux$(EXEEXT): $(aprof_x86_linux_OBJECTS) $(aprof_x86_linux_DEPENDENCIES) 
-	@rm -f aprof-x86-linux$(EXEEXT)
-	$(aprof_x86_linux_LINK) $(aprof_x86_linux_OBJECTS) $(aprof_x86_linux_LDADD) $(LIBS)
+aprof-amd64-linux$(EXEEXT): $(aprof_amd64_linux_OBJECTS) $(aprof_amd64_linux_DEPENDENCIES) 
+	@rm -f aprof-amd64-linux$(EXEEXT)
+	$(aprof_amd64_linux_LINK) $(aprof_amd64_linux_OBJECTS) $(aprof_amd64_linux_LDADD) $(LIBS)
 aprof--linux$(EXEEXT): $(aprof__linux_OBJECTS) $(aprof__linux_DEPENDENCIES) 
 	@rm -f aprof--linux$(EXEEXT)
 	$(aprof__linux_LINK) $(aprof__linux_OBJECTS) $(aprof__linux_LDADD) $(LIBS)
@@ -670,20 +670,20 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-include ./$(DEPDIR)/aprof_x86_linux-CCT.Po
-include ./$(DEPDIR)/aprof_x86_linux-aprof.Po
-include ./$(DEPDIR)/aprof_x86_linux-events.Po
-include ./$(DEPDIR)/aprof_x86_linux-failure.Po
-include ./$(DEPDIR)/aprof_x86_linux-function.Po
-include ./$(DEPDIR)/aprof_x86_linux-fwrite.Po
-include ./$(DEPDIR)/aprof_x86_linux-hashtable.Po
-include ./$(DEPDIR)/aprof_x86_linux-memory.Po
-include ./$(DEPDIR)/aprof_x86_linux-pool.Po
-include ./$(DEPDIR)/aprof_x86_linux-report.Po
-include ./$(DEPDIR)/aprof_x86_linux-suf.Po
-include ./$(DEPDIR)/aprof_x86_linux-thread.Po
-include ./$(DEPDIR)/aprof_x86_linux-time.Po
-include ./$(DEPDIR)/aprof_x86_linux-union_find.Po
+include ./$(DEPDIR)/aprof_amd64_linux-CCT.Po
+include ./$(DEPDIR)/aprof_amd64_linux-aprof.Po
+include ./$(DEPDIR)/aprof_amd64_linux-events.Po
+include ./$(DEPDIR)/aprof_amd64_linux-failure.Po
+include ./$(DEPDIR)/aprof_amd64_linux-function.Po
+include ./$(DEPDIR)/aprof_amd64_linux-fwrite.Po
+include ./$(DEPDIR)/aprof_amd64_linux-hashtable.Po
+include ./$(DEPDIR)/aprof_amd64_linux-memory.Po
+include ./$(DEPDIR)/aprof_amd64_linux-pool.Po
+include ./$(DEPDIR)/aprof_amd64_linux-report.Po
+include ./$(DEPDIR)/aprof_amd64_linux-suf.Po
+include ./$(DEPDIR)/aprof_amd64_linux-thread.Po
+include ./$(DEPDIR)/aprof_amd64_linux-time.Po
+include ./$(DEPDIR)/aprof_amd64_linux-union_find.Po
 include ./$(DEPDIR)/aprof__linux-CCT.Po
 include ./$(DEPDIR)/aprof__linux-aprof.Po
 include ./$(DEPDIR)/aprof__linux-events.Po
@@ -713,201 +713,201 @@ include ./$(DEPDIR)/aprof__linux-union_find.Po
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
 #	$(COMPILE) -c `$(CYGPATH_W) '$<'`
 
-aprof_x86_linux-CCT.o: CCT.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-CCT.o -MD -MP -MF $(DEPDIR)/aprof_x86_linux-CCT.Tpo -c -o aprof_x86_linux-CCT.o `test -f 'CCT.c' || echo '$(srcdir)/'`CCT.c
-	$(am__mv) $(DEPDIR)/aprof_x86_linux-CCT.Tpo $(DEPDIR)/aprof_x86_linux-CCT.Po
-#	source='CCT.c' object='aprof_x86_linux-CCT.o' libtool=no \
+aprof_amd64_linux-CCT.o: CCT.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -MT aprof_amd64_linux-CCT.o -MD -MP -MF $(DEPDIR)/aprof_amd64_linux-CCT.Tpo -c -o aprof_amd64_linux-CCT.o `test -f 'CCT.c' || echo '$(srcdir)/'`CCT.c
+	$(am__mv) $(DEPDIR)/aprof_amd64_linux-CCT.Tpo $(DEPDIR)/aprof_amd64_linux-CCT.Po
+#	source='CCT.c' object='aprof_amd64_linux-CCT.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-CCT.o `test -f 'CCT.c' || echo '$(srcdir)/'`CCT.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -c -o aprof_amd64_linux-CCT.o `test -f 'CCT.c' || echo '$(srcdir)/'`CCT.c
 
-aprof_x86_linux-CCT.obj: CCT.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-CCT.obj -MD -MP -MF $(DEPDIR)/aprof_x86_linux-CCT.Tpo -c -o aprof_x86_linux-CCT.obj `if test -f 'CCT.c'; then $(CYGPATH_W) 'CCT.c'; else $(CYGPATH_W) '$(srcdir)/CCT.c'; fi`
-	$(am__mv) $(DEPDIR)/aprof_x86_linux-CCT.Tpo $(DEPDIR)/aprof_x86_linux-CCT.Po
-#	source='CCT.c' object='aprof_x86_linux-CCT.obj' libtool=no \
+aprof_amd64_linux-CCT.obj: CCT.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -MT aprof_amd64_linux-CCT.obj -MD -MP -MF $(DEPDIR)/aprof_amd64_linux-CCT.Tpo -c -o aprof_amd64_linux-CCT.obj `if test -f 'CCT.c'; then $(CYGPATH_W) 'CCT.c'; else $(CYGPATH_W) '$(srcdir)/CCT.c'; fi`
+	$(am__mv) $(DEPDIR)/aprof_amd64_linux-CCT.Tpo $(DEPDIR)/aprof_amd64_linux-CCT.Po
+#	source='CCT.c' object='aprof_amd64_linux-CCT.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-CCT.obj `if test -f 'CCT.c'; then $(CYGPATH_W) 'CCT.c'; else $(CYGPATH_W) '$(srcdir)/CCT.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -c -o aprof_amd64_linux-CCT.obj `if test -f 'CCT.c'; then $(CYGPATH_W) 'CCT.c'; else $(CYGPATH_W) '$(srcdir)/CCT.c'; fi`
 
-aprof_x86_linux-failure.o: failure.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-failure.o -MD -MP -MF $(DEPDIR)/aprof_x86_linux-failure.Tpo -c -o aprof_x86_linux-failure.o `test -f 'failure.c' || echo '$(srcdir)/'`failure.c
-	$(am__mv) $(DEPDIR)/aprof_x86_linux-failure.Tpo $(DEPDIR)/aprof_x86_linux-failure.Po
-#	source='failure.c' object='aprof_x86_linux-failure.o' libtool=no \
+aprof_amd64_linux-failure.o: failure.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -MT aprof_amd64_linux-failure.o -MD -MP -MF $(DEPDIR)/aprof_amd64_linux-failure.Tpo -c -o aprof_amd64_linux-failure.o `test -f 'failure.c' || echo '$(srcdir)/'`failure.c
+	$(am__mv) $(DEPDIR)/aprof_amd64_linux-failure.Tpo $(DEPDIR)/aprof_amd64_linux-failure.Po
+#	source='failure.c' object='aprof_amd64_linux-failure.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-failure.o `test -f 'failure.c' || echo '$(srcdir)/'`failure.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -c -o aprof_amd64_linux-failure.o `test -f 'failure.c' || echo '$(srcdir)/'`failure.c
 
-aprof_x86_linux-failure.obj: failure.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-failure.obj -MD -MP -MF $(DEPDIR)/aprof_x86_linux-failure.Tpo -c -o aprof_x86_linux-failure.obj `if test -f 'failure.c'; then $(CYGPATH_W) 'failure.c'; else $(CYGPATH_W) '$(srcdir)/failure.c'; fi`
-	$(am__mv) $(DEPDIR)/aprof_x86_linux-failure.Tpo $(DEPDIR)/aprof_x86_linux-failure.Po
-#	source='failure.c' object='aprof_x86_linux-failure.obj' libtool=no \
+aprof_amd64_linux-failure.obj: failure.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -MT aprof_amd64_linux-failure.obj -MD -MP -MF $(DEPDIR)/aprof_amd64_linux-failure.Tpo -c -o aprof_amd64_linux-failure.obj `if test -f 'failure.c'; then $(CYGPATH_W) 'failure.c'; else $(CYGPATH_W) '$(srcdir)/failure.c'; fi`
+	$(am__mv) $(DEPDIR)/aprof_amd64_linux-failure.Tpo $(DEPDIR)/aprof_amd64_linux-failure.Po
+#	source='failure.c' object='aprof_amd64_linux-failure.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-failure.obj `if test -f 'failure.c'; then $(CYGPATH_W) 'failure.c'; else $(CYGPATH_W) '$(srcdir)/failure.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -c -o aprof_amd64_linux-failure.obj `if test -f 'failure.c'; then $(CYGPATH_W) 'failure.c'; else $(CYGPATH_W) '$(srcdir)/failure.c'; fi`
 
-aprof_x86_linux-fwrite.o: fwrite.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-fwrite.o -MD -MP -MF $(DEPDIR)/aprof_x86_linux-fwrite.Tpo -c -o aprof_x86_linux-fwrite.o `test -f 'fwrite.c' || echo '$(srcdir)/'`fwrite.c
-	$(am__mv) $(DEPDIR)/aprof_x86_linux-fwrite.Tpo $(DEPDIR)/aprof_x86_linux-fwrite.Po
-#	source='fwrite.c' object='aprof_x86_linux-fwrite.o' libtool=no \
+aprof_amd64_linux-fwrite.o: fwrite.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -MT aprof_amd64_linux-fwrite.o -MD -MP -MF $(DEPDIR)/aprof_amd64_linux-fwrite.Tpo -c -o aprof_amd64_linux-fwrite.o `test -f 'fwrite.c' || echo '$(srcdir)/'`fwrite.c
+	$(am__mv) $(DEPDIR)/aprof_amd64_linux-fwrite.Tpo $(DEPDIR)/aprof_amd64_linux-fwrite.Po
+#	source='fwrite.c' object='aprof_amd64_linux-fwrite.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-fwrite.o `test -f 'fwrite.c' || echo '$(srcdir)/'`fwrite.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -c -o aprof_amd64_linux-fwrite.o `test -f 'fwrite.c' || echo '$(srcdir)/'`fwrite.c
 
-aprof_x86_linux-fwrite.obj: fwrite.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-fwrite.obj -MD -MP -MF $(DEPDIR)/aprof_x86_linux-fwrite.Tpo -c -o aprof_x86_linux-fwrite.obj `if test -f 'fwrite.c'; then $(CYGPATH_W) 'fwrite.c'; else $(CYGPATH_W) '$(srcdir)/fwrite.c'; fi`
-	$(am__mv) $(DEPDIR)/aprof_x86_linux-fwrite.Tpo $(DEPDIR)/aprof_x86_linux-fwrite.Po
-#	source='fwrite.c' object='aprof_x86_linux-fwrite.obj' libtool=no \
+aprof_amd64_linux-fwrite.obj: fwrite.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -MT aprof_amd64_linux-fwrite.obj -MD -MP -MF $(DEPDIR)/aprof_amd64_linux-fwrite.Tpo -c -o aprof_amd64_linux-fwrite.obj `if test -f 'fwrite.c'; then $(CYGPATH_W) 'fwrite.c'; else $(CYGPATH_W) '$(srcdir)/fwrite.c'; fi`
+	$(am__mv) $(DEPDIR)/aprof_amd64_linux-fwrite.Tpo $(DEPDIR)/aprof_amd64_linux-fwrite.Po
+#	source='fwrite.c' object='aprof_amd64_linux-fwrite.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-fwrite.obj `if test -f 'fwrite.c'; then $(CYGPATH_W) 'fwrite.c'; else $(CYGPATH_W) '$(srcdir)/fwrite.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -c -o aprof_amd64_linux-fwrite.obj `if test -f 'fwrite.c'; then $(CYGPATH_W) 'fwrite.c'; else $(CYGPATH_W) '$(srcdir)/fwrite.c'; fi`
 
-aprof_x86_linux-thread.o: thread.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-thread.o -MD -MP -MF $(DEPDIR)/aprof_x86_linux-thread.Tpo -c -o aprof_x86_linux-thread.o `test -f 'thread.c' || echo '$(srcdir)/'`thread.c
-	$(am__mv) $(DEPDIR)/aprof_x86_linux-thread.Tpo $(DEPDIR)/aprof_x86_linux-thread.Po
-#	source='thread.c' object='aprof_x86_linux-thread.o' libtool=no \
+aprof_amd64_linux-thread.o: thread.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -MT aprof_amd64_linux-thread.o -MD -MP -MF $(DEPDIR)/aprof_amd64_linux-thread.Tpo -c -o aprof_amd64_linux-thread.o `test -f 'thread.c' || echo '$(srcdir)/'`thread.c
+	$(am__mv) $(DEPDIR)/aprof_amd64_linux-thread.Tpo $(DEPDIR)/aprof_amd64_linux-thread.Po
+#	source='thread.c' object='aprof_amd64_linux-thread.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-thread.o `test -f 'thread.c' || echo '$(srcdir)/'`thread.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -c -o aprof_amd64_linux-thread.o `test -f 'thread.c' || echo '$(srcdir)/'`thread.c
 
-aprof_x86_linux-thread.obj: thread.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-thread.obj -MD -MP -MF $(DEPDIR)/aprof_x86_linux-thread.Tpo -c -o aprof_x86_linux-thread.obj `if test -f 'thread.c'; then $(CYGPATH_W) 'thread.c'; else $(CYGPATH_W) '$(srcdir)/thread.c'; fi`
-	$(am__mv) $(DEPDIR)/aprof_x86_linux-thread.Tpo $(DEPDIR)/aprof_x86_linux-thread.Po
-#	source='thread.c' object='aprof_x86_linux-thread.obj' libtool=no \
+aprof_amd64_linux-thread.obj: thread.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -MT aprof_amd64_linux-thread.obj -MD -MP -MF $(DEPDIR)/aprof_amd64_linux-thread.Tpo -c -o aprof_amd64_linux-thread.obj `if test -f 'thread.c'; then $(CYGPATH_W) 'thread.c'; else $(CYGPATH_W) '$(srcdir)/thread.c'; fi`
+	$(am__mv) $(DEPDIR)/aprof_amd64_linux-thread.Tpo $(DEPDIR)/aprof_amd64_linux-thread.Po
+#	source='thread.c' object='aprof_amd64_linux-thread.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-thread.obj `if test -f 'thread.c'; then $(CYGPATH_W) 'thread.c'; else $(CYGPATH_W) '$(srcdir)/thread.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -c -o aprof_amd64_linux-thread.obj `if test -f 'thread.c'; then $(CYGPATH_W) 'thread.c'; else $(CYGPATH_W) '$(srcdir)/thread.c'; fi`
 
-aprof_x86_linux-report.o: report.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-report.o -MD -MP -MF $(DEPDIR)/aprof_x86_linux-report.Tpo -c -o aprof_x86_linux-report.o `test -f 'report.c' || echo '$(srcdir)/'`report.c
-	$(am__mv) $(DEPDIR)/aprof_x86_linux-report.Tpo $(DEPDIR)/aprof_x86_linux-report.Po
-#	source='report.c' object='aprof_x86_linux-report.o' libtool=no \
+aprof_amd64_linux-report.o: report.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -MT aprof_amd64_linux-report.o -MD -MP -MF $(DEPDIR)/aprof_amd64_linux-report.Tpo -c -o aprof_amd64_linux-report.o `test -f 'report.c' || echo '$(srcdir)/'`report.c
+	$(am__mv) $(DEPDIR)/aprof_amd64_linux-report.Tpo $(DEPDIR)/aprof_amd64_linux-report.Po
+#	source='report.c' object='aprof_amd64_linux-report.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-report.o `test -f 'report.c' || echo '$(srcdir)/'`report.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -c -o aprof_amd64_linux-report.o `test -f 'report.c' || echo '$(srcdir)/'`report.c
 
-aprof_x86_linux-report.obj: report.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-report.obj -MD -MP -MF $(DEPDIR)/aprof_x86_linux-report.Tpo -c -o aprof_x86_linux-report.obj `if test -f 'report.c'; then $(CYGPATH_W) 'report.c'; else $(CYGPATH_W) '$(srcdir)/report.c'; fi`
-	$(am__mv) $(DEPDIR)/aprof_x86_linux-report.Tpo $(DEPDIR)/aprof_x86_linux-report.Po
-#	source='report.c' object='aprof_x86_linux-report.obj' libtool=no \
+aprof_amd64_linux-report.obj: report.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -MT aprof_amd64_linux-report.obj -MD -MP -MF $(DEPDIR)/aprof_amd64_linux-report.Tpo -c -o aprof_amd64_linux-report.obj `if test -f 'report.c'; then $(CYGPATH_W) 'report.c'; else $(CYGPATH_W) '$(srcdir)/report.c'; fi`
+	$(am__mv) $(DEPDIR)/aprof_amd64_linux-report.Tpo $(DEPDIR)/aprof_amd64_linux-report.Po
+#	source='report.c' object='aprof_amd64_linux-report.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-report.obj `if test -f 'report.c'; then $(CYGPATH_W) 'report.c'; else $(CYGPATH_W) '$(srcdir)/report.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -c -o aprof_amd64_linux-report.obj `if test -f 'report.c'; then $(CYGPATH_W) 'report.c'; else $(CYGPATH_W) '$(srcdir)/report.c'; fi`
 
-aprof_x86_linux-events.o: events.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-events.o -MD -MP -MF $(DEPDIR)/aprof_x86_linux-events.Tpo -c -o aprof_x86_linux-events.o `test -f 'events.c' || echo '$(srcdir)/'`events.c
-	$(am__mv) $(DEPDIR)/aprof_x86_linux-events.Tpo $(DEPDIR)/aprof_x86_linux-events.Po
-#	source='events.c' object='aprof_x86_linux-events.o' libtool=no \
+aprof_amd64_linux-events.o: events.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -MT aprof_amd64_linux-events.o -MD -MP -MF $(DEPDIR)/aprof_amd64_linux-events.Tpo -c -o aprof_amd64_linux-events.o `test -f 'events.c' || echo '$(srcdir)/'`events.c
+	$(am__mv) $(DEPDIR)/aprof_amd64_linux-events.Tpo $(DEPDIR)/aprof_amd64_linux-events.Po
+#	source='events.c' object='aprof_amd64_linux-events.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-events.o `test -f 'events.c' || echo '$(srcdir)/'`events.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -c -o aprof_amd64_linux-events.o `test -f 'events.c' || echo '$(srcdir)/'`events.c
 
-aprof_x86_linux-events.obj: events.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-events.obj -MD -MP -MF $(DEPDIR)/aprof_x86_linux-events.Tpo -c -o aprof_x86_linux-events.obj `if test -f 'events.c'; then $(CYGPATH_W) 'events.c'; else $(CYGPATH_W) '$(srcdir)/events.c'; fi`
-	$(am__mv) $(DEPDIR)/aprof_x86_linux-events.Tpo $(DEPDIR)/aprof_x86_linux-events.Po
-#	source='events.c' object='aprof_x86_linux-events.obj' libtool=no \
+aprof_amd64_linux-events.obj: events.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -MT aprof_amd64_linux-events.obj -MD -MP -MF $(DEPDIR)/aprof_amd64_linux-events.Tpo -c -o aprof_amd64_linux-events.obj `if test -f 'events.c'; then $(CYGPATH_W) 'events.c'; else $(CYGPATH_W) '$(srcdir)/events.c'; fi`
+	$(am__mv) $(DEPDIR)/aprof_amd64_linux-events.Tpo $(DEPDIR)/aprof_amd64_linux-events.Po
+#	source='events.c' object='aprof_amd64_linux-events.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-events.obj `if test -f 'events.c'; then $(CYGPATH_W) 'events.c'; else $(CYGPATH_W) '$(srcdir)/events.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -c -o aprof_amd64_linux-events.obj `if test -f 'events.c'; then $(CYGPATH_W) 'events.c'; else $(CYGPATH_W) '$(srcdir)/events.c'; fi`
 
-aprof_x86_linux-function.o: function.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-function.o -MD -MP -MF $(DEPDIR)/aprof_x86_linux-function.Tpo -c -o aprof_x86_linux-function.o `test -f 'function.c' || echo '$(srcdir)/'`function.c
-	$(am__mv) $(DEPDIR)/aprof_x86_linux-function.Tpo $(DEPDIR)/aprof_x86_linux-function.Po
-#	source='function.c' object='aprof_x86_linux-function.o' libtool=no \
+aprof_amd64_linux-function.o: function.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -MT aprof_amd64_linux-function.o -MD -MP -MF $(DEPDIR)/aprof_amd64_linux-function.Tpo -c -o aprof_amd64_linux-function.o `test -f 'function.c' || echo '$(srcdir)/'`function.c
+	$(am__mv) $(DEPDIR)/aprof_amd64_linux-function.Tpo $(DEPDIR)/aprof_amd64_linux-function.Po
+#	source='function.c' object='aprof_amd64_linux-function.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-function.o `test -f 'function.c' || echo '$(srcdir)/'`function.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -c -o aprof_amd64_linux-function.o `test -f 'function.c' || echo '$(srcdir)/'`function.c
 
-aprof_x86_linux-function.obj: function.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-function.obj -MD -MP -MF $(DEPDIR)/aprof_x86_linux-function.Tpo -c -o aprof_x86_linux-function.obj `if test -f 'function.c'; then $(CYGPATH_W) 'function.c'; else $(CYGPATH_W) '$(srcdir)/function.c'; fi`
-	$(am__mv) $(DEPDIR)/aprof_x86_linux-function.Tpo $(DEPDIR)/aprof_x86_linux-function.Po
-#	source='function.c' object='aprof_x86_linux-function.obj' libtool=no \
+aprof_amd64_linux-function.obj: function.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -MT aprof_amd64_linux-function.obj -MD -MP -MF $(DEPDIR)/aprof_amd64_linux-function.Tpo -c -o aprof_amd64_linux-function.obj `if test -f 'function.c'; then $(CYGPATH_W) 'function.c'; else $(CYGPATH_W) '$(srcdir)/function.c'; fi`
+	$(am__mv) $(DEPDIR)/aprof_amd64_linux-function.Tpo $(DEPDIR)/aprof_amd64_linux-function.Po
+#	source='function.c' object='aprof_amd64_linux-function.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-function.obj `if test -f 'function.c'; then $(CYGPATH_W) 'function.c'; else $(CYGPATH_W) '$(srcdir)/function.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -c -o aprof_amd64_linux-function.obj `if test -f 'function.c'; then $(CYGPATH_W) 'function.c'; else $(CYGPATH_W) '$(srcdir)/function.c'; fi`
 
-aprof_x86_linux-memory.o: memory.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-memory.o -MD -MP -MF $(DEPDIR)/aprof_x86_linux-memory.Tpo -c -o aprof_x86_linux-memory.o `test -f 'memory.c' || echo '$(srcdir)/'`memory.c
-	$(am__mv) $(DEPDIR)/aprof_x86_linux-memory.Tpo $(DEPDIR)/aprof_x86_linux-memory.Po
-#	source='memory.c' object='aprof_x86_linux-memory.o' libtool=no \
+aprof_amd64_linux-memory.o: memory.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -MT aprof_amd64_linux-memory.o -MD -MP -MF $(DEPDIR)/aprof_amd64_linux-memory.Tpo -c -o aprof_amd64_linux-memory.o `test -f 'memory.c' || echo '$(srcdir)/'`memory.c
+	$(am__mv) $(DEPDIR)/aprof_amd64_linux-memory.Tpo $(DEPDIR)/aprof_amd64_linux-memory.Po
+#	source='memory.c' object='aprof_amd64_linux-memory.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-memory.o `test -f 'memory.c' || echo '$(srcdir)/'`memory.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -c -o aprof_amd64_linux-memory.o `test -f 'memory.c' || echo '$(srcdir)/'`memory.c
 
-aprof_x86_linux-memory.obj: memory.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-memory.obj -MD -MP -MF $(DEPDIR)/aprof_x86_linux-memory.Tpo -c -o aprof_x86_linux-memory.obj `if test -f 'memory.c'; then $(CYGPATH_W) 'memory.c'; else $(CYGPATH_W) '$(srcdir)/memory.c'; fi`
-	$(am__mv) $(DEPDIR)/aprof_x86_linux-memory.Tpo $(DEPDIR)/aprof_x86_linux-memory.Po
-#	source='memory.c' object='aprof_x86_linux-memory.obj' libtool=no \
+aprof_amd64_linux-memory.obj: memory.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -MT aprof_amd64_linux-memory.obj -MD -MP -MF $(DEPDIR)/aprof_amd64_linux-memory.Tpo -c -o aprof_amd64_linux-memory.obj `if test -f 'memory.c'; then $(CYGPATH_W) 'memory.c'; else $(CYGPATH_W) '$(srcdir)/memory.c'; fi`
+	$(am__mv) $(DEPDIR)/aprof_amd64_linux-memory.Tpo $(DEPDIR)/aprof_amd64_linux-memory.Po
+#	source='memory.c' object='aprof_amd64_linux-memory.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-memory.obj `if test -f 'memory.c'; then $(CYGPATH_W) 'memory.c'; else $(CYGPATH_W) '$(srcdir)/memory.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -c -o aprof_amd64_linux-memory.obj `if test -f 'memory.c'; then $(CYGPATH_W) 'memory.c'; else $(CYGPATH_W) '$(srcdir)/memory.c'; fi`
 
-aprof_x86_linux-time.o: time.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-time.o -MD -MP -MF $(DEPDIR)/aprof_x86_linux-time.Tpo -c -o aprof_x86_linux-time.o `test -f 'time.c' || echo '$(srcdir)/'`time.c
-	$(am__mv) $(DEPDIR)/aprof_x86_linux-time.Tpo $(DEPDIR)/aprof_x86_linux-time.Po
-#	source='time.c' object='aprof_x86_linux-time.o' libtool=no \
+aprof_amd64_linux-time.o: time.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -MT aprof_amd64_linux-time.o -MD -MP -MF $(DEPDIR)/aprof_amd64_linux-time.Tpo -c -o aprof_amd64_linux-time.o `test -f 'time.c' || echo '$(srcdir)/'`time.c
+	$(am__mv) $(DEPDIR)/aprof_amd64_linux-time.Tpo $(DEPDIR)/aprof_amd64_linux-time.Po
+#	source='time.c' object='aprof_amd64_linux-time.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-time.o `test -f 'time.c' || echo '$(srcdir)/'`time.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -c -o aprof_amd64_linux-time.o `test -f 'time.c' || echo '$(srcdir)/'`time.c
 
-aprof_x86_linux-time.obj: time.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-time.obj -MD -MP -MF $(DEPDIR)/aprof_x86_linux-time.Tpo -c -o aprof_x86_linux-time.obj `if test -f 'time.c'; then $(CYGPATH_W) 'time.c'; else $(CYGPATH_W) '$(srcdir)/time.c'; fi`
-	$(am__mv) $(DEPDIR)/aprof_x86_linux-time.Tpo $(DEPDIR)/aprof_x86_linux-time.Po
-#	source='time.c' object='aprof_x86_linux-time.obj' libtool=no \
+aprof_amd64_linux-time.obj: time.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -MT aprof_amd64_linux-time.obj -MD -MP -MF $(DEPDIR)/aprof_amd64_linux-time.Tpo -c -o aprof_amd64_linux-time.obj `if test -f 'time.c'; then $(CYGPATH_W) 'time.c'; else $(CYGPATH_W) '$(srcdir)/time.c'; fi`
+	$(am__mv) $(DEPDIR)/aprof_amd64_linux-time.Tpo $(DEPDIR)/aprof_amd64_linux-time.Po
+#	source='time.c' object='aprof_amd64_linux-time.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-time.obj `if test -f 'time.c'; then $(CYGPATH_W) 'time.c'; else $(CYGPATH_W) '$(srcdir)/time.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -c -o aprof_amd64_linux-time.obj `if test -f 'time.c'; then $(CYGPATH_W) 'time.c'; else $(CYGPATH_W) '$(srcdir)/time.c'; fi`
 
-aprof_x86_linux-hashtable.o: ./hashtable/hashtable.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-hashtable.o -MD -MP -MF $(DEPDIR)/aprof_x86_linux-hashtable.Tpo -c -o aprof_x86_linux-hashtable.o `test -f './hashtable/hashtable.c' || echo '$(srcdir)/'`./hashtable/hashtable.c
-	$(am__mv) $(DEPDIR)/aprof_x86_linux-hashtable.Tpo $(DEPDIR)/aprof_x86_linux-hashtable.Po
-#	source='./hashtable/hashtable.c' object='aprof_x86_linux-hashtable.o' libtool=no \
+aprof_amd64_linux-hashtable.o: ./hashtable/hashtable.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -MT aprof_amd64_linux-hashtable.o -MD -MP -MF $(DEPDIR)/aprof_amd64_linux-hashtable.Tpo -c -o aprof_amd64_linux-hashtable.o `test -f './hashtable/hashtable.c' || echo '$(srcdir)/'`./hashtable/hashtable.c
+	$(am__mv) $(DEPDIR)/aprof_amd64_linux-hashtable.Tpo $(DEPDIR)/aprof_amd64_linux-hashtable.Po
+#	source='./hashtable/hashtable.c' object='aprof_amd64_linux-hashtable.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-hashtable.o `test -f './hashtable/hashtable.c' || echo '$(srcdir)/'`./hashtable/hashtable.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -c -o aprof_amd64_linux-hashtable.o `test -f './hashtable/hashtable.c' || echo '$(srcdir)/'`./hashtable/hashtable.c
 
-aprof_x86_linux-hashtable.obj: ./hashtable/hashtable.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-hashtable.obj -MD -MP -MF $(DEPDIR)/aprof_x86_linux-hashtable.Tpo -c -o aprof_x86_linux-hashtable.obj `if test -f './hashtable/hashtable.c'; then $(CYGPATH_W) './hashtable/hashtable.c'; else $(CYGPATH_W) '$(srcdir)/./hashtable/hashtable.c'; fi`
-	$(am__mv) $(DEPDIR)/aprof_x86_linux-hashtable.Tpo $(DEPDIR)/aprof_x86_linux-hashtable.Po
-#	source='./hashtable/hashtable.c' object='aprof_x86_linux-hashtable.obj' libtool=no \
+aprof_amd64_linux-hashtable.obj: ./hashtable/hashtable.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -MT aprof_amd64_linux-hashtable.obj -MD -MP -MF $(DEPDIR)/aprof_amd64_linux-hashtable.Tpo -c -o aprof_amd64_linux-hashtable.obj `if test -f './hashtable/hashtable.c'; then $(CYGPATH_W) './hashtable/hashtable.c'; else $(CYGPATH_W) '$(srcdir)/./hashtable/hashtable.c'; fi`
+	$(am__mv) $(DEPDIR)/aprof_amd64_linux-hashtable.Tpo $(DEPDIR)/aprof_amd64_linux-hashtable.Po
+#	source='./hashtable/hashtable.c' object='aprof_amd64_linux-hashtable.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-hashtable.obj `if test -f './hashtable/hashtable.c'; then $(CYGPATH_W) './hashtable/hashtable.c'; else $(CYGPATH_W) '$(srcdir)/./hashtable/hashtable.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -c -o aprof_amd64_linux-hashtable.obj `if test -f './hashtable/hashtable.c'; then $(CYGPATH_W) './hashtable/hashtable.c'; else $(CYGPATH_W) '$(srcdir)/./hashtable/hashtable.c'; fi`
 
-aprof_x86_linux-pool.o: ./pool/pool.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-pool.o -MD -MP -MF $(DEPDIR)/aprof_x86_linux-pool.Tpo -c -o aprof_x86_linux-pool.o `test -f './pool/pool.c' || echo '$(srcdir)/'`./pool/pool.c
-	$(am__mv) $(DEPDIR)/aprof_x86_linux-pool.Tpo $(DEPDIR)/aprof_x86_linux-pool.Po
-#	source='./pool/pool.c' object='aprof_x86_linux-pool.o' libtool=no \
+aprof_amd64_linux-pool.o: ./pool/pool.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -MT aprof_amd64_linux-pool.o -MD -MP -MF $(DEPDIR)/aprof_amd64_linux-pool.Tpo -c -o aprof_amd64_linux-pool.o `test -f './pool/pool.c' || echo '$(srcdir)/'`./pool/pool.c
+	$(am__mv) $(DEPDIR)/aprof_amd64_linux-pool.Tpo $(DEPDIR)/aprof_amd64_linux-pool.Po
+#	source='./pool/pool.c' object='aprof_amd64_linux-pool.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-pool.o `test -f './pool/pool.c' || echo '$(srcdir)/'`./pool/pool.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -c -o aprof_amd64_linux-pool.o `test -f './pool/pool.c' || echo '$(srcdir)/'`./pool/pool.c
 
-aprof_x86_linux-pool.obj: ./pool/pool.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-pool.obj -MD -MP -MF $(DEPDIR)/aprof_x86_linux-pool.Tpo -c -o aprof_x86_linux-pool.obj `if test -f './pool/pool.c'; then $(CYGPATH_W) './pool/pool.c'; else $(CYGPATH_W) '$(srcdir)/./pool/pool.c'; fi`
-	$(am__mv) $(DEPDIR)/aprof_x86_linux-pool.Tpo $(DEPDIR)/aprof_x86_linux-pool.Po
-#	source='./pool/pool.c' object='aprof_x86_linux-pool.obj' libtool=no \
+aprof_amd64_linux-pool.obj: ./pool/pool.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -MT aprof_amd64_linux-pool.obj -MD -MP -MF $(DEPDIR)/aprof_amd64_linux-pool.Tpo -c -o aprof_amd64_linux-pool.obj `if test -f './pool/pool.c'; then $(CYGPATH_W) './pool/pool.c'; else $(CYGPATH_W) '$(srcdir)/./pool/pool.c'; fi`
+	$(am__mv) $(DEPDIR)/aprof_amd64_linux-pool.Tpo $(DEPDIR)/aprof_amd64_linux-pool.Po
+#	source='./pool/pool.c' object='aprof_amd64_linux-pool.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-pool.obj `if test -f './pool/pool.c'; then $(CYGPATH_W) './pool/pool.c'; else $(CYGPATH_W) '$(srcdir)/./pool/pool.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -c -o aprof_amd64_linux-pool.obj `if test -f './pool/pool.c'; then $(CYGPATH_W) './pool/pool.c'; else $(CYGPATH_W) '$(srcdir)/./pool/pool.c'; fi`
 
-aprof_x86_linux-union_find.o: ./SUF/union_find.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-union_find.o -MD -MP -MF $(DEPDIR)/aprof_x86_linux-union_find.Tpo -c -o aprof_x86_linux-union_find.o `test -f './SUF/union_find.c' || echo '$(srcdir)/'`./SUF/union_find.c
-	$(am__mv) $(DEPDIR)/aprof_x86_linux-union_find.Tpo $(DEPDIR)/aprof_x86_linux-union_find.Po
-#	source='./SUF/union_find.c' object='aprof_x86_linux-union_find.o' libtool=no \
+aprof_amd64_linux-union_find.o: ./SUF/union_find.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -MT aprof_amd64_linux-union_find.o -MD -MP -MF $(DEPDIR)/aprof_amd64_linux-union_find.Tpo -c -o aprof_amd64_linux-union_find.o `test -f './SUF/union_find.c' || echo '$(srcdir)/'`./SUF/union_find.c
+	$(am__mv) $(DEPDIR)/aprof_amd64_linux-union_find.Tpo $(DEPDIR)/aprof_amd64_linux-union_find.Po
+#	source='./SUF/union_find.c' object='aprof_amd64_linux-union_find.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-union_find.o `test -f './SUF/union_find.c' || echo '$(srcdir)/'`./SUF/union_find.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -c -o aprof_amd64_linux-union_find.o `test -f './SUF/union_find.c' || echo '$(srcdir)/'`./SUF/union_find.c
 
-aprof_x86_linux-union_find.obj: ./SUF/union_find.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-union_find.obj -MD -MP -MF $(DEPDIR)/aprof_x86_linux-union_find.Tpo -c -o aprof_x86_linux-union_find.obj `if test -f './SUF/union_find.c'; then $(CYGPATH_W) './SUF/union_find.c'; else $(CYGPATH_W) '$(srcdir)/./SUF/union_find.c'; fi`
-	$(am__mv) $(DEPDIR)/aprof_x86_linux-union_find.Tpo $(DEPDIR)/aprof_x86_linux-union_find.Po
-#	source='./SUF/union_find.c' object='aprof_x86_linux-union_find.obj' libtool=no \
+aprof_amd64_linux-union_find.obj: ./SUF/union_find.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -MT aprof_amd64_linux-union_find.obj -MD -MP -MF $(DEPDIR)/aprof_amd64_linux-union_find.Tpo -c -o aprof_amd64_linux-union_find.obj `if test -f './SUF/union_find.c'; then $(CYGPATH_W) './SUF/union_find.c'; else $(CYGPATH_W) '$(srcdir)/./SUF/union_find.c'; fi`
+	$(am__mv) $(DEPDIR)/aprof_amd64_linux-union_find.Tpo $(DEPDIR)/aprof_amd64_linux-union_find.Po
+#	source='./SUF/union_find.c' object='aprof_amd64_linux-union_find.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-union_find.obj `if test -f './SUF/union_find.c'; then $(CYGPATH_W) './SUF/union_find.c'; else $(CYGPATH_W) '$(srcdir)/./SUF/union_find.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -c -o aprof_amd64_linux-union_find.obj `if test -f './SUF/union_find.c'; then $(CYGPATH_W) './SUF/union_find.c'; else $(CYGPATH_W) '$(srcdir)/./SUF/union_find.c'; fi`
 
-aprof_x86_linux-suf.o: ./SUF2/suf.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-suf.o -MD -MP -MF $(DEPDIR)/aprof_x86_linux-suf.Tpo -c -o aprof_x86_linux-suf.o `test -f './SUF2/suf.c' || echo '$(srcdir)/'`./SUF2/suf.c
-	$(am__mv) $(DEPDIR)/aprof_x86_linux-suf.Tpo $(DEPDIR)/aprof_x86_linux-suf.Po
-#	source='./SUF2/suf.c' object='aprof_x86_linux-suf.o' libtool=no \
+aprof_amd64_linux-suf.o: ./SUF2/suf.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -MT aprof_amd64_linux-suf.o -MD -MP -MF $(DEPDIR)/aprof_amd64_linux-suf.Tpo -c -o aprof_amd64_linux-suf.o `test -f './SUF2/suf.c' || echo '$(srcdir)/'`./SUF2/suf.c
+	$(am__mv) $(DEPDIR)/aprof_amd64_linux-suf.Tpo $(DEPDIR)/aprof_amd64_linux-suf.Po
+#	source='./SUF2/suf.c' object='aprof_amd64_linux-suf.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-suf.o `test -f './SUF2/suf.c' || echo '$(srcdir)/'`./SUF2/suf.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -c -o aprof_amd64_linux-suf.o `test -f './SUF2/suf.c' || echo '$(srcdir)/'`./SUF2/suf.c
 
-aprof_x86_linux-suf.obj: ./SUF2/suf.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-suf.obj -MD -MP -MF $(DEPDIR)/aprof_x86_linux-suf.Tpo -c -o aprof_x86_linux-suf.obj `if test -f './SUF2/suf.c'; then $(CYGPATH_W) './SUF2/suf.c'; else $(CYGPATH_W) '$(srcdir)/./SUF2/suf.c'; fi`
-	$(am__mv) $(DEPDIR)/aprof_x86_linux-suf.Tpo $(DEPDIR)/aprof_x86_linux-suf.Po
-#	source='./SUF2/suf.c' object='aprof_x86_linux-suf.obj' libtool=no \
+aprof_amd64_linux-suf.obj: ./SUF2/suf.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -MT aprof_amd64_linux-suf.obj -MD -MP -MF $(DEPDIR)/aprof_amd64_linux-suf.Tpo -c -o aprof_amd64_linux-suf.obj `if test -f './SUF2/suf.c'; then $(CYGPATH_W) './SUF2/suf.c'; else $(CYGPATH_W) '$(srcdir)/./SUF2/suf.c'; fi`
+	$(am__mv) $(DEPDIR)/aprof_amd64_linux-suf.Tpo $(DEPDIR)/aprof_amd64_linux-suf.Po
+#	source='./SUF2/suf.c' object='aprof_amd64_linux-suf.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-suf.obj `if test -f './SUF2/suf.c'; then $(CYGPATH_W) './SUF2/suf.c'; else $(CYGPATH_W) '$(srcdir)/./SUF2/suf.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -c -o aprof_amd64_linux-suf.obj `if test -f './SUF2/suf.c'; then $(CYGPATH_W) './SUF2/suf.c'; else $(CYGPATH_W) '$(srcdir)/./SUF2/suf.c'; fi`
 
-aprof_x86_linux-aprof.o: aprof.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-aprof.o -MD -MP -MF $(DEPDIR)/aprof_x86_linux-aprof.Tpo -c -o aprof_x86_linux-aprof.o `test -f 'aprof.c' || echo '$(srcdir)/'`aprof.c
-	$(am__mv) $(DEPDIR)/aprof_x86_linux-aprof.Tpo $(DEPDIR)/aprof_x86_linux-aprof.Po
-#	source='aprof.c' object='aprof_x86_linux-aprof.o' libtool=no \
+aprof_amd64_linux-aprof.o: aprof.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -MT aprof_amd64_linux-aprof.o -MD -MP -MF $(DEPDIR)/aprof_amd64_linux-aprof.Tpo -c -o aprof_amd64_linux-aprof.o `test -f 'aprof.c' || echo '$(srcdir)/'`aprof.c
+	$(am__mv) $(DEPDIR)/aprof_amd64_linux-aprof.Tpo $(DEPDIR)/aprof_amd64_linux-aprof.Po
+#	source='aprof.c' object='aprof_amd64_linux-aprof.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-aprof.o `test -f 'aprof.c' || echo '$(srcdir)/'`aprof.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -c -o aprof_amd64_linux-aprof.o `test -f 'aprof.c' || echo '$(srcdir)/'`aprof.c
 
-aprof_x86_linux-aprof.obj: aprof.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-aprof.obj -MD -MP -MF $(DEPDIR)/aprof_x86_linux-aprof.Tpo -c -o aprof_x86_linux-aprof.obj `if test -f 'aprof.c'; then $(CYGPATH_W) 'aprof.c'; else $(CYGPATH_W) '$(srcdir)/aprof.c'; fi`
-	$(am__mv) $(DEPDIR)/aprof_x86_linux-aprof.Tpo $(DEPDIR)/aprof_x86_linux-aprof.Po
-#	source='aprof.c' object='aprof_x86_linux-aprof.obj' libtool=no \
+aprof_amd64_linux-aprof.obj: aprof.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -MT aprof_amd64_linux-aprof.obj -MD -MP -MF $(DEPDIR)/aprof_amd64_linux-aprof.Tpo -c -o aprof_amd64_linux-aprof.obj `if test -f 'aprof.c'; then $(CYGPATH_W) 'aprof.c'; else $(CYGPATH_W) '$(srcdir)/aprof.c'; fi`
+	$(am__mv) $(DEPDIR)/aprof_amd64_linux-aprof.Tpo $(DEPDIR)/aprof_amd64_linux-aprof.Po
+#	source='aprof.c' object='aprof_amd64_linux-aprof.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-aprof.obj `if test -f 'aprof.c'; then $(CYGPATH_W) 'aprof.c'; else $(CYGPATH_W) '$(srcdir)/aprof.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_amd64_linux_CFLAGS) $(CFLAGS) -c -o aprof_amd64_linux-aprof.obj `if test -f 'aprof.c'; then $(CYGPATH_W) 'aprof.c'; else $(CYGPATH_W) '$(srcdir)/aprof.c'; fi`
 
 aprof__linux-CCT.o: CCT.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -MT aprof__linux-CCT.o -MD -MP -MF $(DEPDIR)/aprof__linux-CCT.Tpo -c -o aprof__linux-CCT.o `test -f 'CCT.c' || echo '$(srcdir)/'`CCT.c

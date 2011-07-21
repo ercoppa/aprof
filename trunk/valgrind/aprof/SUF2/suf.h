@@ -13,7 +13,7 @@ extern void failure(char * msg);
 #ifdef __i386__
 #define SSM_SIZE 65536 // 4GB
 #else
-#define SSM_SIZE 65536 * 4 // 16GB address space
+#define SSM_SIZE 65536 * 8 // 32GB address space
 #endif
 
 typedef struct SSM {

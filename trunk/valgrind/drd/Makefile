@@ -40,14 +40,14 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-build_triplet = i686-pc-linux-gnu
-host_triplet = i686-pc-linux-gnu
+build_triplet = x86_64-unknown-linux-gnu
+host_triplet = x86_64-unknown-linux-gnu
 DIST_COMMON = $(noinst_HEADERS) $(pkginclude_HEADERS) \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(top_srcdir)/Makefile.all.am $(top_srcdir)/Makefile.tool.am
-noinst_PROGRAMS = drd-x86-linux$(EXEEXT) \
+noinst_PROGRAMS = drd-amd64-linux$(EXEEXT) \
 	$(am__EXEEXT_1) \
-	vgpreload_drd-x86-linux.so$(EXEEXT) \
+	vgpreload_drd-amd64-linux.so$(EXEEXT) \
 	$(am__EXEEXT_2)
 #am__append_1 = drd--linux
 drd__linux_DEPENDENCIES =
@@ -66,24 +66,24 @@ CONFIG_CLEAN_VPATH_FILES =
 #am__EXEEXT_2 = vgpreload_drd--linux.so$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am__objects_1 =  \
-	drd_x86_linux-drd_barrier.$(OBJEXT) \
-	drd_x86_linux-drd_bitmap2_node.$(OBJEXT) \
-	drd_x86_linux-drd_clientobj.$(OBJEXT) \
-	drd_x86_linux-drd_clientreq.$(OBJEXT) \
-	drd_x86_linux-drd_cond.$(OBJEXT) \
-	drd_x86_linux-drd_cond_initializer.$(OBJEXT) \
-	drd_x86_linux-drd_error.$(OBJEXT) \
-	drd_x86_linux-drd_hb.$(OBJEXT) \
-	drd_x86_linux-drd_load_store.$(OBJEXT) \
-	drd_x86_linux-drd_main.$(OBJEXT) \
-	drd_x86_linux-drd_malloc_wrappers.$(OBJEXT) \
-	drd_x86_linux-drd_mutex.$(OBJEXT) \
-	drd_x86_linux-drd_rwlock.$(OBJEXT) \
-	drd_x86_linux-drd_semaphore.$(OBJEXT) \
-	drd_x86_linux-drd_suppression.$(OBJEXT)
-am_drd_x86_linux_OBJECTS = $(am__objects_1)
-drd_x86_linux_OBJECTS =  \
-	$(am_drd_x86_linux_OBJECTS)
+	drd_amd64_linux-drd_barrier.$(OBJEXT) \
+	drd_amd64_linux-drd_bitmap2_node.$(OBJEXT) \
+	drd_amd64_linux-drd_clientobj.$(OBJEXT) \
+	drd_amd64_linux-drd_clientreq.$(OBJEXT) \
+	drd_amd64_linux-drd_cond.$(OBJEXT) \
+	drd_amd64_linux-drd_cond_initializer.$(OBJEXT) \
+	drd_amd64_linux-drd_error.$(OBJEXT) \
+	drd_amd64_linux-drd_hb.$(OBJEXT) \
+	drd_amd64_linux-drd_load_store.$(OBJEXT) \
+	drd_amd64_linux-drd_main.$(OBJEXT) \
+	drd_amd64_linux-drd_malloc_wrappers.$(OBJEXT) \
+	drd_amd64_linux-drd_mutex.$(OBJEXT) \
+	drd_amd64_linux-drd_rwlock.$(OBJEXT) \
+	drd_amd64_linux-drd_semaphore.$(OBJEXT) \
+	drd_amd64_linux-drd_suppression.$(OBJEXT)
+am_drd_amd64_linux_OBJECTS = $(am__objects_1)
+drd_amd64_linux_OBJECTS =  \
+	$(am_drd_amd64_linux_OBJECTS)
 am__drd__linux_SOURCES_DIST = drd_barrier.c \
 	drd_bitmap2_node.c drd_clientobj.c drd_clientreq.c drd_cond.c \
 	drd_cond_initializer.c drd_error.c drd_hb.c drd_load_store.c \
@@ -109,23 +109,23 @@ am__objects_2 =  \
 #	$(am__objects_2)
 drd__linux_OBJECTS =  \
 	$(am_drd__linux_OBJECTS)
-am__vgpreload_drd_x86_linux_so_SOURCES_DIST =  \
+am__vgpreload_drd_amd64_linux_so_SOURCES_DIST =  \
 	drd_pthread_intercepts.c drd_qtcore_intercepts.c \
 	drd_strmem_intercepts.c drd_darwin_intercepts.c
-#am__objects_3 = vgpreload_drd_x86_linux_so-drd_darwin_intercepts.$(OBJEXT)
-am__objects_4 = vgpreload_drd_x86_linux_so-drd_pthread_intercepts.$(OBJEXT) \
-	vgpreload_drd_x86_linux_so-drd_qtcore_intercepts.$(OBJEXT) \
-	vgpreload_drd_x86_linux_so-drd_strmem_intercepts.$(OBJEXT) \
+#am__objects_3 = vgpreload_drd_amd64_linux_so-drd_darwin_intercepts.$(OBJEXT)
+am__objects_4 = vgpreload_drd_amd64_linux_so-drd_pthread_intercepts.$(OBJEXT) \
+	vgpreload_drd_amd64_linux_so-drd_qtcore_intercepts.$(OBJEXT) \
+	vgpreload_drd_amd64_linux_so-drd_strmem_intercepts.$(OBJEXT) \
 	$(am__objects_3)
-am_vgpreload_drd_x86_linux_so_OBJECTS =  \
+am_vgpreload_drd_amd64_linux_so_OBJECTS =  \
 	$(am__objects_4)
-vgpreload_drd_x86_linux_so_OBJECTS =  \
-	$(am_vgpreload_drd_x86_linux_so_OBJECTS)
-vgpreload_drd_x86_linux_so_LDADD = $(LDADD)
-vgpreload_drd_x86_linux_so_LINK = $(CCLD) \
-	$(vgpreload_drd_x86_linux_so_CFLAGS) \
+vgpreload_drd_amd64_linux_so_OBJECTS =  \
+	$(am_vgpreload_drd_amd64_linux_so_OBJECTS)
+vgpreload_drd_amd64_linux_so_LDADD = $(LDADD)
+vgpreload_drd_amd64_linux_so_LINK = $(CCLD) \
+	$(vgpreload_drd_amd64_linux_so_CFLAGS) \
 	$(CFLAGS) \
-	$(vgpreload_drd_x86_linux_so_LDFLAGS) \
+	$(vgpreload_drd_amd64_linux_so_LDFLAGS) \
 	$(LDFLAGS) -o $@
 am__vgpreload_drd__linux_so_SOURCES_DIST =  \
 	drd_pthread_intercepts.c drd_qtcore_intercepts.c \
@@ -153,13 +153,13 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(drd_x86_linux_SOURCES) \
+SOURCES = $(drd_amd64_linux_SOURCES) \
 	$(drd__linux_SOURCES) \
-	$(vgpreload_drd_x86_linux_so_SOURCES) \
+	$(vgpreload_drd_amd64_linux_so_SOURCES) \
 	$(vgpreload_drd__linux_so_SOURCES)
-DIST_SOURCES = $(drd_x86_linux_SOURCES) \
+DIST_SOURCES = $(drd_amd64_linux_SOURCES) \
 	$(am__drd__linux_SOURCES_DIST) \
-	$(am__vgpreload_drd_x86_linux_so_SOURCES_DIST) \
+	$(am__vgpreload_drd_amd64_linux_so_SOURCES_DIST) \
 	$(am__vgpreload_drd__linux_so_SOURCES_DIST)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
@@ -225,12 +225,12 @@ am__relativize = \
     dir1=`echo "$$dir1" | sed -e "$$sed_rest"`; \
   done; \
   reldir="$$dir2"
-ACLOCAL = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run aclocal-1.11
-AMTAR = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run tar
+ACLOCAL = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run aclocal-1.11
+AMTAR = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run tar
 AR = /usr/bin/ar
-AUTOCONF = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run autoconf
-AUTOHEADER = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run autoheader
-AUTOMAKE = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run automake-1.11
+AUTOCONF = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run autoconf
+AUTOHEADER = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run autoheader
+AUTOMAKE = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run automake-1.11
 AWK = mawk
 BOOST_CFLAGS = 
 BOOST_LIBS = 
@@ -282,7 +282,7 @@ LIBS =
 LN_S = ln -s
 LTLIBOBJS = 
 MAINT = #
-MAKEINFO = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run makeinfo
+MAKEINFO = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run makeinfo
 MKDIR_P = /bin/mkdir -p
 MPI_CC = mpicc
 OBJEXT = o
@@ -295,7 +295,7 @@ PACKAGE_URL =
 PACKAGE_VERSION = 3.7.0.SVN
 PATH_SEPARATOR = :
 PERL = /usr/bin/perl
-PREFERRED_STACK_BOUNDARY = -mpreferred-stack-boundary=2
+PREFERRED_STACK_BOUNDARY = 
 RANLIB = ranlib
 SED = /bin/sed
 SET_MAKE = 
@@ -304,15 +304,15 @@ STRIP =
 VALT_LOAD_ADDRESS_PRI = 0x38000000
 VALT_LOAD_ADDRESS_SEC = 0xUNSET
 VERSION = 3.7.0.SVN
-VGCONF_ARCH_PRI = x86
+VGCONF_ARCH_PRI = amd64
 VGCONF_ARCH_SEC = 
 VGCONF_OS = linux
-VGCONF_PLATFORM_PRI_CAPS = X86_LINUX
+VGCONF_PLATFORM_PRI_CAPS = AMD64_LINUX
 VGCONF_PLATFORM_SEC_CAPS = 
-abs_builddir = /home/ercoppa/Desktop/code/aprof/valgrind/drd
-abs_srcdir = /home/ercoppa/Desktop/code/aprof/valgrind/drd
-abs_top_builddir = /home/ercoppa/Desktop/code/aprof/valgrind
-abs_top_srcdir = /home/ercoppa/Desktop/code/aprof/valgrind
+abs_builddir = /home/ercoppa/Desktop/aprof/valgrind/drd
+abs_srcdir = /home/ercoppa/Desktop/aprof/valgrind/drd
+abs_top_builddir = /home/ercoppa/Desktop/aprof/valgrind
+abs_top_srcdir = /home/ercoppa/Desktop/aprof/valgrind
 ac_ct_CC = gcc
 ac_ct_CXX = g++
 am__include = include
@@ -321,26 +321,26 @@ am__quote =
 am__tar = ${AMTAR} chof - "$$tardir"
 am__untar = ${AMTAR} xf -
 bindir = ${exec_prefix}/bin
-build = i686-pc-linux-gnu
+build = x86_64-unknown-linux-gnu
 build_alias = 
-build_cpu = i686
+build_cpu = x86_64
 build_os = linux-gnu
-build_vendor = pc
+build_vendor = unknown
 builddir = .
 datadir = ${datarootdir}
 datarootdir = ${prefix}/share
 docdir = ${datarootdir}/doc/${PACKAGE_TARNAME}
 dvidir = ${docdir}
 exec_prefix = ${prefix}
-host = i686-pc-linux-gnu
+host = x86_64-unknown-linux-gnu
 host_alias = 
-host_cpu = i686
+host_cpu = x86_64
 host_os = linux-gnu
-host_vendor = pc
+host_vendor = unknown
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/install-sh
+install_sh = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -349,7 +349,7 @@ mandir = ${datarootdir}/man
 mkdir_p = /bin/mkdir -p
 oldincludedir = /usr/include
 pdfdir = ${docdir}
-prefix = /home/ercoppa/Desktop/code/aprof/valgrind/inst
+prefix = /home/ercoppa/Desktop/aprof/valgrind/inst
 program_transform_name = s,x,x,
 psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
@@ -402,13 +402,13 @@ AM_CFLAGS_PIC = -fpic -O -g -fno-omit-frame-pointer -fno-strict-aliasing
 # AM_CPPFLAGS_<PLATFORM> in each AM_CCASFLAGS_<PLATFORM> variable.  This
 # means some of the flags are duplicated on systems with newer versions of
 # automake, but this does not really matter and seems hard to avoid.
-AM_CPPFLAGS_X86_LINUX = \
+AM_CPPFLAGS_AMD64_LINUX = \
 	-I$(top_srcdir) \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/VEX/pub \
-	-DVGA_x86=1 \
+	-DVGA_amd64=1 \
 	-DVGO_linux=1 \
-	-DVGP_x86_linux=1
+	-DVGP_amd64_linux=1
 
 #AM_CPPFLAGS_ = \
 #	-I$(top_srcdir) \
@@ -419,13 +419,13 @@ AM_CPPFLAGS_X86_LINUX = \
 #	-DVGP__linux=1
 
 AM_FLAG_M3264_X86_LINUX = -m32
-AM_CFLAGS_X86_LINUX = -m32 -mpreferred-stack-boundary=2 \
+AM_CFLAGS_X86_LINUX = -m32  \
 			 	$(AM_CFLAGS_BASE)
 
 AM_CCASFLAGS_X86_LINUX = $(AM_CPPFLAGS_X86_LINUX) -m32 -g
 AM_FLAG_M3264_AMD64_LINUX = -m64
 AM_CFLAGS_AMD64_LINUX = -m64 -fomit-frame-pointer \
-				-mpreferred-stack-boundary=2 $(AM_CFLAGS_BASE)
+				 $(AM_CFLAGS_BASE)
 
 AM_CCASFLAGS_AMD64_LINUX = $(AM_CPPFLAGS_AMD64_LINUX) -m64 -g
 AM_FLAG_M3264_PPC32_LINUX = -m32
@@ -435,7 +435,7 @@ AM_FLAG_M3264_PPC64_LINUX = -m64
 AM_CFLAGS_PPC64_LINUX = -m64 $(AM_CFLAGS_BASE)
 AM_CCASFLAGS_PPC64_LINUX = $(AM_CPPFLAGS_PPC64_LINUX) -m64 -g
 AM_FLAG_M3264_ARM_LINUX = -m32
-AM_CFLAGS_ARM_LINUX = -m32 -mpreferred-stack-boundary=2 \
+AM_CFLAGS_ARM_LINUX = -m32  \
 			 	$(AM_CFLAGS_BASE) -marm
 
 AM_CCASFLAGS_ARM_LINUX = $(AM_CPPFLAGS_ARM_LINUX) -m32 -marm -g
@@ -470,10 +470,10 @@ AM_CCASFLAGS_S390X_LINUX = $(AM_CPPFLAGS_S390X_LINUX) -mzarch -march=z900 \
 # regtests and performance tests.  In fact, these must be used to
 # build anything which is built only once on a dual-arch build.
 #
-AM_FLAG_M3264_PRI = $(AM_FLAG_M3264_X86_LINUX)
-AM_CPPFLAGS_PRI = $(AM_CPPFLAGS_X86_LINUX)
-AM_CFLAGS_PRI = $(AM_CFLAGS_X86_LINUX)
-AM_CCASFLAGS_PRI = $(AM_CCASFLAGS_X86_LINUX)
+AM_FLAG_M3264_PRI = $(AM_FLAG_M3264_AMD64_LINUX)
+AM_CPPFLAGS_PRI = $(AM_CPPFLAGS_AMD64_LINUX)
+AM_CFLAGS_PRI = $(AM_CFLAGS_AMD64_LINUX)
+AM_CCASFLAGS_PRI = $(AM_CCASFLAGS_AMD64_LINUX)
 AM_FLAG_M3264_SEC = 
 #AM_FLAG_M3264_SEC = $(AM_FLAG_M3264_)
 
@@ -496,17 +496,17 @@ PRELOAD_LDFLAGS_S390X_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) -m64
 #----------------------------------------------------------------------------
 # <tool>-<platform> stuff
 #----------------------------------------------------------------------------
-TOOL_DEPENDENCIES_X86_LINUX = \
-	$(top_builddir)/coregrind/libcoregrind-x86-linux.a \
-	$(top_builddir)/VEX/libvex-x86-linux.a
+TOOL_DEPENDENCIES_AMD64_LINUX = \
+	$(top_builddir)/coregrind/libcoregrind-amd64-linux.a \
+	$(top_builddir)/VEX/libvex-amd64-linux.a
 
 #TOOL_DEPENDENCIES_ = \
 #	$(top_builddir)/coregrind/libcoregrind--linux.a \
 #	$(top_builddir)/VEX/libvex--linux.a
 
 TOOL_LDADD_COMMON = -lgcc
-TOOL_LDADD_X86_LINUX = \
-	$(TOOL_DEPENDENCIES_X86_LINUX) $(TOOL_LDADD_COMMON)
+TOOL_LDADD_AMD64_LINUX = \
+	$(TOOL_DEPENDENCIES_AMD64_LINUX) $(TOOL_LDADD_COMMON)
 
 #TOOL_LDADD_ = \
 #	$(TOOL_DEPENDENCIES_) $(TOOL_LDADD_COMMON)
@@ -695,30 +695,30 @@ DRD_SOURCES_COMMON = \
   drd_semaphore.c       \
   drd_suppression.c
 
-drd_x86_linux_SOURCES = \
+drd_amd64_linux_SOURCES = \
 	$(DRD_SOURCES_COMMON)
 
-drd_x86_linux_CPPFLAGS = \
-	$(AM_CPPFLAGS_X86_LINUX)
+drd_amd64_linux_CPPFLAGS = \
+	$(AM_CPPFLAGS_AMD64_LINUX)
 
-drd_x86_linux_CFLAGS = \
-	$(AM_CFLAGS_X86_LINUX) $(DRD_CFLAGS)
+drd_amd64_linux_CFLAGS = \
+	$(AM_CFLAGS_AMD64_LINUX) $(DRD_CFLAGS)
 
-drd_x86_linux_DEPENDENCIES = \
-	$(TOOL_DEPENDENCIES_X86_LINUX)
+drd_amd64_linux_DEPENDENCIES = \
+	$(TOOL_DEPENDENCIES_AMD64_LINUX)
 
-drd_x86_linux_LDADD = \
-	$(TOOL_LDADD_X86_LINUX)
+drd_amd64_linux_LDADD = \
+	$(TOOL_LDADD_AMD64_LINUX)
 
-drd_x86_linux_LDFLAGS = \
-	$(TOOL_LDFLAGS_X86_LINUX)
+drd_amd64_linux_LDFLAGS = \
+	$(TOOL_LDFLAGS_AMD64_LINUX)
 
-drd_x86_linux_LINK = \
+drd_amd64_linux_LINK = \
 	$(top_builddir)/coregrind/link_tool_exe_linux \
 	0x38000000 \
 	$(LINK) \
-	$(drd_x86_linux_CFLAGS) \
-	$(drd_x86_linux_LDFLAGS)
+	$(drd_amd64_linux_CFLAGS) \
+	$(drd_amd64_linux_LDFLAGS)
 
 #drd__linux_SOURCES = \
 #	$(DRD_SOURCES_COMMON)
@@ -749,21 +749,21 @@ drd_x86_linux_LINK = \
 VGPRELOAD_DRD_SOURCES_COMMON = drd_pthread_intercepts.c \
 	drd_qtcore_intercepts.c drd_strmem_intercepts.c \
 	$(am__append_3)
-vgpreload_drd_x86_linux_so_SOURCES = \
+vgpreload_drd_amd64_linux_so_SOURCES = \
 	$(VGPRELOAD_DRD_SOURCES_COMMON)
 
-vgpreload_drd_x86_linux_so_CPPFLAGS = \
-	$(AM_CPPFLAGS_X86_LINUX)
+vgpreload_drd_amd64_linux_so_CPPFLAGS = \
+	$(AM_CPPFLAGS_AMD64_LINUX)
 
-vgpreload_drd_x86_linux_so_CFLAGS = \
-	$(AM_CFLAGS_X86_LINUX) $(AM_CFLAGS_PIC) $(DRD_CFLAGS)
+vgpreload_drd_amd64_linux_so_CFLAGS = \
+	$(AM_CFLAGS_AMD64_LINUX) $(AM_CFLAGS_PIC) $(DRD_CFLAGS)
 
-vgpreload_drd_x86_linux_so_DEPENDENCIES = \
-	$(LIBREPLACEMALLOC_X86_LINUX)
+vgpreload_drd_amd64_linux_so_DEPENDENCIES = \
+	$(LIBREPLACEMALLOC_AMD64_LINUX)
 
-vgpreload_drd_x86_linux_so_LDFLAGS = \
-	$(PRELOAD_LDFLAGS_X86_LINUX) \
-	$(LIBREPLACEMALLOC_LDFLAGS_X86_LINUX)
+vgpreload_drd_amd64_linux_so_LDFLAGS = \
+	$(PRELOAD_LDFLAGS_AMD64_LINUX) \
+	$(LIBREPLACEMALLOC_LDFLAGS_AMD64_LINUX)
 
 #vgpreload_drd__linux_so_SOURCES = \
 #	$(VGPRELOAD_DRD_SOURCES_COMMON)
@@ -818,15 +818,15 @@ $(am__aclocal_m4_deps):
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-drd-x86-linux$(EXEEXT): $(drd_x86_linux_OBJECTS) $(drd_x86_linux_DEPENDENCIES) 
-	@rm -f drd-x86-linux$(EXEEXT)
-	$(drd_x86_linux_LINK) $(drd_x86_linux_OBJECTS) $(drd_x86_linux_LDADD) $(LIBS)
+drd-amd64-linux$(EXEEXT): $(drd_amd64_linux_OBJECTS) $(drd_amd64_linux_DEPENDENCIES) 
+	@rm -f drd-amd64-linux$(EXEEXT)
+	$(drd_amd64_linux_LINK) $(drd_amd64_linux_OBJECTS) $(drd_amd64_linux_LDADD) $(LIBS)
 drd--linux$(EXEEXT): $(drd__linux_OBJECTS) $(drd__linux_DEPENDENCIES) 
 	@rm -f drd--linux$(EXEEXT)
 	$(drd__linux_LINK) $(drd__linux_OBJECTS) $(drd__linux_LDADD) $(LIBS)
-vgpreload_drd-x86-linux.so$(EXEEXT): $(vgpreload_drd_x86_linux_so_OBJECTS) $(vgpreload_drd_x86_linux_so_DEPENDENCIES) 
-	@rm -f vgpreload_drd-x86-linux.so$(EXEEXT)
-	$(vgpreload_drd_x86_linux_so_LINK) $(vgpreload_drd_x86_linux_so_OBJECTS) $(vgpreload_drd_x86_linux_so_LDADD) $(LIBS)
+vgpreload_drd-amd64-linux.so$(EXEEXT): $(vgpreload_drd_amd64_linux_so_OBJECTS) $(vgpreload_drd_amd64_linux_so_DEPENDENCIES) 
+	@rm -f vgpreload_drd-amd64-linux.so$(EXEEXT)
+	$(vgpreload_drd_amd64_linux_so_LINK) $(vgpreload_drd_amd64_linux_so_OBJECTS) $(vgpreload_drd_amd64_linux_so_LDADD) $(LIBS)
 vgpreload_drd--linux.so$(EXEEXT): $(vgpreload_drd__linux_so_OBJECTS) $(vgpreload_drd__linux_so_DEPENDENCIES) 
 	@rm -f vgpreload_drd--linux.so$(EXEEXT)
 	$(vgpreload_drd__linux_so_LINK) $(vgpreload_drd__linux_so_OBJECTS) $(vgpreload_drd__linux_so_LDADD) $(LIBS)
@@ -837,21 +837,21 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-include ./$(DEPDIR)/drd_x86_linux-drd_barrier.Po
-include ./$(DEPDIR)/drd_x86_linux-drd_bitmap2_node.Po
-include ./$(DEPDIR)/drd_x86_linux-drd_clientobj.Po
-include ./$(DEPDIR)/drd_x86_linux-drd_clientreq.Po
-include ./$(DEPDIR)/drd_x86_linux-drd_cond.Po
-include ./$(DEPDIR)/drd_x86_linux-drd_cond_initializer.Po
-include ./$(DEPDIR)/drd_x86_linux-drd_error.Po
-include ./$(DEPDIR)/drd_x86_linux-drd_hb.Po
-include ./$(DEPDIR)/drd_x86_linux-drd_load_store.Po
-include ./$(DEPDIR)/drd_x86_linux-drd_main.Po
-include ./$(DEPDIR)/drd_x86_linux-drd_malloc_wrappers.Po
-include ./$(DEPDIR)/drd_x86_linux-drd_mutex.Po
-include ./$(DEPDIR)/drd_x86_linux-drd_rwlock.Po
-include ./$(DEPDIR)/drd_x86_linux-drd_semaphore.Po
-include ./$(DEPDIR)/drd_x86_linux-drd_suppression.Po
+include ./$(DEPDIR)/drd_amd64_linux-drd_barrier.Po
+include ./$(DEPDIR)/drd_amd64_linux-drd_bitmap2_node.Po
+include ./$(DEPDIR)/drd_amd64_linux-drd_clientobj.Po
+include ./$(DEPDIR)/drd_amd64_linux-drd_clientreq.Po
+include ./$(DEPDIR)/drd_amd64_linux-drd_cond.Po
+include ./$(DEPDIR)/drd_amd64_linux-drd_cond_initializer.Po
+include ./$(DEPDIR)/drd_amd64_linux-drd_error.Po
+include ./$(DEPDIR)/drd_amd64_linux-drd_hb.Po
+include ./$(DEPDIR)/drd_amd64_linux-drd_load_store.Po
+include ./$(DEPDIR)/drd_amd64_linux-drd_main.Po
+include ./$(DEPDIR)/drd_amd64_linux-drd_malloc_wrappers.Po
+include ./$(DEPDIR)/drd_amd64_linux-drd_mutex.Po
+include ./$(DEPDIR)/drd_amd64_linux-drd_rwlock.Po
+include ./$(DEPDIR)/drd_amd64_linux-drd_semaphore.Po
+include ./$(DEPDIR)/drd_amd64_linux-drd_suppression.Po
 include ./$(DEPDIR)/drd__linux-drd_barrier.Po
 include ./$(DEPDIR)/drd__linux-drd_bitmap2_node.Po
 include ./$(DEPDIR)/drd__linux-drd_clientobj.Po
@@ -867,10 +867,10 @@ include ./$(DEPDIR)/drd__linux-drd_mutex.Po
 include ./$(DEPDIR)/drd__linux-drd_rwlock.Po
 include ./$(DEPDIR)/drd__linux-drd_semaphore.Po
 include ./$(DEPDIR)/drd__linux-drd_suppression.Po
-include ./$(DEPDIR)/vgpreload_drd_x86_linux_so-drd_darwin_intercepts.Po
-include ./$(DEPDIR)/vgpreload_drd_x86_linux_so-drd_pthread_intercepts.Po
-include ./$(DEPDIR)/vgpreload_drd_x86_linux_so-drd_qtcore_intercepts.Po
-include ./$(DEPDIR)/vgpreload_drd_x86_linux_so-drd_strmem_intercepts.Po
+include ./$(DEPDIR)/vgpreload_drd_amd64_linux_so-drd_darwin_intercepts.Po
+include ./$(DEPDIR)/vgpreload_drd_amd64_linux_so-drd_pthread_intercepts.Po
+include ./$(DEPDIR)/vgpreload_drd_amd64_linux_so-drd_qtcore_intercepts.Po
+include ./$(DEPDIR)/vgpreload_drd_amd64_linux_so-drd_strmem_intercepts.Po
 include ./$(DEPDIR)/vgpreload_drd__linux_so-drd_darwin_intercepts.Po
 include ./$(DEPDIR)/vgpreload_drd__linux_so-drd_pthread_intercepts.Po
 include ./$(DEPDIR)/vgpreload_drd__linux_so-drd_qtcore_intercepts.Po
@@ -890,215 +890,215 @@ include ./$(DEPDIR)/vgpreload_drd__linux_so-drd_strmem_intercepts.Po
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
 #	$(COMPILE) -c `$(CYGPATH_W) '$<'`
 
-drd_x86_linux-drd_barrier.o: drd_barrier.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -MT drd_x86_linux-drd_barrier.o -MD -MP -MF $(DEPDIR)/drd_x86_linux-drd_barrier.Tpo -c -o drd_x86_linux-drd_barrier.o `test -f 'drd_barrier.c' || echo '$(srcdir)/'`drd_barrier.c
-	$(am__mv) $(DEPDIR)/drd_x86_linux-drd_barrier.Tpo $(DEPDIR)/drd_x86_linux-drd_barrier.Po
-#	source='drd_barrier.c' object='drd_x86_linux-drd_barrier.o' libtool=no \
+drd_amd64_linux-drd_barrier.o: drd_barrier.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -MT drd_amd64_linux-drd_barrier.o -MD -MP -MF $(DEPDIR)/drd_amd64_linux-drd_barrier.Tpo -c -o drd_amd64_linux-drd_barrier.o `test -f 'drd_barrier.c' || echo '$(srcdir)/'`drd_barrier.c
+	$(am__mv) $(DEPDIR)/drd_amd64_linux-drd_barrier.Tpo $(DEPDIR)/drd_amd64_linux-drd_barrier.Po
+#	source='drd_barrier.c' object='drd_amd64_linux-drd_barrier.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -c -o drd_x86_linux-drd_barrier.o `test -f 'drd_barrier.c' || echo '$(srcdir)/'`drd_barrier.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -c -o drd_amd64_linux-drd_barrier.o `test -f 'drd_barrier.c' || echo '$(srcdir)/'`drd_barrier.c
 
-drd_x86_linux-drd_barrier.obj: drd_barrier.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -MT drd_x86_linux-drd_barrier.obj -MD -MP -MF $(DEPDIR)/drd_x86_linux-drd_barrier.Tpo -c -o drd_x86_linux-drd_barrier.obj `if test -f 'drd_barrier.c'; then $(CYGPATH_W) 'drd_barrier.c'; else $(CYGPATH_W) '$(srcdir)/drd_barrier.c'; fi`
-	$(am__mv) $(DEPDIR)/drd_x86_linux-drd_barrier.Tpo $(DEPDIR)/drd_x86_linux-drd_barrier.Po
-#	source='drd_barrier.c' object='drd_x86_linux-drd_barrier.obj' libtool=no \
+drd_amd64_linux-drd_barrier.obj: drd_barrier.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -MT drd_amd64_linux-drd_barrier.obj -MD -MP -MF $(DEPDIR)/drd_amd64_linux-drd_barrier.Tpo -c -o drd_amd64_linux-drd_barrier.obj `if test -f 'drd_barrier.c'; then $(CYGPATH_W) 'drd_barrier.c'; else $(CYGPATH_W) '$(srcdir)/drd_barrier.c'; fi`
+	$(am__mv) $(DEPDIR)/drd_amd64_linux-drd_barrier.Tpo $(DEPDIR)/drd_amd64_linux-drd_barrier.Po
+#	source='drd_barrier.c' object='drd_amd64_linux-drd_barrier.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -c -o drd_x86_linux-drd_barrier.obj `if test -f 'drd_barrier.c'; then $(CYGPATH_W) 'drd_barrier.c'; else $(CYGPATH_W) '$(srcdir)/drd_barrier.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -c -o drd_amd64_linux-drd_barrier.obj `if test -f 'drd_barrier.c'; then $(CYGPATH_W) 'drd_barrier.c'; else $(CYGPATH_W) '$(srcdir)/drd_barrier.c'; fi`
 
-drd_x86_linux-drd_bitmap2_node.o: drd_bitmap2_node.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -MT drd_x86_linux-drd_bitmap2_node.o -MD -MP -MF $(DEPDIR)/drd_x86_linux-drd_bitmap2_node.Tpo -c -o drd_x86_linux-drd_bitmap2_node.o `test -f 'drd_bitmap2_node.c' || echo '$(srcdir)/'`drd_bitmap2_node.c
-	$(am__mv) $(DEPDIR)/drd_x86_linux-drd_bitmap2_node.Tpo $(DEPDIR)/drd_x86_linux-drd_bitmap2_node.Po
-#	source='drd_bitmap2_node.c' object='drd_x86_linux-drd_bitmap2_node.o' libtool=no \
+drd_amd64_linux-drd_bitmap2_node.o: drd_bitmap2_node.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -MT drd_amd64_linux-drd_bitmap2_node.o -MD -MP -MF $(DEPDIR)/drd_amd64_linux-drd_bitmap2_node.Tpo -c -o drd_amd64_linux-drd_bitmap2_node.o `test -f 'drd_bitmap2_node.c' || echo '$(srcdir)/'`drd_bitmap2_node.c
+	$(am__mv) $(DEPDIR)/drd_amd64_linux-drd_bitmap2_node.Tpo $(DEPDIR)/drd_amd64_linux-drd_bitmap2_node.Po
+#	source='drd_bitmap2_node.c' object='drd_amd64_linux-drd_bitmap2_node.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -c -o drd_x86_linux-drd_bitmap2_node.o `test -f 'drd_bitmap2_node.c' || echo '$(srcdir)/'`drd_bitmap2_node.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -c -o drd_amd64_linux-drd_bitmap2_node.o `test -f 'drd_bitmap2_node.c' || echo '$(srcdir)/'`drd_bitmap2_node.c
 
-drd_x86_linux-drd_bitmap2_node.obj: drd_bitmap2_node.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -MT drd_x86_linux-drd_bitmap2_node.obj -MD -MP -MF $(DEPDIR)/drd_x86_linux-drd_bitmap2_node.Tpo -c -o drd_x86_linux-drd_bitmap2_node.obj `if test -f 'drd_bitmap2_node.c'; then $(CYGPATH_W) 'drd_bitmap2_node.c'; else $(CYGPATH_W) '$(srcdir)/drd_bitmap2_node.c'; fi`
-	$(am__mv) $(DEPDIR)/drd_x86_linux-drd_bitmap2_node.Tpo $(DEPDIR)/drd_x86_linux-drd_bitmap2_node.Po
-#	source='drd_bitmap2_node.c' object='drd_x86_linux-drd_bitmap2_node.obj' libtool=no \
+drd_amd64_linux-drd_bitmap2_node.obj: drd_bitmap2_node.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -MT drd_amd64_linux-drd_bitmap2_node.obj -MD -MP -MF $(DEPDIR)/drd_amd64_linux-drd_bitmap2_node.Tpo -c -o drd_amd64_linux-drd_bitmap2_node.obj `if test -f 'drd_bitmap2_node.c'; then $(CYGPATH_W) 'drd_bitmap2_node.c'; else $(CYGPATH_W) '$(srcdir)/drd_bitmap2_node.c'; fi`
+	$(am__mv) $(DEPDIR)/drd_amd64_linux-drd_bitmap2_node.Tpo $(DEPDIR)/drd_amd64_linux-drd_bitmap2_node.Po
+#	source='drd_bitmap2_node.c' object='drd_amd64_linux-drd_bitmap2_node.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -c -o drd_x86_linux-drd_bitmap2_node.obj `if test -f 'drd_bitmap2_node.c'; then $(CYGPATH_W) 'drd_bitmap2_node.c'; else $(CYGPATH_W) '$(srcdir)/drd_bitmap2_node.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -c -o drd_amd64_linux-drd_bitmap2_node.obj `if test -f 'drd_bitmap2_node.c'; then $(CYGPATH_W) 'drd_bitmap2_node.c'; else $(CYGPATH_W) '$(srcdir)/drd_bitmap2_node.c'; fi`
 
-drd_x86_linux-drd_clientobj.o: drd_clientobj.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -MT drd_x86_linux-drd_clientobj.o -MD -MP -MF $(DEPDIR)/drd_x86_linux-drd_clientobj.Tpo -c -o drd_x86_linux-drd_clientobj.o `test -f 'drd_clientobj.c' || echo '$(srcdir)/'`drd_clientobj.c
-	$(am__mv) $(DEPDIR)/drd_x86_linux-drd_clientobj.Tpo $(DEPDIR)/drd_x86_linux-drd_clientobj.Po
-#	source='drd_clientobj.c' object='drd_x86_linux-drd_clientobj.o' libtool=no \
+drd_amd64_linux-drd_clientobj.o: drd_clientobj.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -MT drd_amd64_linux-drd_clientobj.o -MD -MP -MF $(DEPDIR)/drd_amd64_linux-drd_clientobj.Tpo -c -o drd_amd64_linux-drd_clientobj.o `test -f 'drd_clientobj.c' || echo '$(srcdir)/'`drd_clientobj.c
+	$(am__mv) $(DEPDIR)/drd_amd64_linux-drd_clientobj.Tpo $(DEPDIR)/drd_amd64_linux-drd_clientobj.Po
+#	source='drd_clientobj.c' object='drd_amd64_linux-drd_clientobj.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -c -o drd_x86_linux-drd_clientobj.o `test -f 'drd_clientobj.c' || echo '$(srcdir)/'`drd_clientobj.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -c -o drd_amd64_linux-drd_clientobj.o `test -f 'drd_clientobj.c' || echo '$(srcdir)/'`drd_clientobj.c
 
-drd_x86_linux-drd_clientobj.obj: drd_clientobj.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -MT drd_x86_linux-drd_clientobj.obj -MD -MP -MF $(DEPDIR)/drd_x86_linux-drd_clientobj.Tpo -c -o drd_x86_linux-drd_clientobj.obj `if test -f 'drd_clientobj.c'; then $(CYGPATH_W) 'drd_clientobj.c'; else $(CYGPATH_W) '$(srcdir)/drd_clientobj.c'; fi`
-	$(am__mv) $(DEPDIR)/drd_x86_linux-drd_clientobj.Tpo $(DEPDIR)/drd_x86_linux-drd_clientobj.Po
-#	source='drd_clientobj.c' object='drd_x86_linux-drd_clientobj.obj' libtool=no \
+drd_amd64_linux-drd_clientobj.obj: drd_clientobj.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -MT drd_amd64_linux-drd_clientobj.obj -MD -MP -MF $(DEPDIR)/drd_amd64_linux-drd_clientobj.Tpo -c -o drd_amd64_linux-drd_clientobj.obj `if test -f 'drd_clientobj.c'; then $(CYGPATH_W) 'drd_clientobj.c'; else $(CYGPATH_W) '$(srcdir)/drd_clientobj.c'; fi`
+	$(am__mv) $(DEPDIR)/drd_amd64_linux-drd_clientobj.Tpo $(DEPDIR)/drd_amd64_linux-drd_clientobj.Po
+#	source='drd_clientobj.c' object='drd_amd64_linux-drd_clientobj.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -c -o drd_x86_linux-drd_clientobj.obj `if test -f 'drd_clientobj.c'; then $(CYGPATH_W) 'drd_clientobj.c'; else $(CYGPATH_W) '$(srcdir)/drd_clientobj.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -c -o drd_amd64_linux-drd_clientobj.obj `if test -f 'drd_clientobj.c'; then $(CYGPATH_W) 'drd_clientobj.c'; else $(CYGPATH_W) '$(srcdir)/drd_clientobj.c'; fi`
 
-drd_x86_linux-drd_clientreq.o: drd_clientreq.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -MT drd_x86_linux-drd_clientreq.o -MD -MP -MF $(DEPDIR)/drd_x86_linux-drd_clientreq.Tpo -c -o drd_x86_linux-drd_clientreq.o `test -f 'drd_clientreq.c' || echo '$(srcdir)/'`drd_clientreq.c
-	$(am__mv) $(DEPDIR)/drd_x86_linux-drd_clientreq.Tpo $(DEPDIR)/drd_x86_linux-drd_clientreq.Po
-#	source='drd_clientreq.c' object='drd_x86_linux-drd_clientreq.o' libtool=no \
+drd_amd64_linux-drd_clientreq.o: drd_clientreq.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -MT drd_amd64_linux-drd_clientreq.o -MD -MP -MF $(DEPDIR)/drd_amd64_linux-drd_clientreq.Tpo -c -o drd_amd64_linux-drd_clientreq.o `test -f 'drd_clientreq.c' || echo '$(srcdir)/'`drd_clientreq.c
+	$(am__mv) $(DEPDIR)/drd_amd64_linux-drd_clientreq.Tpo $(DEPDIR)/drd_amd64_linux-drd_clientreq.Po
+#	source='drd_clientreq.c' object='drd_amd64_linux-drd_clientreq.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -c -o drd_x86_linux-drd_clientreq.o `test -f 'drd_clientreq.c' || echo '$(srcdir)/'`drd_clientreq.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -c -o drd_amd64_linux-drd_clientreq.o `test -f 'drd_clientreq.c' || echo '$(srcdir)/'`drd_clientreq.c
 
-drd_x86_linux-drd_clientreq.obj: drd_clientreq.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -MT drd_x86_linux-drd_clientreq.obj -MD -MP -MF $(DEPDIR)/drd_x86_linux-drd_clientreq.Tpo -c -o drd_x86_linux-drd_clientreq.obj `if test -f 'drd_clientreq.c'; then $(CYGPATH_W) 'drd_clientreq.c'; else $(CYGPATH_W) '$(srcdir)/drd_clientreq.c'; fi`
-	$(am__mv) $(DEPDIR)/drd_x86_linux-drd_clientreq.Tpo $(DEPDIR)/drd_x86_linux-drd_clientreq.Po
-#	source='drd_clientreq.c' object='drd_x86_linux-drd_clientreq.obj' libtool=no \
+drd_amd64_linux-drd_clientreq.obj: drd_clientreq.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -MT drd_amd64_linux-drd_clientreq.obj -MD -MP -MF $(DEPDIR)/drd_amd64_linux-drd_clientreq.Tpo -c -o drd_amd64_linux-drd_clientreq.obj `if test -f 'drd_clientreq.c'; then $(CYGPATH_W) 'drd_clientreq.c'; else $(CYGPATH_W) '$(srcdir)/drd_clientreq.c'; fi`
+	$(am__mv) $(DEPDIR)/drd_amd64_linux-drd_clientreq.Tpo $(DEPDIR)/drd_amd64_linux-drd_clientreq.Po
+#	source='drd_clientreq.c' object='drd_amd64_linux-drd_clientreq.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -c -o drd_x86_linux-drd_clientreq.obj `if test -f 'drd_clientreq.c'; then $(CYGPATH_W) 'drd_clientreq.c'; else $(CYGPATH_W) '$(srcdir)/drd_clientreq.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -c -o drd_amd64_linux-drd_clientreq.obj `if test -f 'drd_clientreq.c'; then $(CYGPATH_W) 'drd_clientreq.c'; else $(CYGPATH_W) '$(srcdir)/drd_clientreq.c'; fi`
 
-drd_x86_linux-drd_cond.o: drd_cond.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -MT drd_x86_linux-drd_cond.o -MD -MP -MF $(DEPDIR)/drd_x86_linux-drd_cond.Tpo -c -o drd_x86_linux-drd_cond.o `test -f 'drd_cond.c' || echo '$(srcdir)/'`drd_cond.c
-	$(am__mv) $(DEPDIR)/drd_x86_linux-drd_cond.Tpo $(DEPDIR)/drd_x86_linux-drd_cond.Po
-#	source='drd_cond.c' object='drd_x86_linux-drd_cond.o' libtool=no \
+drd_amd64_linux-drd_cond.o: drd_cond.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -MT drd_amd64_linux-drd_cond.o -MD -MP -MF $(DEPDIR)/drd_amd64_linux-drd_cond.Tpo -c -o drd_amd64_linux-drd_cond.o `test -f 'drd_cond.c' || echo '$(srcdir)/'`drd_cond.c
+	$(am__mv) $(DEPDIR)/drd_amd64_linux-drd_cond.Tpo $(DEPDIR)/drd_amd64_linux-drd_cond.Po
+#	source='drd_cond.c' object='drd_amd64_linux-drd_cond.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -c -o drd_x86_linux-drd_cond.o `test -f 'drd_cond.c' || echo '$(srcdir)/'`drd_cond.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -c -o drd_amd64_linux-drd_cond.o `test -f 'drd_cond.c' || echo '$(srcdir)/'`drd_cond.c
 
-drd_x86_linux-drd_cond.obj: drd_cond.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -MT drd_x86_linux-drd_cond.obj -MD -MP -MF $(DEPDIR)/drd_x86_linux-drd_cond.Tpo -c -o drd_x86_linux-drd_cond.obj `if test -f 'drd_cond.c'; then $(CYGPATH_W) 'drd_cond.c'; else $(CYGPATH_W) '$(srcdir)/drd_cond.c'; fi`
-	$(am__mv) $(DEPDIR)/drd_x86_linux-drd_cond.Tpo $(DEPDIR)/drd_x86_linux-drd_cond.Po
-#	source='drd_cond.c' object='drd_x86_linux-drd_cond.obj' libtool=no \
+drd_amd64_linux-drd_cond.obj: drd_cond.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -MT drd_amd64_linux-drd_cond.obj -MD -MP -MF $(DEPDIR)/drd_amd64_linux-drd_cond.Tpo -c -o drd_amd64_linux-drd_cond.obj `if test -f 'drd_cond.c'; then $(CYGPATH_W) 'drd_cond.c'; else $(CYGPATH_W) '$(srcdir)/drd_cond.c'; fi`
+	$(am__mv) $(DEPDIR)/drd_amd64_linux-drd_cond.Tpo $(DEPDIR)/drd_amd64_linux-drd_cond.Po
+#	source='drd_cond.c' object='drd_amd64_linux-drd_cond.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -c -o drd_x86_linux-drd_cond.obj `if test -f 'drd_cond.c'; then $(CYGPATH_W) 'drd_cond.c'; else $(CYGPATH_W) '$(srcdir)/drd_cond.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -c -o drd_amd64_linux-drd_cond.obj `if test -f 'drd_cond.c'; then $(CYGPATH_W) 'drd_cond.c'; else $(CYGPATH_W) '$(srcdir)/drd_cond.c'; fi`
 
-drd_x86_linux-drd_cond_initializer.o: drd_cond_initializer.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -MT drd_x86_linux-drd_cond_initializer.o -MD -MP -MF $(DEPDIR)/drd_x86_linux-drd_cond_initializer.Tpo -c -o drd_x86_linux-drd_cond_initializer.o `test -f 'drd_cond_initializer.c' || echo '$(srcdir)/'`drd_cond_initializer.c
-	$(am__mv) $(DEPDIR)/drd_x86_linux-drd_cond_initializer.Tpo $(DEPDIR)/drd_x86_linux-drd_cond_initializer.Po
-#	source='drd_cond_initializer.c' object='drd_x86_linux-drd_cond_initializer.o' libtool=no \
+drd_amd64_linux-drd_cond_initializer.o: drd_cond_initializer.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -MT drd_amd64_linux-drd_cond_initializer.o -MD -MP -MF $(DEPDIR)/drd_amd64_linux-drd_cond_initializer.Tpo -c -o drd_amd64_linux-drd_cond_initializer.o `test -f 'drd_cond_initializer.c' || echo '$(srcdir)/'`drd_cond_initializer.c
+	$(am__mv) $(DEPDIR)/drd_amd64_linux-drd_cond_initializer.Tpo $(DEPDIR)/drd_amd64_linux-drd_cond_initializer.Po
+#	source='drd_cond_initializer.c' object='drd_amd64_linux-drd_cond_initializer.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -c -o drd_x86_linux-drd_cond_initializer.o `test -f 'drd_cond_initializer.c' || echo '$(srcdir)/'`drd_cond_initializer.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -c -o drd_amd64_linux-drd_cond_initializer.o `test -f 'drd_cond_initializer.c' || echo '$(srcdir)/'`drd_cond_initializer.c
 
-drd_x86_linux-drd_cond_initializer.obj: drd_cond_initializer.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -MT drd_x86_linux-drd_cond_initializer.obj -MD -MP -MF $(DEPDIR)/drd_x86_linux-drd_cond_initializer.Tpo -c -o drd_x86_linux-drd_cond_initializer.obj `if test -f 'drd_cond_initializer.c'; then $(CYGPATH_W) 'drd_cond_initializer.c'; else $(CYGPATH_W) '$(srcdir)/drd_cond_initializer.c'; fi`
-	$(am__mv) $(DEPDIR)/drd_x86_linux-drd_cond_initializer.Tpo $(DEPDIR)/drd_x86_linux-drd_cond_initializer.Po
-#	source='drd_cond_initializer.c' object='drd_x86_linux-drd_cond_initializer.obj' libtool=no \
+drd_amd64_linux-drd_cond_initializer.obj: drd_cond_initializer.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -MT drd_amd64_linux-drd_cond_initializer.obj -MD -MP -MF $(DEPDIR)/drd_amd64_linux-drd_cond_initializer.Tpo -c -o drd_amd64_linux-drd_cond_initializer.obj `if test -f 'drd_cond_initializer.c'; then $(CYGPATH_W) 'drd_cond_initializer.c'; else $(CYGPATH_W) '$(srcdir)/drd_cond_initializer.c'; fi`
+	$(am__mv) $(DEPDIR)/drd_amd64_linux-drd_cond_initializer.Tpo $(DEPDIR)/drd_amd64_linux-drd_cond_initializer.Po
+#	source='drd_cond_initializer.c' object='drd_amd64_linux-drd_cond_initializer.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -c -o drd_x86_linux-drd_cond_initializer.obj `if test -f 'drd_cond_initializer.c'; then $(CYGPATH_W) 'drd_cond_initializer.c'; else $(CYGPATH_W) '$(srcdir)/drd_cond_initializer.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -c -o drd_amd64_linux-drd_cond_initializer.obj `if test -f 'drd_cond_initializer.c'; then $(CYGPATH_W) 'drd_cond_initializer.c'; else $(CYGPATH_W) '$(srcdir)/drd_cond_initializer.c'; fi`
 
-drd_x86_linux-drd_error.o: drd_error.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -MT drd_x86_linux-drd_error.o -MD -MP -MF $(DEPDIR)/drd_x86_linux-drd_error.Tpo -c -o drd_x86_linux-drd_error.o `test -f 'drd_error.c' || echo '$(srcdir)/'`drd_error.c
-	$(am__mv) $(DEPDIR)/drd_x86_linux-drd_error.Tpo $(DEPDIR)/drd_x86_linux-drd_error.Po
-#	source='drd_error.c' object='drd_x86_linux-drd_error.o' libtool=no \
+drd_amd64_linux-drd_error.o: drd_error.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -MT drd_amd64_linux-drd_error.o -MD -MP -MF $(DEPDIR)/drd_amd64_linux-drd_error.Tpo -c -o drd_amd64_linux-drd_error.o `test -f 'drd_error.c' || echo '$(srcdir)/'`drd_error.c
+	$(am__mv) $(DEPDIR)/drd_amd64_linux-drd_error.Tpo $(DEPDIR)/drd_amd64_linux-drd_error.Po
+#	source='drd_error.c' object='drd_amd64_linux-drd_error.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -c -o drd_x86_linux-drd_error.o `test -f 'drd_error.c' || echo '$(srcdir)/'`drd_error.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -c -o drd_amd64_linux-drd_error.o `test -f 'drd_error.c' || echo '$(srcdir)/'`drd_error.c
 
-drd_x86_linux-drd_error.obj: drd_error.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -MT drd_x86_linux-drd_error.obj -MD -MP -MF $(DEPDIR)/drd_x86_linux-drd_error.Tpo -c -o drd_x86_linux-drd_error.obj `if test -f 'drd_error.c'; then $(CYGPATH_W) 'drd_error.c'; else $(CYGPATH_W) '$(srcdir)/drd_error.c'; fi`
-	$(am__mv) $(DEPDIR)/drd_x86_linux-drd_error.Tpo $(DEPDIR)/drd_x86_linux-drd_error.Po
-#	source='drd_error.c' object='drd_x86_linux-drd_error.obj' libtool=no \
+drd_amd64_linux-drd_error.obj: drd_error.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -MT drd_amd64_linux-drd_error.obj -MD -MP -MF $(DEPDIR)/drd_amd64_linux-drd_error.Tpo -c -o drd_amd64_linux-drd_error.obj `if test -f 'drd_error.c'; then $(CYGPATH_W) 'drd_error.c'; else $(CYGPATH_W) '$(srcdir)/drd_error.c'; fi`
+	$(am__mv) $(DEPDIR)/drd_amd64_linux-drd_error.Tpo $(DEPDIR)/drd_amd64_linux-drd_error.Po
+#	source='drd_error.c' object='drd_amd64_linux-drd_error.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -c -o drd_x86_linux-drd_error.obj `if test -f 'drd_error.c'; then $(CYGPATH_W) 'drd_error.c'; else $(CYGPATH_W) '$(srcdir)/drd_error.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -c -o drd_amd64_linux-drd_error.obj `if test -f 'drd_error.c'; then $(CYGPATH_W) 'drd_error.c'; else $(CYGPATH_W) '$(srcdir)/drd_error.c'; fi`
 
-drd_x86_linux-drd_hb.o: drd_hb.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -MT drd_x86_linux-drd_hb.o -MD -MP -MF $(DEPDIR)/drd_x86_linux-drd_hb.Tpo -c -o drd_x86_linux-drd_hb.o `test -f 'drd_hb.c' || echo '$(srcdir)/'`drd_hb.c
-	$(am__mv) $(DEPDIR)/drd_x86_linux-drd_hb.Tpo $(DEPDIR)/drd_x86_linux-drd_hb.Po
-#	source='drd_hb.c' object='drd_x86_linux-drd_hb.o' libtool=no \
+drd_amd64_linux-drd_hb.o: drd_hb.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -MT drd_amd64_linux-drd_hb.o -MD -MP -MF $(DEPDIR)/drd_amd64_linux-drd_hb.Tpo -c -o drd_amd64_linux-drd_hb.o `test -f 'drd_hb.c' || echo '$(srcdir)/'`drd_hb.c
+	$(am__mv) $(DEPDIR)/drd_amd64_linux-drd_hb.Tpo $(DEPDIR)/drd_amd64_linux-drd_hb.Po
+#	source='drd_hb.c' object='drd_amd64_linux-drd_hb.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -c -o drd_x86_linux-drd_hb.o `test -f 'drd_hb.c' || echo '$(srcdir)/'`drd_hb.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -c -o drd_amd64_linux-drd_hb.o `test -f 'drd_hb.c' || echo '$(srcdir)/'`drd_hb.c
 
-drd_x86_linux-drd_hb.obj: drd_hb.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -MT drd_x86_linux-drd_hb.obj -MD -MP -MF $(DEPDIR)/drd_x86_linux-drd_hb.Tpo -c -o drd_x86_linux-drd_hb.obj `if test -f 'drd_hb.c'; then $(CYGPATH_W) 'drd_hb.c'; else $(CYGPATH_W) '$(srcdir)/drd_hb.c'; fi`
-	$(am__mv) $(DEPDIR)/drd_x86_linux-drd_hb.Tpo $(DEPDIR)/drd_x86_linux-drd_hb.Po
-#	source='drd_hb.c' object='drd_x86_linux-drd_hb.obj' libtool=no \
+drd_amd64_linux-drd_hb.obj: drd_hb.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -MT drd_amd64_linux-drd_hb.obj -MD -MP -MF $(DEPDIR)/drd_amd64_linux-drd_hb.Tpo -c -o drd_amd64_linux-drd_hb.obj `if test -f 'drd_hb.c'; then $(CYGPATH_W) 'drd_hb.c'; else $(CYGPATH_W) '$(srcdir)/drd_hb.c'; fi`
+	$(am__mv) $(DEPDIR)/drd_amd64_linux-drd_hb.Tpo $(DEPDIR)/drd_amd64_linux-drd_hb.Po
+#	source='drd_hb.c' object='drd_amd64_linux-drd_hb.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -c -o drd_x86_linux-drd_hb.obj `if test -f 'drd_hb.c'; then $(CYGPATH_W) 'drd_hb.c'; else $(CYGPATH_W) '$(srcdir)/drd_hb.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -c -o drd_amd64_linux-drd_hb.obj `if test -f 'drd_hb.c'; then $(CYGPATH_W) 'drd_hb.c'; else $(CYGPATH_W) '$(srcdir)/drd_hb.c'; fi`
 
-drd_x86_linux-drd_load_store.o: drd_load_store.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -MT drd_x86_linux-drd_load_store.o -MD -MP -MF $(DEPDIR)/drd_x86_linux-drd_load_store.Tpo -c -o drd_x86_linux-drd_load_store.o `test -f 'drd_load_store.c' || echo '$(srcdir)/'`drd_load_store.c
-	$(am__mv) $(DEPDIR)/drd_x86_linux-drd_load_store.Tpo $(DEPDIR)/drd_x86_linux-drd_load_store.Po
-#	source='drd_load_store.c' object='drd_x86_linux-drd_load_store.o' libtool=no \
+drd_amd64_linux-drd_load_store.o: drd_load_store.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -MT drd_amd64_linux-drd_load_store.o -MD -MP -MF $(DEPDIR)/drd_amd64_linux-drd_load_store.Tpo -c -o drd_amd64_linux-drd_load_store.o `test -f 'drd_load_store.c' || echo '$(srcdir)/'`drd_load_store.c
+	$(am__mv) $(DEPDIR)/drd_amd64_linux-drd_load_store.Tpo $(DEPDIR)/drd_amd64_linux-drd_load_store.Po
+#	source='drd_load_store.c' object='drd_amd64_linux-drd_load_store.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -c -o drd_x86_linux-drd_load_store.o `test -f 'drd_load_store.c' || echo '$(srcdir)/'`drd_load_store.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -c -o drd_amd64_linux-drd_load_store.o `test -f 'drd_load_store.c' || echo '$(srcdir)/'`drd_load_store.c
 
-drd_x86_linux-drd_load_store.obj: drd_load_store.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -MT drd_x86_linux-drd_load_store.obj -MD -MP -MF $(DEPDIR)/drd_x86_linux-drd_load_store.Tpo -c -o drd_x86_linux-drd_load_store.obj `if test -f 'drd_load_store.c'; then $(CYGPATH_W) 'drd_load_store.c'; else $(CYGPATH_W) '$(srcdir)/drd_load_store.c'; fi`
-	$(am__mv) $(DEPDIR)/drd_x86_linux-drd_load_store.Tpo $(DEPDIR)/drd_x86_linux-drd_load_store.Po
-#	source='drd_load_store.c' object='drd_x86_linux-drd_load_store.obj' libtool=no \
+drd_amd64_linux-drd_load_store.obj: drd_load_store.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -MT drd_amd64_linux-drd_load_store.obj -MD -MP -MF $(DEPDIR)/drd_amd64_linux-drd_load_store.Tpo -c -o drd_amd64_linux-drd_load_store.obj `if test -f 'drd_load_store.c'; then $(CYGPATH_W) 'drd_load_store.c'; else $(CYGPATH_W) '$(srcdir)/drd_load_store.c'; fi`
+	$(am__mv) $(DEPDIR)/drd_amd64_linux-drd_load_store.Tpo $(DEPDIR)/drd_amd64_linux-drd_load_store.Po
+#	source='drd_load_store.c' object='drd_amd64_linux-drd_load_store.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -c -o drd_x86_linux-drd_load_store.obj `if test -f 'drd_load_store.c'; then $(CYGPATH_W) 'drd_load_store.c'; else $(CYGPATH_W) '$(srcdir)/drd_load_store.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -c -o drd_amd64_linux-drd_load_store.obj `if test -f 'drd_load_store.c'; then $(CYGPATH_W) 'drd_load_store.c'; else $(CYGPATH_W) '$(srcdir)/drd_load_store.c'; fi`
 
-drd_x86_linux-drd_main.o: drd_main.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -MT drd_x86_linux-drd_main.o -MD -MP -MF $(DEPDIR)/drd_x86_linux-drd_main.Tpo -c -o drd_x86_linux-drd_main.o `test -f 'drd_main.c' || echo '$(srcdir)/'`drd_main.c
-	$(am__mv) $(DEPDIR)/drd_x86_linux-drd_main.Tpo $(DEPDIR)/drd_x86_linux-drd_main.Po
-#	source='drd_main.c' object='drd_x86_linux-drd_main.o' libtool=no \
+drd_amd64_linux-drd_main.o: drd_main.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -MT drd_amd64_linux-drd_main.o -MD -MP -MF $(DEPDIR)/drd_amd64_linux-drd_main.Tpo -c -o drd_amd64_linux-drd_main.o `test -f 'drd_main.c' || echo '$(srcdir)/'`drd_main.c
+	$(am__mv) $(DEPDIR)/drd_amd64_linux-drd_main.Tpo $(DEPDIR)/drd_amd64_linux-drd_main.Po
+#	source='drd_main.c' object='drd_amd64_linux-drd_main.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -c -o drd_x86_linux-drd_main.o `test -f 'drd_main.c' || echo '$(srcdir)/'`drd_main.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -c -o drd_amd64_linux-drd_main.o `test -f 'drd_main.c' || echo '$(srcdir)/'`drd_main.c
 
-drd_x86_linux-drd_main.obj: drd_main.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -MT drd_x86_linux-drd_main.obj -MD -MP -MF $(DEPDIR)/drd_x86_linux-drd_main.Tpo -c -o drd_x86_linux-drd_main.obj `if test -f 'drd_main.c'; then $(CYGPATH_W) 'drd_main.c'; else $(CYGPATH_W) '$(srcdir)/drd_main.c'; fi`
-	$(am__mv) $(DEPDIR)/drd_x86_linux-drd_main.Tpo $(DEPDIR)/drd_x86_linux-drd_main.Po
-#	source='drd_main.c' object='drd_x86_linux-drd_main.obj' libtool=no \
+drd_amd64_linux-drd_main.obj: drd_main.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -MT drd_amd64_linux-drd_main.obj -MD -MP -MF $(DEPDIR)/drd_amd64_linux-drd_main.Tpo -c -o drd_amd64_linux-drd_main.obj `if test -f 'drd_main.c'; then $(CYGPATH_W) 'drd_main.c'; else $(CYGPATH_W) '$(srcdir)/drd_main.c'; fi`
+	$(am__mv) $(DEPDIR)/drd_amd64_linux-drd_main.Tpo $(DEPDIR)/drd_amd64_linux-drd_main.Po
+#	source='drd_main.c' object='drd_amd64_linux-drd_main.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -c -o drd_x86_linux-drd_main.obj `if test -f 'drd_main.c'; then $(CYGPATH_W) 'drd_main.c'; else $(CYGPATH_W) '$(srcdir)/drd_main.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -c -o drd_amd64_linux-drd_main.obj `if test -f 'drd_main.c'; then $(CYGPATH_W) 'drd_main.c'; else $(CYGPATH_W) '$(srcdir)/drd_main.c'; fi`
 
-drd_x86_linux-drd_malloc_wrappers.o: drd_malloc_wrappers.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -MT drd_x86_linux-drd_malloc_wrappers.o -MD -MP -MF $(DEPDIR)/drd_x86_linux-drd_malloc_wrappers.Tpo -c -o drd_x86_linux-drd_malloc_wrappers.o `test -f 'drd_malloc_wrappers.c' || echo '$(srcdir)/'`drd_malloc_wrappers.c
-	$(am__mv) $(DEPDIR)/drd_x86_linux-drd_malloc_wrappers.Tpo $(DEPDIR)/drd_x86_linux-drd_malloc_wrappers.Po
-#	source='drd_malloc_wrappers.c' object='drd_x86_linux-drd_malloc_wrappers.o' libtool=no \
+drd_amd64_linux-drd_malloc_wrappers.o: drd_malloc_wrappers.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -MT drd_amd64_linux-drd_malloc_wrappers.o -MD -MP -MF $(DEPDIR)/drd_amd64_linux-drd_malloc_wrappers.Tpo -c -o drd_amd64_linux-drd_malloc_wrappers.o `test -f 'drd_malloc_wrappers.c' || echo '$(srcdir)/'`drd_malloc_wrappers.c
+	$(am__mv) $(DEPDIR)/drd_amd64_linux-drd_malloc_wrappers.Tpo $(DEPDIR)/drd_amd64_linux-drd_malloc_wrappers.Po
+#	source='drd_malloc_wrappers.c' object='drd_amd64_linux-drd_malloc_wrappers.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -c -o drd_x86_linux-drd_malloc_wrappers.o `test -f 'drd_malloc_wrappers.c' || echo '$(srcdir)/'`drd_malloc_wrappers.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -c -o drd_amd64_linux-drd_malloc_wrappers.o `test -f 'drd_malloc_wrappers.c' || echo '$(srcdir)/'`drd_malloc_wrappers.c
 
-drd_x86_linux-drd_malloc_wrappers.obj: drd_malloc_wrappers.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -MT drd_x86_linux-drd_malloc_wrappers.obj -MD -MP -MF $(DEPDIR)/drd_x86_linux-drd_malloc_wrappers.Tpo -c -o drd_x86_linux-drd_malloc_wrappers.obj `if test -f 'drd_malloc_wrappers.c'; then $(CYGPATH_W) 'drd_malloc_wrappers.c'; else $(CYGPATH_W) '$(srcdir)/drd_malloc_wrappers.c'; fi`
-	$(am__mv) $(DEPDIR)/drd_x86_linux-drd_malloc_wrappers.Tpo $(DEPDIR)/drd_x86_linux-drd_malloc_wrappers.Po
-#	source='drd_malloc_wrappers.c' object='drd_x86_linux-drd_malloc_wrappers.obj' libtool=no \
+drd_amd64_linux-drd_malloc_wrappers.obj: drd_malloc_wrappers.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -MT drd_amd64_linux-drd_malloc_wrappers.obj -MD -MP -MF $(DEPDIR)/drd_amd64_linux-drd_malloc_wrappers.Tpo -c -o drd_amd64_linux-drd_malloc_wrappers.obj `if test -f 'drd_malloc_wrappers.c'; then $(CYGPATH_W) 'drd_malloc_wrappers.c'; else $(CYGPATH_W) '$(srcdir)/drd_malloc_wrappers.c'; fi`
+	$(am__mv) $(DEPDIR)/drd_amd64_linux-drd_malloc_wrappers.Tpo $(DEPDIR)/drd_amd64_linux-drd_malloc_wrappers.Po
+#	source='drd_malloc_wrappers.c' object='drd_amd64_linux-drd_malloc_wrappers.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -c -o drd_x86_linux-drd_malloc_wrappers.obj `if test -f 'drd_malloc_wrappers.c'; then $(CYGPATH_W) 'drd_malloc_wrappers.c'; else $(CYGPATH_W) '$(srcdir)/drd_malloc_wrappers.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -c -o drd_amd64_linux-drd_malloc_wrappers.obj `if test -f 'drd_malloc_wrappers.c'; then $(CYGPATH_W) 'drd_malloc_wrappers.c'; else $(CYGPATH_W) '$(srcdir)/drd_malloc_wrappers.c'; fi`
 
-drd_x86_linux-drd_mutex.o: drd_mutex.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -MT drd_x86_linux-drd_mutex.o -MD -MP -MF $(DEPDIR)/drd_x86_linux-drd_mutex.Tpo -c -o drd_x86_linux-drd_mutex.o `test -f 'drd_mutex.c' || echo '$(srcdir)/'`drd_mutex.c
-	$(am__mv) $(DEPDIR)/drd_x86_linux-drd_mutex.Tpo $(DEPDIR)/drd_x86_linux-drd_mutex.Po
-#	source='drd_mutex.c' object='drd_x86_linux-drd_mutex.o' libtool=no \
+drd_amd64_linux-drd_mutex.o: drd_mutex.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -MT drd_amd64_linux-drd_mutex.o -MD -MP -MF $(DEPDIR)/drd_amd64_linux-drd_mutex.Tpo -c -o drd_amd64_linux-drd_mutex.o `test -f 'drd_mutex.c' || echo '$(srcdir)/'`drd_mutex.c
+	$(am__mv) $(DEPDIR)/drd_amd64_linux-drd_mutex.Tpo $(DEPDIR)/drd_amd64_linux-drd_mutex.Po
+#	source='drd_mutex.c' object='drd_amd64_linux-drd_mutex.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -c -o drd_x86_linux-drd_mutex.o `test -f 'drd_mutex.c' || echo '$(srcdir)/'`drd_mutex.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -c -o drd_amd64_linux-drd_mutex.o `test -f 'drd_mutex.c' || echo '$(srcdir)/'`drd_mutex.c
 
-drd_x86_linux-drd_mutex.obj: drd_mutex.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -MT drd_x86_linux-drd_mutex.obj -MD -MP -MF $(DEPDIR)/drd_x86_linux-drd_mutex.Tpo -c -o drd_x86_linux-drd_mutex.obj `if test -f 'drd_mutex.c'; then $(CYGPATH_W) 'drd_mutex.c'; else $(CYGPATH_W) '$(srcdir)/drd_mutex.c'; fi`
-	$(am__mv) $(DEPDIR)/drd_x86_linux-drd_mutex.Tpo $(DEPDIR)/drd_x86_linux-drd_mutex.Po
-#	source='drd_mutex.c' object='drd_x86_linux-drd_mutex.obj' libtool=no \
+drd_amd64_linux-drd_mutex.obj: drd_mutex.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -MT drd_amd64_linux-drd_mutex.obj -MD -MP -MF $(DEPDIR)/drd_amd64_linux-drd_mutex.Tpo -c -o drd_amd64_linux-drd_mutex.obj `if test -f 'drd_mutex.c'; then $(CYGPATH_W) 'drd_mutex.c'; else $(CYGPATH_W) '$(srcdir)/drd_mutex.c'; fi`
+	$(am__mv) $(DEPDIR)/drd_amd64_linux-drd_mutex.Tpo $(DEPDIR)/drd_amd64_linux-drd_mutex.Po
+#	source='drd_mutex.c' object='drd_amd64_linux-drd_mutex.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -c -o drd_x86_linux-drd_mutex.obj `if test -f 'drd_mutex.c'; then $(CYGPATH_W) 'drd_mutex.c'; else $(CYGPATH_W) '$(srcdir)/drd_mutex.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -c -o drd_amd64_linux-drd_mutex.obj `if test -f 'drd_mutex.c'; then $(CYGPATH_W) 'drd_mutex.c'; else $(CYGPATH_W) '$(srcdir)/drd_mutex.c'; fi`
 
-drd_x86_linux-drd_rwlock.o: drd_rwlock.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -MT drd_x86_linux-drd_rwlock.o -MD -MP -MF $(DEPDIR)/drd_x86_linux-drd_rwlock.Tpo -c -o drd_x86_linux-drd_rwlock.o `test -f 'drd_rwlock.c' || echo '$(srcdir)/'`drd_rwlock.c
-	$(am__mv) $(DEPDIR)/drd_x86_linux-drd_rwlock.Tpo $(DEPDIR)/drd_x86_linux-drd_rwlock.Po
-#	source='drd_rwlock.c' object='drd_x86_linux-drd_rwlock.o' libtool=no \
+drd_amd64_linux-drd_rwlock.o: drd_rwlock.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -MT drd_amd64_linux-drd_rwlock.o -MD -MP -MF $(DEPDIR)/drd_amd64_linux-drd_rwlock.Tpo -c -o drd_amd64_linux-drd_rwlock.o `test -f 'drd_rwlock.c' || echo '$(srcdir)/'`drd_rwlock.c
+	$(am__mv) $(DEPDIR)/drd_amd64_linux-drd_rwlock.Tpo $(DEPDIR)/drd_amd64_linux-drd_rwlock.Po
+#	source='drd_rwlock.c' object='drd_amd64_linux-drd_rwlock.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -c -o drd_x86_linux-drd_rwlock.o `test -f 'drd_rwlock.c' || echo '$(srcdir)/'`drd_rwlock.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -c -o drd_amd64_linux-drd_rwlock.o `test -f 'drd_rwlock.c' || echo '$(srcdir)/'`drd_rwlock.c
 
-drd_x86_linux-drd_rwlock.obj: drd_rwlock.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -MT drd_x86_linux-drd_rwlock.obj -MD -MP -MF $(DEPDIR)/drd_x86_linux-drd_rwlock.Tpo -c -o drd_x86_linux-drd_rwlock.obj `if test -f 'drd_rwlock.c'; then $(CYGPATH_W) 'drd_rwlock.c'; else $(CYGPATH_W) '$(srcdir)/drd_rwlock.c'; fi`
-	$(am__mv) $(DEPDIR)/drd_x86_linux-drd_rwlock.Tpo $(DEPDIR)/drd_x86_linux-drd_rwlock.Po
-#	source='drd_rwlock.c' object='drd_x86_linux-drd_rwlock.obj' libtool=no \
+drd_amd64_linux-drd_rwlock.obj: drd_rwlock.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -MT drd_amd64_linux-drd_rwlock.obj -MD -MP -MF $(DEPDIR)/drd_amd64_linux-drd_rwlock.Tpo -c -o drd_amd64_linux-drd_rwlock.obj `if test -f 'drd_rwlock.c'; then $(CYGPATH_W) 'drd_rwlock.c'; else $(CYGPATH_W) '$(srcdir)/drd_rwlock.c'; fi`
+	$(am__mv) $(DEPDIR)/drd_amd64_linux-drd_rwlock.Tpo $(DEPDIR)/drd_amd64_linux-drd_rwlock.Po
+#	source='drd_rwlock.c' object='drd_amd64_linux-drd_rwlock.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -c -o drd_x86_linux-drd_rwlock.obj `if test -f 'drd_rwlock.c'; then $(CYGPATH_W) 'drd_rwlock.c'; else $(CYGPATH_W) '$(srcdir)/drd_rwlock.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -c -o drd_amd64_linux-drd_rwlock.obj `if test -f 'drd_rwlock.c'; then $(CYGPATH_W) 'drd_rwlock.c'; else $(CYGPATH_W) '$(srcdir)/drd_rwlock.c'; fi`
 
-drd_x86_linux-drd_semaphore.o: drd_semaphore.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -MT drd_x86_linux-drd_semaphore.o -MD -MP -MF $(DEPDIR)/drd_x86_linux-drd_semaphore.Tpo -c -o drd_x86_linux-drd_semaphore.o `test -f 'drd_semaphore.c' || echo '$(srcdir)/'`drd_semaphore.c
-	$(am__mv) $(DEPDIR)/drd_x86_linux-drd_semaphore.Tpo $(DEPDIR)/drd_x86_linux-drd_semaphore.Po
-#	source='drd_semaphore.c' object='drd_x86_linux-drd_semaphore.o' libtool=no \
+drd_amd64_linux-drd_semaphore.o: drd_semaphore.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -MT drd_amd64_linux-drd_semaphore.o -MD -MP -MF $(DEPDIR)/drd_amd64_linux-drd_semaphore.Tpo -c -o drd_amd64_linux-drd_semaphore.o `test -f 'drd_semaphore.c' || echo '$(srcdir)/'`drd_semaphore.c
+	$(am__mv) $(DEPDIR)/drd_amd64_linux-drd_semaphore.Tpo $(DEPDIR)/drd_amd64_linux-drd_semaphore.Po
+#	source='drd_semaphore.c' object='drd_amd64_linux-drd_semaphore.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -c -o drd_x86_linux-drd_semaphore.o `test -f 'drd_semaphore.c' || echo '$(srcdir)/'`drd_semaphore.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -c -o drd_amd64_linux-drd_semaphore.o `test -f 'drd_semaphore.c' || echo '$(srcdir)/'`drd_semaphore.c
 
-drd_x86_linux-drd_semaphore.obj: drd_semaphore.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -MT drd_x86_linux-drd_semaphore.obj -MD -MP -MF $(DEPDIR)/drd_x86_linux-drd_semaphore.Tpo -c -o drd_x86_linux-drd_semaphore.obj `if test -f 'drd_semaphore.c'; then $(CYGPATH_W) 'drd_semaphore.c'; else $(CYGPATH_W) '$(srcdir)/drd_semaphore.c'; fi`
-	$(am__mv) $(DEPDIR)/drd_x86_linux-drd_semaphore.Tpo $(DEPDIR)/drd_x86_linux-drd_semaphore.Po
-#	source='drd_semaphore.c' object='drd_x86_linux-drd_semaphore.obj' libtool=no \
+drd_amd64_linux-drd_semaphore.obj: drd_semaphore.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -MT drd_amd64_linux-drd_semaphore.obj -MD -MP -MF $(DEPDIR)/drd_amd64_linux-drd_semaphore.Tpo -c -o drd_amd64_linux-drd_semaphore.obj `if test -f 'drd_semaphore.c'; then $(CYGPATH_W) 'drd_semaphore.c'; else $(CYGPATH_W) '$(srcdir)/drd_semaphore.c'; fi`
+	$(am__mv) $(DEPDIR)/drd_amd64_linux-drd_semaphore.Tpo $(DEPDIR)/drd_amd64_linux-drd_semaphore.Po
+#	source='drd_semaphore.c' object='drd_amd64_linux-drd_semaphore.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -c -o drd_x86_linux-drd_semaphore.obj `if test -f 'drd_semaphore.c'; then $(CYGPATH_W) 'drd_semaphore.c'; else $(CYGPATH_W) '$(srcdir)/drd_semaphore.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -c -o drd_amd64_linux-drd_semaphore.obj `if test -f 'drd_semaphore.c'; then $(CYGPATH_W) 'drd_semaphore.c'; else $(CYGPATH_W) '$(srcdir)/drd_semaphore.c'; fi`
 
-drd_x86_linux-drd_suppression.o: drd_suppression.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -MT drd_x86_linux-drd_suppression.o -MD -MP -MF $(DEPDIR)/drd_x86_linux-drd_suppression.Tpo -c -o drd_x86_linux-drd_suppression.o `test -f 'drd_suppression.c' || echo '$(srcdir)/'`drd_suppression.c
-	$(am__mv) $(DEPDIR)/drd_x86_linux-drd_suppression.Tpo $(DEPDIR)/drd_x86_linux-drd_suppression.Po
-#	source='drd_suppression.c' object='drd_x86_linux-drd_suppression.o' libtool=no \
+drd_amd64_linux-drd_suppression.o: drd_suppression.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -MT drd_amd64_linux-drd_suppression.o -MD -MP -MF $(DEPDIR)/drd_amd64_linux-drd_suppression.Tpo -c -o drd_amd64_linux-drd_suppression.o `test -f 'drd_suppression.c' || echo '$(srcdir)/'`drd_suppression.c
+	$(am__mv) $(DEPDIR)/drd_amd64_linux-drd_suppression.Tpo $(DEPDIR)/drd_amd64_linux-drd_suppression.Po
+#	source='drd_suppression.c' object='drd_amd64_linux-drd_suppression.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -c -o drd_x86_linux-drd_suppression.o `test -f 'drd_suppression.c' || echo '$(srcdir)/'`drd_suppression.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -c -o drd_amd64_linux-drd_suppression.o `test -f 'drd_suppression.c' || echo '$(srcdir)/'`drd_suppression.c
 
-drd_x86_linux-drd_suppression.obj: drd_suppression.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -MT drd_x86_linux-drd_suppression.obj -MD -MP -MF $(DEPDIR)/drd_x86_linux-drd_suppression.Tpo -c -o drd_x86_linux-drd_suppression.obj `if test -f 'drd_suppression.c'; then $(CYGPATH_W) 'drd_suppression.c'; else $(CYGPATH_W) '$(srcdir)/drd_suppression.c'; fi`
-	$(am__mv) $(DEPDIR)/drd_x86_linux-drd_suppression.Tpo $(DEPDIR)/drd_x86_linux-drd_suppression.Po
-#	source='drd_suppression.c' object='drd_x86_linux-drd_suppression.obj' libtool=no \
+drd_amd64_linux-drd_suppression.obj: drd_suppression.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -MT drd_amd64_linux-drd_suppression.obj -MD -MP -MF $(DEPDIR)/drd_amd64_linux-drd_suppression.Tpo -c -o drd_amd64_linux-drd_suppression.obj `if test -f 'drd_suppression.c'; then $(CYGPATH_W) 'drd_suppression.c'; else $(CYGPATH_W) '$(srcdir)/drd_suppression.c'; fi`
+	$(am__mv) $(DEPDIR)/drd_amd64_linux-drd_suppression.Tpo $(DEPDIR)/drd_amd64_linux-drd_suppression.Po
+#	source='drd_suppression.c' object='drd_amd64_linux-drd_suppression.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_x86_linux_CPPFLAGS) $(CPPFLAGS) $(drd_x86_linux_CFLAGS) $(CFLAGS) -c -o drd_x86_linux-drd_suppression.obj `if test -f 'drd_suppression.c'; then $(CYGPATH_W) 'drd_suppression.c'; else $(CYGPATH_W) '$(srcdir)/drd_suppression.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(drd_amd64_linux_CFLAGS) $(CFLAGS) -c -o drd_amd64_linux-drd_suppression.obj `if test -f 'drd_suppression.c'; then $(CYGPATH_W) 'drd_suppression.c'; else $(CYGPATH_W) '$(srcdir)/drd_suppression.c'; fi`
 
 drd__linux-drd_barrier.o: drd_barrier.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd__linux_CPPFLAGS) $(CPPFLAGS) $(drd__linux_CFLAGS) $(CFLAGS) -MT drd__linux-drd_barrier.o -MD -MP -MF $(DEPDIR)/drd__linux-drd_barrier.Tpo -c -o drd__linux-drd_barrier.o `test -f 'drd_barrier.c' || echo '$(srcdir)/'`drd_barrier.c
@@ -1310,61 +1310,61 @@ drd__linux-drd_suppression.obj: drd_suppression.c
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
 #	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(drd__linux_CPPFLAGS) $(CPPFLAGS) $(drd__linux_CFLAGS) $(CFLAGS) -c -o drd__linux-drd_suppression.obj `if test -f 'drd_suppression.c'; then $(CYGPATH_W) 'drd_suppression.c'; else $(CYGPATH_W) '$(srcdir)/drd_suppression.c'; fi`
 
-vgpreload_drd_x86_linux_so-drd_pthread_intercepts.o: drd_pthread_intercepts.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd_x86_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd_x86_linux_so_CFLAGS) $(CFLAGS) -MT vgpreload_drd_x86_linux_so-drd_pthread_intercepts.o -MD -MP -MF $(DEPDIR)/vgpreload_drd_x86_linux_so-drd_pthread_intercepts.Tpo -c -o vgpreload_drd_x86_linux_so-drd_pthread_intercepts.o `test -f 'drd_pthread_intercepts.c' || echo '$(srcdir)/'`drd_pthread_intercepts.c
-	$(am__mv) $(DEPDIR)/vgpreload_drd_x86_linux_so-drd_pthread_intercepts.Tpo $(DEPDIR)/vgpreload_drd_x86_linux_so-drd_pthread_intercepts.Po
-#	source='drd_pthread_intercepts.c' object='vgpreload_drd_x86_linux_so-drd_pthread_intercepts.o' libtool=no \
+vgpreload_drd_amd64_linux_so-drd_pthread_intercepts.o: drd_pthread_intercepts.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd_amd64_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd_amd64_linux_so_CFLAGS) $(CFLAGS) -MT vgpreload_drd_amd64_linux_so-drd_pthread_intercepts.o -MD -MP -MF $(DEPDIR)/vgpreload_drd_amd64_linux_so-drd_pthread_intercepts.Tpo -c -o vgpreload_drd_amd64_linux_so-drd_pthread_intercepts.o `test -f 'drd_pthread_intercepts.c' || echo '$(srcdir)/'`drd_pthread_intercepts.c
+	$(am__mv) $(DEPDIR)/vgpreload_drd_amd64_linux_so-drd_pthread_intercepts.Tpo $(DEPDIR)/vgpreload_drd_amd64_linux_so-drd_pthread_intercepts.Po
+#	source='drd_pthread_intercepts.c' object='vgpreload_drd_amd64_linux_so-drd_pthread_intercepts.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd_x86_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd_x86_linux_so_CFLAGS) $(CFLAGS) -c -o vgpreload_drd_x86_linux_so-drd_pthread_intercepts.o `test -f 'drd_pthread_intercepts.c' || echo '$(srcdir)/'`drd_pthread_intercepts.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd_amd64_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd_amd64_linux_so_CFLAGS) $(CFLAGS) -c -o vgpreload_drd_amd64_linux_so-drd_pthread_intercepts.o `test -f 'drd_pthread_intercepts.c' || echo '$(srcdir)/'`drd_pthread_intercepts.c
 
-vgpreload_drd_x86_linux_so-drd_pthread_intercepts.obj: drd_pthread_intercepts.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd_x86_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd_x86_linux_so_CFLAGS) $(CFLAGS) -MT vgpreload_drd_x86_linux_so-drd_pthread_intercepts.obj -MD -MP -MF $(DEPDIR)/vgpreload_drd_x86_linux_so-drd_pthread_intercepts.Tpo -c -o vgpreload_drd_x86_linux_so-drd_pthread_intercepts.obj `if test -f 'drd_pthread_intercepts.c'; then $(CYGPATH_W) 'drd_pthread_intercepts.c'; else $(CYGPATH_W) '$(srcdir)/drd_pthread_intercepts.c'; fi`
-	$(am__mv) $(DEPDIR)/vgpreload_drd_x86_linux_so-drd_pthread_intercepts.Tpo $(DEPDIR)/vgpreload_drd_x86_linux_so-drd_pthread_intercepts.Po
-#	source='drd_pthread_intercepts.c' object='vgpreload_drd_x86_linux_so-drd_pthread_intercepts.obj' libtool=no \
+vgpreload_drd_amd64_linux_so-drd_pthread_intercepts.obj: drd_pthread_intercepts.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd_amd64_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd_amd64_linux_so_CFLAGS) $(CFLAGS) -MT vgpreload_drd_amd64_linux_so-drd_pthread_intercepts.obj -MD -MP -MF $(DEPDIR)/vgpreload_drd_amd64_linux_so-drd_pthread_intercepts.Tpo -c -o vgpreload_drd_amd64_linux_so-drd_pthread_intercepts.obj `if test -f 'drd_pthread_intercepts.c'; then $(CYGPATH_W) 'drd_pthread_intercepts.c'; else $(CYGPATH_W) '$(srcdir)/drd_pthread_intercepts.c'; fi`
+	$(am__mv) $(DEPDIR)/vgpreload_drd_amd64_linux_so-drd_pthread_intercepts.Tpo $(DEPDIR)/vgpreload_drd_amd64_linux_so-drd_pthread_intercepts.Po
+#	source='drd_pthread_intercepts.c' object='vgpreload_drd_amd64_linux_so-drd_pthread_intercepts.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd_x86_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd_x86_linux_so_CFLAGS) $(CFLAGS) -c -o vgpreload_drd_x86_linux_so-drd_pthread_intercepts.obj `if test -f 'drd_pthread_intercepts.c'; then $(CYGPATH_W) 'drd_pthread_intercepts.c'; else $(CYGPATH_W) '$(srcdir)/drd_pthread_intercepts.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd_amd64_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd_amd64_linux_so_CFLAGS) $(CFLAGS) -c -o vgpreload_drd_amd64_linux_so-drd_pthread_intercepts.obj `if test -f 'drd_pthread_intercepts.c'; then $(CYGPATH_W) 'drd_pthread_intercepts.c'; else $(CYGPATH_W) '$(srcdir)/drd_pthread_intercepts.c'; fi`
 
-vgpreload_drd_x86_linux_so-drd_qtcore_intercepts.o: drd_qtcore_intercepts.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd_x86_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd_x86_linux_so_CFLAGS) $(CFLAGS) -MT vgpreload_drd_x86_linux_so-drd_qtcore_intercepts.o -MD -MP -MF $(DEPDIR)/vgpreload_drd_x86_linux_so-drd_qtcore_intercepts.Tpo -c -o vgpreload_drd_x86_linux_so-drd_qtcore_intercepts.o `test -f 'drd_qtcore_intercepts.c' || echo '$(srcdir)/'`drd_qtcore_intercepts.c
-	$(am__mv) $(DEPDIR)/vgpreload_drd_x86_linux_so-drd_qtcore_intercepts.Tpo $(DEPDIR)/vgpreload_drd_x86_linux_so-drd_qtcore_intercepts.Po
-#	source='drd_qtcore_intercepts.c' object='vgpreload_drd_x86_linux_so-drd_qtcore_intercepts.o' libtool=no \
+vgpreload_drd_amd64_linux_so-drd_qtcore_intercepts.o: drd_qtcore_intercepts.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd_amd64_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd_amd64_linux_so_CFLAGS) $(CFLAGS) -MT vgpreload_drd_amd64_linux_so-drd_qtcore_intercepts.o -MD -MP -MF $(DEPDIR)/vgpreload_drd_amd64_linux_so-drd_qtcore_intercepts.Tpo -c -o vgpreload_drd_amd64_linux_so-drd_qtcore_intercepts.o `test -f 'drd_qtcore_intercepts.c' || echo '$(srcdir)/'`drd_qtcore_intercepts.c
+	$(am__mv) $(DEPDIR)/vgpreload_drd_amd64_linux_so-drd_qtcore_intercepts.Tpo $(DEPDIR)/vgpreload_drd_amd64_linux_so-drd_qtcore_intercepts.Po
+#	source='drd_qtcore_intercepts.c' object='vgpreload_drd_amd64_linux_so-drd_qtcore_intercepts.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd_x86_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd_x86_linux_so_CFLAGS) $(CFLAGS) -c -o vgpreload_drd_x86_linux_so-drd_qtcore_intercepts.o `test -f 'drd_qtcore_intercepts.c' || echo '$(srcdir)/'`drd_qtcore_intercepts.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd_amd64_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd_amd64_linux_so_CFLAGS) $(CFLAGS) -c -o vgpreload_drd_amd64_linux_so-drd_qtcore_intercepts.o `test -f 'drd_qtcore_intercepts.c' || echo '$(srcdir)/'`drd_qtcore_intercepts.c
 
-vgpreload_drd_x86_linux_so-drd_qtcore_intercepts.obj: drd_qtcore_intercepts.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd_x86_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd_x86_linux_so_CFLAGS) $(CFLAGS) -MT vgpreload_drd_x86_linux_so-drd_qtcore_intercepts.obj -MD -MP -MF $(DEPDIR)/vgpreload_drd_x86_linux_so-drd_qtcore_intercepts.Tpo -c -o vgpreload_drd_x86_linux_so-drd_qtcore_intercepts.obj `if test -f 'drd_qtcore_intercepts.c'; then $(CYGPATH_W) 'drd_qtcore_intercepts.c'; else $(CYGPATH_W) '$(srcdir)/drd_qtcore_intercepts.c'; fi`
-	$(am__mv) $(DEPDIR)/vgpreload_drd_x86_linux_so-drd_qtcore_intercepts.Tpo $(DEPDIR)/vgpreload_drd_x86_linux_so-drd_qtcore_intercepts.Po
-#	source='drd_qtcore_intercepts.c' object='vgpreload_drd_x86_linux_so-drd_qtcore_intercepts.obj' libtool=no \
+vgpreload_drd_amd64_linux_so-drd_qtcore_intercepts.obj: drd_qtcore_intercepts.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd_amd64_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd_amd64_linux_so_CFLAGS) $(CFLAGS) -MT vgpreload_drd_amd64_linux_so-drd_qtcore_intercepts.obj -MD -MP -MF $(DEPDIR)/vgpreload_drd_amd64_linux_so-drd_qtcore_intercepts.Tpo -c -o vgpreload_drd_amd64_linux_so-drd_qtcore_intercepts.obj `if test -f 'drd_qtcore_intercepts.c'; then $(CYGPATH_W) 'drd_qtcore_intercepts.c'; else $(CYGPATH_W) '$(srcdir)/drd_qtcore_intercepts.c'; fi`
+	$(am__mv) $(DEPDIR)/vgpreload_drd_amd64_linux_so-drd_qtcore_intercepts.Tpo $(DEPDIR)/vgpreload_drd_amd64_linux_so-drd_qtcore_intercepts.Po
+#	source='drd_qtcore_intercepts.c' object='vgpreload_drd_amd64_linux_so-drd_qtcore_intercepts.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd_x86_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd_x86_linux_so_CFLAGS) $(CFLAGS) -c -o vgpreload_drd_x86_linux_so-drd_qtcore_intercepts.obj `if test -f 'drd_qtcore_intercepts.c'; then $(CYGPATH_W) 'drd_qtcore_intercepts.c'; else $(CYGPATH_W) '$(srcdir)/drd_qtcore_intercepts.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd_amd64_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd_amd64_linux_so_CFLAGS) $(CFLAGS) -c -o vgpreload_drd_amd64_linux_so-drd_qtcore_intercepts.obj `if test -f 'drd_qtcore_intercepts.c'; then $(CYGPATH_W) 'drd_qtcore_intercepts.c'; else $(CYGPATH_W) '$(srcdir)/drd_qtcore_intercepts.c'; fi`
 
-vgpreload_drd_x86_linux_so-drd_strmem_intercepts.o: drd_strmem_intercepts.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd_x86_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd_x86_linux_so_CFLAGS) $(CFLAGS) -MT vgpreload_drd_x86_linux_so-drd_strmem_intercepts.o -MD -MP -MF $(DEPDIR)/vgpreload_drd_x86_linux_so-drd_strmem_intercepts.Tpo -c -o vgpreload_drd_x86_linux_so-drd_strmem_intercepts.o `test -f 'drd_strmem_intercepts.c' || echo '$(srcdir)/'`drd_strmem_intercepts.c
-	$(am__mv) $(DEPDIR)/vgpreload_drd_x86_linux_so-drd_strmem_intercepts.Tpo $(DEPDIR)/vgpreload_drd_x86_linux_so-drd_strmem_intercepts.Po
-#	source='drd_strmem_intercepts.c' object='vgpreload_drd_x86_linux_so-drd_strmem_intercepts.o' libtool=no \
+vgpreload_drd_amd64_linux_so-drd_strmem_intercepts.o: drd_strmem_intercepts.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd_amd64_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd_amd64_linux_so_CFLAGS) $(CFLAGS) -MT vgpreload_drd_amd64_linux_so-drd_strmem_intercepts.o -MD -MP -MF $(DEPDIR)/vgpreload_drd_amd64_linux_so-drd_strmem_intercepts.Tpo -c -o vgpreload_drd_amd64_linux_so-drd_strmem_intercepts.o `test -f 'drd_strmem_intercepts.c' || echo '$(srcdir)/'`drd_strmem_intercepts.c
+	$(am__mv) $(DEPDIR)/vgpreload_drd_amd64_linux_so-drd_strmem_intercepts.Tpo $(DEPDIR)/vgpreload_drd_amd64_linux_so-drd_strmem_intercepts.Po
+#	source='drd_strmem_intercepts.c' object='vgpreload_drd_amd64_linux_so-drd_strmem_intercepts.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd_x86_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd_x86_linux_so_CFLAGS) $(CFLAGS) -c -o vgpreload_drd_x86_linux_so-drd_strmem_intercepts.o `test -f 'drd_strmem_intercepts.c' || echo '$(srcdir)/'`drd_strmem_intercepts.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd_amd64_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd_amd64_linux_so_CFLAGS) $(CFLAGS) -c -o vgpreload_drd_amd64_linux_so-drd_strmem_intercepts.o `test -f 'drd_strmem_intercepts.c' || echo '$(srcdir)/'`drd_strmem_intercepts.c
 
-vgpreload_drd_x86_linux_so-drd_strmem_intercepts.obj: drd_strmem_intercepts.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd_x86_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd_x86_linux_so_CFLAGS) $(CFLAGS) -MT vgpreload_drd_x86_linux_so-drd_strmem_intercepts.obj -MD -MP -MF $(DEPDIR)/vgpreload_drd_x86_linux_so-drd_strmem_intercepts.Tpo -c -o vgpreload_drd_x86_linux_so-drd_strmem_intercepts.obj `if test -f 'drd_strmem_intercepts.c'; then $(CYGPATH_W) 'drd_strmem_intercepts.c'; else $(CYGPATH_W) '$(srcdir)/drd_strmem_intercepts.c'; fi`
-	$(am__mv) $(DEPDIR)/vgpreload_drd_x86_linux_so-drd_strmem_intercepts.Tpo $(DEPDIR)/vgpreload_drd_x86_linux_so-drd_strmem_intercepts.Po
-#	source='drd_strmem_intercepts.c' object='vgpreload_drd_x86_linux_so-drd_strmem_intercepts.obj' libtool=no \
+vgpreload_drd_amd64_linux_so-drd_strmem_intercepts.obj: drd_strmem_intercepts.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd_amd64_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd_amd64_linux_so_CFLAGS) $(CFLAGS) -MT vgpreload_drd_amd64_linux_so-drd_strmem_intercepts.obj -MD -MP -MF $(DEPDIR)/vgpreload_drd_amd64_linux_so-drd_strmem_intercepts.Tpo -c -o vgpreload_drd_amd64_linux_so-drd_strmem_intercepts.obj `if test -f 'drd_strmem_intercepts.c'; then $(CYGPATH_W) 'drd_strmem_intercepts.c'; else $(CYGPATH_W) '$(srcdir)/drd_strmem_intercepts.c'; fi`
+	$(am__mv) $(DEPDIR)/vgpreload_drd_amd64_linux_so-drd_strmem_intercepts.Tpo $(DEPDIR)/vgpreload_drd_amd64_linux_so-drd_strmem_intercepts.Po
+#	source='drd_strmem_intercepts.c' object='vgpreload_drd_amd64_linux_so-drd_strmem_intercepts.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd_x86_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd_x86_linux_so_CFLAGS) $(CFLAGS) -c -o vgpreload_drd_x86_linux_so-drd_strmem_intercepts.obj `if test -f 'drd_strmem_intercepts.c'; then $(CYGPATH_W) 'drd_strmem_intercepts.c'; else $(CYGPATH_W) '$(srcdir)/drd_strmem_intercepts.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd_amd64_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd_amd64_linux_so_CFLAGS) $(CFLAGS) -c -o vgpreload_drd_amd64_linux_so-drd_strmem_intercepts.obj `if test -f 'drd_strmem_intercepts.c'; then $(CYGPATH_W) 'drd_strmem_intercepts.c'; else $(CYGPATH_W) '$(srcdir)/drd_strmem_intercepts.c'; fi`
 
-vgpreload_drd_x86_linux_so-drd_darwin_intercepts.o: drd_darwin_intercepts.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd_x86_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd_x86_linux_so_CFLAGS) $(CFLAGS) -MT vgpreload_drd_x86_linux_so-drd_darwin_intercepts.o -MD -MP -MF $(DEPDIR)/vgpreload_drd_x86_linux_so-drd_darwin_intercepts.Tpo -c -o vgpreload_drd_x86_linux_so-drd_darwin_intercepts.o `test -f 'drd_darwin_intercepts.c' || echo '$(srcdir)/'`drd_darwin_intercepts.c
-	$(am__mv) $(DEPDIR)/vgpreload_drd_x86_linux_so-drd_darwin_intercepts.Tpo $(DEPDIR)/vgpreload_drd_x86_linux_so-drd_darwin_intercepts.Po
-#	source='drd_darwin_intercepts.c' object='vgpreload_drd_x86_linux_so-drd_darwin_intercepts.o' libtool=no \
+vgpreload_drd_amd64_linux_so-drd_darwin_intercepts.o: drd_darwin_intercepts.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd_amd64_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd_amd64_linux_so_CFLAGS) $(CFLAGS) -MT vgpreload_drd_amd64_linux_so-drd_darwin_intercepts.o -MD -MP -MF $(DEPDIR)/vgpreload_drd_amd64_linux_so-drd_darwin_intercepts.Tpo -c -o vgpreload_drd_amd64_linux_so-drd_darwin_intercepts.o `test -f 'drd_darwin_intercepts.c' || echo '$(srcdir)/'`drd_darwin_intercepts.c
+	$(am__mv) $(DEPDIR)/vgpreload_drd_amd64_linux_so-drd_darwin_intercepts.Tpo $(DEPDIR)/vgpreload_drd_amd64_linux_so-drd_darwin_intercepts.Po
+#	source='drd_darwin_intercepts.c' object='vgpreload_drd_amd64_linux_so-drd_darwin_intercepts.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd_x86_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd_x86_linux_so_CFLAGS) $(CFLAGS) -c -o vgpreload_drd_x86_linux_so-drd_darwin_intercepts.o `test -f 'drd_darwin_intercepts.c' || echo '$(srcdir)/'`drd_darwin_intercepts.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd_amd64_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd_amd64_linux_so_CFLAGS) $(CFLAGS) -c -o vgpreload_drd_amd64_linux_so-drd_darwin_intercepts.o `test -f 'drd_darwin_intercepts.c' || echo '$(srcdir)/'`drd_darwin_intercepts.c
 
-vgpreload_drd_x86_linux_so-drd_darwin_intercepts.obj: drd_darwin_intercepts.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd_x86_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd_x86_linux_so_CFLAGS) $(CFLAGS) -MT vgpreload_drd_x86_linux_so-drd_darwin_intercepts.obj -MD -MP -MF $(DEPDIR)/vgpreload_drd_x86_linux_so-drd_darwin_intercepts.Tpo -c -o vgpreload_drd_x86_linux_so-drd_darwin_intercepts.obj `if test -f 'drd_darwin_intercepts.c'; then $(CYGPATH_W) 'drd_darwin_intercepts.c'; else $(CYGPATH_W) '$(srcdir)/drd_darwin_intercepts.c'; fi`
-	$(am__mv) $(DEPDIR)/vgpreload_drd_x86_linux_so-drd_darwin_intercepts.Tpo $(DEPDIR)/vgpreload_drd_x86_linux_so-drd_darwin_intercepts.Po
-#	source='drd_darwin_intercepts.c' object='vgpreload_drd_x86_linux_so-drd_darwin_intercepts.obj' libtool=no \
+vgpreload_drd_amd64_linux_so-drd_darwin_intercepts.obj: drd_darwin_intercepts.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd_amd64_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd_amd64_linux_so_CFLAGS) $(CFLAGS) -MT vgpreload_drd_amd64_linux_so-drd_darwin_intercepts.obj -MD -MP -MF $(DEPDIR)/vgpreload_drd_amd64_linux_so-drd_darwin_intercepts.Tpo -c -o vgpreload_drd_amd64_linux_so-drd_darwin_intercepts.obj `if test -f 'drd_darwin_intercepts.c'; then $(CYGPATH_W) 'drd_darwin_intercepts.c'; else $(CYGPATH_W) '$(srcdir)/drd_darwin_intercepts.c'; fi`
+	$(am__mv) $(DEPDIR)/vgpreload_drd_amd64_linux_so-drd_darwin_intercepts.Tpo $(DEPDIR)/vgpreload_drd_amd64_linux_so-drd_darwin_intercepts.Po
+#	source='drd_darwin_intercepts.c' object='vgpreload_drd_amd64_linux_so-drd_darwin_intercepts.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd_x86_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd_x86_linux_so_CFLAGS) $(CFLAGS) -c -o vgpreload_drd_x86_linux_so-drd_darwin_intercepts.obj `if test -f 'drd_darwin_intercepts.c'; then $(CYGPATH_W) 'drd_darwin_intercepts.c'; else $(CYGPATH_W) '$(srcdir)/drd_darwin_intercepts.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd_amd64_linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd_amd64_linux_so_CFLAGS) $(CFLAGS) -c -o vgpreload_drd_amd64_linux_so-drd_darwin_intercepts.obj `if test -f 'drd_darwin_intercepts.c'; then $(CYGPATH_W) 'drd_darwin_intercepts.c'; else $(CYGPATH_W) '$(srcdir)/drd_darwin_intercepts.c'; fi`
 
 vgpreload_drd__linux_so-drd_pthread_intercepts.o: drd_pthread_intercepts.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(vgpreload_drd__linux_so_CPPFLAGS) $(CPPFLAGS) $(vgpreload_drd__linux_so_CFLAGS) $(CFLAGS) -MT vgpreload_drd__linux_so-drd_pthread_intercepts.o -MD -MP -MF $(DEPDIR)/vgpreload_drd__linux_so-drd_pthread_intercepts.Tpo -c -o vgpreload_drd__linux_so-drd_pthread_intercepts.o `test -f 'drd_pthread_intercepts.c' || echo '$(srcdir)/'`drd_pthread_intercepts.c

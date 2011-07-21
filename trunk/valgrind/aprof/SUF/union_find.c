@@ -27,6 +27,11 @@
 #define SET_PARENT(n, p)    (n)->parent = (void *)(((unsigned long)((n)->parent) & 2) | (unsigned long)(p));
 #define GET_PARENT(n)       (void *)((unsigned long)(n)->parent & ~3)
 
+#define CHECK_ADDR_OVERFLOW(x) do { \
+									if ((x) > (unsigned long long) USM_SIZE * 65536) \
+										failure("Address overflow"); \
+									} while (0);
+
 static void failure(char * c) {
 	
 	printf("%s\n", c);
@@ -87,6 +92,10 @@ void UF_destroy(UnionFind * uf){
 }
 
 int UF_insert(UnionFind * uf, ADDRINT addr, int stack_depth){
+
+	#if !defined(__i386__) && CHECK_SUF_OVERFLOW
+	CHECK_ADDR_OVERFLOW(addr);
+	#endif
 
 	Node * new = NULL;
 	Node * n   = NULL;
@@ -310,6 +319,10 @@ void UF_rebalance(UnionFind * uf, Node * root) {
 }
 
 int UF_lookup(UnionFind * uf, ADDRINT addr){
+	
+	#if !defined(__i386__) && CHECK_SUF_OVERFLOW
+	CHECK_ADDR_OVERFLOW(addr);
+	#endif
 
 	ADDRINT i = addr >> 16;
 	if (uf->table[i] == NULL) return -1;

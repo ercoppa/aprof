@@ -41,8 +41,8 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-build_triplet = i686-pc-linux-gnu
-host_triplet = i686-pc-linux-gnu
+build_triplet = x86_64-unknown-linux-gnu
+host_triplet = x86_64-unknown-linux-gnu
 DIST_COMMON = $(dist_noinst_SCRIPTS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(top_srcdir)/Makefile.all.am \
 	$(top_srcdir)/Makefile.tool-tests.am
@@ -80,12 +80,12 @@ DIST_SOURCES = access_extended.c apple-main-arg.c rlimit.c
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run aclocal-1.11
-AMTAR = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run tar
+ACLOCAL = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run aclocal-1.11
+AMTAR = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run tar
 AR = /usr/bin/ar
-AUTOCONF = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run autoconf
-AUTOHEADER = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run autoheader
-AUTOMAKE = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run automake-1.11
+AUTOCONF = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run autoconf
+AUTOHEADER = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run autoheader
+AUTOMAKE = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run automake-1.11
 AWK = mawk
 BOOST_CFLAGS = 
 BOOST_LIBS = 
@@ -137,7 +137,7 @@ LIBS =
 LN_S = ln -s
 LTLIBOBJS = 
 MAINT = #
-MAKEINFO = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run makeinfo
+MAKEINFO = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run makeinfo
 MKDIR_P = /bin/mkdir -p
 MPI_CC = mpicc
 OBJEXT = o
@@ -150,7 +150,7 @@ PACKAGE_URL =
 PACKAGE_VERSION = 3.7.0.SVN
 PATH_SEPARATOR = :
 PERL = /usr/bin/perl
-PREFERRED_STACK_BOUNDARY = -mpreferred-stack-boundary=2
+PREFERRED_STACK_BOUNDARY = 
 RANLIB = ranlib
 SED = /bin/sed
 SET_MAKE = 
@@ -159,15 +159,15 @@ STRIP =
 VALT_LOAD_ADDRESS_PRI = 0x38000000
 VALT_LOAD_ADDRESS_SEC = 0xUNSET
 VERSION = 3.7.0.SVN
-VGCONF_ARCH_PRI = x86
+VGCONF_ARCH_PRI = amd64
 VGCONF_ARCH_SEC = 
 VGCONF_OS = linux
-VGCONF_PLATFORM_PRI_CAPS = X86_LINUX
+VGCONF_PLATFORM_PRI_CAPS = AMD64_LINUX
 VGCONF_PLATFORM_SEC_CAPS = 
-abs_builddir = /home/ercoppa/Desktop/code/aprof/valgrind/none/tests/darwin
-abs_srcdir = /home/ercoppa/Desktop/code/aprof/valgrind/none/tests/darwin
-abs_top_builddir = /home/ercoppa/Desktop/code/aprof/valgrind
-abs_top_srcdir = /home/ercoppa/Desktop/code/aprof/valgrind
+abs_builddir = /home/ercoppa/Desktop/aprof/valgrind/none/tests/darwin
+abs_srcdir = /home/ercoppa/Desktop/aprof/valgrind/none/tests/darwin
+abs_top_builddir = /home/ercoppa/Desktop/aprof/valgrind
+abs_top_srcdir = /home/ercoppa/Desktop/aprof/valgrind
 ac_ct_CC = gcc
 ac_ct_CXX = g++
 am__include = include
@@ -176,26 +176,26 @@ am__quote =
 am__tar = ${AMTAR} chof - "$$tardir"
 am__untar = ${AMTAR} xf -
 bindir = ${exec_prefix}/bin
-build = i686-pc-linux-gnu
+build = x86_64-unknown-linux-gnu
 build_alias = 
-build_cpu = i686
+build_cpu = x86_64
 build_os = linux-gnu
-build_vendor = pc
+build_vendor = unknown
 builddir = .
 datadir = ${datarootdir}
 datarootdir = ${prefix}/share
 docdir = ${datarootdir}/doc/${PACKAGE_TARNAME}
 dvidir = ${docdir}
 exec_prefix = ${prefix}
-host = i686-pc-linux-gnu
+host = x86_64-unknown-linux-gnu
 host_alias = 
-host_cpu = i686
+host_cpu = x86_64
 host_os = linux-gnu
-host_vendor = pc
+host_vendor = unknown
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/install-sh
+install_sh = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -204,7 +204,7 @@ mandir = ${datarootdir}/man
 mkdir_p = /bin/mkdir -p
 oldincludedir = /usr/include
 pdfdir = ${docdir}
-prefix = /home/ercoppa/Desktop/code/aprof/valgrind/inst
+prefix = /home/ercoppa/Desktop/aprof/valgrind/inst
 program_transform_name = s,x,x,
 psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
@@ -256,13 +256,13 @@ AM_CFLAGS_PIC = -fpic -O -g -fno-omit-frame-pointer -fno-strict-aliasing
 # AM_CPPFLAGS_<PLATFORM> in each AM_CCASFLAGS_<PLATFORM> variable.  This
 # means some of the flags are duplicated on systems with newer versions of
 # automake, but this does not really matter and seems hard to avoid.
-AM_CPPFLAGS_X86_LINUX = \
+AM_CPPFLAGS_AMD64_LINUX = \
 	-I$(top_srcdir) \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/VEX/pub \
-	-DVGA_x86=1 \
+	-DVGA_amd64=1 \
 	-DVGO_linux=1 \
-	-DVGP_x86_linux=1
+	-DVGP_amd64_linux=1
 
 #AM_CPPFLAGS_ = \
 #	-I$(top_srcdir) \
@@ -273,13 +273,13 @@ AM_CPPFLAGS_X86_LINUX = \
 #	-DVGP__linux=1
 
 AM_FLAG_M3264_X86_LINUX = -m32
-AM_CFLAGS_X86_LINUX = -m32 -mpreferred-stack-boundary=2 \
+AM_CFLAGS_X86_LINUX = -m32  \
 			 	$(AM_CFLAGS_BASE)
 
 AM_CCASFLAGS_X86_LINUX = $(AM_CPPFLAGS_X86_LINUX) -m32 -g
 AM_FLAG_M3264_AMD64_LINUX = -m64
 AM_CFLAGS_AMD64_LINUX = -m64 -fomit-frame-pointer \
-				-mpreferred-stack-boundary=2 $(AM_CFLAGS_BASE)
+				 $(AM_CFLAGS_BASE)
 
 AM_CCASFLAGS_AMD64_LINUX = $(AM_CPPFLAGS_AMD64_LINUX) -m64 -g
 AM_FLAG_M3264_PPC32_LINUX = -m32
@@ -289,7 +289,7 @@ AM_FLAG_M3264_PPC64_LINUX = -m64
 AM_CFLAGS_PPC64_LINUX = -m64 $(AM_CFLAGS_BASE)
 AM_CCASFLAGS_PPC64_LINUX = $(AM_CPPFLAGS_PPC64_LINUX) -m64 -g
 AM_FLAG_M3264_ARM_LINUX = -m32
-AM_CFLAGS_ARM_LINUX = -m32 -mpreferred-stack-boundary=2 \
+AM_CFLAGS_ARM_LINUX = -m32  \
 			 	$(AM_CFLAGS_BASE) -marm
 
 AM_CCASFLAGS_ARM_LINUX = $(AM_CPPFLAGS_ARM_LINUX) -m32 -marm -g
@@ -324,10 +324,10 @@ AM_CCASFLAGS_S390X_LINUX = $(AM_CPPFLAGS_S390X_LINUX) -mzarch -march=z900 \
 # regtests and performance tests.  In fact, these must be used to
 # build anything which is built only once on a dual-arch build.
 #
-AM_FLAG_M3264_PRI = $(AM_FLAG_M3264_X86_LINUX)
-AM_CPPFLAGS_PRI = $(AM_CPPFLAGS_X86_LINUX)
-AM_CFLAGS_PRI = $(AM_CFLAGS_X86_LINUX)
-AM_CCASFLAGS_PRI = $(AM_CCASFLAGS_X86_LINUX)
+AM_FLAG_M3264_PRI = $(AM_FLAG_M3264_AMD64_LINUX)
+AM_CPPFLAGS_PRI = $(AM_CPPFLAGS_AMD64_LINUX)
+AM_CFLAGS_PRI = $(AM_CFLAGS_AMD64_LINUX)
+AM_CCASFLAGS_PRI = $(AM_CCASFLAGS_AMD64_LINUX)
 AM_FLAG_M3264_SEC = 
 #AM_FLAG_M3264_SEC = $(AM_FLAG_M3264_)
 
