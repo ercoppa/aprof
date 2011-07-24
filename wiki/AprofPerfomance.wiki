@@ -57,5 +57,5 @@ Revision 31:
 {{{
 DSP(aprof): space 36mb ~ time real 5.689s ~ EVENTCOUNT=1 (only mem access)
 DSP(aprof): space 36mb ~ time real 8.128s ~ EVENTCOUNT=2 (only function), TIME=NO_TIME
-DSP(aprof): space 37mb ~ time real 13.744s ~ EVENTCOUNT=2 (memory and function), TIME=NO_TIME
+DSP(aprof): space 37mb ~ time real 13.744s ~ EVENTCOUNT=3 (memory and function), TIME=NO_TIME
 }}}
