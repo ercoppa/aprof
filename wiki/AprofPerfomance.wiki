@@ -18,8 +18,8 @@ See aprof log under _benchmark/dsp/bin/_
 == Perfomance reference ==
 {{{
 DSP(native): real 0.36 sec
-DSP(callgrind): real 16.08 sec
-DSP(memcheck): real 9.85 sec
+DSP(callgrind): space 35mb ~  time real 16.08 sec
+DSP(memcheck): space 99mb ~ time real 9.85 sec
 }}}
 
 == Results ==
@@ -45,4 +45,11 @@ Revision 26:
 {{{
 DSP(aprof): space 100mb ~ time real 1m33s ~ CCT=0, ADDR_MULTIPLE=4, TIME=RDTSC, SUF=1
 DSP(aprof): space 51mb ~ time real 43s ~ CCT=0, ADDR_MULTIPLE=4, TIME=RDTSC, SUF=2
+}}}
+
+Revision 31:
+{{{
+DSP(aprof): space 36mb ~ time real 5.689s ~ EVENTCOUNT=1 (only mem access)
+DSP(aprof): space 36mb ~ time real 8.128s ~ EVENTCOUNT=2 (only function), TIME=NO_TIME
+DSP(aprof): space 37mb ~ time real 13.744s ~ EVENTCOUNT=2 (only function), TIME=NO_TIME
 }}}
