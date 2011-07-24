@@ -49,13 +49,9 @@ static Node * UF_find(Node * n) {
 
 	if (n == NULL) return NULL;
 	if (IS_ROOT(n)) return n;
-	
-	int i = 0;
-	if (IS_DUMMY(n)) i = 1;
+
 	
 	SET_PARENT(n, UF_find(GET_PARENT(n))); /* Path Compression */
-	if (i && !IS_DUMMY(n)) failure("bad macro");
-	if (UF_find(GET_PARENT(n)) != GET_PARENT(n)) failure("Bad macro");
 
 	return GET_PARENT(n);
 

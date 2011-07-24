@@ -114,6 +114,7 @@ void flushEvents(IRSB* sb) {
 // the Ir events to the events list so that merging of paired load/store
 // events into modify events works correctly.
 void addEvent_Ir ( IRSB* sb, IRAtom* iaddr, UInt isize ) {
+	
 	Event* evt;
 	tl_assert( (VG_MIN_INSTR_SZB <= isize && isize <= VG_MAX_INSTR_SZB)
 				|| VG_CLREQ_SZB == isize );

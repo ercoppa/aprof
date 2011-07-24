@@ -18,7 +18,7 @@ UWord thread_n = 0;
 
 void thread_pool_init(void) {
 	
-	#if EMPTY_ANALYSIS
+	#if EMPTY_ANALYSIS || EVENTCOUNT
 	return;
 	#endif
 	
@@ -57,7 +57,7 @@ ThreadData * thread_init(ThreadId tid){
 
 	#if SUF == 1
 	tdata->accesses = UF_create();
-	#else
+	#elif SUF == 2
 	tdata->accesses = SUF_create();
 	#endif
 	
@@ -100,8 +100,9 @@ void thread_start(ThreadId tid) {
 	VG_(printf)("Start thread %u\n", tid);
 	#endif
 	
-	#if EVENTCOUNT
+	#if EVENTCOUNT == 4
 	thread_n++;
+	return;
 	#endif
 	
 	thread_init(tid);
@@ -109,7 +110,7 @@ void thread_start(ThreadId tid) {
 
 void thread_exit (ThreadId tid){
 
-	#if EMPTY_ANALYSIS
+	#if EMPTY_ANALYSIS || EVENTCOUNT
 	return;
 	#endif
 
@@ -140,7 +141,7 @@ void thread_exit (ThreadId tid){
 	/* destroy all thread data data */
 	#if SUF == 1
 	UF_destroy(tdata->accesses);
-	#else
+	#elif SUF == 2
 	SUF_destroy(tdata->accesses);
 	#endif
 	

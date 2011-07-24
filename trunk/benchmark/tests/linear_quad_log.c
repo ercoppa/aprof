@@ -20,7 +20,9 @@ int linear(int * v, int n) {
 	return sum;
 }
 
-int main() {
+int main(int argc, char * argv[]) {
+	
+	if (argc == 1)
 	
 	double i = 1.0;
 	int j = 0;
@@ -30,8 +32,16 @@ int main() {
 	//int * old = NULL;
 	while (i < 10000000) {
 		
-		for (j = 0; j < 1; j++)
-			linear(p, (int)i);
+		for (j = 0; j < 1; j++) {
+			
+			if (alg == 1)
+				linear(p, (int)i);
+			else if (alg == 2)
+				quadratic(p, (int)i);
+			else if (alg == 3)
+				logar(p, (int)i);
+		
+		}
 		i = i*1.20;
 		
 		/*

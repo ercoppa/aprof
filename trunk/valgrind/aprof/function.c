@@ -74,7 +74,15 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 	/* Is this client request for aprof? */
 	if (!VG_IS_TOOL_USERREQ('V','A',arg[0])) return False;
 	
+	#if TIME != NO_TIME
 	UWord64 start = ap_time();
+	#endif
+	
+	#if EVENTCOUNT >= 2
+	if (arg[2] == 1) fn_in_n++;
+	else if (arg[2] == 2) fn_out_n++;
+	return;
+	#endif
 	
 	#if EMPTY_ANALYSIS
 	return True;
@@ -112,10 +120,6 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 	
 		#if VERBOSE
 		VG_(printf)("Start function: %s\n", debug_name); 
-		#endif
-		
-		#if EVENTCOUNT
-		fn_in_n++;
 		#endif
 	
 		tdata->stack_depth++;
@@ -221,10 +225,6 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 		VG_(printf)("Exit function: %s\n", debug_name); 
 		#endif
 		
-		#if EVENTCOUNT
-		fn_out_n++;
-		#endif
-		
 		Activation * activation = get_activation(tdata, tdata->stack_depth);
 		#if DEBUG
 		if (activation == NULL) failure("Invalid activation in function exit");
@@ -293,7 +293,7 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 			
 			#if SUF == 1
 			UF_merge(tdata->accesses, tdata->stack_depth);
-			#else
+			#elif SUF == 2
 			tdata->curr_aid = activation->old_aid;
 			#endif
 

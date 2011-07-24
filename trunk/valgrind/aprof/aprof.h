@@ -27,23 +27,23 @@
 #include "hashtable/hashtable.h"
 
 /* Behaviour macro */
-#define SUF					1	// Implementation of stack union find
-#define CHECK_SUF_OVERFLOW	0	// On 64bit, check if an addr owerflow SUF supported max value
-#define EMPTY_ANALYSIS		0	// if 1, analysis routines are empty (performance benchmark reference)
+#define SUF					2	// Implementation of stack union find {1,2}
+#define EMPTY_ANALYSIS		0	// if 1, analyesis routines are empty (performance benchmark reference)
 #define TRACER 				0	// Create a trace for testing SUF
 #define DEBUG				0	// Enable some sanity checks
 #define VERBOSE				0	// 0 disabled, 1 function + thread, 2 function + thread + load/store/modify
-#define EVENTCOUNT			0	// count load, store, modify, fn entry, fn exit, thread
+#define EVENTCOUNT			1	// 0 disabled, 1 memory accesses, 2 function entries/exits, 3 mem+fn, 4 mem+fn+thread
 #define CCT					0	// if 1, keep a calling context tree for each thread to include context information in reports
 #define ADDR_MULTIPLE		4	// account only accessed address muliple of this number, min 1
 #define NO_TIME				0	// No time 
 #define INSTR				1	// Count guest intel instruction 
 #define RDTSC				2	// rdtsc intel instruction
-#define TIME				RDTSC
+#define BB_COUNT			3	// count BB executed
+#define TIME				BB_COUNT
 
 #if SUF == 1
 #include "SUF/union_find.h"
-#else
+#elif SUF == 2
 #include "SUF2/suf.h"
 #endif
 
@@ -54,7 +54,8 @@ extern UWord write_n;
 extern UWord modify_n;
 extern UWord fn_in_n;
 extern UWord fn_out_n;
-extern UWord thread_n; 
+extern UWord thread_n;
+extern UWord bb_c;
 #endif
 
 /* Some constants */
@@ -127,7 +128,7 @@ typedef struct {
 typedef struct {
 	#if SUF == 1
 	UnionFind * accesses;				// stack of sets of addresses
-	#else
+	#elif SUF == 2
 	StackUF * accesses;					// stack of sets of addresses
 	#endif
 	HashTable * routine_hash_table;		// table of all encountered routines
@@ -141,6 +142,8 @@ typedef struct {
 	#endif
 	#if TIME == INSTR
 	UWord64 instr;
+	#elif TIME == BB_COUNT
+	UWord bb_c;
 	#endif
 	#if TRACER
 	FILE * log;
@@ -193,6 +196,9 @@ void destroy_routine_info(void * data);
 UWord64 ap_time(void);
 #if TIME == INSTR
 VG_REGPARM(0) void add_one_guest_instr(void);
+#endif
+#if TIME == BB_COUNT
+VG_REGPARM(0) void add_one_guest_BB(void);
 #endif
 
 /* events */

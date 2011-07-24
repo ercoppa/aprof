@@ -21,6 +21,8 @@ UWord64 ap_time(void) {
 	UWord64 ret;
 	__asm__ __volatile__("rdtsc": "=A" (ret));
 	return ret;
+	#elif !TRACER && TIME == BB_COUNT
+	return get_thread_data(0)->bb_c;
 	#endif
 	
 	return 0;
@@ -49,3 +51,24 @@ VG_REGPARM(0) void add_one_guest_instr(void) {
 	#endif
 }
 #endif
+
+#if EVENTCOUNT
+UWord bb_c = 0;
+#endif
+
+#if EVENTCOUNT == 0 || EVENTCOUNT >= 2
+
+#if TIME == BB_COUNT
+
+VG_REGPARM(0) void add_one_guest_BB(void) {
+
+	#if EVENTCOUNT == 0
+	get_thread_data(0)->bb_c++;
+	#else
+	bb_c++;
+	#endif
+}
+#endif
+
+#endif
+

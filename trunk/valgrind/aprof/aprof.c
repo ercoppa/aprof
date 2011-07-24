@@ -7,6 +7,7 @@
 
 #include "aprof.h"
 
+
 static
 IRSB* instrument (  VgCallbackClosure* closure, 
 					IRSB* sbIn,
@@ -30,21 +31,31 @@ IRSB* instrument (  VgCallbackClosure* closure,
 		addStmtToIRSB( sbOut, sbIn->stmts[i] );
 		i++;
 	}
+	
+	#if EVENTCOUNT == 0 || EVENTCOUNT >= 2
+	
+	#if TIME == BB_COUNT
+	IRDirty * di2 = unsafeIRDirty_0_N( 0, "add_one_guest_BB", 
+	VG_(fnptr_to_fnentry)( &add_one_guest_BB ), 
+								mkIRExprVec_0() );
+	addStmtToIRSB( sbOut, IRStmt_Dirty(di2) );
+	#endif
+	
+	#endif
    
 	for (/*use current i*/; i < sbIn->stmts_used; i++) {
 		
 		IRStmt* st = sbIn->stmts[i];
 		if (!st || st->tag == Ist_NoOp) continue;
-		
-		IRDirty * di = NULL;
 
-		/* Count one VEX statement. */
+		/* Count one VEX statement.
 		#if COUNT_VEX_I
 		di = unsafeIRDirty_0_N( 0, "add_one_IRStmt", 
 		VG_(fnptr_to_fnentry)( &add_one_IRStmt ), 
 		mkIRExprVec_0() );
 		addStmtToIRSB( sbOut, IRStmt_Dirty(di) );
 		#endif
+		*/
 
 		switch (st->tag) {
 
@@ -59,15 +70,21 @@ IRSB* instrument (  VgCallbackClosure* closure,
 
 			case Ist_IMark: {
 
+				#if EVENTCOUNT == 0 || EVENTCOUNT >= 2
+
 				#if TIME == INSTR
 				di = unsafeIRDirty_0_N( 0, "add_one_guest_instr",
 										VG_(fnptr_to_fnentry)( &add_one_guest_instr ), 
 										mkIRExprVec_0() );
 				addStmtToIRSB( sbOut, IRStmt_Dirty(di) );
 				#endif
+				
+				#endif
 
+				#if EVENTCOUNT != 2
 				addEvent_Ir( sbOut, mkIRExpr_HWord( (HWord)st->Ist.IMark.addr ),
 								st->Ist.IMark.len );
+				#endif
 
 				addStmtToIRSB( sbOut, st );
 				break;
@@ -75,21 +92,25 @@ IRSB* instrument (  VgCallbackClosure* closure,
 
 			case Ist_WrTmp:{
 
+				#if EVENTCOUNT != 2 
 				IRExpr* data = st->Ist.WrTmp.data;
 				if (data->tag == Iex_Load) {
 					addEvent_Dr( sbOut, data->Iex.Load.addr,
 					sizeofIRType(data->Iex.Load.ty) );
 				}
+				#endif
 
 				addStmtToIRSB( sbOut, st );
 				break;
 			}
 
 			case Ist_Store: {
-			 
+				
+				#if EVENTCOUNT != 2
 				IRExpr* data  = st->Ist.Store.data;
 				addEvent_Dw(sbOut, st->Ist.Store.addr,
 							sizeofIRType(typeOfIRExpr(tyenv, data)) );
+				#endif
 									
 				addStmtToIRSB( sbOut, st );
 				break;
@@ -97,6 +118,7 @@ IRSB* instrument (  VgCallbackClosure* closure,
 
 			case Ist_Dirty: {
 
+				#if EVENTCOUNT != 2
 				Int dsize;
 				IRDirty* d = st->Ist.Dirty.details;
 				if (d->mFx != Ifx_None) {
@@ -112,12 +134,15 @@ IRSB* instrument (  VgCallbackClosure* closure,
 					tl_assert(d->mAddr == NULL);
 					tl_assert(d->mSize == 0);
 				}
+				#endif
 
 				addStmtToIRSB( sbOut, st );
 				break;
 			}
 
 			case Ist_CAS: {
+				
+				#if EVENTCOUNT != 2
 				/* We treat it as a read and a write of the location.  I
 				think that is the same behaviour as it was before IRCAS
 				was introduced, since prior to that point, the Vex
@@ -135,12 +160,15 @@ IRSB* instrument (  VgCallbackClosure* closure,
 
 				addEvent_Dr( sbOut, cas->addr, dataSize );
 				addEvent_Dw( sbOut, cas->addr, dataSize );
+				#endif
 
 				addStmtToIRSB( sbOut, st );
 				break;
 			}
 
 			case Ist_LLSC: {
+				
+				#if EVENTCOUNT != 2
 				IRType dataTy;
 				if (st->Ist.LLSC.storedata == NULL) {
 					/* LL */
@@ -151,6 +179,8 @@ IRSB* instrument (  VgCallbackClosure* closure,
 					dataTy = typeOfIRExpr(tyenv, st->Ist.LLSC.storedata);
 					addEvent_Dw( sbOut, st->Ist.LLSC.addr, sizeofIRType(dataTy) );
 				}
+				#endif
+				
 				addStmtToIRSB( sbOut, st );
 				break;
 			}
@@ -179,12 +209,15 @@ static void post_clo_init(void) {
 /* Funzione per presentare risultati in fase finale */
 static void fini(Int exitcode) {
 	
+	#if !EVENTCOUNT && !TRACER
 	HT_destroy_pool();
+	#endif
 	
 	#if EVENTCOUNT && !TRACER
 	VG_(printf)("Load: %lu\nStore: %lu\nModify: %lu\n", read_n, write_n, modify_n);
 	VG_(printf)("Function entry: %lu\nFunction exit: %lu\n", fn_in_n, fn_out_n);
 	VG_(printf)("Thread: %lu\n", thread_n);
+	VG_(printf)("BB executed: %u\n", bb_c);
 	#endif
 
 }

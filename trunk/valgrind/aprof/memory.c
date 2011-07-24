@@ -19,6 +19,13 @@ VG_REGPARM(3) void trace_access(UWord type, Addr addr, SizeT size) {
 	return;
 	#endif
 	
+	#if EVENTCOUNT
+	if (type == LOAD) read_n++;
+	else if (type == STORE) write_n++;
+	else if (type == MODIFY) modify_n++;
+	return;
+	#endif
+	
 	ThreadData * tdata = get_thread_data(0);
 	#if DEBUG
 	if (tdata == NULL) failure("Invalid tdata in trace_load");
@@ -39,12 +46,6 @@ VG_REGPARM(3) void trace_access(UWord type, Addr addr, SizeT size) {
 	else if (type == STORE) VG_(printf)("Store: %lu:%lu\n", addr, size);
 	else if (type == MODIFY) VG_(printf)("Modify: %lu:%lu\n", addr, size);
 	#endif
-
-	#if EVENTCOUNT
-	if (type == LOAD) read_n++;
-	else if (type == STORE) write_n++;
-	else if (type == MODIFY) modify_n++;
-	#endif
 	
 	#if ADDR_MULTIPLE > 1
 	UWord diff = addr & (ADDR_MULTIPLE-1);
@@ -61,6 +62,7 @@ VG_REGPARM(3) void trace_access(UWord type, Addr addr, SizeT size) {
 	for (i = 0; i < size; i++) {
 		
 		#if SUF == 1
+
 		int addr_depth = UF_insert(tdata->accesses, addr+(ADDR_MULTIPLE*i), tdata->stack_depth);
 		
 		if (tdata->stack_depth > addr_depth) {
