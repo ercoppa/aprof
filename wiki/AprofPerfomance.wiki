@@ -22,6 +22,12 @@ DSP(callgrind): space 35mb ~  time real 16.08 sec
 DSP(memcheck): space 99mb ~ time real 9.85 sec
 }}}
 
+Aprof based on [http://www.pintool.org/ PIN]:
+{{{
+DSP(aprof-PIN): space 128mb ~ time real 4m57.972s ~ FAST_BUFFERING=1, CCT=1, MEM_TIME=1, TIME_GETTIMEOFDAY
+DSP(aprof-PIN): space 126mb ~ time real 4m16.767s ~ FAST_BUFFERING=1, TIME_GETTIMEOFDAY
+}}}
+
 == Results ==
 Revision 0 (old repo): 
 {{{
