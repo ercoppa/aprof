@@ -39,11 +39,11 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-build_triplet = x86_64-unknown-linux-gnu
-host_triplet = x86_64-unknown-linux-gnu
+build_triplet = i686-pc-linux-gnu
+host_triplet = i686-pc-linux-gnu
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(top_srcdir)/Makefile.all.am $(top_srcdir)/Makefile.tool.am
-noinst_PROGRAMS = none-amd64-linux$(EXEEXT) \
+noinst_PROGRAMS = none-x86-linux$(EXEEXT) \
 	$(am__EXEEXT_1)
 #am__append_1 = none--linux
 none__linux_DEPENDENCIES =
@@ -58,10 +58,10 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 #am__EXEEXT_1 = none--linux$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-am__objects_1 = none_amd64_linux-nl_main.$(OBJEXT)
-am_none_amd64_linux_OBJECTS = $(am__objects_1)
-none_amd64_linux_OBJECTS =  \
-	$(am_none_amd64_linux_OBJECTS)
+am__objects_1 = none_x86_linux-nl_main.$(OBJEXT)
+am_none_x86_linux_OBJECTS = $(am__objects_1)
+none_x86_linux_OBJECTS =  \
+	$(am_none_x86_linux_OBJECTS)
 am__none__linux_SOURCES_DIST = nl_main.c
 am__objects_2 = none__linux-nl_main.$(OBJEXT)
 #am_none__linux_OBJECTS =  \
@@ -76,9 +76,9 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(none_amd64_linux_SOURCES) \
+SOURCES = $(none_x86_linux_SOURCES) \
 	$(none__linux_SOURCES)
-DIST_SOURCES = $(none_amd64_linux_SOURCES) \
+DIST_SOURCES = $(none_x86_linux_SOURCES) \
 	$(am__none__linux_SOURCES_DIST)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
@@ -121,12 +121,12 @@ am__relativize = \
     dir1=`echo "$$dir1" | sed -e "$$sed_rest"`; \
   done; \
   reldir="$$dir2"
-ACLOCAL = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run aclocal-1.11
-AMTAR = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run tar
+ACLOCAL = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run aclocal-1.11
+AMTAR = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run tar
 AR = /usr/bin/ar
-AUTOCONF = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run autoconf
-AUTOHEADER = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run autoheader
-AUTOMAKE = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run automake-1.11
+AUTOCONF = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run autoconf
+AUTOHEADER = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run autoheader
+AUTOMAKE = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run automake-1.11
 AWK = mawk
 BOOST_CFLAGS = 
 BOOST_LIBS = 
@@ -178,7 +178,7 @@ LIBS =
 LN_S = ln -s
 LTLIBOBJS = 
 MAINT = #
-MAKEINFO = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run makeinfo
+MAKEINFO = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run makeinfo
 MKDIR_P = /bin/mkdir -p
 MPI_CC = mpicc
 OBJEXT = o
@@ -191,7 +191,7 @@ PACKAGE_URL =
 PACKAGE_VERSION = 3.7.0.SVN
 PATH_SEPARATOR = :
 PERL = /usr/bin/perl
-PREFERRED_STACK_BOUNDARY = 
+PREFERRED_STACK_BOUNDARY = -mpreferred-stack-boundary=2
 RANLIB = ranlib
 SED = /bin/sed
 SET_MAKE = 
@@ -200,15 +200,15 @@ STRIP =
 VALT_LOAD_ADDRESS_PRI = 0x38000000
 VALT_LOAD_ADDRESS_SEC = 0xUNSET
 VERSION = 3.7.0.SVN
-VGCONF_ARCH_PRI = amd64
+VGCONF_ARCH_PRI = x86
 VGCONF_ARCH_SEC = 
 VGCONF_OS = linux
-VGCONF_PLATFORM_PRI_CAPS = AMD64_LINUX
+VGCONF_PLATFORM_PRI_CAPS = X86_LINUX
 VGCONF_PLATFORM_SEC_CAPS = 
-abs_builddir = /home/ercoppa/Desktop/aprof/valgrind/none
-abs_srcdir = /home/ercoppa/Desktop/aprof/valgrind/none
-abs_top_builddir = /home/ercoppa/Desktop/aprof/valgrind
-abs_top_srcdir = /home/ercoppa/Desktop/aprof/valgrind
+abs_builddir = /home/ercoppa/Desktop/code/aprof/valgrind/none
+abs_srcdir = /home/ercoppa/Desktop/code/aprof/valgrind/none
+abs_top_builddir = /home/ercoppa/Desktop/code/aprof/valgrind
+abs_top_srcdir = /home/ercoppa/Desktop/code/aprof/valgrind
 ac_ct_CC = gcc
 ac_ct_CXX = g++
 am__include = include
@@ -217,26 +217,26 @@ am__quote =
 am__tar = ${AMTAR} chof - "$$tardir"
 am__untar = ${AMTAR} xf -
 bindir = ${exec_prefix}/bin
-build = x86_64-unknown-linux-gnu
+build = i686-pc-linux-gnu
 build_alias = 
-build_cpu = x86_64
+build_cpu = i686
 build_os = linux-gnu
-build_vendor = unknown
+build_vendor = pc
 builddir = .
 datadir = ${datarootdir}
 datarootdir = ${prefix}/share
 docdir = ${datarootdir}/doc/${PACKAGE_TARNAME}
 dvidir = ${docdir}
 exec_prefix = ${prefix}
-host = x86_64-unknown-linux-gnu
+host = i686-pc-linux-gnu
 host_alias = 
-host_cpu = x86_64
+host_cpu = i686
 host_os = linux-gnu
-host_vendor = unknown
+host_vendor = pc
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/install-sh
+install_sh = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -245,7 +245,7 @@ mandir = ${datarootdir}/man
 mkdir_p = /bin/mkdir -p
 oldincludedir = /usr/include
 pdfdir = ${docdir}
-prefix = /home/ercoppa/Desktop/aprof/valgrind/inst
+prefix = /home/ercoppa/Desktop/code/aprof/valgrind/inst
 program_transform_name = s,x,x,
 psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
@@ -298,13 +298,13 @@ AM_CFLAGS_PIC = -fpic -O -g -fno-omit-frame-pointer -fno-strict-aliasing
 # AM_CPPFLAGS_<PLATFORM> in each AM_CCASFLAGS_<PLATFORM> variable.  This
 # means some of the flags are duplicated on systems with newer versions of
 # automake, but this does not really matter and seems hard to avoid.
-AM_CPPFLAGS_AMD64_LINUX = \
+AM_CPPFLAGS_X86_LINUX = \
 	-I$(top_srcdir) \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/VEX/pub \
-	-DVGA_amd64=1 \
+	-DVGA_x86=1 \
 	-DVGO_linux=1 \
-	-DVGP_amd64_linux=1
+	-DVGP_x86_linux=1
 
 #AM_CPPFLAGS_ = \
 #	-I$(top_srcdir) \
@@ -315,13 +315,13 @@ AM_CPPFLAGS_AMD64_LINUX = \
 #	-DVGP__linux=1
 
 AM_FLAG_M3264_X86_LINUX = -m32
-AM_CFLAGS_X86_LINUX = -m32  \
+AM_CFLAGS_X86_LINUX = -m32 -mpreferred-stack-boundary=2 \
 			 	$(AM_CFLAGS_BASE)
 
 AM_CCASFLAGS_X86_LINUX = $(AM_CPPFLAGS_X86_LINUX) -m32 -g
 AM_FLAG_M3264_AMD64_LINUX = -m64
 AM_CFLAGS_AMD64_LINUX = -m64 -fomit-frame-pointer \
-				 $(AM_CFLAGS_BASE)
+				-mpreferred-stack-boundary=2 $(AM_CFLAGS_BASE)
 
 AM_CCASFLAGS_AMD64_LINUX = $(AM_CPPFLAGS_AMD64_LINUX) -m64 -g
 AM_FLAG_M3264_PPC32_LINUX = -m32
@@ -331,7 +331,7 @@ AM_FLAG_M3264_PPC64_LINUX = -m64
 AM_CFLAGS_PPC64_LINUX = -m64 $(AM_CFLAGS_BASE)
 AM_CCASFLAGS_PPC64_LINUX = $(AM_CPPFLAGS_PPC64_LINUX) -m64 -g
 AM_FLAG_M3264_ARM_LINUX = -m32
-AM_CFLAGS_ARM_LINUX = -m32  \
+AM_CFLAGS_ARM_LINUX = -m32 -mpreferred-stack-boundary=2 \
 			 	$(AM_CFLAGS_BASE) -marm
 
 AM_CCASFLAGS_ARM_LINUX = $(AM_CPPFLAGS_ARM_LINUX) -m32 -marm -g
@@ -366,10 +366,10 @@ AM_CCASFLAGS_S390X_LINUX = $(AM_CPPFLAGS_S390X_LINUX) -mzarch -march=z900 \
 # regtests and performance tests.  In fact, these must be used to
 # build anything which is built only once on a dual-arch build.
 #
-AM_FLAG_M3264_PRI = $(AM_FLAG_M3264_AMD64_LINUX)
-AM_CPPFLAGS_PRI = $(AM_CPPFLAGS_AMD64_LINUX)
-AM_CFLAGS_PRI = $(AM_CFLAGS_AMD64_LINUX)
-AM_CCASFLAGS_PRI = $(AM_CCASFLAGS_AMD64_LINUX)
+AM_FLAG_M3264_PRI = $(AM_FLAG_M3264_X86_LINUX)
+AM_CPPFLAGS_PRI = $(AM_CPPFLAGS_X86_LINUX)
+AM_CFLAGS_PRI = $(AM_CFLAGS_X86_LINUX)
+AM_CCASFLAGS_PRI = $(AM_CCASFLAGS_X86_LINUX)
 AM_FLAG_M3264_SEC = 
 #AM_FLAG_M3264_SEC = $(AM_FLAG_M3264_)
 
@@ -392,17 +392,17 @@ PRELOAD_LDFLAGS_S390X_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) -m64
 #----------------------------------------------------------------------------
 # <tool>-<platform> stuff
 #----------------------------------------------------------------------------
-TOOL_DEPENDENCIES_AMD64_LINUX = \
-	$(top_builddir)/coregrind/libcoregrind-amd64-linux.a \
-	$(top_builddir)/VEX/libvex-amd64-linux.a
+TOOL_DEPENDENCIES_X86_LINUX = \
+	$(top_builddir)/coregrind/libcoregrind-x86-linux.a \
+	$(top_builddir)/VEX/libvex-x86-linux.a
 
 #TOOL_DEPENDENCIES_ = \
 #	$(top_builddir)/coregrind/libcoregrind--linux.a \
 #	$(top_builddir)/VEX/libvex--linux.a
 
 TOOL_LDADD_COMMON = -lgcc
-TOOL_LDADD_AMD64_LINUX = \
-	$(TOOL_DEPENDENCIES_AMD64_LINUX) $(TOOL_LDADD_COMMON)
+TOOL_LDADD_X86_LINUX = \
+	$(TOOL_DEPENDENCIES_X86_LINUX) $(TOOL_LDADD_COMMON)
 
 #TOOL_LDADD_ = \
 #	$(TOOL_DEPENDENCIES_) $(TOOL_LDADD_COMMON)
@@ -537,30 +537,30 @@ LIBREPLACEMALLOC_LDFLAGS_S390X_LINUX = \
 
 EXTRA_DIST = docs/nl-manual.xml
 NONE_SOURCES_COMMON = nl_main.c
-none_amd64_linux_SOURCES = \
+none_x86_linux_SOURCES = \
 	$(NONE_SOURCES_COMMON)
 
-none_amd64_linux_CPPFLAGS = \
-	$(AM_CPPFLAGS_AMD64_LINUX)
+none_x86_linux_CPPFLAGS = \
+	$(AM_CPPFLAGS_X86_LINUX)
 
-none_amd64_linux_CFLAGS = \
-	$(AM_CFLAGS_AMD64_LINUX)
+none_x86_linux_CFLAGS = \
+	$(AM_CFLAGS_X86_LINUX)
 
-none_amd64_linux_DEPENDENCIES = \
-	$(TOOL_DEPENDENCIES_AMD64_LINUX)
+none_x86_linux_DEPENDENCIES = \
+	$(TOOL_DEPENDENCIES_X86_LINUX)
 
-none_amd64_linux_LDADD = \
-	$(TOOL_LDADD_AMD64_LINUX)
+none_x86_linux_LDADD = \
+	$(TOOL_LDADD_X86_LINUX)
 
-none_amd64_linux_LDFLAGS = \
-	$(TOOL_LDFLAGS_AMD64_LINUX)
+none_x86_linux_LDFLAGS = \
+	$(TOOL_LDFLAGS_X86_LINUX)
 
-none_amd64_linux_LINK = \
+none_x86_linux_LINK = \
 	$(top_builddir)/coregrind/link_tool_exe_linux \
 	0x38000000 \
 	$(LINK) \
-	$(none_amd64_linux_CFLAGS) \
-	$(none_amd64_linux_LDFLAGS)
+	$(none_x86_linux_CFLAGS) \
+	$(none_x86_linux_LDFLAGS)
 
 #none__linux_SOURCES = \
 #	$(NONE_SOURCES_COMMON)
@@ -624,9 +624,9 @@ $(am__aclocal_m4_deps):
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-none-amd64-linux$(EXEEXT): $(none_amd64_linux_OBJECTS) $(none_amd64_linux_DEPENDENCIES) 
-	@rm -f none-amd64-linux$(EXEEXT)
-	$(none_amd64_linux_LINK) $(none_amd64_linux_OBJECTS) $(none_amd64_linux_LDADD) $(LIBS)
+none-x86-linux$(EXEEXT): $(none_x86_linux_OBJECTS) $(none_x86_linux_DEPENDENCIES) 
+	@rm -f none-x86-linux$(EXEEXT)
+	$(none_x86_linux_LINK) $(none_x86_linux_OBJECTS) $(none_x86_linux_LDADD) $(LIBS)
 none--linux$(EXEEXT): $(none__linux_OBJECTS) $(none__linux_DEPENDENCIES) 
 	@rm -f none--linux$(EXEEXT)
 	$(none__linux_LINK) $(none__linux_OBJECTS) $(none__linux_LDADD) $(LIBS)
@@ -637,7 +637,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-include ./$(DEPDIR)/none_amd64_linux-nl_main.Po
+include ./$(DEPDIR)/none_x86_linux-nl_main.Po
 include ./$(DEPDIR)/none__linux-nl_main.Po
 
 .c.o:
@@ -654,19 +654,19 @@ include ./$(DEPDIR)/none__linux-nl_main.Po
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
 #	$(COMPILE) -c `$(CYGPATH_W) '$<'`
 
-none_amd64_linux-nl_main.o: nl_main.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(none_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(none_amd64_linux_CFLAGS) $(CFLAGS) -MT none_amd64_linux-nl_main.o -MD -MP -MF $(DEPDIR)/none_amd64_linux-nl_main.Tpo -c -o none_amd64_linux-nl_main.o `test -f 'nl_main.c' || echo '$(srcdir)/'`nl_main.c
-	$(am__mv) $(DEPDIR)/none_amd64_linux-nl_main.Tpo $(DEPDIR)/none_amd64_linux-nl_main.Po
-#	source='nl_main.c' object='none_amd64_linux-nl_main.o' libtool=no \
+none_x86_linux-nl_main.o: nl_main.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(none_x86_linux_CPPFLAGS) $(CPPFLAGS) $(none_x86_linux_CFLAGS) $(CFLAGS) -MT none_x86_linux-nl_main.o -MD -MP -MF $(DEPDIR)/none_x86_linux-nl_main.Tpo -c -o none_x86_linux-nl_main.o `test -f 'nl_main.c' || echo '$(srcdir)/'`nl_main.c
+	$(am__mv) $(DEPDIR)/none_x86_linux-nl_main.Tpo $(DEPDIR)/none_x86_linux-nl_main.Po
+#	source='nl_main.c' object='none_x86_linux-nl_main.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(none_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(none_amd64_linux_CFLAGS) $(CFLAGS) -c -o none_amd64_linux-nl_main.o `test -f 'nl_main.c' || echo '$(srcdir)/'`nl_main.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(none_x86_linux_CPPFLAGS) $(CPPFLAGS) $(none_x86_linux_CFLAGS) $(CFLAGS) -c -o none_x86_linux-nl_main.o `test -f 'nl_main.c' || echo '$(srcdir)/'`nl_main.c
 
-none_amd64_linux-nl_main.obj: nl_main.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(none_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(none_amd64_linux_CFLAGS) $(CFLAGS) -MT none_amd64_linux-nl_main.obj -MD -MP -MF $(DEPDIR)/none_amd64_linux-nl_main.Tpo -c -o none_amd64_linux-nl_main.obj `if test -f 'nl_main.c'; then $(CYGPATH_W) 'nl_main.c'; else $(CYGPATH_W) '$(srcdir)/nl_main.c'; fi`
-	$(am__mv) $(DEPDIR)/none_amd64_linux-nl_main.Tpo $(DEPDIR)/none_amd64_linux-nl_main.Po
-#	source='nl_main.c' object='none_amd64_linux-nl_main.obj' libtool=no \
+none_x86_linux-nl_main.obj: nl_main.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(none_x86_linux_CPPFLAGS) $(CPPFLAGS) $(none_x86_linux_CFLAGS) $(CFLAGS) -MT none_x86_linux-nl_main.obj -MD -MP -MF $(DEPDIR)/none_x86_linux-nl_main.Tpo -c -o none_x86_linux-nl_main.obj `if test -f 'nl_main.c'; then $(CYGPATH_W) 'nl_main.c'; else $(CYGPATH_W) '$(srcdir)/nl_main.c'; fi`
+	$(am__mv) $(DEPDIR)/none_x86_linux-nl_main.Tpo $(DEPDIR)/none_x86_linux-nl_main.Po
+#	source='nl_main.c' object='none_x86_linux-nl_main.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(none_amd64_linux_CPPFLAGS) $(CPPFLAGS) $(none_amd64_linux_CFLAGS) $(CFLAGS) -c -o none_amd64_linux-nl_main.obj `if test -f 'nl_main.c'; then $(CYGPATH_W) 'nl_main.c'; else $(CYGPATH_W) '$(srcdir)/nl_main.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(none_x86_linux_CPPFLAGS) $(CPPFLAGS) $(none_x86_linux_CFLAGS) $(CFLAGS) -c -o none_x86_linux-nl_main.obj `if test -f 'nl_main.c'; then $(CYGPATH_W) 'nl_main.c'; else $(CYGPATH_W) '$(srcdir)/nl_main.c'; fi`
 
 none__linux-nl_main.o: nl_main.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(none__linux_CPPFLAGS) $(CPPFLAGS) $(none__linux_CFLAGS) $(CFLAGS) -MT none__linux-nl_main.o -MD -MP -MF $(DEPDIR)/none__linux-nl_main.Tpo -c -o none__linux-nl_main.o `test -f 'nl_main.c' || echo '$(srcdir)/'`nl_main.c

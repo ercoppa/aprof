@@ -36,7 +36,7 @@ ThreadData * thread_init(ThreadId tid){
 	//VG_(printf)("Init thread data %d\n", tid);
 	#endif
 	
-	ThreadData * tdata = VG_(malloc)("thread_data", sizeof(ThreadData));
+	ThreadData * tdata = VG_(calloc)("thread_data", sizeof(ThreadData), 1);
 	if (tdata == NULL) failure("thread data not allocable");
 	
 	if (tid == 1) 
@@ -64,7 +64,7 @@ ThreadData * thread_init(ThreadId tid){
 	tdata->routine_hash_table = HT_construct(destroy_routine_info);
 	tdata->stack_depth = 0;
 	tdata->max_stack_size = STACK_SIZE;
-	tdata->stack = VG_(malloc)("stack", STACK_SIZE * sizeof(Activation));
+	tdata->stack = VG_(calloc)("stack", STACK_SIZE * sizeof(Activation), 1);
 	tdata->next_routine_id = 0;
 	#if CCT
 	// allocate dummy CCT root

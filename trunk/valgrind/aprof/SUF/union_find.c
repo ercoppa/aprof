@@ -161,7 +161,7 @@ int UF_insert(UnionFind * uf, ADDRINT addr, int stack_depth){
 	/* Create new representative and insert the new node */
 	if (uf->headRep == NULL || stack_depth != uf->headRep->stack_depth) {
 
-		Representative * new_rep = malloc(sizeof(Representative));
+		Representative * new_rep = calloc(sizeof(Representative), 1);
 		if (new_rep == NULL) failure("Impossible allocate a new rep");
 
 		new_rep->rank = 0;

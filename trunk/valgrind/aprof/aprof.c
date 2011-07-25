@@ -213,6 +213,11 @@ static void fini(Int exitcode) {
 	HT_destroy_pool();
 	#endif
 	
+	#if SUF == 2 && SUF2_SEARCH == STATS
+	VG_(printf)("Average stack depth: %llu / %llu = %llu\n", avg_depth, ops, avg_depth/ops);
+	VG_(printf)("Average # iterations: %llu / %llu = %llu\n", avg_iteration, ops, avg_iteration/ops);
+	#endif
+	
 	#if EVENTCOUNT && !TRACER
 	VG_(printf)("Load: %lu\nStore: %lu\nModify: %lu\n", read_n, write_n, modify_n);
 	VG_(printf)("Function entry: %lu\nFunction exit: %lu\n", fn_in_n, fn_out_n);

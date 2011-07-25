@@ -39,12 +39,12 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-build_triplet = x86_64-unknown-linux-gnu
-host_triplet = x86_64-unknown-linux-gnu
+build_triplet = i686-pc-linux-gnu
+host_triplet = i686-pc-linux-gnu
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(top_srcdir)/Makefile.all.am
 noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2)
-#am__append_1 = libmpiwrap-amd64-linux.so
+#am__append_1 = libmpiwrap-x86-linux.so
 #am__append_2 = libmpiwrap--linux.so
 subdir = mpi
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -55,19 +55,19 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-#am__EXEEXT_1 = libmpiwrap-amd64-linux.so$(EXEEXT)
+#am__EXEEXT_1 = libmpiwrap-x86-linux.so$(EXEEXT)
 #am__EXEEXT_2 = libmpiwrap--linux.so$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-am__libmpiwrap_amd64_linux_so_SOURCES_DIST =  \
+am__libmpiwrap_x86_linux_so_SOURCES_DIST =  \
 	libmpiwrap.c
-#am_libmpiwrap_amd64_linux_so_OBJECTS = libmpiwrap_amd64_linux_so-libmpiwrap.$(OBJEXT)
-libmpiwrap_amd64_linux_so_OBJECTS =  \
-	$(am_libmpiwrap_amd64_linux_so_OBJECTS)
-libmpiwrap_amd64_linux_so_LDADD = $(LDADD)
-libmpiwrap_amd64_linux_so_LINK = $(CCLD) \
-	$(libmpiwrap_amd64_linux_so_CFLAGS) \
+#am_libmpiwrap_x86_linux_so_OBJECTS = libmpiwrap_x86_linux_so-libmpiwrap.$(OBJEXT)
+libmpiwrap_x86_linux_so_OBJECTS =  \
+	$(am_libmpiwrap_x86_linux_so_OBJECTS)
+libmpiwrap_x86_linux_so_LDADD = $(LDADD)
+libmpiwrap_x86_linux_so_LINK = $(CCLD) \
+	$(libmpiwrap_x86_linux_so_CFLAGS) \
 	$(CFLAGS) \
-	$(libmpiwrap_amd64_linux_so_LDFLAGS) \
+	$(libmpiwrap_x86_linux_so_LDFLAGS) \
 	$(LDFLAGS) -o $@
 am__libmpiwrap__linux_so_SOURCES_DIST =  \
 	libmpiwrap.c
@@ -87,19 +87,19 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libmpiwrap_amd64_linux_so_SOURCES) \
+SOURCES = $(libmpiwrap_x86_linux_so_SOURCES) \
 	$(libmpiwrap__linux_so_SOURCES)
-DIST_SOURCES = $(am__libmpiwrap_amd64_linux_so_SOURCES_DIST) \
+DIST_SOURCES = $(am__libmpiwrap_x86_linux_so_SOURCES_DIST) \
 	$(am__libmpiwrap__linux_so_SOURCES_DIST)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run aclocal-1.11
-AMTAR = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run tar
+ACLOCAL = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run aclocal-1.11
+AMTAR = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run tar
 AR = /usr/bin/ar
-AUTOCONF = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run autoconf
-AUTOHEADER = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run autoheader
-AUTOMAKE = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run automake-1.11
+AUTOCONF = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run autoconf
+AUTOHEADER = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run autoheader
+AUTOMAKE = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run automake-1.11
 AWK = mawk
 BOOST_CFLAGS = 
 BOOST_LIBS = 
@@ -156,7 +156,7 @@ LIBS =
 LN_S = ln -s
 LTLIBOBJS = 
 MAINT = #
-MAKEINFO = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/missing --run makeinfo
+MAKEINFO = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/missing --run makeinfo
 MKDIR_P = /bin/mkdir -p
 MPI_CC = mpicc
 OBJEXT = o
@@ -169,7 +169,7 @@ PACKAGE_URL =
 PACKAGE_VERSION = 3.7.0.SVN
 PATH_SEPARATOR = :
 PERL = /usr/bin/perl
-PREFERRED_STACK_BOUNDARY = 
+PREFERRED_STACK_BOUNDARY = -mpreferred-stack-boundary=2
 RANLIB = ranlib
 SED = /bin/sed
 SET_MAKE = 
@@ -178,15 +178,15 @@ STRIP =
 VALT_LOAD_ADDRESS_PRI = 0x38000000
 VALT_LOAD_ADDRESS_SEC = 0xUNSET
 VERSION = 3.7.0.SVN
-VGCONF_ARCH_PRI = amd64
+VGCONF_ARCH_PRI = x86
 VGCONF_ARCH_SEC = 
 VGCONF_OS = linux
-VGCONF_PLATFORM_PRI_CAPS = AMD64_LINUX
+VGCONF_PLATFORM_PRI_CAPS = X86_LINUX
 VGCONF_PLATFORM_SEC_CAPS = 
-abs_builddir = /home/ercoppa/Desktop/aprof/valgrind/mpi
-abs_srcdir = /home/ercoppa/Desktop/aprof/valgrind/mpi
-abs_top_builddir = /home/ercoppa/Desktop/aprof/valgrind
-abs_top_srcdir = /home/ercoppa/Desktop/aprof/valgrind
+abs_builddir = /home/ercoppa/Desktop/code/aprof/valgrind/mpi
+abs_srcdir = /home/ercoppa/Desktop/code/aprof/valgrind/mpi
+abs_top_builddir = /home/ercoppa/Desktop/code/aprof/valgrind
+abs_top_srcdir = /home/ercoppa/Desktop/code/aprof/valgrind
 ac_ct_CC = gcc
 ac_ct_CXX = g++
 am__include = include
@@ -195,26 +195,26 @@ am__quote =
 am__tar = ${AMTAR} chof - "$$tardir"
 am__untar = ${AMTAR} xf -
 bindir = ${exec_prefix}/bin
-build = x86_64-unknown-linux-gnu
+build = i686-pc-linux-gnu
 build_alias = 
-build_cpu = x86_64
+build_cpu = i686
 build_os = linux-gnu
-build_vendor = unknown
+build_vendor = pc
 builddir = .
 datadir = ${datarootdir}
 datarootdir = ${prefix}/share
 docdir = ${datarootdir}/doc/${PACKAGE_TARNAME}
 dvidir = ${docdir}
 exec_prefix = ${prefix}
-host = x86_64-unknown-linux-gnu
+host = i686-pc-linux-gnu
 host_alias = 
-host_cpu = x86_64
+host_cpu = i686
 host_os = linux-gnu
-host_vendor = unknown
+host_vendor = pc
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /home/ercoppa/Desktop/aprof/valgrind/install-sh
+install_sh = ${SHELL} /home/ercoppa/Desktop/code/aprof/valgrind/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -223,7 +223,7 @@ mandir = ${datarootdir}/man
 mkdir_p = /bin/mkdir -p
 oldincludedir = /usr/include
 pdfdir = ${docdir}
-prefix = /home/ercoppa/Desktop/aprof/valgrind/inst
+prefix = /home/ercoppa/Desktop/code/aprof/valgrind/inst
 program_transform_name = s,x,x,
 psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
@@ -275,13 +275,13 @@ AM_CFLAGS_PIC = -fpic -O -g -fno-omit-frame-pointer -fno-strict-aliasing
 # AM_CPPFLAGS_<PLATFORM> in each AM_CCASFLAGS_<PLATFORM> variable.  This
 # means some of the flags are duplicated on systems with newer versions of
 # automake, but this does not really matter and seems hard to avoid.
-AM_CPPFLAGS_AMD64_LINUX = \
+AM_CPPFLAGS_X86_LINUX = \
 	-I$(top_srcdir) \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/VEX/pub \
-	-DVGA_amd64=1 \
+	-DVGA_x86=1 \
 	-DVGO_linux=1 \
-	-DVGP_amd64_linux=1
+	-DVGP_x86_linux=1
 
 #AM_CPPFLAGS_ = \
 #	-I$(top_srcdir) \
@@ -292,13 +292,13 @@ AM_CPPFLAGS_AMD64_LINUX = \
 #	-DVGP__linux=1
 
 AM_FLAG_M3264_X86_LINUX = -m32
-AM_CFLAGS_X86_LINUX = -m32  \
+AM_CFLAGS_X86_LINUX = -m32 -mpreferred-stack-boundary=2 \
 			 	$(AM_CFLAGS_BASE)
 
 AM_CCASFLAGS_X86_LINUX = $(AM_CPPFLAGS_X86_LINUX) -m32 -g
 AM_FLAG_M3264_AMD64_LINUX = -m64
 AM_CFLAGS_AMD64_LINUX = -m64 -fomit-frame-pointer \
-				 $(AM_CFLAGS_BASE)
+				-mpreferred-stack-boundary=2 $(AM_CFLAGS_BASE)
 
 AM_CCASFLAGS_AMD64_LINUX = $(AM_CPPFLAGS_AMD64_LINUX) -m64 -g
 AM_FLAG_M3264_PPC32_LINUX = -m32
@@ -308,7 +308,7 @@ AM_FLAG_M3264_PPC64_LINUX = -m64
 AM_CFLAGS_PPC64_LINUX = -m64 $(AM_CFLAGS_BASE)
 AM_CCASFLAGS_PPC64_LINUX = $(AM_CPPFLAGS_PPC64_LINUX) -m64 -g
 AM_FLAG_M3264_ARM_LINUX = -m32
-AM_CFLAGS_ARM_LINUX = -m32  \
+AM_CFLAGS_ARM_LINUX = -m32 -mpreferred-stack-boundary=2 \
 			 	$(AM_CFLAGS_BASE) -marm
 
 AM_CCASFLAGS_ARM_LINUX = $(AM_CPPFLAGS_ARM_LINUX) -m32 -marm -g
@@ -343,10 +343,10 @@ AM_CCASFLAGS_S390X_LINUX = $(AM_CPPFLAGS_S390X_LINUX) -mzarch -march=z900 \
 # regtests and performance tests.  In fact, these must be used to
 # build anything which is built only once on a dual-arch build.
 #
-AM_FLAG_M3264_PRI = $(AM_FLAG_M3264_AMD64_LINUX)
-AM_CPPFLAGS_PRI = $(AM_CPPFLAGS_AMD64_LINUX)
-AM_CFLAGS_PRI = $(AM_CFLAGS_AMD64_LINUX)
-AM_CCASFLAGS_PRI = $(AM_CCASFLAGS_AMD64_LINUX)
+AM_FLAG_M3264_PRI = $(AM_FLAG_M3264_X86_LINUX)
+AM_CPPFLAGS_PRI = $(AM_CPPFLAGS_X86_LINUX)
+AM_CFLAGS_PRI = $(AM_CFLAGS_X86_LINUX)
+AM_CCASFLAGS_PRI = $(AM_CCASFLAGS_X86_LINUX)
 AM_FLAG_M3264_SEC = 
 #AM_FLAG_M3264_SEC = $(AM_FLAG_M3264_)
 
@@ -385,12 +385,12 @@ MPI_FLAG_M3264_PRI = $(AM_FLAG_M3264_PRI)
 #MPI_FLAG_M3264_SEC = `echo $(AM_FLAG_M3264_SEC) | sed s/maix/q/g`
 #MPI_FLAG_M3264_SEC = $(AM_FLAG_M3264_SEC)
 MPI_FLAG_M3264_SEC = $(AM_FLAG_M3264_SEC)
-#libmpiwrap_amd64_linux_so_SOURCES = libmpiwrap.c
-#libmpiwrap_amd64_linux_so_CPPFLAGS = -I../include
-#libmpiwrap_amd64_linux_so_CFLAGS = \
+#libmpiwrap_x86_linux_so_SOURCES = libmpiwrap.c
+#libmpiwrap_x86_linux_so_CPPFLAGS = -I../include
+#libmpiwrap_x86_linux_so_CFLAGS = \
 #	$(CFLAGS_MPI) $(MPI_FLAG_M3264_PRI)
 
-#libmpiwrap_amd64_linux_so_LDFLAGS = $(LDFLAGS_MPI)
+#libmpiwrap_x86_linux_so_LDFLAGS = $(LDFLAGS_MPI)
 #libmpiwrap__linux_so_SOURCES = libmpiwrap.c
 #libmpiwrap__linux_so_CPPFLAGS = -I../include
 #libmpiwrap__linux_so_CFLAGS = \
@@ -434,9 +434,9 @@ $(am__aclocal_m4_deps):
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-libmpiwrap-amd64-linux.so$(EXEEXT): $(libmpiwrap_amd64_linux_so_OBJECTS) $(libmpiwrap_amd64_linux_so_DEPENDENCIES) 
-	@rm -f libmpiwrap-amd64-linux.so$(EXEEXT)
-	$(libmpiwrap_amd64_linux_so_LINK) $(libmpiwrap_amd64_linux_so_OBJECTS) $(libmpiwrap_amd64_linux_so_LDADD) $(LIBS)
+libmpiwrap-x86-linux.so$(EXEEXT): $(libmpiwrap_x86_linux_so_OBJECTS) $(libmpiwrap_x86_linux_so_DEPENDENCIES) 
+	@rm -f libmpiwrap-x86-linux.so$(EXEEXT)
+	$(libmpiwrap_x86_linux_so_LINK) $(libmpiwrap_x86_linux_so_OBJECTS) $(libmpiwrap_x86_linux_so_LDADD) $(LIBS)
 libmpiwrap--linux.so$(EXEEXT): $(libmpiwrap__linux_so_OBJECTS) $(libmpiwrap__linux_so_DEPENDENCIES) 
 	@rm -f libmpiwrap--linux.so$(EXEEXT)
 	$(libmpiwrap__linux_so_LINK) $(libmpiwrap__linux_so_OBJECTS) $(libmpiwrap__linux_so_LDADD) $(LIBS)
@@ -447,7 +447,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-include ./$(DEPDIR)/libmpiwrap_amd64_linux_so-libmpiwrap.Po
+include ./$(DEPDIR)/libmpiwrap_x86_linux_so-libmpiwrap.Po
 include ./$(DEPDIR)/libmpiwrap__linux_so-libmpiwrap.Po
 
 .c.o:
@@ -464,19 +464,19 @@ include ./$(DEPDIR)/libmpiwrap__linux_so-libmpiwrap.Po
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
 #	$(COMPILE) -c `$(CYGPATH_W) '$<'`
 
-libmpiwrap_amd64_linux_so-libmpiwrap.o: libmpiwrap.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmpiwrap_amd64_linux_so_CPPFLAGS) $(CPPFLAGS) $(libmpiwrap_amd64_linux_so_CFLAGS) $(CFLAGS) -MT libmpiwrap_amd64_linux_so-libmpiwrap.o -MD -MP -MF $(DEPDIR)/libmpiwrap_amd64_linux_so-libmpiwrap.Tpo -c -o libmpiwrap_amd64_linux_so-libmpiwrap.o `test -f 'libmpiwrap.c' || echo '$(srcdir)/'`libmpiwrap.c
-	$(am__mv) $(DEPDIR)/libmpiwrap_amd64_linux_so-libmpiwrap.Tpo $(DEPDIR)/libmpiwrap_amd64_linux_so-libmpiwrap.Po
-#	source='libmpiwrap.c' object='libmpiwrap_amd64_linux_so-libmpiwrap.o' libtool=no \
+libmpiwrap_x86_linux_so-libmpiwrap.o: libmpiwrap.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmpiwrap_x86_linux_so_CPPFLAGS) $(CPPFLAGS) $(libmpiwrap_x86_linux_so_CFLAGS) $(CFLAGS) -MT libmpiwrap_x86_linux_so-libmpiwrap.o -MD -MP -MF $(DEPDIR)/libmpiwrap_x86_linux_so-libmpiwrap.Tpo -c -o libmpiwrap_x86_linux_so-libmpiwrap.o `test -f 'libmpiwrap.c' || echo '$(srcdir)/'`libmpiwrap.c
+	$(am__mv) $(DEPDIR)/libmpiwrap_x86_linux_so-libmpiwrap.Tpo $(DEPDIR)/libmpiwrap_x86_linux_so-libmpiwrap.Po
+#	source='libmpiwrap.c' object='libmpiwrap_x86_linux_so-libmpiwrap.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmpiwrap_amd64_linux_so_CPPFLAGS) $(CPPFLAGS) $(libmpiwrap_amd64_linux_so_CFLAGS) $(CFLAGS) -c -o libmpiwrap_amd64_linux_so-libmpiwrap.o `test -f 'libmpiwrap.c' || echo '$(srcdir)/'`libmpiwrap.c
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmpiwrap_x86_linux_so_CPPFLAGS) $(CPPFLAGS) $(libmpiwrap_x86_linux_so_CFLAGS) $(CFLAGS) -c -o libmpiwrap_x86_linux_so-libmpiwrap.o `test -f 'libmpiwrap.c' || echo '$(srcdir)/'`libmpiwrap.c
 
-libmpiwrap_amd64_linux_so-libmpiwrap.obj: libmpiwrap.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmpiwrap_amd64_linux_so_CPPFLAGS) $(CPPFLAGS) $(libmpiwrap_amd64_linux_so_CFLAGS) $(CFLAGS) -MT libmpiwrap_amd64_linux_so-libmpiwrap.obj -MD -MP -MF $(DEPDIR)/libmpiwrap_amd64_linux_so-libmpiwrap.Tpo -c -o libmpiwrap_amd64_linux_so-libmpiwrap.obj `if test -f 'libmpiwrap.c'; then $(CYGPATH_W) 'libmpiwrap.c'; else $(CYGPATH_W) '$(srcdir)/libmpiwrap.c'; fi`
-	$(am__mv) $(DEPDIR)/libmpiwrap_amd64_linux_so-libmpiwrap.Tpo $(DEPDIR)/libmpiwrap_amd64_linux_so-libmpiwrap.Po
-#	source='libmpiwrap.c' object='libmpiwrap_amd64_linux_so-libmpiwrap.obj' libtool=no \
+libmpiwrap_x86_linux_so-libmpiwrap.obj: libmpiwrap.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmpiwrap_x86_linux_so_CPPFLAGS) $(CPPFLAGS) $(libmpiwrap_x86_linux_so_CFLAGS) $(CFLAGS) -MT libmpiwrap_x86_linux_so-libmpiwrap.obj -MD -MP -MF $(DEPDIR)/libmpiwrap_x86_linux_so-libmpiwrap.Tpo -c -o libmpiwrap_x86_linux_so-libmpiwrap.obj `if test -f 'libmpiwrap.c'; then $(CYGPATH_W) 'libmpiwrap.c'; else $(CYGPATH_W) '$(srcdir)/libmpiwrap.c'; fi`
+	$(am__mv) $(DEPDIR)/libmpiwrap_x86_linux_so-libmpiwrap.Tpo $(DEPDIR)/libmpiwrap_x86_linux_so-libmpiwrap.Po
+#	source='libmpiwrap.c' object='libmpiwrap_x86_linux_so-libmpiwrap.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmpiwrap_amd64_linux_so_CPPFLAGS) $(CPPFLAGS) $(libmpiwrap_amd64_linux_so_CFLAGS) $(CFLAGS) -c -o libmpiwrap_amd64_linux_so-libmpiwrap.obj `if test -f 'libmpiwrap.c'; then $(CYGPATH_W) 'libmpiwrap.c'; else $(CYGPATH_W) '$(srcdir)/libmpiwrap.c'; fi`
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmpiwrap_x86_linux_so_CPPFLAGS) $(CPPFLAGS) $(libmpiwrap_x86_linux_so_CFLAGS) $(CFLAGS) -c -o libmpiwrap_x86_linux_so-libmpiwrap.obj `if test -f 'libmpiwrap.c'; then $(CYGPATH_W) 'libmpiwrap.c'; else $(CYGPATH_W) '$(srcdir)/libmpiwrap.c'; fi`
 
 libmpiwrap__linux_so-libmpiwrap.o: libmpiwrap.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmpiwrap__linux_so_CPPFLAGS) $(CPPFLAGS) $(libmpiwrap__linux_so_CFLAGS) $(CFLAGS) -MT libmpiwrap__linux_so-libmpiwrap.o -MD -MP -MF $(DEPDIR)/libmpiwrap__linux_so-libmpiwrap.Tpo -c -o libmpiwrap__linux_so-libmpiwrap.o `test -f 'libmpiwrap.c' || echo '$(srcdir)/'`libmpiwrap.c

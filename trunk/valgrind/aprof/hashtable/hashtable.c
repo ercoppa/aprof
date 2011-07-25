@@ -71,7 +71,7 @@ HashTable * HT_construct(void * func)
 {
    /* Initialises to zero, ie. all entries NULL */
    SizeT       n_chains = primes[0];
-   SizeT       sz       = n_chains * sizeof(HashNode*);
+   SizeT       sz       = n_chains * sizeof(HashNode *);
    HashTable * table    = VG_(calloc)("ht", 1, sizeof(struct _HashTable));
    table->chains        = VG_(calloc)("chains", 1, sz);
    table->n_chains      = n_chains;
@@ -142,6 +142,7 @@ void HT_add_node (HashTable * table, UWord key, void * value)
 {
    HashNode * node = NULL;
    pool_alloc(pool, free_list, node, HashNode);
+   node->next           = NULL;
    node->key            = key;
    node->value          = value;
    UWord chain          = CHAIN_NO(node->key, table);

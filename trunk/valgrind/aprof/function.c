@@ -12,6 +12,10 @@ UWord fn_in_n  = 0;
 UWord fn_out_n = 0;
 #endif
 
+#if SUF2_SEARCH == STATS
+
+#endif
+
 Activation * get_activation(ThreadData * tdata, unsigned int depth) {
 
 	#if DEBUG
@@ -20,7 +24,7 @@ Activation * get_activation(ThreadData * tdata, unsigned int depth) {
 	#endif
 
 	/* Expand stack if necessary */
-	if (depth -1 >= tdata->max_stack_size) {
+	if (depth - 1 >= tdata->max_stack_size) {
 		
 		tdata->max_stack_size = tdata->max_stack_size * 2;
 		
@@ -38,21 +42,91 @@ Activation * get_activation(ThreadData * tdata, unsigned int depth) {
 }
 
 #if SUF == 2
+
+/*
+static void dump_stack(ThreadData * tdata, UWord aid) {
+	
+	VG_(printf)("\n");
+	VG_(printf)("Searching aid: %lu", aid);
+	VG_(printf)("\nStack depth: %lu ", tdata->stack_depth);
+	VG_(printf)("\n");
+	Activation * a = get_activation(tdata, tdata->stack_depth);
+	while (a >= tdata->stack) {
+		VG_(printf)("%lu ", a->aid);
+		a--;
+	}
+	VG_(printf)("\n");
+	
+}
+*/
+
+#if SUF2_SEARCH == STATS
+UWord64 avg_depth = 0;
+UWord64 avg_iteration = 0;
+UWord64 ops = 0;
+#endif
+
 Activation * get_activation_by_aid(ThreadData * tdata, UWord aid) {
 	
-	Activation * a = get_activation(tdata, tdata->stack_depth);
-
-	//VG_(printf)("(%lu):", tdata->stack_depth);
-	
 	/* Linear search... maybe better binary search */
+	#if SUF2_SEARCH == LINEAR
+	
+	Activation * a = &tdata->stack[tdata->stack_depth - 2];
 	while (a->aid > aid) {
-		//VG_(printf)(".");
+		
 		a--;
 		if (a < tdata->stack) failure("Impossible");
+		
 	}
-	//VG_(printf)("\n");
-
 	return a;
+	
+	#elif SUF2_SEARCH == BINARY
+	
+	Word min = 0;
+	Word max = tdata->stack_depth - 2;
+	
+	do {
+		
+		Word index = (min + max) / 2;
+		
+		if (tdata->stack[index].aid == aid) {
+			//if (a != &tdata->stack[index]) failure("Search wrong");
+			return &tdata->stack[index];
+		}
+		
+		else if (tdata->stack[index].aid > aid) 
+			max = index - 1; 
+			
+		else {
+			
+			if (tdata->stack[index + 1].aid > aid) {
+				//if (a != &tdata->stack[index]) failure("Search wrong");
+				return &tdata->stack[index];
+			}
+			min = index + 1;
+			
+		}
+		
+	} while(min <= max);
+	
+	failure("Binary search fail");
+	return NULL;
+
+	#elif SUF2_SEARCH == STATS
+	
+	ops++;
+	avg_depth += tdata->stack_depth;
+	avg_iteration++;
+	
+	Activation * a = get_activation(tdata, tdata->stack_depth - 1);
+	while (a->aid > aid) {
+		a--;
+		avg_iteration++;
+		if (a < tdata->stack) failure("Impossible");
+	}
+	return a;
+	
+	#endif
 
 }
 #endif
@@ -74,14 +148,12 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 	/* Is this client request for aprof? */
 	if (!VG_IS_TOOL_USERREQ('V','A',arg[0])) return False;
 	
-	#if TIME != NO_TIME
 	UWord64 start = ap_time();
-	#endif
 	
 	#if EVENTCOUNT >= 2
 	if (arg[2] == 1) fn_in_n++;
 	else if (arg[2] == 2) fn_out_n++;
-	return;
+	return True;
 	#endif
 	
 	#if EMPTY_ANALYSIS
@@ -137,7 +209,6 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 			if (!VG_(get_fnname)(arg[1], rtn_name, 256))
 				rtn_name = "???";
 			
-			//VG_(printf)("New routine info\n");
 			rtn_info = (RoutineInfo * )VG_(calloc)("rtn_info", 1, sizeof(RoutineInfo));
 			if (rtn_info == NULL) failure("rtn_info not allocable");
 			rtn_info->routine_id = tdata->next_routine_id++;
@@ -145,6 +216,7 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 			DebugInfo * di = VG_(find_DebugInfo)(target);
 			if (di == NULL) failure("Invalid DebugInfo");
 			rtn_info->image_name = VG_(DebugInfo_get_soname)(di);
+			//VG_(printf)("New routine info: %s %lu\n", rtn_name, rtn_info->routine_id);
 			#if CCT
 			rtn_info->context_sms_map = HT_construct(HT_destruct);
 			if (rtn_info->context_sms_map == NULL) failure("context_sms_map not allocable");
