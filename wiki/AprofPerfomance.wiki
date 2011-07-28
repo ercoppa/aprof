@@ -24,6 +24,7 @@ See aprof log under _benchmark/dsp/bin/_
 DSP(native): space 15696 kB ~ time real 0.36 sec
 DSP(callgrind): space 73308 kB ~  time real 16.08 sec
 DSP(memcheck): space 145236 kB ~ time real 9.85 sec
+DSP(TOOL:none): space 59372 kB ~ time real 0m2.010s
 }}}
 
 Aprof based on [http://www.pintool.org/ PIN]:
