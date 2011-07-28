@@ -21,9 +21,9 @@ See aprof log under _benchmark/dsp/bin/_
 
 == Perfomance reference ==
 {{{
-DSP(native): real 0.36 sec
-DSP(callgrind): space 35mb ~  time real 16.08 sec
-DSP(memcheck): space 99mb ~ time real 9.85 sec
+DSP(native): space 15696 kB ~ time real 0.36 sec
+DSP(callgrind): space 73308 kB ~  time real 16.08 sec
+DSP(memcheck): space 145236 kB ~ time real 9.85 sec
 }}}
 
 Aprof based on [http://www.pintool.org/ PIN]:
@@ -63,4 +63,10 @@ Revision 31:
 DSP(aprof): space 36mb ~ time real 5.689s ~ EVENTCOUNT=1 (only mem access)
 DSP(aprof): space 36mb ~ time real 8.128s ~ EVENTCOUNT=2 (only function), TIME=NO_TIME
 DSP(aprof): space 37mb ~ time real 13.744s ~ EVENTCOUNT=3 (memory and function), TIME=NO_TIME
+}}}
+
+Revision 32:
+{{{
+DSP(aprof): space 127100 kB ~ time real 1m23.533s ~ CCT=0, ADDR_MULTIPLE=4, TIME=RDTSC, SUF=1
+DSP(aprof): space 73852 kB ~ time real 0m37.827s ~ CCT=0, ADDR_MULTIPLE=4, TIME=RDTSC, SUF=2
 }}}
