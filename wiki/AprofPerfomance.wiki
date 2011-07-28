@@ -1,5 +1,9 @@
 = Aprof perfomance =
 We run [http://www.dis.uniroma1.it/~demetres/experim/dsp/README.txt DSP] with [http://code.google.com/p/aprof/source/browse/trunk/benchmark/dsp/scripts/aprof_benchmark1.txt this input]. We measure with the _time_ command.
+Under GNU/Linux, space is measured with:
+{{{
+cat /proc/PID/status | grep VmPeak
+}}}
 
 == Build DSP and run under Aprof ==
 {{{
