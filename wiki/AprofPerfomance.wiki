@@ -29,9 +29,8 @@ DSP(TOOL:none): space 59372 kB ~ time real 0m2.010s
 
 Aprof based on [http://www.pintool.org/ PIN]:
 {{{
-DSP(aprof-PIN): space 128mb ~ time real 5m12.650s ~ FAST_BUFFERING=1, CCT=1, MEM_TIME=1, TIME_GETTIMEOFDAY
-DSP(aprof-PIN): space 126mb ~ time real 4m16.767s ~ FAST_BUFFERING=1, TIME_GETTIMEOFDAY
-DSP(aprof-PIN): space - ~ time real 3m45s ~ TIME_GETTIMEOFDAY
+DSP(aprof-PIN): space 158512 kB ~ time real 3m48.569s ~ TIME_GETTIMEOFDAY
+DSP(aprof-PIN): space 158548 kB ~ time real 2m5.545s ~ TIME_RDTSC
 }}}
 
 == Results ==
