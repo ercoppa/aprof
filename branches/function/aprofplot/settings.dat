@@ -1,0 +1,4 @@
+/home/ercoppa/Desktop/code/aprof/benchmark
+blacklist 0 
+rtn_display 0
+recent /home/ercoppa/Desktop/code/aprof/benchmark/lin_1.aprof /home/ercoppa/Desktop/code/aprof/benchmark/results2/dsp_1.aprof /home/ercoppa/Desktop/code/aprof/benchmark/dsp/bin/dsp_1.aprof /home/ercoppa/Desktop/code/aprof/aprof-svn/lin_1.aprof 
