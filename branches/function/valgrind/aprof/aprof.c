@@ -7,6 +7,130 @@
 
 #include "aprof.h"
 
+typedef struct act {
+	UWord sp;
+	UWord target;
+	Char * fn;
+} act;
+
+static UWord stack_depth = 0;
+static act * current = NULL; 
+static act * tstack = NULL;
+
+typedef enum jump_t { BB_INIT, CALL, RET, BBCALL, BBRET, BOR, BBBOR } jump_t;
+
+static VG_REGPARM(2) void call(UWord target, UWord type_op) {
+
+	UWord type = 0;
+	if (type_op == BB_INIT) type = 1;
+	else if (type_op == CALL) type = 2;
+	else if (type_op == RET) type = 3;
+	else if (type_op == BBCALL) type = 4;
+	else if (type_op == BBRET) type = 5;
+	else if (type_op == BOR) type = 6;
+	else if (type_op == BBBOR) type = 7;
+	else failure("Invalid type");
+	
+	UWord csp = (UWord) VG_(get_SP)(1);
+	Char * fn = VG_(calloc)("fn name", 256, 1);
+	
+	/* Init stack */
+	if (tstack == NULL) {
+		
+		tstack = VG_(calloc)("thread_data", sizeof(act) * 4096, 1);
+		current = tstack;
+		VG_(sprintf)(fn, "(below main)");
+		current->fn = fn;
+		current->sp = csp;
+		
+		if (VG_(get_fnname_if_entry)(target, fn, 256)) failure("Wrong");
+		
+		return;
+	
+	}
+	
+	/*
+	if ((type == 6 || type == 7) && csp != current->sp) {
+		VG_(printf)("BORING: SP: %lu ~ CSP: %lu\n", csp, current->sp);
+	}*/
+
+	if (csp < current->sp && VG_(get_fnname_if_entry)(target, fn, 256)) {
+		
+		stack_depth++;
+		current++;
+		current->sp = csp;
+		current->target = target;
+		current->fn = fn;
+		VG_(printf)("[%lu] Entered: %s from %s ~ SP: %lu ~ T: %lu ~ Type %lu\n",
+							stack_depth, fn, (current-1)->fn, csp, target, type);
+		
+	} else if (csp > current->sp) {
+			
+		VG_(get_fnname)(target, fn, 256);
+		
+		if (VG_(strcmp)(fn, "") == 0) 
+			return;
+		
+		while(stack_depth > 0) {
+			
+			VG_(printf)("[%lu] Return from %s to %s ~ CSP: %lu ~ SP: %lu ~  OLDSP: %lu ~ T: %lu ~ Type %lu\n",
+						stack_depth, current->fn, (current-1)->fn, csp, current->sp, (current+1)->sp, target, type);
+			
+			stack_depth--;
+			current--;
+			
+			if (csp <= current->sp && VG_(strcmp)("",fn) != 0) {
+				if (VG_(strcmp)(current->fn,fn) != 0) {
+					VG_(printf)("Simulated stack says you are in %s but valgrind says %s\n", current->fn, fn);
+					failure("Mismatch during return\n");
+				}
+				break;
+			}
+		}
+		
+		if (stack_depth == 0 && current->sp < csp) {
+			
+			if (current->sp == 0)
+				VG_(printf)("Init start SP\n");
+			
+			else
+				VG_(printf)("Redefining start SP\n");
+				
+			current->sp = csp;
+			
+		}
+		/*
+		if (stack_depth > 0)
+			VG_(printf)("[%lu] Return from %s to %s ~ CSP: %lu ~ SP: %lu ~  OLDSP: %lu ~ T: %lu ~ Type %lu\n",
+						stack_depth, current->fn, (current-1)->fn, csp, current->sp, (current+1)->sp, target, type);
+		
+		else
+			VG_(printf)("[%lu] Return from %s ~ CSP: %lu ~ SP: %lu ~  OLDSP: %lu ~ T: %lu ~ Type %lu\n",
+						stack_depth, current->fn, csp, current->sp, (current+1)->sp, target, type);
+		*/
+	} else if (csp < current->sp) {
+		
+		if (VG_(get_fnname)(target, fn, 256)) {
+			if (VG_(strcmp)(current->fn,fn) != 0) {
+				
+				stack_depth++;
+				current++;
+				current->sp = csp;
+				current->target = target;
+				current->fn = fn;
+				VG_(printf)("[%lu] Entered: %s from %s ~ SP: %lu ~ T: %lu ~ Type %lu\n",
+				stack_depth, fn, (current-1)->fn, csp, target, type);
+				
+				/*
+				VG_(printf)("Simulated stack says you are in %s but valgrind says %s\n", current->fn, fn);
+				failure("Mismatch during call\n");
+				*/
+			}
+		}
+		
+	}
+
+}
 
 static
 IRSB* instrument (  VgCallbackClosure* closure, 
@@ -42,7 +166,17 @@ IRSB* instrument (  VgCallbackClosure* closure,
 	#endif
 	
 	#endif
-   
+	
+	if (sbIn->stmts[i]->tag != Ist_IMark) failure("errore");
+	
+	IRExpr  * e1 = mkIRExpr_HWord ( BB_INIT );
+	IRExpr  * e2 = mkIRExpr_HWord ( (HWord) sbIn->stmts[i]->Ist.IMark.addr );
+	IRDirty * di2 = unsafeIRDirty_0_N( 2, "call",
+								VG_(fnptr_to_fnentry)( &call ),
+								mkIRExprVec_2( e2, e1 ) );
+
+	addStmtToIRSB( sbOut, IRStmt_Dirty(di2) );
+	
 	for (/*use current i*/; i < sbIn->stmts_used; i++) {
 		
 		IRStmt* st = sbIn->stmts[i];
@@ -186,6 +320,43 @@ IRSB* instrument (  VgCallbackClosure* closure,
 			}
 
 			case Ist_Exit: {
+				
+				/*
+				if (st->Ist.Exit.jk == Ijk_Call) {
+					
+					e1 = mkIRExpr_HWord ( CALL );
+					IRConst * c = st->Ist.Exit.dst;
+					IRExpr  * e = IRExpr_Const( c );
+					IRDirty * di = unsafeIRDirty_0_N( 2, "call",
+											VG_(fnptr_to_fnentry)( &call ),
+											mkIRExprVec_2( e, e1 ) );
+					addStmtToIRSB( sbOut, IRStmt_Dirty(di) );
+				}
+				
+				if (st->Ist.Exit.jk == Ijk_Ret) {
+					
+					IRConst * c = st->Ist.Exit.dst;
+					IRExpr  * e = IRExpr_Const( c );
+					e1 = mkIRExpr_HWord ( RET );
+					IRDirty * di = unsafeIRDirty_0_N( 2, "call",
+											VG_(fnptr_to_fnentry)( &call ),
+											mkIRExprVec_2( e, e1 ) );
+					addStmtToIRSB( sbOut, IRStmt_Dirty(di) );
+				}
+				
+			
+				if (st->Ist.Exit.jk == Ijk_Boring) {
+					
+					IRConst * c = st->Ist.Exit.dst;
+					IRExpr  * e = IRExpr_Const( c );
+					e1 = mkIRExpr_HWord ( BOR );
+					IRDirty * di = unsafeIRDirty_0_N( 2, "call",
+											VG_(fnptr_to_fnentry)( &call ),
+											mkIRExprVec_2( e, e1 ) );
+					addStmtToIRSB( sbOut, IRStmt_Dirty(di) );
+				}
+				*/
+				
 				addStmtToIRSB( sbOut, st );      // Original statement
 				break;
 			}
@@ -197,6 +368,34 @@ IRSB* instrument (  VgCallbackClosure* closure,
 
 	/* At the end of the sbIn.  Flush outstandings. */
 	flushEvents(sbOut);
+
+	/*
+	if (sbIn->jumpkind == Ijk_Call) {
+		
+		e1 = mkIRExpr_HWord ( BBCALL );
+		IRDirty * di = unsafeIRDirty_0_N( 2, "call",
+								VG_(fnptr_to_fnentry)( &call ),
+								mkIRExprVec_2( sbIn->next, e1 ) );
+		addStmtToIRSB( sbOut, IRStmt_Dirty(di) );
+		
+	} else if (sbIn->jumpkind == Ijk_Call) {
+		
+		e1 = mkIRExpr_HWord ( BBRET );
+		IRDirty * di = unsafeIRDirty_0_N( 2, "call",
+								VG_(fnptr_to_fnentry)( &call ),
+								mkIRExprVec_2( sbIn->next, e1 ) );
+		addStmtToIRSB( sbOut, IRStmt_Dirty(di) );
+		
+	} else if (sbIn->jumpkind == Ijk_Boring) {
+		
+		e1 = mkIRExpr_HWord ( BBBOR );
+		IRDirty * di = unsafeIRDirty_0_N( 2, "call",
+								VG_(fnptr_to_fnentry)( &call ),
+								mkIRExprVec_2( sbIn->next, e1 ) );
+		addStmtToIRSB( sbOut, IRStmt_Dirty(di) );
+		
+	}
+	*/
 
 	return sbOut;
 }
@@ -222,7 +421,7 @@ static void fini(Int exitcode) {
 	VG_(printf)("Load: %lu\nStore: %lu\nModify: %lu\n", read_n, write_n, modify_n);
 	VG_(printf)("Function entry: %lu\nFunction exit: %lu\n", fn_in_n, fn_out_n);
 	VG_(printf)("Thread: %lu\n", thread_n);
-	VG_(printf)("BB executed: %u\n", bb_c);
+	VG_(printf)("BB executed: %lu\n", bb_c);
 	#endif
 
 }
@@ -240,6 +439,13 @@ static void pre_clo_init(void) {
 	VG_(needs_client_requests)			(trace_function);
 	VG_(track_pre_thread_first_insn)	(thread_start);
 	VG_(track_pre_thread_ll_exit)		(thread_exit);
+	
+	//#if TIME == BB_COUNT
+	VG_(clo_vex_control).iropt_level = 0;
+	VG_(clo_vex_control).iropt_unroll_thresh = 0;
+	VG_(clo_vex_control).guest_chase_thresh  = 0;
+	//#endif
+	
 }
 
 VG_DETERMINE_INTERFACE_VERSION(pre_clo_init)

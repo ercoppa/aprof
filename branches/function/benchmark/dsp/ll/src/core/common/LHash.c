@@ -72,7 +72,7 @@ LHash* LHash_New()
 	LHash theObject = {0};
 	ui4 theEntriesCount = BASE_ENTRIES_COUNT;
 	ui4 theSizeOf = sizeof(struct TSlot);
-	ui4 theSeed = (ui4)time(NULL);
+	ui4 theSeed = 7; //(ui4)time(NULL);
 	LRandSource* theRand = NULL;
 
 	Try

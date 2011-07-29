@@ -461,77 +461,79 @@ static void flushEvents ( ClgState* clgs )
 		  because each insn starts with an IMark, hence an
 		  Ev_Ir, and so these Dr must pertain to the
 		  immediately preceding Ir.  Same applies to analogous
-		  assertions in the subsequent cases. */
+		  assertions in the subsequent cases. *//*
 	       tl_assert(ev2->inode == ev->inode);
 	       helperName = CLG_(cachesim).log_1I1Dr_name;
 	       helperAddr = CLG_(cachesim).log_1I1Dr;
 	       argv = mkIRExprVec_3( i_node_expr,
 				     get_Event_dea(ev2),
 				     mkIRExpr_HWord( get_Event_dszB(ev2) ) );
-	       regparms = 3;
+	       regparms = 3;*/
 	       inew = i+2;
 	    }
 	    /* Merge an Ir with a following Dw/Dm. */
 	    else
-	    if (ev2 && (ev2->tag == Ev_Dw || ev2->tag == Ev_Dm)) {
+	    if (ev2 && (ev2->tag == Ev_Dw || ev2->tag == Ev_Dm)) {/*
 	       tl_assert(ev2->inode == ev->inode);
 	       helperName = CLG_(cachesim).log_1I1Dw_name;
 	       helperAddr = CLG_(cachesim).log_1I1Dw;
 	       argv = mkIRExprVec_3( i_node_expr,
 				     get_Event_dea(ev2),
 				     mkIRExpr_HWord( get_Event_dszB(ev2) ) );
-	       regparms = 3;
+	       regparms = 3;*/
 	       inew = i+2;
 	    }
 	    /* Merge an Ir with two following Irs. */
 	    else
-	    if (ev2 && ev3 && ev2->tag == Ev_Ir && ev3->tag == Ev_Ir) {
+	    if (ev2 && ev3 && ev2->tag == Ev_Ir && ev3->tag == Ev_Ir) {/*
 	       helperName = CLG_(cachesim).log_3I0D_name;
 	       helperAddr = CLG_(cachesim).log_3I0D;
 	       argv = mkIRExprVec_3( i_node_expr,
 				     mkIRExpr_HWord( (HWord)ev2->inode ),
 				     mkIRExpr_HWord( (HWord)ev3->inode ) );
-	       regparms = 3;
+	       regparms = 3;*/
 	       inew = i+3;
 	    }
 	    /* Merge an Ir with one following Ir. */
 	    else
-	    if (ev2 && ev2->tag == Ev_Ir) {
+	    if (ev2 && ev2->tag == Ev_Ir) {/*
 	       helperName = CLG_(cachesim).log_2I0D_name;
 	       helperAddr = CLG_(cachesim).log_2I0D;
 	       argv = mkIRExprVec_2( i_node_expr,
 				     mkIRExpr_HWord( (HWord)ev2->inode ) );
-	       regparms = 2;
+	       regparms = 2;*/
 	       inew = i+2;
 	    }
 	    /* No merging possible; emit as-is. */
 	    else {
+			/*
 	       helperName = CLG_(cachesim).log_1I0D_name;
 	       helperAddr = CLG_(cachesim).log_1I0D;
 	       argv = mkIRExprVec_1( i_node_expr );
-	       regparms = 1;
+	       regparms = 1;*/
 	       inew = i+1;
 	    }
 	    break;
 	 case Ev_Dr:
-	    /* Data read or modify */
+	    /* Data read or modify *//*
 	    helperName = CLG_(cachesim).log_0I1Dr_name;
 	    helperAddr = CLG_(cachesim).log_0I1Dr;
 	    argv = mkIRExprVec_3( i_node_expr,
 				  get_Event_dea(ev),
 				  mkIRExpr_HWord( get_Event_dszB(ev) ) );
-	    regparms = 3;
+	    regparms = 3;*/
 	    inew = i+1;
 	    break;
 	 case Ev_Dw:
 	 case Ev_Dm:
 	    /* Data write */
+	    /*
 	    helperName = CLG_(cachesim).log_0I1Dw_name;
 	    helperAddr = CLG_(cachesim).log_0I1Dw;
 	    argv = mkIRExprVec_3( i_node_expr,
 				  get_Event_dea(ev),
 				  mkIRExpr_HWord( get_Event_dszB(ev) ) );
-	    regparms = 3;
+	    regparms = 3;*/
 	    inew = i+1;
 	    break;
          case Ev_Bc:
