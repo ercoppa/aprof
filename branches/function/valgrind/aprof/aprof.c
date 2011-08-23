@@ -54,7 +54,7 @@ static VG_REGPARM(2) void call(UWord target, UWord type_op) {
 		VG_(printf)("BORING: SP: %lu ~ CSP: %lu\n", csp, current->sp);
 	}*/
 
-	if (csp < current->sp && VG_(get_fnname_if_entry)(target, fn, 256)) {
+	if (VG_(get_fnname_if_entry)(target, fn, 256)) {
 		
 		stack_depth++;
 		current++;
@@ -65,11 +65,18 @@ static VG_REGPARM(2) void call(UWord target, UWord type_op) {
 							stack_depth, fn, (current-1)->fn, csp, target, type);
 		
 	} else if (csp > current->sp) {
-			
-		VG_(get_fnname)(target, fn, 256);
 		
-		if (VG_(strcmp)(fn, "") == 0) 
-			return;
+		if (!VG_(get_fnname)(target, fn, 256)) {
+		
+			/*
+		
+			VG_(get_fnname_w_offset) (target, fn, 256);
+			VG_(printf)("Function: %s\n", fn);
+			
+			failure("Invalid function name");
+			*/
+
+		}
 		
 		while(stack_depth > 0) {
 			
@@ -79,8 +86,12 @@ static VG_REGPARM(2) void call(UWord target, UWord type_op) {
 			stack_depth--;
 			current--;
 			
-			if (csp <= current->sp && VG_(strcmp)("",fn) != 0) {
-				if (VG_(strcmp)(current->fn,fn) != 0) {
+			if (csp <= current->sp) {
+				
+				VG_(printf)("[%lu] Inside %s ~ CSP: %lu ~ SP: %lu ~  OLDSP: %lu ~ T: %lu ~ Type %lu\n",
+					stack_depth, current->fn, csp, current->sp, (current+1)->sp, target, type);
+				
+				if (VG_(strcmp)(current->fn,fn) != 0 && VG_(strcmp)("",fn) != 0) {
 					VG_(printf)("Simulated stack says you are in %s but valgrind says %s\n", current->fn, fn);
 					failure("Mismatch during return\n");
 				}
@@ -111,7 +122,7 @@ static VG_REGPARM(2) void call(UWord target, UWord type_op) {
 	} else if (csp < current->sp) {
 		
 		if (VG_(get_fnname)(target, fn, 256)) {
-			if (VG_(strcmp)(current->fn,fn) != 0) {
+			if (VG_(strcmp)(current->fn,fn) != 0 && VG_(strcmp)(fn, "") != 0) {
 				
 				stack_depth++;
 				current++;
@@ -121,10 +132,10 @@ static VG_REGPARM(2) void call(UWord target, UWord type_op) {
 				VG_(printf)("[%lu] Entered: %s from %s ~ SP: %lu ~ T: %lu ~ Type %lu\n",
 				stack_depth, fn, (current-1)->fn, csp, target, type);
 				
-				/*
+
 				VG_(printf)("Simulated stack says you are in %s but valgrind says %s\n", current->fn, fn);
 				failure("Mismatch during call\n");
-				*/
+
 			}
 		}
 		
@@ -407,6 +418,8 @@ static void post_clo_init(void) {
 
 /* Funzione per presentare risultati in fase finale */
 static void fini(Int exitcode) {
+	
+	VG_(printf)("Fine\n");
 	
 	#if !EVENTCOUNT && !TRACER
 	HT_destroy_pool();
