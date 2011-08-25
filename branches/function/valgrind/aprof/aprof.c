@@ -19,127 +19,120 @@ static act * tstack = NULL;
 
 typedef enum jump_t { BB_INIT, CALL, RET, BBCALL, BBRET, BOR, BBBOR } jump_t;
 
+static void print_stack(void) {
+	UWord depth = stack_depth;
+	act * c = current;
+	while(stack_depth > 0) {
+		
+		VG_(printf)("[%lu] %s()\n", depth, c->fn);
+		c--;
+		depth--;
+	}
+}
+
+
+static void function_enter(UWord target, char * name) {
+	VG_(printf)("[%lu] Entered %s()\n", stack_depth, name);
+}
+
+static void function_exit(UWord target, char * name) {
+	VG_(printf)("[%lu] Exit %s()\n", stack_depth, name);
+}
+
+static void init_stack(UWord csp, UWord target) {
+	
+	tstack = VG_(calloc)("thread_data", sizeof(act) * 4096, 1);
+	current = tstack;
+	/* Function name buffer */
+	Char * fn = VG_(calloc)("fn name", 256, 1);
+	/* valgrind call the init function "(below main)" */
+	VG_(sprintf)(fn, "(below main)");
+	current->fn = fn;
+	current->sp = csp;
+	current->target = 0; /* Fake target */
+	
+	/* Safety check: we never execute the first 
+	 * instruction of this function */
+	if (VG_(get_fnname_if_entry)(target, fn, 256)) failure("Wrong");
+	
+}
+
 static VG_REGPARM(2) void call(UWord target, UWord type_op) {
 
-	UWord type = 0;
-	if (type_op == BB_INIT) type = 1;
-	else if (type_op == CALL) type = 2;
-	else if (type_op == RET) type = 3;
-	else if (type_op == BBCALL) type = 4;
-	else if (type_op == BBRET) type = 5;
-	else if (type_op == BOR) type = 6;
-	else if (type_op == BBBOR) type = 7;
-	else failure("Invalid type");
-	
+	/* Obtain current stack pointer */
 	UWord csp = (UWord) VG_(get_SP)(1);
-	Char * fn = VG_(calloc)("fn name", 256, 1);
-	
+
 	/* Init stack */
 	if (tstack == NULL) {
-		
-		tstack = VG_(calloc)("thread_data", sizeof(act) * 4096, 1);
-		current = tstack;
-		VG_(sprintf)(fn, "(below main)");
-		current->fn = fn;
-		current->sp = csp;
-		
-		if (VG_(get_fnname_if_entry)(target, fn, 256)) failure("Wrong");
-		
+		init_stack(csp, target);
 		return;
+	}
+
+	/* Function name buffer */
+	Char * fn = VG_(calloc)("fn name", 256, 1);
+	/* Are we entering a new function? */
+	Bool call_fn = VG_(get_fnname_if_entry)(target, fn, VG_(strlen)(fn));
+	/* If not, ask valgrind where we are... */
+	Bool act_fn = True;
+	if (!call_fn)
+		act_fn = VG_(get_fnname)(target, fn, VG_(strlen)(fn));
 	
+	if (!act_fn) {
+		/* 
+		 * Why is this happening?
+		 * I don't know!
+		 */
+		VG_(printf)("Valgrind does not know where we are: %p\n", target);
 	}
 	
-	/*
-	if ((type == 6 || type == 7) && csp != current->sp) {
-		VG_(printf)("BORING: SP: %lu ~ CSP: %lu\n", csp, current->sp);
-	}*/
 
-	if (VG_(get_fnname_if_entry)(target, fn, 256)) {
+	if (call_fn) {
 		
+		/* Before the call, some functions are returned? */
+		while(current->sp < csp && stack_depth > 0) {
+			
+			VG_(printf)("We miss a return :(\n");
+			
+			/* This function is returned */
+			function_exit(current->target, current->fn);
+			/* Adjust stack */
+			stack_depth--;
+			current--;
+			
+		}
+		
+		/* Register the new activation of a function */
 		stack_depth++;
 		current++;
 		current->sp = csp;
 		current->target = target;
 		current->fn = fn;
-		VG_(printf)("[%lu] Entered: %s from %s ~ SP: %lu ~ T: %lu ~ Type %lu\n",
-							stack_depth, fn, (current-1)->fn, csp, target, type);
+		function_enter(current->target, current->fn);
 		
 	} else if (csp > current->sp) {
-		
-		if (!VG_(get_fnname)(target, fn, 256)) {
-		
-			/*
-		
-			VG_(get_fnname_w_offset) (target, fn, 256);
-			VG_(printf)("Function: %s\n", fn);
-			
-			failure("Invalid function name");
-			*/
-
-		}
-		
+	
+		/* One or more function returned */
 		while(stack_depth > 0) {
 			
-			VG_(printf)("[%lu] Return from %s to %s ~ CSP: %lu ~ SP: %lu ~  OLDSP: %lu ~ T: %lu ~ Type %lu\n",
-						stack_depth, current->fn, (current-1)->fn, csp, current->sp, (current+1)->sp, target, type);
-			
+			function_exit(current->target, current->fn);
 			stack_depth--;
 			current--;
 			
 			if (csp <= current->sp) {
 				
-				VG_(printf)("[%lu] Inside %s ~ CSP: %lu ~ SP: %lu ~  OLDSP: %lu ~ T: %lu ~ Type %lu\n",
-					stack_depth, current->fn, csp, current->sp, (current+1)->sp, target, type);
+				VG_(printf)("[%lu] Inside %s\n", stack_depth, current->fn);
 				
-				if (VG_(strcmp)(current->fn,fn) != 0 && VG_(strcmp)("",fn) != 0) {
+				/* Safety check */
+				if (act_fn && VG_(strcmp)(current->fn,fn) != 0) {
 					VG_(printf)("Simulated stack says you are in %s but valgrind says %s\n", current->fn, fn);
 					failure("Mismatch during return\n");
 				}
+				
 				break;
 			}
 		}
 		
-		if (stack_depth == 0 && current->sp < csp) {
-			
-			if (current->sp == 0)
-				VG_(printf)("Init start SP\n");
-			
-			else
-				VG_(printf)("Redefining start SP\n");
-				
-			current->sp = csp;
-			
-		}
-		/*
-		if (stack_depth > 0)
-			VG_(printf)("[%lu] Return from %s to %s ~ CSP: %lu ~ SP: %lu ~  OLDSP: %lu ~ T: %lu ~ Type %lu\n",
-						stack_depth, current->fn, (current-1)->fn, csp, current->sp, (current+1)->sp, target, type);
-		
-		else
-			VG_(printf)("[%lu] Return from %s ~ CSP: %lu ~ SP: %lu ~  OLDSP: %lu ~ T: %lu ~ Type %lu\n",
-						stack_depth, current->fn, csp, current->sp, (current+1)->sp, target, type);
-		*/
-	} else if (csp < current->sp) {
-		
-		if (VG_(get_fnname)(target, fn, 256)) {
-			if (VG_(strcmp)(current->fn,fn) != 0 && VG_(strcmp)(fn, "") != 0) {
-				
-				stack_depth++;
-				current++;
-				current->sp = csp;
-				current->target = target;
-				current->fn = fn;
-				VG_(printf)("[%lu] Entered: %s from %s ~ SP: %lu ~ T: %lu ~ Type %lu\n",
-				stack_depth, fn, (current-1)->fn, csp, target, type);
-				
-
-				VG_(printf)("Simulated stack says you are in %s but valgrind says %s\n", current->fn, fn);
-				failure("Mismatch during call\n");
-
-			}
-		}
-		
-	}
+	} 
 
 }
 
