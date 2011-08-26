@@ -288,7 +288,7 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 		#if TIME == NO_TIME
 		activation->overhead = 0;
 		#else
-		activation->overhead = ap_time() - start;
+		activation->overhead = 0; //ap_time() - start;
 		#endif
 		
 	} else if (arg[2] == 2) { /* Function exit */
@@ -303,7 +303,7 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 		#endif
 		RoutineInfo * rtn_info = activation->rtn_info;
 
-		UWord partial_cumulative =  start - activation->entry_time - activation->overhead;
+		UWord64 partial_cumulative =  start - activation->entry_time - activation->overhead;
 		if (rtn_info->recursion_pending < 2) rtn_info->total_cumulative_time += partial_cumulative;
 
 		UWord partial_self = partial_cumulative - activation->total_children_time;
