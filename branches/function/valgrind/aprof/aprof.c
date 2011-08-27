@@ -11,11 +11,15 @@ typedef struct act {
 	UWord sp;
 	UWord target;
 	Char * fn;
+	Bool simul;
 } act;
 
 static UWord stack_depth = 0;
 static act * current = NULL; 
 static act * tstack = NULL;
+
+static UWord last_bb_jump = 0;
+static UWord last_bb_ret  = 0;
 
 typedef enum jump_t { BB_INIT, CALL, RET, BBCALL, BBRET, BOR, BBBOR } jump_t;
 
@@ -32,11 +36,15 @@ static void print_stack(void) {
 
 
 static void function_enter(UWord target, char * name) {
-	VG_(printf)("[%lu] Entered %s()\n", stack_depth, name);
+	int i = 0;
+	for(i = 0; i < stack_depth; i++)
+		VG_(printf)("| ");
+	VG_(printf)("> %s()\n", name);
+	//VG_(printf)("[%lu] Entered %s()\n", stack_depth, name);
 }
 
 static void function_exit(UWord target, char * name) {
-	VG_(printf)("[%lu] Exit %s()\n", stack_depth, name);
+	//VG_(printf)("[%lu] Exit %s()\n", stack_depth, name);
 }
 
 static void init_stack(UWord csp, UWord target) {
@@ -68,10 +76,18 @@ static VG_REGPARM(2) void call(UWord target, UWord type_op) {
 		return;
 	}
 
+
+	Bool simulate_call = False;
 	/* Function name buffer */
 	Char * fn = VG_(calloc)("fn name", 256, 1);
 	/* Are we entering a new function? */
 	Bool call_fn = VG_(get_fnname_if_entry)(target, fn, VG_(strlen)(fn));
+	if (!call_fn && last_bb_jump != 0) {
+		VG_(sprintf)(fn, "%p", (void *) target);
+		last_bb_jump = 0;
+		call_fn = True;
+		simulate_call = True;
+	} 
 	/* If not, ask valgrind where we are... */
 	Bool act_fn = True;
 	if (!call_fn)
@@ -82,7 +98,7 @@ static VG_REGPARM(2) void call(UWord target, UWord type_op) {
 		 * Why is this happening?
 		 * I don't know!
 		 */
-		VG_(printf)("Valgrind does not know where we are: %p\n", target);
+		VG_(printf)("Valgrind does not know where we are: %p\n", (void *)target);
 	}
 	
 
@@ -91,7 +107,7 @@ static VG_REGPARM(2) void call(UWord target, UWord type_op) {
 		/* Before the call, some functions are returned? */
 		while(current->sp < csp && stack_depth > 0) {
 			
-			VG_(printf)("We miss a return :(\n");
+			//VG_(printf)("We miss a return :(\n");
 			
 			/* This function is returned */
 			function_exit(current->target, current->fn);
@@ -107,6 +123,7 @@ static VG_REGPARM(2) void call(UWord target, UWord type_op) {
 		current->sp = csp;
 		current->target = target;
 		current->fn = fn;
+		current->simul = simulate_call;
 		function_enter(current->target, current->fn);
 		
 	} else if (csp > current->sp) {
@@ -120,10 +137,25 @@ static VG_REGPARM(2) void call(UWord target, UWord type_op) {
 			
 			if (csp <= current->sp) {
 				
-				VG_(printf)("[%lu] Inside %s\n", stack_depth, current->fn);
+				//VG_(printf)("[%lu] Inside %s\n", stack_depth, current->fn);
 				
 				/* Safety check */
 				if (act_fn && VG_(strcmp)(current->fn,fn) != 0) {
+					
+					if (target == current->target) {
+						
+						VG_(free)(current->fn);
+						current->fn = fn;
+						break;
+						
+					}
+					
+					if (last_bb_ret && current->simul && stack_depth > 0) {
+						stack_depth--;
+						current--;
+						if (VG_(strcmp)(current->fn,fn) == 0) break;
+					}
+					
 					VG_(printf)("Simulated stack says you are in %s but valgrind says %s\n", current->fn, fn);
 					failure("Mismatch during return\n");
 				}
@@ -133,7 +165,14 @@ static VG_REGPARM(2) void call(UWord target, UWord type_op) {
 		}
 		
 	} 
+	
+	last_bb_ret = 0;
 
+}
+
+static VG_REGPARM(2) void call_fin(UWord target, UWord type_op) {
+	if (type_op == BBRET) last_bb_ret = target;
+	else if (type_op == BBCALL) last_bb_jump = target;
 }
 
 static
@@ -373,24 +412,26 @@ IRSB* instrument (  VgCallbackClosure* closure,
 	/* At the end of the sbIn.  Flush outstandings. */
 	flushEvents(sbOut);
 
-	/*
+	
 	if (sbIn->jumpkind == Ijk_Call) {
 		
 		e1 = mkIRExpr_HWord ( BBCALL );
-		IRDirty * di = unsafeIRDirty_0_N( 2, "call",
-								VG_(fnptr_to_fnentry)( &call ),
+		IRDirty * di = unsafeIRDirty_0_N( 2, "call_fin",
+								VG_(fnptr_to_fnentry)( &call_fin ),
 								mkIRExprVec_2( sbIn->next, e1 ) );
 		addStmtToIRSB( sbOut, IRStmt_Dirty(di) );
 		
-	} else if (sbIn->jumpkind == Ijk_Call) {
+	} else if (sbIn->jumpkind == Ijk_Ret) {
 		
 		e1 = mkIRExpr_HWord ( BBRET );
-		IRDirty * di = unsafeIRDirty_0_N( 2, "call",
-								VG_(fnptr_to_fnentry)( &call ),
+		IRDirty * di = unsafeIRDirty_0_N( 2, "call_fin",
+								VG_(fnptr_to_fnentry)( &call_fin ),
 								mkIRExprVec_2( sbIn->next, e1 ) );
 		addStmtToIRSB( sbOut, IRStmt_Dirty(di) );
 		
-	} else if (sbIn->jumpkind == Ijk_Boring) {
+	} 
+	/*
+	else if (sbIn->jumpkind == Ijk_Boring) {
 		
 		e1 = mkIRExpr_HWord ( BBBOR );
 		IRDirty * di = unsafeIRDirty_0_N( 2, "call",
