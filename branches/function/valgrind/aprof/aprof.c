@@ -20,6 +20,10 @@ static act * tstack = NULL;
 
 static UWord last_bb_jump = 0;
 static UWord last_bb_ret  = 0;
+static VgSectKind last_bb_sect_kind  = 0;
+static UChar * last_bb_obj_name = 0;
+static Bool last_bb_info_sect_obj = False;
+static Char * anonymous_obj = "???";
 
 typedef enum jump_t { BB_INIT, CALL, RET, BBCALL, BBRET, BOR, BBBOR } jump_t;
 
@@ -66,6 +70,26 @@ static void init_stack(UWord csp, UWord target) {
 }
 
 static VG_REGPARM(2) void call(UWord target, UWord type_op) {
+
+
+	DebugInfo * di = VG_(find_DebugInfo)(target);
+	UChar * obj_name = di ? (Char*) VG_(DebugInfo_get_filename)(di) : anonymous_obj;
+	VgSectKind sect_kind = VG_(DebugInfo_sect_kind)(NULL, 0, target);
+
+	Bool different_ELF_section = False;
+	if (
+			last_bb_info_sect_obj && 
+			(
+				VG_(strcmp)(obj_name, last_bb_obj_name) != 0 ||
+				sect_kind != last_bb_sect_kind
+			)
+		)
+	{
+		different_ELF_section = True;
+	}
+	
+	last_bb_obj_name = obj_name;
+	last_bb_sect_kind = sect_kind;
 
 	/* Obtain current stack pointer */
 	UWord csp = (UWord) VG_(get_SP)(1);
@@ -173,6 +197,7 @@ static VG_REGPARM(2) void call(UWord target, UWord type_op) {
 static VG_REGPARM(2) void call_fin(UWord target, UWord type_op) {
 	if (type_op == BBRET) last_bb_ret = target;
 	else if (type_op == BBCALL) last_bb_jump = target;
+	else last_bb_info_sect_obj = True;
 }
 
 static
@@ -429,18 +454,15 @@ IRSB* instrument (  VgCallbackClosure* closure,
 								mkIRExprVec_2( sbIn->next, e1 ) );
 		addStmtToIRSB( sbOut, IRStmt_Dirty(di) );
 		
-	} 
-	/*
-	else if (sbIn->jumpkind == Ijk_Boring) {
+	} else {
 		
 		e1 = mkIRExpr_HWord ( BBBOR );
-		IRDirty * di = unsafeIRDirty_0_N( 2, "call",
-								VG_(fnptr_to_fnentry)( &call ),
+		IRDirty * di = unsafeIRDirty_0_N( 2, "call_fin",
+								VG_(fnptr_to_fnentry)( &call_fin ),
 								mkIRExprVec_2( sbIn->next, e1 ) );
 		addStmtToIRSB( sbOut, IRStmt_Dirty(di) );
 		
 	}
-	*/
 
 	return sbOut;
 }
