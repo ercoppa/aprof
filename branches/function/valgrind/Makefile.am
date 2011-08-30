@@ -11,7 +11,8 @@ TOOLS =		memcheck \
 		none \
 		helgrind \
 		drd \
-		aprof
+		aprof \
+		tf
 
 EXP_TOOLS = 	exp-ptrcheck \
 		exp-bbv \
