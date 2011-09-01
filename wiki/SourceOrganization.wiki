@@ -6,6 +6,6 @@
       * *dsp/*: main benchmark for aprof, run different graph algorithms
     * *valgrind/*: [http://valgrind.org/ valgrind code]
        * *aprof/*: source code of aprof
-  * *branches/function/*: experimental branch, trying to implement function tracking entry/exit within Valgrind (stable branch use GCC instrumentation)
+  * *branches/function/*: experimental branch, attempt to implement function tracking entry/exit point within Valgrind (stable branch use GCC instrumentation)
     * *valgrind/aprof*: broken version of aprof, fixed when TF will be complete/robust
     * *valgrind/tf*: new valgrind tool, more updated code on function tracing with Valgrind, not complete
