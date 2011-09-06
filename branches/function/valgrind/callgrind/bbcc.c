@@ -652,6 +652,7 @@ void CLG_(setup_bbcc)(BB* bb)
       if (popcount_on_return == 0) {
 	  jmpkind = Ijk_Boring;
 	  ret_without_call = True;
+	  VG_(printf)("RET converted in CALL\n");
       }
   }
 
@@ -746,6 +747,7 @@ void CLG_(setup_bbcc)(BB* bb)
     if (unwind_count > 0) {
       /* if unwinding was done, this actually is a return */
       jmpkind = Ijk_Ret;
+      VG_(printf)("CALL converted to RET\n");
     }
     
     if (jmpkind == Ijk_Call) {
