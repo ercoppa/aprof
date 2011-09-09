@@ -1225,6 +1225,7 @@ IRSB* CLG_(instrument)( VgCallbackClosure* closure,
    else {
        clgs.bb->cost_count = update_cost_offsets(&clgs);
        clgs.bb->instr_len = clgs.instr_offset;
+       //VG_(printf)("Instr size(%lu): %lu\n", origAddr, clgs.instr_offset);
        clgs.bb->jmpkind = sbIn->jumpkind;
    }
 

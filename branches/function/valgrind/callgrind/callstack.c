@@ -185,6 +185,11 @@ static void function_left(fn_node* fn)
  */
 void CLG_(push_call_stack)(BBCC* from, UInt jmp, BBCC* to, Addr sp, Bool skip)
 {
+    
+    //VG_(printf)("PUSH: addr %lu - depth %lu - SP %lu\n", bb_addr(to->bb), CLG_(current_call_stack).sp +1, sp);
+   // VG_(printf)("PUSH: addr %lu\n", bb_addr(to->bb));
+    
+    
     jCC* jcc;
     UInt* pdepth;
     call_entry* current_entry;
@@ -237,6 +242,12 @@ void CLG_(push_call_stack)(BBCC* from, UInt jmp, BBCC* to, Addr sp, Bool skip)
      * used to detect RET w/o CALL */
     ret_addr = (from->bb->jmpkind == Ijk_Call) ?
 	bb_addr(from->bb) + from->bb->instr_len : 0;
+
+    if (ret_addr > 0) {
+	//VG_(printf)("Ret address: %lu : %lu + %lu\n", ret_addr,
+	//    bb_addr(from->bb), from->bb->instr_len);
+    }
+
 
     /* put jcc on call stack */
     current_entry->jcc = jcc;
@@ -306,6 +317,8 @@ void CLG_(push_call_stack)(BBCC* from, UInt jmp, BBCC* to, Addr sp, Bool skip)
  */
 void CLG_(pop_call_stack)()
 {
+    
+    //VG_(printf)("POP\n");
     jCC* jcc;
     Int depth = 0;
     call_entry* lower_entry;

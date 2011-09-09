@@ -44,6 +44,7 @@
 #include "pub_tool_threadstate.h"
 #include "valgrind.h"
 #include "pub_tool_mallocfree.h"
+#include "pub_tool_hashtable.h"
 
 /* Activation record on the stack */
 typedef struct activation {
@@ -110,6 +111,8 @@ static BB last_bb;
 static act_stack stack; 
 /* unknown object */
 char * anon_obj = "UNKNOW";
+/* HT of all BB that are entry point for a function */
+static VgHashTable bb_entry_ht = NULL;
 
 static void failure(char * msg) {
 
@@ -122,7 +125,7 @@ static void failure(char * msg) {
 static void print_stack(void) {
 	
 	VG_(printf)("\nStack trace:\n");
-	VG_(printf)("\nstack. stack poiter: %lu\n",  (UWord) VG_(get_SP)(1));
+	VG_(printf)("\nCurren stack poiter: %lu\n",  (UWord) VG_(get_SP)(1));
 	
 	UWord depth = stack.depth;
 	activation * c = stack.current;
@@ -138,12 +141,18 @@ static void print_stack(void) {
 }
 
 /* Called when a function is called */
-static void function_enter(UWord target, char * name) {
+static void function_enter(UWord target, char * name, VgSectKind section) {
+	
+	//if (section == Vg_SectPLT) return;
+	
 	int i = 0;
-	for(i = 0; i < stack.depth; i++)
+	for(i = 0; i < stack.depth -1; i++)
 		VG_(printf)("| ");
-	if (name == NULL) VG_(printf)("> %p()\n", (void *)target);
-	else VG_(printf)("> %s()\n", name);
+	
+	char * sect = (char *)VG_(pp_SectKind)(section);
+	
+	if (name == NULL) VG_(printf)("> %p() [%s]\n", (void *)target, sect);
+	else VG_(printf)("> %s() [%s]\n", name, sect);
 }
 
 /* Called when a function return */
@@ -152,10 +161,27 @@ static void function_exit(UWord target, char * name) {
 }
 
 static void BB_is_entry_add(UWord target) {
-	return;
+	
+	if (bb_entry_ht == NULL) {
+		bb_entry_ht = VG_(HT_construct)("bb entry");
+		if (bb_entry_ht == NULL) failure("bb entry ht not allocable");
+	}
+	
+	VgHashNode * n = VG_(calloc)("ht node", sizeof(VgHashNode), 1);
+	if (n == NULL) failure("ht node not allocable");
+	
+	n->key = target;
+	VG_(HT_add_node)(bb_entry_ht, n);
+	
 }
+
 static Bool BB_is_entry(UWord target) {
-	return False;
+	
+	void * n = VG_(HT_lookup) (bb_entry_ht, target);
+	if (n == NULL) return False;
+	
+	return True;
+	
 }
 
 /* Init the stack */
@@ -173,6 +199,24 @@ static void init_stack(UWord csp, UWord target) {
 	stack.current->sp = csp;
 	stack.current->addr = 0; /* Fake target */
 	
+	/* Obtain debug info about this BB */
+	DebugInfo * di = VG_(find_DebugInfo)(target);
+	/* Obtain object name */
+	UChar * obj_name = NULL;
+	if (di != NULL) 
+		obj_name = (Char*) VG_(strdup)("obj_name",VG_(DebugInfo_get_filename)(di));
+	if (obj_name == NULL)
+		obj_name = anon_obj;
+	
+	/* Obtain section kind of this BB */
+	VgSectKind sect_kind = VG_(DebugInfo_sect_kind)(NULL, 0, target);
+	
+	last_bb.addr = target;
+	last_bb.instr_offset = 0;
+	last_bb.obj_name = obj_name;
+	last_bb.obj_section = sect_kind;
+	last_bb.exit = NONE;
+	
 	/* Safety check: we never execute the first 
 	 * instruction of this function */
 	if (VG_(get_fnname_if_entry)(target, fn, 256)) failure("Wrong");
@@ -181,7 +225,7 @@ static void init_stack(UWord csp, UWord target) {
 
 /* Push a new activation on the stack */
 static void push_stack(UWord sp, UWord target, Char * name, 
-						Char * libname, UWord ret) 
+						Char * libname, UWord ret, VgSectKind section) 
 {
 	
 	stack.depth++;
@@ -191,7 +235,13 @@ static void push_stack(UWord sp, UWord target, Char * name,
 	stack.current->name = name;
 	stack.current->libname = libname;
 	stack.current->ret_addr = ret;
-	function_enter(target, name);
+	function_enter(target, name, section);
+	
+	/* Safety check */
+	if ((stack.current-1)->sp < sp) failure("Caller has a lower SP!");
+	
+	//VG_(printf)("PUSH: addr %lu - depth %lu - SP %lu\n", target, stack.depth, sp);
+	//VG_(printf)("PUSH: addr %lu\n", target);
 	
 	//if (stack.depth > 10) failure("Depth too much");
 
@@ -203,6 +253,8 @@ static void push_stack(UWord sp, UWord target, Char * name,
  * Return how many activations are removed from the stack.
  */
 static UWord pop_stack(UWord csp, UWord n_frames) {
+	
+	//VG_(printf)("POP\n");
 	
 	UWord n_pop = 0;
 	
@@ -221,6 +273,10 @@ static UWord pop_stack(UWord csp, UWord n_frames) {
 		if (n_frames > 0) n_frames--;
 		n_pop++;
 		/* Adjust stack */
+		//if (stack.current->name != NULL)
+		//	VG_(free)(stack.current->name);
+		if ((char *)stack.current->libname != (char *) anon_obj)
+			VG_(free)(stack.current->libname);
 		stack.depth--;
 		stack.current--;
 		
@@ -280,18 +336,21 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 	Bool info_fn = True; /* Have we info about current fn? */
 	if (!simulate_call)
 		info_fn = VG_(get_fnname)(target, fn, VG_(strlen)(fn));
+	else {
+		BB_is_entry_add(target);
+	}
 	
 	/* Estimation of number of returned functions */ 
-	UWord n_pop = 0;
-	/* Expected return address (when returning to the previous fn) */
-	UWord ret = 0;
+	UWord n_pop = 1;
+	
 	if (last_bb.exit == BBCALL) {
 		
 		/*
-		 * if this function call another function, then
-		 * we expect this return address:
+		 * if this function returns, we expect the return address:
 		 */
-		ret = last_bb.addr + last_bb.instr_offset;
+		stack.current->ret_addr = last_bb.addr + last_bb.instr_offset;
+		//VG_(printf)("Ret address: %lu : %lu + %lu\n", stack.current->ret_addr,
+		//	last_bb.addr, last_bb.instr_offset);
 		
 		/* 
 		 * If last BB do a Ijk_Call exit but Valgrind does not 
@@ -323,13 +382,19 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 	 */
 	else if (last_bb.exit == BBRET) {
 		
+		
 		/* This is a call! */
-		if (csp < stack.current->sp) n_pop = 0;
+		if (csp < stack.current->sp) {
+			n_pop = 0;
+			VG_(printf)("On BB %lu, RET to CALL because SP(%lu) < TOP_SP(%lu)\n", target, csp, stack.current->sp);
+		}
 		/* 
 		 * SP does not change, so this is a call only if return 
 		 * does not match our expected return address.
 		 */
 		else if (csp == stack.current->sp) {
+			
+			VG_(printf)("Try to convert RET to CALL for BB(%lu) because SP=CSP=%lu\n", target, csp);
 			
 			activation * c = stack.current;
 			UWord depth = stack.depth;
@@ -353,6 +418,7 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 				 * planned pop operations.
 				 */
 				n_pop = 0;
+				VG_(printf)("No match found BB(%lu)\n", target);
 				break;
 			}
 			
@@ -361,7 +427,7 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 		if (n_pop == 0) {
 			simulate_call = True;
 			last_bb.exit = BBOTHER;
-			//VG_(printf)("Call because RET as CALL\n");
+			VG_(printf)("Call because RET as CALL\n");
 		}
 		
 	}
@@ -391,7 +457,7 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 		
 		pop_stack(csp, n_pop);
 		
-	} else if (simulate_call) {
+	} else {
 		
 		/* 
 		 * By definition, if this is a call, SP must be equal or smaller
@@ -399,16 +465,18 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 		 */
 		n_pop = pop_stack(csp, 0);
 		if (n_pop > 0) {
-			//VG_(printf)("Call deleted\n");
+			VG_(printf)("Call deleted\n");
 			simulate_call = False;
-		} else {
+		} 
+		
+		if (simulate_call) {
 			
 			if (!info_fn) {
 				VG_(free)(fn);
 				fn = NULL;
 			}
 			
-			push_stack(csp, target, fn, obj_name, 0); 
+			push_stack(csp, target, fn, obj_name, 0, sect_kind); 
 			
 		}
 		
@@ -423,11 +491,14 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 	}
 	
 	/* Safety check */
-	if (	info_fn != NULL && stack.current->name != NULL &&
+	if (
+			info_fn && stack.current->name != NULL &&
 			VG_(strcmp)(stack.current->name, fn) != 0
 		)
 	{
-		failure("Mismatch between current function and simulated stack");
+		VG_(printf)("Valgrind says you are in %s() but simulated stack says %s()\n", fn, stack.current->name);
+		print_stack();
+		failure("Mismatch");
 	}
 	
 	
@@ -478,8 +549,10 @@ IRSB* tf_instrument (  VgCallbackClosure* closure,
 		i++;
 	}
 	
+	UWord bb_addr = sbIn->stmts[i]->Ist.IMark.addr;
+	
 	IRExpr  * e1 = mkIRExpr_HWord ( BB_INIT );
-	IRExpr  * e2 = mkIRExpr_HWord ( (HWord) sbIn->stmts[i]->Ist.IMark.addr );
+	IRExpr  * e2 = mkIRExpr_HWord ( (HWord) (Addr)sbIn->stmts[i]->Ist.IMark.addr );
 	IRDirty * di2 = unsafeIRDirty_0_N( 2, "BB start",
 								VG_(fnptr_to_fnentry)( &BB_start ),
 								mkIRExprVec_2( e2, e1 ) );
@@ -494,7 +567,13 @@ IRSB* tf_instrument (  VgCallbackClosure* closure,
 		switch (st->tag) {
 
 			case Ist_IMark: {
-				instr_offset += st->Ist.IMark.len;
+				
+				if (st->Ist.IMark.len == 0)
+					instr_offset += VG_MIN_INSTR_SZB;
+				else
+					instr_offset += st->Ist.IMark.len;
+					
+				//VG_(printf)("Instruction size: %lu\n", st->Ist.IMark.len);
 				addStmtToIRSB( sbOut, st );
 				break;
 			}
@@ -591,6 +670,8 @@ IRSB* tf_instrument (  VgCallbackClosure* closure,
 		
 	}
 
+	//VG_(printf)("Instr size(%lu): %lu\n", bb_addr, instr_offset);
+
 	return sbOut;
 }
 
@@ -620,9 +701,9 @@ static void tf_pre_clo_init(void) {
 
 	VG_(basic_tool_funcs) 				(tf_post_clo_init, tf_instrument, tf_fini);
 	
-	VG_(clo_vex_control).iropt_level = 0;
+	//VG_(clo_vex_control).iropt_level = 0;
 	VG_(clo_vex_control).iropt_unroll_thresh = 0;
-	VG_(clo_vex_control).guest_chase_thresh  = 0;
+	VG_(clo_vex_control).guest_chase_thresh = 0;
 	
 }
 
