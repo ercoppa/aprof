@@ -14,6 +14,17 @@
    has to manipulate the appropriate stack (see 
    VG_(get_running_tid)() )
    
+   Special thanks to Josef Weidendorfer (author of callgrind) 
+   that helps me a lot for TF. Some code of TF is taken from callgrind.
+   
+   Some useful reading about function tracking and Valgrind:
+   1) valgrind/docs/internals/tracking-fn-entry-exit.txt
+   2) http://thread.gmane.org/gmane.comp.debugging.valgrind/11474
+   3) http://thread.gmane.org/gmane.comp.debugging.valgrind/11477
+   4) http://thread.gmane.org/gmane.comp.debugging.valgrind/11533
+   5) http://thread.gmane.org/gmane.comp.debugging.valgrind/4962
+   6) http://comments.gmane.org/gmane.comp.debugging.valgrind/11346
+   
    --
 
    This program is free software; you can redistribute it and/or
