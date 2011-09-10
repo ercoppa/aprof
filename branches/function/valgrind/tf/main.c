@@ -5,10 +5,16 @@
 
 /*
    This file is part of TF, a minimal Valgrind tool,
-   which try to trace function entry/exit.
-
-   Copyright (C) 2002-2010 Nicholas Nethercote
-      njn@valgrind.org
+   which try to trace function entry/exit. This tool contains a
+   more simple version of code/logic used by callgrind. It's not
+   optimized, you can do better. TF is provided as toy tool that
+   you can copy/modify/extend if you need function tracing.
+   TF does not manage multithread process, but it's easy to fix this,
+   you have to allocate a new stack for each thread and each function
+   has to manipulate the appropriate stack (see 
+   VG_(get_running_tid)() )
+   
+   --
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -60,7 +66,7 @@ typedef struct activation {
 	UWord ret_addr;
 	/* Function name */
 	Char * name;
-	/* lib name */
+	/* object name */
 	Char * libname;
 } activation;
 
@@ -103,6 +109,15 @@ typedef struct BB {
 	
 } BB;
 
+/* a code pattern is a list of tuples (start offset, length) */
+struct chunk_t { int start, len; };
+struct pattern
+{
+    const char* name;
+    int len;
+    struct chunk_t chunk[];
+};
+
 /* Global var */
 
 /* We have to take info only about the last executed BB */
@@ -113,12 +128,169 @@ static act_stack stack;
 char * anon_obj = "UNKNOW";
 /* HT of all BB that are entry point for a function */
 static VgHashTable bb_entry_ht = NULL;
+/* 
+ * _ld_runtime_resolve need a special handling,
+ * we need to know its address and length
+ */
+static Addr runtime_resolve_addr   = 0;
+static int  runtime_resolve_length = 0;
 
 static void failure(char * msg) {
 
 	VG_(printf)("%s\n", msg);
 	VG_(exit)(1);
 
+}
+
+/* 
+ * search_runtime_resolve() and check_code are 
+ * completly taken from callgrind!
+ */
+
+/* 
+ * Scan for a pattern in the code of an ELF object.
+ * If found, return true and set runtime_resolve_{addr,length}
+ */
+__attribute__((unused))    // Possibly;  depends on the platform.
+static Bool check_code(UWord obj_start, UWord obj_size, 
+						unsigned char code[], struct pattern* pat)
+{
+	Bool found;
+	Addr addr, end;
+	int chunk, start, len;
+
+	/* 
+	 * first chunk of pattern should always start at offset 0 and
+	 * have at least 3 bytes 
+	 */
+	if (!(pat->chunk[0].start == 0) || !(pat->chunk[0].len > 2))
+		failure("Check on chunk pat failed");
+
+	end = obj_start + obj_size - pat->len;
+	addr = obj_start;
+	while(addr < end) {
+		found = (VG_(memcmp)( (void*)addr, code, pat->chunk[0].len) == 0);
+
+		if (found) {
+			
+			chunk = 1;
+			while(1) {
+				start = pat->chunk[chunk].start;
+				len   = pat->chunk[chunk].len;
+				if (len == 0) break;
+
+				if(!(len >2)) failure("fail check pattern");
+
+				if (VG_(memcmp)( (void*)(addr+start), code+start, len) != 0) {
+					found = False;
+					break;
+				}
+				chunk++;
+			}
+
+			if (found) {
+				
+				runtime_resolve_addr   = addr;
+				runtime_resolve_length = pat->len;
+				return True;
+			}
+		}
+		addr++;
+    }
+
+    return False;
+}
+
+
+/* _ld_runtime_resolve, located in ld.so, needs special handling:
+ * The jump at end into the resolved function should not be
+ * represented as a call (as usually done in callgrind with jumps),
+ * but as a return + call. Otherwise, the repeated existance of
+ * _ld_runtime_resolve in call chains will lead to huge cycles,
+ * making the profile almost worthless.
+ *
+ * If ld.so is stripped, the symbol will not appear. But as this
+ * function is handcrafted assembler, we search for it.
+ *
+ * We stop if the ELF object name does not seem to be the runtime linker
+ */
+static Bool search_runtime_resolve(char * obj_name, UWord obj_start,
+										UWord obj_size)
+{
+#if defined(VGP_x86_linux)
+    static unsigned char code[] = {
+	/* 0*/ 0x50, 0x51, 0x52, 0x8b, 0x54, 0x24, 0x10, 0x8b,
+	/* 8*/ 0x44, 0x24, 0x0c, 0xe8, 0x70, 0x01, 0x00, 0x00,
+	/*16*/ 0x5a, 0x59, 0x87, 0x04, 0x24, 0xc2, 0x08, 0x00 };
+    /* Check ranges [0-11] and [16-23] ([12-15] is an absolute address) */
+    static struct pattern pat = {
+	"x86-def", 24, {{ 0,12 }, { 16,8 }, { 24,0}} };
+
+    /* Pattern for glibc-2.8 on OpenSuse11.0 */
+    static unsigned char code_28[] = {
+	/* 0*/ 0x50, 0x51, 0x52, 0x8b, 0x54, 0x24, 0x10, 0x8b,
+	/* 8*/ 0x44, 0x24, 0x0c, 0xe8, 0x70, 0x01, 0x00, 0x00,
+	/*16*/ 0x5a, 0x8b, 0x0c, 0x24, 0x89, 0x04, 0x24, 0x8b,
+	/*24*/ 0x44, 0x24, 0x04, 0xc2, 0x0c, 0x00 };
+    static struct pattern pat_28 = {
+	"x86-glibc2.8", 30, {{ 0,12 }, { 16,14 }, { 30,0}} };
+
+    if (VG_(strncmp)(obj_name, "/lib/ld", 7) != 0) return False;
+    if (check_code(obj_start, obj_size, code, &pat)) return True;
+    if (check_code(obj_start, obj_size, code_28, &pat_28)) return True;
+    return False;
+#endif
+
+#if defined(VGP_ppc32_linux)
+    static unsigned char code[] = {
+	/* 0*/ 0x94, 0x21, 0xff, 0xc0, 0x90, 0x01, 0x00, 0x0c,
+	/* 8*/ 0x90, 0x61, 0x00, 0x10, 0x90, 0x81, 0x00, 0x14,
+	/*16*/ 0x7d, 0x83, 0x63, 0x78, 0x90, 0xa1, 0x00, 0x18,
+	/*24*/ 0x7d, 0x64, 0x5b, 0x78, 0x90, 0xc1, 0x00, 0x1c,
+	/*32*/ 0x7c, 0x08, 0x02, 0xa6, 0x90, 0xe1, 0x00, 0x20,
+	/*40*/ 0x90, 0x01, 0x00, 0x30, 0x91, 0x01, 0x00, 0x24,
+	/*48*/ 0x7c, 0x00, 0x00, 0x26, 0x91, 0x21, 0x00, 0x28,
+	/*56*/ 0x91, 0x41, 0x00, 0x2c, 0x90, 0x01, 0x00, 0x08,
+	/*64*/ 0x48, 0x00, 0x02, 0x91, 0x7c, 0x69, 0x03, 0xa6, /* at 64: bl aff0 <fixup> */
+	/*72*/ 0x80, 0x01, 0x00, 0x30, 0x81, 0x41, 0x00, 0x2c,
+	/*80*/ 0x81, 0x21, 0x00, 0x28, 0x7c, 0x08, 0x03, 0xa6,
+	/*88*/ 0x81, 0x01, 0x00, 0x24, 0x80, 0x01, 0x00, 0x08,
+	/*96*/ 0x80, 0xe1, 0x00, 0x20, 0x80, 0xc1, 0x00, 0x1c,
+	/*104*/0x7c, 0x0f, 0xf1, 0x20, 0x80, 0xa1, 0x00, 0x18,
+	/*112*/0x80, 0x81, 0x00, 0x14, 0x80, 0x61, 0x00, 0x10,
+	/*120*/0x80, 0x01, 0x00, 0x0c, 0x38, 0x21, 0x00, 0x40,
+	/*128*/0x4e, 0x80, 0x04, 0x20 };
+    static struct pattern pat = {
+	"ppc32-def", 132, {{ 0,65 }, { 68,64 }, { 132,0 }} };
+
+    if (VG_(strncmp)(obj_name, "/lib/ld", 7) != 0) return False;
+    return check_code(obj_start, obj_size, code, &pat);
+#endif
+
+#if defined(VGP_amd64_linux)
+    static unsigned char code[] = {
+	/* 0*/ 0x48, 0x83, 0xec, 0x38, 0x48, 0x89, 0x04, 0x24,
+	/* 8*/ 0x48, 0x89, 0x4c, 0x24, 0x08, 0x48, 0x89, 0x54, 0x24, 0x10,
+	/*18*/ 0x48, 0x89, 0x74, 0x24, 0x18, 0x48, 0x89, 0x7c, 0x24, 0x20,
+	/*28*/ 0x4c, 0x89, 0x44, 0x24, 0x28, 0x4c, 0x89, 0x4c, 0x24, 0x30,
+	/*38*/ 0x48, 0x8b, 0x74, 0x24, 0x40, 0x49, 0x89, 0xf3,
+	/*46*/ 0x4c, 0x01, 0xde, 0x4c, 0x01, 0xde, 0x48, 0xc1, 0xe6, 0x03,
+	/*56*/ 0x48, 0x8b, 0x7c, 0x24, 0x38, 0xe8, 0xee, 0x01, 0x00, 0x00,
+	/*66*/ 0x49, 0x89, 0xc3, 0x4c, 0x8b, 0x4c, 0x24, 0x30,
+	/*74*/ 0x4c, 0x8b, 0x44, 0x24, 0x28, 0x48, 0x8b, 0x7c, 0x24, 0x20,
+	/*84*/ 0x48, 0x8b, 0x74, 0x24, 0x18, 0x48, 0x8b, 0x54, 0x24, 0x10,
+	/*94*/ 0x48, 0x8b, 0x4c, 0x24, 0x08, 0x48, 0x8b, 0x04, 0x24,
+	/*103*/0x48, 0x83, 0xc4, 0x48, 0x41, 0xff, 0xe3 };
+    static struct pattern pat = {
+	"amd64-def", 110, {{ 0,62 }, { 66,44 }, { 110,0 }} };
+
+    if ((VG_(strncmp)(obj_name, "/lib/ld", 7) != 0) &&
+	(VG_(strncmp)(obj_name, "/lib64/ld", 9) != 0)) return False;
+    return check_code(obj_start, obj_size, code, &pat);
+#endif
+
+    /* For other platforms, no patterns known */
+    return False;
 }
 
 /* debug function for printing the stack */
