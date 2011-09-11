@@ -117,6 +117,8 @@ typedef struct BB {
 	UChar * obj_name;
 	/* Object section (of the function) */
 	VgSectKind obj_section;
+	/* Is this BB part of dl_runtime_resolve? */
+	Bool is_dl_runtime_resolve;
 	
 } BB;
 
@@ -135,10 +137,10 @@ struct pattern
 static BB last_bb;
 /* Global stack */
 static act_stack stack; 
-/* unknown object */
-char * anon_obj = "UNKNOW";
 /* HT of all BB that are entry point for a function */
 static VgHashTable bb_entry_ht = NULL;
+/* default object */
+char * anon_obj = "UNKNOWN";
 /* 
  * _ld_runtime_resolve need a special handling,
  * we need to know its address and length
@@ -385,11 +387,17 @@ static void init_stack(UWord csp, UWord target) {
 	/* Obtain debug info about this BB */
 	DebugInfo * di = VG_(find_DebugInfo)(target);
 	/* Obtain object name */
-	UChar * obj_name = NULL;
-	if (di != NULL) 
-		obj_name = (Char*) VG_(strdup)("obj_name",VG_(DebugInfo_get_filename)(di));
-	if (obj_name == NULL)
-		obj_name = anon_obj;
+	char * obj_name = di ? (Char*) VG_(strdup)("obj_name",
+								VG_(DebugInfo_get_filename)(di))
+							: NULL;
+	if (obj_name == NULL) obj_name = anon_obj;
+	
+	/* try to see if we find dl_runtime_resolve in this obj */
+	if (runtime_resolve_addr == 0) {
+		UWord obj_start = di ? VG_(DebugInfo_get_text_avma)(di) : 0;
+		UWord obj_size = di ? VG_(DebugInfo_get_text_size)(di) : 0;
+		search_runtime_resolve(obj_name, obj_start, obj_size);
+	}
 	
 	/* Obtain section kind of this BB */
 	VgSectKind sect_kind = VG_(DebugInfo_sect_kind)(NULL, 0, target);
@@ -484,22 +492,33 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 	/* Obtain debug info about this BB */
 	DebugInfo * di = VG_(find_DebugInfo)(target);
 	/* Obtain object name */
-	UChar * obj_name = NULL;
-	if (di != NULL) 
-		obj_name = (Char*) VG_(strdup)("obj_name",VG_(DebugInfo_get_filename)(di));
-	if (obj_name == NULL)
-		obj_name = anon_obj;
-	
+	char * obj_name = di ? VG_(strdup)("obj_name",
+								VG_(DebugInfo_get_filename)(di)) 
+							: NULL;
+	if (obj_name == NULL) obj_name = anon_obj;
+    
+	/* Compare object of this BB with last BB */
+	Bool different_obj = False;
+	if (VG_(strcmp)(obj_name, last_bb.obj_name) != 0)
+		different_obj = True;
+
 	/* Obtain section kind of this BB */
 	VgSectKind sect_kind = VG_(DebugInfo_sect_kind)(NULL, 0, target);
+	/* Compare section of this BB with last BB */
+	Bool different_sect = False;
+	if (sect_kind != last_bb.obj_section)
+		 different_sect = True;
 	
-	/* Compare object/section of this BB with last BB */
-	Bool different_ELF_section = False;
-	if (	VG_(strcmp)(obj_name, last_bb.obj_name) != 0 ||
-			sect_kind != last_bb.obj_section
-		) 
-	{
-		different_ELF_section = True;
+	/* try to see if we find dl_runtime_resolve in this obj */
+	if (runtime_resolve_addr == 0 && different_obj) {
+		
+		/* Obtain obj start address */
+		UWord obj_start = di ? VG_(DebugInfo_get_text_avma)(di) : 0;
+		/* Obtaind obj size */
+		UWord obj_size = di ? VG_(DebugInfo_get_text_size)(di) : 0;
+		/* Check */
+		search_runtime_resolve(obj_name, obj_start, obj_size);
+	
 	}
 
 	/* Are we simulating a call? */
@@ -522,6 +541,32 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 	else {
 		BB_is_entry_add(target);
 	}
+	
+	
+	Bool is_dl_runtime_resolve = False;
+	/* Check if this BB is dl_runtime_resolve */
+	if (	
+			(info_fn && VG_(strcmp)(fn, "_dl_runtime_resolve") == 0)
+			||
+			(
+			runtime_resolve_addr && 
+			(target >= runtime_resolve_addr) &&
+			(target < runtime_resolve_addr + runtime_resolve_length)
+			)
+		)
+	{
+		/* BB in runtime_resolve found by code check; use this name */
+		if (!info_fn) 
+			VG_(sprintf)(fn, "_dl_runtime_resolve");
+		/*
+		 * Jump at end into the resolved function should not be
+		 * represented as a call, but as a return + call.
+		 */
+		is_dl_runtime_resolve = True;
+		
+		VG_(printf)("Found dl_runtime_resolve\n");
+		
+    }
 	
 	/* Estimation of number of returned functions */ 
 	UWord n_pop = 1;
@@ -564,7 +609,6 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 	 * saying "JMP addr").
 	 */
 	else if (last_bb.exit == BBRET) {
-		
 		
 		/* This is a call! */
 		if (csp < stack.current->sp) {
@@ -621,11 +665,36 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 	 * - current BB is first BB of a function (we know this from
 	 *   previous info given by Valgrind) 
 	 */
-	if (!simulate_call && last_bb.exit != BBCALL 
-			&& last_bb.exit != BBRET)
+	if (last_bb.exit != BBCALL && last_bb.exit != BBRET)
 	{
 		
-		if (different_ELF_section || BB_is_entry(target)) {
+		if (different_obj || different_sect || BB_is_entry(target)) {
+			
+			/* 
+			 * if the last BB is dl_runtime_resolve, we have to 
+			 * do a pop in out stack. If we avoid this, then
+			 * we see that dl_runtime_resolve call the resolved
+			 * function (this not make sense! It resolve and
+			 * return to the caller).
+			 */
+			if (stack.depth > 0 && last_bb.is_dl_runtime_resolve) {
+				
+				VG_(printf)("POP caused by dl_runtime_resolve");
+				
+				function_exit(stack.current->addr, stack.current->name);
+				//if (stack.current->name != NULL)
+				//	VG_(free)(stack.current->name);
+				if ((char *)stack.current->libname != (char *) anon_obj)
+					VG_(free)(stack.current->libname);
+				/* Adjust stack */
+				stack.depth--;
+				stack.current--;
+				
+				/* Update current stack pointer */
+				csp = stack.current->sp;
+				
+			}
+			
 			simulate_call = True;
 			//VG_(printf)("Call because different ELF/section\n");
 		}
@@ -691,6 +760,7 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 	last_bb.obj_name = obj_name;
 	last_bb.obj_section = sect_kind;
 	last_bb.exit = NONE;
+	last_bb.is_dl_runtime_resolve = is_dl_runtime_resolve;
 
 }
 
