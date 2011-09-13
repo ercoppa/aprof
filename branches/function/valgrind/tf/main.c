@@ -76,9 +76,9 @@ typedef struct activation {
 	 */
 	UWord ret_addr;
 	/* Function name */
-	Char * name;
+	char * name;
 	/* object name */
-	Char * libname;
+	char * libname;
 } activation;
 
 typedef struct act_stack {
@@ -328,8 +328,6 @@ static void print_stack(void) {
 /* Called when a function is called */
 static void function_enter(UWord target, char * name, VgSectKind section) {
 	
-	//if (section == Vg_SectPLT) return;
-	
 	int i = 0;
 	for(i = 0; i < stack.depth -1; i++)
 		VG_(printf)("| ");
@@ -415,7 +413,7 @@ static void init_stack(UWord csp, UWord target) {
 }
 
 /* Push a new activation on the stack */
-static void push_stack(UWord sp, UWord target, Char * name, 
+static void push_stack(UWord sp, UWord target, char * name, 
 						Char * libname, UWord ret, VgSectKind section) 
 {
 	
@@ -463,11 +461,11 @@ static UWord pop_stack(UWord csp, UWord n_frames) {
 		function_exit(stack.current->addr, stack.current->name);
 		if (n_frames > 0) n_frames--;
 		n_pop++;
-		/* Adjust stack */
-		//if (stack.current->name != NULL)
-		//	VG_(free)(stack.current->name);
+		if (stack.current->name != NULL) 
+			VG_(free)(stack.current->name);
 		if ((char *)stack.current->libname != (char *) anon_obj)
 			VG_(free)(stack.current->libname);
+		/* Adjust stack */
 		stack.depth--;
 		stack.current--;
 		
@@ -525,7 +523,7 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 	Bool simulate_call = False;
 	
 	/* Function name buffer */
-	Char * fn = VG_(calloc)("fn name", 256, 1);
+	char * fn = VG_(calloc)("fn_name", 256, 1);
 	/* 
 	 * Are we entering a new function? Ask to Valgrind
 	 * if this BB is the first of a function. Valgrind sometimes
@@ -533,15 +531,14 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 	 * the case, we try different stategies to capture a call, see
 	 * simulate_call later.
 	 */
-	simulate_call = VG_(get_fnname_if_entry)(target, fn, VG_(strlen)(fn));
+	simulate_call = VG_(get_fnname_if_entry)(target, fn, 256);
 	/* If not, ask valgrind where we are... */
 	Bool info_fn = True; /* Have we info about current fn? */
 	if (!simulate_call)
-		info_fn = VG_(get_fnname)(target, fn, VG_(strlen)(fn));
+		info_fn = VG_(get_fnname)(target, fn, 256);
 	else {
 		BB_is_entry_add(target);
 	}
-	
 	
 	Bool is_dl_runtime_resolve = False;
 	/* Check if this BB is dl_runtime_resolve */
@@ -556,15 +553,17 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 		)
 	{
 		/* BB in runtime_resolve found by code check; use this name */
-		if (!info_fn) 
+		if (!info_fn) {
 			VG_(sprintf)(fn, "_dl_runtime_resolve");
+			info_fn = True;
+		}
 		/*
 		 * Jump at end into the resolved function should not be
 		 * represented as a call, but as a return + call.
 		 */
 		is_dl_runtime_resolve = True;
 		
-		VG_(printf)("Found dl_runtime_resolve\n");
+		//VG_(printf)("Found dl_runtime_resolve\n");
 		
     }
 	
@@ -613,7 +612,7 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 		/* This is a call! */
 		if (csp < stack.current->sp) {
 			n_pop = 0;
-			VG_(printf)("On BB %lu, RET to CALL because SP(%lu) < TOP_SP(%lu)\n", target, csp, stack.current->sp);
+			//VG_(printf)("On BB %lu, RET to CALL because SP(%lu) < TOP_SP(%lu)\n", target, csp, stack.current->sp);
 		}
 		/* 
 		 * SP does not change, so this is a call only if return 
@@ -621,7 +620,7 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 		 */
 		else if (csp == stack.current->sp) {
 			
-			VG_(printf)("Try to convert RET to CALL for BB(%lu) because SP=CSP=%lu\n", target, csp);
+			//VG_(printf)("Try to convert RET to CALL for BB(%lu) because SP=CSP=%lu\n", target, csp);
 			
 			activation * c = stack.current;
 			UWord depth = stack.depth;
@@ -645,7 +644,7 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 				 * planned pop operations.
 				 */
 				n_pop = 0;
-				VG_(printf)("No match found BB(%lu)\n", target);
+				//VG_(printf)("No match found BB(%lu)\n", target);
 				break;
 			}
 			
@@ -654,7 +653,7 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 		if (n_pop == 0) {
 			simulate_call = True;
 			last_bb.exit = BBOTHER;
-			VG_(printf)("Call because RET as CALL\n");
+			//VG_(printf)("Call because RET as CALL\n");
 		}
 		
 	}
@@ -680,7 +679,7 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 			 */
 			if (stack.depth > 0 && last_bb.is_dl_runtime_resolve) {
 				
-				VG_(printf)("POP caused by dl_runtime_resolve\n");
+				//VG_(printf)("POP caused by dl_runtime_resolve\n");
 				
 				/* Update current stack pointer */
 				csp = stack.current->sp;
@@ -720,7 +719,7 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 		 */
 		n_pop = pop_stack(csp, 0);
 		if (n_pop > 0) {
-			VG_(printf)("Call deleted\n");
+			//VG_(printf)("Call deleted\n");
 			simulate_call = False;
 		} 
 		
@@ -759,6 +758,10 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 		failure("Mismatch");
 	}
 	
+	if (!info_fn && fn != NULL) {
+		VG_(free)(fn);
+		fn = NULL;
+	}
 	
 	/* Update info about this BB */
 	last_bb.addr = target;
