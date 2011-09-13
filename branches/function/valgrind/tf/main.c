@@ -665,6 +665,7 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 	 * - current BB is first BB of a function (we know this from
 	 *   previous info given by Valgrind) 
 	 */
+	Bool call_emulation = False;
 	if (last_bb.exit != BBCALL && last_bb.exit != BBRET)
 	{
 		
@@ -679,7 +680,10 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 			 */
 			if (stack.depth > 0 && last_bb.is_dl_runtime_resolve) {
 				
-				VG_(printf)("POP caused by dl_runtime_resolve");
+				VG_(printf)("POP caused by dl_runtime_resolve\n");
+				
+				/* Update current stack pointer */
+				csp = stack.current->sp;
 				
 				function_exit(stack.current->addr, stack.current->name);
 				//if (stack.current->name != NULL)
@@ -690,12 +694,11 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 				stack.depth--;
 				stack.current--;
 				
-				/* Update current stack pointer */
-				csp = stack.current->sp;
-				
 			}
 			
 			simulate_call = True;
+			call_emulation = True;
+			
 			//VG_(printf)("Call because different ELF/section\n");
 		}
 		
@@ -722,6 +725,9 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 		} 
 		
 		if (simulate_call) {
+			
+			if (call_emulation && stack.depth > 0)
+				csp = stack.current->sp;
 			
 			if (!info_fn) {
 				VG_(free)(fn);
