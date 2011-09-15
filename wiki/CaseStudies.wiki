@@ -1,8 +1,19 @@
 = Sort algorithms =
 See algorithms used [http://code.google.com/p/aprof/source/browse/#svn%2Ftrunk%2Fbenchmark%2Ftests%2Fsort here]. We run each algorithm with both metric (time: RDTSC, instruction: BB executed).
 == Bubble sort ==
+Asymptotic complexity: [http://en.wikipedia.org/wiki/Bubble_sort O(n^2^)] 
+
 == Heap sort ==
+Asymptotic complexity: [http://en.wikipedia.org/wiki/Heapsort O(n*log(n))]
+
 == Integer sort ==
+Asymptotic complexity: O(n)
+
 == Merge sort ==
+Asymptotic complexity: O(n*log(n))
+
 == Quick sort ==
+Asymptotic complexity: [http://en.wikipedia.org/wiki/Quicksort O(n^2^)]
+
 == Selection sort ==
+Asymptotic complexity: [http://en.wikipedia.org/wiki/Selection_sort O(n^2^)]
