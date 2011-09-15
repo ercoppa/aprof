@@ -18,12 +18,12 @@ void selection_sort(int v[], int n) {
 
 int main() {
 
-    int v[1024*100];
+    int v[1024];
 	srand(time(0));
 	int j = 0, i = 0;
 	int n = sizeof(v)/sizeof(int);
     
-    for (i = 0; i < n; i++) {
+    for (i = 0; i < n; i+=10) {
         
         for (j = 0; j < i; j++)
             v[j] = rand() % n;

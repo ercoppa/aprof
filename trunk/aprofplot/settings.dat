@@ -1,4 +1,4 @@
-/home/ercoppa/Desktop/code/aprof
+/home/ercoppa/Desktop/code/aprof/benchmark/tests/sort/results/bb
 blacklist 0 
 rtn_display 0
-recent /home/ercoppa/Desktop/code/aprof/merge3_1.aprof /home/ercoppa/Desktop/code/aprof_old/pintool/aprof/merge_0.aprof /home/ercoppa/Desktop/code/aprof/merge_1.aprof /home/ercoppa/Desktop/code/aprof/quick_1.aprof /home/ercoppa/Desktop/code/aprof/benchmark/dsp/bin/dsp_1.aprof /home/ercoppa/Desktop/code/aprof/dsp.aprof 
+recent /home/ercoppa/Desktop/code/aprof/benchmark/tests/sort/results/bb/bubble_1.aprof /home/ercoppa/Desktop/code/aprof/benchmark/tests/sort/results/bb/selection_1.aprof /home/ercoppa/Desktop/code/aprof/benchmark/tests/sort/results/bb/quick_1.aprof /home/ercoppa/Desktop/code/aprof/benchmark/tests/sort/results/bb/merge_1.aprof /home/ercoppa/Desktop/code/aprof/benchmark/tests/sort/results/bb/integer_1.aprof /home/ercoppa/Desktop/code/aprof/benchmark/tests/sort/results/bb/heap_1.aprof 

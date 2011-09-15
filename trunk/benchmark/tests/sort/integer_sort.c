@@ -19,7 +19,7 @@ int main() {
     int j = 0, i = 0;
     int n = sizeof(v)/sizeof(int);
     
-    for (i = 10; i < n; i++) {
+    for (i = 10; i < n; i+=100) {
     
 	for (j = 0; j < i; j++)
 		v[j] = rand() % i;

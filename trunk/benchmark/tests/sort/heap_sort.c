@@ -29,7 +29,7 @@ void heapify(int v[], int i, int n) {
 
 void heap_sort(int v[], int n) {
 	heapify(v, 1, n);
-	print(v, n, "after heapify");
+	//print(v, n, "after heapify");
 	while (n > 1) {
 		int max = v[1];
 		v[1] = v[n];
@@ -45,7 +45,7 @@ int main() {
 	srand(time(0));
 	int j = 0;
 	int n = sizeof(v)/sizeof(int);
-	for (j = 0; j < sizeof(v)/sizeof(int); j++)
+	for (j = 0; j < n; j++)
 		v[j] = rand() % n;
 
     heap_sort(v, n);

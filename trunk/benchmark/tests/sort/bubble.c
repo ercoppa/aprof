@@ -62,11 +62,11 @@ int cmpfun(int a, int b)
 int main(int argc, char ** argv)
 {
   int i;
-  int array[1024*100];
+  int array[1024];
   int n = sizeof(array)/sizeof(int);
   srand(time(0));
 
-  for (i = 0; i < n; i++) { 
+  for (i = 0; i < n; i+=10) { 
     fill_array(array, i);
     ArraySort(array, cmpfun, i);
   }
