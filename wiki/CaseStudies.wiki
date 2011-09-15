@@ -3,8 +3,8 @@ See algorithms used [http://code.google.com/p/aprof/source/browse/#svn%2Ftrunk%2
 == Bubble sort ==
 Asymptotic complexity: O(n^2^) ([http://en.wikipedia.org/wiki/Bubble_sort ref]) 
 
-=== Time: RDTSC ===
 === Instruction: BB count ===
+[http://aprof.googlecode.com/svn-history/r78/trunk/benchmark/tests/sort/results/bb/ArraySort_ratio_plot.png]
 
 == Heap sort ==
 Asymptotic complexity: O(n*log(n)) ([http://en.wikipedia.org/wiki/Heapsort ref])
