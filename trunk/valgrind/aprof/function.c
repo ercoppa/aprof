@@ -249,6 +249,12 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 		tdata->curr_aid                 = activation->aid;
 		#endif
 		
+		/*
+		int i = 0;
+		for ( i = 0; i < tdata->stack_depth; i++)
+			VG_(printf)("| ");
+		VG_(printf)("> %s: %lu\n", rtn_info->name, activation->aid);
+		*/
 		#if CCT
 		
 		CCTNode * parent = parent_CCT(tdata);
@@ -355,6 +361,12 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 		if (info_access->min_cumulative_time > partial_cumulative) info_access->min_cumulative_time = partial_cumulative;
 		rtn_info->recursion_pending--;
 		
+		/*
+		int i = 0;
+		for ( i = 0; i < tdata->stack_depth; i++)
+			VG_(printf)("| ");
+		VG_(printf)("< %s: id %lu - input %lu - bb: %lu\n", activation->rtn_info->name, activation->aid, activation->sms, partial_cumulative);
+		*/
 		// merge accesses of current activation with those of the parent activation
 		if (tdata->stack_depth > 1) {
 

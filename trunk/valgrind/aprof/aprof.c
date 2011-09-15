@@ -222,7 +222,7 @@ static void fini(Int exitcode) {
 	VG_(printf)("Load: %lu\nStore: %lu\nModify: %lu\n", read_n, write_n, modify_n);
 	VG_(printf)("Function entry: %lu\nFunction exit: %lu\n", fn_in_n, fn_out_n);
 	VG_(printf)("Thread: %lu\n", thread_n);
-	VG_(printf)("BB executed: %u\n", bb_c);
+	VG_(printf)("BB executed: %lu\n", bb_c);
 	#endif
 
 }
