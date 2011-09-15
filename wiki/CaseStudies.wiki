@@ -29,9 +29,11 @@ Asymptotic complexity: O(n*log(n)) ([http://en.wikipedia.org/wiki/Merge_sort ref
 
 === Instruction: BB count ===
 merge function:
+
 [http://aprof.googlecode.com/svn-history/r78/trunk/benchmark/tests/sort/results/bb/merge_ratio_plot.png]
 
 merge_sort_ric function:
+
 [http://aprof.googlecode.com/svn-history/r78/trunk/benchmark/tests/sort/results/bb/merge_sort_ric_ratio_plot.png]
 
 == Quick sort ==
@@ -39,9 +41,11 @@ Asymptotic complexity:  O(n^2^) ([http://en.wikipedia.org/wiki/Quicksort ref]) <
 Average perfomance: O(n*log(n))
 
 quick_sort_ric function:
+
 [http://aprof.googlecode.com/svn-history/r78/trunk/benchmark/tests/sort/results/bb/quick_sort_ric_ratio_plot.png]
 
 partition function:
+
 [http://aprof.googlecode.com/svn-history/r78/trunk/benchmark/tests/sort/results/bb/partition_ratio_plot.png]
 
 == Selection sort ==
