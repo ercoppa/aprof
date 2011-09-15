@@ -811,8 +811,6 @@ IRSB* tf_instrument (  VgCallbackClosure* closure,
 		i++;
 	}
 	
-	UWord bb_addr = sbIn->stmts[i]->Ist.IMark.addr;
-	
 	IRExpr  * e1 = mkIRExpr_HWord ( BB_INIT );
 	IRExpr  * e2 = mkIRExpr_HWord ( (HWord) (Addr)sbIn->stmts[i]->Ist.IMark.addr );
 	IRDirty * di2 = unsafeIRDirty_0_N( 2, "BB start",

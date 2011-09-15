@@ -44,6 +44,9 @@
 #define BINARY				2	// Binary search
 #define STATS				3	// Compute some stats about searching into the stack when doing liner search
 #define SUF2_SEARCH			LINEAR
+#define TRACE_FUNCTION		1	// if 1, aprof trace functions by itself, otherwise it suppose 
+								// that the program is instrumentated by GCC
+								// with -finstrument-functions
 
 #if SUF == 1
 #include "SUF/union_find.h"
@@ -71,6 +74,19 @@ typedef unsigned long long UWord64;
 typedef IRExpr IRAtom;
 typedef enum access_t { LOAD, STORE, MODIFY } access_t;
 
+#if TRACE_FUNCTION
+/* 
+ * When I call an helper function during the exec of a BB,
+ * I descriminate the point with one of these: 
+ */
+typedef enum jump_t { 
+	BB_INIT,                /* head of BB */
+	CALL, RET, OTHER,       /* jump within a BB */
+	BBCALL, BBRET, BBOTHER, /* tail of BB */
+	NONE                    /* default value */
+} jump_t;
+#endif
+
 #if SUF2_SEARCH == STATS
 extern UWord64 avg_depth;
 extern UWord64 avg_iteration;
@@ -78,6 +94,41 @@ extern UWord64 ops;
 #endif
 
 /* Data structures */
+
+#if TRACE_FUNCTION
+/* Info about a Basic Block */
+typedef struct BB {
+	
+	/* Basic bloc address */
+	UWord addr;
+	/* length of BB, valid only if BB_end is exec by this BB with BBCALL */
+	UWord instr_offset;
+	/* 
+	 * Type of exit (jumpkind of the BB):
+	 * - if Ijk_Call then BBCALL
+	 * - if Ijk_Ret then BBRET
+	 * - if Ijk_Boring then BBOTHER
+	 * If the BB never take the "final exit" then NONE
+	 */
+	jump_t exit;
+	/* Object name (of the function) */
+	UChar * obj_name;
+	/* Object section (of the function) */
+	VgSectKind obj_section;
+	/* Is this BB part of dl_runtime_resolve? */
+	Bool is_dl_runtime_resolve;
+	
+} BB;
+
+/* a code pattern is a list of tuples (start offset, length) */
+struct chunk_t { int start, len; };
+struct pattern
+{
+    const char* name;
+    int len;
+    struct chunk_t chunk[];
+};
+#endif
 
 typedef struct FILE {
 	int file;
