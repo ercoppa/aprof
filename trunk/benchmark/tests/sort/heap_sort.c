@@ -41,14 +41,18 @@ void heap_sort(int v[], int n) {
 
 int main() {
 
-	int v[1024*100];
+	int v[1024*10];
 	srand(time(0));
-	int j = 0;
+	int j = 0, i = 0;
 	int n = sizeof(v)/sizeof(int);
-	for (j = 0; j < n; j++)
-		v[j] = rand() % n;
 
-    heap_sort(v, n);
+	for (i = 10; i < n; i+=100) {
+    
+		for (j = 0; j < i; j++)
+			v[j] = rand() % i;
+
+		heap_sort(v, i);
+    }
 	
     return 0;
 }
