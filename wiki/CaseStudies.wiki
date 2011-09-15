@@ -13,7 +13,7 @@ Asymptotic complexity: O(n)
 Asymptotic complexity: O(n*log(n)) ([http://en.wikipedia.org/wiki/Merge_sort ref])
 
 == Quick sort ==
-Asymptotic complexity:  O(n^2^) ([http://en.wikipedia.org/wiki/Quicksort ref])
+Asymptotic complexity:  O(n^2^) ([http://en.wikipedia.org/wiki/Quicksort ref]) <br>
 Average perfomance: O(n*log(n))
 
 == Selection sort ==
