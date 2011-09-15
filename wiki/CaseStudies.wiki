@@ -1,15 +1,18 @@
-= Sort algorithms =
+=Case studies=
+<wiki:toc max_depth="3" />
+
+== Sort algorithms ==
 See algorithms used [http://code.google.com/p/aprof/source/browse/#svn%2Ftrunk%2Fbenchmark%2Ftests%2Fsort here]. We run each algorithm with both metric (time: RDTSC, instruction: BB executed).
-== Bubble sort ==
+=== Bubble sort ===
 Asymptotic complexity: O(n^2^) ([http://en.wikipedia.org/wiki/Bubble_sort ref]) 
 
-=== Instruction: BB count ===
+==== Instruction: BB count ====
 [http://aprof.googlecode.com/svn-history/r78/trunk/benchmark/tests/sort/results/bb/ArraySort_ratio_plot.png]
 
-== Heap sort ==
+=== Heap sort ===
 Asymptotic complexity: O(n*log(n)) ([http://en.wikipedia.org/wiki/Heapsort ref])
 
-=== Instruction: BB count ===
+==== Instruction: BB count ====
 Fix_heap function:
 
 [http://aprof.googlecode.com/svn-history/r78/trunk/benchmark/tests/sort/results/bb/fix_heap_ratio_plot.png]
@@ -18,16 +21,16 @@ Heapify:
 
 [http://aprof.googlecode.com/svn-history/r78/trunk/benchmark/tests/sort/results/bb/heapify_ratio_plot.png]
 
-== Integer sort ==
+=== Integer sort ===
 Asymptotic complexity: O(n)
 
-=== Instruction: BB count ===
+==== Instruction: BB count ====
 [http://aprof.googlecode.com/svn-history/r78/trunk/benchmark/tests/sort/results/bb/integer_sort_ratio_plot.png]
 
-== Merge sort ==
+=== Merge sort ====
 Asymptotic complexity: O(n*log(n)) ([http://en.wikipedia.org/wiki/Merge_sort ref])
 
-=== Instruction: BB count ===
+==== Instruction: BB count ====
 merge function:
 
 [http://aprof.googlecode.com/svn-history/r78/trunk/benchmark/tests/sort/results/bb/merge_ratio_plot.png]
@@ -36,9 +39,11 @@ merge_sort_ric function:
 
 [http://aprof.googlecode.com/svn-history/r78/trunk/benchmark/tests/sort/results/bb/merge_sort_ric_ratio_plot.png]
 
-== Quick sort ==
+=== Quick sort ===
 Asymptotic complexity:  O(n^2^) ([http://en.wikipedia.org/wiki/Quicksort ref]) <br>
 Average perfomance: O(n*log(n))
+
+==== Instruction: BB count ====
 
 quick_sort_ric function:
 
@@ -48,7 +53,9 @@ partition function:
 
 [http://aprof.googlecode.com/svn-history/r78/trunk/benchmark/tests/sort/results/bb/partition_ratio_plot.png]
 
-== Selection sort ==
+=== Selection sort ===
 Asymptotic complexity: O(n^2^) ([http://en.wikipedia.org/wiki/Selection_sort ref])
+
+==== Instruction: BB count ====
 
 [http://aprof.googlecode.com/svn-history/r78/trunk/benchmark/tests/sort/results/bb/selection_sort_ratio_plot.png]
