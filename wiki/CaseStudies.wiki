@@ -10,7 +10,7 @@ Asymptotic complexity: [http://en.wikipedia.org/wiki/Heapsort O(n*log(n))]
 Asymptotic complexity: O(n)
 
 == Merge sort ==
-Asymptotic complexity: O(n*log(n))
+Asymptotic complexity: [http://en.wikipedia.org/wiki/Merge_sort O(n*log(n))]
 
 == Quick sort ==
 Asymptotic complexity: [http://en.wikipedia.org/wiki/Quicksort O(n^2^)]
