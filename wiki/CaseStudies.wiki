@@ -9,6 +9,10 @@ Asymptotic complexity: O(n^2^) ([http://en.wikipedia.org/wiki/Bubble_sort ref])
 == Heap sort ==
 Asymptotic complexity: O(n*log(n)) ([http://en.wikipedia.org/wiki/Heapsort ref])
 
+=== Instruction: BB count ===
+[http://aprof.googlecode.com/svn-history/r78/trunk/benchmark/tests/sort/results/bb/fix_heap_ratio_plot.png]
+[http://aprof.googlecode.com/svn-history/r78/trunk/benchmark/tests/sort/results/bb/heapify_ratio_plot.png]
+
 == Integer sort ==
 Asymptotic complexity: O(n)
 
