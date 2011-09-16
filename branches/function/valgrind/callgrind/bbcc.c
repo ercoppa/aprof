@@ -635,7 +635,7 @@ void CLG_(setup_bbcc)(BB* bb)
        * the same over CALL=b(c)l / RET=b(c)lr boundaries
        */
       if (sp < top_ce->sp)  {
-	  VG_(printf)("On BB %lu, RET to CALL because SP(%lu) < TOP_SP(%lu)\n", bb_addr(bb), sp, top_ce->sp);
+	  //VG_(printf)("On BB %lu, RET to CALL because SP(%lu) < TOP_SP(%lu)\n", bb_addr(bb), sp, top_ce->sp);
 	  popcount_on_return = 0;
 	}
       else if (top_ce->sp == sp) {
@@ -655,14 +655,14 @@ void CLG_(setup_bbcc)(BB* bb)
 		  }
 	      }
 	      popcount_on_return = 0;
-	      VG_(printf)("No match found BB(%lu)\n", bb_addr(bb));
+	      //VG_(printf)("No match found BB(%lu)\n", bb_addr(bb));
 	      break;
 	  }
       } 
       if (popcount_on_return == 0) {
 	  jmpkind = Ijk_Boring;
 	  ret_without_call = True;
-	  VG_(printf)("RET converted in CALL %lu\n", bb_addr(bb));
+	  //VG_(printf)("RET converted in CALL %lu\n", bb_addr(bb));
       }
   }
 
@@ -757,7 +757,7 @@ void CLG_(setup_bbcc)(BB* bb)
     if (unwind_count > 0) {
       /* if unwinding was done, this actually is a return */
       jmpkind = Ijk_Ret;
-      VG_(printf)("CALL converted to RET\n");
+      //VG_(printf)("CALL converted to RET\n");
     }
     
     if (jmpkind == Ijk_Call) {

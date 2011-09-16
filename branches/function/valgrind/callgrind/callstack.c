@@ -288,11 +288,22 @@ void CLG_(push_call_stack)(BBCC* from, UInt jmp, BBCC* to, Addr sp, Bool skip)
 
 	    BB* bb = jcc->to->bb;
 	    if (s>40) s=40;
+	    
+	    int i = 0;
+	    for(i = 0; i < s -1; i++)
+		VG_(printf)("| ");
+	    
+	    //char * sect = (char *)VG_(pp_SectKind)(section);
+	    
+	    VG_(printf)("> %s\n", bb->fn->name);
+	    
+	    /*
 	    VG_(printf)("%s> %s(0x%x, 0x%x, ...) [%s / %#lx]\n", spaces[s%4]+40-s, bb->fn->name,
                         pars ? pars[1]:0,
 			pars ? pars[2]:0,
 			bb->obj->name + bb->obj->last_slash_pos,
 			bb->offset);
+	    */
 	  }
 	}
 	else if (CLG_(clo).verbose<4) {

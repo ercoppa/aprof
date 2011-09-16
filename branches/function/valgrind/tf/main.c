@@ -331,31 +331,19 @@ static void function_enter(UWord target, char * name, VgSectKind section) {
 	int i = 0;
 	for(i = 0; i < stack.depth -1; i++)
 		VG_(printf)("| ");
+
+	char * sect = "";
+	if (section == Vg_SectPLT) sect = "[PLT]";
 	
-	char * sect = (char *)VG_(pp_SectKind)(section);
+	//char * sect = (char *)VG_(pp_SectKind)(section);
 	
-	if (name == NULL) VG_(printf)("> %p() [%s]\n", (void *)target, sect);
-	else VG_(printf)("> %s() [%s]\n", name, sect);
+	if (name == NULL) VG_(printf)("> %p %s\n", target, sect);
+	else VG_(printf)("> %s\n", name);
 }
 
 /* Called when a function return */
 static void function_exit(UWord target, char * name) {
 	return;
-}
-
-static void BB_is_entry_add(UWord target) {
-	
-	if (bb_entry_ht == NULL) {
-		bb_entry_ht = VG_(HT_construct)("bb entry");
-		if (bb_entry_ht == NULL) failure("bb entry ht not allocable");
-	}
-	
-	VgHashNode * n = VG_(calloc)("ht node", sizeof(VgHashNode), 1);
-	if (n == NULL) failure("ht node not allocable");
-	
-	n->key = target;
-	VG_(HT_add_node)(bb_entry_ht, n);
-	
 }
 
 static Bool BB_is_entry(UWord target) {
@@ -367,13 +355,33 @@ static Bool BB_is_entry(UWord target) {
 	
 }
 
+static void BB_is_entry_add(UWord target) {
+	
+	if (bb_entry_ht == NULL) {
+		bb_entry_ht = VG_(HT_construct)("bb entry");
+		if (bb_entry_ht == NULL) failure("bb entry ht not allocable");
+	}
+	
+	if (!BB_is_entry(target)) {
+		VgHashNode * n = VG_(calloc)("ht node", sizeof(VgHashNode), 1);
+		if (n == NULL) failure("ht node not allocable");
+		
+		n->key = target;
+		VG_(HT_add_node)(bb_entry_ht, n);
+	}
+	
+}
+
 /* Init the stack */
 static void init_stack(UWord csp, UWord target) {
 	
 	stack.head = VG_(calloc)("thread_data", sizeof(activation) * 4096, 1);
 	if (stack.head == NULL) failure("Stack not allocable");
 	stack.current = stack.head;
-	stack.depth = 1;
+	stack.depth = 0;
+	
+	return;
+	
 	/* Function name buffer */
 	Char * fn = VG_(calloc)("fn name", 256, 1);
 	/* valgrind call the init function "(below main)" */
@@ -410,6 +418,7 @@ static void init_stack(UWord csp, UWord target) {
 	 * instruction of this function */
 	if (VG_(get_fnname_if_entry)(target, fn, 256)) failure("Wrong");
 	
+
 }
 
 /* Push a new activation on the stack */
@@ -427,7 +436,8 @@ static void push_stack(UWord sp, UWord target, char * name,
 	function_enter(target, name, section);
 	
 	/* Safety check */
-	if ((stack.current-1)->sp < sp) failure("Caller has a lower SP!");
+	//if (stack.depth > 0 && (stack.current-1)->sp < sp)
+	//	failure("Caller has a lower SP!");
 	
 	//VG_(printf)("PUSH: addr %lu - depth %lu - SP %lu\n", target, stack.depth, sp);
 	//VG_(printf)("PUSH: addr %lu\n", target);
@@ -447,8 +457,10 @@ static UWord pop_stack(UWord csp, UWord n_frames) {
 	
 	UWord n_pop = 0;
 	
+	/*
 	if (n_frames >= stack.depth)
 		failure("Too much pop request!");
+	*/
 	
 	while (	stack.depth > 0 && 
 			(
@@ -484,7 +496,7 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 	/* Init stack if needed */
 	if (stack.head == NULL) {
 		init_stack(csp, target);
-		return;
+		//return;
 	}
 
 	/* Obtain debug info about this BB */
@@ -519,8 +531,8 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 	
 	}
 
-	/* Are we simulating a call? */
-	Bool simulate_call = False;
+	/* Are we converting RET into a CALL? */
+	Bool ret_as_call = False;
 	
 	/* Function name buffer */
 	char * fn = VG_(calloc)("fn_name", 256, 1);
@@ -529,14 +541,14 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 	 * if this BB is the first of a function. Valgrind sometimes
 	 * does not know this information, so it return False. If this is
 	 * the case, we try different stategies to capture a call, see
-	 * simulate_call later.
+	 * later.
 	 */
-	simulate_call = VG_(get_fnname_if_entry)(target, fn, 256);
+	Bool is_entry = VG_(get_fnname_if_entry)(target, fn, 256);
 	/* If not, ask valgrind where we are... */
 	Bool info_fn = True; /* Have we info about current fn? */
-	if (!simulate_call)
+	if (!is_entry) {
 		info_fn = VG_(get_fnname)(target, fn, 256);
-	else {
+	} else {
 		BB_is_entry_add(target);
 	}
 	
@@ -573,20 +585,11 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 	if (last_bb.exit == BBCALL) {
 		
 		/*
-		 * if this function returns, we expect the return address:
+		 * if this function returns, we expect as return address this:
 		 */
 		stack.current->ret_addr = last_bb.addr + last_bb.instr_offset;
 		//VG_(printf)("Ret address: %lu : %lu + %lu\n", stack.current->ret_addr,
 		//	last_bb.addr, last_bb.instr_offset);
-		
-		/* 
-		 * If last BB do a Ijk_Call exit but Valgrind does not 
-		 * recognize this BB as first of a function, we "simulate"
-		 * a call
-		 */
-		simulate_call = True;
-		
-		//VG_(printf)("Call because BBCALL\n");
 
 	} 
 
@@ -651,7 +654,7 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 		}
 		
 		if (n_pop == 0) {
-			simulate_call = True;
+			ret_as_call = True;
 			last_bb.exit = BBOTHER;
 			//VG_(printf)("Call because RET as CALL\n");
 		}
@@ -665,10 +668,10 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 	 *   previous info given by Valgrind) 
 	 */
 	Bool call_emulation = False;
-	if (last_bb.exit != BBCALL && last_bb.exit != BBRET)
+	if (last_bb.addr > 0 && last_bb.exit != BBCALL && last_bb.exit != BBRET)
 	{
 		
-		if (different_obj || different_sect || BB_is_entry(target)) {
+		if (ret_as_call || different_obj || different_sect || BB_is_entry(target)) {
 			
 			/* 
 			 * if the last BB is dl_runtime_resolve, we have to 
@@ -685,8 +688,8 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 				csp = stack.current->sp;
 				
 				function_exit(stack.current->addr, stack.current->name);
-				//if (stack.current->name != NULL)
-				//	VG_(free)(stack.current->name);
+				if (stack.current->name != NULL)
+					VG_(free)(stack.current->name);
 				if ((char *)stack.current->libname != (char *) anon_obj)
 					VG_(free)(stack.current->libname);
 				/* Adjust stack */
@@ -695,10 +698,14 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 				
 			}
 			
-			simulate_call = True;
+			last_bb.exit = BBCALL;
+			
+			/* 
+			 * We are simulating a call... later we have to fix 
+			 * something in the stack
+			 */
 			call_emulation = True;
 			
-			//VG_(printf)("Call because different ELF/section\n");
 		}
 		
 	}
@@ -720,11 +727,12 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 		n_pop = pop_stack(csp, 0);
 		if (n_pop > 0) {
 			//VG_(printf)("Call deleted\n");
-			simulate_call = False;
+			last_bb.exit = BBRET;
 		} 
 		
-		if (simulate_call) {
+		if (last_bb.exit == BBCALL) {
 			
+			/* I don't know why we do this but callgrind does so... */
 			if (call_emulation && stack.depth > 0)
 				csp = stack.current->sp;
 			
@@ -737,14 +745,6 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 			
 		}
 		
-	}
-	
-	if (!info_fn) {
-		/* 
-		 * Why is this happening?
-		 * I don't know!
-		 */
-		//VG_(printf)("Valgrind does not know where we are: %p\n", (void *)target);
 	}
 	
 	/* Safety check */
@@ -768,7 +768,7 @@ static VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 	last_bb.instr_offset = 0;
 	last_bb.obj_name = obj_name;
 	last_bb.obj_section = sect_kind;
-	last_bb.exit = NONE;
+	last_bb.exit = BBOTHER;
 	last_bb.is_dl_runtime_resolve = is_dl_runtime_resolve;
 
 }
@@ -938,11 +938,13 @@ IRSB* tf_instrument (  VgCallbackClosure* closure,
 /* aprof initialization */
 static void tf_post_clo_init(void) {
 	last_bb.addr = 0;
-	last_bb.exit = NONE;
+	last_bb.exit = BBOTHER;
 	last_bb.instr_offset = 0;
 	last_bb.obj_name =  anon_obj;
 	last_bb.obj_section = Vg_SectUnknown;
-	return;
+	
+	VG_(printf)("\n\n");
+	
 }
 
 /* Funzione per presentare risultati in fase finale */
