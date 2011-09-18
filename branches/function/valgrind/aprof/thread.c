@@ -7,9 +7,9 @@
 
 #include "aprof.h"
 
-/* Most of the program has only one thread so...*/
-static ThreadData * thread_one = NULL; 
-/* More than one thread? */
+/* Most of the programs use less than 5 thread so... */
+static ThreadData thread_fast[5] = { 0 }; 
+/* More than five thread? */
 static HashTable * thread_pool = NULL;
 
 #if EVENTCOUNT
@@ -39,8 +39,8 @@ ThreadData * thread_init(ThreadId tid){
 	ThreadData * tdata = VG_(calloc)("thread_data", sizeof(ThreadData), 1);
 	if (tdata == NULL) failure("thread data not allocable");
 	
-	if (tid == 1) 
-		thread_one = tdata;
+	if (tid <= 5) 
+		thread_fast[tid-1] = tdata;
 	
 	else if (thread_pool == NULL) 
 		thread_pool_init();
@@ -83,7 +83,11 @@ ThreadData * thread_init(ThreadId tid){
 	tdata->curr_aid = 0;
 	#endif
 	
-	if (tid > 1) /* Insert thread data in the thread pool */
+	#if TRACE_FUNCTION
+	tdata->last_bb = NULL;  
+	#endif
+	
+	if (tid > 5) /* Insert thread data in the thread pool */
 		HT_add_node(thread_pool, tid, tdata);
 
 	return tdata;
@@ -119,8 +123,8 @@ void thread_exit (ThreadId tid){
 	#endif
 
 	ThreadData * tdata = NULL;
-	if (tid == 1)
-		tdata = thread_one;
+	if (tid < 6)
+		tdata = thread_fast[tid - 1];
 	else
 		tdata = HT_lookup(thread_pool, tid, NULL);
 	
@@ -152,8 +156,11 @@ void thread_exit (ThreadId tid){
 	#endif
 	
 	VG_(free)(tdata->stack);
-	if (tid > 1)
+	if (tid > 5)
 		HT_remove(thread_pool, tid);
+	else
+		thread_fast[tid -1] = NULL;
+	
 	VG_(free)(tdata);
 
 }
@@ -168,7 +175,7 @@ ThreadData * get_thread_data(ThreadId tid) {
 		tid = VG_(get_running_tid)();
 	
 	if (tid == 0) failure("Thread id is zero");
-	if (tid == 1) return thread_one;
+	if (tid < 6) return thread_fast[tid -1];
 	
 	ThreadData * tdata = HT_lookup(thread_pool, tid, NULL);
 	if (tdata == NULL) failure("Thread never initializated");

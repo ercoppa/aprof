@@ -145,8 +145,10 @@ void destroy_routine_info(void * data) {
 
 Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 	
+	#if !TRACE_FUNCTION
 	/* Is this client request for aprof? */
 	if (!VG_IS_TOOL_USERREQ('V','A',arg[0])) return False;
+	#endif
 	
 	UWord64 start = ap_time();
 	

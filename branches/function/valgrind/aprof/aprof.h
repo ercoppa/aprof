@@ -96,10 +96,17 @@ extern UWord64 ops;
 /* Data structures */
 
 #if TRACE_FUNCTION
+
+typdef struct Function {
+	UInt		 hash;					// Id of this function
+	const char * name;					// name of routine
+	char       * obj;					// name of library the routine belongs to
+} Function;
+
 /* Info about a Basic Block */
 typedef struct BB {
-	
-	/* Basic bloc address */
+
+	/* Basic block address */
 	UWord addr;
 	/* length of BB, valid only if BB_end is exec by this BB with BBCALL */
 	UWord instr_offset;
@@ -117,6 +124,12 @@ typedef struct BB {
 	VgSectKind obj_section;
 	/* Is this BB part of dl_runtime_resolve? */
 	Bool is_dl_runtime_resolve;
+	/* Is this BB first one of a function? */
+	Bool is_entry;
+	/* Info about the associated function */
+	Function * fn;
+	/* Info about object */
+	UInt obj_hash; 
 	
 } BB;
 
@@ -128,6 +141,27 @@ struct pattern
     int len;
     struct chunk_t chunk[];
 };
+
+/* Activation record on the stack */
+typedef struct activation {
+	/* Stack pointer when entered this function */
+	UWord sp;
+	/* 
+	 * If A() call  B() (and BB of A has as jumpkind Ijk_Call),
+	 * when B() returned, I will expect to execute the BB of A() 
+	 * with this address.
+	 */
+	UWord ret_addr;
+	/* hash of function name */
+	UInt hash_fn;
+} activation;
+
+typedef struct act_stack {
+	UWord depth;          /* stack depth */
+	activation * head;    /* head of the stack */
+	activation * current; /* current act */
+} act_stack;
+
 #endif
 
 typedef struct FILE {
@@ -148,6 +182,7 @@ typedef struct CCTNode {
 #endif
 
 typedef struct {
+	
 	UWord64 routine_id;					// unique id for this routine
 	const char * name;					// name of routine
 	const char * image_name;			// name of library the routine belongs to
@@ -213,6 +248,10 @@ typedef struct {
 	UWord next_aid;
 	UWord curr_aid;
 	#endif
+	#if TRACE_FUNCTION
+	BB * last_bb;
+	act_stack * stack_real;
+	#endif
 } ThreadData;
 
 /* Failure/error function */
@@ -267,5 +306,9 @@ void flushEvents(IRSB* sb);
 void addEvent_Ir ( IRSB* sb, IRAtom* iaddr, UInt isize );
 void addEvent_Dr (IRSB* sb, IRAtom* daddr, Int dsize);
 void addEvent_Dw (IRSB* sb, IRAtom* daddr, Int dsize);
+
+/* Callstack management */
+VG_REGPARM(2) void BB_start(UWord target, UWord type_op);
+VG_REGPARM(3) void BB_end(UWord target, UWord type_op, UWord instr_offset);
 
 #endif
