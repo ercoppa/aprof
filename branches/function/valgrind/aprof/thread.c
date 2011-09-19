@@ -8,7 +8,7 @@
 #include "aprof.h"
 
 /* Most of the programs use less than 5 thread so... */
-static ThreadData thread_fast[5] = { 0 }; 
+static ThreadData * thread_fast[5]; 
 /* More than five thread? */
 static HashTable * thread_pool = NULL;
 

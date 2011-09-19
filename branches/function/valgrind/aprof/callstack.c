@@ -181,7 +181,12 @@ static UInt str_hash(const Char *s, UInt table_size)
 {
     int hash_value = 0;
     for ( ; *s; s++)
-        hash_value = (HASH_CONSTANT * hash_value + *s) % table_size;
+        hash_value = 31 * hash_value + *s;
+        
+    if (hash_value == 0) {
+		hash_value = 1;
+		VG_(printf)("Function %s has hash zero\n");
+    }
     return hash_value;
 }
 
@@ -189,6 +194,15 @@ static UInt str_hash(const Char *s, UInt table_size)
 
 /* Init the stack */
 static void init_stack(ThreadData * tdata) {
+	
+	if (bb_ht == NULL || fn_ht == NULL) {
+		
+		bb_ht = HT_construct(NULL);
+		if (bb_ht == NULL) failure("bb ht not allocable");
+		fn_ht = HT_construct(NULL);
+		if (fn_ht == NULL) failure("fn ht not allocable");
+		
+	}
 	
 	if (tdata->stack_real == NULL) {
 		
@@ -206,19 +220,19 @@ static void init_stack(ThreadData * tdata) {
 }
 
 /* Push a new activation on the stack */
-static void push_stack(ThreadId tid, act_stack stack, UWord sp, 
-							Function * fn, UWord addr, VgSectKind section) 
+static void push_stack(ThreadData * tdata, act_stack * stack, UWord sp, 
+							UWord addr, Function * fn, VgSectKind section) 
 {
 	
 	stack->depth++;
 	stack->current++;
 	stack->current->sp = sp;
-	stack.current->ret_addr = 0;
+	stack->current->ret_addr = 0;
 	
 	if (fn != NULL) {
 		
 		stack->current->hash_fn = fn->hash;
-		function_enter(tid, fn->name, fn->obj);
+		function_enter(tdata, fn->hash, fn->name, fn->obj);
 		
 	} else {
 		
@@ -243,7 +257,7 @@ static void push_stack(ThreadId tid, act_stack stack, UWord sp,
  * and CSP == SP, pop out n_frames activation.
  * Return how many activations are removed from the stack.
  */
-static UWord pop_stack(ThreadId tid, act_stack * stack, UWord csp, UWord n_frames) {
+static UWord pop_stack(ThreadData * tdata, act_stack * stack, UWord csp, UWord n_frames) {
 	
 	//VG_(printf)("POP\n");
 	
@@ -262,17 +276,15 @@ static UWord pop_stack(ThreadId tid, act_stack * stack, UWord csp, UWord n_frame
 		  ) 
 	{
 		
-		//function_exit(stack.current->addr, stack.current->name);
-		
 		if (stack->current->hash_fn > 0) {
-			function_exit(tid, stack->current->hash_fn);
+			function_exit(tdata, stack->current->hash_fn);
 		}
 		
 		if (n_frames > 0) n_frames--;
 		n_pop++;
 		/* Adjust stack */
-		stack.depth--;
-		stack.current--;
+		stack->depth--;
+		stack->current--;
 		
 	}
 	
@@ -289,7 +301,7 @@ VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 	
 	/* Previoud BB executed */
 	BB * last_bb = tdata->last_bb;
-	access_t exit = NONE;
+	enum jump_t exit = NONE;
 	if (last_bb != NULL) {
 		exit = last_bb->exit;
 	}
@@ -332,7 +344,7 @@ VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 		bb->is_entry = VG_(get_fnname_if_entry)(target, fn, 256);
 		/* If is not entry, we need anyway info about this function */
 		Bool info_fn = True; 
-		if (!is_entry) {
+		if (!bb->is_entry) {
 			info_fn = VG_(get_fnname)(target, fn, 256);
 		}
 		
@@ -341,12 +353,22 @@ VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 			runtime_resolve_addr = 1; /* this only means that ld is not stripped */
 		}
 		
-		if (f->obj == 0) {
+		Function * f = NULL;
+		UInt hash = 0;
+		if (info_fn) {
+			hash = str_hash(fn, N_FN_ENTRIES);
+			f = HT_lookup(fn_ht, hash, NULL);
+		}
+		
+		char * obj_name = NULL;
+		if (f == NULL || f->obj == 0) {
 			
 			/* Obtain debug info about this BB */
 			DebugInfo * di = VG_(find_DebugInfo)(target);
 			/* Obtain object name */
-			char * obj_name = VG_(DebugInfo_get_filename)(di);
+			obj_name = di ? VG_(strdup)("obj_name",
+								VG_(DebugInfo_get_filename)(di)) 
+								: NULL;
 			if (obj_name == NULL)
 				obj_name = anon_obj;
 			
@@ -378,7 +400,7 @@ VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 		
 		/* Is this BB dl_runtime_resolve? */ 
 		if (
-			!bb->is_dl_runtime_resolve && runtime_resolve_addr > 1
+			!bb->is_dl_runtime_resolve && runtime_resolve_addr > 1 &&
 			(target >= runtime_resolve_addr) &&
 			(target < runtime_resolve_addr + runtime_resolve_length)
 			) 
@@ -388,13 +410,14 @@ VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 			info_fn = True;
 		}
 		
-		UInt hash = 0;
-		
-		Function * f = NULL;
-		if (info_fn) {
+		if (info_fn && f == NULL) {
 			
-			hash = str_hash(fn, N_FN_ENTRIES);
-			f = HT_lookup(fn_ht, hash, NULL);
+			UInt hash_2 = str_hash(fn, N_FN_ENTRIES);
+			if (hash != hash_2) {
+				f = HT_lookup(fn_ht, hash, NULL);
+				hash = hash_2;
+			}
+			
 			if (f == NULL) {
 				
 				f = VG_(calloc)("fn", sizeof(Function), 1);
@@ -404,7 +427,7 @@ VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 				HT_add_node(fn_ht, hash, f);
 				
 				if (obj_name != anon_obj)
-					f->obj = VG_(strdup)("obj_name", obj_name)
+					f->obj = VG_(strdup)("obj_name", obj_name);
 				
 				f->hash = hash;
 			}
@@ -447,7 +470,7 @@ VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 	 * (pattern: PUSH addr; RET; this is only another way of 
 	 * saying "JMP addr").
 	 */
-	else if (exit == BBRET) {
+	if (exit == BBRET) {
 		
 		/* This is a call! */
 		if (csp < stack->current->sp) {
@@ -525,7 +548,7 @@ VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 				csp = stack->current->sp;
 				
 				if (stack->current->hash_fn > 0) {
-					function_exit(tid, stack->current->hash_fn);
+					function_exit(tdata, stack->current->hash_fn);
 				}
 				
 				/* Adjust stack */
@@ -552,7 +575,7 @@ VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 	 */
 	if (exit == BBRET) {
 		
-		pop_stack(tid, stack, csp, n_pop);
+		pop_stack(tdata, stack, csp, n_pop);
 		
 	} else {
 		
@@ -560,7 +583,7 @@ VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 		 * By definition, if this is a call, SP must be equal or smaller
 		 * of SP on top of our stack. Try to see if this is not true...
 		 */
-		n_pop = pop_stack(tid, stack, csp, 0);
+		n_pop = pop_stack(tdata, stack, csp, 0);
 		if (n_pop > 0) {
 			//VG_(printf)("Call deleted\n");
 			exit = BBRET;
@@ -575,7 +598,7 @@ VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 			if (last_bb->exit == BBCALL)
 				stack->current->ret_addr = last_bb->addr + last_bb->instr_offset;
 			
-			push_stack(tid, stack, csp, bb->addr, bb->fn, bb->obj_section); 
+			push_stack(tdata, stack, csp, bb->addr, bb->fn, bb->obj_section); 
 			
 		}
 		

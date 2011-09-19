@@ -18,6 +18,10 @@ IRSB* instrument (  VgCallbackClosure* closure,
 	Int        i;
 	IRSB*      sbOut;
 	IRTypeEnv* tyenv = sbIn->tyenv;
+	
+	#if TRACE_FUNCTION
+	UWord instr_offset = 0;
+	#endif
 
 	if (gWordTy != hWordTy) /* We don't currently support this case. */
 		VG_(tool_panic)("host/guest word size mismatch");
@@ -31,6 +35,16 @@ IRSB* instrument (  VgCallbackClosure* closure,
 		addStmtToIRSB( sbOut, sbIn->stmts[i] );
 		i++;
 	}
+	
+	#if TRACE_FUNCTION
+	IRExpr  * e1 = mkIRExpr_HWord ( BB_INIT );
+	IRExpr  * e2 = mkIRExpr_HWord ( (HWord) (Addr)sbIn->stmts[i]->Ist.IMark.addr );
+	IRDirty * di3 = unsafeIRDirty_0_N( 2, "BB start",
+								VG_(fnptr_to_fnentry)( &BB_start ),
+								mkIRExprVec_2( e2, e1 ) );
+
+	addStmtToIRSB( sbOut, IRStmt_Dirty(di3) );
+	#endif
 	
 	#if EVENTCOUNT == 0 || EVENTCOUNT >= 2
 	
@@ -84,6 +98,13 @@ IRSB* instrument (  VgCallbackClosure* closure,
 				#if EVENTCOUNT != 2
 				addEvent_Ir( sbOut, mkIRExpr_HWord( (HWord)st->Ist.IMark.addr ),
 								st->Ist.IMark.len );
+				#endif
+				
+				#if TRACE_FUNCTION
+				if (st->Ist.IMark.len == 0)
+					instr_offset += VG_MIN_INSTR_SZB;
+				else
+					instr_offset += st->Ist.IMark.len;
 				#endif
 
 				addStmtToIRSB( sbOut, st );
@@ -195,6 +216,37 @@ IRSB* instrument (  VgCallbackClosure* closure,
 		}
 	}
 
+	#if TRACE_FUNCTION
+	if (sbIn->jumpkind == Ijk_Call) {
+		
+		e1 = mkIRExpr_HWord ( BBCALL );
+		e2 = mkIRExpr_HWord ( instr_offset );
+		IRDirty * di = unsafeIRDirty_0_N( 3, "BB end",
+								VG_(fnptr_to_fnentry)( &BB_end ),
+								mkIRExprVec_3( sbIn->next, e1, e2) );
+		addStmtToIRSB( sbOut, IRStmt_Dirty(di) );
+		
+	} else if (sbIn->jumpkind == Ijk_Ret) {
+		
+		e1 = mkIRExpr_HWord ( BBRET );
+		e2 = mkIRExpr_HWord ( instr_offset );
+		IRDirty * di = unsafeIRDirty_0_N( 3, "BB end",
+								VG_(fnptr_to_fnentry)( &BB_end ),
+								mkIRExprVec_3( sbIn->next, e1, e2 ) );
+		addStmtToIRSB( sbOut, IRStmt_Dirty(di) );
+		
+	} else {
+		
+		e1 = mkIRExpr_HWord ( BBOTHER );
+		e2 = mkIRExpr_HWord ( instr_offset );
+		IRDirty * di = unsafeIRDirty_0_N( 3, "BB end",
+								VG_(fnptr_to_fnentry)( &BB_end ),
+								mkIRExprVec_3( sbIn->next, e1, e2 ) );
+		addStmtToIRSB( sbOut, IRStmt_Dirty(di) );
+		
+	}
+	#endif
+
 	/* At the end of the sbIn.  Flush outstandings. */
 	flushEvents(sbOut);
 
@@ -237,11 +289,14 @@ static void pre_clo_init(void) {
 	VG_(details_bug_reports_to)		("ercoppa@gmail.com");
 
 	VG_(basic_tool_funcs) 				(post_clo_init, instrument, fini);
+	
+	#if !TRACE_FUNCTION
 	VG_(needs_client_requests)			(trace_function);
+	#endif
+	
 	VG_(track_pre_thread_first_insn)	(thread_start);
 	VG_(track_pre_thread_ll_exit)		(thread_exit);
 	
-	VG_(clo_vex_control).iropt_level = 0;
 	VG_(clo_vex_control).iropt_unroll_thresh = 0;
 	VG_(clo_vex_control).guest_chase_thresh  = 0;
 }
