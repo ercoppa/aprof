@@ -9,10 +9,9 @@
 
 /* FixMe: capire come ricavare la commandline completa */
 
-void generate_report(ThreadData * tdata) {
+void generate_report(ThreadData * tdata, ThreadId tid) {
 	
 	Char filename_priv[256];
-	ThreadId tid = thread_running();
 	Char * prog_name = (Char *) VG_(args_the_exename);
 	VG_(sprintf)(filename_priv, "%s_%u.aprof", prog_name, tid);
 	Char * filename = VG_(expand_file_name)("aprof log", filename_priv);

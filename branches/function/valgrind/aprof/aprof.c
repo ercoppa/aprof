@@ -7,7 +7,6 @@
 
 #include "aprof.h"
 
-
 static
 IRSB* instrument (  VgCallbackClosure* closure, 
 					IRSB* sbIn,
@@ -37,6 +36,9 @@ IRSB* instrument (  VgCallbackClosure* closure,
 	}
 	
 	#if TRACE_FUNCTION
+	
+	BB * bb = get_BB(sbIn->stmts[i]->Ist.IMark.addr);
+	
 	IRExpr  * e1 = mkIRExpr_HWord ( BB_INIT );
 	IRExpr  * e2 = mkIRExpr_HWord ( (HWord) (Addr)sbIn->stmts[i]->Ist.IMark.addr );
 	IRDirty * di3 = unsafeIRDirty_0_N( 2, "BB start",
@@ -48,7 +50,7 @@ IRSB* instrument (  VgCallbackClosure* closure,
 	
 	#if EVENTCOUNT == 0 || EVENTCOUNT >= 2
 	
-	#if TIME == BB_COUNT
+	#if TIME == BB_COUNT && !TRACE_FUNCTION
 	IRDirty * di2 = unsafeIRDirty_0_N( 0, "add_one_guest_BB", 
 	VG_(fnptr_to_fnentry)( &add_one_guest_BB ), 
 								mkIRExprVec_0() );
@@ -217,34 +219,20 @@ IRSB* instrument (  VgCallbackClosure* closure,
 	}
 
 	#if TRACE_FUNCTION
-	if (sbIn->jumpkind == Ijk_Call) {
-		
-		e1 = mkIRExpr_HWord ( BBCALL );
-		e2 = mkIRExpr_HWord ( instr_offset );
-		IRDirty * di = unsafeIRDirty_0_N( 3, "BB end",
-								VG_(fnptr_to_fnentry)( &BB_end ),
-								mkIRExprVec_3( sbIn->next, e1, e2) );
-		addStmtToIRSB( sbOut, IRStmt_Dirty(di) );
-		
-	} else if (sbIn->jumpkind == Ijk_Ret) {
-		
-		e1 = mkIRExpr_HWord ( BBRET );
-		e2 = mkIRExpr_HWord ( instr_offset );
-		IRDirty * di = unsafeIRDirty_0_N( 3, "BB end",
-								VG_(fnptr_to_fnentry)( &BB_end ),
-								mkIRExprVec_3( sbIn->next, e1, e2 ) );
-		addStmtToIRSB( sbOut, IRStmt_Dirty(di) );
-		
-	} else {
-		
-		e1 = mkIRExpr_HWord ( BBOTHER );
-		e2 = mkIRExpr_HWord ( instr_offset );
-		IRDirty * di = unsafeIRDirty_0_N( 3, "BB end",
-								VG_(fnptr_to_fnentry)( &BB_end ),
-								mkIRExprVec_3( sbIn->next, e1, e2 ) );
-		addStmtToIRSB( sbOut, IRStmt_Dirty(di) );
-		
-	}
+	
+	if (sbIn->jumpkind == Ijk_Call) bb->exit = BBCALL;
+	else if (sbIn->jumpkind == Ijk_Ret) bb->exit = BBRET;
+	else bb->exit = BBOTHER;
+	
+	addStmtToIRSB( sbOut, IRStmt_Store(Endness, 
+					IRExpr_Const(hWordTy == Ity_I32 ?
+								 IRConst_U32( (UWord) &last_exit ) :
+								 IRConst_U64( (UWord) &last_exit )),
+					IRExpr_Const(IRConst_U32(bb->exit)) )
+				);
+	 
+	bb->instr_offset = instr_offset;
+	
 	#endif
 
 	/* At the end of the sbIn.  Flush outstandings. */
@@ -294,7 +282,7 @@ static void pre_clo_init(void) {
 	VG_(needs_client_requests)			(trace_function);
 	#endif
 	
-	VG_(track_pre_thread_first_insn)	(thread_start);
+	VG_(track_start_client_code)		(switch_thread);
 	VG_(track_pre_thread_ll_exit)		(thread_exit);
 	
 	VG_(clo_vex_control).iropt_unroll_thresh = 0;

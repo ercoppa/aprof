@@ -26,7 +26,7 @@ VG_REGPARM(3) void trace_access(UWord type, Addr addr, SizeT size) {
 	return;
 	#endif
 	
-	ThreadData * tdata = get_thread_data(0);
+	ThreadData * tdata = current_tdata;
 	#if DEBUG
 	if (tdata == NULL) failure("Invalid tdata in trace_load");
 	#endif

@@ -169,25 +169,11 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 #endif
 
 #if TRACE_FUNCTION
-/* FixMe: deve essere una var di thread!!! */
-static Bool inside_main = 0;
-#endif
-
-#if TRACE_FUNCTION
 void function_enter(ThreadData * tdata, UWord target, 
 						char * rtn_name, char * image_name) {
 #else
 void function_enter(ThreadData * tdata, UWord target) {
 #endif
-
-	#if TRACE_FUNCTION
-	if (!inside_main) {
-		if (VG_(strcmp)("main", rtn_name) == 0)
-			inside_main = True;
-		
-		else return;
-	}
-	#endif
 
 	/*
 	tdata->stack_depth++;
@@ -316,10 +302,6 @@ void function_enter(ThreadData * tdata, UWord target) {
 
 void function_exit(ThreadData * tdata, UWord target) {
 	
-	#if TRACE_FUNCTION
-	if (!inside_main) return;
-	#endif
-	
 	/*
 	tdata->stack_depth--;
 	return;
@@ -337,9 +319,6 @@ void function_exit(ThreadData * tdata, UWord target) {
 	if (act == NULL) failure("Invalid activation in function exit");
 	#endif
 	RoutineInfo * rtn_info = act->rtn_info;
-	
-	if (VG_(strcmp)("main", rtn_info->name) == 0)
-			inside_main = False;
 
 	UWord64 partial_cumulative =  start - act->entry_time - act->overhead;
 	if (rtn_info->recursion_pending < 2) rtn_info->total_cumulative_time += partial_cumulative;

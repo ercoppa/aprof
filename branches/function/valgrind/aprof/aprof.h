@@ -54,20 +54,17 @@
 #include "SUF2/suf.h"
 #endif
 
-/* Counter */ 
-#if EVENTCOUNT
-extern UWord read_n;
-extern UWord write_n;
-extern UWord modify_n;
-extern UWord fn_in_n;
-extern UWord fn_out_n;
-extern UWord thread_n;
-extern UWord bb_c;
-#endif
-
 /* Some constants */
 #define STACK_SIZE  32
 #define BUFFER_SIZE 32000
+
+#if defined(VG_BIGENDIAN)
+# define Endness Iend_BE
+#elif defined(VG_LITTLEENDIAN)
+# define Endness Iend_LE
+#else
+# error "Unknown endianness"
+#endif
 
 /* Data type */
 typedef unsigned long long UWord64;
@@ -75,6 +72,7 @@ typedef IRExpr IRAtom;
 typedef enum access_t { LOAD, STORE, MODIFY } access_t;
 
 #if TRACE_FUNCTION
+
 /* 
  * When I call an helper function during the exec of a BB,
  * I descriminate the point with one of these: 
@@ -85,12 +83,7 @@ typedef enum jump_t {
 	BBCALL, BBRET, BBOTHER, /* tail of BB */
 	NONE                    /* default value */
 } jump_t;
-#endif
 
-#if SUF2_SEARCH == STATS
-extern UWord64 avg_depth;
-extern UWord64 avg_iteration;
-extern UWord64 ops;
 #endif
 
 /* Data structures */
@@ -251,8 +244,39 @@ typedef struct {
 	#if TRACE_FUNCTION
 	BB * last_bb;
 	act_stack * stack_real;
+	jump_t last_exit;
+	Bool inside_main;
 	#endif
 } ThreadData;
+
+/* Global vars */
+
+extern ThreadId current_TID;
+extern ThreadData * current_tdata; 
+
+/* Counter */ 
+#if EVENTCOUNT
+extern UWord read_n;
+extern UWord write_n;
+extern UWord modify_n;
+extern UWord fn_in_n;
+extern UWord fn_out_n;
+extern UWord thread_n;
+extern UWord bb_c;
+#endif
+
+#if SUF2_SEARCH == STATS
+extern UWord64 avg_depth;
+extern UWord64 avg_iteration;
+extern UWord64 ops;
+#endif
+
+#if TRACE_FUNCTION
+extern jump_t last_exit;
+#endif
+
+//ThreadId current_tid = 0;
+//ThreadData * current_tdata = NULL;
 
 /* Failure/error function */
 void failure(char * msg);
@@ -264,15 +288,13 @@ void ap_fwrite(FILE * f, char * buffer, unsigned int size);
 void ap_fclose(FILE * f);
 
 /* thread functions */
-void thread_pool_init (void);
-void thread_start (ThreadId tid);
-ThreadData * thread_init (ThreadId tid);
+void switch_thread(ThreadId tid, ULong blocks_dispatched);
 void thread_exit (ThreadId tid);
 ThreadId thread_running (void);
 ThreadData * get_thread_data(ThreadId tid);	// if tid == 0, we ask to Valgrind 
 
 /* report functions */
-void generate_report(ThreadData * tdata);
+void generate_report(ThreadData * tdata, ThreadId tid);
 
 /* CCT functions */
 #if CCT
@@ -317,8 +339,9 @@ void addEvent_Dw (IRSB* sb, IRAtom* daddr, Int dsize);
 
 /* Callstack management */
 #if TRACE_FUNCTION
+void init_stack(ThreadData * tdata);
+BB * get_BB(UWord target);
 VG_REGPARM(2) void BB_start(UWord target, UWord type_op);
-VG_REGPARM(3) void BB_end(UWord target, UWord type_op, UWord instr_offset);
 #endif
 
 #endif

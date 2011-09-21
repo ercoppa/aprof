@@ -7,26 +7,16 @@
 
 #include "aprof.h"
 
-/* Most of the programs use less than 5 thread so... */
-static ThreadData * thread_fast[5]; 
-/* More than five thread? */
-static HashTable * thread_pool = NULL;
+/* All threads */
+static ThreadData * threads[VG_N_THREADS];
+ThreadId current_TID = 0;
+ThreadData * current_tdata = NULL; 
 
 #if EVENTCOUNT
 UWord thread_n = 0;
 #endif
 
-void thread_pool_init(void) {
-	
-	#if EMPTY_ANALYSIS || EVENTCOUNT
-	return;
-	#endif
-	
-	thread_pool = HT_construct(NULL);
-	if (thread_pool == NULL) failure("thread pool not allocatable");
-}
-
-ThreadData * thread_init(ThreadId tid){
+static ThreadData * thread_start(ThreadId tid){
 
 	#if EMPTY_ANALYSIS
 	return NULL;
@@ -39,21 +29,7 @@ ThreadData * thread_init(ThreadId tid){
 	ThreadData * tdata = VG_(calloc)("thread_data", sizeof(ThreadData), 1);
 	if (tdata == NULL) failure("thread data not allocable");
 	
-	if (tid <= 5) 
-		thread_fast[tid-1] = tdata;
-	
-	else if (thread_pool == NULL) 
-		thread_pool_init();
-	
-	#if TRACER
-	Char filename[150];
-	Char * prog_name = (Char *) VG_(args_the_exename);
-	VG_(sprintf)(filename, "%s_%u.suf", prog_name, tid);
-	tdata->log = ap_fopen(filename);
-	tdata->stack_depth = 0;
-	HT_add_node(thread_pool, tid, tdata);
-	return tdata;
-	#endif
+	threads[tid-1] = tdata;
 
 	#if SUF == 1
 	tdata->accesses = UF_create();
@@ -84,32 +60,13 @@ ThreadData * thread_init(ThreadId tid){
 	#endif
 	
 	#if TRACE_FUNCTION
-	tdata->last_bb = NULL;  
+	tdata->last_bb = NULL;
+	init_stack(tdata);  
+	tdata->inside_main = False;
 	#endif
-	
-	if (tid > 5) /* Insert thread data in the thread pool */
-		HT_add_node(thread_pool, tid, tdata);
 
 	return tdata;
 
-}
-
-void thread_start(ThreadId tid) {
-	
-	#if EMPTY_ANALYSIS
-	return;
-	#endif
-	
-	#if VERBOSE && !TRACER
-	VG_(printf)("Start thread %u\n", tid);
-	#endif
-	
-	#if EVENTCOUNT == 4
-	thread_n++;
-	return;
-	#endif
-	
-	thread_init(tid);
 }
 
 void thread_exit (ThreadId tid){
@@ -123,24 +80,13 @@ void thread_exit (ThreadId tid){
 	#endif
 
 	ThreadData * tdata = NULL;
-	if (tid < 6)
-		tdata = thread_fast[tid - 1];
-	else
-		tdata = HT_lookup(thread_pool, tid, NULL);
+	tdata = threads[tid - 1];
 	
 	#if DEBUG
 	if (tdata == NULL) failure("Invalid tdata in thread exit");
 	#endif
 	
-	#if TRACER
-	ap_fclose(tdata->log);
-	if (tid > 1)
-		HT_remove(thread_pool, tid);
-	VG_(free)(tdata);
-	return;
-	#endif
-	
-	generate_report(tdata);
+	generate_report(tdata, tid);
 	
 	/* destroy all thread data data */
 	#if SUF == 1
@@ -156,31 +102,35 @@ void thread_exit (ThreadId tid){
 	#endif
 	
 	VG_(free)(tdata->stack);
-	if (tid > 5)
-		HT_remove(thread_pool, tid);
-	else
-		thread_fast[tid -1] = NULL;
+	threads[tid -1] = NULL;
 	
 	VG_(free)(tdata);
 
 }
 
-ThreadId thread_running (void) {
-	return VG_(get_running_tid)();
+void switch_thread(ThreadId tid, ULong blocks_dispatched) {
+	
+	/* 
+	 * Note: Callgrind says that if you have not done at least
+	 * 5000 blocks you can ignore this call.
+		-----
+		static ULong last_blocks_done = 0;
+		// throttle calls to CLG_(run_thread) by number of BBs executed
+		if (blocks_done - blocks_dispatched < 5000) return;
+		------
+	 * Why? Investigate! 
+	 */
+	 
+	if (tid == current_TID) return;
+	if (threads[tid-1] == NULL) thread_start(tid);
+	
+	if (current_tdata != NULL)
+		current_tdata->last_exit = last_exit;
+	
+	current_TID = tid;
+	current_tdata = threads[tid -1];
+	last_exit = current_tdata->last_exit;
+	
 }
 
-ThreadData * get_thread_data(ThreadId tid) {
-
-	if (tid == 0) /* tid == 0, we ask to Valgrind */
-		tid = VG_(get_running_tid)();
-	
-	if (tid == 0) failure("Thread id is zero");
-	if (tid < 6) return thread_fast[tid -1];
-	
-	ThreadData * tdata = HT_lookup(thread_pool, tid, NULL);
-	if (tdata == NULL) failure("Thread never initializated");
-	
-	return tdata;
-
-}
 

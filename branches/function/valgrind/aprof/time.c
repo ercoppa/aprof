@@ -22,7 +22,7 @@ UWord64 ap_time(void) {
 	__asm__ __volatile__("rdtsc": "=A" (ret));
 	return ret;
 	#elif !TRACER && TIME == BB_COUNT
-	return get_thread_data(0)->bb_c;
+	return current_tdata->bb_c;
 	#endif
 	
 	return 0;
@@ -47,7 +47,7 @@ VG_REGPARM(0) void add_one_guest_instr(void) {
 	#if EMPTY_ANALYSIS
 	counter_instr++;
 	#else
-	get_thread_data(0)->instr++;
+	current_tdata->instr++;
 	#endif
 }
 #endif
@@ -63,7 +63,7 @@ UWord bb_c = 0;
 VG_REGPARM(0) void add_one_guest_BB(void) {
 
 	#if EVENTCOUNT == 0
-	get_thread_data(0)->bb_c++;
+	current_tdata->bb_c++;
 	#else
 	bb_c++;
 	#endif

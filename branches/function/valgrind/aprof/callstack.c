@@ -4,6 +4,8 @@
 
 /* Global vars */
 
+jump_t last_exit = NONE;
+
 /* default object */
 char * anon_obj = "UNKNOWN";
 /* 
@@ -19,12 +21,33 @@ static int  runtime_resolve_length = 0;
 static HashTable * bb_ht = NULL;
 /* HT of all function */
 static HashTable * fn_ht = NULL;
+/* hash of string main */
+static UInt hash_main = 0;
 
 #define N_FN_ENTRIES  87
 #define N_OBJ_ENTRIES 47
 #define HASH_CONSTANT 256
 
 /* End global vars */
+
+/* Obtain a BB from bb_ht or allocate a new BB */
+BB * get_BB(UWord target) {
+	
+	//VG_(printf)("Asked BB for %lu\n", target);
+	
+	BB * bb = HT_lookup(bb_ht, target, NULL);
+	if (bb == NULL) {
+		
+		bb = VG_(calloc)("bb", sizeof(BB), 1);
+		if (bb == NULL) failure("BB not allocable");
+		
+		//VG_(printf)("Created BB for %lu\n", target);
+		
+	}
+	
+	return bb;
+
+}
 
 /* 
  * search_runtime_resolve() and check_code are 
@@ -177,23 +200,26 @@ static Bool search_runtime_resolve(char * obj_name, UWord obj_start,
     return False;
 }
 
+/* End callgrind function */
+
 static UInt str_hash(const Char *s, UInt table_size)
 {
+	
+	const Char * s_orig = s;
+	
     int hash_value = 0;
     for ( ; *s; s++)
         hash_value = 31 * hash_value + *s;
         
     if (hash_value == 0) {
 		hash_value = 1;
-		VG_(printf)("Function %s has hash zero\n");
+		VG_(printf)("Function %s has hash zero\n", s_orig);
     }
     return hash_value;
 }
 
-/* End callgrind function */
-
 /* Init the stack */
-static void init_stack(ThreadData * tdata) {
+void init_stack(ThreadData * tdata) {
 	
 	if (bb_ht == NULL || fn_ht == NULL) {
 		
@@ -201,6 +227,8 @@ static void init_stack(ThreadData * tdata) {
 		if (bb_ht == NULL) failure("bb ht not allocable");
 		fn_ht = HT_construct(NULL);
 		if (fn_ht == NULL) failure("fn ht not allocable");
+		
+		hash_main = str_hash("main", 0);
 		
 	}
 	
@@ -231,8 +259,11 @@ static void push_stack(ThreadData * tdata, act_stack * stack, UWord sp,
 	
 	if (fn != NULL) {
 		
+		if (fn->hash == hash_main) tdata->inside_main = True;
+		
 		stack->current->hash_fn = fn->hash;
-		function_enter(tdata, fn->hash, fn->name, fn->obj);
+		if (tdata->inside_main)
+			function_enter(tdata, fn->hash, fn->name, fn->obj);
 		
 	} else {
 		
@@ -277,7 +308,13 @@ static UWord pop_stack(ThreadData * tdata, act_stack * stack, UWord csp, UWord n
 	{
 		
 		if (stack->current->hash_fn > 0) {
-			function_exit(tdata, stack->current->hash_fn);
+			
+			if (tdata->inside_main)
+				function_exit(tdata, stack->current->hash_fn);
+			
+			if (stack->current->hash_fn == hash_main) 
+				tdata->inside_main = False;
+				
 		}
 		
 		if (n_frames > 0) n_frames--;
@@ -296,19 +333,24 @@ static UWord pop_stack(ThreadData * tdata, act_stack * stack, UWord csp, UWord n
 VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 
 	/* Get thread data */
-	ThreadId tid = thread_running();
-	ThreadData * tdata = get_thread_data(tid);
+	ThreadData * tdata = current_tdata;
+	
+	#if TIME == BB_COUNT
+	
+	#if EVENTCOUNT == 0
+	tdata->bb_c++;
+	#else
+	bb_c++;
+	#endif
+	
+	#endif
 	
 	/* Previoud BB executed */
 	BB * last_bb = tdata->last_bb;
 	enum jump_t exit = NONE;
 	if (last_bb != NULL) {
-		exit = last_bb->exit;
+		exit = last_exit;
 	}
-	
-	/* Init stack if needed */
-	if (tdata->stack_real == NULL) 
-		init_stack(tdata);
 	
 	/* Stack for current thread */
 	act_stack * stack = tdata->stack_real;
@@ -317,16 +359,14 @@ VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 	UWord csp = (UWord) VG_(get_SP)(1);
 
 	/* Get info about this BB */
-	BB * bb = HT_lookup(bb_ht, target, NULL); 
+	BB * bb = get_BB(target); 
+	if (bb == NULL) failure("BB not exist!");
 	
 	Bool different_obj = False;
 	Bool different_sect = False;
 	
 	/* Create a new BB structure */
-	if (bb == NULL) {
-		
-		bb = VG_(calloc)("bb", sizeof(BB), 1);
-		if (bb == NULL) failure("BB not allocable");
+	if (bb->addr == 0) {
 		
 		bb->addr = target;
 		
@@ -548,7 +588,13 @@ VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 				csp = stack->current->sp;
 				
 				if (stack->current->hash_fn > 0) {
-					function_exit(tdata, stack->current->hash_fn);
+					
+					if (tdata->inside_main)
+						function_exit(tdata, stack->current->hash_fn);
+					
+					if (stack->current->hash_fn == hash_main) 
+						tdata->inside_main = False;
+					
 				}
 				
 				/* Adjust stack */
@@ -621,22 +667,7 @@ VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 	tdata->last_bb = bb;
 	
 	/* Reset exit of current BB */
-	tdata->last_bb->exit = BBOTHER;
-
-}
-
-/* 
- * Helper function called at the end of a BB (so it's executed only
- * if there is not a taken jump within the BB) 
- */
-VG_REGPARM(3) void BB_end(UWord target, UWord type_op, UWord instr_offset)
-{
-
-	ThreadData * tdata = get_thread_data(0);
-
-	tdata->last_bb->exit = type_op;
-	if (type_op == BBCALL) 
-		tdata->last_bb->instr_offset = instr_offset;
+	last_exit = BBOTHER;
 
 }
 
