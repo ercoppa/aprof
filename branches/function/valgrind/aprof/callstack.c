@@ -259,7 +259,10 @@ static void push_stack(ThreadData * tdata, act_stack * stack, UWord sp,
 	
 	if (fn != NULL) {
 		
-		if (fn->hash == hash_main) tdata->inside_main = True;
+		if (fn->hash == hash_main) {
+			//VG_(printf)("Inside main :)\n");
+			tdata->inside_main = True;
+		}
 		
 		stack->current->hash_fn = fn->hash;
 		if (tdata->inside_main)
@@ -312,9 +315,11 @@ static UWord pop_stack(ThreadData * tdata, act_stack * stack, UWord csp, UWord n
 			if (tdata->inside_main)
 				function_exit(tdata, stack->current->hash_fn);
 			
-			if (stack->current->hash_fn == hash_main) 
+			if (stack->current->hash_fn == hash_main) {
 				tdata->inside_main = False;
-				
+				//VG_(printf)("Outside main :(\n");
+			}
+			
 		}
 		
 		if (n_frames > 0) n_frames--;
@@ -369,6 +374,9 @@ VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 	if (bb->addr == 0) {
 		
 		bb->addr = target;
+		
+		/* Obtain section kind of this BB */
+		bb->obj_section = VG_(DebugInfo_sect_kind)(NULL, 0, target);
 		
 		bb->fn = VG_(calloc)("fn", sizeof(Function), 1);
 		
@@ -450,6 +458,19 @@ VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 			info_fn = True;
 		}
 		
+		/* 
+		 * We don't have info, but this is something probably
+		 * interesting anyway (various functions are implemented 
+		 * directly in assembly, maybe get for this also more
+		 * info about filename/line/dir as callgrind does )
+		 */
+		if (!info_fn && bb->obj_section != Vg_SectPLT) {
+			
+			VG_(sprintf)(fn, "%p", (void *) bb->addr);
+			info_fn = True;
+			
+		}
+		
 		if (info_fn && f == NULL) {
 			
 			UInt hash_2 = str_hash(fn, N_FN_ENTRIES);
@@ -475,17 +496,18 @@ VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 		}
 		bb->fn = f;
 		
-		/* Obtain section kind of this BB */
-		bb->obj_section = VG_(DebugInfo_sect_kind)(NULL, 0, target);
-		
-		if (last_bb != NULL && bb->obj_section != last_bb->obj_section)
-			different_sect = True;
-		
 		bb->instr_offset = 0; /* real value filled with BB_end */
 		
 		HT_add_node(bb_ht, target, bb);
 	
 	}
+	
+
+	if (last_bb != NULL && bb->obj_hash != last_bb->obj_hash)
+		different_obj = True;
+
+	if (last_bb != NULL && bb->obj_section != last_bb->obj_section)
+			different_sect = True;
 
 	/* Are we converting RET into a CALL? */
 	Bool ret_as_call = False;
@@ -592,8 +614,10 @@ VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 					if (tdata->inside_main)
 						function_exit(tdata, stack->current->hash_fn);
 					
-					if (stack->current->hash_fn == hash_main) 
+					if (stack->current->hash_fn == hash_main) {
 						tdata->inside_main = False;
+						//VG_(printf)("Outside main :(\n");
+					}
 					
 				}
 				
