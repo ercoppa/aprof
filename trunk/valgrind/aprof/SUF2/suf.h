@@ -1,23 +1,10 @@
 #ifndef _SUF_H_
 #define _SUF_H_
 
-#include "pub_tool_basics.h"
-#include "pub_tool_libcprint.h"
-#include "pub_tool_mallocfree.h"
-#include "pub_tool_libcbase.h"
-#include "pub_tool_libcassert.h"
-#include "valgrind.h"
-
-extern void failure(char * msg);
-
 #ifdef __i386__
 #define SPM_SIZE 65536 // 4GB
 #else
-#define SOM_SIZE 65536 * 8 // 32GB address space
-#endif
-
-#ifndef ADDR_MULTIPLE
-#define ADDR_MULTIPLE 1
+#define SPM_SIZE 65536 * 8 // 32GB address space
 #endif
 
 #if ADDR_MULTIPLE == 1

@@ -34,8 +34,8 @@
 #define VERBOSE				0	// 0 disabled, 1 function + thread, 2 function + thread + load/store/modify
 #define EVENTCOUNT			0	// 0 disabled, 1 memory accesses, 2 function entries/exits, 3 mem+fn, 4 mem+fn+thread
 #define CCT					0	// if 1, keep a calling context tree for each thread to include context information in reports
-#define ADDR_MULTIPLE		4	// account only accessed address muliple of this number, min 1
-#define COSTANT_MEM_ACCESS	1	// if 1, memory access with size >1 are managed as size==1
+#define ADDR_MULTIPLE		1	// account only accessed address muliple of this number, min 1
+#define COSTANT_MEM_ACCESS	0	// if 1, memory access with size >1 are managed as size==1
 #define NO_TIME				0	// No time 
 #define INSTR				1	// Count guest intel instruction 
 #define RDTSC				2	// rdtsc intel instruction

@@ -1,7 +1,7 @@
-#include "suf.h"
+#include "aprof.h"
 
 #define CHECK_ADDR_OVERFLOW(x) do { \
-									if ((x) > (unsigned long long) SSM_SIZE * 65536) \
+									if ((x) > (unsigned long long) SPM_SIZE * 65536) \
 										failure("Address overflow"); \
 									} while (0);
 
