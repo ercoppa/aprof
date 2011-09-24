@@ -79,6 +79,8 @@ HashTable * HT_construct(void * func)
    table->iterOK        = True;
    table->free_func     = func;
    
+   //VG_(printf)("Chains %p:%p\n", table->chains, table);
+   
    if (pool == NULL)
 		pool = pool_init(PAGE_NODES, sizeof(HashNode), &free_list);
    
@@ -131,9 +133,12 @@ static void resize (HashTable * table)
          node = next;
       }
    }
+   
+   //VG_(printf)("New chains %p:%p:%p\n", chains, table->chains, table);
 
    VG_(free)(table->chains);
    table->chains = chains;
+   
 }
 
 /* Puts a new, heap allocated VgHashNode, into the VgHashTable.  Prepends
@@ -247,6 +252,7 @@ void HT_destruct(HashTable * table)
          pool_free(node, free_list);
       }
    }
+   //VG_(printf)("I will free %p for %p\n", table->chains, table);
    VG_(free)(table->chains);
    VG_(free)(table);
 }

@@ -18,11 +18,9 @@ char * anon_obj = "UNKNOWN";
 static Addr runtime_resolve_addr   = 0;
 static int  runtime_resolve_length = 0;
 /* HT of all BB */
-static HashTable * bb_ht = NULL;
+HashTable * bb_ht = NULL;
 /* HT of all function */
-static HashTable * fn_ht = NULL;
-/* hash of string main */
-static UInt hash_main = 0;
+HashTable * fn_ht = NULL;
 
 #define N_FN_ENTRIES  87
 #define N_OBJ_ENTRIES 47
@@ -228,8 +226,6 @@ void init_stack(ThreadData * tdata) {
 		fn_ht = HT_construct(NULL);
 		if (fn_ht == NULL) failure("fn ht not allocable");
 		
-		hash_main = str_hash("main", 0);
-		
 	}
 	
 	if (tdata->stack_real == NULL) {
@@ -259,14 +255,8 @@ static void push_stack(ThreadData * tdata, act_stack * stack, UWord sp,
 	
 	if (fn != NULL) {
 		
-		if (fn->hash == hash_main) {
-			//VG_(printf)("Inside main :)\n");
-			tdata->inside_main = True;
-		}
-		
 		stack->current->hash_fn = fn->hash;
-		if (tdata->inside_main)
-			function_enter(tdata, fn->hash, fn->name, fn->obj);
+		function_enter(tdata, fn->hash, fn->name, fn->obj);
 		
 	} else {
 		
@@ -312,13 +302,7 @@ static UWord pop_stack(ThreadData * tdata, act_stack * stack, UWord csp, UWord n
 		
 		if (stack->current->hash_fn > 0) {
 			
-			if (tdata->inside_main)
-				function_exit(tdata, stack->current->hash_fn);
-			
-			if (stack->current->hash_fn == hash_main) {
-				tdata->inside_main = False;
-				//VG_(printf)("Outside main :(\n");
-			}
+			function_exit(tdata, stack->current->hash_fn);
 			
 		}
 		
@@ -339,6 +323,7 @@ VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 
 	/* Get thread data */
 	ThreadData * tdata = current_tdata;
+	if (current_tdata == NULL) failure("Invalid tdata");
 	
 	#if TIME == BB_COUNT
 	
@@ -394,6 +379,10 @@ VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 		Bool info_fn = True; 
 		if (!bb->is_entry) {
 			info_fn = VG_(get_fnname)(target, fn, 256);
+		}
+		
+		if (info_fn && VG_(strcmp)(fn, "(below main)") == 0) {
+			VG_(sprintf)(fn, "below_main");
 		}
 		
 		if (info_fn && VG_(strcmp)(fn, "_dl_runtime_resolve") == 0) {
@@ -503,7 +492,7 @@ VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 	}
 	
 
-	if (last_bb != NULL && bb->obj_hash != last_bb->obj_hash)
+	if (!different_obj && last_bb != NULL && bb->obj_hash != last_bb->obj_hash)
 		different_obj = True;
 
 	if (last_bb != NULL && bb->obj_section != last_bb->obj_section)
@@ -611,13 +600,7 @@ VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 				
 				if (stack->current->hash_fn > 0) {
 					
-					if (tdata->inside_main)
-						function_exit(tdata, stack->current->hash_fn);
-					
-					if (stack->current->hash_fn == hash_main) {
-						tdata->inside_main = False;
-						//VG_(printf)("Outside main :(\n");
-					}
+					function_exit(tdata, stack->current->hash_fn);
 					
 				}
 				

@@ -245,7 +245,6 @@ typedef struct {
 	BB * last_bb;
 	act_stack * stack_real;
 	jump_t last_exit;
-	Bool inside_main;
 	#endif
 } ThreadData;
 
@@ -253,6 +252,11 @@ typedef struct {
 
 extern ThreadId current_TID;
 extern ThreadData * current_tdata; 
+
+#if TRACE_FUNCTION
+extern HashTable * bb_ht;
+extern HashTable * fn_ht;
+#endif
 
 /* Counter */ 
 #if EVENTCOUNT

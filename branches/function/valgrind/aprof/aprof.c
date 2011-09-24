@@ -249,6 +249,11 @@ static void post_clo_init(void) {
 /* Funzione per presentare risultati in fase finale */
 static void fini(Int exitcode) {
 	
+	#if TRACE_FUNCTION 
+	HT_destruct(bb_ht);
+	HT_destruct(fn_ht);
+	#endif
+	
 	#if !EVENTCOUNT && !TRACER
 	HT_destroy_pool();
 	#endif

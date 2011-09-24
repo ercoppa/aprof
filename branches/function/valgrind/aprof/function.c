@@ -23,6 +23,8 @@ Activation * get_activation(ThreadData * tdata, unsigned int depth) {
 	if (depth == 0) failure("Inavalid depth in get_activation");
 	#endif
 
+	if (depth - 1 < 0) return NULL;
+
 	/* Expand stack if necessary */
 	if (depth - 1 >= tdata->max_stack_size) {
 		
@@ -75,7 +77,7 @@ Activation * get_activation_by_aid(ThreadData * tdata, UWord aid) {
 	while (a->aid > aid) {
 		
 		a--;
-		if (a < tdata->stack) failure("Impossible");
+		if (a < tdata->stack) failure("Requested aid not found in stack!");
 		
 	}
 	return a;
@@ -153,7 +155,7 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 	return True;
 	#endif
 	
-	ThreadData * tdata = get_thread_data(tid);
+	ThreadData * tdata = current_tdata;
 	UWord target = arg[1]; 
 	
 	if (arg[2] == 1) 
@@ -301,6 +303,8 @@ void function_enter(ThreadData * tdata, UWord target) {
 }
 
 void function_exit(ThreadData * tdata, UWord target) {
+	
+	if (tdata->stack_depth <= 0) return;
 	
 	/*
 	tdata->stack_depth--;

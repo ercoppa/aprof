@@ -62,7 +62,6 @@ static ThreadData * thread_start(ThreadId tid){
 	#if TRACE_FUNCTION
 	tdata->last_bb = NULL;
 	init_stack(tdata);  
-	tdata->inside_main = False;
 	#endif
 
 	return tdata;
@@ -70,7 +69,10 @@ static ThreadData * thread_start(ThreadId tid){
 }
 
 void thread_exit (ThreadId tid){
-
+	
+	current_TID = 0;
+	current_tdata = NULL;
+	
 	#if EMPTY_ANALYSIS || EVENTCOUNT
 	return;
 	#endif
@@ -81,6 +83,7 @@ void thread_exit (ThreadId tid){
 
 	ThreadData * tdata = NULL;
 	tdata = threads[tid - 1];
+	threads[tid -1] = NULL;
 	
 	#if DEBUG
 	if (tdata == NULL) failure("Invalid tdata in thread exit");
@@ -102,7 +105,6 @@ void thread_exit (ThreadId tid){
 	#endif
 	
 	VG_(free)(tdata->stack);
-	threads[tid -1] = NULL;
 	
 	VG_(free)(tdata);
 
@@ -124,13 +126,16 @@ void switch_thread(ThreadId tid, ULong blocks_dispatched) {
 	if (tid == current_TID) return;
 	if (threads[tid-1] == NULL) thread_start(tid);
 	
+	#if TRACE_FUNCTION
 	if (current_tdata != NULL)
 		current_tdata->last_exit = last_exit;
+	#endif
 	
 	current_TID = tid;
 	current_tdata = threads[tid -1];
+	#if TRACE_FUNCTION
 	last_exit = current_tdata->last_exit;
-	
+	#endif
 }
 
 
