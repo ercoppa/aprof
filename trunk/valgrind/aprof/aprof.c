@@ -240,6 +240,9 @@ static void pre_clo_init(void) {
 	VG_(needs_client_requests)			(trace_function);
 	VG_(track_pre_thread_first_insn)	(thread_start);
 	VG_(track_pre_thread_ll_exit)		(thread_exit);
+	
+	VG_(clo_vex_control).iropt_unroll_thresh = 0;
+	VG_(clo_vex_control).guest_chase_thresh = 0;
 
 }
 

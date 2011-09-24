@@ -25,6 +25,11 @@
 #define USM_SIZE 65536 * 8 // 32GB address space
 #endif
 
+#ifdef ADDR_MULTIPLE
+#if ADDR_MULTIPLE != 4
+#error "SUF1 support only ADDR_MULTIPLE == 4. Fix ME"
+#endif
+#endif
 
 typedef struct Node Node;
 typedef struct Representative Representative;

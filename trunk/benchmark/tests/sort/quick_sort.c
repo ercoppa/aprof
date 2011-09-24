@@ -40,9 +40,22 @@ void quick_sort(int v[], int n) {
     quick_sort_ric(v, 0, n-1);
 }
 
+void quick_sort_ric2(int v[], int a, int b) {
+    int m;
+    if (a >= b) return;
+    m = partition(v, a, b);
+    quick_sort_ric2(v, a, m-1);
+    quick_sort_ric2(v, m+1, b);
+}
+
+void quick_sort2(int v[], int n) {
+    quick_sort_ric2(v, 0, n-1);
+}
+
+
 int main() {
 	
-	int v[1024*100];
+	int v[1000];
 	srand(time(0));
 	int j = 0;
 	int n = sizeof(v)/sizeof(int);
@@ -52,6 +65,7 @@ int main() {
 	//print(v, n, "unsorted array");
 
 	quick_sort(v, n);
+	quick_sort2(v, n);
 
 	//print(v, n, "sorted array");
 	return 0;

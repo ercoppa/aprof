@@ -35,11 +35,12 @@
 #define EVENTCOUNT			0	// 0 disabled, 1 memory accesses, 2 function entries/exits, 3 mem+fn, 4 mem+fn+thread
 #define CCT					0	// if 1, keep a calling context tree for each thread to include context information in reports
 #define ADDR_MULTIPLE		4	// account only accessed address muliple of this number, min 1
+#define COSTANT_MEM_ACCESS	1	// if 1, memory access with size >1 are managed as size==1
 #define NO_TIME				0	// No time 
 #define INSTR				1	// Count guest intel instruction 
 #define RDTSC				2	// rdtsc intel instruction
 #define BB_COUNT			3	// count BB executed
-#define TIME				BB_COUNT
+#define TIME				RDTSC
 #define LINEAR				1	// Linear search (backward into stack)
 #define BINARY				2	// Binary search
 #define STATS				3	// Compute some stats about searching into the stack when doing liner search
