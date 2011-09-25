@@ -38,12 +38,11 @@ IRSB* instrument (  VgCallbackClosure* closure,
 	#if TRACE_FUNCTION
 	
 	BB * bb = get_BB(sbIn->stmts[i]->Ist.IMark.addr);
-	
-	IRExpr  * e1 = mkIRExpr_HWord ( BB_INIT );
+
 	IRExpr  * e2 = mkIRExpr_HWord ( (HWord) (Addr)sbIn->stmts[i]->Ist.IMark.addr );
-	IRDirty * di3 = unsafeIRDirty_0_N( 2, "BB start",
+	IRDirty * di3 = unsafeIRDirty_0_N( 1, "BB start",
 								VG_(fnptr_to_fnentry)( &BB_start ),
-								mkIRExprVec_2( e2, e1 ) );
+								mkIRExprVec_1( e2 ) );
 
 	addStmtToIRSB( sbOut, IRStmt_Dirty(di3) );
 	#endif
@@ -224,6 +223,10 @@ IRSB* instrument (  VgCallbackClosure* closure,
 	else if (sbIn->jumpkind == Ijk_Ret) bb->exit = BBRET;
 	else bb->exit = BBOTHER;
 	
+	/* 
+	 * Set a global var last_exit (saved/restored when there is
+	 * a switch btw thread) to the type of final jump for this BB
+	 */
 	addStmtToIRSB( sbOut, IRStmt_Store(Endness, 
 					IRExpr_Const(hWordTy == Ity_I32 ?
 								 IRConst_U32( (UWord) &last_exit ) :
@@ -243,7 +246,15 @@ IRSB* instrument (  VgCallbackClosure* closure,
 
 /* aprof initialization */
 static void post_clo_init(void) {
-	return;
+	
+	#if TRACE_FUNCTION
+	bb_ht = HT_construct(VG_(free));
+	if (bb_ht == NULL) failure("bb ht not allocable");
+	#endif
+	
+	fn_ht = HT_construct(VG_(free));
+	if (fn_ht == NULL) failure("fn ht not allocable");
+	
 }
 
 /* Funzione per presentare risultati in fase finale */
@@ -251,8 +262,9 @@ static void fini(Int exitcode) {
 	
 	#if TRACE_FUNCTION 
 	HT_destruct(bb_ht);
-	HT_destruct(fn_ht);
 	#endif
+	
+	HT_destruct(fn_ht);
 	
 	#if !EVENTCOUNT && !TRACER
 	HT_destroy_pool();

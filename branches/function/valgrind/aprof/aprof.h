@@ -55,8 +55,9 @@
 #endif
 
 /* Some constants */
-#define STACK_SIZE  32
-#define BUFFER_SIZE 32000
+#define STACK_SIZE   32
+#define BUFFER_SIZE  32000
+#define FN_NAME_SIZE 256
 
 #if defined(VG_BIGENDIAN)
 # define Endness Iend_BE
@@ -88,13 +89,20 @@ typedef enum jump_t {
 
 /* Data structures */
 
-#if TRACE_FUNCTION
+/* Not used for now...
+typedef struct Object {
+	char 		* name;
+	char		* filename;
+} Object;
+*/
 
 typedef struct Function {
-	UInt		 hash;					// Id of this function
+	UInt		 id;					// Id of this function
 	char	   * name;					// name of routine
 	char       * obj;					// name of library the routine belongs to
 } Function;
+
+#if TRACE_FUNCTION
 
 /* Info about a Basic Block */
 typedef struct BB {
@@ -135,26 +143,6 @@ struct pattern
     struct chunk_t chunk[];
 };
 
-/* Activation record on the stack */
-typedef struct activation {
-	/* Stack pointer when entered this function */
-	UWord sp;
-	/* 
-	 * If A() call  B() (and BB of A has as jumpkind Ijk_Call),
-	 * when B() returned, I will expect to execute the BB of A() 
-	 * with this address.
-	 */
-	UWord ret_addr;
-	/* hash of function name */
-	UInt hash_fn;
-} activation;
-
-typedef struct act_stack {
-	UWord depth;          /* stack depth */
-	activation * head;    /* head of the stack */
-	activation * current; /* current act */
-} act_stack;
-
 #endif
 
 typedef struct FILE {
@@ -177,8 +165,7 @@ typedef struct CCTNode {
 typedef struct {
 	
 	UWord64 routine_id;					// unique id for this routine
-	const char * name;					// name of routine
-	const char * image_name;			// name of library the routine belongs to
+	Function * fn;						// Info (name, file, etc) about this routine
 	UWord64 total_self_time;			// total self time for this routine
 	UWord64 total_cumulative_time;		// printf("curr_depth = %d\n", curr_depth); total cumulative time for this routine
 	UWord calls;						// number times this routine has been called
@@ -202,7 +189,6 @@ typedef struct {
 typedef struct {
 	UWord64 entry_time;					// time stamp at activation entry
 	UWord64 total_children_time;		// total time spent in children
-	UWord64 overhead;					// analysis overhead for this activation
 	UWord sms;							// SMS of activation (always positive when an activation ends)
 	RoutineInfo * rtn_info;				// pointer to info record of activated routine
 	#if CCT
@@ -211,6 +197,15 @@ typedef struct {
 	#if SUF == 2
 	UWord aid;
 	UWord old_aid;
+	#endif
+	#if TRACE_FUNCTION
+	UWord sp;							// Stack pointer when entered this function
+	/* 
+	 * If A() call  B() (and BB of A has as jumpkind Ijk_Call),
+	 * when B() returned, I will expect to execute the BB of A() 
+	 * with this address.
+	 */
+	UWord ret_addr;
 	#endif
 } Activation;
 
@@ -243,7 +238,6 @@ typedef struct {
 	#endif
 	#if TRACE_FUNCTION
 	BB * last_bb;
-	act_stack * stack_real;
 	jump_t last_exit;
 	#endif
 } ThreadData;
@@ -255,8 +249,9 @@ extern ThreadData * current_tdata;
 
 #if TRACE_FUNCTION
 extern HashTable * bb_ht;
-extern HashTable * fn_ht;
 #endif
+
+extern HashTable * fn_ht;
 
 /* Counter */ 
 #if EVENTCOUNT
@@ -279,11 +274,13 @@ extern UWord64 ops;
 extern jump_t last_exit;
 #endif
 
-//ThreadId current_tid = 0;
-//ThreadData * current_tdata = NULL;
-
 /* Failure/error function */
-void failure(char * msg);
+#define AP_ASSERT(cond, msg)	{ if (!(cond)) { \
+									VG_(printf)("%s\n", (msg)); \
+									tl_assert(cond); \
+									} \
+								}
+void failure(char * msg); /* Deprecated */
 
 /* file functions */
 FILE * ap_fopen(char * name);
@@ -345,7 +342,7 @@ void addEvent_Dw (IRSB* sb, IRAtom* daddr, Int dsize);
 #if TRACE_FUNCTION
 void init_stack(ThreadData * tdata);
 BB * get_BB(UWord target);
-VG_REGPARM(2) void BB_start(UWord target, UWord type_op);
+VG_REGPARM(1) void BB_start(UWord target);
 #endif
 
 #endif

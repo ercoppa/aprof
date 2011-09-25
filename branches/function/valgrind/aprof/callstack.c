@@ -219,15 +219,6 @@ static UInt str_hash(const Char *s, UInt table_size)
 /* Init the stack */
 void init_stack(ThreadData * tdata) {
 	
-	if (bb_ht == NULL || fn_ht == NULL) {
-		
-		bb_ht = HT_construct(NULL);
-		if (bb_ht == NULL) failure("bb ht not allocable");
-		fn_ht = HT_construct(NULL);
-		if (fn_ht == NULL) failure("fn ht not allocable");
-		
-	}
-	
 	if (tdata->stack_real == NULL) {
 		
 		tdata->stack_real = VG_(calloc)("stack", sizeof(act_stack), 1);
@@ -319,7 +310,7 @@ static UWord pop_stack(ThreadData * tdata, act_stack * stack, UWord csp, UWord n
 }
 
 /* Helper function called at start of a BB */
-VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
+VG_REGPARM(1) void BB_start(UWord target) {
 
 	/* Get thread data */
 	ThreadData * tdata = current_tdata;
@@ -675,6 +666,78 @@ VG_REGPARM(2) void BB_start(UWord target, UWord type_op) {
 	
 	/* Reset exit of current BB */
 	last_exit = BBOTHER;
+
+}
+
+#else
+
+Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
+	
+	/* Is this client request for aprof? */
+	if (!VG_IS_TOOL_USERREQ('V','A',arg[0])) return False;
+	
+	#if EMPTY_ANALYSIS
+	return True;
+	#endif
+	
+	ThreadData * tdata = current_tdata;
+	AP_ASSERT(tdata != NULL, "Invalid tdata");
+	
+	UWord target = arg[1]; 
+	AP_ASSERT(target > 0, "Invalid target")
+	
+	if (arg[2] == 1) {
+		
+		tdata->stack_depth++;
+		Activation * act = get_activation(tdata, tdata->stack_depth);
+		AP_ASSERT(act != NULL, "Invalid activation info");
+		
+		RoutineInfo * rtn_info = HT_lookup(tdata->routine_hash_table, target, NULL); 
+		if (rtn_info == NULL) {
+			
+			Function * fn = VG_(calloc)("fn node", sizeof(Function), 1);
+			AP_ASSERT(fn != NULL, "fn node not allocable");
+			
+			char * rtn_name = VG_(calloc)("rtn_name", FN_NAME_SIZE, 1);
+			AP_ASSERT(rtn_name != NULL, "rtn_name not allocable");
+			
+			if (!VG_(get_fnname)(target, rtn_name, FN_NAME_SIZE))
+				VG_(sprintf)(rtn_name, "%p", (void *) target);
+			
+			DebugInfo * di = VG_(find_DebugInfo)(target);
+			AP_ASSERT(di != NULL, "Invalid debug info");
+			
+			char * obj_name = VG_(DebugInfo_get_soname)(di);
+			AP_ASSERT(obj_name != NULL, "Invalid object name");
+			obj_name = VG_(strdup)(obj_name);
+			AP_ASSERT(obj_name != NULL, "Invalid copy of object name");
+			
+			fn->id = target;
+			fn->name = rtn_name;
+			fn->obj = obj_name;
+			
+			rtn_info = new_routine_info(tdata, fn, target);
+			AP_ASSERT(rtn_info != NULL, "Invalid routine info");
+			act->rtn_info = rtn_info;
+			
+		}
+		
+		function_enter(tdata, act);
+	
+	} else if (arg[2] == 2) {
+		
+		Activation * act = get_activation(tdata, tdata->stack_depth);
+		AP_ASSERT(act != NULL, "Invalid activation");
+		
+		function_exit(tdata, act);
+		
+		AP_ASSERT(tdata->stack_depth > 0, "Stack depth not possible");
+		tdata->stack_depth--;
+	
+	} else
+		AP_ASSERT(0, "Invalid client req");
+	
+	return True;
 
 }
 

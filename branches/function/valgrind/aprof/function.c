@@ -145,124 +145,63 @@ void destroy_routine_info(void * data) {
 
 }
 
-#if !TRACE_FUNCTION
-Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
+RoutineInfo * new_routine_info(ThreadData * tdata, Function * fn, UWord target) {
 	
-	/* Is this client request for aprof? */
-	if (!VG_IS_TOOL_USERREQ('V','A',arg[0])) return False;
+	AP_ASSERT(tdata != NULL, "Thread data is not valid");
+	AP_ASSERT(fn != NULL, "Invalid function info");
+	AP_ASSERT(target != NULL, "Invalid target");
 	
-	#if EMPTY_ANALYSIS
-	return True;
+	rtn_info = (RoutineInfo * )VG_(calloc)("rtn_info", 1, sizeof(RoutineInfo));
+	AP_ASSERT(rtn_info != NULL, "rtn info not allocable");
+	
+	rtn_info->routine_id = tdata->next_routine_id++;
+	rtn_info->fn = fn;
+	
+	rtn_info->total_self_time = 0;
+	rtn_info->total_cumulative_time = 0;
+	rtn_info->calls = 0;
+	rtn_info->recursive = 0;
+	rtn_info->recursive_pending = 0;
+	
+	#if CCT
+	rtn_info->context_sms_map = HT_construct(HT_destruct);
+	AP_ASSERT(rtn_info->context_sms_map != NULL, "context_sms_map not allocable");
+	
+	#else
+	rtn_info->sms_map = HT_construct(VG_(free));
+	AP_ASSERT(rtn_info->sms_map != NULL, "sms_map not allocable");
 	#endif
 	
-	ThreadData * tdata = current_tdata;
-	UWord target = arg[1]; 
+	HT_add_node(tdata->routine_hash_table, target, rtn_info);
 	
-	if (arg[2] == 1) 
-		function_enter(tdata, target);
-	else if (arg[2] == 2)
-		function_exit(tdata, target);
-	else
-		failure("Invalid client req\n");
-	
-	return True;
-
 }
-#endif
 
-#if TRACE_FUNCTION
-void function_enter(ThreadData * tdata, UWord target, 
-						char * rtn_name, char * image_name) {
-#else
-void function_enter(ThreadData * tdata, UWord target) {
-#endif
-
-	/*
-	tdata->stack_depth++;
+void function_enter(ThreadData * tdata, Activation * act) {
 	
-	int i = 0;
-	for(i = 0; i < tdata->stack_depth -1; i++)
-		VG_(printf)("| ");
-	
-	VG_(printf)("> %s\n", rtn_name);
-	
-	return;
-	*/
-	
-	#if EVENTCOUNT >= 2
-	fn_in_n++;
-	return;
-	#endif
+	AP_ASSERT(tdata != NULL, "Thread data is not valid");
+	AP_ASSERT(act != NULL, "Invalid activation info");
 	
 	UWord64 start = ap_time();
-	
-	#if DEBUG
-	if (tdata == NULL) failure("Invalid tdata in trace_function");
-	#endif
-	
-	#if VERBOSE
-	VG_(printf)("Start function: %s\n", debug_name); 
-	#endif
 
-	tdata->stack_depth++;
-
-	/* check if routine has already been encountered */
-	RoutineInfo * rtn_info = HT_lookup(tdata->routine_hash_table, target, NULL); 
-	
-	/* new routine, make routine record */
-	if (rtn_info == NULL) {
-		
-		#if !TRACE_FUNCTION
-		/* Get routine name */
-		char * rtn_name = VG_(calloc)("rtn_name", 256, 1);
-		if (rtn_name == NULL) failure("rtn_name not allocable");
-		if (!VG_(get_fnname)(target, rtn_name, 256)) 
-			VG_(sprintf)(rtn_name, "???");
-		DebugInfo * di = VG_(find_DebugInfo)(target);
-		if (di == NULL) failure("Invalid DebugInfo");
-		char * image_name = (Char *) VG_(DebugInfo_get_soname)(di);
-		#endif
-		
-		rtn_info = (RoutineInfo * )VG_(calloc)("rtn_info", 1, sizeof(RoutineInfo));
-		if (rtn_info == NULL) failure("rtn_info not allocable");
-		rtn_info->routine_id = tdata->next_routine_id++;
-		rtn_info->name       = rtn_name;
-		rtn_info->image_name = image_name;
-		//VG_(printf)("New routine info: %s %lu\n", rtn_name, rtn_info->routine_id);
-		
-		#if CCT
-		rtn_info->context_sms_map = HT_construct(HT_destruct);
-		if (rtn_info->context_sms_map == NULL) failure("context_sms_map not allocable");
-		#else
-		rtn_info->sms_map = HT_construct(VG_(free));
-		if (rtn_info->sms_map == NULL) failure("sms_map not allocable");
-		#endif
-		
-		/* add routine to routine to ht */
-		HT_add_node(tdata->routine_hash_table, target, rtn_info);
-		
-	}
-	
-	// bookkeeping
+	RoutineInfo * rtn_info = act->rtn;
 	rtn_info->calls++;
 	rtn_info->recursion_pending++;
 	if (rtn_info->recursion_pending > 1) rtn_info->recursive = 1;
-	
-	Activation * act = get_activation(tdata, tdata->stack_depth);
-	#if DEBUG
-	if (act == NULL) failure("Invalid activation in function entry");
-	#endif
 	act->rtn_info            = rtn_info;
 	act->entry_time          = start;
 	act->sms                 = 0;
 	act->total_children_time = 0;
+	
 	#if SUF == 2
 	act->aid                 = tdata->next_aid++;
 	act->old_aid             = tdata->curr_aid;
-	tdata->curr_aid                 = act->aid;
+	tdata->curr_aid          = act->aid;
 	#endif
 	
 	#if CCT
+	
+	/* FixMe */
+	AP_ASSERT(0, "CCT does not manage correctly more than one CCT tree");
 	
 	CCTNode * parent = parent_CCT(tdata);
 	#if DEBUG
@@ -298,34 +237,19 @@ void function_enter(ThreadData * tdata, UWord target) {
 	act->node = cnode;
 	#endif
 	
-	act->overhead = 0;
-	
 }
 
-void function_exit(ThreadData * tdata, UWord target) {
+void function_exit(ThreadData * tdata, Activation * act) {
 	
-	if (tdata->stack_depth <= 0) return;
-	
-	/*
-	tdata->stack_depth--;
-	return;
-	*/
-	
-	#if EVENTCOUNT >= 2
-	fn_out_n++;
-	return;
-	#endif
+	AP_ASSERT(tdata != NULL, "Thread data is not valid");
+	AP_ASSERT(act != NULL, "Invalid activation info");
 	
 	UWord64 start = ap_time();
-	
-	Activation * act = get_activation(tdata, tdata->stack_depth);
-	#if DEBUG
-	if (act == NULL) failure("Invalid activation in function exit");
-	#endif
-	RoutineInfo * rtn_info = act->rtn_info;
+	RoutineInfo * rtn = act->rtn;
 
-	UWord64 partial_cumulative =  start - act->entry_time - act->overhead;
-	if (rtn_info->recursion_pending < 2) rtn_info->total_cumulative_time += partial_cumulative;
+	UWord64 partial_cumulative =  start - act->entry_time;
+	if (rtn_info->recursion_pending < 2) 
+		rtn_info->total_cumulative_time += partial_cumulative;
 
 	UWord partial_self = partial_cumulative - act->total_children_time;
 	rtn_info->total_self_time += partial_self;
@@ -340,7 +264,7 @@ void function_exit(ThreadData * tdata, UWord target) {
 		
 		//VG_(printf)("New sms map\n");
 		sms_map = HT_construct(VG_(free));
-		if (sms_map == NULL) failure("sms_map not allocable");
+		AP_ASSERT(sms_map != NULL, "sms_map not allocable");
 		HT_add_node(rtn_info->context_sms_map, act->node->context_id, sms_map);
 
 	} else {
@@ -359,7 +283,7 @@ void function_exit(ThreadData * tdata, UWord target) {
 		
 		//VG_(printf)("New sms info\n");
 		info_access = (SMSInfo * ) VG_(calloc)("sms_info", 1, sizeof(SMSInfo));
-		if (info_access == NULL) failure("sms_info not allocable in function exit");
+		AP_ASSERT(info_access != NULL, "sms_info not allocable in function exit");
 		info_access->sms = act->sms;
 		#if CCT
 		HT_add_node(sms_map, info_access->sms, info_access);
@@ -372,19 +296,21 @@ void function_exit(ThreadData * tdata, UWord target) {
 	// bookkeeping
 	info_access->partial_cumulative_time += partial_cumulative;
 	info_access->partial_calls_number++;
-	if (info_access->max_cumulative_time < partial_cumulative) info_access->max_cumulative_time = partial_cumulative;
-	if (info_access->min_cumulative_time > partial_cumulative) info_access->min_cumulative_time = partial_cumulative;
+	
+	if (info_access->max_cumulative_time < partial_cumulative) 
+		info_access->max_cumulative_time = partial_cumulative;
+	
+	if (info_access->min_cumulative_time > partial_cumulative) 
+		info_access->min_cumulative_time = partial_cumulative;
+	
 	rtn_info->recursion_pending--;
 	
-
 	// merge accesses of current activation with those of the parent activation
 	if (tdata->stack_depth > 1) {
 
 		Activation * parent_activation = get_activation(tdata, tdata->stack_depth - 1);
-		#ifdef DEBUG
-		if (parent_activation == NULL) failure("Invalid parent in function exit");
-		#endif
-		
+		AP_ASSERT(parent_activation != NULL, "Invalid parent activation");
+
 		#if SUF == 1
 		UF_merge(tdata->accesses, tdata->stack_depth);
 		#elif SUF == 2
@@ -395,8 +321,5 @@ void function_exit(ThreadData * tdata, UWord target) {
 		parent_activation->total_children_time += partial_cumulative;
 		
 	}
-	
-	if (tdata->stack_depth > 0)
-		tdata->stack_depth--;
 
 }
