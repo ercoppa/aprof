@@ -119,8 +119,6 @@ typedef struct BB {
 	 * If the BB never take the "final exit" then NONE
 	 */
 	jump_t exit;
-	/* Object name (of the function) */
-	UChar * obj_name;
 	/* Object section (of the function) */
 	VgSectKind obj_section;
 	/* Is this BB part of dl_runtime_resolve? */

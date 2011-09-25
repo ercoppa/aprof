@@ -117,6 +117,8 @@ Activation * get_activation_by_aid(ThreadData * tdata, UWord aid) {
 
 #if TRACE_FUNCTION
 
+#define VERBOSE_TRACE_FUNCTION 0
+
 /* Global vars */
 
 jump_t last_exit = NONE;
@@ -323,6 +325,10 @@ static UWord str_hash(const Char *s) {
 /* Push a new activation on the stack */
 static void push_stack(ThreadData * tdata, UWord sp, Function * f) {
 	
+	#if VERBOSE_TRACE_FUNCTION
+	VG_(printf)("Push stack\n");
+	#endif
+	
 	AP_ASSERT(tdata != NULL, "Invalid tdata");
 	AP_ASSERT(sp > 0, "Invalid stack pointer");
 	AP_ASSERT(f != NULL, "Invalid function");
@@ -364,7 +370,9 @@ static void push_stack(ThreadData * tdata, UWord sp, Function * f) {
 static UWord pop_stack(ThreadData * tdata, UWord csp, UWord n_frames,
 												Activation * current) {
 	
-	//VG_(printf)("POP\n");
+	#if VERBOSE_TRACE_FUNCTION
+	VG_(printf)("POP\n");
+	#endif
 	
 	UWord n_pop = 0;
 	
@@ -372,6 +380,10 @@ static UWord pop_stack(ThreadData * tdata, UWord csp, UWord n_frames,
 	if (n_frames >= stack.depth)
 		failure("Too much pop request!");
 	*/
+	
+	AP_ASSERT(tdata != NULL, "Invalid tdata");
+	AP_ASSERT(csp > 0, "Invalid current stack pointer");
+	AP_ASSERT(current != NULL, "Invalid activition"); 
 	
 	while (	tdata->stack_depth > 0 && 
 			(
@@ -402,6 +414,10 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 
 	AP_ASSERT(target > 0, "Invalid target");
 	AP_ASSERT(bb != NULL, "Invalid BB");
+	
+	#if VERBOSE_TRACE_FUNCTION
+	VG_(printf)("Start BB %lu\n", target);
+	#endif
 
 	/* Get thread data */
 	ThreadData * tdata = current_tdata;
@@ -423,10 +439,6 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 	if (last_bb != NULL) {
 		exit = last_exit;
 	}
-	
-	/* Stack for current thread */
-	Activation * stack = tdata->stack;
-	AP_ASSERT(stack != NULL, "Invalid stack");
 
 	/* Obtain current stack pointer */
 	UWord csp = (UWord) VG_(get_SP)(1);
@@ -436,6 +448,10 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 	
 	/* Create a new BB structure */
 	if (bb->addr == 0) {
+		
+		#if VERBOSE_TRACE_FUNCTION
+		VG_(printf)("Populating BB info\n");
+		#endif
 		
 		bb->addr = target;
 		
@@ -462,9 +478,11 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 			info_fn = VG_(get_fnname)(target, fn, 256);
 		}
 		
+		/*
 		if (info_fn && VG_(strcmp)(fn, "(below main)") == 0) {
 			VG_(sprintf)(fn, "below_main");
 		}
+		*/
 		
 		if (info_fn && VG_(strcmp)(fn, "_dl_runtime_resolve") == 0) {
 			bb->is_dl_runtime_resolve = 1;
@@ -483,6 +501,7 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 				 * This is not thread safe!!! But Valgrind serialized
 				 * thread and callgrind do this without problem so... 
 				 */
+				AP_ASSERT(n != NULL, "Invalid hash node");
 				n = n->next;
 				
 				if (n->next != NULL) f = n->value;
@@ -499,7 +518,10 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 			obj_name = di ? VG_(strdup)("obj_name",
 								VG_(DebugInfo_get_filename)(di)) 
 								: NULL;
-								
+			
+			#if VERBOSE_TRACE_FUNCTION
+			VG_(printf)("Test different object\n");
+			#endif
 			if (last_bb != NULL) {
 				
 				if (last_bb->fn->obj != NULL) {
@@ -516,7 +538,7 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 			}
 			
 			/* try to see if we find dl_runtime_resolve in this obj */
-			if (!bb->is_dl_runtime_resolve && 
+			if (!bb->is_dl_runtime_resolve && obj_name != NULL && 
 				different_obj && runtime_resolve_addr == 0) {
 			
 				/* Obtain obj start address */
@@ -557,7 +579,7 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 		if (!info_fn) {
 			
 			if (bb->obj_section == Vg_SectPLT)
-				VG_(sprintf)(fn, "%p_[PLT]", (void *) bb->addr);
+				VG_(sprintf)(fn, "%p [PLT]", (void *) bb->addr);
 			else 
 				VG_(sprintf)(fn, "%p", (void *) bb->addr);
 				
@@ -591,11 +613,15 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 		bb->fn = f;
 		bb->instr_offset = 0; /* real value filled with a store */
 		
+		AP_ASSERT(bb->fn != NULL, "Invalid fn node");
+		
 		HT_add_node(bb_ht, target, bb);
 	
 	}
 	
-	
+	#if VERBOSE_TRACE_FUNCTION
+	VG_(printf)("Test different obj\n");
+	#endif
 	if (!different_obj && last_bb != NULL) {
 		
 		if (last_bb->fn->obj != NULL) {
@@ -610,7 +636,9 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 		} else if (bb->fn->obj != NULL) different_obj = True;
 		
 	}
-
+	#if VERBOSE_TRACE_FUNCTION
+	VG_(printf)("Test different section\n");
+	#endif
 	if (last_bb != NULL && bb->obj_section != last_bb->obj_section)
 		different_sect = True;
 
@@ -621,7 +649,11 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 	UWord n_pop = 1;
 	
 	/* Current activation */
-	Activation * current = get_activation(tdata, tdata->stack_depth); 
+	Activation * current = NULL;
+	if (tdata->stack_depth > 0) {
+		current = get_activation(tdata, tdata->stack_depth); 
+		AP_ASSERT(current != NULL, "Invalid activation");
+	}
 	
 	/* 
 	 * If last BB do an Ijk_Ret exit not always this is a real return.
@@ -642,6 +674,10 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 	 */
 	if (exit == BBRET) {
 		
+		#if VERBOSE_TRACE_FUNCTION
+		VG_(printf)("Try RET as CALL\n");
+		#endif
+		
 		/* This is a call! */
 		if (csp < current->sp) {
 			n_pop = 0;
@@ -657,7 +693,7 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 			
 			Activation * c = current;
 			UWord depth = tdata->stack_depth;
-			while(1) {
+			while(c != NULL) {
 				
 				if (c->ret_addr == target) break;
 				if (depth > 0) {
@@ -686,7 +722,10 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 		if (n_pop == 0) {
 			ret_as_call = True;
 			exit = BBOTHER;
-			//VG_(printf)("Call because RET as CALL\n");
+			
+			#if VERBOSE_TRACE_FUNCTION
+			VG_(printf)("Call because RET as CALL\n");
+			#endif
 		}
 		
 	}
@@ -700,6 +739,10 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 	Bool call_emulation = False;
 	if (last_bb != NULL && exit != BBCALL && exit != BBRET) {
 		
+		#if VERBOSE_TRACE_FUNCTION
+		VG_(printf)("Try call emulation\n");
+		#endif
+		
 		if (ret_as_call || different_obj || different_sect || bb->is_entry) {
 			
 			/* 
@@ -711,7 +754,9 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 			 */
 			if (tdata->stack_depth > 0 && last_bb->is_dl_runtime_resolve) {
 				
-				//VG_(printf)("POP caused by dl_runtime_resolve\n");
+				#if VERBOSE_TRACE_FUNCTION
+				VG_(printf)("POP caused by dl_runtime_resolve\n");
+				#endif
 				
 				/* Update current stack pointer */
 				csp = current->sp;
@@ -732,6 +777,10 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 			 */
 			call_emulation = True;
 			
+			#if VERBOSE_TRACE_FUNCTION
+			VG_(printf)("Call emulution is true\n");
+			#endif
+			
 		}
 		
 	}
@@ -742,6 +791,10 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 	 */
 	if (exit == BBRET) {
 		
+		#if VERBOSE_TRACE_FUNCTION
+		VG_(printf)("Calling POP stack\n");
+		#endif
+		
 		pop_stack(tdata, csp, n_pop, current);
 		
 	} else {
@@ -750,20 +803,46 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 		 * By definition, if this is a call, SP must be equal or smaller
 		 * of SP on top of our stack. Try to see if this is not true...
 		 */
-		n_pop = pop_stack(tdata, csp, 0, current);
-		if (n_pop > 0) {
-			//VG_(printf)("Call deleted\n");
-			exit = BBRET;
-		} 
+		if (tdata->stack_depth > 0) {
+			
+			#if VERBOSE_TRACE_FUNCTION
+			VG_(printf)("Try to see if is a RET\n");
+			#endif
+			
+			n_pop = pop_stack(tdata, csp, 0, current);
+			if (n_pop > 0) {
+				
+				#if VERBOSE_TRACE_FUNCTION
+				VG_(printf)("Call deleted\n");
+				#endif
+				
+				exit = BBRET;
+			} 
+		}
 		
 		if (exit == BBCALL) {
+			
+			#if VERBOSE_TRACE_FUNCTION
+			VG_(printf)("This is a CALL\n");
+			#endif
 			
 			/* I don't know why we do this but callgrind does so... */
 			if (call_emulation && tdata->stack_depth > 0)
 				csp = current->sp;
 			
-			if (last_bb->exit == BBCALL)
+			if (tdata->stack_depth > 0 && last_bb != NULL && last_bb->exit == BBCALL) {
+				
+				#if VERBOSE_TRACE_FUNCTION
+				VG_(printf)("Assign ret address\n");
+				#endif
+				
+				AP_ASSERT(current != NULL, "Invalid activation");
 				current->ret_addr = last_bb->addr + last_bb->instr_offset;
+			}
+			
+			#if VERBOSE_TRACE_FUNCTION
+			VG_(printf)("Call PUSH stack\n");
+			#endif
 			
 			push_stack(tdata, csp, bb->fn); 
 			
