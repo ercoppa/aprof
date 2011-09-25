@@ -797,26 +797,34 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 		RoutineInfo * rtn_info = HT_lookup(tdata->routine_hash_table, target, NULL); 
 		if (rtn_info == NULL) {
 			
-			Function * fn = VG_(calloc)("fn node", sizeof(Function), 1);
-			AP_ASSERT(fn != NULL, "fn node not allocable");
+			Function * fn = HT_lookup(fn_ht, target, NULL);
 			
-			char * rtn_name = VG_(calloc)("rtn_name", FN_NAME_SIZE, 1);
-			AP_ASSERT(rtn_name != NULL, "rtn_name not allocable");
+			if (fn == NULL) {
+				
+				fn = VG_(calloc)("fn node", sizeof(Function), 1);
+				AP_ASSERT(fn != NULL, "fn node not allocable");
+				
+				char * rtn_name = VG_(calloc)("rtn_name", FN_NAME_SIZE, 1);
+				AP_ASSERT(rtn_name != NULL, "rtn_name not allocable");
+				
+				if (!VG_(get_fnname)(target, rtn_name, FN_NAME_SIZE))
+					VG_(sprintf)(rtn_name, "%p", (void *) target);
+				
+				DebugInfo * di = VG_(find_DebugInfo)(target);
+				AP_ASSERT(di != NULL, "Invalid debug info");
+				
+				char * obj_name = (char *) VG_(DebugInfo_get_soname)(di);
+				AP_ASSERT(obj_name != NULL, "Invalid object name");
+				obj_name = VG_(strdup)("copy obj", obj_name);
+				AP_ASSERT(obj_name != NULL, "Invalid copy of object name");
+				
+				fn->id = target;
+				fn->name = rtn_name;
+				fn->obj = obj_name;
+				
+				HT_add_node(fn_ht, target, fn);
 			
-			if (!VG_(get_fnname)(target, rtn_name, FN_NAME_SIZE))
-				VG_(sprintf)(rtn_name, "%p", (void *) target);
-			
-			DebugInfo * di = VG_(find_DebugInfo)(target);
-			AP_ASSERT(di != NULL, "Invalid debug info");
-			
-			char * obj_name = (char *) VG_(DebugInfo_get_soname)(di);
-			AP_ASSERT(obj_name != NULL, "Invalid object name");
-			obj_name = VG_(strdup)("copy obj", obj_name);
-			AP_ASSERT(obj_name != NULL, "Invalid copy of object name");
-			
-			fn->id = target;
-			fn->name = rtn_name;
-			fn->obj = obj_name;
+			}
 			
 			rtn_info = new_routine_info(tdata, fn, target);
 			AP_ASSERT(rtn_info != NULL, "Invalid routine info");
