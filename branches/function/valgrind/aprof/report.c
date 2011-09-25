@@ -13,12 +13,13 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 	
 	Char filename_priv[256];
 	Char * prog_name = (Char *) VG_(args_the_exename);
-	VG_(sprintf)(filename_priv, "%s_%u.aprof", prog_name, tid);
+	VG_(sprintf)(filename_priv, "%s_%u.aprof", prog_name, tid - 1);
+	/* Add path to log filename */
 	Char * filename = VG_(expand_file_name)("aprof log", filename_priv);
 
     // open report file
 	FILE * report = ap_fopen(filename);
-	if (report == NULL) failure("Can't create report file");
+	AP_ASSERT(report != NULL, "Can't create report file");
 
 	char buffer[250];
 
@@ -34,8 +35,8 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 	while (HT_Next(tdata->routine_hash_table, &key, &value)) {
 		
 		RoutineInfo * rtn_info = (RoutineInfo *) value;
-		VG_(sprintf)(buffer, "r %s %p %s %llu\n", rtn_info->name, 
-						(void *) key, rtn_info->image_name, 
+		VG_(sprintf)(buffer, "r %s %p %s %llu\n", rtn_info->fn->name, 
+						(void *) key, rtn_info->fn->obj, 
 							rtn_info->routine_id);
 		ap_fwrite(report, buffer, VG_(strlen)(buffer));
 		

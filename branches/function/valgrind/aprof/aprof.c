@@ -38,6 +38,7 @@ IRSB* instrument (  VgCallbackClosure* closure,
 	#if TRACE_FUNCTION
 	
 	BB * bb = get_BB(sbIn->stmts[i]->Ist.IMark.addr);
+	AP_ASSERT(bb != NULL, "Invalid BB")
 
 	IRExpr  * e2 = mkIRExpr_HWord ( (HWord) (Addr)sbIn->stmts[i]->Ist.IMark.addr );
 	IRDirty * di3 = unsafeIRDirty_0_N( 1, "BB start",
@@ -233,7 +234,7 @@ IRSB* instrument (  VgCallbackClosure* closure,
 								 IRConst_U64( (UWord) &last_exit )),
 					IRExpr_Const(IRConst_U32(bb->exit)) )
 				);
-	 
+	
 	bb->instr_offset = instr_offset;
 	
 	#endif
@@ -249,11 +250,11 @@ static void post_clo_init(void) {
 	
 	#if TRACE_FUNCTION
 	bb_ht = HT_construct(VG_(free));
-	if (bb_ht == NULL) failure("bb ht not allocable");
+	AP_ASSERT(bb_ht != NULL, "bb ht not allocable");
 	#endif
 	
 	fn_ht = HT_construct(VG_(free));
-	if (fn_ht == NULL) failure("fn ht not allocable");
+	AP_ASSERT(fn_ht != NULL, "fn ht not allocable");
 	
 }
 

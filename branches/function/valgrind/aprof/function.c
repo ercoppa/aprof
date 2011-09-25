@@ -12,127 +12,6 @@ UWord fn_in_n  = 0;
 UWord fn_out_n = 0;
 #endif
 
-#if SUF2_SEARCH == STATS
-
-#endif
-
-Activation * get_activation(ThreadData * tdata, unsigned int depth) {
-
-	#if DEBUG
-	if (tdata == NULL) failure("Invalid tdata in get_activation");
-	if (depth == 0) failure("Inavalid depth in get_activation");
-	#endif
-
-	if (depth - 1 < 0) return NULL;
-
-	/* Expand stack if necessary */
-	if (depth - 1 >= tdata->max_stack_size) {
-		
-		tdata->max_stack_size = tdata->max_stack_size * 2;
-		
-		#if VERBOSE
-		VG_(printf)("Relocate stack\n");
-		#endif
-		
-		tdata->stack = VG_(realloc)("stack", tdata->stack, tdata->max_stack_size * sizeof(Activation));
-		if (tdata->stack == NULL) failure("stack not reallocable");
-	
-	}
-	
-	return tdata->stack + depth - 1;
-
-}
-
-#if SUF == 2
-
-/*
-static void dump_stack(ThreadData * tdata, UWord aid) {
-	
-	VG_(printf)("\n");
-	VG_(printf)("Searching aid: %lu", aid);
-	VG_(printf)("\nStack depth: %lu ", tdata->stack_depth);
-	VG_(printf)("\n");
-	Activation * a = get_activation(tdata, tdata->stack_depth);
-	while (a >= tdata->stack) {
-		VG_(printf)("%lu ", a->aid);
-		a--;
-	}
-	VG_(printf)("\n");
-	
-}
-*/
-
-#if SUF2_SEARCH == STATS
-UWord64 avg_depth = 0;
-UWord64 avg_iteration = 0;
-UWord64 ops = 0;
-#endif
-
-Activation * get_activation_by_aid(ThreadData * tdata, UWord aid) {
-	
-	/* Linear search... maybe better binary search */
-	#if SUF2_SEARCH == LINEAR
-	
-	Activation * a = &tdata->stack[tdata->stack_depth - 2];
-	while (a->aid > aid) {
-		
-		a--;
-		if (a < tdata->stack) failure("Requested aid not found in stack!");
-		
-	}
-	return a;
-	
-	#elif SUF2_SEARCH == BINARY
-	
-	Word min = 0;
-	Word max = tdata->stack_depth - 2;
-	
-	do {
-		
-		Word index = (min + max) / 2;
-		
-		if (tdata->stack[index].aid == aid) {
-			//if (a != &tdata->stack[index]) failure("Search wrong");
-			return &tdata->stack[index];
-		}
-		
-		else if (tdata->stack[index].aid > aid) 
-			max = index - 1; 
-			
-		else {
-			
-			if (tdata->stack[index + 1].aid > aid) {
-				//if (a != &tdata->stack[index]) failure("Search wrong");
-				return &tdata->stack[index];
-			}
-			min = index + 1;
-			
-		}
-		
-	} while(min <= max);
-	
-	failure("Binary search fail");
-	return NULL;
-
-	#elif SUF2_SEARCH == STATS
-	
-	ops++;
-	avg_depth += tdata->stack_depth;
-	avg_iteration++;
-	
-	Activation * a = get_activation(tdata, tdata->stack_depth - 1);
-	while (a->aid > aid) {
-		a--;
-		avg_iteration++;
-		if (a < tdata->stack) failure("Impossible");
-	}
-	return a;
-	
-	#endif
-
-}
-#endif
-
 void destroy_routine_info(void * data) {
 	
 	RoutineInfo * ri = (RoutineInfo *) data;
@@ -149,9 +28,9 @@ RoutineInfo * new_routine_info(ThreadData * tdata, Function * fn, UWord target) 
 	
 	AP_ASSERT(tdata != NULL, "Thread data is not valid");
 	AP_ASSERT(fn != NULL, "Invalid function info");
-	AP_ASSERT(target != NULL, "Invalid target");
+	AP_ASSERT(target > 0, "Invalid target");
 	
-	rtn_info = (RoutineInfo * )VG_(calloc)("rtn_info", 1, sizeof(RoutineInfo));
+	RoutineInfo * rtn_info = VG_(calloc)("rtn_info", 1, sizeof(RoutineInfo));
 	AP_ASSERT(rtn_info != NULL, "rtn info not allocable");
 	
 	rtn_info->routine_id = tdata->next_routine_id++;
@@ -161,7 +40,7 @@ RoutineInfo * new_routine_info(ThreadData * tdata, Function * fn, UWord target) 
 	rtn_info->total_cumulative_time = 0;
 	rtn_info->calls = 0;
 	rtn_info->recursive = 0;
-	rtn_info->recursive_pending = 0;
+	rtn_info->recursion_pending = 0;
 	
 	#if CCT
 	rtn_info->context_sms_map = HT_construct(HT_destruct);
@@ -174,6 +53,7 @@ RoutineInfo * new_routine_info(ThreadData * tdata, Function * fn, UWord target) 
 	
 	HT_add_node(tdata->routine_hash_table, target, rtn_info);
 	
+	return rtn_info;
 }
 
 void function_enter(ThreadData * tdata, Activation * act) {
@@ -183,7 +63,9 @@ void function_enter(ThreadData * tdata, Activation * act) {
 	
 	UWord64 start = ap_time();
 
-	RoutineInfo * rtn_info = act->rtn;
+	RoutineInfo * rtn_info = act->rtn_info;
+	AP_ASSERT(rtn_info != NULL, "Invalid rtn info");
+	
 	rtn_info->calls++;
 	rtn_info->recursion_pending++;
 	if (rtn_info->recursion_pending > 1) rtn_info->recursive = 1;
@@ -245,7 +127,7 @@ void function_exit(ThreadData * tdata, Activation * act) {
 	AP_ASSERT(act != NULL, "Invalid activation info");
 	
 	UWord64 start = ap_time();
-	RoutineInfo * rtn = act->rtn;
+	RoutineInfo * rtn_info = act->rtn_info;
 
 	UWord64 partial_cumulative =  start - act->entry_time;
 	if (rtn_info->recursion_pending < 2) 

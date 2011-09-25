@@ -1,5 +1,113 @@
 #include "aprof.h"
 
+/* HT of all function */
+HashTable * fn_ht = NULL;
+
+Activation * get_activation(ThreadData * tdata, unsigned int depth) {
+
+	AP_ASSERT(tdata != NULL, "Invalid tdata in get_activation");
+	AP_ASSERT(depth > 0, "Invalid depth");
+
+	/* Expand stack if necessary */
+	if (depth - 1 >= tdata->max_stack_size) {
+		
+		tdata->max_stack_size = tdata->max_stack_size * 2;
+		
+		#if VERBOSE
+		VG_(printf)("Relocate stack\n");
+		#endif
+		
+		tdata->stack = VG_(realloc)("stack", tdata->stack, 
+							tdata->max_stack_size * sizeof(Activation));
+		AP_ASSERT(tdata->stack, "stack not reallocable");
+	
+	}
+	
+	return tdata->stack + depth - 1;
+
+}
+
+#if SUF == 2
+
+#if SUF2_SEARCH == STATS
+UWord64 avg_depth = 0;
+UWord64 avg_iteration = 0;
+UWord64 ops = 0;
+#endif
+
+Activation * get_activation_by_aid(ThreadData * tdata, UWord aid) {
+	
+	/* Linear search... maybe better binary search??? */
+	#if SUF2_SEARCH == LINEAR
+	
+	AP_ASSERT(tdata->stack_depth - 2 >= 0, "Invalid depth");
+	
+	Activation * a = &tdata->stack[tdata->stack_depth - 2];
+	while (a->aid > aid) {
+		
+		a--;
+		AP_ASSERT(a >= tdata->stack, "Requested aid not found in stack!");
+		
+	}
+	return a;
+	
+	#elif SUF2_SEARCH == BINARY
+	
+	/* FixMe */
+	AP_ASSERT(0, "Check consistency of this code");
+	
+	Word min = 0;
+	Word max = tdata->stack_depth - 2;
+	
+	do {
+		
+		Word index = (min + max) / 2;
+		
+		if (tdata->stack[index].aid == aid) {
+			//if (a != &tdata->stack[index]) failure("Search wrong");
+			return &tdata->stack[index];
+		}
+		
+		else if (tdata->stack[index].aid > aid) 
+			max = index - 1; 
+			
+		else {
+			
+			if (tdata->stack[index + 1].aid > aid) {
+				//if (a != &tdata->stack[index]) failure("Search wrong");
+				return &tdata->stack[index];
+			}
+			min = index + 1;
+			
+		}
+		
+	} while(min <= max);
+	
+	failure("Binary search fail");
+	return NULL;
+
+	#elif SUF2_SEARCH == STATS
+	
+	/* FixMe */
+	AP_ASSERT(0, "Check consistency of this code");
+	
+	ops++;
+	avg_depth += tdata->stack_depth;
+	avg_iteration++;
+	
+	Activation * a = get_activation(tdata, tdata->stack_depth - 1);
+	while (a->aid > aid) {
+		a--;
+		avg_iteration++;
+		if (a < tdata->stack) failure("Impossible");
+	}
+	return a;
+	
+	#endif
+
+}
+#endif
+
 #if TRACE_FUNCTION
 
 /* Global vars */
@@ -19,12 +127,6 @@ static Addr runtime_resolve_addr   = 0;
 static int  runtime_resolve_length = 0;
 /* HT of all BB */
 HashTable * bb_ht = NULL;
-/* HT of all function */
-HashTable * fn_ht = NULL;
-
-#define N_FN_ENTRIES  87
-#define N_OBJ_ENTRIES 47
-#define HASH_CONSTANT 256
 
 /* End global vars */
 
@@ -37,7 +139,7 @@ BB * get_BB(UWord target) {
 	if (bb == NULL) {
 		
 		bb = VG_(calloc)("bb", sizeof(BB), 1);
-		if (bb == NULL) failure("BB not allocable");
+		AP_ASSERT(bb != NULL, "BB not allocable")
 		
 		//VG_(printf)("Created BB for %lu\n", target);
 		
@@ -707,9 +809,9 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 			DebugInfo * di = VG_(find_DebugInfo)(target);
 			AP_ASSERT(di != NULL, "Invalid debug info");
 			
-			char * obj_name = VG_(DebugInfo_get_soname)(di);
+			char * obj_name = (char *) VG_(DebugInfo_get_soname)(di);
 			AP_ASSERT(obj_name != NULL, "Invalid object name");
-			obj_name = VG_(strdup)(obj_name);
+			obj_name = VG_(strdup)("copy obj", obj_name);
 			AP_ASSERT(obj_name != NULL, "Invalid copy of object name");
 			
 			fn->id = target;
@@ -718,9 +820,10 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 			
 			rtn_info = new_routine_info(tdata, fn, target);
 			AP_ASSERT(rtn_info != NULL, "Invalid routine info");
-			act->rtn_info = rtn_info;
 			
 		}
+		
+		act->rtn_info = rtn_info;
 		
 		function_enter(tdata, act);
 	

@@ -44,7 +44,7 @@
 #define BINARY				2	// Binary search
 #define STATS				3	// Compute some stats about searching into the stack when doing liner search
 #define SUF2_SEARCH			LINEAR
-#define TRACE_FUNCTION		1	// if 1, aprof trace functions by itself, otherwise it suppose 
+#define TRACE_FUNCTION		0	// if 1, aprof trace functions by itself, otherwise it suppose 
 								// that the program is instrumentated by GCC
 								// with -finstrument-functions
 
@@ -169,8 +169,8 @@ typedef struct {
 	UWord64 total_self_time;			// total self time for this routine
 	UWord64 total_cumulative_time;		// printf("curr_depth = %d\n", curr_depth); total cumulative time for this routine
 	UWord calls;						// number times this routine has been called
-	Word recursive;						// 1 if the routine has ever been called recursively
-	Word recursion_pending;				// number of pending activations (> 1 means recursive)
+	UWord recursive;					// 1 if the routine has ever been called recursively
+	UWord recursion_pending;			// number of pending activations (> 1 means recursive)
 	#if !CCT
 	HashTable * sms_map;				// set of unique SMSInfo records for this routine
 	#else
@@ -308,27 +308,17 @@ void print_cct_info(FILE * f, CCTNode * root, UWord parent_id);
 VG_REGPARM(3) void trace_access(UWord type, Addr addr, SizeT size);
 
 /* Function entry/exit handler */
-#if SUF == 2
-Activation * get_activation_by_aid(ThreadData * tdata, UWord aid);
-#endif
-Activation * get_activation(ThreadData * tdata, unsigned int depth);
+RoutineInfo * new_routine_info(ThreadData * tdata, Function * fn, UWord target);
 void destroy_routine_info(void * data);
-#if TRACE_FUNCTION
-void function_enter(ThreadData * tdata, UWord target, 
-						char * rtn_name, char * image_name);
-#else
-Bool trace_function(ThreadId tid, UWord* arg, UWord* ret);
-void function_enter(ThreadData * tdata, UWord target);
-#endif
-void function_exit(ThreadData * tdata, UWord target);
-
+void function_enter(ThreadData * tdata, Activation * act);
+void function_exit(ThreadData * tdata, Activation * act);
 
 /* time */
 UWord64 ap_time(void);
 #if TIME == INSTR
 VG_REGPARM(0) void add_one_guest_instr(void);
 #endif
-#if TIME == BB_COUNT
+#if TIME == BB_COUNT && !TRACE_FUNCTION
 VG_REGPARM(0) void add_one_guest_BB(void);
 #endif
 
@@ -339,10 +329,16 @@ void addEvent_Dr (IRSB* sb, IRAtom* daddr, Int dsize);
 void addEvent_Dw (IRSB* sb, IRAtom* daddr, Int dsize);
 
 /* Callstack management */
+#if SUF == 2
+Activation * get_activation_by_aid(ThreadData * tdata, UWord aid);
+#endif
+Activation * get_activation(ThreadData * tdata, unsigned int depth);
 #if TRACE_FUNCTION
 void init_stack(ThreadData * tdata);
 BB * get_BB(UWord target);
 VG_REGPARM(1) void BB_start(UWord target);
+#else
+Bool trace_function(ThreadId tid, UWord * arg, UWord * ret);
 #endif
 
 #endif
