@@ -40,10 +40,11 @@ IRSB* instrument (  VgCallbackClosure* closure,
 	BB * bb = get_BB(sbIn->stmts[i]->Ist.IMark.addr);
 	AP_ASSERT(bb != NULL, "Invalid BB")
 
+	IRExpr  * e3 = mkIRExpr_HWord ( (HWord) bb );
 	IRExpr  * e2 = mkIRExpr_HWord ( (HWord) (Addr)sbIn->stmts[i]->Ist.IMark.addr );
-	IRDirty * di3 = unsafeIRDirty_0_N( 1, "BB start",
+	IRDirty * di3 = unsafeIRDirty_0_N( 2, "BB start",
 								VG_(fnptr_to_fnentry)( &BB_start ),
-								mkIRExprVec_1( e2 ) );
+								mkIRExprVec_2( e2, e3 ) );
 
 	addStmtToIRSB( sbOut, IRStmt_Dirty(di3) );
 	#endif

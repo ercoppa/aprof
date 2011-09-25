@@ -1,5 +1,5 @@
 /*
- * Entry and exit function handler, simulated thread stack handler
+ * Entry and exit function handler
  * 
  * Last changed: $Date$
  * Revision:     $Rev$
@@ -60,6 +60,13 @@ void function_enter(ThreadData * tdata, Activation * act) {
 	
 	AP_ASSERT(tdata != NULL, "Thread data is not valid");
 	AP_ASSERT(act != NULL, "Invalid activation info");
+	
+	int i = 0;
+	for(i = 0; i < tdata->stack_depth - 1; i++)
+		VG_(printf)("| ");
+
+	VG_(printf)("> %s\n", act->rtn_info->fn->name);
+	return;
 	
 	UWord64 start = ap_time();
 
@@ -125,6 +132,8 @@ void function_exit(ThreadData * tdata, Activation * act) {
 	
 	AP_ASSERT(tdata != NULL, "Thread data is not valid");
 	AP_ASSERT(act != NULL, "Invalid activation info");
+	
+	return;
 	
 	UWord64 start = ap_time();
 	RoutineInfo * rtn_info = act->rtn_info;

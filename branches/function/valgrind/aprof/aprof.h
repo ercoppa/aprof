@@ -44,7 +44,7 @@
 #define BINARY				2	// Binary search
 #define STATS				3	// Compute some stats about searching into the stack when doing liner search
 #define SUF2_SEARCH			LINEAR
-#define TRACE_FUNCTION		0	// if 1, aprof trace functions by itself, otherwise it suppose 
+#define TRACE_FUNCTION		1	// if 1, aprof trace functions by itself, otherwise it suppose 
 								// that the program is instrumentated by GCC
 								// with -finstrument-functions
 
@@ -97,7 +97,7 @@ typedef struct Object {
 */
 
 typedef struct Function {
-	UInt		 id;					// Id of this function
+	UWord		 id;					// Id of this function
 	char	   * name;					// name of routine
 	char       * obj;					// name of library the routine belongs to
 } Function;
@@ -129,8 +129,6 @@ typedef struct BB {
 	Bool is_entry;
 	/* Info about the associated function */
 	Function * fn;
-	/* Info about object */
-	UInt obj_hash; 
 	
 } BB;
 
@@ -336,7 +334,7 @@ Activation * get_activation(ThreadData * tdata, unsigned int depth);
 #if TRACE_FUNCTION
 void init_stack(ThreadData * tdata);
 BB * get_BB(UWord target);
-VG_REGPARM(1) void BB_start(UWord target);
+VG_REGPARM(2) void BB_start(UWord target, BB * bb);
 #else
 Bool trace_function(ThreadId tid, UWord * arg, UWord * ret);
 #endif

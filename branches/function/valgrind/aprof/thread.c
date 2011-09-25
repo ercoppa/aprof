@@ -9,7 +9,7 @@
 
 /* All threads */
 static ThreadData * threads[VG_N_THREADS];
-ThreadId current_TID = 0;
+ThreadId current_TID = VG_INVALID_THREADID; /* 0 */
 ThreadData * current_tdata = NULL; 
 
 #if EVENTCOUNT
@@ -23,11 +23,11 @@ static ThreadData * thread_start(ThreadId tid){
 	#endif
 
 	#if VERBOSE && !TRACER
-	//VG_(printf)("Init thread data %d\n", tid);
+	VG_(printf)("Init thread data %d\n", tid);
 	#endif
 	
 	ThreadData * tdata = VG_(calloc)("thread_data", sizeof(ThreadData), 1);
-	if (tdata == NULL) failure("thread data not allocable");
+	AP_ASSERT(tdata != NULL, "thread data not allocable");
 	
 	threads[tid-1] = tdata;
 
@@ -38,18 +38,24 @@ static ThreadData * thread_start(ThreadId tid){
 	#endif
 	
 	tdata->routine_hash_table = HT_construct(destroy_routine_info);
+	AP_ASSERT(tdata->routine_hash_table != NULL, "rtn ht not allocable");
+	
 	tdata->stack_depth = 0;
 	tdata->max_stack_size = STACK_SIZE;
 	tdata->stack = VG_(calloc)("stack", STACK_SIZE * sizeof(Activation), 1);
+	AP_ASSERT(tdata->stack != NULL, "stack not allocable");
+	
 	tdata->next_routine_id = 0;
+	
 	#if CCT
 	// allocate dummy CCT root
 	tdata->root = (CCTNode*) VG_(calloc)("CCT", sizeof(CCTNode), 1);
-	if (tdata->root == NULL)
-		failure("Can't allocate CCT root node");
+	AP_ASSERT(tdata->root != NULL, "Can't allocate CCT root node");
+
 	tdata->root->context_id = 0;
 	tdata->next_context_id = 1;
 	#endif
+	
 	#if TIME == INSTR
 	tdata->instr = 0;
 	#endif
@@ -61,7 +67,6 @@ static ThreadData * thread_start(ThreadId tid){
 	
 	#if TRACE_FUNCTION
 	tdata->last_bb = NULL;
-	init_stack(tdata);  
 	#endif
 
 	return tdata;
@@ -81,13 +86,11 @@ void thread_exit (ThreadId tid){
 	VG_(printf)("Exit thread %d\n", tid);
 	#endif
 
-	ThreadData * tdata = NULL;
-	tdata = threads[tid - 1];
-	threads[tid -1] = NULL;
+	ThreadData * tdata = threads[tid - 1];
+	AP_ASSERT(tdata != NULL, "Invalid tdata")
 	
-	#if DEBUG
-	if (tdata == NULL) failure("Invalid tdata in thread exit");
-	#endif
+	/* Unregister thread info */
+	threads[tid -1] = NULL;
 	
 	generate_report(tdata, tid);
 	
@@ -105,7 +108,6 @@ void thread_exit (ThreadId tid){
 	#endif
 	
 	VG_(free)(tdata->stack);
-	
 	VG_(free)(tdata);
 
 }
@@ -124,7 +126,6 @@ void switch_thread(ThreadId tid, ULong blocks_dispatched) {
 	 */
 	 
 	if (tid == current_TID) return;
-	if (threads[tid-1] == NULL) thread_start(tid);
 	
 	#if TRACE_FUNCTION
 	if (current_tdata != NULL)
@@ -132,7 +133,19 @@ void switch_thread(ThreadId tid, ULong blocks_dispatched) {
 	#endif
 	
 	current_TID = tid;
-	current_tdata = threads[tid -1];
+	
+	if (tid == VG_INVALID_THREADID) {
+		current_tdata = NULL;
+		return;
+	}
+	
+	if (threads[tid-1] == NULL) 
+		current_tdata = thread_start(tid);
+	else 
+		current_tdata = threads[tid -1];
+		
+	AP_ASSERT(current_tdata != NULL, "Invalid tdata");
+	
 	#if TRACE_FUNCTION
 	last_exit = current_tdata->last_exit;
 	#endif

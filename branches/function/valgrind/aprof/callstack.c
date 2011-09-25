@@ -1,3 +1,10 @@
+/*
+ * Simulated stack  
+ * 
+ * Last changed: $Date$
+ * Revision:     $Rev$
+ */
+
 #include "aprof.h"
 
 /* HT of all function */
@@ -302,61 +309,41 @@ static Bool search_runtime_resolve(char * obj_name, UWord obj_start,
 
 /* End callgrind function */
 
-static UInt str_hash(const Char *s, UInt table_size)
-{
+static UWord str_hash(const Char *s) {
 	
-	const Char * s_orig = s;
+	UWord hash_value = 0;
+	for ( ; *s; s++)
+		hash_value = 31 * hash_value + *s;
 	
-    int hash_value = 0;
-    for ( ; *s; s++)
-        hash_value = 31 * hash_value + *s;
-        
-    if (hash_value == 0) {
-		hash_value = 1;
-		VG_(printf)("Function %s has hash zero\n", s_orig);
-    }
-    return hash_value;
-}
-
-/* Init the stack */
-void init_stack(ThreadData * tdata) {
+	AP_ASSERT(hash_value > 0, "Invalid hash value for this function or obj");
 	
-	if (tdata->stack_real == NULL) {
-		
-		tdata->stack_real = VG_(calloc)("stack", sizeof(act_stack), 1);
-		if (tdata->stack_real == NULL) failure("Stack not allocable");
-		
-	}
-	
-	tdata->stack_real->head = VG_(calloc)("thread_data", sizeof(activation) * 4096, 1);
-	if (tdata->stack_real->head == NULL) failure("Stack not allocable");
-	
-	tdata->stack_real->current = tdata->stack_real->head;
-	tdata->stack_real->depth = 0;
-
+	return hash_value;
 }
 
 /* Push a new activation on the stack */
-static void push_stack(ThreadData * tdata, act_stack * stack, UWord sp, 
-							UWord addr, Function * fn, VgSectKind section) 
-{
+static void push_stack(ThreadData * tdata, UWord sp, Function * f) {
 	
-	stack->depth++;
-	stack->current++;
-	stack->current->sp = sp;
-	stack->current->ret_addr = 0;
+	AP_ASSERT(tdata != NULL, "Invalid tdata");
+	AP_ASSERT(sp > 0, "Invalid stack pointer");
+	AP_ASSERT(f != NULL, "Invalid function");
 	
-	if (fn != NULL) {
+	tdata->stack_depth++;
+	Activation * act = get_activation(tdata, tdata->stack_depth);
+	AP_ASSERT(act != NULL, "Invalid activation info");
+	
+	RoutineInfo * rtn_info = HT_lookup(tdata->routine_hash_table, (UWord) f, NULL); 
+	if (rtn_info == NULL) {
 		
-		stack->current->hash_fn = fn->hash;
-		function_enter(tdata, fn->hash, fn->name, fn->obj);
-		
-	} else {
-		
-		stack->current->hash_fn = 0;
+		rtn_info = new_routine_info(tdata, f, (UWord) f);
+		AP_ASSERT(rtn_info != NULL, "Invalid routine info");
 		
 	}
 	
+	act->sp = sp;
+	act->ret_addr = 0;
+	act->rtn_info = rtn_info;
+	
+	function_enter(tdata, act);
 	
 	/* Safety check */
 	//if (stack.depth > 0 && (stack.current-1)->sp < sp)
@@ -374,7 +361,8 @@ static void push_stack(ThreadData * tdata, act_stack * stack, UWord sp,
  * and CSP == SP, pop out n_frames activation.
  * Return how many activations are removed from the stack.
  */
-static UWord pop_stack(ThreadData * tdata, act_stack * stack, UWord csp, UWord n_frames) {
+static UWord pop_stack(ThreadData * tdata, UWord csp, UWord n_frames,
+												Activation * current) {
 	
 	//VG_(printf)("POP\n");
 	
@@ -385,25 +373,23 @@ static UWord pop_stack(ThreadData * tdata, act_stack * stack, UWord csp, UWord n
 		failure("Too much pop request!");
 	*/
 	
-	while (	stack->depth > 0 && 
+	while (	tdata->stack_depth > 0 && 
 			(
-				csp > stack->current->sp || 
-				(csp == stack->current->sp && n_frames > 0)
+				csp > current->sp || 
+				(csp == current->sp && n_frames > 0)
 			)
 		  ) 
 	{
 		
-		if (stack->current->hash_fn > 0) {
-			
-			function_exit(tdata, stack->current->hash_fn);
-			
-		}
+		
+		function_exit(tdata, current);
 		
 		if (n_frames > 0) n_frames--;
 		n_pop++;
 		/* Adjust stack */
-		stack->depth--;
-		stack->current--;
+		AP_ASSERT(tdata->stack_depth > 0, "Stack depth not possible");
+		tdata->stack_depth--;
+		current--;
 		
 	}
 	
@@ -412,11 +398,14 @@ static UWord pop_stack(ThreadData * tdata, act_stack * stack, UWord csp, UWord n
 }
 
 /* Helper function called at start of a BB */
-VG_REGPARM(1) void BB_start(UWord target) {
+VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
+
+	AP_ASSERT(target > 0, "Invalid target");
+	AP_ASSERT(bb != NULL, "Invalid BB");
 
 	/* Get thread data */
 	ThreadData * tdata = current_tdata;
-	if (current_tdata == NULL) failure("Invalid tdata");
+	AP_ASSERT(tdata != NULL, "Invalid tdata");
 	
 	#if TIME == BB_COUNT
 	
@@ -436,14 +425,11 @@ VG_REGPARM(1) void BB_start(UWord target) {
 	}
 	
 	/* Stack for current thread */
-	act_stack * stack = tdata->stack_real;
+	Activation * stack = tdata->stack;
+	AP_ASSERT(stack != NULL, "Invalid stack");
 
 	/* Obtain current stack pointer */
 	UWord csp = (UWord) VG_(get_SP)(1);
-
-	/* Get info about this BB */
-	BB * bb = get_BB(target); 
-	if (bb == NULL) failure("BB not exist!");
 	
 	Bool different_obj = False;
 	Bool different_sect = False;
@@ -457,9 +443,11 @@ VG_REGPARM(1) void BB_start(UWord target) {
 		bb->obj_section = VG_(DebugInfo_sect_kind)(NULL, 0, target);
 		
 		bb->fn = VG_(calloc)("fn", sizeof(Function), 1);
+		AP_ASSERT(bb->fn != NULL, "fn node not allocable");
 		
 		/* Function name buffer */
 		char * fn = VG_(calloc)("fn_name", 256, 1);
+		AP_ASSERT(fn != NULL, "function name not allocable");
 		/* 
 		 * Are we entering a new function? Ask to Valgrind
 		 * if this BB is the first of a function. Valgrind sometimes
@@ -486,8 +474,20 @@ VG_REGPARM(1) void BB_start(UWord target) {
 		Function * f = NULL;
 		UInt hash = 0;
 		if (info_fn) {
-			hash = str_hash(fn, N_FN_ENTRIES);
-			f = HT_lookup(fn_ht, hash, NULL);
+			hash = str_hash(fn);
+			HashNode * n = NULL;
+			f = HT_lookup(fn_ht, hash, &n);
+			while (f != NULL && VG_(strcmp)(f->name, fn) != 0) {
+				
+				/* 
+				 * This is not thread safe!!! But Valgrind serialized
+				 * thread and callgrind do this without problem so... 
+				 */
+				n = n->next;
+				
+				if (n->next != NULL) f = n->value;
+				else f = NULL; 
+			}
 		}
 		
 		char * obj_name = NULL;
@@ -499,13 +499,21 @@ VG_REGPARM(1) void BB_start(UWord target) {
 			obj_name = di ? VG_(strdup)("obj_name",
 								VG_(DebugInfo_get_filename)(di)) 
 								: NULL;
-			if (obj_name == NULL)
-				obj_name = anon_obj;
-			
-			bb->obj_hash = str_hash(obj_name, N_OBJ_ENTRIES); 
-			
-			if (last_bb != NULL && bb->obj_hash != last_bb->obj_hash)
-				different_obj = True;
+								
+			if (last_bb != NULL) {
+				
+				if (last_bb->fn->obj != NULL) {
+					
+					if (obj_name != NULL) {
+					
+						if (VG_(strcmp)(last_bb->fn->obj, obj_name) != 0)
+							different_obj = True;
+					
+					} else different_obj = True;
+					
+				} else if (obj_name != NULL) different_obj = True;
+				
+			}
 			
 			/* try to see if we find dl_runtime_resolve in this obj */
 			if (!bb->is_dl_runtime_resolve && 
@@ -546,16 +554,20 @@ VG_REGPARM(1) void BB_start(UWord target) {
 		 * directly in assembly, maybe get for this also more
 		 * info about filename/line/dir as callgrind does )
 		 */
-		if (!info_fn && bb->obj_section != Vg_SectPLT) {
+		if (!info_fn) {
 			
-			VG_(sprintf)(fn, "%p", (void *) bb->addr);
+			if (bb->obj_section == Vg_SectPLT)
+				VG_(sprintf)(fn, "%p_[PLT]", (void *) bb->addr);
+			else 
+				VG_(sprintf)(fn, "%p", (void *) bb->addr);
+				
 			info_fn = True;
 			
 		}
 		
 		if (info_fn && f == NULL) {
 			
-			UInt hash_2 = str_hash(fn, N_FN_ENTRIES);
+			UInt hash_2 = str_hash(fn);
 			if (hash != hash_2) {
 				f = HT_lookup(fn_ht, hash, NULL);
 				hash = hash_2;
@@ -564,38 +576,52 @@ VG_REGPARM(1) void BB_start(UWord target) {
 			if (f == NULL) {
 				
 				f = VG_(calloc)("fn", sizeof(Function), 1);
-				if (f == NULL) failure("Function not allocable");
+				AP_ASSERT(f != NULL, "Function not allocable");
 				
 				f->name = fn;
 				HT_add_node(fn_ht, hash, f);
 				
-				if (obj_name != anon_obj)
+				if (obj_name != NULL)
 					f->obj = VG_(strdup)("obj_name", obj_name);
 				
-				f->hash = hash;
+				f->id = hash;
 			}
 			
 		}
 		bb->fn = f;
-		
-		bb->instr_offset = 0; /* real value filled with BB_end */
+		bb->instr_offset = 0; /* real value filled with a store */
 		
 		HT_add_node(bb_ht, target, bb);
 	
 	}
 	
-
-	if (!different_obj && last_bb != NULL && bb->obj_hash != last_bb->obj_hash)
-		different_obj = True;
+	
+	if (!different_obj && last_bb != NULL) {
+		
+		if (last_bb->fn->obj != NULL) {
+			
+			if (bb->fn->obj != NULL) {
+			
+				if (VG_(strcmp)(last_bb->fn->obj, bb->fn->obj) != 0)
+					different_obj = True;
+			
+			} else different_obj = True;
+			
+		} else if (bb->fn->obj != NULL) different_obj = True;
+		
+	}
 
 	if (last_bb != NULL && bb->obj_section != last_bb->obj_section)
-			different_sect = True;
+		different_sect = True;
 
 	/* Are we converting RET into a CALL? */
 	Bool ret_as_call = False;
 	
 	/* Estimation of number of returned functions */ 
 	UWord n_pop = 1;
+	
+	/* Current activation */
+	Activation * current = get_activation(tdata, tdata->stack_depth); 
 	
 	/* 
 	 * If last BB do an Ijk_Ret exit not always this is a real return.
@@ -617,7 +643,7 @@ VG_REGPARM(1) void BB_start(UWord target) {
 	if (exit == BBRET) {
 		
 		/* This is a call! */
-		if (csp < stack->current->sp) {
+		if (csp < current->sp) {
 			n_pop = 0;
 			//VG_(printf)("On BB %lu, RET to CALL because SP(%lu) < TOP_SP(%lu)\n", target, csp, stack.current->sp);
 		}
@@ -625,12 +651,12 @@ VG_REGPARM(1) void BB_start(UWord target) {
 		 * SP does not change, so this is a call only if return 
 		 * does not match our expected return address.
 		 */
-		else if (csp == stack->current->sp) {
+		else if (csp == current->sp) {
 			
 			//VG_(printf)("Try to convert RET to CALL for BB(%lu) because SP=CSP=%lu\n", target, csp);
 			
-			activation * c = stack->current;
-			UWord depth = stack->depth;
+			Activation * c = current;
+			UWord depth = tdata->stack_depth;
 			while(1) {
 				
 				if (c->ret_addr == target) break;
@@ -672,8 +698,7 @@ VG_REGPARM(1) void BB_start(UWord target) {
 	 *   previous info given by Valgrind) 
 	 */
 	Bool call_emulation = False;
-	if (last_bb != NULL && exit != BBCALL && exit != BBRET)
-	{
+	if (last_bb != NULL && exit != BBCALL && exit != BBRET) {
 		
 		if (ret_as_call || different_obj || different_sect || bb->is_entry) {
 			
@@ -684,22 +709,18 @@ VG_REGPARM(1) void BB_start(UWord target) {
 			 * function (this not make sense! It resolve and
 			 * return to the caller).
 			 */
-			if (stack->depth > 0 && last_bb->is_dl_runtime_resolve) {
+			if (tdata->stack_depth > 0 && last_bb->is_dl_runtime_resolve) {
 				
 				//VG_(printf)("POP caused by dl_runtime_resolve\n");
 				
 				/* Update current stack pointer */
-				csp = stack->current->sp;
-				
-				if (stack->current->hash_fn > 0) {
-					
-					function_exit(tdata, stack->current->hash_fn);
-					
-				}
+				csp = current->sp;
+				function_exit(tdata, current);
 				
 				/* Adjust stack */
-				stack->depth--;
-				stack->current--;
+				AP_ASSERT(tdata->stack_depth > 0, "Stack depth not possible");
+				tdata->stack_depth--;
+				current = get_activation(tdata, tdata->stack_depth);
 				
 			}
 			
@@ -721,7 +742,7 @@ VG_REGPARM(1) void BB_start(UWord target) {
 	 */
 	if (exit == BBRET) {
 		
-		pop_stack(tdata, stack, csp, n_pop);
+		pop_stack(tdata, csp, n_pop, current);
 		
 	} else {
 		
@@ -729,7 +750,7 @@ VG_REGPARM(1) void BB_start(UWord target) {
 		 * By definition, if this is a call, SP must be equal or smaller
 		 * of SP on top of our stack. Try to see if this is not true...
 		 */
-		n_pop = pop_stack(tdata, stack, csp, 0);
+		n_pop = pop_stack(tdata, csp, 0, current);
 		if (n_pop > 0) {
 			//VG_(printf)("Call deleted\n");
 			exit = BBRET;
@@ -738,13 +759,13 @@ VG_REGPARM(1) void BB_start(UWord target) {
 		if (exit == BBCALL) {
 			
 			/* I don't know why we do this but callgrind does so... */
-			if (call_emulation && stack->depth > 0)
-				csp = stack->current->sp;
+			if (call_emulation && tdata->stack_depth > 0)
+				csp = current->sp;
 			
 			if (last_bb->exit == BBCALL)
-				stack->current->ret_addr = last_bb->addr + last_bb->instr_offset;
+				current->ret_addr = last_bb->addr + last_bb->instr_offset;
 			
-			push_stack(tdata, stack, csp, bb->addr, bb->fn, bb->obj_section); 
+			push_stack(tdata, csp, bb->fn); 
 			
 		}
 		
