@@ -91,19 +91,15 @@ void function_enter(ThreadData * tdata, Activation * act) {
 	
 	#if CCT
 	
-	/* FixMe */
-	AP_ASSERT(0, "CCT does not manage correctly more than one CCT tree");
-	
 	CCTNode * parent = parent_CCT(tdata);
-	#if DEBUG
-	if (parent == NULL) failure("Invalid parent CCT in function entry");
-	#endif 
+	AP_ASSERT(parent != NULL, "Invalid parent CCT");
+	
 	CCTNode * cnode = parent->firstChild;
 	
 	// did we already encounter this context?
 	while (cnode != NULL) {
 		
-		if (cnode->target == target) break;
+		if (cnode->routine_id == act->rtn_info->routine_id) break;
 		cnode = cnode->nextSibling;
 	
 	}
@@ -112,13 +108,11 @@ void function_enter(ThreadData * tdata, Activation * act) {
 		
 		// create new context node
 		cnode = (CCTNode*) VG_(calloc)("CCT", sizeof(CCTNode), 1);
-		if (cnode == NULL) 
-			failure("Can't allocate CTT node\n");
+		AP_ASSERT(cnode != NULL, "Can't allocate CTT node");
 
 		// add node to tree
 		cnode->nextSibling = parent->firstChild;
 		parent->firstChild = cnode;
-		cnode->target = target;
 		cnode->routine_id = act->rtn_info->routine_id;
 		cnode->context_id = tdata->next_context_id++;
 		

@@ -11,10 +11,8 @@
 
 CCTNode * parent_CCT(ThreadData * tdata) {
 	
-	#if DEBUG
-	if (tdata == NULL) failure("Invalid tdata in parent cct"); 
-	if (tdata->stack_depth == 0) failure("Invalid stack_depth");
-	#endif
+	AP_ASSERT(tdata != NULL, "Invalid tdata");
+	AP_ASSERT(tdata->stack_depth > 0, "Invalid stack_depth");
 	
 	if (tdata->stack_depth <= 1) 
 		return tdata->root;
@@ -28,14 +26,19 @@ CCTNode * parent_CCT(ThreadData * tdata) {
 // -------------------------------------------------------------
 void freeTree(CCTNode * root) {
 
+	//print_CCT(root);
+	//return;
+
 	// skip empty subtrees
 	if (root == NULL) return;
 
 	// call recursively function on children
 	CCTNode * node = root->firstChild;
+	CCTNode * node2 = NULL;
 	while(node != NULL) {
+		node2 = node;
 		node = node->nextSibling;
-		freeTree(node);
+		freeTree(node2);
 	}
 
 	// deallocate CCT node
@@ -69,20 +72,26 @@ void print_cct_info(FILE * f, CCTNode* root, UWord parent_id) {
 			print_cct_info(f, theNodePtr, root->context_id);
 }
 
-/*
+
 void print_CCT(CCTNode* root) {
 	if (root == NULL) return;
 	
-	VG_(printf)("Node(%u): %llu %llu - %u - %u - %u\n", 
-		sizeof(CCTNode), root->context_id, root->routine_id, (unsigned int) root,
-		(unsigned int) root->firstChild, (unsigned int) root->nextSibling);
+	VG_(printf)("%llu\n", root->context_id);
 	CCTNode * node = root->firstChild;
 	while(node != NULL) {
+		VG_(printf)("%llu ", node->context_id);
 		node = node->nextSibling;
+	}
+	
+	VG_(printf)("\n\n");
+	
+	node = root->firstChild;
+	while(node != NULL) {
 		print_CCT(node);
+		node = node->nextSibling;
 	}
 
 }
-*/
+
 
 #endif

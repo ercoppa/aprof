@@ -33,7 +33,7 @@
 #define DEBUG				1	// Enable some sanity checks
 #define VERBOSE				0	// 0 disabled, 1 function + thread, 2 function + thread + load/store/modify, 5 elaborated functions
 #define EVENTCOUNT			0	// 0 disabled, 1 memory accesses, 2 function entries/exits, 3 mem+fn, 4 mem+fn+thread
-#define CCT					0	// if 1, keep a calling context tree for each thread to include context information in reports
+#define CCT					1	// if 1, keep a calling context tree for each thread to include context information in reports
 #define ADDR_MULTIPLE		4	// account only accessed address muliple of this number, min 1
 #define COSTANT_MEM_ACCESS	1	// if 1, memory access with size >1 are managed as size==1
 #define NO_TIME				0	// No time 
@@ -154,7 +154,6 @@ typedef struct FILE {
 typedef struct CCTNode {
 	struct CCTNode * firstChild;		// first child of the node in the CCT
 	struct CCTNode * nextSibling;		// next sibling of the node in the CCT
-	UWord			 target;			// address of call target within function associated with CCT node
 	UWord64			 routine_id;		// the routine id associated with this CCT node
 	UWord64			 context_id;		// the context id associated with this CCT node
 } CCTNode;
