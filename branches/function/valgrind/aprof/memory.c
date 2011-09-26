@@ -47,7 +47,11 @@ VG_REGPARM(3) void trace_access(UWord type, Addr addr, SizeT size) {
 	else if (type == MODIFY) VG_(printf)("Modify: %lu:%lu\n", addr, size);
 	#endif
 	
-	/*
+	#if COSTANT_MEM_ACCESS
+	addr = addr & ~(ADDR_MULTIPLE-1);
+	size = 1;
+	#else
+	
 	#if ADDR_MULTIPLE > 1
 	UWord diff = addr & (ADDR_MULTIPLE-1);
 	addr -= diff;
@@ -58,19 +62,18 @@ VG_REGPARM(3) void trace_access(UWord type, Addr addr, SizeT size) {
 	else
 		size = 1 + ((size + diff) / ADDR_MULTIPLE);
 	#endif
-	*/
 	
-	//VG_(printf)("Size: %lu\n", size);
+	#endif
 	
-	addr = addr & ~(ADDR_MULTIPLE-1);
-	size = 1;
+	unsigned int i = 0;
 	
-	//unsigned int i = 0;
-	//for (i = 0; i < size; i++) {
+	#if !COSTANT_MEM_ACCESS
+	for (i = 0; i < size; i++) {
+	#endif
 		
 		#if SUF == 1
 
-		int addr_depth = UF_insert(tdata->accesses, addr, tdata->stack_depth);
+		int addr_depth = UF_insert(tdata->accesses, addr+(i*ADDR_MULTIPLE), tdata->stack_depth);
 		
 		if (tdata->stack_depth > addr_depth) {
 			
@@ -96,6 +99,8 @@ VG_REGPARM(3) void trace_access(UWord type, Addr addr, SizeT size) {
 		}
 		#endif
 		
-	//}
+	#if !COSTANT_MEM_ACCESS
+	}
+	#endif
 	
 }

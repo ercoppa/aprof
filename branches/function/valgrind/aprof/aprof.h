@@ -30,11 +30,12 @@
 #define SUF					2	// Implementation of stack union find {1,2}
 #define EMPTY_ANALYSIS		0	// if 1, analyesis routines are empty (performance benchmark reference)
 #define TRACER 				0	// Create a trace for testing SUF
-#define DEBUG				0	// Enable some sanity checks
-#define VERBOSE				0	// 0 disabled, 1 function + thread, 2 function + thread + load/store/modify
+#define DEBUG				1	// Enable some sanity checks
+#define VERBOSE				0	// 0 disabled, 1 function + thread, 2 function + thread + load/store/modify, 5 elaborated functions
 #define EVENTCOUNT			0	// 0 disabled, 1 memory accesses, 2 function entries/exits, 3 mem+fn, 4 mem+fn+thread
 #define CCT					0	// if 1, keep a calling context tree for each thread to include context information in reports
 #define ADDR_MULTIPLE		4	// account only accessed address muliple of this number, min 1
+#define COSTANT_MEM_ACCESS	1	// if 1, memory access with size >1 are managed as size==1
 #define NO_TIME				0	// No time 
 #define INSTR				1	// Count guest intel instruction 
 #define RDTSC				2	// rdtsc intel instruction
@@ -47,6 +48,7 @@
 #define TRACE_FUNCTION		1	// if 1, aprof trace functions by itself, otherwise it suppose 
 								// that the program is instrumentated by GCC
 								// with -finstrument-functions
+#define MEM_TRACE			1
 
 #if SUF == 1
 #include "SUF/union_find.h"

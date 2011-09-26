@@ -478,11 +478,9 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 			info_fn = VG_(get_fnname)(target, fn, 256);
 		}
 		
-		/*
 		if (info_fn && VG_(strcmp)(fn, "(below main)") == 0) {
 			VG_(sprintf)(fn, "below_main");
 		}
-		*/
 		
 		if (info_fn && VG_(strcmp)(fn, "_dl_runtime_resolve") == 0) {
 			bb->is_dl_runtime_resolve = 1;
@@ -579,7 +577,8 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 		if (!info_fn) {
 			
 			if (bb->obj_section == Vg_SectPLT)
-				VG_(sprintf)(fn, "%p [PLT]", (void *) bb->addr);
+				VG_(sprintf)(fn, "%p_PLT", (void *) bb->addr);
+				//VG_(sprintf)(fn, "%p [PLT]", (void *) bb->addr);
 			else 
 				VG_(sprintf)(fn, "%p", (void *) bb->addr);
 				

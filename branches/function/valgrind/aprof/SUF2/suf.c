@@ -1,7 +1,7 @@
-#include "suf.h"
+#include "aprof.h"
 
 #define CHECK_ADDR_OVERFLOW(x) do { \
-									if ((x) > (unsigned long long) SSM_SIZE * 65536) \
+									if ((x) > (unsigned long long) SPM_SIZE * 65536) \
 										failure("Address overflow"); \
 									} while (0);
 
@@ -32,7 +32,11 @@ UWord SUF_insert(StackUF * suf, UWord addr, UWord rid)
 	#endif
 	
 	UWord i = addr >> 16;
+	#if ADDR_MULTIPLE == 1
+	UWord j = (addr & 0xffff);
+	#elif ADDR_MULTIPLE == 4
 	UWord j = (addr & 0xffff) / 4;
+	#endif
 	if (suf->table[i] == NULL) {
 		
 		suf->table[i] = VG_(calloc)("suf sm", sizeof(SSM), 1);
@@ -59,6 +63,10 @@ UWord SUF_lookup(StackUF * suf, UWord addr)
 	UWord i = addr >> 16;
 	if (suf->table[i] == NULL) return 0;
 	
+	#if ADDR_MULTIPLE == 1
+	UWord j = (addr & 0xffff);
+	#elif ADDR_MULTIPLE == 4
 	UWord j = (addr & 0xffff) / 4;
+	#endif
 	return suf->table[i]->table[j];
 }

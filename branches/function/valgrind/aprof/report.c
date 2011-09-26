@@ -9,11 +9,27 @@
 
 /* FixMe: capire come ricavare la commandline completa */
 
+static char * basename (char * path) {
+	
+	char * ptr = NULL;
+	while(1) {
+		
+		ptr = VG_(strrchr)(path, '/');
+		if (ptr == NULL) break;
+		
+		path = ptr + 1;
+		
+	}
+	
+	return path;
+	
+}
+
 void generate_report(ThreadData * tdata, ThreadId tid) {
 	
 	Char filename_priv[256];
 	Char * prog_name = (Char *) VG_(args_the_exename);
-	VG_(sprintf)(filename_priv, "%s_%u.aprof", prog_name, tid - 1);
+	VG_(sprintf)(filename_priv, "%s_%u.aprof", basename(prog_name), tid - 1);
 	/* Add path to log filename */
 	Char * filename = VG_(expand_file_name)("aprof log", filename_priv);
 
@@ -35,6 +51,9 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 	while (HT_Next(tdata->routine_hash_table, &key, &value)) {
 		
 		RoutineInfo * rtn_info = (RoutineInfo *) value;
+		
+		if (rtn_info->fn->obj == NULL) rtn_info->fn->obj = "NONE";
+		
 		VG_(sprintf)(buffer, "r %s %p %s %llu\n", rtn_info->fn->name, 
 						(void *) key, rtn_info->fn->obj, 
 							rtn_info->routine_id);

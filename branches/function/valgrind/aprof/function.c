@@ -61,12 +61,14 @@ void function_enter(ThreadData * tdata, Activation * act) {
 	AP_ASSERT(tdata != NULL, "Thread data is not valid");
 	AP_ASSERT(act != NULL, "Invalid activation info");
 	
+	#if VERBOSE
 	int i = 0;
 	for(i = 0; i < tdata->stack_depth - 1; i++)
 		VG_(printf)("| ");
 
 	VG_(printf)("> %s\n", act->rtn_info->fn->name);
 	return;
+	#endif
 	
 	UWord64 start = ap_time();
 
@@ -133,7 +135,9 @@ void function_exit(ThreadData * tdata, Activation * act) {
 	AP_ASSERT(tdata != NULL, "Thread data is not valid");
 	AP_ASSERT(act != NULL, "Invalid activation info");
 	
+	#if VERBOSE == 5
 	return;
+	#endif
 	
 	UWord64 start = ap_time();
 	RoutineInfo * rtn_info = act->rtn_info;

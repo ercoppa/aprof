@@ -98,9 +98,11 @@ IRSB* instrument (  VgCallbackClosure* closure,
 				
 				#endif
 
+				#if MEM_TRACE
 				#if EVENTCOUNT != 2
 				addEvent_Ir( sbOut, mkIRExpr_HWord( (HWord)st->Ist.IMark.addr ),
 								st->Ist.IMark.len );
+				#endif
 				#endif
 				
 				#if TRACE_FUNCTION
@@ -116,12 +118,14 @@ IRSB* instrument (  VgCallbackClosure* closure,
 
 			case Ist_WrTmp:{
 
-				#if EVENTCOUNT != 2 
+				#if MEM_TRACE
+				#if EVENTCOUNT != 2
 				IRExpr* data = st->Ist.WrTmp.data;
 				if (data->tag == Iex_Load) {
 					addEvent_Dr( sbOut, data->Iex.Load.addr,
 					sizeofIRType(data->Iex.Load.ty) );
 				}
+				#endif
 				#endif
 
 				addStmtToIRSB( sbOut, st );
@@ -130,10 +134,12 @@ IRSB* instrument (  VgCallbackClosure* closure,
 
 			case Ist_Store: {
 				
+				#if MEM_TRACE
 				#if EVENTCOUNT != 2
 				IRExpr* data  = st->Ist.Store.data;
 				addEvent_Dw(sbOut, st->Ist.Store.addr,
 							sizeofIRType(typeOfIRExpr(tyenv, data)) );
+				#endif
 				#endif
 									
 				addStmtToIRSB( sbOut, st );
@@ -142,6 +148,7 @@ IRSB* instrument (  VgCallbackClosure* closure,
 
 			case Ist_Dirty: {
 
+				#if MEM_TRACE
 				#if EVENTCOUNT != 2
 				Int dsize;
 				IRDirty* d = st->Ist.Dirty.details;
@@ -159,6 +166,7 @@ IRSB* instrument (  VgCallbackClosure* closure,
 					tl_assert(d->mSize == 0);
 				}
 				#endif
+				#endif
 
 				addStmtToIRSB( sbOut, st );
 				break;
@@ -166,6 +174,7 @@ IRSB* instrument (  VgCallbackClosure* closure,
 
 			case Ist_CAS: {
 				
+				#if MEM_TRACE
 				#if EVENTCOUNT != 2
 				/* We treat it as a read and a write of the location.  I
 				think that is the same behaviour as it was before IRCAS
@@ -185,6 +194,7 @@ IRSB* instrument (  VgCallbackClosure* closure,
 				addEvent_Dr( sbOut, cas->addr, dataSize );
 				addEvent_Dw( sbOut, cas->addr, dataSize );
 				#endif
+				#endif
 
 				addStmtToIRSB( sbOut, st );
 				break;
@@ -192,6 +202,7 @@ IRSB* instrument (  VgCallbackClosure* closure,
 
 			case Ist_LLSC: {
 				
+				#if MEM_TRACE
 				#if EVENTCOUNT != 2
 				IRType dataTy;
 				if (st->Ist.LLSC.storedata == NULL) {
@@ -203,6 +214,7 @@ IRSB* instrument (  VgCallbackClosure* closure,
 					dataTy = typeOfIRExpr(tyenv, st->Ist.LLSC.storedata);
 					addEvent_Dw( sbOut, st->Ist.LLSC.addr, sizeofIRType(dataTy) );
 				}
+				#endif
 				#endif
 				
 				addStmtToIRSB( sbOut, st );
@@ -240,8 +252,10 @@ IRSB* instrument (  VgCallbackClosure* closure,
 	
 	#endif
 
+	#if MEM_TRACE
 	/* At the end of the sbIn.  Flush outstandings. */
 	flushEvents(sbOut);
+	#endif
 
 	return sbOut;
 }
