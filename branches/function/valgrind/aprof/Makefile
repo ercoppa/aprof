@@ -72,6 +72,7 @@ am__objects_1 = aprof_x86_linux-CCT.$(OBJEXT) \
 	aprof_x86_linux-union_find.$(OBJEXT) \
 	aprof_x86_linux-suf.$(OBJEXT) \
 	aprof_x86_linux-callstack.$(OBJEXT) \
+	aprof_x86_linux-debug.$(OBJEXT) \
 	aprof_x86_linux-aprof.$(OBJEXT)
 am_aprof_x86_linux_OBJECTS = $(am__objects_1)
 aprof_x86_linux_OBJECTS =  \
@@ -79,7 +80,7 @@ aprof_x86_linux_OBJECTS =  \
 am__aprof__linux_SOURCES_DIST = CCT.c failure.c \
 	fwrite.c thread.c report.c events.c function.c memory.c time.c \
 	./hashtable/hashtable.c ./pool/pool.c ./SUF/union_find.c \
-	./SUF2/suf.c callstack.c aprof.c
+	./SUF2/suf.c callstack.c debug.c aprof.c
 am__objects_2 = aprof__linux-CCT.$(OBJEXT) \
 	aprof__linux-failure.$(OBJEXT) \
 	aprof__linux-fwrite.$(OBJEXT) \
@@ -94,6 +95,7 @@ am__objects_2 = aprof__linux-CCT.$(OBJEXT) \
 	aprof__linux-union_find.$(OBJEXT) \
 	aprof__linux-suf.$(OBJEXT) \
 	aprof__linux-callstack.$(OBJEXT) \
+	aprof__linux-debug.$(OBJEXT) \
 	aprof__linux-aprof.$(OBJEXT)
 #am_aprof__linux_OBJECTS =  \
 #	$(am__objects_2)
@@ -570,7 +572,7 @@ EXTRA_DIST = docs/va-manual.xml
 aprof_SOURCES_COMMON = CCT.c failure.c fwrite.c thread.c report.c \
 						events.c function.c memory.c time.c ./hashtable/hashtable.c \
 						./pool/pool.c ./SUF/union_find.c ./SUF2/suf.c\
-						callstack.c aprof.c
+						callstack.c debug.c aprof.c
 
 aprof_x86_linux_SOURCES = \
 	$(aprof_SOURCES_COMMON)
@@ -675,6 +677,7 @@ distclean-compile:
 include ./$(DEPDIR)/aprof_x86_linux-CCT.Po
 include ./$(DEPDIR)/aprof_x86_linux-aprof.Po
 include ./$(DEPDIR)/aprof_x86_linux-callstack.Po
+include ./$(DEPDIR)/aprof_x86_linux-debug.Po
 include ./$(DEPDIR)/aprof_x86_linux-events.Po
 include ./$(DEPDIR)/aprof_x86_linux-failure.Po
 include ./$(DEPDIR)/aprof_x86_linux-function.Po
@@ -690,6 +693,7 @@ include ./$(DEPDIR)/aprof_x86_linux-union_find.Po
 include ./$(DEPDIR)/aprof__linux-CCT.Po
 include ./$(DEPDIR)/aprof__linux-aprof.Po
 include ./$(DEPDIR)/aprof__linux-callstack.Po
+include ./$(DEPDIR)/aprof__linux-debug.Po
 include ./$(DEPDIR)/aprof__linux-events.Po
 include ./$(DEPDIR)/aprof__linux-failure.Po
 include ./$(DEPDIR)/aprof__linux-function.Po
@@ -913,6 +917,20 @@ aprof_x86_linux-callstack.obj: callstack.c
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
 #	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-callstack.obj `if test -f 'callstack.c'; then $(CYGPATH_W) 'callstack.c'; else $(CYGPATH_W) '$(srcdir)/callstack.c'; fi`
 
+aprof_x86_linux-debug.o: debug.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-debug.o -MD -MP -MF $(DEPDIR)/aprof_x86_linux-debug.Tpo -c -o aprof_x86_linux-debug.o `test -f 'debug.c' || echo '$(srcdir)/'`debug.c
+	$(am__mv) $(DEPDIR)/aprof_x86_linux-debug.Tpo $(DEPDIR)/aprof_x86_linux-debug.Po
+#	source='debug.c' object='aprof_x86_linux-debug.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-debug.o `test -f 'debug.c' || echo '$(srcdir)/'`debug.c
+
+aprof_x86_linux-debug.obj: debug.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-debug.obj -MD -MP -MF $(DEPDIR)/aprof_x86_linux-debug.Tpo -c -o aprof_x86_linux-debug.obj `if test -f 'debug.c'; then $(CYGPATH_W) 'debug.c'; else $(CYGPATH_W) '$(srcdir)/debug.c'; fi`
+	$(am__mv) $(DEPDIR)/aprof_x86_linux-debug.Tpo $(DEPDIR)/aprof_x86_linux-debug.Po
+#	source='debug.c' object='aprof_x86_linux-debug.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -c -o aprof_x86_linux-debug.obj `if test -f 'debug.c'; then $(CYGPATH_W) 'debug.c'; else $(CYGPATH_W) '$(srcdir)/debug.c'; fi`
+
 aprof_x86_linux-aprof.o: aprof.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_x86_linux_CPPFLAGS) $(CPPFLAGS) $(aprof_x86_linux_CFLAGS) $(CFLAGS) -MT aprof_x86_linux-aprof.o -MD -MP -MF $(DEPDIR)/aprof_x86_linux-aprof.Tpo -c -o aprof_x86_linux-aprof.o `test -f 'aprof.c' || echo '$(srcdir)/'`aprof.c
 	$(am__mv) $(DEPDIR)/aprof_x86_linux-aprof.Tpo $(DEPDIR)/aprof_x86_linux-aprof.Po
@@ -1122,6 +1140,20 @@ aprof__linux-callstack.obj: callstack.c
 #	source='callstack.c' object='aprof__linux-callstack.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
 #	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -c -o aprof__linux-callstack.obj `if test -f 'callstack.c'; then $(CYGPATH_W) 'callstack.c'; else $(CYGPATH_W) '$(srcdir)/callstack.c'; fi`
+
+aprof__linux-debug.o: debug.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -MT aprof__linux-debug.o -MD -MP -MF $(DEPDIR)/aprof__linux-debug.Tpo -c -o aprof__linux-debug.o `test -f 'debug.c' || echo '$(srcdir)/'`debug.c
+	$(am__mv) $(DEPDIR)/aprof__linux-debug.Tpo $(DEPDIR)/aprof__linux-debug.Po
+#	source='debug.c' object='aprof__linux-debug.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -c -o aprof__linux-debug.o `test -f 'debug.c' || echo '$(srcdir)/'`debug.c
+
+aprof__linux-debug.obj: debug.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -MT aprof__linux-debug.obj -MD -MP -MF $(DEPDIR)/aprof__linux-debug.Tpo -c -o aprof__linux-debug.obj `if test -f 'debug.c'; then $(CYGPATH_W) 'debug.c'; else $(CYGPATH_W) '$(srcdir)/debug.c'; fi`
+	$(am__mv) $(DEPDIR)/aprof__linux-debug.Tpo $(DEPDIR)/aprof__linux-debug.Po
+#	source='debug.c' object='aprof__linux-debug.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
+#	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -c -o aprof__linux-debug.obj `if test -f 'debug.c'; then $(CYGPATH_W) 'debug.c'; else $(CYGPATH_W) '$(srcdir)/debug.c'; fi`
 
 aprof__linux-aprof.o: aprof.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof__linux_CPPFLAGS) $(CPPFLAGS) $(aprof__linux_CFLAGS) $(CFLAGS) -MT aprof__linux-aprof.o -MD -MP -MF $(DEPDIR)/aprof__linux-aprof.Tpo -c -o aprof__linux-aprof.o `test -f 'aprof.c' || echo '$(srcdir)/'`aprof.c

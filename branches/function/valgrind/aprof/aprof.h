@@ -33,7 +33,7 @@
 #define DEBUG				1	// Enable some sanity checks
 #define VERBOSE				0	// 0 disabled, 1 function + thread, 2 function + thread + load/store/modify, 5 elaborated functions
 #define EVENTCOUNT			0	// 0 disabled, 1 memory accesses, 2 function entries/exits, 3 mem+fn, 4 mem+fn+thread
-#define CCT					1	// if 1, keep a calling context tree for each thread to include context information in reports
+#define CCT					0	// if 1, keep a calling context tree for each thread to include context information in reports
 #define ADDR_MULTIPLE		4	// account only accessed address muliple of this number, min 1
 #define COSTANT_MEM_ACCESS	1	// if 1, memory access with size >1 are managed as size==1
 #define NO_TIME				0	// No time 
@@ -48,7 +48,9 @@
 #define TRACE_FUNCTION		1	// if 1, aprof trace functions by itself, otherwise it suppose 
 								// that the program is instrumentated by GCC
 								// with -finstrument-functions
-#define MEM_TRACE			1
+#define MEM_TRACE			1	// if 0 disable memory tracing
+#define CCT_GRAPHIC			0	// if 1, create a report that draw the CCT tree with graphviz 
+#define DEBUG_ALLOCATION	0	// if 1, check every allocation maded by aprof
 
 #if SUF == 1
 #include "SUF/union_find.h"
@@ -87,6 +89,17 @@ typedef enum jump_t {
 	NONE                    /* default value */
 } jump_t;
 
+#endif
+
+#if DEBUG_ALLOCATION
+typedef enum alloc_type {
+	BBS, RTS, FNS, 
+	TS, FN_NAME, ACT,
+	OBJ_NAME, POOL_PAGE, HTN,
+	SEG_SUF, SMS, HT,
+	CCTS,
+	A_NONE
+} alloc_type;
 #endif
 
 /* Data structures */
@@ -156,6 +169,9 @@ typedef struct CCTNode {
 	struct CCTNode * nextSibling;		// next sibling of the node in the CCT
 	UWord64			 routine_id;		// the routine id associated with this CCT node
 	UWord64			 context_id;		// the context id associated with this CCT node
+	#if CCT_GRAPHIC
+	char * name;
+	#endif
 } CCTNode;
 #endif
 
@@ -299,6 +315,11 @@ void generate_report(ThreadData * tdata, ThreadId tid);
 CCTNode * parent_CCT(ThreadData * tdata);
 void freeTree(CCTNode * root);
 void print_cct_info(FILE * f, CCTNode * root, UWord parent_id);
+
+#if CCT_GRAPHIC
+void print_cct_graph(FILE * f, CCTNode* root, UWord parent_id, char * parent_name);
+#endif
+
 #endif
 
 /* Memory access  handler */
@@ -336,6 +357,12 @@ BB * get_BB(UWord target);
 VG_REGPARM(2) void BB_start(UWord target, BB * bb);
 #else
 Bool trace_function(ThreadId tid, UWord * arg, UWord * ret);
+#endif
+
+/* Debug */
+#if DEBUG_ALLOCATION
+void add_alloc(UWord type);
+void print_alloc(void);
 #endif
 
 #endif

@@ -287,15 +287,28 @@ void CLG_(push_call_stack)(BBCC* from, UInt jmp, BBCC* to, Addr sp, Bool skip)
 	    Int* pars = (Int*) sp;
 
 	    BB* bb = jcc->to->bb;
-	    if (s>40) s=40;
 	    
+	    if (CLG_(current_tid) > 1) {
+		static int i = 0;
+		i++;
+		VG_(printf)("[%d] %s\n", s, bb->fn->name);
+		CLG_ASSERT(i < 500);
+	    }
+	    
+	    
+	    /*
+	    static int max = 0;
+	    if (s > max) {
+		max = s;
+		//VG_(printf)("Depth: %lu\n", s);
+	    }
+	    */
+	    /*
 	    int i = 0;
 	    for(i = 0; i < s -1; i++)
 		VG_(printf)("| ");
-	    
-	    //char * sect = (char *)VG_(pp_SectKind)(section);
-	    
-	    VG_(printf)("> %s\n", bb->fn->name);
+	    */
+	    //if (s>40) s=40;
 	    
 	    /*
 	    VG_(printf)("%s> %s(0x%x, 0x%x, ...) [%s / %#lx]\n", spaces[s%4]+40-s, bb->fn->name,

@@ -13,15 +13,20 @@ HashTable * fn_ht = NULL;
 Activation * get_activation(ThreadData * tdata, unsigned int depth) {
 
 	AP_ASSERT(tdata != NULL, "Invalid tdata in get_activation");
-	AP_ASSERT(depth > 0, "Invalid depth");
+	AP_ASSERT(depth > 0 && depth < 5000, "Invalid depth");
 
 	/* Expand stack if necessary */
 	if (depth - 1 >= tdata->max_stack_size) {
 		
-		tdata->max_stack_size = tdata->max_stack_size * 2;
+		#if DEBUG_ALLOCATION
+		int j = 0;
+		for (j = 0; j < tdata->max_stack_size; j++) add_alloc(ACT);
+		#endif
+		
+		tdata->max_stack_size = tdata->max_stack_size * 2; 
 		
 		#if VERBOSE
-		VG_(printf)("Relocate stack\n");
+		VG_(printf)("Relocate stack: %llu\n", tdata->max_stack_size);
 		#endif
 		
 		tdata->stack = VG_(realloc)("stack", tdata->stack, 
@@ -149,6 +154,10 @@ BB * get_BB(UWord target) {
 		
 		bb = VG_(calloc)("bb", sizeof(BB), 1);
 		AP_ASSERT(bb != NULL, "BB not allocable")
+		
+		#if DEBUG_ALLOCATION
+		add_alloc(BBS);
+		#endif
 		
 		//VG_(printf)("Created BB for %lu\n", target);
 		
@@ -419,6 +428,9 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 	VG_(printf)("Start BB %lu\n", target);
 	#endif
 
+	/* Safety check due to an old bug of Valgrind */
+	AP_ASSERT(current_TID == VG_(get_running_tid)(), "TID mismatch");
+
 	/* Get thread data */
 	ThreadData * tdata = current_tdata;
 	AP_ASSERT(tdata != NULL, "Invalid tdata");
@@ -441,7 +453,7 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 	}
 
 	/* Obtain current stack pointer */
-	UWord csp = (UWord) VG_(get_SP)(1);
+	UWord csp = (UWord) VG_(get_SP)(current_TID);
 	
 	Bool different_obj = False;
 	Bool different_sect = False;
@@ -458,12 +470,10 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 		/* Obtain section kind of this BB */
 		bb->obj_section = VG_(DebugInfo_sect_kind)(NULL, 0, target);
 		
-		bb->fn = VG_(calloc)("fn", sizeof(Function), 1);
-		AP_ASSERT(bb->fn != NULL, "fn node not allocable");
-		
 		/* Function name buffer */
 		char * fn = VG_(calloc)("fn_name", 256, 1);
 		AP_ASSERT(fn != NULL, "function name not allocable");
+		
 		/* 
 		 * Are we entering a new function? Ask to Valgrind
 		 * if this BB is the first of a function. Valgrind sometimes
@@ -497,7 +507,7 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 				
 				/* 
 				 * This is not thread safe!!! But Valgrind serialized
-				 * thread and callgrind do this without problem so... 
+				 * threads and callgrind do this without problem so... 
 				 */
 				AP_ASSERT(n != NULL, "Invalid hash node");
 				n = n->next;
@@ -505,6 +515,7 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 				if (n->next != NULL) f = n->value;
 				else f = NULL; 
 			}
+			
 		}
 		
 		char * obj_name = NULL;
@@ -516,6 +527,11 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 			obj_name = di ? VG_(strdup)("obj_name",
 								VG_(DebugInfo_get_filename)(di)) 
 								: NULL;
+								
+			#if DEBUG_ALLOCATION
+			if (obj_name != NULL)
+				add_alloc(OBJ_NAME);
+			#endif
 			
 			#if VERBOSE_TRACE_FUNCTION
 			VG_(printf)("Test different object\n");
@@ -577,15 +593,16 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 		if (!info_fn) {
 			
 			if (bb->obj_section == Vg_SectPLT)
-				VG_(sprintf)(fn, "%p_PLT", (void *) bb->addr);
+				VG_(sprintf)(fn, "PLT%lu", bb->addr);
 				//VG_(sprintf)(fn, "%p [PLT]", (void *) bb->addr);
 			else 
-				VG_(sprintf)(fn, "%p", (void *) bb->addr);
+				VG_(sprintf)(fn, "%lu", bb->addr);
+				//VG_(sprintf)(fn, "%p", (void *)bb->addr);
 				
 			info_fn = True;
 			
 		}
-		
+				
 		if (info_fn && f == NULL) {
 			
 			UInt hash_2 = str_hash(fn);
@@ -599,14 +616,28 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 				f = VG_(calloc)("fn", sizeof(Function), 1);
 				AP_ASSERT(f != NULL, "Function not allocable");
 				
+				#if DEBUG_ALLOCATION
+				add_alloc(FNS);
+				#endif
+				
 				f->name = fn;
+				
+				#if DEBUG_ALLOCATION
+				add_alloc(FN_NAME);
+				#endif
+				
 				HT_add_node(fn_ht, hash, f);
+				#if DEBUG_ALLOCATION
+				add_alloc(HTN);
+				#endif
 				
 				if (obj_name != NULL)
 					f->obj = VG_(strdup)("obj_name", obj_name);
 				
 				f->id = hash;
-			}
+			
+			} else VG_(free)(fn);
+
 			
 		}
 		bb->fn = f;
@@ -615,6 +646,10 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 		AP_ASSERT(bb->fn != NULL, "Invalid fn node");
 		
 		HT_add_node(bb_ht, target, bb);
+		
+		#if DEBUG_ALLOCATION
+		add_alloc(HTN);
+		#endif
 	
 	}
 	
@@ -903,8 +938,16 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 				fn = VG_(calloc)("fn node", sizeof(Function), 1);
 				AP_ASSERT(fn != NULL, "fn node not allocable");
 				
+				#if DEBUG_ALLOCATION
+				add_alloc(FNS);
+				#endif
+				
 				char * rtn_name = VG_(calloc)("rtn_name", FN_NAME_SIZE, 1);
 				AP_ASSERT(rtn_name != NULL, "rtn_name not allocable");
+				
+				#if DEBUG_ALLOCATION
+				add_alloc(FN_NAME);
+				#endif
 				
 				if (!VG_(get_fnname)(target, rtn_name, FN_NAME_SIZE))
 					VG_(sprintf)(rtn_name, "%p", (void *) target);
@@ -917,11 +960,19 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 				obj_name = VG_(strdup)("copy obj", obj_name);
 				AP_ASSERT(obj_name != NULL, "Invalid copy of object name");
 				
+				#if DEBUG_ALLOCATION
+				add_alloc(OBJ_NAME);
+				#endif
+				
 				fn->id = target;
 				fn->name = rtn_name;
 				fn->obj = obj_name;
 				
 				HT_add_node(fn_ht, target, fn);
+				
+				#if DEBUG_ALLOCATION
+				add_alloc(HTN);
+				#endif
 			
 			}
 			

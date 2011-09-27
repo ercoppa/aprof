@@ -108,6 +108,20 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 	
 	#if CCT
 	print_cct_info(report, tdata->root, 0);
+	
+	#if CCT_GRAPHIC
+	VG_(sprintf)(filename_priv, "%s_%u.graph", basename(prog_name), tid - 1);
+	filename = VG_(expand_file_name)("aprof log", filename_priv);
+	FILE * cct_rep = ap_fopen(filename);
+	AP_ASSERT(cct_rep != NULL, "Can't create CCT report file");
+	VG_(sprintf)(buffer, "digraph G {\n");
+	ap_fwrite(cct_rep, buffer, VG_(strlen)(buffer));
+	print_cct_graph(cct_rep, tdata->root, 0, NULL);
+	VG_(sprintf)(buffer, "}\n");
+	ap_fwrite(cct_rep, buffer, VG_(strlen)(buffer));
+	ap_fclose(cct_rep);
+	#endif
+	
 	#endif
 
 	// close report file

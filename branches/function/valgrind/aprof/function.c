@@ -33,6 +33,10 @@ RoutineInfo * new_routine_info(ThreadData * tdata, Function * fn, UWord target) 
 	RoutineInfo * rtn_info = VG_(calloc)("rtn_info", 1, sizeof(RoutineInfo));
 	AP_ASSERT(rtn_info != NULL, "rtn info not allocable");
 	
+	#if DEBUG_ALLOCATION
+	add_alloc(RTS);
+	#endif
+	
 	rtn_info->routine_id = tdata->next_routine_id++;
 	rtn_info->fn = fn;
 	
@@ -46,12 +50,26 @@ RoutineInfo * new_routine_info(ThreadData * tdata, Function * fn, UWord target) 
 	rtn_info->context_sms_map = HT_construct(HT_destruct);
 	AP_ASSERT(rtn_info->context_sms_map != NULL, "context_sms_map not allocable");
 	
+	#if DEBUG_ALLOCATION
+	add_alloc(HT);
+	#endif
+	
 	#else
+	
 	rtn_info->sms_map = HT_construct(VG_(free));
 	AP_ASSERT(rtn_info->sms_map != NULL, "sms_map not allocable");
+	
+	#if DEBUG_ALLOCATION
+	add_alloc(HT);
+	#endif
+	
 	#endif
 	
 	HT_add_node(tdata->routine_hash_table, target, rtn_info);
+	
+	#if DEBUG_ALLOCATION
+	add_alloc(HTN);
+	#endif
 	
 	return rtn_info;
 }
@@ -61,12 +79,13 @@ void function_enter(ThreadData * tdata, Activation * act) {
 	AP_ASSERT(tdata != NULL, "Thread data is not valid");
 	AP_ASSERT(act != NULL, "Invalid activation info");
 	
-	#if VERBOSE
+	#if VERBOSE == 5
+	/*
 	int i = 0;
 	for(i = 0; i < tdata->stack_depth - 1; i++)
 		VG_(printf)("| ");
-
-	VG_(printf)("> %s\n", act->rtn_info->fn->name);
+	*/
+	VG_(printf)("[%lu] %s\n", tdata->stack_depth, act->rtn_info->fn->name);
 	return;
 	#endif
 	
@@ -110,9 +129,16 @@ void function_enter(ThreadData * tdata, Activation * act) {
 		cnode = (CCTNode*) VG_(calloc)("CCT", sizeof(CCTNode), 1);
 		AP_ASSERT(cnode != NULL, "Can't allocate CTT node");
 
+		#if DEBUG_ALLOCATION
+		add_alloc(CCTS);
+		#endif
+
 		// add node to tree
 		cnode->nextSibling = parent->firstChild;
 		parent->firstChild = cnode;
+		#if CCT_GRAPHIC
+		cnode->name = act->rtn_info->fn->name;
+		#endif
 		cnode->routine_id = act->rtn_info->routine_id;
 		cnode->context_id = tdata->next_context_id++;
 		
@@ -154,7 +180,16 @@ void function_exit(ThreadData * tdata, Activation * act) {
 		//VG_(printf)("New sms map\n");
 		sms_map = HT_construct(VG_(free));
 		AP_ASSERT(sms_map != NULL, "sms_map not allocable");
+		
+		#if DEBUG_ALLOCATION
+		add_alloc(HT);
+		#endif
+		
 		HT_add_node(rtn_info->context_sms_map, act->node->context_id, sms_map);
+
+		#if DEBUG_ALLOCATION
+		add_alloc(HTN);
+		#endif
 
 	} else {
 		
@@ -173,11 +208,26 @@ void function_exit(ThreadData * tdata, Activation * act) {
 		//VG_(printf)("New sms info\n");
 		info_access = (SMSInfo * ) VG_(calloc)("sms_info", 1, sizeof(SMSInfo));
 		AP_ASSERT(info_access != NULL, "sms_info not allocable in function exit");
+		
+		#if DEBUG_ALLOCATION
+		add_alloc(SMS);
+		#endif
+		
 		info_access->sms = act->sms;
 		#if CCT
 		HT_add_node(sms_map, info_access->sms, info_access);
+		
+		#if DEBUG_ALLOCATION
+		add_alloc(HTN);
+		#endif
+		
 		#else
 		HT_add_node(rtn_info->sms_map, info_access->sms, info_access);
+		
+		#if DEBUG_ALLOCATION
+		add_alloc(HTN);
+		#endif
+		
 		#endif
 
 	}

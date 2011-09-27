@@ -23,11 +23,15 @@ static ThreadData * thread_start(ThreadId tid){
 	#endif
 
 	#if VERBOSE && !TRACER
-	VG_(printf)("Init thread data %d\n", tid);
+	VG_(printf)("start thread data %d\n", tid);
 	#endif
 	
 	ThreadData * tdata = VG_(calloc)("thread_data", sizeof(ThreadData), 1);
 	AP_ASSERT(tdata != NULL, "thread data not allocable");
+	
+	#if DEBUG_ALLOCATION
+	add_alloc(TS);
+	#endif
 	
 	threads[tid-1] = tdata;
 
@@ -40,10 +44,19 @@ static ThreadData * thread_start(ThreadId tid){
 	tdata->routine_hash_table = HT_construct(destroy_routine_info);
 	AP_ASSERT(tdata->routine_hash_table != NULL, "rtn ht not allocable");
 	
+	#if DEBUG_ALLOCATION
+	add_alloc(HT);
+	#endif
+	
 	tdata->stack_depth = 0;
 	tdata->max_stack_size = STACK_SIZE;
 	tdata->stack = VG_(calloc)("stack", STACK_SIZE * sizeof(Activation), 1);
 	AP_ASSERT(tdata->stack != NULL, "stack not allocable");
+	
+	#if DEBUG_ALLOCATION
+	int j = 0;
+	for (j = 0; j < STACK_SIZE; j++) add_alloc(ACT);
+	#endif
 	
 	tdata->next_routine_id = 0;
 	
@@ -52,7 +65,18 @@ static ThreadData * thread_start(ThreadId tid){
 	tdata->root = (CCTNode*) VG_(calloc)("CCT", sizeof(CCTNode), 1);
 	AP_ASSERT(tdata->root != NULL, "Can't allocate CCT root node");
 
+	#if DEBUG_ALLOCATION
+	add_alloc(CCTS);
+	#endif
+
 	tdata->root->context_id = 0;
+	
+	#if CCT_GRAPHIC
+	char * n = VG_(calloc)("nome root", 32, 1);
+	n = "ROOT";
+	tdata->root->name = n;
+	#endif
+	
 	tdata->next_context_id = 1;
 	#endif
 	

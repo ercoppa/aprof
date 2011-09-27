@@ -47,6 +47,7 @@ IRSB* instrument (  VgCallbackClosure* closure,
 								mkIRExprVec_2( e2, e3 ) );
 
 	addStmtToIRSB( sbOut, IRStmt_Dirty(di3) );
+	
 	#endif
 	
 	#if EVENTCOUNT == 0 || EVENTCOUNT >= 2
@@ -266,15 +267,28 @@ static void post_clo_init(void) {
 	#if TRACE_FUNCTION
 	bb_ht = HT_construct(VG_(free));
 	AP_ASSERT(bb_ht != NULL, "bb ht not allocable");
+	
+	#if DEBUG_ALLOCATION
+	add_alloc(HT);
+	#endif
+	
 	#endif
 	
 	fn_ht = HT_construct(VG_(free));
 	AP_ASSERT(fn_ht != NULL, "fn ht not allocable");
 	
+	#if DEBUG_ALLOCATION
+	add_alloc(HT);
+	#endif
+	
 }
 
 /* Funzione per presentare risultati in fase finale */
 static void fini(Int exitcode) {
+	
+	#if DEBUG_ALLOCATION
+	print_alloc();
+	#endif
 	
 	#if TRACE_FUNCTION 
 	HT_destruct(bb_ht);
@@ -300,6 +314,11 @@ static void fini(Int exitcode) {
 
 }
 
+void signal(ThreadId tid, Int sigNo, Bool alt_stack) {
+	AP_ASSERT(0, "There is a signal");
+}
+
+
 /* Valgrind init */
 static void pre_clo_init(void) {
 
@@ -317,6 +336,7 @@ static void pre_clo_init(void) {
 	
 	VG_(track_start_client_code)		(switch_thread);
 	VG_(track_pre_thread_ll_exit)		(thread_exit);
+	VG_(track_pre_deliver_signal)		(signal);
 	
 	VG_(clo_vex_control).iropt_unroll_thresh = 0;
 	VG_(clo_vex_control).guest_chase_thresh  = 0;

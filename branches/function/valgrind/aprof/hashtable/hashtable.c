@@ -43,16 +43,6 @@ static void * free_list = NULL;
 
 #define CHAIN_NO(key,tbl) (((UWord)(key)) % tbl->n_chains)
 
-struct _HashTable {
-   UInt         n_chains;   // should be prime
-   UInt         n_elements;
-   HashNode  *  iterNode;   // current iterator node
-   UInt         iterChain;  // next chain to be traversed by the iterator
-   HashNode  ** chains;     // expanding array of hash chains
-   Bool         iterOK;     // table safe to iterate over?
-   void         (*free_func)(void *); // function invoked on node->value when desctructing the ht
-};
-
 #define N_HASH_PRIMES 20
 
 static SizeT primes[N_HASH_PRIMES] = {

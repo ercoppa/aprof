@@ -72,8 +72,35 @@ void print_cct_info(FILE * f, CCTNode* root, UWord parent_id) {
 			print_cct_info(f, theNodePtr, root->context_id);
 }
 
+#if CCT_GRAPHIC
+void print_cct_graph(FILE * f, CCTNode* root, UWord parent_id, char * parent_name) {
+	// skip empty subtrees
+	if (root == NULL) return;
+	
+	char msg[256];
+	
+	if (VG_(strncmp)(root->name, "check_match", 10) == 0) {
+		root->name[11] = '0';
+	}
+	
+	if (parent_name != NULL){
 
-void print_CCT(CCTNode* root) {
+		VG_(sprintf)(msg, "%s->%s%llu;\n", parent_name, root->name, root->context_id);
+		ap_fwrite(f, msg, VG_(strlen(msg)));
+
+	}
+	VG_(sprintf)(msg, "%s%llu", root->name, root->context_id);
+
+	// call recursively function on children
+	CCTNode* theNodePtr;
+	for (theNodePtr = root->firstChild;
+		theNodePtr != NULL;
+		theNodePtr = theNodePtr->nextSibling)
+			print_cct_graph(f, theNodePtr, root->context_id, msg);
+}
+#endif
+
+static void print_CCT(CCTNode* root) {
 	if (root == NULL) return;
 	
 	VG_(printf)("%llu\n", root->context_id);
