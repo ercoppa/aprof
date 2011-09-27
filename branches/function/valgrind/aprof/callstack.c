@@ -332,7 +332,7 @@ static UWord str_hash(const Char *s) {
 }
 
 /* Push a new activation on the stack */
-static void push_stack(ThreadData * tdata, UWord sp, Function * f) {
+static void push_stack(ThreadData * tdata, UWord sp, Function * f, Bool skip) {
 	
 	#if VERBOSE_TRACE_FUNCTION
 	VG_(printf)("Push stack\n");
@@ -353,6 +353,9 @@ static void push_stack(ThreadData * tdata, UWord sp, Function * f) {
 		AP_ASSERT(rtn_info != NULL, "Invalid routine info");
 		
 	}
+	
+	if (skip) act->skip = True;
+	else act->skip = False;
 	
 	act->sp = sp;
 	act->ret_addr = 0;
@@ -488,9 +491,11 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 			info_fn = VG_(get_fnname)(target, fn, 256);
 		}
 		
+		#if VERBOSE != 5
 		if (info_fn && VG_(strcmp)(fn, "(below main)") == 0) {
 			VG_(sprintf)(fn, "below_main");
 		}
+		#endif
 		
 		if (info_fn && VG_(strcmp)(fn, "_dl_runtime_resolve") == 0) {
 			bb->is_dl_runtime_resolve = 1;
@@ -593,11 +598,13 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 		if (!info_fn) {
 			
 			if (bb->obj_section == Vg_SectPLT)
-				VG_(sprintf)(fn, "PLT%lu", bb->addr);
-				//VG_(sprintf)(fn, "%p [PLT]", (void *) bb->addr);
+				#if VERBOSE != 5
+				VG_(sprintf)(fn, "PLT%p", (void *) bb->addr);
+				#else
+				VG_(sprintf)(fn, "%p [PLT]", (void *) bb->addr);
+				#endif
 			else 
-				VG_(sprintf)(fn, "%lu", bb->addr);
-				//VG_(sprintf)(fn, "%p", (void *)bb->addr);
+				VG_(sprintf)(fn, "%p", (void *)bb->addr);
 				
 			info_fn = True;
 			
@@ -878,7 +885,7 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 			VG_(printf)("Call PUSH stack\n");
 			#endif
 			
-			push_stack(tdata, csp, bb->fn); 
+			push_stack(tdata, csp, bb->fn, bb->is_dl_runtime_resolve); 
 			
 		}
 		

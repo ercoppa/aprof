@@ -33,7 +33,7 @@
 #define DEBUG				1	// Enable some sanity checks
 #define VERBOSE				0	// 0 disabled, 1 function + thread, 2 function + thread + load/store/modify, 5 elaborated functions
 #define EVENTCOUNT			0	// 0 disabled, 1 memory accesses, 2 function entries/exits, 3 mem+fn, 4 mem+fn+thread
-#define CCT					0	// if 1, keep a calling context tree for each thread to include context information in reports
+#define CCT					1	// if 1, keep a calling context tree for each thread to include context information in reports
 #define ADDR_MULTIPLE		4	// account only accessed address muliple of this number, min 1
 #define COSTANT_MEM_ACCESS	1	// if 1, memory access with size >1 are managed as size==1
 #define NO_TIME				0	// No time 
@@ -176,7 +176,6 @@ typedef struct CCTNode {
 #endif
 
 typedef struct {
-	
 	UWord64 routine_id;					// unique id for this routine
 	Function * fn;						// Info (name, file, etc) about this routine
 	UWord64 total_self_time;			// total self time for this routine
@@ -219,6 +218,7 @@ typedef struct {
 	 * with this address.
 	 */
 	UWord ret_addr;
+	Bool skip;						// if True, do not trace
 	#endif
 } Activation;
 
@@ -252,6 +252,7 @@ typedef struct {
 	#if TRACE_FUNCTION
 	BB * last_bb;
 	jump_t last_exit;
+	Bool skip;
 	#endif
 } ThreadData;
 
@@ -352,7 +353,6 @@ Activation * get_activation_by_aid(ThreadData * tdata, UWord aid);
 #endif
 Activation * get_activation(ThreadData * tdata, unsigned int depth);
 #if TRACE_FUNCTION
-void init_stack(ThreadData * tdata);
 BB * get_BB(UWord target);
 VG_REGPARM(2) void BB_start(UWord target, BB * bb);
 #else

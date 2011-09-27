@@ -288,12 +288,7 @@ void CLG_(push_call_stack)(BBCC* from, UInt jmp, BBCC* to, Addr sp, Bool skip)
 
 	    BB* bb = jcc->to->bb;
 	    
-	    if (CLG_(current_tid) > 1) {
-		static int i = 0;
-		i++;
-		VG_(printf)("[%d] %s\n", s, bb->fn->name);
-		CLG_ASSERT(i < 500);
-	    }
+	    VG_(printf)("[%d] %s\n", s, bb->fn->name);
 	    
 	    
 	    /*

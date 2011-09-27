@@ -148,6 +148,10 @@ void function_enter(ThreadData * tdata, Activation * act) {
 	act->node = cnode;
 	#endif
 	
+	#if TRACE_FUNCTION
+	if (act->skip) tdata->skip = True;
+	#endif
+	
 }
 
 void function_exit(ThreadData * tdata, Activation * act) {
@@ -256,9 +260,20 @@ void function_exit(ThreadData * tdata, Activation * act) {
 		tdata->curr_aid = act->old_aid;
 		#endif
 
-		parent_activation->sms                 += act->sms;
-		parent_activation->total_children_time += partial_cumulative;
-		
+		#if TRACE_FUNCTION
+		if (!tdata->skip) {
+		#endif
+			parent_activation->sms                 += act->sms;
+			parent_activation->total_children_time += partial_cumulative;
+		#if TRACE_FUNCTION
+		} else {
+			tdata->bb_c -= partial_cumulative;
+		}
+		#endif
 	}
+	
+	#if TRACE_FUNCTION
+	if (act->skip) tdata->skip = False;
+	#endif
 
 }

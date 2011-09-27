@@ -31,7 +31,6 @@ VG_REGPARM(3) void trace_access(UWord type, Addr addr, SizeT size) {
 	if (tdata == NULL) failure("Invalid tdata in trace_load");
 	#endif
 	
-	/* We start tracing after main() */
 	if (tdata->stack_depth == 0) return;
 	
 	#if TRACER
@@ -46,6 +45,8 @@ VG_REGPARM(3) void trace_access(UWord type, Addr addr, SizeT size) {
 	else if (type == STORE) VG_(printf)("Store: %lu:%lu\n", addr, size);
 	else if (type == MODIFY) VG_(printf)("Modify: %lu:%lu\n", addr, size);
 	#endif
+	
+	if (tdata->skip) return;
 	
 	#if COSTANT_MEM_ACCESS
 	addr = addr & ~(ADDR_MULTIPLE-1);
