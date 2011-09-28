@@ -74,7 +74,7 @@ DSP(aprof): space 61564 kB ~ time real 8.200s ~ EVENTCOUNT=2 (only function), TI
 DSP(aprof): space 61564 kB ~ time real 0m13.943s ~ EVENTCOUNT=3 (memory and function), TIME=NO_TIME
 }}}
 
-Revisione 107 (branch function):
+Revision 107 (branch function):
 {{{
 DSP(aprof): space 78000 kB ~ time real 0m20.138s ~ CCT=0, SUF=2, TIME=BB_COUNT, ADDR_MULTIPLE=4, COSTANT_MEM_ACCESS=1
 }}}
