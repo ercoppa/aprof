@@ -26,12 +26,16 @@ void destroy_routine_info(void * data) {
 
 RoutineInfo * new_routine_info(ThreadData * tdata, Function * fn, UWord target) {
 	
+	#if DEBUG
 	AP_ASSERT(tdata != NULL, "Thread data is not valid");
 	AP_ASSERT(fn != NULL, "Invalid function info");
 	AP_ASSERT(target > 0, "Invalid target");
+	#endif
 	
 	RoutineInfo * rtn_info = VG_(calloc)("rtn_info", 1, sizeof(RoutineInfo));
+	#if DEBUG
 	AP_ASSERT(rtn_info != NULL, "rtn info not allocable");
+	#endif
 	
 	#if DEBUG_ALLOCATION
 	add_alloc(RTS);
@@ -48,7 +52,9 @@ RoutineInfo * new_routine_info(ThreadData * tdata, Function * fn, UWord target) 
 	
 	#if CCT
 	rtn_info->context_sms_map = HT_construct(HT_destruct);
+	#if DEBUG
 	AP_ASSERT(rtn_info->context_sms_map != NULL, "context_sms_map not allocable");
+	#endif
 	
 	#if DEBUG_ALLOCATION
 	add_alloc(HT);
@@ -57,7 +63,9 @@ RoutineInfo * new_routine_info(ThreadData * tdata, Function * fn, UWord target) 
 	#else
 	
 	rtn_info->sms_map = HT_construct(VG_(free));
+	#if DEBUG
 	AP_ASSERT(rtn_info->sms_map != NULL, "sms_map not allocable");
+	#endif
 	
 	#if DEBUG_ALLOCATION
 	add_alloc(HT);
@@ -76,8 +84,10 @@ RoutineInfo * new_routine_info(ThreadData * tdata, Function * fn, UWord target) 
 
 void function_enter(ThreadData * tdata, Activation * act) {
 	
+	#if DEBUG
 	AP_ASSERT(tdata != NULL, "Thread data is not valid");
 	AP_ASSERT(act != NULL, "Invalid activation info");
+	#endif
 	
 	#if VERBOSE == 5
 	/*
@@ -92,7 +102,9 @@ void function_enter(ThreadData * tdata, Activation * act) {
 	UWord64 start = ap_time();
 
 	RoutineInfo * rtn_info = act->rtn_info;
+	#if DEBUG
 	AP_ASSERT(rtn_info != NULL, "Invalid rtn info");
+	#endif
 	
 	rtn_info->calls++;
 	rtn_info->recursion_pending++;
@@ -111,7 +123,9 @@ void function_enter(ThreadData * tdata, Activation * act) {
 	#if CCT
 	
 	CCTNode * parent = parent_CCT(tdata);
+	#if DEBUG
 	AP_ASSERT(parent != NULL, "Invalid parent CCT");
+	#endif
 	
 	CCTNode * cnode = parent->firstChild;
 	
@@ -156,8 +170,10 @@ void function_enter(ThreadData * tdata, Activation * act) {
 
 void function_exit(ThreadData * tdata, Activation * act) {
 	
+	#if DEBUG
 	AP_ASSERT(tdata != NULL, "Thread data is not valid");
 	AP_ASSERT(act != NULL, "Invalid activation info");
+	#endif
 	
 	#if VERBOSE == 5
 	return;
@@ -183,7 +199,9 @@ void function_exit(ThreadData * tdata, Activation * act) {
 		
 		//VG_(printf)("New sms map\n");
 		sms_map = HT_construct(VG_(free));
+		#if DEBUG
 		AP_ASSERT(sms_map != NULL, "sms_map not allocable");
+		#endif
 		
 		#if DEBUG_ALLOCATION
 		add_alloc(HT);
@@ -211,7 +229,9 @@ void function_exit(ThreadData * tdata, Activation * act) {
 		
 		//VG_(printf)("New sms info\n");
 		info_access = (SMSInfo * ) VG_(calloc)("sms_info", 1, sizeof(SMSInfo));
+		#if DEBUG
 		AP_ASSERT(info_access != NULL, "sms_info not allocable in function exit");
+		#endif
 		
 		#if DEBUG_ALLOCATION
 		add_alloc(SMS);
@@ -252,7 +272,9 @@ void function_exit(ThreadData * tdata, Activation * act) {
 	if (tdata->stack_depth > 1) {
 
 		Activation * parent_activation = get_activation(tdata, tdata->stack_depth - 1);
+		#if DEBUG
 		AP_ASSERT(parent_activation != NULL, "Invalid parent activation");
+		#endif
 
 		#if SUF == 1
 		UF_merge(tdata->accesses, tdata->stack_depth);

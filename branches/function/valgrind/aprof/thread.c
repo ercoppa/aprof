@@ -167,8 +167,10 @@ void switch_thread(ThreadId tid, ULong blocks_dispatched) {
 		current_tdata = thread_start(tid);
 	else 
 		current_tdata = threads[tid -1];
-		
+	
+	#if DEBUG
 	AP_ASSERT(current_tdata != NULL, "Invalid tdata");
+	#endif
 	
 	#if TRACE_FUNCTION
 	last_exit = current_tdata->last_exit;

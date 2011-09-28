@@ -277,6 +277,9 @@ static void post_clo_init(void) {
 	fn_ht = HT_construct(VG_(free));
 	AP_ASSERT(fn_ht != NULL, "fn ht not allocable");
 	
+	obj_ht = HT_construct(VG_(free));
+	AP_ASSERT(obj_ht != NULL, "fn ht not allocable");
+	
 	#if DEBUG_ALLOCATION
 	add_alloc(HT);
 	#endif
@@ -295,6 +298,7 @@ static void fini(Int exitcode) {
 	#endif
 	
 	HT_destruct(fn_ht);
+	HT_destruct(obj_ht);
 	
 	#if !EVENTCOUNT && !TRACER
 	HT_destroy_pool();

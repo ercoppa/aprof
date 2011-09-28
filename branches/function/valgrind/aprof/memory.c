@@ -28,7 +28,7 @@ VG_REGPARM(3) void trace_access(UWord type, Addr addr, SizeT size) {
 	
 	ThreadData * tdata = current_tdata;
 	#if DEBUG
-	if (tdata == NULL) failure("Invalid tdata in trace_load");
+	AP_ASSERT(tdata != NULL, "Invalid tdata");
 	#endif
 	
 	if (tdata->stack_depth == 0) return;
@@ -93,9 +93,8 @@ VG_REGPARM(3) void trace_access(UWord type, Addr addr, SizeT size) {
 		
 		if (old_aid < tdata->curr_aid && (type == LOAD || type == MODIFY)) {
 			get_activation(tdata, tdata->stack_depth)->sms++;
-			if (old_aid > 0 && old_aid >= get_activation(tdata, 1)->aid) {
+			if (old_aid > 0 && old_aid >= get_activation(tdata, 1)->aid) 
 				get_activation_by_aid(tdata, old_aid)->sms--;
-			}
 
 		}
 		#endif

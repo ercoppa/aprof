@@ -30,10 +30,10 @@
 #define SUF					2	// Implementation of stack union find {1,2}
 #define EMPTY_ANALYSIS		0	// if 1, analyesis routines are empty (performance benchmark reference)
 #define TRACER 				0	// Create a trace for testing SUF
-#define DEBUG				1	// Enable some sanity checks
+#define DEBUG				0	// Enable some sanity checks
 #define VERBOSE				0	// 0 disabled, 1 function + thread, 2 function + thread + load/store/modify, 5 elaborated functions
 #define EVENTCOUNT			0	// 0 disabled, 1 memory accesses, 2 function entries/exits, 3 mem+fn, 4 mem+fn+thread
-#define CCT					1	// if 1, keep a calling context tree for each thread to include context information in reports
+#define CCT					0	// if 1, keep a calling context tree for each thread to include context information in reports
 #define ADDR_MULTIPLE		4	// account only accessed address muliple of this number, min 1
 #define COSTANT_MEM_ACCESS	1	// if 1, memory access with size >1 are managed as size==1
 #define NO_TIME				0	// No time 
@@ -59,7 +59,7 @@
 #endif
 
 /* Some constants */
-#define STACK_SIZE   32
+#define STACK_SIZE   64
 #define BUFFER_SIZE  32000
 #define FN_NAME_SIZE 256
 
@@ -104,17 +104,15 @@ typedef enum alloc_type {
 
 /* Data structures */
 
-/* Not used for now...
 typedef struct Object {
 	char 		* name;
 	char		* filename;
 } Object;
-*/
 
 typedef struct Function {
 	UWord		 id;					// Id of this function
 	char	   * name;					// name of routine
-	char       * obj;					// name of library the routine belongs to
+	Object     * obj;					// name of library the routine belongs to
 } Function;
 
 #if TRACE_FUNCTION
@@ -265,6 +263,7 @@ extern ThreadData * current_tdata;
 extern HashTable * bb_ht;
 #endif
 
+extern HashTable * obj_ht;
 extern HashTable * fn_ht;
 
 /* Counter */ 
@@ -351,7 +350,13 @@ void addEvent_Dw (IRSB* sb, IRAtom* daddr, Int dsize);
 #if SUF == 2
 Activation * get_activation_by_aid(ThreadData * tdata, UWord aid);
 #endif
-Activation * get_activation(ThreadData * tdata, unsigned int depth);
+
+#define get_activation(tdata, depth) ((depth-1 >= tdata->max_stack_size) ? \
+										resize_stack(tdata, depth) : \
+										(tdata->stack + depth - 1))
+//Activation * get_activation(ThreadData * tdata, unsigned int depth);
+Activation * resize_stack(ThreadData * tdata, unsigned int depth);
+
 #if TRACE_FUNCTION
 BB * get_BB(UWord target);
 VG_REGPARM(2) void BB_start(UWord target, BB * bb);
