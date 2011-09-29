@@ -13,7 +13,7 @@ You can find `ubuntu.cfg` file and all PDF reports here.
   * Ubuntu 11.04 *32bit* 
 
 === Summary ===
-Native is the native execution time (seconds). For memcheck, aprof, and callgrind are given slowdown factors.
+Native is the native execution time (seconds). For memcheck, aprof, and callgrind is given also the slowdown factor.
 
 || *Program* || *Native* || *memcheck* || *callgrind* || *callgrind cache-sim*|| *aprof* ||
 || 400.perlbench || 0 || 0 || 0 || 0 || 0 ||
