@@ -14,6 +14,17 @@ You can find `ubuntu.cfg` file and all PDF reports here.
 
 === Summary ===
 Native is the native execution time (seconds). For memcheck, aprof, and callgrind is given also the slowdown factor.
-
+==== Int ====
 || *Program* || *Native* || *memcheck* || *callgrind* || *callgrind cache-sim*|| *aprof* ||
-|| 400.perlbench || 0 || 0 || 0 || 0 || 0 ||
+|| 400.perlbench || 4.20 || 0 || 0 || 0 || 0 ||
+|| 401.bzip2 || 13.6 || 0 || 0 || 0 || 0 ||
+|| 403.gcc || 2.12 || 0 || 0 || 0 || 0 ||
+|| 429.mcf || 3.68 || 0 || 0 || 0 || 0 ||
+|| 445.gobmk || 30.9 || 0 || 0 || 0 || 0 ||
+|| 456.hmmer || 6.05 || 0 || 0 || 0 || 0 ||
+|| 458.sjeng || 6.98 || 0 || 0 || 0 || 0 ||
+|| 462.libquantum || 0.126 || 0 || 0 || 0 || 0 ||
+|| 464.h624ref || 33.9 || 0 || 0 || 0 || 0 ||
+|| 471.omnetpp || 0.911 || 0 || 0 || 0 || 0 ||
+|| 473.astar || 16.9 || 0 || 0 || 0 || 0 ||
+|| 483.xalancbmk || 0.149 || 0 || 0 || 0 || 0 ||
