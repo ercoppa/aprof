@@ -210,13 +210,13 @@ void HT_destruct(HashTable * table)
    UInt       i;
    HashNode *node, *node_next;
 
-   if (table->free_func != NULL)
-       for (i = 0; i < table->n_chains; i++) {
-          for (node = table->chains[i]; node != NULL; node = node_next) {
-             node_next = node->next;
+   for (i = 0; i < table->n_chains; i++) {
+      for (node = table->chains[i]; node != NULL; node = node_next) {
+         node_next = node->next;
+         if (table->free_func != NULL)
              table->free_func(node);
-          }
-       }
+      }
+   }
    //VG_(printf)("I will free %p for %p\n", table->chains, table);
    VG_(free)(table->chains);
    VG_(free)(table);

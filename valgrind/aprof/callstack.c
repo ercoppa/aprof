@@ -8,11 +8,7 @@
 #include "aprof.h"
 
 /* HT of all function */
-pool_t * fn_pool = NULL;
-void * fn_free_list = NULL;
 HashTable * fn_ht = NULL;
-pool_t * obj_pool = NULL;
-void * obj_free_list = NULL;
 HashTable * obj_ht = NULL;
 
 #if 0
@@ -175,8 +171,6 @@ static Addr runtime_resolve_addr   = 0;
 static int  runtime_resolve_length = 0;
 /* HT of all BB */
 HashTable * bb_ht = NULL;
-pool_t * bb_pool = NULL;
-void * bb_free_list = NULL;
 
 /* End global vars */
 
@@ -188,18 +182,14 @@ BB * get_BB(UWord target) {
 	BB * bb = HT_lookup(bb_ht, target);
 	if (bb == NULL) {
 		
-		pool_alloc(bb_pool, bb_free_list, bb, BB);
-		//bb = VG_(calloc)("bb", sizeof(BB), 1);
+		bb = VG_(calloc)("bb", sizeof(BB), 1);
 		AP_ASSERT(bb != NULL, "BB not allocable")
 		
 		#if DEBUG_ALLOCATION
 		add_alloc(BBS);
 		#endif
 		
-		bb->key = 0;
-		bb->next = NULL;
-		bb->is_entry = False;
-		bb->is_dl_runtime_resolve = False;
+		
 		
 	}
 	
@@ -593,9 +583,7 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 				if (obj == NULL) {
 					
 					char * obj_name_c = VG_(strdup)("obj_name", obj_name);
-					pool_alloc(obj_pool, obj_free_list, obj, Object);
-					obj->next = NULL;
-					//obj = VG_(calloc)("obj", sizeof(Object), 1);
+					obj = VG_(calloc)("obj", sizeof(Object), 1);
 					#if DEBUG
 					AP_ASSERT(obj != NULL, "Obj not allocable");
 					#endif
@@ -681,12 +669,10 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 			
 			if (f == NULL) {
 				
-				pool_alloc(fn_pool, fn_free_list, f, Function);
-				//f = VG_(calloc)("fn", sizeof(Function), 1);
+				f = VG_(calloc)("fn", sizeof(Function), 1);
 				#if DEBUG
 				AP_ASSERT(f != NULL, "Function not allocable");
 				#endif
-				f->next = NULL;
 				
 				#if DEBUG_ALLOCATION
 				add_alloc(FNS);
@@ -1007,12 +993,10 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 			
 			if (fn == NULL) {
 				
-				pool_alloc(fn_pool, fn_free_list, fn, Function);
-				fn->next = NULL;
-				//fn = VG_(calloc)("fn node", sizeof(Function), 1);
+				fn = VG_(calloc)("fn node", sizeof(Function), 1);
 				#if DEBUG
 				AP_ASSERT(fn != NULL, "fn node not allocable");
-				#endif			
+				#endif
 				
 				#if DEBUG_ALLOCATION
 				add_alloc(FNS);
@@ -1044,9 +1028,7 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 				AP_ASSERT(obj_name != NULL, "Invalid copy of object name");
 				#endif
 				
-				//Object * obj = VG_(calloc)("obj", sizeof(Object), 1);
-				pool_alloc(obj_pool, obj_free_list, obj, Object);
-				obj->next = NULL;
+				Object * obj = VG_(calloc)("obj", sizeof(Object), 1);
 				#if DEBUG
 				AP_ASSERT(obj != NULL, "Invalid object");
 				#endif
@@ -1059,7 +1041,6 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 				fn->name = rtn_name;
 				fn->obj = obj;
 				obj->name = obj_name;
-				obj->filename = NULL;
 				
 				HT_add_node(fn_ht, fn->key, fn);
 				

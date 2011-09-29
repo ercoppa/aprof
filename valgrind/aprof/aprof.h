@@ -25,13 +25,12 @@
 #include "valgrind.h"
 #include "pub_tool_mallocfree.h"
 #include "hashtable/hashtable.h"
-#include "pool/pool.h"
 
 /* Behaviour macro */
 #define SUF					2	// Implementation of stack union find {1,2}
 #define EMPTY_ANALYSIS		0	// if 1, analyesis routines are empty (performance benchmark reference)
 #define TRACER 				0	// Create a trace for testing SUF
-#define DEBUG				1	// Enable some sanity checks
+#define DEBUG				0	// Enable some sanity checks
 #define VERBOSE				0	// 0 disabled, 1 function + thread, 2 function + thread + load/store/modify, 5 elaborated functions
 #define EVENTCOUNT			0	// 0 disabled, 1 memory accesses, 2 function entries/exits, 3 mem+fn, 4 mem+fn+thread
 #define CCT					0	// if 1, keep a calling context tree for each thread to include context information in reports
@@ -63,7 +62,6 @@
 #define STACK_SIZE   64
 #define BUFFER_SIZE  32000
 #define FN_NAME_SIZE 256
-#define POOL_ELEM 1024
 
 #if defined(VG_BIGENDIAN)
 # define Endness Iend_BE
@@ -269,22 +267,12 @@ typedef struct {
 
 extern ThreadId current_TID;
 extern ThreadData * current_tdata; 
-extern pool_t * rtn_pool;
-extern void * rtn_free_list;
-extern pool_t * sms_pool;
-extern void * sms_free_list;
 
 #if TRACE_FUNCTION
 extern HashTable * bb_ht;
-extern pool_t * bb_pool;
-extern void * bb_free_list;
 #endif
 
-extern pool_t * obj_pool;
-extern void * obj_free_list;
 extern HashTable * obj_ht;
-extern pool_t * fn_pool;
-extern void * fn_free_list;
 extern HashTable * fn_ht;
 
 /* Counter */ 

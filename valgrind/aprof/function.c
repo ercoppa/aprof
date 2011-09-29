@@ -12,11 +12,6 @@ UWord fn_in_n  = 0;
 UWord fn_out_n = 0;
 #endif
 
-pool_t * rtn_pool = NULL;
-void * rtn_free_list = NULL;
-pool_t * sms_pool = NULL;
-void * sms_free_list = NULL;
-
 void destroy_routine_info(void * data) {
 	
 	RoutineInfo * ri = (RoutineInfo *) data;
@@ -25,8 +20,7 @@ void destroy_routine_info(void * data) {
 	#else
 	HT_destruct(ri->sms_map);
 	#endif
-	pool_free(ri, rtn_free_list);
-	//VG_(free)(ri);
+	VG_(free)(ri);
 
 }
 
@@ -38,11 +32,7 @@ RoutineInfo * new_routine_info(ThreadData * tdata, Function * fn, UWord target) 
 	AP_ASSERT(target > 0, "Invalid target");
 	#endif
 	
-	RoutineInfo * rtn_info = NULL;
-	pool_alloc(rtn_pool, rtn_free_list, rtn_info, RoutineInfo);
-	rtn_info->next = NULL;
-	
-	//RoutineInfo * rtn_info = VG_(calloc)("rtn_info", 1, sizeof(RoutineInfo));
+	RoutineInfo * rtn_info = VG_(calloc)("rtn_info", 1, sizeof(RoutineInfo));
 	#if DEBUG
 	AP_ASSERT(rtn_info != NULL, "rtn info not allocable");
 	#endif
@@ -73,7 +63,7 @@ RoutineInfo * new_routine_info(ThreadData * tdata, Function * fn, UWord target) 
 	
 	#else
 	
-	rtn_info->sms_map = HT_construct(NULL);
+	rtn_info->sms_map = HT_construct(VG_(free));
 	#if DEBUG
 	AP_ASSERT(rtn_info->sms_map != NULL, "sms_map not allocable");
 	#endif
@@ -209,7 +199,7 @@ void function_exit(ThreadData * tdata, Activation * act) {
 	if (sms_map == NULL) {
 		
 		//VG_(printf)("New sms map\n");
-		sms_map = HT_construct(NULL);
+		sms_map = HT_construct(VG_(free));
 		#if DEBUG
 		AP_ASSERT(sms_map != NULL, "sms_map not allocable");
 		#endif
@@ -240,14 +230,7 @@ void function_exit(ThreadData * tdata, Activation * act) {
 	if (info_access == NULL) {
 		
 		//VG_(printf)("New sms info\n");
-		pool_alloc(sms_pool, sms_free_list, info_access, SMSInfo);
-		info_access->next = NULL;
-		info_access->max_cumulative_time = 0;
-		info_access->min_cumulative_time = 0;
-		info_access->partial_cumulative_time = 0;
-		info_access->partial_calls_number = 0;
-		
-		//info_access = (SMSInfo * ) VG_(calloc)("sms_info", 1, sizeof(SMSInfo));
+		info_access = (SMSInfo * ) VG_(calloc)("sms_info", 1, sizeof(SMSInfo));
 		#if DEBUG
 		AP_ASSERT(info_access != NULL, "sms_info not allocable in function exit");
 		#endif
