@@ -47,6 +47,12 @@
 
 #else
 #include "pub_tool_basics.h"
+#include "pub_tool_libcassert.h"
+#include "pub_tool_mallocfree.h"
+#endif
+
+#ifndef UWord64
+#define UWord64 unsigned long long 
 #endif
 
 /* Generic type for a separately-chained hash table.  Via a kind of dodgy
@@ -59,12 +65,13 @@
 //   probing give better cache behaviour.
 
 typedef struct HashNode {
-		struct HashNode * next;
-		UWord				key;
-		void *				value;
+        UWord              key;
+        struct HashNode  * next;
 } HashNode;
 
 struct _HashTable {
+   UWord64      key;        // Needed because we do ht fo ht...
+   void       * next;
    UInt         n_chains;   // should be prime
    UInt         n_elements;
    HashNode  *  iterNode;   // current iterator node
@@ -83,21 +90,21 @@ typedef struct _HashTable HashTable;
 extern HashTable * HT_construct (void * free_func);
 
 /* Count the number of nodes in a table. */
-extern Int HT_count_nodes (HashTable * table );
+extern Int HT_count_nodes (HashTable * table);
 
 /* Add a node to the table.  Duplicate keys are permitted. */
-extern void HT_add_node (HashTable * t, UWord key, void * value);
+extern void HT_add_node (HashTable * t, UWord key, void * node);
 
 /* Looks up a VgHashNode in the table.  Returns NULL if not found.  If entries
  * with duplicate keys are present, the most recently-added of the dups will
  * be returned, but it's probably better to avoid dups altogether. */
-extern void * HT_lookup (HashTable * table, UWord key, HashNode ** node);
+extern void * HT_lookup (HashTable * table, UWord key);
 
 /* Removes a VgHashNode from the table.  Returns NULL if not found. */
-extern void * HT_remove (HashTable * table, UWord key );
+extern void * HT_remove (HashTable * table, UWord key);
 
 /* Reset the table's iterator to point to the first element. */
-extern void HT_ResetIter (HashTable * table );
+extern void HT_ResetIter (HashTable * table);
 
 /* Return the element pointed to by the iterator and move on to the
    next one.  Returns NULL if the last one has been passed, or if
@@ -110,13 +117,10 @@ extern void HT_ResetIter (HashTable * table );
    Since resizing only happens as a result of calling HT_add_node,
    disallowing HT_add_node during iteration should give the required
    assurance. */
-extern void * HT_Next (HashTable * table,  UWord * key, void ** value);
+extern void * HT_Next (HashTable * table);
 
 /* Destroy a table. */
 extern void HT_destruct (HashTable * t);
-
-extern void HT_destroy_pool(void);
-
 
 #endif 
 

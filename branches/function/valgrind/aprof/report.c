@@ -45,18 +45,15 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 
 	// iterate over routines
 	HT_ResetIter(tdata->routine_hash_table);
-	UWord key;
-	void * value = NULL;
 
-	while (HT_Next(tdata->routine_hash_table, &key, &value)) {
-		
-		RoutineInfo * rtn_info = (RoutineInfo *) value;
+	RoutineInfo * rtn_info = HT_Next(tdata->routine_hash_table);
+	while (rtn_info != NULL) {
 		
 		char * obj_name = "NONE";
 		if (rtn_info->fn->obj != NULL) obj_name = rtn_info->fn->obj->name; 
 		
 		VG_(sprintf)(buffer, "r %s %p %s %llu\n", rtn_info->fn->name, 
-						(void *) key, obj_name, 
+							rtn_info->key, obj_name, 
 							rtn_info->routine_id);
 		ap_fwrite(report, buffer, VG_(strlen)(buffer));
 		
@@ -67,43 +64,50 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 
 		#if CCT
 
-		UWord ckey;
-		void * cvalue;
 		HT_ResetIter(rtn_info->context_sms_map);
+		HashTable * ht = HT_Next(rtn_info->context_sms_map);
 		
-		while (HT_Next(rtn_info->context_sms_map, &ckey, &cvalue)) {
+		while (ht != NULL) {
 			
-			UWord skey;
-			void * svalue;
-			HT_ResetIter(cvalue);
+			HT_ResetIter(ht);
+			SMSInfo * info_access = HT_Next(ht);
 			
-			while (HT_Next(cvalue, &skey, &svalue)) {
+			while (info_access != NULL) {
 				
-				SMSInfo * info_access = (SMSInfo *) svalue;
-				UWord64 time_exec = info_access->partial_cumulative_time / info_access->partial_calls_number;
+				UWord64 time_exec = info_access->partial_cumulative_time 
+										/ info_access->partial_calls_number;
 				
-				VG_(sprintf)(buffer, "q %llu %lu %llu %lu\n", (UWord64) ckey, skey, time_exec, info_access->partial_calls_number);
+				VG_(sprintf)(buffer, "q %llu %lu %llu %lu\n", 
+								ht->key, info_access->key, time_exec,
+								info_access->partial_calls_number);
 				ap_fwrite(report, buffer, VG_(strlen)(buffer));
+
+				info_access = HT_Next(ht);
 
 			}
 			
+			ht = HT_Next(rtn_info->context_sms_map);
 		}
 		#else
 
-		UWord skey;
-		void * svalue;
 		// iterate over sms records of current routine
 		HT_ResetIter(rtn_info->sms_map);
+		SMSInfo * info_access = HT_Next(rtn_info->sms_map);
 		
-		while (HT_Next(rtn_info->sms_map, &skey, &svalue)) {
+		while (info_access != NULL) {
 			
-			SMSInfo * info_access = (SMSInfo *) svalue;
-			UWord64 time_exec = info_access->partial_cumulative_time / info_access->partial_calls_number;
-			VG_(sprintf)(buffer, "p %llu %lu %llu %lu\n", rtn_info->routine_id, skey, time_exec, info_access->partial_calls_number);
+			UWord64 time_exec = info_access->partial_cumulative_time 
+									/ info_access->partial_calls_number;
+			VG_(sprintf)(buffer, "p %llu %lu %llu %lu\n", 
+				rtn_info->routine_id, info_access->key, time_exec, 
+				info_access->partial_calls_number);
 			ap_fwrite(report, buffer, VG_(strlen)(buffer));
 			
+			info_access = HT_Next(rtn_info->sms_map);
 		}
 		#endif
+
+		rtn_info = HT_Next(tdata->routine_hash_table);
 
 	}
 	

@@ -41,6 +41,7 @@ RoutineInfo * new_routine_info(ThreadData * tdata, Function * fn, UWord target) 
 	add_alloc(RTS);
 	#endif
 	
+	rtn_info->key = target;
 	rtn_info->routine_id = tdata->next_routine_id++;
 	rtn_info->fn = fn;
 	
@@ -73,7 +74,7 @@ RoutineInfo * new_routine_info(ThreadData * tdata, Function * fn, UWord target) 
 	
 	#endif
 	
-	HT_add_node(tdata->routine_hash_table, target, rtn_info);
+	HT_add_node(tdata->routine_hash_table, rtn_info->key, rtn_info);
 	
 	#if DEBUG_ALLOCATION
 	add_alloc(HTN);
@@ -193,7 +194,7 @@ void function_exit(ThreadData * tdata, Activation * act) {
 	SMSInfo * info_access = NULL;
 	#if CCT
 	HashTable * sms_map  = HT_lookup(rtn_info->context_sms_map, 
-									act->node->context_id, NULL);
+											act->node->context_id);
 	
 	if (sms_map == NULL) {
 		
@@ -207,7 +208,8 @@ void function_exit(ThreadData * tdata, Activation * act) {
 		add_alloc(HT);
 		#endif
 		
-		HT_add_node(rtn_info->context_sms_map, act->node->context_id, sms_map);
+		sms_map->key = act->node->context_id;
+		HT_add_node(rtn_info->context_sms_map, sms_map->key, sms_map);
 
 		#if DEBUG_ALLOCATION
 		add_alloc(HTN);
@@ -215,12 +217,12 @@ void function_exit(ThreadData * tdata, Activation * act) {
 
 	} else {
 		
-		info_access = HT_lookup(sms_map, act->sms, NULL);
+		info_access = HT_lookup(sms_map, act->sms);
 	
 	}
 	#else
 	
-	info_access = HT_lookup(rtn_info->sms_map, act->sms, NULL);
+	info_access = HT_lookup(rtn_info->sms_map, act->sms);
 	
 	#endif
 	
@@ -237,16 +239,16 @@ void function_exit(ThreadData * tdata, Activation * act) {
 		add_alloc(SMS);
 		#endif
 		
-		info_access->sms = act->sms;
+		info_access->key = act->sms;
 		#if CCT
-		HT_add_node(sms_map, info_access->sms, info_access);
+		HT_add_node(sms_map, info_access->key, info_access);
 		
 		#if DEBUG_ALLOCATION
 		add_alloc(HTN);
 		#endif
 		
 		#else
-		HT_add_node(rtn_info->sms_map, info_access->sms, info_access);
+		HT_add_node(rtn_info->sms_map, info_access->key, info_access);
 		
 		#if DEBUG_ALLOCATION
 		add_alloc(HTN);

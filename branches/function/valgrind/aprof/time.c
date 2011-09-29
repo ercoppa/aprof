@@ -58,7 +58,7 @@ UWord bb_c = 0;
 
 #if EVENTCOUNT == 0 || EVENTCOUNT >= 2
 
-#if TIME == BB_COUNT
+#if TIME == BB_COUNT && !TRACE_FUNCTION
 
 VG_REGPARM(0) void add_one_guest_BB(void) {
 

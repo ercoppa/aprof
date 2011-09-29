@@ -45,7 +45,7 @@ Activation * get_activation(ThreadData * tdata, unsigned int depth) {
 Activation * resize_stack(ThreadData * tdata, unsigned int depth) {
 
 	AP_ASSERT(tdata != NULL, "Invalid tdata in get_activation");
-	AP_ASSERT(depth > 0 && depth < 5000, "Invalid depth");
+	AP_ASSERT(depth > 0 && depth < 20, "Invalid depth");
 
 	/* Expand stack if necessary */
 	if (depth - 1 >= tdata->max_stack_size) {
@@ -160,8 +160,6 @@ Activation * get_activation_by_aid(ThreadData * tdata, UWord aid) {
 
 jump_t last_exit = NONE;
 
-/* default object */
-char * anon_obj = "UNKNOWN";
 /* 
  * _ld_runtime_resolve need a special handling,
  * we need to know its address and length
@@ -181,7 +179,7 @@ BB * get_BB(UWord target) {
 	
 	//VG_(printf)("Asked BB for %lu\n", target);
 	
-	BB * bb = HT_lookup(bb_ht, target, NULL);
+	BB * bb = HT_lookup(bb_ht, target);
 	if (bb == NULL) {
 		
 		bb = VG_(calloc)("bb", sizeof(BB), 1);
@@ -191,7 +189,7 @@ BB * get_BB(UWord target) {
 		add_alloc(BBS);
 		#endif
 		
-		//VG_(printf)("Created BB for %lu\n", target);
+		
 		
 	}
 	
@@ -378,7 +376,7 @@ static void push_stack(ThreadData * tdata, UWord sp, Function * f, Bool skip) {
 	Activation * act = get_activation(tdata, tdata->stack_depth);
 	AP_ASSERT(act != NULL, "Invalid activation info");
 	
-	RoutineInfo * rtn_info = HT_lookup(tdata->routine_hash_table, (UWord) f, NULL); 
+	RoutineInfo * rtn_info = HT_lookup(tdata->routine_hash_table, (UWord) f); 
 	if (rtn_info == NULL) {
 		
 		rtn_info = new_routine_info(tdata, f, (UWord) f);
@@ -401,8 +399,6 @@ static void push_stack(ThreadData * tdata, UWord sp, Function * f, Bool skip) {
 	
 	//VG_(printf)("PUSH: addr %lu - depth %lu - SP %lu\n", target, stack.depth, sp);
 	//VG_(printf)("PUSH: addr %lu\n", target);
-	
-	//if (stack.depth > 10) failure("Depth too much");
 
 }
 
@@ -500,13 +496,13 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 	Bool different_sect = False;
 	
 	/* Create a new BB structure */
-	if (bb->addr == 0) {
+	if (bb->key == 0) {
 		
 		#if VERBOSE_TRACE_FUNCTION
 		VG_(printf)("Populating BB info\n");
 		#endif
 		
-		bb->addr = target;
+		bb->key = target;
 		
 		/* Obtain section kind of this BB */
 		bb->obj_section = VG_(DebugInfo_sect_kind)(NULL, 0, target);
@@ -547,19 +543,10 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 		if (info_fn) {
 			
 			hash = str_hash(fn);
-			HashNode * n = NULL;
-			f = HT_lookup(fn_ht, hash, &n);
+			f = HT_lookup(fn_ht, hash);
 			
-			while (f != NULL && VG_(strcmp)(f->name, fn) != 0) {
-				
-				#if DEBUG
-				AP_ASSERT(n != NULL, "Invalid hash node");
-				#endif
-				n = n->next;
-				
-				if (n->next != NULL) f = n->value;
-				else f = NULL; 
-			}
+			while (f != NULL && VG_(strcmp)(f->name, fn) != 0)
+				f = f->next;
 			
 		}
 		
@@ -587,18 +574,10 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 			if (obj_name != NULL) {
 				
 				hash_obj = str_hash(obj_name);
-				HashNode * n = NULL;
-				obj = HT_lookup(obj_ht, hash_obj, &n);
+				obj = HT_lookup(obj_ht, hash_obj);
 				
 				while (obj != NULL && VG_(strcmp)(obj->name, obj_name) != 0) {
-					
-					#if DEBUG
-					AP_ASSERT(n != NULL, "Invalid hash node");
-					#endif
-					n = n->next;
-					
-					if (n->next != NULL) obj = n->value;
-					else obj = NULL; 
+					obj = obj->next;
 				}
 				
 				if (obj == NULL) {
@@ -609,9 +588,10 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 					AP_ASSERT(obj != NULL, "Obj not allocable");
 					#endif
 					
+					obj->key = hash_obj;
 					obj->name = obj_name_c;
 					obj->filename = NULL; /* FixMe */
-					HT_add_node(obj_ht, hash_obj, obj);
+					HT_add_node(obj_ht, obj->key, obj);
 					
 				}
 				
@@ -664,12 +644,12 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 			
 			if (bb->obj_section == Vg_SectPLT)
 				#if VERBOSE != 5
-				VG_(sprintf)(fn, "PLT%p", (void *) bb->addr);
+				VG_(sprintf)(fn, "PLT%p", (void *) bb->key);
 				#else
-				VG_(sprintf)(fn, "%p [PLT]", (void *) bb->addr);
+				VG_(sprintf)(fn, "%p [PLT]", (void *) bb->key);
 				#endif
 			else 
-				VG_(sprintf)(fn, "%p", (void *)bb->addr);
+				VG_(sprintf)(fn, "%p", (void *)bb->key);
 				
 			info_fn = True;
 			
@@ -677,22 +657,14 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 				
 		if (info_fn && f == NULL) {
 			
-			HashNode * n = NULL;
 			UInt hash_2 = str_hash(fn);
 			if (hash != hash_2) {
-				f = HT_lookup(fn_ht, hash, &n);
+				f = HT_lookup(fn_ht, hash);
 				hash = hash_2;
 			}
 			
 			while (f != NULL && VG_(strcmp)(f->name, fn) != 0) {
-				
-				#if DEBUG
-				AP_ASSERT(n != NULL, "Invalid hash node");
-				#endif
-				n = n->next;
-				
-				if (n->next != NULL) f = n->value;
-				else f = NULL; 
+				f = f->next;
 			}
 			
 			if (f == NULL) {
@@ -706,19 +678,19 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 				add_alloc(FNS);
 				#endif
 				
+				f->key = hash;
 				f->name = fn;
 				
 				#if DEBUG_ALLOCATION
 				add_alloc(FN_NAME);
 				#endif
 				
-				HT_add_node(fn_ht, hash, f);
+				HT_add_node(fn_ht, f->key, f);
 				#if DEBUG_ALLOCATION
 				add_alloc(HTN);
 				#endif
 				
 				f->obj = obj;
-				f->id = hash;
 			
 			} else VG_(free)(fn);
 			
@@ -730,7 +702,9 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 		AP_ASSERT(bb->fn != NULL, "Invalid fn node");
 		#endif
 		
-		HT_add_node(bb_ht, target, bb);
+		HT_add_node(bb_ht, bb->key, bb);
+		BB * bb_t = HT_lookup(bb_ht, bb->key);
+		if (bb_t == NULL) AP_ASSERT(0, "BB inserted not found");
 		
 		#if DEBUG_ALLOCATION
 		add_alloc(HTN);
@@ -949,7 +923,7 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 				#if DEBUG
 				AP_ASSERT(current != NULL, "Invalid activation");
 				#endif
-				current->ret_addr = last_bb->addr + last_bb->instr_offset;
+				current->ret_addr = last_bb->key + last_bb->instr_offset;
 			}
 			
 			#if VERBOSE_TRACE_FUNCTION
@@ -1012,10 +986,10 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 		AP_ASSERT(act != NULL, "Invalid activation info");
 		#endif
 		
-		RoutineInfo * rtn_info = HT_lookup(tdata->routine_hash_table, target, NULL); 
+		RoutineInfo * rtn_info = HT_lookup(tdata->routine_hash_table, target); 
 		if (rtn_info == NULL) {
 			
-			Function * fn = HT_lookup(fn_ht, target, NULL);
+			Function * fn = HT_lookup(fn_ht, target);
 			
 			if (fn == NULL) {
 				
@@ -1063,12 +1037,12 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 				add_alloc(OBJ_NAME);
 				#endif
 				
-				fn->id = target;
+				fn->key = target;
 				fn->name = rtn_name;
 				fn->obj = obj;
 				obj->name = obj_name;
 				
-				HT_add_node(fn_ht, target, fn);
+				HT_add_node(fn_ht, fn->key, fn);
 				
 				#if DEBUG_ALLOCATION
 				add_alloc(HTN);

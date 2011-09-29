@@ -88,7 +88,7 @@ VG_REGPARM(3) void trace_access(UWord type, Addr addr, SizeT size) {
 		
 		#else
 		UWord old_aid = SUF_insert( tdata->accesses, 
-									addr, 
+									addr+(i*ADDR_MULTIPLE), 
 									tdata->curr_aid);
 		
 		if (old_aid < tdata->curr_aid && (type == LOAD || type == MODIFY)) {

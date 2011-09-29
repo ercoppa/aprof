@@ -72,7 +72,9 @@
 #endif
 
 /* Data type */
-typedef unsigned long long UWord64;
+#ifndef UWord64
+#define UWord64 unsigned long long 
+#endif
 typedef IRExpr IRAtom;
 typedef enum access_t { LOAD, STORE, MODIFY } access_t;
 
@@ -105,14 +107,17 @@ typedef enum alloc_type {
 /* Data structures */
 
 typedef struct Object {
+	UWord		  key;
+	void 		* next;
 	char 		* name;
 	char		* filename;
 } Object;
 
 typedef struct Function {
-	UWord		 id;					// Id of this function
-	char	   * name;					// name of routine
-	Object     * obj;					// name of library the routine belongs to
+	UWord		  key;
+	void 		* next;
+	char		* name;					// name of routine
+	Object		* obj;					// name of library the routine belongs to
 } Function;
 
 #if TRACE_FUNCTION
@@ -121,7 +126,8 @@ typedef struct Function {
 typedef struct BB {
 
 	/* Basic block address */
-	UWord addr;
+	UWord key;
+	void * next;
 	/* length of BB, valid only if BB_end is exec by this BB with BBCALL */
 	UWord instr_offset;
 	/* 
@@ -174,6 +180,8 @@ typedef struct CCTNode {
 #endif
 
 typedef struct {
+	UWord		  key;
+	void 		* next;
 	UWord64 routine_id;					// unique id for this routine
 	Function * fn;						// Info (name, file, etc) about this routine
 	UWord64 total_self_time;			// total self time for this routine
@@ -189,11 +197,12 @@ typedef struct {
 } RoutineInfo;
 
 typedef struct {
+	UWord   key;						// sms value for this record
+	void  * next;
 	UWord64 max_cumulative_time;		// maximum time spent by the routine in calls with this sms
 	UWord64 min_cumulative_time;		// minimum time spent by the routine in calls with this sms
 	UWord64 partial_cumulative_time;	// total time spent by the routine in calls with this sms
 	UWord partial_calls_number;			// number of times the routine has been called with this sms
-	UWord sms;							// sms value for this record
 } SMSInfo;
 
 typedef struct {

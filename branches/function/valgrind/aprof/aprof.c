@@ -300,10 +300,6 @@ static void fini(Int exitcode) {
 	HT_destruct(fn_ht);
 	HT_destruct(obj_ht);
 	
-	#if !EVENTCOUNT && !TRACER
-	HT_destroy_pool();
-	#endif
-	
 	#if SUF == 2 && SUF2_SEARCH == STATS
 	VG_(printf)("Average stack depth: %llu / %llu = %llu\n", avg_depth, ops, avg_depth/ops);
 	VG_(printf)("Average # iterations: %llu / %llu = %llu\n", avg_iteration, ops, avg_iteration/ops);
@@ -318,6 +314,7 @@ static void fini(Int exitcode) {
 
 }
 
+void signal(ThreadId tid, Int sigNo, Bool alt_stack);
 void signal(ThreadId tid, Int sigNo, Bool alt_stack) {
 	AP_ASSERT(0, "There is a signal");
 }
