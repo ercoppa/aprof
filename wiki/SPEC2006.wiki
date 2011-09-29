@@ -27,7 +27,7 @@ Native is the native execution time (seconds). For memcheck, aprof, and callgrin
 || 464.h624ref || 33.9 || 686 - 20x || 0 || 0 || 0 ||
 || 471.omnetpp || 0.911 || 54 - 59x || 0 || 0 || 0 ||
 || 473.astar || 16.9 || 203 - 12x || 0 || 0 || 0 ||
-|| 483.xalancbmk || 0.149 - 88x || 13.1 || 0 || 0 || 0 ||
+|| 483.xalancbmk || 0.149 || 13.1 - 88x || 0 || 0 || 0 ||
 
 ==== fp ====
 || *Program* || *native* || *memcheck* || *callgrind* || *callgrind cache-sim*|| *aprof* ||
