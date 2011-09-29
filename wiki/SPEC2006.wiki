@@ -51,4 +51,4 @@ Native is the native execution time (seconds). For memcheck, aprof, and callgrin
 
 
 
-<iframe src="https://docs.google.com/spreadsheet/ccc?key=0AjPEdOad795XdDNwQUg1dl9rc2ZSSkFOT0w3dy1kcUE&hl=en_US" width="310" height="566" frameborder="0" marginheight="0" marginwidth="0">Loading...</iframe>
+<iframe width='500' height='300' frameborder='0' src='https://docs.google.com/spreadsheet/pub?key=0AjPEdOad795XdDNwQUg1dl9rc2ZSSkFOT0w3dy1kcUE&output=html&widget=true'></iframe>
