@@ -14,4 +14,4 @@ You can find `ubuntu.cfg` file and all PDF reports here.
 
 === Summary ===
 
-|| *Program* || *Native* || *memcheck* || *callgrind* || *callgrind cache-sim*||*aprof* ||
+|| *Program* || *Native* || *memcheck* || *callgrind* || *callgrind cache-sim*|| *aprof* ||
