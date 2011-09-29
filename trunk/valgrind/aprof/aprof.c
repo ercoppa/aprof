@@ -265,10 +265,8 @@ IRSB* instrument (  VgCallbackClosure* closure,
 static void post_clo_init(void) {
 	
 	#if TRACE_FUNCTION
-	bb_ht = HT_construct(NULL);
+	bb_ht = HT_construct(VG_(free));
 	AP_ASSERT(bb_ht != NULL, "bb ht not allocable");
-	
-	bb_pool = pool_init(POOL_ELEM, sizeof(BB), &bb_free_list);
 	
 	#if DEBUG_ALLOCATION
 	add_alloc(HT);
@@ -276,18 +274,11 @@ static void post_clo_init(void) {
 	
 	#endif
 	
-	fn_ht = HT_construct(NULL);
+	fn_ht = HT_construct(VG_(free));
 	AP_ASSERT(fn_ht != NULL, "fn ht not allocable");
 	
-	fn_pool = pool_init(POOL_ELEM, sizeof(Function), &fn_free_list);
-	
-	obj_ht = HT_construct(NULL);
+	obj_ht = HT_construct(VG_(free));
 	AP_ASSERT(obj_ht != NULL, "fn ht not allocable");
-	
-	obj_pool = pool_init(POOL_ELEM, sizeof(Object), &obj_free_list);
-	
-	rtn_pool = pool_init(POOL_ELEM, sizeof(RoutineInfo), &rtn_free_list);
-	sms_pool = pool_init(POOL_ELEM, sizeof(SMSInfo), &sms_free_list);
 	
 	#if DEBUG_ALLOCATION
 	add_alloc(HT);
@@ -304,17 +295,10 @@ static void fini(Int exitcode) {
 	
 	#if TRACE_FUNCTION 
 	HT_destruct(bb_ht);
-	pool_cleanup(bb_pool);
 	#endif
 	
 	HT_destruct(fn_ht);
-	pool_cleanup(fn_pool);
-	
 	HT_destruct(obj_ht);
-	pool_cleanup(obj_pool);
-	
-	pool_cleanup(rtn_pool);
-	pool_cleanup(sms_pool);
 	
 	#if SUF == 2 && SUF2_SEARCH == STATS
 	VG_(printf)("Average stack depth: %llu / %llu = %llu\n", avg_depth, ops, avg_depth/ops);
