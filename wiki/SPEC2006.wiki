@@ -6,4 +6,12 @@ runspec --config=ubuntu.cfg --noreportable --size=test --tune=base $name_bench
 }}}
 You can find `ubuntu.cfg` file and all PDF reports here.
 
-== Summary ==
+=== Platform ===
+  * Macbook 5,1
+  * Intel(R) Core(TM)2 Duo CPU     P7350  @ 2.00GHz
+  * 2GB DDR3
+  * Ubuntu 11.04 *32bit* 
+
+=== Summary ===
+
+|| *Program* || *Native* || *memcheck* || *callgrind* || *callgrind cache-sim*||*aprof* ||
