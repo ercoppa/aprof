@@ -1,4 +1,4 @@
-Due to the high slowdown (10-100x) of `aprof/memcheck/callgrind` we can't run all these benchmarks with real workloads (`--size=ref`) provided by CPU SPEC2006. 
+Due to the high slowdown (10-100x) of `aprof/memcheck/callgrind` we can't run all the benchmarks with real workloads (`--size=ref`) provided by CPU SPEC2006. 
 
 We run the benchmarks with:
 {{{
