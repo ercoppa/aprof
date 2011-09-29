@@ -15,3 +15,4 @@ You can find `ubuntu.cfg` file and all PDF reports here.
 === Summary ===
 
 || *Program* || *Native* || *memcheck* || *callgrind* || *callgrind cache-sim*|| *aprof* ||
+|| 400.perlbench || 0 || 0 || 0 || 0 || 0 ||
