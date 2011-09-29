@@ -16,4 +16,4 @@ gcc -Wall your_code.c gcc-instrument/instr-gcc.c -finstrument-functions -o your_
 }}}
 Of course if your program/lib use a makefile, you have to modify it in a similarly way.
 
-[ EXPLAIN HOW TO DISABLE INTERNAL FUNCTION TRACING IN APROF ]
+*EXPLAIN HOW TO DISABLE INTERNAL FUNCTION TRACING IN APROF*
