@@ -52,7 +52,7 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 		char * obj_name = "NONE";
 		if (rtn_info->fn->obj != NULL) obj_name = rtn_info->fn->obj->name; 
 		
-		VG_(sprintf)(buffer, "r %s %p %s %llu\n", rtn_info->fn->name, 
+		VG_(sprintf)(buffer, "r %s %lu %s %llu\n", rtn_info->fn->name, 
 							rtn_info->key, obj_name, 
 							rtn_info->routine_id);
 		ap_fwrite(report, buffer, VG_(strlen)(buffer));

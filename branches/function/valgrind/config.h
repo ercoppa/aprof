@@ -32,10 +32,10 @@
 /* #undef GLIBC_2_11 */
 
 /* Define to 1 if you're using glibc 2.12.x */
-/* #undef GLIBC_2_12 */
+#define GLIBC_2_12 1
 
 /* Define to 1 if you're using glibc 2.13.x */
-#define GLIBC_2_13 1
+/* #undef GLIBC_2_13 */
 
 /* Define to 1 if you're using glibc 2.2.x */
 /* #undef GLIBC_2_2 */
@@ -76,7 +76,7 @@
 
 /* Define to 1 if g++ supports __sync_bool_compare_and_swap() and
    __sync_add_and_fetch() */
-#define HAVE_BUILTIN_ATOMIC_CXX 1
+/* #undef HAVE_BUILTIN_ATOMIC_CXX */
 
 /* Define to 1 if you have the `clock_gettime' function. */
 #define HAVE_CLOCK_GETTIME 1
