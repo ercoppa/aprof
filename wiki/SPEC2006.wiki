@@ -1,0 +1,9 @@
+Due to high slowdown (10-100x) of `aprof/memcheck/callgrind` we can't run all these benchmarks with real workloads (`--size=ref`) provided by CPU SPEC2006. 
+
+We run the benchmarks with:
+{{{
+runspec --config=ubuntu.cfg --noreportable --size=test --tune=base $name_bench 
+}}}
+You can find `ubuntu.cfg` file and all PDF reports here.
+
+== Summary ==
