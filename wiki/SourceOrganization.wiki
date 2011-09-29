@@ -1,11 +1,8 @@
 == Source organization ==
   * *trunk/*: _stable_ branch, check out this!
-    * *aprofplot/*: a java GUI for displaying aprof log
-    * *benchmark/*: tools used for aprof's benchmarks
-      * *test/*: some simple programs with different behaviour (small sms, linear, quadratic, etc)
-      * *dsp/*: main benchmark for aprof, run different graph algorithms
+    * *aprofplot/*: a java GUI for displaying aprof logs
+    * *benchmark/*: some tools/code used for aprof's benchmarks
     * *valgrind/*: [http://valgrind.org/ valgrind code]
        * *aprof/*: source code of aprof
-  * *branches/function/*: experimental branch, attempt to implement function tracking entry/exit point within Valgrind (stable branch use GCC instrumentation)
-    * *valgrind/aprof*: broken version of aprof, fixed when TF will be complete/robust
-    * *valgrind/tf*: new valgrind tool, more updated code on function tracing with Valgrind, not complete
+       * *tf/*: source code of TF, basic logic of callgrind for tracing fuunctions, very limited (no multithreading, no signal handling, only correct under `x86/x86_64`), very ineficient
+  * *tags/vg1*: first implementation of aprof under Valgrind, traces functions only through GCC instrumentation (`-finstrument-functions`), deprecated 
