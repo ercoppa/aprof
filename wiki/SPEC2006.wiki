@@ -50,4 +50,5 @@ Native is the native execution time (seconds). For memcheck, aprof, and callgrin
 || 482.sphnx3 || 3.19 || 0 || 0 || 0 || 0 ||
 
 
-<iframe src="http://spreadsheets.google.com/embeddedform?key=0AjPEdOad795XdDNwQUg1dl9rc2ZSSkFOT0w3dy1kcUE" width="310" height="566" frameborder="0" marginheight="0" marginwidth="0">Loading...</iframe>
+
+<iframe src="https://docs.google.com/spreadsheet/ccc?key=0AjPEdOad795XdDNwQUg1dl9rc2ZSSkFOT0w3dy1kcUE&hl=en_US" width="310" height="566" frameborder="0" marginheight="0" marginwidth="0">Loading...</iframe>
