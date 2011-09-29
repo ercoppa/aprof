@@ -5,13 +5,17 @@ Under GNU/Linux, space is measured with:
 cat /proc/PID/status | grep VmPeak
 }}}
 
+== Download DSP ==
+{{{
+svn co http://aprof.googlecode.com/svn/trunk/benchmark/dsp
+}}}
+
 == Build DSP and run under Aprof ==
 {{{
-cd path/to/aprof/benchmark/dsp
+cd aprof_valgrind
 make
-time ../../aprof-bin bin/dsp < scripts/aprof/aprof_benchmark1.txt
+time ./inst/bin/valgrind --tool=aprof path/to/benchmark/dsp/bin/dsp < path/to/benchmark/dsp/scripts/aprof/aprof_benchmark1.txt
 }}}
-See aprof log under _benchmark/dsp/bin/_
 
 == Platform ==
   * Macbook 5,1
