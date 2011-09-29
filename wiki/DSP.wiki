@@ -8,7 +8,7 @@ cat /proc/PID/status | grep VmPeak
 == Build DSP and run under Aprof ==
 {{{
 cd path/to/aprof/benchmark/dsp
-make valgrind
+make
 time ../../aprof-bin bin/dsp < scripts/aprof/aprof_benchmark1.txt
 }}}
 See aprof log under _benchmark/dsp/bin/_
