@@ -1,0 +1,6 @@
+#! /usr/bin/perl
+
+use warnings;
+use strict;
+
+die "link_tool_exe_linux requires implementation";
