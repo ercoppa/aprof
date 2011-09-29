@@ -15,7 +15,7 @@ You can find `ubuntu.cfg` file and all PDF reports here.
 === Summary ===
 Native is the native execution time (seconds). For memcheck, aprof, and callgrind is given also the slowdown factor.
 ==== Int ====
-|| *Program* || *Native* || *memcheck* || *callgrind* || *callgrind cache-sim*|| *aprof* ||
+|| *Program* || *native* || *memcheck* || *callgrind* || *callgrind cache-sim*|| *aprof* ||
 || 400.perlbench || 4.20 || 0 || 0 || 0 || 0 ||
 || 401.bzip2 || 13.6 || 0 || 0 || 0 || 0 ||
 || 403.gcc || 2.12 || 0 || 0 || 0 || 0 ||
@@ -28,3 +28,23 @@ Native is the native execution time (seconds). For memcheck, aprof, and callgrin
 || 471.omnetpp || 0.911 || 0 || 0 || 0 || 0 ||
 || 473.astar || 16.9 || 0 || 0 || 0 || 0 ||
 || 483.xalancbmk || 0.149 || 0 || 0 || 0 || 0 ||
+
+==== fp ====
+|| *Program* || *native* || *memcheck* || *callgrind* || *callgrind cache-sim*|| *aprof* ||
+|| 410.bwaves || 0 || 0 || 0 || 0 || 0 ||
+|| 416.gamess || 0 || 0 || 0 || 0 || 0 ||
+|| 433.milc || 0 || 0 || 0 || 0 || 0 ||
+|| 434.zeusmp || 0 || 0 || 0 || 0 || 0 ||
+|| 435.gromacs || 0 || 0 || 0 || 0 || 0 ||
+|| 436.cactusADM || 0 || 0 || 0 || 0 || 0 ||
+|| 437.leslie3d || 0 || 0 || 0 || 0 || 0 ||
+|| 444.namd || 0 || 0 || 0 || 0 || 0 ||
+|| 447.dealII || 0 || 0 || 0 || 0 || 0 ||
+|| 450.soplex || 0 || 0 || 0 || 0 || 0 ||
+|| 453.povray || 0 || 0 || 0 || 0 || 0 ||
+|| 453.calculix || 0 || 0 || 0 || 0 || 0 ||
+|| 459.GemsFDTD || 0 || 0 || 0 || 0 || 0 ||
+|| 465.tonto || 0 || 0 || 0 || 0 || 0 ||
+|| 470.Ibm || 0 || 0 || 0 || 0 || 0 ||
+|| 481.wrf || 0 || 0 || 0 || 0 || 0 ||
+|| 482.sphnx3 || 0 || 0 || 0 || 0 || 0 ||
