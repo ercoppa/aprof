@@ -1,4 +1,4 @@
-/home/ercoppa/Desktop/code/aprof_exp
+/home/ercoppa/Desktop/code/aprof
 blacklist 0 
 rtn_display 0
-recent /home/ercoppa/Desktop/code/aprof_exp/dsp_0.aprof /home/ercoppa/Desktop/code/aprof_exp/dsp_0MACRO.aprof /home/ercoppa/Desktop/code/aprof/benchmark/dsp/bin/dsp_1.aprof /home/ercoppa/Dropbox/aprof-paper/benchmark/wf/wf.annakar.vg2.aprof /home/ercoppa/Dropbox/aprof-paper/benchmark/wf/wf.protein.pin.aprof /home/ercoppa/Dropbox/aprof-paper/benchmark/wf/wf.protein.vg2.aprof 
+recent /home/ercoppa/Desktop/code/aprof/dsp_0.aprof /home/ercoppa/Desktop/code/aprof_exp/dsp_0.aprof /home/ercoppa/Desktop/code/aprof_exp/dsp_0MACRO.aprof /home/ercoppa/Desktop/code/aprof/benchmark/dsp/bin/dsp_1.aprof /home/ercoppa/Dropbox/aprof-paper/benchmark/wf/wf.annakar.vg2.aprof /home/ercoppa/Dropbox/aprof-paper/benchmark/wf/wf.protein.pin.aprof 

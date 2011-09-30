@@ -51,10 +51,6 @@
 #include "pub_tool_mallocfree.h"
 #endif
 
-#ifndef UWord64
-#define UWord64 unsigned long long 
-#endif
-
 /* Generic type for a separately-chained hash table.  Via a kind of dodgy
    C-as-C++ style inheritance, tools can extend the VgHashNode type, so long
    as the first two fields match the sizes of these two fields.  Requires
@@ -70,7 +66,7 @@ typedef struct HashNode {
 } HashNode;
 
 struct _HashTable {
-   UWord64      key;        // Needed because we do ht fo ht...
+   UWord        key;        // Needed because we do ht fo ht...
    void       * next;
    UInt         n_chains;   // should be prime
    UInt         n_elements;

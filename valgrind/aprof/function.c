@@ -100,7 +100,7 @@ void function_enter(ThreadData * tdata, Activation * act) {
 	return;
 	#endif
 	
-	UWord64 start = ap_time();
+	ULong start = ap_time();
 
 	RoutineInfo * rtn_info = act->rtn_info;
 	#if DEBUG
@@ -180,10 +180,10 @@ void function_exit(ThreadData * tdata, Activation * act) {
 	return;
 	#endif
 	
-	UWord64 start = ap_time();
+	ULong start = ap_time();
 	RoutineInfo * rtn_info = act->rtn_info;
 
-	UWord64 partial_cumulative =  start - act->entry_time;
+	ULong partial_cumulative =  start - act->entry_time;
 	if (rtn_info->recursion_pending < 2) 
 		rtn_info->total_cumulative_time += partial_cumulative;
 

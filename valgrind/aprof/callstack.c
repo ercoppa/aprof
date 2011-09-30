@@ -45,7 +45,7 @@ Activation * get_activation(ThreadData * tdata, unsigned int depth) {
 Activation * resize_stack(ThreadData * tdata, unsigned int depth) {
 
 	AP_ASSERT(tdata != NULL, "Invalid tdata in get_activation");
-	AP_ASSERT(depth > 0 && depth < 20, "Invalid depth");
+	AP_ASSERT(depth > 0 && depth < 5000, "Invalid depth");
 
 	/* Expand stack if necessary */
 	if (depth - 1 >= tdata->max_stack_size) {
@@ -74,9 +74,9 @@ Activation * resize_stack(ThreadData * tdata, unsigned int depth) {
 #if SUF == 2
 
 #if SUF2_SEARCH == STATS
-UWord64 avg_depth = 0;
-UWord64 avg_iteration = 0;
-UWord64 ops = 0;
+ULong avg_depth = 0;
+ULong avg_iteration = 0;
+ULong ops = 0;
 #endif
 
 Activation * get_activation_by_aid(ThreadData * tdata, UWord aid) {
@@ -508,7 +508,7 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 		bb->obj_section = VG_(DebugInfo_sect_kind)(NULL, 0, target);
 		
 		/* Function name buffer */
-		char * fn = VG_(calloc)("fn_name", 256, 1);
+		char * fn = VG_(calloc)("fn_name", FN_NAME_SIZE, 1);
 		#if DEBUG
 		AP_ASSERT(fn != NULL, "function name not allocable");
 		#endif
@@ -520,11 +520,11 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 		 * the case, we try different stategies to capture a call, see
 		 * later.
 		 */
-		bb->is_entry = VG_(get_fnname_if_entry)(target, fn, 256);
+		bb->is_entry = VG_(get_fnname_if_entry)(target, fn, FN_NAME_SIZE);
 		/* If is not entry, we need anyway info about this function */
 		Bool info_fn = True; 
 		if (!bb->is_entry) {
-			info_fn = VG_(get_fnname)(target, fn, 256);
+			info_fn = VG_(get_fnname)(target, fn, FN_NAME_SIZE);
 		}
 		
 		#if VERBOSE != 5
