@@ -8,7 +8,8 @@ We need these _events_:
 
 Our first implementation of aprof was based on PIN (that provides the first two type of _events_). Functions entry/exit points is predicted through a stack simulation and SP synchronization when there is a branch. For different reason, aprof under PIN is not very fast so we decided to switch to Valgrind.
 
-Valgrind, similarly to PIN, does not provide by default function entry/exit point events, so again we have to implement a predict logic. This time we study a very mature tool of Valgrind, called `Callgrind`, that already do this. Its approach is a bit more sophisticated of what we do with PIN. Memory accesses are instrumentated with the `standard` approach under valgrind (see tool `lackey` or `main.c` of `callgrind` tool).
+Valgrind, similarly to PIN, does not provide by default function entry/exit point events, so again we have to implement a predict logic. This time we study a very mature tool of Valgrind, called `Callgrind`, that already do this. Its approach is a bit more sophisticated of what we do with PIN. Unfortunately this mechanism is not reliable on ARM/PPC architecture (in this you can use aprof but you have to recompile your program, more info [AprofOnARM_PPC here]).
+Memory accesses are instrumentated with the `standard` approach under valgrind (see tool `lackey` or `main.c` of `callgrind` tool).
 
 === Details about function entry/exit point prediction ===
 === Aproximations of memory accesses ===
