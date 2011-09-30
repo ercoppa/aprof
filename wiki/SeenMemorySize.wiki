@@ -1,2 +1,3 @@
-=SMS: Seen Memory Size=
-Write me...
+=SMS: Seen memory size=
+
+Under construction.
