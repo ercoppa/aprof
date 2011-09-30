@@ -13,7 +13,7 @@ You can find `ubuntu.cfg` file and all PDF reports here.
   * Ubuntu 11.04 *32bit* 
 
 === Summary ===
-We summorize results in [https://docs.google.com/spreadsheet/pub?hl=en_US&hl=en_US&key=0AjPEdOad795XdDNwQUg1dl9rc2ZSSkFOT0w3dy1kcUE&single=true&gid=0&output=html this spreadsheets].
+We summarize results in [https://docs.google.com/spreadsheet/pub?hl=en_US&hl=en_US&key=0AjPEdOad795XdDNwQUg1dl9rc2ZSSkFOT0w3dy1kcUE&single=true&gid=0&output=html this spreadsheets].
 
 <wiki:comment>
 Maybe used when benchmarks results are "mature"
