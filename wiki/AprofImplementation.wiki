@@ -1,6 +1,21 @@
 <h2>Table of contents</h2>
 <wiki:toc max_depth="4" />
 == Instrumentation ==
+We need these `events`:
+  * memory read & write
+  * thread start, exit and currently running
+  * function entry/exit point
+
+Our first implementation of aprof was based on PIN that provides the first two type of `events`. Functions entry/exit points is predicted through a stack simulation and SP synchronization when there is a branch. For different reason, aprof under PIN is not very fast so we decided to switch to Valgrind.
+
+Valgrind, similarly to PIN, does not provide by default function entry/exit point events, so again we have to implement a predict logic. This time we study a very mature tool of Valgrind, called `Callgrind`, that already do this. Its approach is a bit more sophisticated of what we do with PIN. Memory accesses are instrumentated with the `standard` approach under valgrind (see tool `lackey` or `main.c` of `callgrind` tool).
+
+=== Details about function entry/exit point prediction ===
+== Metric ==
+  * Count basic blocks:
+  * Count guest instructions:
+  * Timestamp through RDSTC:
+
 == Data Structures ==
 === Memory access logic ===
 ==== `[`PIN`]` Union find: disjoint-set linked list ====
