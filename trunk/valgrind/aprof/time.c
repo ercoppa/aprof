@@ -7,7 +7,7 @@
 
 #include "aprof.h"
 
-UWord64 ap_time(void) {
+ULong ap_time(void) {
 	
 	#if !TRACER && TIME == INSTR
 	
@@ -18,7 +18,7 @@ UWord64 ap_time(void) {
 	#endif
 	
 	#elif !TRACER && TIME == RDTSC
-	UWord64 ret;
+	ULong ret;
 	__asm__ __volatile__("rdtsc": "=A" (ret));
 	return ret;
 	#elif !TRACER && TIME == BB_COUNT
@@ -40,7 +40,7 @@ static VG_REGPARM(0) void add_one_IRStmt(void) {
 #if TIME == INSTR
 
 #if EMPTY_ANALYSIS
-static UWord64 counter_instr = 0;
+static ULong counter_instr = 0;
 #endif
 
 VG_REGPARM(0) void add_one_guest_instr(void) {

@@ -61,7 +61,7 @@
 /* Some constants */
 #define STACK_SIZE   64
 #define BUFFER_SIZE  32000
-#define FN_NAME_SIZE 256
+#define FN_NAME_SIZE  4096
 
 #if defined(VG_BIGENDIAN)
 # define Endness Iend_BE
@@ -72,9 +72,6 @@
 #endif
 
 /* Data type */
-#ifndef UWord64
-#define UWord64 unsigned long long 
-#endif
 typedef IRExpr IRAtom;
 typedef enum access_t { LOAD, STORE, MODIFY } access_t;
 
@@ -171,8 +168,8 @@ typedef struct FILE {
 typedef struct CCTNode {
 	struct CCTNode * firstChild;		// first child of the node in the CCT
 	struct CCTNode * nextSibling;		// next sibling of the node in the CCT
-	UWord64			 routine_id;		// the routine id associated with this CCT node
-	UWord64			 context_id;		// the context id associated with this CCT node
+	UWord			 routine_id;		// the routine id associated with this CCT node
+	ULong			 context_id;		// the context id associated with this CCT node
 	#if CCT_GRAPHIC
 	char * name;
 	#endif
@@ -182,11 +179,11 @@ typedef struct CCTNode {
 typedef struct {
 	UWord		  key;
 	void 		* next;
-	UWord64 routine_id;					// unique id for this routine
+	UWord	routine_id;					// unique id for this routine
 	Function * fn;						// Info (name, file, etc) about this routine
-	UWord64 total_self_time;			// total self time for this routine
-	UWord64 total_cumulative_time;		// printf("curr_depth = %d\n", curr_depth); total cumulative time for this routine
-	UWord calls;						// number times this routine has been called
+	ULong	 total_self_time;			// total self time for this routine
+	ULong	total_cumulative_time;		// printf("curr_depth = %d\n", curr_depth); total cumulative time for this routine
+	ULong calls;						// number times this routine has been called
 	UWord recursive;					// 1 if the routine has ever been called recursively
 	UWord recursion_pending;			// number of pending activations (> 1 means recursive)
 	#if !CCT
@@ -199,16 +196,16 @@ typedef struct {
 typedef struct {
 	UWord   key;						// sms value for this record
 	void  * next;
-	UWord64 max_cumulative_time;		// maximum time spent by the routine in calls with this sms
-	UWord64 min_cumulative_time;		// minimum time spent by the routine in calls with this sms
-	UWord64 partial_cumulative_time;	// total time spent by the routine in calls with this sms
-	UWord partial_calls_number;			// number of times the routine has been called with this sms
+	ULong	max_cumulative_time;		// maximum time spent by the routine in calls with this sms
+	ULong	min_cumulative_time;		// minimum time spent by the routine in calls with this sms
+	ULong	partial_cumulative_time;	// total time spent by the routine in calls with this sms
+	ULong	partial_calls_number;			// number of times the routine has been called with this sms
 } SMSInfo;
 
 typedef struct {
-	UWord64 entry_time;					// time stamp at activation entry
-	UWord64 total_children_time;		// total time spent in children
-	UWord sms;							// SMS of activation (always positive when an activation ends)
+	ULong	entry_time;					// time stamp at activation entry
+	ULong	total_children_time;		// total time spent in children
+	UWord	sms;							// SMS of activation (always positive when an activation ends)
 	RoutineInfo * rtn_info;				// pointer to info record of activated routine
 	#if CCT
 	CCTNode * node;						// pointer to the CCT node associated with the call
@@ -239,13 +236,13 @@ typedef struct {
 	int stack_depth;					// stack depth
 	Activation * stack;					// activation stack
 	UWord max_stack_size;				// max stack size
-	UWord64 next_routine_id;			// the routine_id that will be assigned to the next routine_info
+	UWord next_routine_id;			// the routine_id that will be assigned to the next routine_info
 	#if CCT
 	CCTNode * root;						// root of the CCT
-	UWord64 next_context_id;				// the context_id that will be assigned to the next CCT node
+	ULong next_context_id;				// the context_id that will be assigned to the next CCT node
 	#endif
 	#if TIME == INSTR
-	UWord64 instr;
+	ULong instr;
 	#elif TIME == BB_COUNT
 	UWord bb_c;
 	#endif
@@ -287,9 +284,9 @@ extern UWord bb_c;
 #endif
 
 #if SUF2_SEARCH == STATS
-extern UWord64 avg_depth;
-extern UWord64 avg_iteration;
-extern UWord64 ops;
+extern ULong avg_depth;
+extern ULong avg_iteration;
+extern ULong ops;
 #endif
 
 #if TRACE_FUNCTION
@@ -341,7 +338,7 @@ void function_enter(ThreadData * tdata, Activation * act);
 void function_exit(ThreadData * tdata, Activation * act);
 
 /* time */
-UWord64 ap_time(void);
+ULong ap_time(void);
 #if TIME == INSTR
 VG_REGPARM(0) void add_one_guest_instr(void);
 #endif

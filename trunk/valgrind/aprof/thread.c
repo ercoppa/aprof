@@ -115,6 +115,8 @@ void thread_exit (ThreadId tid){
 	
 	/* Unregister thread info */
 	threads[tid -1] = NULL;
+	current_TID =  VG_INVALID_THREADID;
+	current_tdata = NULL;
 	
 	generate_report(tdata, tid);
 	

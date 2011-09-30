@@ -30,6 +30,7 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 	Char filename_priv[256];
 	Char * prog_name = (Char *) VG_(args_the_exename);
 	VG_(sprintf)(filename_priv, "%s_%u.aprof", basename(prog_name), tid - 1);
+	//VG_(sprintf)(filename_priv, "%d_%u.aprof", VG_(getpid), tid - 1);
 	/* Add path to log filename */
 	Char * filename = VG_(expand_file_name)("aprof log", filename_priv);
 
@@ -37,11 +38,15 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 	FILE * report = ap_fopen(filename);
 	AP_ASSERT(report != NULL, "Can't create report file");
 
-	char buffer[250];
+	char buffer[10000];
 
 	// write command line and application name
 	VG_(sprintf)(buffer, "f %s\na %s\n", prog_name, prog_name);
 	ap_fwrite(report, buffer, VG_(strlen)(buffer));
+
+	#if DEBUG
+	AP_ASSERT(tdata->routine_hash_table != NULL, "Invalid rtn ht");
+	#endif
 
 	// iterate over routines
 	HT_ResetIter(tdata->routine_hash_table);
@@ -49,10 +54,16 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 	RoutineInfo * rtn_info = HT_Next(tdata->routine_hash_table);
 	while (rtn_info != NULL) {
 		
+		#if DEBUG
+		AP_ASSERT(rtn_info != NULL, "Invalid rtn");
+		AP_ASSERT(rtn_info->fn != NULL, "Invalid fn");
+		AP_ASSERT(rtn_info->fn->name != NULL, "Invalid name fn");
+		#endif
+		
 		char * obj_name = "NONE";
 		if (rtn_info->fn->obj != NULL) obj_name = rtn_info->fn->obj->name; 
 		
-		VG_(sprintf)(buffer, "r %s %lu %s %llu\n", rtn_info->fn->name, 
+		VG_(sprintf)(buffer, "r %s %lu %s %lu\n", rtn_info->fn->name, 
 							rtn_info->key, obj_name, 
 							rtn_info->routine_id);
 		ap_fwrite(report, buffer, VG_(strlen)(buffer));
@@ -74,10 +85,10 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 			
 			while (info_access != NULL) {
 				
-				UWord64 time_exec = info_access->partial_cumulative_time 
+				ULong time_exec = info_access->partial_cumulative_time 
 										/ info_access->partial_calls_number;
 				
-				VG_(sprintf)(buffer, "q %llu %lu %llu %lu\n", 
+				VG_(sprintf)(buffer, "q %lu %lu %llu %llu\n", 
 								ht->key, info_access->key, time_exec,
 								info_access->partial_calls_number);
 				ap_fwrite(report, buffer, VG_(strlen)(buffer));
@@ -96,9 +107,9 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 		
 		while (info_access != NULL) {
 			
-			UWord64 time_exec = info_access->partial_cumulative_time 
+			ULong time_exec = info_access->partial_cumulative_time 
 									/ info_access->partial_calls_number;
-			VG_(sprintf)(buffer, "p %llu %lu %llu %lu\n", 
+			VG_(sprintf)(buffer, "p %lu %lu %llu %llu\n", 
 				rtn_info->routine_id, info_access->key, time_exec, 
 				info_access->partial_calls_number);
 			ap_fwrite(report, buffer, VG_(strlen)(buffer));
