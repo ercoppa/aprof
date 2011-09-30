@@ -1,8 +1,9 @@
+<wiki:toc max_depth="3" />
 == Instrumentation ==
 == Data Structures ==
 === Memory access logic ===
-==== [PIN] Union find: disjoint-set linked list ====
-==== [VG:SUF1] Union find: disjoint-set forests ====
+==== `[`PIN`]` Union find: disjoint-set linked list ====
+==== `[`VG:SUF1`]` Union find: disjoint-set forests ====
 ==== `[`VG:SUF2`]` Stack union find ====
 === Other ===
   * `Function`: ...
