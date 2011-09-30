@@ -1,5 +1,5 @@
-[h2]Table of contents[/h2]
-<wiki:toc max_depth="3" />
+<h2>Table of contents</h2>
+<wiki:toc max_depth="4" />
 == Instrumentation ==
 == Data Structures ==
 === Memory access logic ===
