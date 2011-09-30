@@ -11,6 +11,7 @@ Our first implementation of aprof was based on PIN (that provides the first two 
 Valgrind, similarly to PIN, does not provide by default function entry/exit point events, so again we have to implement a predict logic. This time we study a very mature tool of Valgrind, called `Callgrind`, that already do this. Its approach is a bit more sophisticated of what we do with PIN. Memory accesses are instrumentated with the `standard` approach under valgrind (see tool `lackey` or `main.c` of `callgrind` tool).
 
 === Details about function entry/exit point prediction ===
+=== Aproximations of memory accesses ===
 == Metric ==
   * Count basic blocks:
   * Count guest instructions:
