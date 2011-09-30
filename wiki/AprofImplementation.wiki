@@ -1,3 +1,4 @@
+[h2]Table of contents[/h2]
 <wiki:toc max_depth="3" />
 == Instrumentation ==
 == Data Structures ==
