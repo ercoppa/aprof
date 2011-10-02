@@ -71,7 +71,7 @@ Example:
 ----
 * u: routine demangled name*
 
-Syntax: `d routine-id "demangled-name"`, where:
+Syntax: `u routine-id "demangled-name"`, where:
 
   * `routine-id`: id of the routine
   * `demangled-name`: demangled name of the routine
