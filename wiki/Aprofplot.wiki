@@ -22,24 +22,29 @@ ant run
 === Report file format ===
 Report file data are specified one item per line. Each line starts with a tag:
 
+----
 * v: version number of report file format*
 
 Syntax: `v version`, where `version` is a version number (0, 1, etc.).
 
-_Must be first line of the report_. If missing, the default version number is 0.
+If missing, the default version number is 0.
 
+----
 * c: comment line*
 
 Syntax: `c comment`, where `comment` is any text fragment.
 
+----
 * f: command line of the analized program*
 
 Syntax: `f command-line`
 
+----
 * a: executable file name of the analized program*
 
 Syntax: `a application-name`
 
+----
 * m: performance metric*
 
 Syntax: `m metric`, where `metric` is the metric type of performance measurements. It can be one of the following:
@@ -49,11 +54,12 @@ Syntax: `m metric`, where `metric` is the metric type of performance measurement
 
 If missing, the default metric is `bb-count`.
 
+----
 * r: routine info*
 
 Syntax: `r "routine-name" address "image-name" routine-id`, where:
 
-  * `"routine-name"`: string specifying the name of the routine
+  * `"routine-name"`: string specifying the (possibly mangled) name of the routine
   * `address`: memory address of the routine
   * `"image-name"`: string specifying the pathname of the image containing the routine
   * `routine-id`: distinct numerical id associated to the routine
@@ -62,6 +68,31 @@ Example:
 
 `r "mmap" 1641023000 "/lib/i386-linux-gnu/ld-2.13.so" 30`
 
+----
+* u: routine demangled name*
+
+Syntax: `d routine-id "demangled-name"`, where:
+
+  * `routine-id`: id of the routine
+  * `demangled-name`: demangled name of the routine
+
+Example:
+
+`u 431 "ogdf::VariableEmbeddingInserter::doCall"`
+
+----
+* d: routine full demangled name*
+
+Syntax: `d routine-id "full-demangled-name"`, where:
+
+  * `routine-id`: id of the routine
+  * `"full-demangled-name"`: string specifying full demangled name of the routine, including function arguments
+
+Example:
+
+`d 431 "ogdf::VariableEmbeddingInserter::doCall(ogdf::PlanRep&, ogdf::List<ogdf::EdgeElement*> const&, bool, ogdf::EdgeArray<int> const*, ogdf::EdgeArray<bool> const*, ogdf::EdgeArray<unsigned int> const*)"`
+
+----
 * p: routine performance point*
 
 Syntax: `p routine-id sms min max sum sqr-sum occ`, where:
@@ -80,7 +111,22 @@ Example:
 
 means that the routine `foo` was called 10 times on sms 23, requiring a minimum of 15 cost units, a maximum of 37 cost units, a total cost of 200 and sum of squares 5712.
 
+----
+* x: distinct calling context info*
 
+Each `x`-line corresponds to a node of the calling context tree (CCT).
+
+Syntax: `x routine-id context-id parent-context-id`, where:
+
+  * `routine-id`: routine id
+  * `context-id`: unique id of CCT node
+  * `parent-context-id`: id of parent context in the CCT, or -1 if the context has no parent (node is the root of the CCT).
+
+Example:
+
+`x 24 352 350`
+
+means that node 352 of the CCT is a context of routine 24 and its parent node is 350.
 
 === Examples ===
 *INSERT SCREENSHOTS*
