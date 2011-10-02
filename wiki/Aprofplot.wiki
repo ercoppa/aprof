@@ -74,7 +74,7 @@ Example:
 Syntax: `u routine-id "demangled-name"`, where:
 
   * `routine-id`: id of the routine
-  * `demangled-name`: demangled name of the routine
+  * `demangled-name`: string specifying demangled name of the routine
 
 Example:
 
