@@ -103,13 +103,13 @@ Syntax: `p routine-id sms min max sum sqr-sum occ`, where:
   * `max`: maximum performance measurement
   * `sum`: sum of performance measurements (for average)
   * `sqr-sum`: sum of squares of performance measurements (for variance)
-  * `occ`: number of times the routine was called
+  * `occ`: number of routine calls with the given sms
 
 Example:
 
 `p 7 23 15 37 270 5712 10` 
 
-means that the routine with id 7 was called 10 times on sms 23, requiring a minimum of 15 cost units, a maximum of 37 cost units, a total cost of 200 and sum of squares 5712.
+means that the routine with id 7 was called 10 times on sms 23, requiring a minimum of 15 cost units, a maximum of 37 cost units, a total cost of 200 units and sum of squares 5712.
 
 ----
 * x: distinct calling context info*
@@ -139,13 +139,13 @@ Syntax: `q context-id sms min max sum sqr-sum occ`, where:
   * `max`: maximum performance measurement
   * `sum`: sum of performance measurements (for average)
   * `sqr-sum`: sum of squares of performance measurements (for variance)
-  * `occ`: number of times the routine was called
+  * `occ`: number of context activations with the given sms
 
 Example:
 
 `p 624 23 15 37 270 5712 10` 
 
-means that the calling context 624 was activated 10 times on sms 23, requiring a minimum of 15 cost units, a maximum of 37 cost units, a total cost of 200 and sum of squares 5712.
+means that the calling context 624 was activated 10 times on sms 23, requiring a minimum of 15 cost units, a maximum of 37 cost units, a total cost of 200 units and sum of squares 5712.
 
 === Examples ===
 *INSERT SCREENSHOTS*
