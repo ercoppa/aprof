@@ -22,6 +22,16 @@ ant run
 === Report file format ===
 Report file data are specified one item per line. Each line starts with a tag:
 
+* v: version number of report file format*
+
+Syntax: `v version`, where `version` is a version number (0, 1, etc.).
+
+_Must be first line of the report_. If the version number is missing, the default version number is 0.
+
+* c: comment line*
+
+Syntax: `c comment`, where `comment` is any text fragment.
+
 * f: command line of the analized program*
 
 Syntax: `f command-line`
@@ -39,6 +49,10 @@ Syntax: `r "routine-name" address "image-name" routine-id`, where:
   * `"image-name"`: string specifying the name of the image containing the routine
   * `routine-id`: distinct numerical id associated to the routine
 
+Example:
+
+`r "mmap" 1641023000 "/lib/i386-linux-gnu/ld-2.13.so" 30`
+
 * p: routine performance point*
 
 Syntax: `p routine-id sms min max sum sqr-sum occ`, where:
@@ -53,7 +67,9 @@ Syntax: `p routine-id sms min max sum sqr-sum occ`, where:
 
 Example:
 
-`p foo 23 15 37 270 5712 10` means that the routine `foo` was called 10 times on sms 23, requiring a minimum of 15 cost units, a maximum of 37 cost units, a total cost of 200 and sum of squares 5712.
+`p foo 23 15 37 270 5712 10` 
+
+means that the routine `foo` was called 10 times on sms 23, requiring a minimum of 15 cost units, a maximum of 37 cost units, a total cost of 200 and sum of squares 5712.
 
 
 
