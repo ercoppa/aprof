@@ -40,7 +40,7 @@ Syntax: `a application-name`
 ----
 * m: performance metric*
 
-Syntax: `m metric`, where `metric` is the metric type of performance measurements. It can be one of the following:
+Syntax: `m metric`, where `metric` is the metric type of performance measurements. It can be any of the following:
 
   * `bb-count`: count of executed basic blocks;
   * `time-usec`: elapsed time in microseconds.
