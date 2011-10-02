@@ -7,6 +7,7 @@ package aprofplot;
 
 import java.io.*;
 import java.util.*;
+import java.util.regex.MatchResult;
 
 /**
  *
@@ -101,11 +102,43 @@ public class AprofReport {
         }
         for (int i = 0; i < routines_temporary.size(); i++) {
 //            System.out.println("Processing string: " + routines_temporary.get(i));
-            tokenizer = new StringTokenizer(routines_temporary.get(i));
-            tokenizer.nextToken(); // discard first token
-            rtn_info = new UncontextualizedRoutineInfo(tokenizer.nextToken(), tokenizer.nextToken(), tokenizer.nextToken());
-            //if (rtn_info == null) System.out.println("rtn_info == null !!!");
-            int index = Integer.parseInt(tokenizer.nextToken());
+            str = routines_temporary.get(i);
+            
+            
+            if (str.length() - 1 < 2)
+                throw(new Exception("Invalid routine line"));
+                
+            String rtn_name = null;
+            String target = null;
+            String lib = null;
+            String id = null;
+            
+            if (str.charAt(2) == '"') {
+                
+                Scanner s = new Scanner(str);
+                s.findInLine("r \"([^\"]+)\" ([0-9A-Fx]+) \"([^\"]+)\" ([0-9]+)");
+                MatchResult result = s.match();
+                
+                rtn_name = result.group(1);
+                target = result.group(2);
+                lib = result.group(3);
+                id = result.group(4);
+                
+            } else {
+                
+                tokenizer = new StringTokenizer(str);
+                tokenizer.nextToken(); // discard first token
+                //if (rtn_info == null) System.out.println("rtn_info == null !!!");
+                rtn_name = tokenizer.nextToken();
+                target = tokenizer.nextToken();
+                lib = tokenizer.nextToken();
+                id = tokenizer.nextToken();
+                
+            }
+            
+            int index = Integer.parseInt(id);
+            rtn_info = new UncontextualizedRoutineInfo(rtn_name, 
+                                                        target, lib);
             routines.remove(index);
             routines.add(index, rtn_info);
             if (!libset.contains(rtn_info.getImage())) {
