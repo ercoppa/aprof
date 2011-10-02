@@ -22,17 +22,34 @@ ant run
 === Report file format ===
 Report file data are specified one item per line. Each line starts with a tag:
 
-* f: command line of the analized program
+* f: command line of the analized program*
 
 Syntax: `f command-line`
 
-* a: executable file name of the analized program
+* a: executable file name of the analized program*
 
 Syntax: `a application-name`
 
-* r: routine info
+* r: routine info*
 
-Syntax: `r "routine-name" address "image-name"`
+Syntax: `r "routine-name" address "image-name" routine-id`, where:
+
+  * `"routine-name"`: string specifying the name of the routine
+  * `address`: memory address of the routine
+  * `"image-name"`: string specifying the name of the image containing the routine
+  * `routine-id`: distinct numerical id associated to the routine
+
+* p: routine performance point*
+
+Syntax: `p routine-id sms avg-measure occ`, where:
+
+  * `routine-id`: id of the routine
+  * `sms`: seen memory size of the point
+  * `measure-min`: minimum performance measurement
+  * `measure-max`: maximum performance measurement
+  * `measure-sum`: sum of performance measurements
+  * `measure-sqr-sum`: sum of squares of performance measurements
+  * `occ`: number of times the routine was called
 
 === Examples ===
 *INSERT SCREENSHOTS*
