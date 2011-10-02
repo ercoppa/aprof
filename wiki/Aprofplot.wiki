@@ -41,15 +41,21 @@ Syntax: `r "routine-name" address "image-name" routine-id`, where:
 
 * p: routine performance point*
 
-Syntax: `p routine-id sms avg-measure occ`, where:
+Syntax: `p routine-id sms min max sum sqr-sum occ`, where:
 
   * `routine-id`: id of the routine
   * `sms`: seen memory size of the point
-  * `measure-min`: minimum performance measurement
-  * `measure-max`: maximum performance measurement
-  * `measure-sum`: sum of performance measurements
-  * `measure-sqr-sum`: sum of squares of performance measurements
+  * `min`: minimum performance measurement
+  * `max`: maximum performance measurement
+  * `sum`: sum of performance measurements (for average)
+  * `sqr-sum`: sum of squares of performance measurements (for variance)
   * `occ`: number of times the routine was called
+
+Example:
+
+`p foo 23 15 37 270 5712 10` means that the routine `foo` was called 10 times on sms 23, requiring a minimum of 15 cost units, a maximum of 37 cost units, a total cost of 200 and sum of squares 5712.
+
+
 
 === Examples ===
 *INSERT SCREENSHOTS*
