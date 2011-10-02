@@ -23,13 +23,6 @@ ant run
 Report file data are specified one item per line. Each line starts with a tag:
 
 ----
-* v: version number of report file format*
-
-Syntax: `v version`, where `version` is a version number (0, 1, etc.).
-
-If missing, the default version number is 0.
-
-----
 * c: comment line*
 
 Syntax: `c comment`, where `comment` is any text fragment.
