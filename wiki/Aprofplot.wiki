@@ -47,6 +47,8 @@ Syntax: `m metric`, where `metric` is the metric type of performance measurement
   * `bb-count`: count of executed basic blocks;
   * `time-usec`: elapsed time in microseconds.
 
+If missing, the default metric is `bb-count`.
+
 * r: routine info*
 
 Syntax: `r "routine-name" address "image-name" routine-id`, where:
