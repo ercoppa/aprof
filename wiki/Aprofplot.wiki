@@ -26,7 +26,7 @@ Report file data are specified one item per line. Each line starts with a tag:
 
 Syntax: `v version`, where `version` is a version number (0, 1, etc.).
 
-_Must be first line of the report_. If the version number is missing, the default version number is 0.
+_Must be first line of the report_. If missing, the default version number is 0.
 
 * c: comment line*
 
@@ -39,6 +39,13 @@ Syntax: `f command-line`
 * a: executable file name of the analized program*
 
 Syntax: `a application-name`
+
+* m: performance metric*
+
+Syntax: `m metric`, where `metric` is the metric type of performance measurements. It can be one of the following:
+
+  * `bb-count`: count of executed basic blocks;
+  * `time-usec`: elapsed time in microseconds.
 
 * r: routine info*
 
