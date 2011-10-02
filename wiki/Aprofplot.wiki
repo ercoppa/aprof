@@ -53,7 +53,7 @@ Syntax: `r "routine-name" address "image-name" routine-id`, where:
 
   * `"routine-name"`: string specifying the name of the routine
   * `address`: memory address of the routine
-  * `"image-name"`: string specifying the name of the image containing the routine
+  * `"image-name"`: string specifying the pathname of the image containing the routine
   * `routine-id`: distinct numerical id associated to the routine
 
 Example:
