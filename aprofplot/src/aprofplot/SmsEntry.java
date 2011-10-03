@@ -63,7 +63,7 @@ public class SmsEntry implements Comparable<SmsEntry> {
     }
 
     public double getCost() {
-        return this.getAvgCost();
+        return this.getMaxCost();
     }
 
     public double getRatio() {

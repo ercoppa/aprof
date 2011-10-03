@@ -17,9 +17,9 @@ public class SmsTableModel extends AbstractTableModel {
 
     private ArrayList<SmsEntry> elements;
     private String[] columnNames = new String [] {"Sms",
-                                                  "Time (μs)",
-                                                  "Ratio (μs)",
-                                                  "Freq"
+                                                  "Cost",
+                                                  "Ratio",
+                                                  "Occ"
     };
     private Class[] columnTypes = new Class[] {Integer.class,
                                                Double.class,
