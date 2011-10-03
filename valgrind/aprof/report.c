@@ -40,6 +40,8 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 
 	char buffer[10000];
 
+	#if REPORT_VERSION > 0
+
 	// write header
 	VG_(sprintf)(buffer, "c -------------------------------------\n");
 	ap_fwrite(report, buffer, VG_(strlen)(buffer));
@@ -47,8 +49,6 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 	ap_fwrite(report, buffer, VG_(strlen)(buffer));
 	VG_(sprintf)(buffer, "c -------------------------------------\n");
 	ap_fwrite(report, buffer, VG_(strlen)(buffer));
-	
-	#if REPORT_VERSION > 0
 	
 	// write version 
 	VG_(sprintf)(buffer, "v %d\n", REPORT_VERSION);
@@ -109,7 +109,7 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 		#endif
 		
 		char * obj_name = "NONE";
-		if (rtn_info->fn->obj != NULL) obj_name = rtn_info->fn->obj->name; 
+		//if (rtn_info->fn->obj != NULL) obj_name = rtn_info->fn->obj->name; 
 		
 		char * rtn_name = rtn_info->fn->mangled;
 		if (rtn_name == NULL) rtn_name = rtn_info->fn->name;

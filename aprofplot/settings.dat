@@ -1,4 +1,4 @@
-/home/ercoppa/Dropbox/aprof-paper/benchmark/gnome-dictionary
+/home/ercoppa/Desktop/code/aprof_vg1
 blacklist 0 
 rtn_display 0
-recent /home/ercoppa/Dropbox/aprof-paper/benchmark/gnome-dictionary/gnome-dictionary_0.vg2.aprof /home/ercoppa/Desktop/test.aprof /home/ercoppa/Dropbox/aprof-paper/benchmark/SPEC2006/aprof-vg2/log/wrf_base.i386-m32-gcc42-nn_0.aprof /home/ercoppa/Dropbox/aprof-paper/benchmark/SPEC2006/aprof-vg2/log/tonto_base.i386-m32-gcc42-nn_0.aprof /home/ercoppa/Dropbox/aprof-paper/benchmark/SPEC2006/aprof-vg2/log/sphinx_livepretend_base.i386-m32-gcc42-nn_0.aprof /home/ercoppa/Dropbox/aprof-paper/benchmark/SPEC2006/aprof-vg2/log/specrand_base.i386-m32-gcc42-nn_0.aprof 
+recent /home/ercoppa/Desktop/code/aprof_vg1/dsp.aprof /home/ercoppa/Desktop/code/aprof_old/pintool/aprof/dsp_0.aprof /home/ercoppa/Desktop/code/aprof/dsp_0.vg2.aprof /home/ercoppa/Desktop/code/aprof/basic_0.vg2.aprof /home/ercoppa/Desktop/code/aprof/dsp_0.aprof /home/ercoppa/Dropbox/aprof-paper/benchmark/gnome-dictionary/gnome-dictionary_0.vg2.aprof 
