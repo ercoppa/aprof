@@ -135,7 +135,7 @@ public class AprofReport {
             // parse routine line (report version > 0)
             if (this.version > 0) {
                 Scanner s = new Scanner(str);
-                s.findInLine("r \"([^\"]+)\" ([0-9A-Fx]+) \"([^\"]+)\" ([0-9]+)");
+                s.findInLine("r \"([^\"]+)\" ([0-9A-Fa-fx]+) \"([^\"]+)\" ([0-9]+)");
                 MatchResult result = s.match();
                 
                 rtn_name = result.group(1);
