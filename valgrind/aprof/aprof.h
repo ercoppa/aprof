@@ -59,7 +59,7 @@
 #define CCT_GRAPHIC			0	// if 1, create a report compatible with graphviz about CCT tree
 #define DEBUG_ALLOCATION	0	// if 1, check every allocation maded by aprof
 #define IGNORE_DL_RUNTIME	1	// if 1, disable analysis for dl_runtime_resolve (and its children)
-#define REPORT_VERSION		0	// see documentation on  our site
+#define REPORT_VERSION		1	// see documentation on  our site
 
 /* Some constants */
 #define STACK_SIZE		64		// Initial stack size
@@ -195,7 +195,7 @@ typedef struct {
 	UWord	max_cumulative_time;		// maximum time spent by the routine in calls with this sms
 	UWord	min_cumulative_time;		// minimum time spent by the routine in calls with this sms
 	ULong	cumulative_time_sum;		// total time spent by the routine in calls with this sms
-	UWord	calls_number;				// number of times the routine has been called with this sms
+	ULong	calls_number;				// number of times the routine has been called with this sms
 	ULong	cumulative_time_sqr_sum;	// sum of squares of times spent by the routine in calls with this sms
 } SMSInfo;
 
