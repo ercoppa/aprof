@@ -8,33 +8,29 @@
 #ifndef _UNIONFIND_H_
 #define _UNIONFIND_H_
 
-#ifdef GLIBC
-#include <stdlib.h>
-#include <stdio.h>
-#else
-#include "valgrind.h"
-#endif
-
-#include "../pool/pool.h"
-
-#define ADDRINT unsigned long
-
 #ifdef __i386__
-#define USM_SIZE 65536 // 4GB
+#define UPM_SIZE 65536 // 4GB
 #else
-#define USM_SIZE 65536 * 8 // 32GB address space
+#define UPM_SIZE 65536 * 8 // 32GB address space
 #endif
 
+#if ADDR_MULTIPLE == 1
+#define USM_SIZE 65536
+#elif ADDR_MULTIPLE == 4
+#define USM_SIZE 16384
+#else
+#error "ADDR_MULTIPLE nor supported"
+#endif
 
 typedef struct Node Node;
 typedef struct Representative Representative;
 
 struct Representative {
-	unsigned int rank;			// Height of the tree
+	UWord rank;			// Height of the tree
 	Representative * next;		// Next representive
 	Node * tree;				// The tree
-	unsigned int real_nodes;	// # real nodes in the tree
-	unsigned int dummies;		// # dummies nodes in the tree
+	UWord real_nodes;	// # real nodes in the tree
+	UWord dummies;		// # dummies nodes in the tree
 	int stack_depth;			// stack depth associated with this rep
 };
 
@@ -42,17 +38,17 @@ struct Node {
 	Node * next;			// Circular linked list of all nodes in the tree
 	Node * parent;			// If this node is the root (see IS_ROOT macro), its parent is the rep
 	#if DEBUG
-	ADDRINT addr;
+	UWord addr;
 	#endif
 };
 
 typedef struct USM {
-	Node * node[16384];
+	Node * node[USM_SIZE];
 } USM;
 
 typedef struct {
 	Representative * headRep;	// Last (created) rep
-	USM * table[USM_SIZE];
+	USM * table[UPM_SIZE];
 	pool_t * pool;
 	void * free_list;
 } UnionFind;
@@ -85,7 +81,7 @@ void UF_destroy(UnionFind * uf);
 // Return the stack depth of the old representative (if the address is
 // already present in the UF. 
 //
-int UF_insert(UnionFind * uf, ADDRINT addr, int stack_depth);
+int UF_insert(UnionFind * uf, UWord addr, int stack_depth);
 
 // ---------------------------------------------------------------------
 // UF_lookup
@@ -95,7 +91,7 @@ int UF_insert(UnionFind * uf, ADDRINT addr, int stack_depth);
 //		ADDRINT addr: accessed address (payload)
 // Return -1 if the addr is not in UF
 //
-int UF_lookup(UnionFind * uf, ADDRINT addr);
+int UF_lookup(UnionFind * uf, UWord addr);
 
 // ---------------------------------------------------------------------
 // UF_merge

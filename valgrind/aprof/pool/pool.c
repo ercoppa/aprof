@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #else
-#include "../glibc-valgrind.h"
+#include "glibc-valgrind.h"
 #endif
 
 // pool iterator

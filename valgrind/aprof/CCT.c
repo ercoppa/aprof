@@ -11,8 +11,10 @@
 
 CCTNode * parent_CCT(ThreadData * tdata) {
 	
+	#if DEBUG
 	AP_ASSERT(tdata != NULL, "Invalid tdata");
 	AP_ASSERT(tdata->stack_depth > 0, "Invalid stack_depth");
+	#endif
 	
 	if (tdata->stack_depth <= 1) 
 		return tdata->root;

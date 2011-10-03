@@ -50,15 +50,11 @@ IRSB* instrument (  VgCallbackClosure* closure,
 	
 	#endif
 	
-	#if EVENTCOUNT == 0 || EVENTCOUNT >= 2
-	
 	#if TIME == BB_COUNT && !TRACE_FUNCTION
 	IRDirty * di2 = unsafeIRDirty_0_N( 0, "add_one_guest_BB", 
 	VG_(fnptr_to_fnentry)( &add_one_guest_BB ), 
 								mkIRExprVec_0() );
 	addStmtToIRSB( sbOut, IRStmt_Dirty(di2) );
-	#endif
-	
 	#endif
    
 	for (/*use current i*/; i < sbIn->stmts_used; i++) {
@@ -88,22 +84,16 @@ IRSB* instrument (  VgCallbackClosure* closure,
 
 			case Ist_IMark: {
 
-				#if EVENTCOUNT == 0 || EVENTCOUNT >= 2
-
 				#if TIME == INSTR
 				di = unsafeIRDirty_0_N( 0, "add_one_guest_instr",
 										VG_(fnptr_to_fnentry)( &add_one_guest_instr ), 
 										mkIRExprVec_0() );
 				addStmtToIRSB( sbOut, IRStmt_Dirty(di) );
 				#endif
-				
-				#endif
 
 				#if MEM_TRACE
-				#if EVENTCOUNT != 2
 				addEvent_Ir( sbOut, mkIRExpr_HWord( (HWord)st->Ist.IMark.addr ),
 								st->Ist.IMark.len );
-				#endif
 				#endif
 				
 				#if TRACE_FUNCTION
@@ -120,13 +110,11 @@ IRSB* instrument (  VgCallbackClosure* closure,
 			case Ist_WrTmp:{
 
 				#if MEM_TRACE
-				#if EVENTCOUNT != 2
 				IRExpr* data = st->Ist.WrTmp.data;
 				if (data->tag == Iex_Load) {
 					addEvent_Dr( sbOut, data->Iex.Load.addr,
 					sizeofIRType(data->Iex.Load.ty) );
 				}
-				#endif
 				#endif
 
 				addStmtToIRSB( sbOut, st );
@@ -136,13 +124,11 @@ IRSB* instrument (  VgCallbackClosure* closure,
 			case Ist_Store: {
 				
 				#if MEM_TRACE
-				#if EVENTCOUNT != 2
 				IRExpr* data  = st->Ist.Store.data;
 				addEvent_Dw(sbOut, st->Ist.Store.addr,
 							sizeofIRType(typeOfIRExpr(tyenv, data)) );
 				#endif
-				#endif
-									
+
 				addStmtToIRSB( sbOut, st );
 				break;
 			}
@@ -150,7 +136,6 @@ IRSB* instrument (  VgCallbackClosure* closure,
 			case Ist_Dirty: {
 
 				#if MEM_TRACE
-				#if EVENTCOUNT != 2
 				Int dsize;
 				IRDirty* d = st->Ist.Dirty.details;
 				if (d->mFx != Ifx_None) {
@@ -167,7 +152,6 @@ IRSB* instrument (  VgCallbackClosure* closure,
 					tl_assert(d->mSize == 0);
 				}
 				#endif
-				#endif
 
 				addStmtToIRSB( sbOut, st );
 				break;
@@ -176,7 +160,6 @@ IRSB* instrument (  VgCallbackClosure* closure,
 			case Ist_CAS: {
 				
 				#if MEM_TRACE
-				#if EVENTCOUNT != 2
 				/* We treat it as a read and a write of the location.  I
 				think that is the same behaviour as it was before IRCAS
 				was introduced, since prior to that point, the Vex
@@ -195,7 +178,6 @@ IRSB* instrument (  VgCallbackClosure* closure,
 				addEvent_Dr( sbOut, cas->addr, dataSize );
 				addEvent_Dw( sbOut, cas->addr, dataSize );
 				#endif
-				#endif
 
 				addStmtToIRSB( sbOut, st );
 				break;
@@ -204,7 +186,6 @@ IRSB* instrument (  VgCallbackClosure* closure,
 			case Ist_LLSC: {
 				
 				#if MEM_TRACE
-				#if EVENTCOUNT != 2
 				IRType dataTy;
 				if (st->Ist.LLSC.storedata == NULL) {
 					/* LL */
@@ -215,7 +196,6 @@ IRSB* instrument (  VgCallbackClosure* closure,
 					dataTy = typeOfIRExpr(tyenv, st->Ist.LLSC.storedata);
 					addEvent_Dw( sbOut, st->Ist.LLSC.addr, sizeofIRType(dataTy) );
 				}
-				#endif
 				#endif
 				
 				addStmtToIRSB( sbOut, st );
@@ -299,18 +279,6 @@ static void fini(Int exitcode) {
 	
 	HT_destruct(fn_ht);
 	HT_destruct(obj_ht);
-	
-	#if SUF == 2 && SUF2_SEARCH == STATS
-	VG_(printf)("Average stack depth: %llu / %llu = %llu\n", avg_depth, ops, avg_depth/ops);
-	VG_(printf)("Average # iterations: %llu / %llu = %llu\n", avg_iteration, ops, avg_iteration/ops);
-	#endif
-	
-	#if EVENTCOUNT && !TRACER
-	VG_(printf)("Load: %lu\nStore: %lu\nModify: %lu\n", read_n, write_n, modify_n);
-	VG_(printf)("Function entry: %lu\nFunction exit: %lu\n", fn_in_n, fn_out_n);
-	VG_(printf)("Thread: %lu\n", thread_n);
-	VG_(printf)("BB executed: %lu\n", bb_c);
-	#endif
 
 }
 
@@ -329,15 +297,15 @@ static void pre_clo_init(void) {
 	VG_(details_copyright_author)	("By Camil Demetrescu, Irene Finocchi, Bruno Aleandri, Emilio Coppa");
 	VG_(details_bug_reports_to)		("ercoppa@gmail.com");
 
-	VG_(basic_tool_funcs) 				(post_clo_init, instrument, fini);
+	VG_(basic_tool_funcs) 			(post_clo_init, instrument, fini);
 	
 	#if !TRACE_FUNCTION
-	VG_(needs_client_requests)			(trace_function);
+	VG_(needs_client_requests)		(trace_function);
 	#endif
 	
-	VG_(track_start_client_code)		(switch_thread);
-	VG_(track_pre_thread_ll_exit)		(thread_exit);
-	VG_(track_pre_deliver_signal)		(signal);
+	VG_(track_start_client_code)	(switch_thread);
+	VG_(track_pre_thread_ll_exit)	(thread_exit);
+	VG_(track_pre_deliver_signal)	(signal);
 	
 	VG_(clo_vex_control).iropt_unroll_thresh = 0;
 	VG_(clo_vex_control).guest_chase_thresh  = 0;

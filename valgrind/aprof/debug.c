@@ -4,10 +4,10 @@
 
 static UInt alloc_type_size[A_NONE] = {
 	sizeof(BB), sizeof(RoutineInfo), sizeof(Function), 
-	sizeof(ThreadData), FN_NAME_SIZE, sizeof(Activation),
-	FN_NAME_SIZE, 1024*sizeof(HashNode), sizeof(HashNode),
+	sizeof(ThreadData), NAME_SIZE, sizeof(Activation),
+	NAME_SIZE, 1024*sizeof(HashNode), sizeof(HashNode),
 	sizeof(SSM),  sizeof(SMSInfo),  sizeof(HashTable),
-	sizeof(CCTS)
+	sizeof(CCTS), sizeof(Object)
 };
 
 static char * alloc_type_name[A_NONE] = {
@@ -15,7 +15,7 @@ static char * alloc_type_name[A_NONE] = {
 	"Thread", "FunctionName", "Activation",
 	"ObjectName", "PoolPage", "HashNode",
 	"SUF2Segment",  "SMSInfo",  "HashTable",
-	"CCT"
+	"CCT", "Object"
 };
 
 
@@ -29,6 +29,13 @@ void add_alloc(UWord type) {
 			alloc_counter[type], alloc_type_name[type]); 
 	}
 	
+	return;
+	
+}
+
+void remove_alloc(UWord type) {
+	
+	alloc_counter[type]--;
 	return;
 	
 }

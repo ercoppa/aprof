@@ -7,37 +7,11 @@
 
 #include "aprof.h"
 
-#if EVENTCOUNT
-UWord read_n   = 0;
-UWord write_n  = 0;
-UWord modify_n = 0;
-#endif
-
 VG_REGPARM(3) void trace_access(UWord type, Addr addr, SizeT size) {
-	
-	#if EMPTY_ANALYSIS
-	return;
-	#endif
-	
-	#if EVENTCOUNT
-	if (type == LOAD) read_n++;
-	else if (type == STORE) write_n++;
-	else if (type == MODIFY) modify_n++;
-	return;
-	#endif
 	
 	ThreadData * tdata = current_tdata;
 	#if DEBUG
 	AP_ASSERT(tdata != NULL, "Invalid tdata");
-	#endif
-	
-	if (tdata->stack_depth == 0) return;
-	
-	#if TRACER
-	char buf[24];
-	VG_(sprintf)(buf, "a:%u:%u\n", size, ((unsigned int) addr));
-	ap_fwrite(tdata->log, (void*)buf, VG_(strlen)(buf));
-	return;
 	#endif
 	
 	#if VERBOSE == 2
@@ -46,7 +20,21 @@ VG_REGPARM(3) void trace_access(UWord type, Addr addr, SizeT size) {
 	else if (type == MODIFY) VG_(printf)("Modify: %lu:%lu\n", addr, size);
 	#endif
 	
+	#if EVENTCOUNT == 1 || EVENTCOUNT == 3
+	if (type == LOAD) tdata->num_read++;
+	else if (type == STORE) tdata->num_write++;
+	else if (type == MODIFY) tdata->num_modify++;
+	#endif
+	
+	#if EMPTY_ANALYSIS
+	return;
+	#endif
+	
+	if (tdata->stack_depth == 0) return;
+	
+	#if TRACE_FUNCTION
 	if (tdata->skip) return;
+	#endif
 	
 	#if COSTANT_MEM_ACCESS
 	addr = addr & ~(ADDR_MULTIPLE-1);

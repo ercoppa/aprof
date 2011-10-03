@@ -6,11 +6,6 @@
  */
 
 #include "aprof.h"
- 
-#if EVENTCOUNT
-UWord fn_in_n  = 0;
-UWord fn_out_n = 0;
-#endif
 
 void destroy_routine_info(void * data) {
 	
@@ -84,19 +79,26 @@ RoutineInfo * new_routine_info(ThreadData * tdata, Function * fn, UWord target) 
 }
 
 void function_enter(ThreadData * tdata, Activation * act) {
-	
+
 	#if DEBUG
 	AP_ASSERT(tdata != NULL, "Thread data is not valid");
 	AP_ASSERT(act != NULL, "Invalid activation info");
 	#endif
 	
-	#if VERBOSE == 5
+	#if VERBOSE
 	/*
 	int i = 0;
 	for(i = 0; i < tdata->stack_depth - 1; i++)
 		VG_(printf)("| ");
 	*/
 	VG_(printf)("[%lu] %s\n", tdata->stack_depth, act->rtn_info->fn->name);
+	#endif
+	
+	#if EVENTCOUNT >= 2
+	tdata->num_func_enter++;
+	#endif
+	
+	#if EMPTY_ANALYSIS
 	return;
 	#endif
 	
@@ -176,18 +178,22 @@ void function_exit(ThreadData * tdata, Activation * act) {
 	AP_ASSERT(act != NULL, "Invalid activation info");
 	#endif
 	
-	#if VERBOSE == 5
+	#if EVENTCOUNT >= 2
+	tdata->num_func_exit++;
+	#endif
+	
+	#if EMPTY_ANALYSIS
 	return;
 	#endif
 	
 	ULong start = ap_time();
 	RoutineInfo * rtn_info = act->rtn_info;
 
-	ULong partial_cumulative =  start - act->entry_time;
+	ULong partial_cumulative = start - act->entry_time;
 	if (rtn_info->recursion_pending < 2) 
 		rtn_info->total_cumulative_time += partial_cumulative;
 
-	UWord partial_self = partial_cumulative - act->total_children_time;
+	ULong partial_self = partial_cumulative - act->total_children_time;
 	rtn_info->total_self_time += partial_self;
 	
 	// check if routine has ever been called with this seen memory size (SMS)
@@ -239,6 +245,9 @@ void function_exit(ThreadData * tdata, Activation * act) {
 		add_alloc(SMS);
 		#endif
 		
+		// init minimum cumulative time for sms entry
+		info_access->min_cumulative_time = (UWord)-1;
+		
 		info_access->key = act->sms;
 		#if CCT
 		HT_add_node(sms_map, info_access->key, info_access);
@@ -259,8 +268,11 @@ void function_exit(ThreadData * tdata, Activation * act) {
 	}
 
 	// bookkeeping
-	info_access->partial_cumulative_time += partial_cumulative;
-	info_access->partial_calls_number++;
+	info_access->cumulative_time_sum += partial_cumulative;
+	info_access->calls_number++;
+	
+	info_access->cumulative_time_sqr_sum += 
+		partial_cumulative * partial_cumulative;
 	
 	if (info_access->max_cumulative_time < partial_cumulative) 
 		info_access->max_cumulative_time = partial_cumulative;

@@ -28,7 +28,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "hashtable.h"
+#include "../aprof.h"
 #define vg_assert tl_assert
 
 /*--------------------------------------------------------------------*/

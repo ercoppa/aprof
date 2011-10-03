@@ -5,39 +5,24 @@
  * Revision:     $Rev$
  */
 
-#ifndef GLIBC
-#include "pub_tool_basics.h"
-#include "pub_tool_libcprint.h"
-#include "pub_tool_mallocfree.h"
-#include "pub_tool_libcbase.h"
-#include "pub_tool_libcassert.h"
-#endif
-
+#include "../aprof.h"
 #include "union_find.h"
-#include "../glibc-valgrind.h"
 
 #define PAGE_NODES 1024
 
 /* Macro for dealing with bit stealing */
-#define IS_ROOT(e)          ((unsigned long)((e)->parent) & 1)
-#define SET_AS_ROOT(r, rep) (r)->parent = (void *)(((unsigned long)((r)->parent) & 2) | ((unsigned long)(rep) | 1));
-#define GET_REP(n)          ((Representative *)((unsigned long)(n)->parent & ~3))
-#define SET_AS_DUMMY(n)     (n)->parent = (void *)((unsigned long)((n)->parent) | 2);
-#define IS_DUMMY(n)         ((unsigned long)((n)->parent) & 2)
-#define SET_PARENT(n, p)    (n)->parent = (void *)(((unsigned long)((n)->parent) & 2) | (unsigned long)(p));
-#define GET_PARENT(n)       (void *)((unsigned long)(n)->parent & ~3)
+#define IS_ROOT(e)          ((UWord)((e)->parent) & 1)
+#define SET_AS_ROOT(r, rep) (r)->parent = (void *)(((UWord)((r)->parent) & 2) | ((UWord)(rep) | 1));
+#define GET_REP(n)          ((Representative *)((UWord)(n)->parent & ~3))
+#define SET_AS_DUMMY(n)     (n)->parent = (void *)((UWord)((n)->parent) | 2);
+#define IS_DUMMY(n)         ((UWord)((n)->parent) & 2)
+#define SET_PARENT(n, p)    (n)->parent = (void *)(((UWord)((n)->parent) & 2) | (UWord)(p));
+#define GET_PARENT(n)       (void *)((UWord)(n)->parent & ~3)
 
 #define CHECK_ADDR_OVERFLOW(x) do { \
-									if ((x) > (unsigned long long) USM_SIZE * 65536) \
-										failure("Address overflow"); \
+									if ((x) > (UWord) UPM_SIZE * 65536) \
+										AP_ASSERT(0, "Address overflow"); \
 									} while (0);
-
-static void failure(char * c) {
-	
-	printf("%s\n", c);
-	exit(1);
-	
-}
 
 // ---------------------------------------------------------------------
 // UF_find
@@ -49,7 +34,6 @@ static Node * UF_find(Node * n) {
 
 	if (n == NULL) return NULL;
 	if (IS_ROOT(n)) return n;
-
 	
 	SET_PARENT(n, UF_find(GET_PARENT(n))); /* Path Compression */
 
@@ -61,11 +45,11 @@ static Node * UF_find(Node * n) {
 
 UnionFind * UF_create() {
 
-	UnionFind * uf = (UnionFind *) calloc(1, sizeof(UnionFind));
-	if (uf == NULL) failure("UF not allocable");
+	UnionFind * uf = (UnionFind *) VG_(calloc)("uf", 1, sizeof(UnionFind));
+	AP_ASSERT(uf != NULL, "UF not allocable");
 	
 	uf->pool = pool_init(PAGE_NODES, sizeof(Node), &uf->free_list);
-	if (uf->pool == NULL) failure("UF pool not allocable");
+	AP_ASSERT(uf->pool != NULL, "UF pool not allocable");
 	
 	uf->free_list = NULL;
 
@@ -78,16 +62,16 @@ void UF_destroy(UnionFind * uf){
 	int i = 0;
 	while (i < USM_SIZE) {
 		if (uf->table[i] != NULL) 
-			free(uf->table[i]);
+			VG_(free)(uf->table[i]);
 		i++;
 	}
 	
 	pool_cleanup(uf->pool);
-	free(uf);
+	VG_(free)(uf);
 
 }
 
-int UF_insert(UnionFind * uf, ADDRINT addr, int stack_depth){
+int UF_insert(UnionFind * uf, UWord addr, int stack_depth){
 
 	#if !defined(__i386__) && CHECK_SUF_OVERFLOW
 	CHECK_ADDR_OVERFLOW(addr);
@@ -97,13 +81,13 @@ int UF_insert(UnionFind * uf, ADDRINT addr, int stack_depth){
 	Node * n   = NULL;
 	int depth = -1;
 
-	ADDRINT i = addr >> 16;
-	ADDRINT j = (addr & 0xffff) / 4;
+	UWord i = addr >> 16;
+	UWord j = (addr & 0xffff) / 4;
 	if (uf->table[i] != NULL)
 		n = uf->table[i]->node[j];
 	else {
-		uf->table[i] = calloc(sizeof(USM), 1);
-		if (uf->table[i] == NULL) failure("UF sm not allocable");
+		uf->table[i] = VG_(calloc)("usm", sizeof(USM), 1);
+		AP_ASSERT(uf->table[i] != NULL, "UF sm not allocable");
 	}
 	
 	if (n != NULL) {
@@ -111,13 +95,13 @@ int UF_insert(UnionFind * uf, ADDRINT addr, int stack_depth){
 		Node * node = UF_find(n);
 		
 		#ifdef DEBUG
-		if (node == NULL) failure("Invalid parent");
+		AP_ASSERT(node != NULL, "Invalid parent");
 		#endif
 		
 		Representative * r = GET_REP(node);
 		
 		#ifdef DEBUG
-		if (r == NULL) failure("Invalid rep");
+		AP_ASSERT(r != NULL, "Invalid rep");
 		#endif
 		
 		if (stack_depth == r->stack_depth)
@@ -134,7 +118,7 @@ int UF_insert(UnionFind * uf, ADDRINT addr, int stack_depth){
 		#endif
 		
 		pool_alloc(uf->pool, uf->free_list, new, Node);
-		if (new == NULL) failure("Impossible allocate a node");
+		AP_ASSERT(new != NULL, "Impossible allocate a node");
 		new->parent = NULL;
 		new->next = NULL;
 		
@@ -146,7 +130,7 @@ int UF_insert(UnionFind * uf, ADDRINT addr, int stack_depth){
 	} else {
 		
 		pool_alloc(uf->pool, uf->free_list, new, Node);
-		if (new == NULL) failure("Impossible allocate a node");
+		AP_ASSERT(new != NULL, "Impossible allocate a node");
 		new->parent = NULL;
 		new->next = NULL;
 		
@@ -161,8 +145,8 @@ int UF_insert(UnionFind * uf, ADDRINT addr, int stack_depth){
 	/* Create new representative and insert the new node */
 	if (uf->headRep == NULL || stack_depth != uf->headRep->stack_depth) {
 
-		Representative * new_rep = calloc(sizeof(Representative), 1);
-		if (new_rep == NULL) failure("Impossible allocate a new rep");
+		Representative * new_rep = VG_(calloc)("rep", sizeof(Representative), 1);
+		AP_ASSERT(new_rep != NULL, "Impossible allocate a new rep");
 
 		new_rep->rank = 0;
 		new_rep->real_nodes = 1;
@@ -177,7 +161,7 @@ int UF_insert(UnionFind * uf, ADDRINT addr, int stack_depth){
 		SET_AS_ROOT(new, new_rep);
 		
 		#ifdef DEBUG
-		if (!IS_ROOT(new)) failure("bad macro\n");
+		AP_ASSERT(IS_ROOT(new), "bad macro");
 		#endif
 		
 		/* Insert in the representative list */
@@ -238,7 +222,7 @@ int UF_merge(UnionFind * uf, int current_stack_depth){
 	live->next = uf->headRep->next->next;
 	uf->headRep = live;
 
-	free(dead);
+	VG_(free)(dead);
 
 	return uf->headRep->real_nodes;
 
@@ -251,7 +235,7 @@ void UF_rebalance(UnionFind * uf, Node * root) {
 	Node * head = root;
 	Representative * r = GET_REP(root);
 	#ifdef DEBUG
-	if (r == NULL) failure("Invalid rep during rebalancing");
+	AP_ASSERT(r != NULL, "Invalid rep during rebalancing");
 	#endif
 	
 	if (r->dummies == 0) return;
@@ -273,8 +257,8 @@ void UF_rebalance(UnionFind * uf, Node * root) {
 		}
 		
 		#ifdef DEBUG
-		if (root == NULL || cand == head)
-			failure("We need at least one real node!\n");
+		AP_ASSERT(root != NULL, "invalid root");
+		AP_ASSERT(cand != head, "We need at least one real node!");
 		#endif
 	
 	}
@@ -314,16 +298,16 @@ void UF_rebalance(UnionFind * uf, Node * root) {
 
 }
 
-int UF_lookup(UnionFind * uf, ADDRINT addr){
+int UF_lookup(UnionFind * uf, UWord addr){
 	
 	#if !defined(__i386__) && CHECK_SUF_OVERFLOW
 	CHECK_ADDR_OVERFLOW(addr);
 	#endif
 
-	ADDRINT i = addr >> 16;
+	UWord i = addr >> 16;
 	if (uf->table[i] == NULL) return -1;
 	
-	ADDRINT j = (addr & 0xffff) / 4;
+	UWord j = (addr & 0xffff) / 4;
 	Node * n = uf->table[i]->node[j];
 	
 	if (n == NULL) return -1;
@@ -335,17 +319,17 @@ int UF_lookup(UnionFind * uf, ADDRINT addr){
 #if DEBUG
 void UF_print(UnionFind * uf) {
 
-	printf("\n--------------\n");
-	printf("| Union find |\n");
-	printf("--------------\n");
+	VG_(printf)("\n--------------\n");
+	VG_(printf)("| Union find |\n");
+	VG_(printf)("--------------\n");
 	
 	Representative * r = uf->headRep;
 	while (r != NULL) {
-		printf("REP: dummies(%u) - real(%u) - rank(%u) - depth(%u) - addr(%lu)\n",
-				r->dummies, r->real_nodes, r->rank, r->stack_depth, (unsigned long int) r);
-		if (r->tree == NULL) printf("Root is NULL\n");
-		if (!IS_ROOT(r->tree)) printf("Root not set as root\n");
-		if (GET_REP(r->tree) != (void*)r) printf("Rep & root are not linked\n");
+		VG_(printf)("REP: dummies(%lu) - real(%lu) - rank(%lu) - depth(%u) - addr(%lu)\n",
+				r->dummies, r->real_nodes, r->rank, r->stack_depth, (UWord) r);
+		if (r->tree == NULL) VG_(printf)("Root is NULL\n");
+		if (!IS_ROOT(r->tree)) VG_(printf)("Root not set as root\n");
+		if (GET_REP(r->tree) != (void*)r) VG_(printf)("Rep & root are not linked\n");
 		UF_print_tree(r->tree, 0, r->real_nodes, r->dummies);
 		r = r->next;
 	}
@@ -362,18 +346,17 @@ void UF_print_tree(Node * node, int level, int reals, int dummies) {
 	
 	while (node != NULL) {
 		
-		if(IS_ROOT(node)) printf("[0] ");
-		else printf("[1] ");
-		printf("Addr(%lu)\n", node->addr);
+		if(IS_ROOT(node)) VG_(printf)("[0] ");
+		else VG_(printf)("[1] ");
+		VG_(printf)("Addr(%lu)\n", node->addr);
 		
-		if (node->addr == 0 && !IS_DUMMY(node)) failure("Dummy not marked as dummy");
-		if (IS_DUMMY(node) && node->addr != 0) failure("Dummy with not zero addr");
+		AP_ASSERT(node->addr == 0 && IS_DUMMY(node), "Dummy not marked as dummy");
 		
 		if (IS_DUMMY(node)) dummy_nodes++;
 		else real_nodes++;
 		
 		if (node->next == head) {
-			printf("Linked correctly to head\n");
+			VG_(printf)("Linked correctly to head\n");
 			break;
 		}
 		
@@ -381,8 +364,8 @@ void UF_print_tree(Node * node, int level, int reals, int dummies) {
 		
 	}
 	
-	if (real_nodes != reals) printf("Wrong # real nodes\n");
-	if (dummy_nodes != dummies) printf("Wrong # dummy nodes\n");
+	if (real_nodes != reals) VG_(printf)("Wrong # real nodes\n");
+	if (dummy_nodes != dummies) VG_(printf)("Wrong # dummy nodes\n");
 	
 }
 #endif
