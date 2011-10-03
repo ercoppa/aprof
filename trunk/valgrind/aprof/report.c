@@ -115,13 +115,11 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 		if (rtn_name == NULL) rtn_name = rtn_info->fn->name;
 		
 		#if REPORT_VERSION == 0
-		VG_(sprintf)(buffer, "r %s %lu %s %llu\n", rtn_name, 
-							rtn_info->key, obj_name, 
+		VG_(sprintf)(buffer, "r %s %s %llu\n", rtn_name, obj_name, 
 							rtn_info->routine_id);
 		#elif REPORT_VERSION == 1
-		VG_(sprintf)(buffer, "r \"%s\" %lu \"%s\" %llu\n", rtn_name, 
-					rtn_info->key, obj_name, 
-					rtn_info->routine_id);
+		VG_(sprintf)(buffer, "r \"%s\" \"%s\" %llu\n", rtn_name, 
+					obj_name, rtn_info->routine_id);
 		#endif
 		ap_fwrite(report, buffer, VG_(strlen)(buffer));
 		
@@ -178,7 +176,7 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 		while (info_access != NULL) {
 			
 			#if REPORT_VERSION == 1
-			VG_(sprintf)(buffer, "p %llu %lu %lu %lu %llu %llu %lu\n", 
+			VG_(sprintf)(buffer, "p %llu %lu %lu %lu %llu %llu %llu\n", 
 				rtn_info->routine_id,
 				info_access->key,
 				info_access->min_cumulative_time,
@@ -189,7 +187,7 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 			#elif REPORT_VERSION == 0
 			ULong time_exec = info_access->cumulative_time_sum 
 									/ info_access->calls_number;
-			VG_(sprintf)(buffer, "p %llu %lu %llu %lu\n", 
+			VG_(sprintf)(buffer, "p %llu %lu %llu %llu\n", 
 				rtn_info->routine_id, info_access->key, time_exec, 
 				info_access->calls_number);
 			#endif
