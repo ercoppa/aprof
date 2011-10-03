@@ -15,7 +15,7 @@ import aprofplot.*;
  */
 public class SmsTableModel extends AbstractTableModel {
 
-    private ArrayList<TimeEntry> elements;
+    private ArrayList<SmsEntry> elements;
     private String[] columnNames = new String [] {"Sms",
                                                   "Time (μs)",
                                                   "Ratio (μs)",
@@ -61,12 +61,12 @@ public class SmsTableModel extends AbstractTableModel {
 
     public Object getValueAt(int rowIndex, int columnIndex) {
         if (elements == null) return null;
-        TimeEntry te = elements.get(rowIndex);
+        SmsEntry te = elements.get(rowIndex);
         switch (columnIndex) {
-            case 0: return new Integer(te.getAccesses());
-            case 1: return new Double(te.getTime()/* / 1000000*/);
+            case 0: return new Integer(te.getSms());
+            case 1: return new Double(te.getCost()/* / 1000000*/);
             case 2: return new Double(te.getRatio());
-            case 3: return new Integer(te.getOccurrences());
+            case 3: return new Integer(te.getOcc());
             default: return null;
         }
     }

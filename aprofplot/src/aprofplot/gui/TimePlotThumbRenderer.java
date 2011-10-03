@@ -57,18 +57,18 @@ public class TimePlotThumbRenderer extends JLabel implements TableCellRenderer {
             /* maximize graph */
             r.sortTimeEntriesByTime();
             min_x = min_y = 0;
-            max_y = r.getTimeEntries().get(r.getTimeEntries().size() - 1).getTime();
+            max_y = r.getTimeEntries().get(r.getTimeEntries().size() - 1).getCost();
             max_y = Math.ceil(max_y);
             if (max_y == 0) max_y++;
             r.sortTimeEntriesByAccesses();
-            max_x = r.getTimeEntries().get(r.getTimeEntries().size() - 1).getAccesses();
+            max_x = r.getTimeEntries().get(r.getTimeEntries().size() - 1).getSms();
             if (max_x == 0) max_x++;
 
             /* draw points */
             g2d.setColor(java.awt.Color.BLUE);
             for (int i = 0; i < r.getTimeEntries().size(); i++) {
-                double x = r.getTimeEntries().get(i).getAccesses();
-                double y = r.getTimeEntries().get(i).getTime();
+                double x = r.getTimeEntries().get(i).getSms();
+                double y = r.getTimeEntries().get(i).getCost();
                 int x_trans = XCoordTransform(x);
                 int y_trans = -YCoordTransform(y);
                 g2d.drawLine(x_trans, y_trans, x_trans, y_trans);
