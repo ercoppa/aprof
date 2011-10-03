@@ -57,10 +57,9 @@ If missing, the default metric is `bb-count`.
 ----
 * r: routine info*
 
-Syntax: `r "routine-name" address "image-name" routine-id`, where:
+Syntax: `r "routine-name" "image-name" routine-id`, where:
 
   * `"routine-name"`: string specifying the (possibly mangled) name of the routine
-  * `address`: memory address of the routine (64 bit unsigned integer)
   * `"image-name"`: string specifying the pathname of the image containing the routine
   * `routine-id`: distinct numerical id associated to the routine (32 bit unsigned integer)
 
