@@ -58,9 +58,9 @@ void print_cct_info(FILE * f, CCTNode* root, UWord parent_id) {
 		
 		char msg[256];
 		if (parent_id > 0)
-			VG_(sprintf)(msg, "x %llu %llu %lu\n", root->routine_id, root->context_id, parent_id);
+			VG_(sprintf)(msg, "x %llu %lu %lu\n", root->routine_id, root->context_id, parent_id);
 		else
-			VG_(sprintf)(msg, "x %llu %llu -1\n", root->routine_id, root->context_id);
+			VG_(sprintf)(msg, "x %llu %lu -1\n", root->routine_id, root->context_id);
 		
 		ap_fwrite(f, msg, VG_(strlen(msg)));
 		
@@ -105,10 +105,10 @@ void print_cct_graph(FILE * f, CCTNode* root, UWord parent_id, char * parent_nam
 static void print_CCT(CCTNode* root) {
 	if (root == NULL) return;
 	
-	VG_(printf)("%llu\n", root->context_id);
+	VG_(printf)("%lu\n", root->context_id);
 	CCTNode * node = root->firstChild;
 	while(node != NULL) {
-		VG_(printf)("%llu ", node->context_id);
+		VG_(printf)("%lu ", node->context_id);
 		node = node->nextSibling;
 	}
 	

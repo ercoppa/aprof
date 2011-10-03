@@ -75,7 +75,7 @@ Activation * resize_stack(ThreadData * tdata, unsigned int depth) {
 		#endif
 		
 		/* Safety check, better always run this :) */
-		AP_ASSERT(depth - 1 >= tdata->max_stack_size, "This is absurd...")
+		AP_ASSERT(depth - 1 < tdata->max_stack_size, "This is absurd...")
 	}
 	
 	return tdata->stack + depth - 1;
