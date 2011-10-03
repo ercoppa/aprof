@@ -679,10 +679,18 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 				#if DEBUG
 				AP_ASSERT(mangled != NULL, "mangled name not allocable");
 				#endif
-				if(	VG_(get_fnname_no_cxx_demangle)(bb->key, mangled, NAME_SIZE)
-					&& VG_(strcmp)(f->name, mangled) != 0
-					)
-					f->mangled = mangled;
+				
+				if(	VG_(get_fnname_no_cxx_demangle)(bb->key, mangled, NAME_SIZE)) {
+					#if REPORT_VERSION == 0
+					if (info_fn && VG_(strcmp)(mangled, "(below main)") == 0) {
+						VG_(sprintf)(mangled, "below_main");
+					}
+					#endif
+					if (VG_(strcmp)(f->name, mangled) != 0)
+						f->mangled = mangled;
+					else
+						VG_(free)(mangled);
+				}
 				else VG_(free)(mangled);
 				
 				HT_add_node(fn_ht, f->key, f);
