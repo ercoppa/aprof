@@ -60,9 +60,9 @@ If missing, the default metric is `bb-count`.
 Syntax: `r "routine-name" address "image-name" routine-id`, where:
 
   * `"routine-name"`: string specifying the (possibly mangled) name of the routine
-  * `address`: memory address of the routine
+  * `address`: memory address of the routine (64 bit unsigned integer)
   * `"image-name"`: string specifying the pathname of the image containing the routine
-  * `routine-id`: distinct numerical id associated to the routine
+  * `routine-id`: distinct numerical id associated to the routine (32 bit unsigned integer)
 
 Example:
 
@@ -73,7 +73,7 @@ Example:
 
 Syntax: `u routine-id "demangled-name"`, where:
 
-  * `routine-id`: id of the routine
+  * `routine-id`: id of the routine (32 bit unsigned integer)
   * `demangled-name`: string specifying demangled name of the routine
 
 Example:
@@ -85,7 +85,7 @@ Example:
 
 Syntax: `d routine-id "full-demangled-name"`, where:
 
-  * `routine-id`: id of the routine
+  * `routine-id`: id of the routine (32 bit unsigned integer)
   * `"full-demangled-name"`: string specifying full demangled name of the routine, including function arguments
 
 Example:
@@ -97,13 +97,13 @@ Example:
 
 Syntax: `p routine-id sms min max sum sqr-sum occ`, where:
 
-  * `routine-id`: id of the routine
-  * `sms`: seen memory size of the point
-  * `min`: minimum performance measurement
-  * `max`: maximum performance measurement
-  * `sum`: sum of performance measurements (for average)
-  * `sqr-sum`: sum of squares of performance measurements (for variance)
-  * `occ`: number of routine calls with the given sms
+  * `routine-id`: id of the routine (32 bit unsigned integer)
+  * `sms`: seen memory size of the point (32 bit unsigned integer)
+  * `min`: minimum performance measurement (64 bit unsigned integer)
+  * `max`: maximum performance measurement (64 bit unsigned integer)
+  * `sum`: sum of performance measurements (64 bit unsigned integer)
+  * `sqr-sum`: sum of squares of performance measurements (64 bit unsigned integer)
+  * `occ`: number of routine calls with the given sms (32 bit unsigned integer)
 
 Example:
 
@@ -118,8 +118,8 @@ Each `x`-line corresponds to a node of the calling context tree (CCT).
 
 Syntax: `x routine-id context-id parent-context-id`, where:
 
-  * `routine-id`: routine id
-  * `context-id`: unique id of CCT node
+  * `routine-id`: routine id (32 bit unsigned integer)
+  * `context-id`: unique id of CCT node (32 bit unsigned integer)
   * `parent-context-id`: id of parent context in the CCT, or -1 if the context has no parent (node is the root of the CCT).
 
 Example:
@@ -133,13 +133,13 @@ means that node 352 of the CCT is a context of routine 24 and its parent node is
 
 Syntax: `q context-id sms min max sum sqr-sum occ`, where:
 
-  * `context-id`: id of the calling context
-  * `sms`: seen memory size of the point
-  * `min`: minimum performance measurement
-  * `max`: maximum performance measurement
-  * `sum`: sum of performance measurements (for average)
-  * `sqr-sum`: sum of squares of performance measurements (for variance)
-  * `occ`: number of context activations with the given sms
+  * `context-id`: id of the calling context (32 bit unsigned integer)
+  * `sms`: seen memory size of the point (32 bit unsigned integer)
+  * `min`: minimum performance measurement (64 bit unsigned integer)
+  * `max`: maximum performance measurement (64 bit unsigned integer)
+  * `sum`: sum of performance measurements (64 bit unsigned integer)
+  * `sqr-sum`: sum of squares of performance measurements (64 bit unsigned integer)
+  * `occ`: number of context activations with the given sms (32 bit unsigned integer)
 
 Example:
 
