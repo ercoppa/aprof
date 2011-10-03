@@ -21,7 +21,7 @@ public abstract class RoutineInfo implements Comparable<RoutineInfo> {
     //private double mean_ratio;
     private double total_time;
     private int total_calls;
-    ArrayList<TimeEntry> time_entries;
+    ArrayList<SmsEntry> time_entries;
 
     public RoutineInfo(String name, String address, String image) {
         this.name = this.dem_name = this.full_dem_name = name;
@@ -32,21 +32,21 @@ public abstract class RoutineInfo implements Comparable<RoutineInfo> {
         //mean_ratio = 0;
         total_time = 0;
         total_calls = 0;
-        time_entries = new ArrayList<TimeEntry>();
+        time_entries = new ArrayList<SmsEntry>();
     }
 
-    public void addTimeEntry(TimeEntry t) {
+    public void addSmsEntry(SmsEntry t) {
         int old_te_index = time_entries.indexOf(t);
         if (old_te_index >= 0) {
             t = t.mergeWith(time_entries.get(old_te_index));
             time_entries.remove(old_te_index);
         }
         time_entries.add(t);
-        if (t.getTime() > max_time) max_time = t.getTime();
+        if (t.getCost() > max_time) max_time = t.getCost();
         //if (t.getRatio() > max_ratio) max_ratio = t.getRatio();
         //mean_ratio = ((mean_ratio * (time_entries.size() - 1)) + t.getRatio()) / time_entries.size();
-        total_time += t.getTime() * t.getOccurrences();
-        total_calls += t.getOccurrences();
+        total_time += t.getCost() * t.getOcc();
+        total_calls += t.getOcc();
     }
 
     public String getName() {
@@ -105,9 +105,9 @@ public abstract class RoutineInfo implements Comparable<RoutineInfo> {
         return this.total_calls;
     }
 
-    public ArrayList<TimeEntry> getTimeEntries() {
-        //return (ArrayList<TimeEntry>)time_entries.clone();
-        return new ArrayList<TimeEntry>(this.time_entries);
+    public ArrayList<SmsEntry> getTimeEntries() {
+        //return (ArrayList<SmsEntry>)time_entries.clone();
+        return new ArrayList<SmsEntry>(this.time_entries);
     }
 
     @Override
@@ -135,28 +135,28 @@ public abstract class RoutineInfo implements Comparable<RoutineInfo> {
     }
 
     public void sortTimeEntriesByAccesses() {
-        Collections.sort(time_entries, new Comparator<TimeEntry> () {
-           public int compare(TimeEntry t1, TimeEntry t2) {
-               if (t1.getAccesses() == t2.getAccesses()) return 0;
-               if (t1.getAccesses() > t2.getAccesses()) return 1;
+        Collections.sort(time_entries, new Comparator<SmsEntry> () {
+           public int compare(SmsEntry t1, SmsEntry t2) {
+               if (t1.getSms() == t2.getSms()) return 0;
+               if (t1.getSms() > t2.getSms()) return 1;
                return -1;
            }
         });
     }
 
     public void sortTimeEntriesByTime() {
-        Collections.sort(time_entries, new Comparator<TimeEntry> () {
-           public int compare(TimeEntry t1, TimeEntry t2) {
-               if (t1.getTime() == t2.getTime()) return 0;
-               if (t1.getTime() > t2.getTime()) return 1;
+        Collections.sort(time_entries, new Comparator<SmsEntry> () {
+           public int compare(SmsEntry t1, SmsEntry t2) {
+               if (t1.getCost() == t2.getCost()) return 0;
+               if (t1.getCost() > t2.getCost()) return 1;
                return -1;
            }
         });
     }
 
     public void sortTimeEntriesByRatio() {
-        Collections.sort(time_entries, new Comparator<TimeEntry> () {
-           public int compare(TimeEntry t1, TimeEntry t2) {
+        Collections.sort(time_entries, new Comparator<SmsEntry> () {
+           public int compare(SmsEntry t1, SmsEntry t2) {
                if (t1.getRatio() == t2.getRatio()) return 0;
                if (t1.getRatio() > t2.getRatio()) return 1;
                return -1;
@@ -166,8 +166,8 @@ public abstract class RoutineInfo implements Comparable<RoutineInfo> {
 
     public void sortTimeEntriesByRatio(int type) {
         final int t = type;
-        Collections.sort(time_entries, new Comparator<TimeEntry> () {
-           public int compare(TimeEntry t1, TimeEntry t2) {
+        Collections.sort(time_entries, new Comparator<SmsEntry> () {
+           public int compare(SmsEntry t1, SmsEntry t2) {
                if (t1.getRatio(t) == t2.getRatio(t)) return 0;
                if (t1.getRatio(t) > t2.getRatio(t)) return 1;
                return -1;
@@ -176,10 +176,10 @@ public abstract class RoutineInfo implements Comparable<RoutineInfo> {
     }
 
     public void sortTimeEntriesByOccurrences() {
-        Collections.sort(time_entries, new Comparator<TimeEntry> () {
-           public int compare(TimeEntry t1, TimeEntry t2) {
-               if (t1.getOccurrences() == t2.getOccurrences()) return 0;
-               if (t1.getOccurrences() > t2.getOccurrences()) return 1;
+        Collections.sort(time_entries, new Comparator<SmsEntry> () {
+           public int compare(SmsEntry t1, SmsEntry t2) {
+               if (t1.getOcc() == t2.getOcc()) return 0;
+               if (t1.getOcc() > t2.getOcc()) return 1;
                return -1;
            }
         });
