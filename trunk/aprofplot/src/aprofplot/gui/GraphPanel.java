@@ -574,7 +574,7 @@ public class GraphPanel extends javax.swing.JPanel {
             case TIME_PLOT: s = "Time plot"; break;
             case FREQ_PLOT: s = "Frequency plot"; break;
             case RATIO_PLOT: s = "Ratio plot - T(n) / ";
-                            double[] rc = TimeEntry.getRatioConfiguration();
+                            double[] rc = SmsEntry.getRatioConfig();
                             int n = 0;
                             for (int i =  0; i < rc.length; i++) {
                                 if (rc[i] != 0) n++;
@@ -677,7 +677,7 @@ public class GraphPanel extends javax.swing.JPanel {
 
     private int sumOccurrences(int first, int last) {
         int sum = 0;
-        for (int i = first; i <= last; i++) sum += rtn_info.getTimeEntries().get(i).getOccurrences();
+        for (int i = first; i <= last; i++) sum += rtn_info.getTimeEntries().get(i).getOcc();
         return sum;
     }
 
@@ -714,23 +714,23 @@ public class GraphPanel extends javax.swing.JPanel {
                 }
             }
             switch (this.graph_type) {
-                case TIME_PLOT: max_y = rtn_info.getTimeEntries().get(middle).getTime();
+                case TIME_PLOT: max_y = rtn_info.getTimeEntries().get(middle).getCost();
 //                                int i = 0;
-//                                while ((min_y = rtn_info.getTimeEntries().get(i).getTime()) == 0 && i < rtn_info.getTimeEntries().size()) i++;
+//                                while ((min_y = rtn_info.getTimeEntries().get(i).getCost()) == 0 && i < rtn_info.getTimeEntries().size()) i++;
                                 break;
                 case RATIO_PLOT: max_y = rtn_info.getTimeEntries().get(middle).getRatio();
 //                                i = 0;
 //                                while ((min_y = rtn_info.getTimeEntries().get(i).getRatio()) == 0 && i < rtn_info.getTimeEntries().size()) i++;
                                 break;
-                case FREQ_PLOT: max_y = rtn_info.getTimeEntries().get(middle).getOccurrences();
+                case FREQ_PLOT: max_y = rtn_info.getTimeEntries().get(middle).getOcc();
 //                                i = 0;
-//                                while ((min_y = rtn_info.getTimeEntries().get(i).getOccurrences()) == 0 && i < rtn_info.getTimeEntries().size()) i++;
+//                                while ((min_y = rtn_info.getTimeEntries().get(i).getOcc()) == 0 && i < rtn_info.getTimeEntries().size()) i++;
                                 break;
             }
 
             rtn_info.sortTimeEntriesByAccesses();
 //            int i = 0;
-//            while ((min_x = rtn_info.getTimeEntries().get(i).getAccesses()) == 0 && i < rtn_info.getTimeEntries().size()) i++;
+//            while ((min_x = rtn_info.getTimeEntries().get(i).getSms()) == 0 && i < rtn_info.getTimeEntries().size()) i++;
             first = 0;
             last = rtn_info.getTimeEntries().size() - 1;
             middle = (int)Math.ceil(((double)last - (double)first) / 2);
@@ -747,7 +747,7 @@ public class GraphPanel extends javax.swing.JPanel {
                     c = sumOccurrences(0, middle);
                 }
             }
-            max_x = rtn_info.getTimeEntries().get(middle).getAccesses();
+            max_x = rtn_info.getTimeEntries().get(middle).getSms();
             min_x = min_y = 0;
             updateXAxis();
             updateYAxis();
@@ -889,7 +889,7 @@ public class GraphPanel extends javax.swing.JPanel {
     private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
         // TODO add your handling code here:
         double[] rc = {1, 0, 0};
-        TimeEntry.setRatioConfiguration(rc);
+        SmsEntry.setRatioConfig(rc);
         updateGraphTitle();
         refresh();
         main_window.refreshTables();
@@ -898,7 +898,7 @@ public class GraphPanel extends javax.swing.JPanel {
     private void jMenuItem2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem2ActionPerformed
         // TODO add your handling code here:
         double[] rc = {1, 0, 1};
-        TimeEntry.setRatioConfiguration(rc);
+        SmsEntry.setRatioConfig(rc);
         updateGraphTitle();
         refresh();
         main_window.refreshTables();
@@ -907,7 +907,7 @@ public class GraphPanel extends javax.swing.JPanel {
     private void jMenuItem3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem3ActionPerformed
         // TODO add your handling code here:
         double[] rc = {1, 1, 0};
-        TimeEntry.setRatioConfiguration(rc);
+        SmsEntry.setRatioConfig(rc);
         updateGraphTitle();
         refresh();
         main_window.refreshTables();
@@ -916,7 +916,7 @@ public class GraphPanel extends javax.swing.JPanel {
     private void jMenuItem4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem4ActionPerformed
         // TODO add your handling code here:
         double[] rc = {1.5, 0, 0};
-        TimeEntry.setRatioConfiguration(rc);
+        SmsEntry.setRatioConfig(rc);
         updateGraphTitle();
         refresh();
         main_window.refreshTables();
@@ -925,7 +925,7 @@ public class GraphPanel extends javax.swing.JPanel {
     private void jMenuItem5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem5ActionPerformed
         // TODO add your handling code here:
         double[] rc = {2, 0, 0};
-        TimeEntry.setRatioConfiguration(rc);
+        SmsEntry.setRatioConfig(rc);
         updateGraphTitle();
         refresh();
         main_window.refreshTables();
@@ -934,7 +934,7 @@ public class GraphPanel extends javax.swing.JPanel {
     private void jMenuItem6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem6ActionPerformed
         // TODO add your handling code here:
         double[] rc = {2.5, 0, 0};
-        TimeEntry.setRatioConfiguration(rc);
+        SmsEntry.setRatioConfig(rc);
         updateGraphTitle();
         refresh();
         main_window.refreshTables();
@@ -943,7 +943,7 @@ public class GraphPanel extends javax.swing.JPanel {
     private void jMenuItem7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem7ActionPerformed
         // TODO add your handling code here:
         double[] rc = {3, 0, 0};
-        TimeEntry.setRatioConfiguration(rc);
+        SmsEntry.setRatioConfig(rc);
         updateGraphTitle();
         refresh();
         main_window.refreshTables();
@@ -951,13 +951,13 @@ public class GraphPanel extends javax.swing.JPanel {
 
     private void jMenuItem8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem8ActionPerformed
         // TODO add your handling code here:
-        double[] rc = TimeEntry.getRatioConfiguration();
+        double[] rc = SmsEntry.getRatioConfig();
         rc[2]--;
         if (rc[0] == 0 && rc[1] == 0 && rc[2] == 0) {
             javax.swing.JOptionPane.showMessageDialog(main_window, "can't apply setting: division by zero");
             return;
         }
-        TimeEntry.setRatioConfiguration(rc);
+        SmsEntry.setRatioConfig(rc);
         updateGraphTitle();
         refresh();
         main_window.refreshTables();
@@ -965,9 +965,9 @@ public class GraphPanel extends javax.swing.JPanel {
 
     private void jMenuItem9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem9ActionPerformed
         // TODO add your handling code here:
-        double[] rc = TimeEntry.getRatioConfiguration();
+        double[] rc = SmsEntry.getRatioConfig();
         rc[2]++;
-        TimeEntry.setRatioConfiguration(rc);
+        SmsEntry.setRatioConfig(rc);
         updateGraphTitle();
         refresh();
         main_window.refreshTables();
@@ -975,13 +975,13 @@ public class GraphPanel extends javax.swing.JPanel {
 
     private void jMenuItem10ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem10ActionPerformed
         // TODO add your handling code here:
-        double[] rc = TimeEntry.getRatioConfiguration();
+        double[] rc = SmsEntry.getRatioConfig();
         rc[1]--;
         if (rc[0] == 0 && rc[1] == 0 && rc[2] == 0) {
             javax.swing.JOptionPane.showMessageDialog(main_window, "can't apply setting: division by zero");
             return;
         }
-        TimeEntry.setRatioConfiguration(rc);
+        SmsEntry.setRatioConfig(rc);
         updateGraphTitle();
         refresh();
         main_window.refreshTables();
@@ -989,9 +989,9 @@ public class GraphPanel extends javax.swing.JPanel {
 
     private void jMenuItem11ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem11ActionPerformed
         // TODO add your handling code here:
-        double[] rc = TimeEntry.getRatioConfiguration();
+        double[] rc = SmsEntry.getRatioConfig();
         rc[1]++;
-        TimeEntry.setRatioConfiguration(rc);
+        SmsEntry.setRatioConfig(rc);
         updateGraphTitle();
         refresh();
         main_window.refreshTables();
@@ -1010,13 +1010,13 @@ public class GraphPanel extends javax.swing.JPanel {
         catch (Exception e) {
             return;
         }
-        double[] rc = TimeEntry.getRatioConfiguration();
+        double[] rc = SmsEntry.getRatioConfig();
         rc[2] -= exp;
         if (rc[0] == 0 && rc[1] == 0 && rc[2] == 0) {
             javax.swing.JOptionPane.showMessageDialog(main_window, "can't apply setting: division by zero");
             return;
         }
-        TimeEntry.setRatioConfiguration(rc);
+        SmsEntry.setRatioConfig(rc);
         updateGraphTitle();
         refresh();
         main_window.refreshTables();
@@ -1035,13 +1035,13 @@ public class GraphPanel extends javax.swing.JPanel {
         catch (Exception e) {
             return;
         }
-        double[] rc = TimeEntry.getRatioConfiguration();
+        double[] rc = SmsEntry.getRatioConfig();
         rc[1] -= exp;
         if (rc[0] == 0 && rc[1] == 0 && rc[2] == 0) {
             javax.swing.JOptionPane.showMessageDialog(main_window, "can't apply setting: division by zero");
             return;
         }
-        TimeEntry.setRatioConfiguration(rc);
+        SmsEntry.setRatioConfig(rc);
         updateGraphTitle();
         refresh();
         main_window.refreshTables();
@@ -1060,24 +1060,24 @@ public class GraphPanel extends javax.swing.JPanel {
         catch (Exception e) {
             return;
         }
-        double[] rc = TimeEntry.getRatioConfiguration();
+        double[] rc = SmsEntry.getRatioConfig();
         rc[0] -= exp;
         if (rc[0] == 0 && rc[1] == 0 && rc[2] == 0) {
             javax.swing.JOptionPane.showMessageDialog(main_window, "can't apply setting: division by zero");
             return;
         }
-        TimeEntry.setRatioConfiguration(rc);
+        SmsEntry.setRatioConfig(rc);
         updateGraphTitle();
         refresh();
         main_window.refreshTables();
     }//GEN-LAST:event_jMenuItem14ActionPerformed
 
-    private boolean filterTimeEntry(TimeEntry t) {
+    private boolean filterTimeEntry(SmsEntry t) {
         if (filters == null) return true;
         if (filters[0] != null) {
             try {
                 double time = Double.parseDouble(filters[0]);
-                if (t.getTime() < time) return false;
+                if (t.getCost() < time) return false;
             }
             catch (Exception e) {
                 return true;
@@ -1095,7 +1095,7 @@ public class GraphPanel extends javax.swing.JPanel {
         if (filters[2] != null) {
             try {
                 int freq = Integer.parseInt(filters[2]);
-                if (t.getOccurrences() < freq) return false;
+                if (t.getOcc() < freq) return false;
             }
             catch (Exception e) {
                 return true;
@@ -1108,16 +1108,16 @@ public class GraphPanel extends javax.swing.JPanel {
         for (int i = 0; i < series.length; i++) series[i].clear();
         if (group_threshold == 1) {
             for (int i = 0; i < this.rtn_info.getTimeEntries().size(); i++) {
-                TimeEntry te = this.rtn_info.getTimeEntries().get(i);
+                SmsEntry te = this.rtn_info.getTimeEntries().get(i);
                 if (filterTimeEntry(te)) {
-                    double x = te.getAccesses();
+                    double x = te.getSms();
                     double y;
-                    if (this.graph_type == GraphPanel.TIME_PLOT) y = te.getTime();
+                    if (this.graph_type == GraphPanel.TIME_PLOT) y = te.getCost();
                     else if (this.graph_type == GraphPanel.RATIO_PLOT) y = te.getRatio();
-                    else y = te.getOccurrences();
+                    else y = te.getOcc();
                     if (this.graph_type == GraphPanel.FREQ_PLOT) series[0].add(x, y);
                     else {
-                        double index = Math.round(Math.log10(te.getOccurrences()) / Math.log10(2));
+                        double index = Math.round(Math.log10(te.getOcc()) / Math.log10(2));
                         if (index > 11) index = 11;
                         if (index < 0) index = 0;
                         series[(int)index].add(x, y);
@@ -1132,18 +1132,18 @@ public class GraphPanel extends javax.swing.JPanel {
             int sum_occurrences = 0;
             int n = 0;
             for (int i = 0; i < this.rtn_info.getTimeEntries().size(); i++) {
-                TimeEntry te = this.rtn_info.getTimeEntries().get(i);
+                SmsEntry te = this.rtn_info.getTimeEntries().get(i);
                 if (filterTimeEntry(te)) {
-                    double x = te.getAccesses();
+                    double x = te.getSms();
                     double y;
-                    if (graph_type == GraphPanel.TIME_PLOT) y = te.getTime();
+                    if (graph_type == GraphPanel.TIME_PLOT) y = te.getCost();
                     else if (graph_type == GraphPanel.RATIO_PLOT) y = te.getRatio();
-                    else y = te.getOccurrences();
+                    else y = te.getOcc();
                     double current_slot = x - (x % group_threshold);
                     if (current_slot == slot_start) {
                         sum_x += x;
                         sum_y += y;
-                        sum_occurrences += te.getOccurrences();
+                        sum_occurrences += te.getOcc();
                         n++;
                     }
                     else {
@@ -1166,7 +1166,7 @@ public class GraphPanel extends javax.swing.JPanel {
                             n = 0;
                             sum_x += x;
                             sum_y += y;
-                            sum_occurrences += te.getOccurrences();
+                            sum_occurrences += te.getOcc();
                             n++;
                         }
                         slot_start = current_slot;
