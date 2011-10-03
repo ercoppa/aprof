@@ -109,7 +109,7 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 		#endif
 		
 		char * obj_name = "NONE";
-		//if (rtn_info->fn->obj != NULL) obj_name = rtn_info->fn->obj->name; 
+		if (rtn_info->fn->obj != NULL) obj_name = rtn_info->fn->obj->name; 
 		
 		char * rtn_name = rtn_info->fn->mangled;
 		if (rtn_name == NULL) rtn_name = rtn_info->fn->name;
