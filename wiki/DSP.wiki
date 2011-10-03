@@ -83,3 +83,8 @@ Revision 107 (branch function):
 {{{
 DSP(aprof): space 78000 kB ~ time real 0m20.138s ~ CCT=0, SUF=2, TIME=BB_COUNT, ADDR_MULTIPLE=4, COSTANT_MEM_ACCESS=1
 }}}
+
+Revision 190:
+{{{
+DSP(aprof): space 78000 kB ~ time real 0m19.460s ~ CCT=0, SUF=2, TIME=BB_COUNT, ADDR_MULTIPLE=4, COSTANT_MEM_ACCESS=1, IGNORE_DL_RUNTIME=1
+}}}
