@@ -17,23 +17,27 @@ public class AprofReport {
 
     private String appname;
     private String cmdline;
-    private double total_time;
+    private int version;
+    private String metric;
+    private long total_cost;
     private int total_calls;
     private int total_contexts;
     private ArrayList<RoutineInfo> routines;
-    private HashSet<String> favourites;
+    private HashSet<String> favorites;
     private File file;
     private ArrayList<String> liblist;
 
     public AprofReport(File f) throws Exception {
-        total_time = 0;
-        total_calls = 0;
-        total_contexts = 0;
+
+        this.total_cost = 0;
+        this.total_calls = 0;
+        this.total_contexts = 0;
         this.routines = new ArrayList<RoutineInfo>();
         this.liblist = new ArrayList<String>();
-        this.favourites = new HashSet<String>();
-        HashSet<String> libset = new HashSet<String>();
+        this.favorites = new HashSet<String>();
         this.file = f;
+
+        HashSet<String> libset = new HashSet<String>();
         BufferedReader in = new BufferedReader(new FileReader(f));
         RoutineInfo rtn_info = null;
 //        ArrayList<ContextualizedRoutineInfo> contexts = new ArrayList<ContextualizedRoutineInfo>(); // temporary
@@ -44,52 +48,67 @@ public class AprofReport {
         ArrayList<String> q_points_temporary = new ArrayList<String>();
         ArrayList<String> demangled_temporary = new ArrayList<String>();
         ArrayList<String> full_demangled_temporary = new ArrayList<String>();
+
+        // read report file
         String str;
         StringTokenizer tokenizer;
         while ((str = in.readLine()) != null) {
+
             tokenizer = new StringTokenizer(str);
             String token = tokenizer.nextToken();
+
             if (token.equals("f")) { // command line
                 this.cmdline = str.substring(2);
                 continue;
             }
+
             if (token.equals("a")) { // application name
                 this.appname = tokenizer.nextToken();
                 continue;
             }
+
             if (token.equals("r")) { // routine
                 routines_temporary.add(str);
                 continue;
             }
+
             if (token.equals("x")) { // context
                 contexts_temporary.add(str);
                 continue;
             }
+
             if (token.equals("p")) { // routine point
                 p_points_temporary.add(str);
                 continue;
             }
+
             if (token.equals("q")) { // context point
                 q_points_temporary.add(str);
                 continue;
             }
+
             if (token.equals("d")) { // demangled routine name
                 demangled_temporary.add(str);
                 continue;
             }
+
             if (token.equals("u")) { // demangled routine name with full signature
                 full_demangled_temporary.add(str);
                 continue;
             }
+
             if (token.equals("c")) { // comment
                 // skip comments
                 continue;
             }
+
             if (token.equals("fav")) { // favourite routines
                 // load favourite routines list
-                while (tokenizer.hasMoreTokens()) favourites.add(tokenizer.nextToken());
+                while (tokenizer.hasMoreTokens())
+                    favorites.add(tokenizer.nextToken());
                 continue;
             }
+
             //throw(new Exception());
         }
         in.close();
@@ -227,7 +246,7 @@ public class AprofReport {
         }
 
         for (int i=0; i<routines.size(); i++) {
-            total_time += routines.get(i).getTotalTime();
+            total_cost += routines.get(i).getTotalTime();
             total_calls += routines.get(i).getTotalCalls();
         }
     }
@@ -243,9 +262,9 @@ public class AprofReport {
             String token = tokenizer.nextToken();
             if (!token.equals("fav")) out.println(str);
         }
-        if (!favourites.isEmpty()) {
+        if (!favorites.isEmpty()) {
             out.print("fav ");
-            Iterator<String> iterator = favourites.iterator();
+            Iterator<String> iterator = favorites.iterator();
             while (iterator.hasNext()) {
                 out.print(iterator.next() + " ");
             }
@@ -422,7 +441,7 @@ public class AprofReport {
     }
 
     public double getTotalTime() {
-        return total_time;
+        return total_cost;
     }
 
     public int getTotalCalls() {
@@ -438,15 +457,15 @@ public class AprofReport {
     }
 
     public boolean isFavourite(String addr) {
-        return favourites.contains(addr);
+        return favorites.contains(addr);
     }
 
     public void addToFavourites(String addr) {
-        if (!favourites.contains(addr)) favourites.add(addr);
+        if (!favorites.contains(addr)) favorites.add(addr);
     }
 
     public void removeFromFavourites(String addr) {
-        if (favourites.contains(addr)) favourites.remove(addr);
+        if (favorites.contains(addr)) favorites.remove(addr);
     }
 
     public void sortRoutinesByTotalTimeDescending() {
