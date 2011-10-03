@@ -12,17 +12,9 @@ static ThreadData * threads[VG_N_THREADS];
 ThreadId current_TID = VG_INVALID_THREADID; /* 0 */
 ThreadData * current_tdata = NULL; 
 
-#if EVENTCOUNT
-UWord thread_n = 0;
-#endif
-
 static ThreadData * thread_start(ThreadId tid){
 
-	#if EMPTY_ANALYSIS
-	return NULL;
-	#endif
-
-	#if VERBOSE && !TRACER
+	#if VERBOSE
 	VG_(printf)("start thread data %d\n", tid);
 	#endif
 	
@@ -35,12 +27,6 @@ static ThreadData * thread_start(ThreadId tid){
 	
 	threads[tid-1] = tdata;
 
-	#if SUF == 1
-	tdata->accesses = UF_create();
-	#elif SUF == 2
-	tdata->accesses = SUF_create();
-	#endif
-	
 	tdata->routine_hash_table = HT_construct(destroy_routine_info);
 	AP_ASSERT(tdata->routine_hash_table != NULL, "rtn ht not allocable");
 	
@@ -59,6 +45,20 @@ static ThreadData * thread_start(ThreadId tid){
 	#endif
 	
 	tdata->next_routine_id = 0;
+	
+	#if TRACE_FUNCTION
+	tdata->last_bb = NULL;
+	#endif
+	
+	#if EMPTY_ANALYSIS
+	return tdata;
+	#endif
+	
+	#if SUF == 1
+	tdata->accesses = UF_create();
+	#elif SUF == 2
+	tdata->accesses = SUF_create();
+	#endif
 	
 	#if CCT
 	// allocate dummy CCT root
@@ -88,10 +88,6 @@ static ThreadData * thread_start(ThreadId tid){
 	tdata->next_aid = 1;
 	tdata->curr_aid = 0;
 	#endif
-	
-	#if TRACE_FUNCTION
-	tdata->last_bb = NULL;
-	#endif
 
 	return tdata;
 
@@ -102,11 +98,7 @@ void thread_exit (ThreadId tid){
 	current_TID = 0;
 	current_tdata = NULL;
 	
-	#if EMPTY_ANALYSIS || EVENTCOUNT
-	return;
-	#endif
-
-	#if VERBOSE && !TRACER
+	#if VERBOSE
 	VG_(printf)("Exit thread %d\n", tid);
 	#endif
 
@@ -118,6 +110,28 @@ void thread_exit (ThreadId tid){
 	current_TID =  VG_INVALID_THREADID;
 	current_tdata = NULL;
 	
+	#if EVENTCOUNT
+	VG_(printf)("[TID=%d] Load: %llu\n", tid, tdata->num_read);
+	VG_(printf)("[TID=%d] Store: %llu\n", tid, tdata->num_write);
+	VG_(printf)("[TID=%d] Modify: %llu\n", tid, tdata->num_modify);
+	VG_(printf)("[TID=%d] Function entry: %llu\n", tid, tdata->num_func_enter);
+	VG_(printf)("[TID=%d] Function exit: %llu\n", tid, tdata->num_func_exit);
+	#endif
+	
+	#if SUF == 2 && SUF2_SEARCH == STATS
+	VG_(printf)("[TID=%d] Average stack depth: %llu / %llu = %llu\n", 
+					tid, tdata->avg_depth, ops, tdata->avg_depth/ops);
+	VG_(printf)("[TID=%d] Average # iterations: %llu / %llu = %llu\n", 
+					tid, tdata->avg_iteration, ops, tdata->avg_iteration/ops);
+	#endif
+	
+	#if EMPTY_ANALYSIS 
+	HT_destruct(tdata->routine_hash_table);
+	VG_(free)(tdata->stack);
+	VG_(free)(tdata);
+	return;
+	#endif
+	
 	generate_report(tdata, tid);
 	
 	/* destroy all thread data data */
@@ -127,7 +141,7 @@ void thread_exit (ThreadId tid){
 	SUF_destroy(tdata->accesses);
 	#endif
 	
-	HT_destruct(tdata->routine_hash_table);
+	
 	#if CCT
 	// deallocate CCT
 	freeTree(tdata->root);

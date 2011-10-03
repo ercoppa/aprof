@@ -1,8 +1,8 @@
 #include "aprof.h"
 
 #define CHECK_ADDR_OVERFLOW(x) do { \
-									if ((x) > (unsigned long long) SPM_SIZE * 65536) \
-										failure("Address overflow"); \
+									if ((x) > (UWord) SPM_SIZE * 65536) \
+										AP_ASSERT(0, "Address overflow"); \
 									} while (0);
 
 StackUF * SUF_create(void)
@@ -40,7 +40,7 @@ UWord SUF_insert(StackUF * suf, UWord addr, UWord rid)
 	if (suf->table[i] == NULL) {
 		
 		suf->table[i] = VG_(calloc)("suf sm", sizeof(SSM), 1);
-		if (suf->table[i] == NULL) failure("SUF sm not allocable");
+		AP_ASSERT(suf->table[i] != NULL, "SUF sm not allocable");
 		
 		suf->table[i]->table[j] = rid;
 		return 0;

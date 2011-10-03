@@ -31,26 +31,6 @@
 #ifndef __HASHTABLE_H
 #define __HASHTABLE_H
 
-#ifdef GLIBC
-
-#define vg_assert(a) ;
-#define UInt   unsigned int
-#define Bool   char
-#define HChar  char
-#define SizeT  unsigned int
-#define Int    int
-#define ULong  unsigned long long
-#define UWord  unsigned long
-
-#define True  1
-#define False 0
-
-#else
-#include "pub_tool_basics.h"
-#include "pub_tool_libcassert.h"
-#include "pub_tool_mallocfree.h"
-#endif
-
 /* Generic type for a separately-chained hash table.  Via a kind of dodgy
    C-as-C++ style inheritance, tools can extend the VgHashNode type, so long
    as the first two fields match the sizes of these two fields.  Requires

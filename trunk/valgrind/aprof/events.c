@@ -117,7 +117,7 @@ void addEvent_Ir ( IRSB* sb, IRAtom* iaddr, UInt isize ) {
 	
 	Event* evt;
 	tl_assert( (VG_MIN_INSTR_SZB <= isize && isize <= VG_MAX_INSTR_SZB)
-				|| VG_CLREQ_SZB == isize );
+											|| VG_CLREQ_SZB == isize );
 	if (events_used == N_EVENTS)
 		flushEvents(sb);
 	tl_assert(events_used >= 0 && events_used < N_EVENTS);

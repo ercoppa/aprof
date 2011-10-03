@@ -59,7 +59,6 @@ CONFIG_CLEAN_VPATH_FILES =
 @VGCONF_HAVE_PLATFORM_SEC_TRUE@am__EXEEXT_1 = aprof-@VGCONF_ARCH_SEC@-@VGCONF_OS@$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am__objects_1 = aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-CCT.$(OBJEXT) \
-	aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-failure.$(OBJEXT) \
 	aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-fwrite.$(OBJEXT) \
 	aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-thread.$(OBJEXT) \
 	aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-report.$(OBJEXT) \
@@ -73,16 +72,15 @@ am__objects_1 = aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-CCT.$(OBJEXT) \
 	aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-suf.$(OBJEXT) \
 	aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-callstack.$(OBJEXT) \
 	aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-debug.$(OBJEXT) \
-	aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-aprof.$(OBJEXT)
+	aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-main.$(OBJEXT)
 am_aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_OBJECTS = $(am__objects_1)
 aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_OBJECTS =  \
 	$(am_aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_OBJECTS)
-am__aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_SOURCES_DIST = CCT.c failure.c \
-	fwrite.c thread.c report.c events.c function.c memory.c time.c \
+am__aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_SOURCES_DIST = CCT.c fwrite.c \
+	thread.c report.c events.c function.c memory.c time.c \
 	./hashtable/hashtable.c ./pool/pool.c ./SUF/union_find.c \
-	./SUF2/suf.c callstack.c debug.c aprof.c
+	./SUF2/suf.c callstack.c debug.c main.c
 am__objects_2 = aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-CCT.$(OBJEXT) \
-	aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-failure.$(OBJEXT) \
 	aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-fwrite.$(OBJEXT) \
 	aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-thread.$(OBJEXT) \
 	aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-report.$(OBJEXT) \
@@ -96,7 +94,7 @@ am__objects_2 = aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-CCT.$(OBJEXT) \
 	aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-suf.$(OBJEXT) \
 	aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-callstack.$(OBJEXT) \
 	aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-debug.$(OBJEXT) \
-	aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-aprof.$(OBJEXT)
+	aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-main.$(OBJEXT)
 @VGCONF_HAVE_PLATFORM_SEC_TRUE@am_aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_OBJECTS =  \
 @VGCONF_HAVE_PLATFORM_SEC_TRUE@	$(am__objects_2)
 aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_OBJECTS =  \
@@ -569,10 +567,11 @@ LIBREPLACEMALLOC_LDFLAGS_S390X_LINUX = \
 	-Wl,--no-whole-archive
 
 EXTRA_DIST = docs/va-manual.xml
-aprof_SOURCES_COMMON = CCT.c failure.c fwrite.c thread.c report.c \
-						events.c function.c memory.c time.c ./hashtable/hashtable.c \
-						./pool/pool.c ./SUF/union_find.c ./SUF2/suf.c\
-						callstack.c debug.c aprof.c
+aprof_SOURCES_COMMON = CCT.c fwrite.c thread.c report.c \
+						events.c function.c memory.c time.c \
+						./hashtable/hashtable.c ./pool/pool.c \
+						./SUF/union_find.c ./SUF2/suf.c\
+						callstack.c debug.c main.c
 
 aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_SOURCES = \
 	$(aprof_SOURCES_COMMON)
@@ -675,14 +674,13 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-CCT.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-aprof.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-callstack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-debug.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-events.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-failure.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-function.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-fwrite.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-hashtable.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-memory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-pool.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-report.Po@am__quote@
@@ -691,14 +689,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-time.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-union_find.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-CCT.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-aprof.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-callstack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-debug.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-events.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-failure.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-function.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-fwrite.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-hashtable.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-memory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-pool.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-report.Po@am__quote@
@@ -734,20 +731,6 @@ aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-CCT.obj: CCT.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='CCT.c' object='aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-CCT.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CPPFLAGS) $(CPPFLAGS) $(aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CFLAGS) $(CFLAGS) -c -o aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-CCT.obj `if test -f 'CCT.c'; then $(CYGPATH_W) 'CCT.c'; else $(CYGPATH_W) '$(srcdir)/CCT.c'; fi`
-
-aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-failure.o: failure.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CPPFLAGS) $(CPPFLAGS) $(aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CFLAGS) $(CFLAGS) -MT aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-failure.o -MD -MP -MF $(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-failure.Tpo -c -o aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-failure.o `test -f 'failure.c' || echo '$(srcdir)/'`failure.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-failure.Tpo $(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-failure.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='failure.c' object='aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-failure.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CPPFLAGS) $(CPPFLAGS) $(aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CFLAGS) $(CFLAGS) -c -o aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-failure.o `test -f 'failure.c' || echo '$(srcdir)/'`failure.c
-
-aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-failure.obj: failure.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CPPFLAGS) $(CPPFLAGS) $(aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CFLAGS) $(CFLAGS) -MT aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-failure.obj -MD -MP -MF $(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-failure.Tpo -c -o aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-failure.obj `if test -f 'failure.c'; then $(CYGPATH_W) 'failure.c'; else $(CYGPATH_W) '$(srcdir)/failure.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-failure.Tpo $(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-failure.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='failure.c' object='aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-failure.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CPPFLAGS) $(CPPFLAGS) $(aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CFLAGS) $(CFLAGS) -c -o aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-failure.obj `if test -f 'failure.c'; then $(CYGPATH_W) 'failure.c'; else $(CYGPATH_W) '$(srcdir)/failure.c'; fi`
 
 aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-fwrite.o: fwrite.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CPPFLAGS) $(CPPFLAGS) $(aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CFLAGS) $(CFLAGS) -MT aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-fwrite.o -MD -MP -MF $(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-fwrite.Tpo -c -o aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-fwrite.o `test -f 'fwrite.c' || echo '$(srcdir)/'`fwrite.c
@@ -931,19 +914,19 @@ aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-debug.obj: debug.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CPPFLAGS) $(CPPFLAGS) $(aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CFLAGS) $(CFLAGS) -c -o aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-debug.obj `if test -f 'debug.c'; then $(CYGPATH_W) 'debug.c'; else $(CYGPATH_W) '$(srcdir)/debug.c'; fi`
 
-aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-aprof.o: aprof.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CPPFLAGS) $(CPPFLAGS) $(aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CFLAGS) $(CFLAGS) -MT aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-aprof.o -MD -MP -MF $(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-aprof.Tpo -c -o aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-aprof.o `test -f 'aprof.c' || echo '$(srcdir)/'`aprof.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-aprof.Tpo $(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-aprof.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='aprof.c' object='aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-aprof.o' libtool=no @AMDEPBACKSLASH@
+aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-main.o: main.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CPPFLAGS) $(CPPFLAGS) $(aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CFLAGS) $(CFLAGS) -MT aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-main.o -MD -MP -MF $(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-main.Tpo -c -o aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-main.o `test -f 'main.c' || echo '$(srcdir)/'`main.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-main.Tpo $(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-main.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='main.c' object='aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-main.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CPPFLAGS) $(CPPFLAGS) $(aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CFLAGS) $(CFLAGS) -c -o aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-aprof.o `test -f 'aprof.c' || echo '$(srcdir)/'`aprof.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CPPFLAGS) $(CPPFLAGS) $(aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CFLAGS) $(CFLAGS) -c -o aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-main.o `test -f 'main.c' || echo '$(srcdir)/'`main.c
 
-aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-aprof.obj: aprof.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CPPFLAGS) $(CPPFLAGS) $(aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CFLAGS) $(CFLAGS) -MT aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-aprof.obj -MD -MP -MF $(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-aprof.Tpo -c -o aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-aprof.obj `if test -f 'aprof.c'; then $(CYGPATH_W) 'aprof.c'; else $(CYGPATH_W) '$(srcdir)/aprof.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-aprof.Tpo $(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-aprof.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='aprof.c' object='aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-aprof.obj' libtool=no @AMDEPBACKSLASH@
+aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-main.obj: main.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CPPFLAGS) $(CPPFLAGS) $(aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CFLAGS) $(CFLAGS) -MT aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-main.obj -MD -MP -MF $(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-main.Tpo -c -o aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-main.obj `if test -f 'main.c'; then $(CYGPATH_W) 'main.c'; else $(CYGPATH_W) '$(srcdir)/main.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-main.Tpo $(DEPDIR)/aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-main.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='main.c' object='aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-main.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CPPFLAGS) $(CPPFLAGS) $(aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CFLAGS) $(CFLAGS) -c -o aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-aprof.obj `if test -f 'aprof.c'; then $(CYGPATH_W) 'aprof.c'; else $(CYGPATH_W) '$(srcdir)/aprof.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CPPFLAGS) $(CPPFLAGS) $(aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CFLAGS) $(CFLAGS) -c -o aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@-main.obj `if test -f 'main.c'; then $(CYGPATH_W) 'main.c'; else $(CYGPATH_W) '$(srcdir)/main.c'; fi`
 
 aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-CCT.o: CCT.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CPPFLAGS) $(CPPFLAGS) $(aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CFLAGS) $(CFLAGS) -MT aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-CCT.o -MD -MP -MF $(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-CCT.Tpo -c -o aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-CCT.o `test -f 'CCT.c' || echo '$(srcdir)/'`CCT.c
@@ -958,20 +941,6 @@ aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-CCT.obj: CCT.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='CCT.c' object='aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-CCT.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CPPFLAGS) $(CPPFLAGS) $(aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CFLAGS) $(CFLAGS) -c -o aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-CCT.obj `if test -f 'CCT.c'; then $(CYGPATH_W) 'CCT.c'; else $(CYGPATH_W) '$(srcdir)/CCT.c'; fi`
-
-aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-failure.o: failure.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CPPFLAGS) $(CPPFLAGS) $(aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CFLAGS) $(CFLAGS) -MT aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-failure.o -MD -MP -MF $(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-failure.Tpo -c -o aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-failure.o `test -f 'failure.c' || echo '$(srcdir)/'`failure.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-failure.Tpo $(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-failure.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='failure.c' object='aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-failure.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CPPFLAGS) $(CPPFLAGS) $(aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CFLAGS) $(CFLAGS) -c -o aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-failure.o `test -f 'failure.c' || echo '$(srcdir)/'`failure.c
-
-aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-failure.obj: failure.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CPPFLAGS) $(CPPFLAGS) $(aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CFLAGS) $(CFLAGS) -MT aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-failure.obj -MD -MP -MF $(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-failure.Tpo -c -o aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-failure.obj `if test -f 'failure.c'; then $(CYGPATH_W) 'failure.c'; else $(CYGPATH_W) '$(srcdir)/failure.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-failure.Tpo $(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-failure.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='failure.c' object='aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-failure.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CPPFLAGS) $(CPPFLAGS) $(aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CFLAGS) $(CFLAGS) -c -o aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-failure.obj `if test -f 'failure.c'; then $(CYGPATH_W) 'failure.c'; else $(CYGPATH_W) '$(srcdir)/failure.c'; fi`
 
 aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-fwrite.o: fwrite.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CPPFLAGS) $(CPPFLAGS) $(aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CFLAGS) $(CFLAGS) -MT aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-fwrite.o -MD -MP -MF $(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-fwrite.Tpo -c -o aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-fwrite.o `test -f 'fwrite.c' || echo '$(srcdir)/'`fwrite.c
@@ -1155,19 +1124,19 @@ aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-debug.obj: debug.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CPPFLAGS) $(CPPFLAGS) $(aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CFLAGS) $(CFLAGS) -c -o aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-debug.obj `if test -f 'debug.c'; then $(CYGPATH_W) 'debug.c'; else $(CYGPATH_W) '$(srcdir)/debug.c'; fi`
 
-aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-aprof.o: aprof.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CPPFLAGS) $(CPPFLAGS) $(aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CFLAGS) $(CFLAGS) -MT aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-aprof.o -MD -MP -MF $(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-aprof.Tpo -c -o aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-aprof.o `test -f 'aprof.c' || echo '$(srcdir)/'`aprof.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-aprof.Tpo $(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-aprof.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='aprof.c' object='aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-aprof.o' libtool=no @AMDEPBACKSLASH@
+aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-main.o: main.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CPPFLAGS) $(CPPFLAGS) $(aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CFLAGS) $(CFLAGS) -MT aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-main.o -MD -MP -MF $(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-main.Tpo -c -o aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-main.o `test -f 'main.c' || echo '$(srcdir)/'`main.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-main.Tpo $(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-main.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='main.c' object='aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-main.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CPPFLAGS) $(CPPFLAGS) $(aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CFLAGS) $(CFLAGS) -c -o aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-aprof.o `test -f 'aprof.c' || echo '$(srcdir)/'`aprof.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CPPFLAGS) $(CPPFLAGS) $(aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CFLAGS) $(CFLAGS) -c -o aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-main.o `test -f 'main.c' || echo '$(srcdir)/'`main.c
 
-aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-aprof.obj: aprof.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CPPFLAGS) $(CPPFLAGS) $(aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CFLAGS) $(CFLAGS) -MT aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-aprof.obj -MD -MP -MF $(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-aprof.Tpo -c -o aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-aprof.obj `if test -f 'aprof.c'; then $(CYGPATH_W) 'aprof.c'; else $(CYGPATH_W) '$(srcdir)/aprof.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-aprof.Tpo $(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-aprof.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='aprof.c' object='aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-aprof.obj' libtool=no @AMDEPBACKSLASH@
+aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-main.obj: main.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CPPFLAGS) $(CPPFLAGS) $(aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CFLAGS) $(CFLAGS) -MT aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-main.obj -MD -MP -MF $(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-main.Tpo -c -o aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-main.obj `if test -f 'main.c'; then $(CYGPATH_W) 'main.c'; else $(CYGPATH_W) '$(srcdir)/main.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-main.Tpo $(DEPDIR)/aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-main.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='main.c' object='aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-main.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CPPFLAGS) $(CPPFLAGS) $(aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CFLAGS) $(CFLAGS) -c -o aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-aprof.obj `if test -f 'aprof.c'; then $(CYGPATH_W) 'aprof.c'; else $(CYGPATH_W) '$(srcdir)/aprof.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CPPFLAGS) $(CPPFLAGS) $(aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CFLAGS) $(CFLAGS) -c -o aprof_@VGCONF_ARCH_SEC@_@VGCONF_OS@-main.obj `if test -f 'main.c'; then $(CYGPATH_W) 'main.c'; else $(CYGPATH_W) '$(srcdir)/main.c'; fi`
 
 # This directory's subdirectories are mostly independent; you can cd
 # into them and run `make' without going through this Makefile.
