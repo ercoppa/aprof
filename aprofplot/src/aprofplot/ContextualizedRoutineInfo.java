@@ -17,12 +17,10 @@ public class ContextualizedRoutineInfo extends RoutineInfo {
     private ContextualizedRoutineInfo parent;
     private UncontextualizedRoutineInfo overall;
 
-    public ContextualizedRoutineInfo(String name, String address, String image,
-                                        /*int context_id,*/
+    public ContextualizedRoutineInfo(int id, String name, String image,
                                         ContextualizedRoutineInfo parent,
                                         UncontextualizedRoutineInfo overall) {
-        super(name, address, image);
-        //this.context_id = context_id;
+        super(id, name, image);
         this.parent = parent;
         this.overall = overall;
     }
@@ -57,11 +55,20 @@ public class ContextualizedRoutineInfo extends RoutineInfo {
     public boolean equals(Object o) {
         if (o != null && getClass().equals(o.getClass())) {
             ContextualizedRoutineInfo rtn_info = (ContextualizedRoutineInfo)o;
-            return (rtn_info.getAddress().equals(this.getAddress()) && (rtn_info.getContextId() == this.getContextId()));
+            return (rtn_info.getID() == this.getID() &&
+                    rtn_info.getContextId() == this.getContextId());
         }
         else return false;
     }
 
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 67 * hash + this.context_id;
+        return hash;
+    }
+
+    @Override
     public String toString() {
         return this.getName() + " (" + this.getContextId() +  "/" + this.getOverallRoutineInfo().getContextCount() + ")";
     }

@@ -128,20 +128,18 @@ public class AprofReport {
                 throw(new Exception("Invalid routine line"));
 
             String rtn_name = null;
-            String rtn_addr = null;
             String lib = null;
             String id = null;
 
             // parse routine line (report version > 0)
             if (this.version > 0) {
                 Scanner s = new Scanner(str);
-                s.findInLine("r \"([^\"]+)\" ([0-9A-Fa-fx]+) \"([^\"]+)\" ([0-9]+)");
+                s.findInLine("r \"([^\"]+)\" \"([^\"]+)\" ([0-9]+)");
                 MatchResult result = s.match();
-                
+
                 rtn_name = result.group(1);
-                rtn_addr = result.group(2);
-                lib = result.group(3);
-                id = result.group(4);
+                lib = result.group(2);
+                id = result.group(3);
             }
 
             // parse routine line (report version == 0)
@@ -149,13 +147,13 @@ public class AprofReport {
                 tokenizer = new StringTokenizer(str);
                 tokenizer.nextToken(); // discard first token
                 rtn_name = tokenizer.nextToken();
-                rtn_addr = tokenizer.nextToken();
+                tokenizer.nextToken(); // discard routine address
                 lib = tokenizer.nextToken();
                 id = tokenizer.nextToken();
             }
 
             int rtn_id = Integer.parseInt(id);
-            rtn_info = new UncontextualizedRoutineInfo(rtn_name, rtn_addr, lib);
+            rtn_info = new UncontextualizedRoutineInfo(rtn_id, rtn_name, lib);
             routines.remove(rtn_id);
             routines.add(rtn_id, rtn_info);
             if (!libset.contains(rtn_info.getImage())) {
@@ -234,8 +232,8 @@ public class AprofReport {
             if (parent_id >= 0) parent = contexts[parent_id];
             rtn_info = 
                     new ContextualizedRoutineInfo(
+                        rtn.getID(),
                         rtn.getRealName(),
-                        rtn.getAddress(),
                         rtn.getImage(),
                         parent,
                         rtn);
@@ -495,16 +493,16 @@ public class AprofReport {
         return this.routines.size();
     }
 
-    public boolean isFavourite(String addr) {
-        return favorites.contains(addr);
+    public boolean isFavorite(String fav) {
+        return favorites.contains(fav);
     }
 
-    public void addToFavourites(String addr) {
-        if (!favorites.contains(addr)) favorites.add(addr);
+    public void addToFavorites(String fav) {
+        if (!favorites.contains(fav)) favorites.add(fav);
     }
 
-    public void removeFromFavourites(String addr) {
-        if (favorites.contains(addr)) favorites.remove(addr);
+    public void removeFromFavorites(String fav) {
+        if (favorites.contains(fav)) favorites.remove(fav);
     }
 
     public void sortRoutinesByTotalTimeDescending() {

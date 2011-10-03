@@ -106,10 +106,11 @@ public class RoutinesTableModel extends AbstractTableModel {
             case 10:if (rtn_info instanceof UncontextualizedRoutineInfo)
                         return "" + ((UncontextualizedRoutineInfo)rtn_info).getContextCount();
                     else return ((ContextualizedRoutineInfo)rtn_info).getContextId() + "/" + ((ContextualizedRoutineInfo)rtn_info).getOverallRoutineInfo().getContextCount();
-            case 11:String addr = rtn_info.getAddress();
+            case 11:String fav = "" + rtn_info.getID();
                     if (rtn_info instanceof ContextualizedRoutineInfo)
-                        addr += ("_" + ((ContextualizedRoutineInfo)rtn_info).getContextId());
-                    return new Boolean(report.isFavourite(addr));
+                        fav += ("_" + ((ContextualizedRoutineInfo)rtn_info).getContextId());
+                    return new Boolean(report.isFavorite(fav));
+
             default: return null;
         }
     }
@@ -146,11 +147,11 @@ public class RoutinesTableModel extends AbstractTableModel {
         }
         else if (columnIndex == 11) {
             RoutineInfo rtn_info = elements.get(rowIndex);
-            String addr = rtn_info.getAddress();
+            String fav = ""+rtn_info.getID();
             if (rtn_info instanceof ContextualizedRoutineInfo)
-                addr += ("_" + ((ContextualizedRoutineInfo)rtn_info).getContextId());
-            if (!report.isFavourite(addr)) report.addToFavourites(addr);
-            else report.removeFromFavourites(addr);
+                fav += ("_" + ((ContextualizedRoutineInfo)rtn_info).getContextId());
+            if (!report.isFavorite(fav)) report.addToFavorites(fav);
+            else report.removeFromFavorites(fav);
             this.fireTableCellUpdated(rowIndex, columnIndex);
         }
     }
