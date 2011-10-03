@@ -16,8 +16,8 @@ public class UncontextualizedRoutineInfo extends RoutineInfo {
     private boolean collapsed;
     private ArrayList<ContextualizedRoutineInfo> contexts;
 
-    public UncontextualizedRoutineInfo(String name, String address, String image) {
-        super(name, address, image);
+    public UncontextualizedRoutineInfo(int id, String name, String image) {
+        super(id, name, image);
         this.collapsed = true;
     }
 

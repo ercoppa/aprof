@@ -13,8 +13,8 @@ import java.util.*;
  */
 public abstract class RoutineInfo implements Comparable<RoutineInfo> {
 
+    private int id;
     private String name, dem_name, full_dem_name;
-    private String address;
     private String image;
     private double max_time;
     //private double max_ratio;
@@ -23,13 +23,11 @@ public abstract class RoutineInfo implements Comparable<RoutineInfo> {
     private int total_calls;
     ArrayList<SmsEntry> time_entries;
 
-    public RoutineInfo(String name, String address, String image) {
+    public RoutineInfo(int id, String name, String image) {
+        this.id = id;
         this.name = this.dem_name = this.full_dem_name = name;
-        this.address = address;
         this.image = image.substring(image.lastIndexOf('/') + 1);
         max_time = 0;
-        //max_ratio = 0;
-        //mean_ratio = 0;
         total_time = 0;
         total_calls = 0;
         time_entries = new ArrayList<SmsEntry>();
@@ -43,8 +41,6 @@ public abstract class RoutineInfo implements Comparable<RoutineInfo> {
         }
         time_entries.add(t);
         if (t.getCost() > max_time) max_time = t.getCost();
-        //if (t.getRatio() > max_ratio) max_ratio = t.getRatio();
-        //mean_ratio = ((mean_ratio * (time_entries.size() - 1)) + t.getRatio()) / time_entries.size();
         total_time += t.getCost() * t.getOcc();
         total_calls += t.getOcc();
     }
@@ -74,9 +70,6 @@ public abstract class RoutineInfo implements Comparable<RoutineInfo> {
         this.full_dem_name = fdn;
     }
 
-    public String getAddress() {
-        return this.address;
-    }
 
     public String getImage() {
         return this.image;
@@ -92,13 +85,18 @@ public abstract class RoutineInfo implements Comparable<RoutineInfo> {
 
     public double getMeanRatio() {
         double sum = 0;
-        for (int i = 0; i < time_entries.size(); i++) sum += time_entries.get(i).getRatio();
+        for (int i = 0; i < time_entries.size(); i++)
+            sum += time_entries.get(i).getRatio();
         return sum / time_entries.size();
         //return mean_ratio;
     }
 
     public double getTotalTime() {
         return total_time;
+    }
+
+    public int getID() {
+        return id;
     }
 
     public int getTotalCalls() {
@@ -114,17 +112,15 @@ public abstract class RoutineInfo implements Comparable<RoutineInfo> {
     public boolean equals(Object o) {
         if (o != null && getClass().equals(o.getClass())) {
             RoutineInfo rtn_info = (RoutineInfo)o;
-            return rtn_info.address.equals(address);
+            return rtn_info.id==this.id;
         }
         else return false;
     }
 
     @Override
     public int hashCode() {
-        int hash = 5;
-        hash = 83 * hash + (this.name != null ? this.name.hashCode() : 0);
-        hash = 83 * hash + (this.address != null ? this.address.hashCode() : 0);
-        hash = 83 * hash + (this.image != null ? this.image.hashCode() : 0);
+        int hash = 3;
+        hash = 31 * hash + this.id;
         return hash;
     }
 
