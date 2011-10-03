@@ -103,7 +103,7 @@ Syntax: `p routine-id sms min max sum sqr-sum occ`, where:
   * `max`: maximum performance measurement (64 bit unsigned integer)
   * `sum`: sum of performance measurements (64 bit unsigned integer)
   * `sqr-sum`: sum of squares of performance measurements (64 bit unsigned integer)
-  * `occ`: number of routine calls with the given sms (32 bit unsigned integer)
+  * `occ`: number of routine calls with the given sms (64 bit unsigned integer)
 
 Example:
 
@@ -139,7 +139,7 @@ Syntax: `q context-id sms min max sum sqr-sum occ`, where:
   * `max`: maximum performance measurement (64 bit unsigned integer)
   * `sum`: sum of performance measurements (64 bit unsigned integer)
   * `sqr-sum`: sum of squares of performance measurements (64 bit unsigned integer)
-  * `occ`: number of context activations with the given sms (32 bit unsigned integer)
+  * `occ`: number of context activations with the given sms (64 bit unsigned integer)
 
 Example:
 
