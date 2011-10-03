@@ -144,11 +144,11 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 			
 			while (info_access != NULL) {
 				
-				ULong time_exec = info_access->partial_cumulative_time 
+				#if REPORT_VERSION == 0
+				ULong time_exec = info_access->cumulative_time_sum 
 										/ info_access->calls_number;
 				
-				#if REPORT_VERSION == 0
-				VG_(sprintf)(buffer, "q %lu %lu %llu %llu\n", 
+				VG_(sprintf)(buffer, "q %lu %lu %llu %lu\n", 
 								ht->key, info_access->key, time_exec,
 								info_access->calls_number);
 				#elif REPORT_VERSION == 1
