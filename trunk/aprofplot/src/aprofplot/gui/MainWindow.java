@@ -16,12 +16,16 @@ import java.util.ArrayList;
 import javax.swing.JOptionPane;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import java.util.*;
+import java.io.*;
 
 /**
  *
  * @author bruno
  */
 public class MainWindow extends javax.swing.JFrame {
+
+    private RoutineInfo rtn_info = null;
 
     /** Creates new form MainWindow */
     public MainWindow() {
@@ -122,6 +126,8 @@ public class MainWindow extends javax.swing.JFrame {
         recentMenuItem5 = new javax.swing.JMenuItem();
         recentMenuItem6 = new javax.swing.JMenuItem();
         jMenuItem6 = new javax.swing.JMenuItem();
+        jMenuItem8 = new javax.swing.JMenuItem();
+        jMenuItem9 = new javax.swing.JMenuItem();
         jMenuItem7 = new javax.swing.JMenuItem();
         jSeparator4 = new javax.swing.JSeparator();
         jMenuItem2 = new javax.swing.JMenuItem();
@@ -574,6 +580,24 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jMenu1.add(jMenuItem6);
 
+        jMenuItem8.setText("Export sms of selected routine");
+        jMenuItem8.setEnabled(false);
+        jMenuItem8.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem8ActionPerformed(evt);
+            }
+        });
+        jMenu1.add(jMenuItem8);
+
+        jMenuItem9.setText("Export routine table");
+        jMenuItem9.setEnabled(false);
+        jMenuItem9.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem9ActionPerformed(evt);
+            }
+        });
+        jMenu1.add(jMenuItem9);
+
         jMenuItem7.setText("Merge...");
         jMenuItem7.setEnabled(false);
         jMenuItem7.addActionListener(new java.awt.event.ActionListener() {
@@ -696,6 +720,7 @@ public class MainWindow extends javax.swing.JFrame {
     }
 
     protected void loadReport(java.io.File file) throws Exception {
+        jMenuItem9.setEnabled(true);
         report = new AprofReport(file);
         //routines_filter_criteria = new String[5];
         //routines_filter_criteria[4] = "5";
@@ -892,6 +917,9 @@ public class MainWindow extends javax.swing.JFrame {
             if (jToggleButton1.isSelected()) timeGraphPanel.setData(r);
             if (jToggleButton2.isSelected()) ratioGraphPanel.setData(r);
             if (jToggleButton3.isSelected()) freqGraphPanel.setData(r);
+            if (r == null) jMenuItem8.setEnabled(false);
+            else jMenuItem8.setEnabled(true);
+            this.rtn_info = r;
             ((SmsTableModel)jTable2.getModel()).setData(r);
             if (r instanceof ContextualizedRoutineInfo) ((StackTraceListModel)jList1.getModel()).setData(((ContextualizedRoutineInfo)r).getStackTrace());
             else ((StackTraceListModel)jList1.getModel()).setData(null);
@@ -1220,6 +1248,47 @@ public class MainWindow extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_jList1MouseClicked
 
+    private void jMenuItem8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem8ActionPerformed
+        if (this.rtn_info == null) return;
+        ArrayList<SmsEntry> ss = this.rtn_info.getTimeEntries();
+        try {
+            File tmp = new File(Main.getLastReportPath() + "/" 
+                                + this.report.getName() + "."
+                                + this.rtn_info.getName() + ".sms");
+            tmp.createNewFile();
+            PrintWriter out = new PrintWriter(new FileWriter(tmp));
+            for (int i = 0; i < ss.size(); i++) {
+                SmsEntry s = ss.get(i);
+                out.println(s.getSms() + " " + (int) s.getMinCost() + " " +
+                                  (int) s.getMaxCost() + " " + (int) s.getSumCost()
+                                    + " " + (int)s.getSumSquareCost()
+                                    + " " + (int)s.getOcc());
+            }
+            out.close();
+        } catch(java.io.IOException e) {
+            System.out.println("Error file");
+        }
+    }//GEN-LAST:event_jMenuItem8ActionPerformed
+
+    private void jMenuItem9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem9ActionPerformed
+        ArrayList<RoutineInfo> els = this.report.getRoutines();
+        try {
+            File tmp = new File(Main.getLastReportPath() + "/" + this.report.getName() + ".sms");
+            tmp.createNewFile();
+            PrintWriter out = new PrintWriter(new FileWriter(tmp));
+            for (int i = 0; i < els.size(); i++) {
+                RoutineInfo el = els.get(i);
+                out.println(el.getID() + " " +
+                            (int) el.getSizeTimeEntries() + " " +
+                            (int) el.getTotalTime() + " " +
+                            (int) el.getTotalCalls() + " " +
+                            el.getName()
+                            );
+            }
+            out.close();
+        } catch(java.io.IOException e) {}
+    }//GEN-LAST:event_jMenuItem9ActionPerformed
+
     protected void removeRoutineTableFilter() {
         this.routines_filter_criteria = new String[5];
         refreshRoutinesTableFilter();
@@ -1510,6 +1579,8 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JMenuItem jMenuItem5;
     private javax.swing.JMenuItem jMenuItem6;
     private javax.swing.JMenuItem jMenuItem7;
+    private javax.swing.JMenuItem jMenuItem8;
+    private javax.swing.JMenuItem jMenuItem9;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;

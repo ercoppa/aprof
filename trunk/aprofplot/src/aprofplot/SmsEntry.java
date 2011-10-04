@@ -58,6 +58,14 @@ public class SmsEntry implements Comparable<SmsEntry> {
         return this.max_cost;
     }
 
+    public double getSumCost() {
+        return this.cost_sum;
+    }
+
+    public double getSumSquareCost() {
+        return this.cost_sqr_sum;
+    }
+
     public double getAvgCost() {
         return (double)this.cost_sum / this.occ;
     }

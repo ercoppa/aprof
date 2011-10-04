@@ -103,6 +103,10 @@ public abstract class RoutineInfo implements Comparable<RoutineInfo> {
         return this.total_calls;
     }
 
+    public int getSizeTimeEntries() {
+        return this.time_entries.size();
+    }
+
     public ArrayList<SmsEntry> getTimeEntries() {
         //return (ArrayList<SmsEntry>)time_entries.clone();
         return new ArrayList<SmsEntry>(this.time_entries);
