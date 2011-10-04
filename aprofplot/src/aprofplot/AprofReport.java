@@ -523,4 +523,8 @@ public class AprofReport {
     public ArrayList<String> getLibList() {
         return this.liblist;
     }
+    
+    public String getName() {
+        return this.file.getName();
+    }
 }
