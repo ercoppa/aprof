@@ -1260,9 +1260,9 @@ public class MainWindow extends javax.swing.JFrame {
             for (int i = 0; i < ss.size(); i++) {
                 SmsEntry s = ss.get(i);
                 out.println(s.getSms() + " " + (int) s.getMinCost() + " " +
-                                  (int) s.getMaxCost() + " " + (int) s.getSumCost()
-                                    + " " + (int)s.getSumSquareCost()
-                                    + " " + (int)s.getOcc());
+                                  (int) s.getMaxCost() + " " + (long) s.getSumCost()
+                                    + " " + (long)s.getSumSquareCost()
+                                    + " " + (long)s.getOcc());
             }
             out.close();
         } catch(java.io.IOException e) {
@@ -1280,8 +1280,8 @@ public class MainWindow extends javax.swing.JFrame {
                 RoutineInfo el = els.get(i);
                 out.println(el.getID() + " " +
                             (int) el.getSizeTimeEntries() + " " +
-                            (int) el.getTotalTime() + " " +
-                            (int) el.getTotalCalls() + " " +
+                            (long) el.getTotalTime() + " " +
+                            (long) el.getTotalCalls() + " " +
                             el.getName()
                             );
             }
