@@ -14,7 +14,7 @@ VG_REGPARM(3) void trace_access(UWord type, Addr addr, SizeT size) {
 	AP_ASSERT(tdata != NULL, "Invalid tdata");
 	#endif
 	
-	#if VERBOSE == 2
+	#if VERBOSE > 1
 	if (type == LOAD) VG_(printf)("Load: %lu:%lu\n", addr, size);
 	else if (type == STORE) VG_(printf)("Store: %lu:%lu\n", addr, size);
 	else if (type == MODIFY) VG_(printf)("Modify: %lu:%lu\n", addr, size);
@@ -81,8 +81,12 @@ VG_REGPARM(3) void trace_access(UWord type, Addr addr, SizeT size) {
 		
 		if (old_aid < tdata->curr_aid && (type == LOAD || type == MODIFY)) {
 			get_activation(tdata, tdata->stack_depth)->sms++;
-			if (old_aid > 0 && old_aid >= get_activation(tdata, 1)->aid) 
+			//VG_(printf)("Incremented SMS\n");
+			if (old_aid > 0 && old_aid >= get_activation(tdata, 1)->aid) {
 				get_activation_by_aid(tdata, old_aid)->sms--;
+				//VG_(printf)("Decremented SMS of ancestor %s\n", 
+				//	get_activation_by_aid(tdata, old_aid)->rtn_info->fn->name);
+			}
 
 		}
 		#endif

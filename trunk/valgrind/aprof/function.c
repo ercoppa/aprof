@@ -86,12 +86,13 @@ void function_enter(ThreadData * tdata, Activation * act) {
 	#endif
 	
 	#if VERBOSE
+	VG_(printf)("Enter: %s\n", act->rtn_info->fn->name);
 	/*
 	int i = 0;
 	for(i = 0; i < tdata->stack_depth - 1; i++)
 		VG_(printf)("| ");
 	*/
-	VG_(printf)("[%lu] %s\n", tdata->stack_depth, act->rtn_info->fn->name);
+	//VG_(printf)("[%lu] %s\n", tdata->stack_depth, act->rtn_info->fn->name);
 	#endif
 	
 	#if EVENTCOUNT >= 2
@@ -176,6 +177,10 @@ void function_exit(ThreadData * tdata, Activation * act) {
 	#if DEBUG
 	AP_ASSERT(tdata != NULL, "Thread data is not valid");
 	AP_ASSERT(act != NULL, "Invalid activation info");
+	#endif
+	
+	#if VERBOSE
+	VG_(printf)("Exit: %s\n", act->rtn_info->fn->name);
 	#endif
 	
 	#if EVENTCOUNT >= 2
@@ -307,6 +312,8 @@ void function_exit(ThreadData * tdata, Activation * act) {
 		}
 		#endif
 	}
+	
+	//VG_(printf)("SMS: %lu\n", act->sms);
 	
 	#if TRACE_FUNCTION
 	if (act->skip) tdata->skip = False;
