@@ -60,7 +60,7 @@
 #define DEBUG_ALLOCATION	0	// if 1, check every allocation maded by aprof
 #define IGNORE_DL_RUNTIME	1	// if 1, disable analysis for dl_runtime_resolve (and its children)
 #define REPORT_VERSION		1	// see documentation on  our site
-#define DISCARD_UNKNOWN		1	// discard info about PLT or unknown function (but this not implies to discard info about its children)
+#define DISCARD_UNKNOWN		0	// discard info about PLT or unknown function (but this not implies to discard info about its children)
 
 /* Some constants */
 #define STACK_SIZE		64		// Initial stack size
@@ -102,7 +102,7 @@ typedef enum alloc_type {
 	BBS, RTS, FNS, 
 	TS, FN_NAME, ACT,
 	OBJ_NAME, POOL_PAGE, HTN,
-	SEG_SUF, SMS, HT,
+	SEG_SUF, SMS, HT, HTNC,
 	CCTS, OBJ, MANGLED,
 	A_NONE
 } alloc_type;

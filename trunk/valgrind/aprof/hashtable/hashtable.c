@@ -37,9 +37,10 @@
 
 #define CHAIN_NO(key,tbl) (((UWord)(key)) % tbl->n_chains)
 
-#define N_HASH_PRIMES 20
+#define N_HASH_PRIMES 24
 
 static SizeT primes[N_HASH_PRIMES] = {
+          53UL,           97UL,          193UL,           389UL,
          769UL,         1543UL,         3079UL,          6151UL,
        12289UL,        24593UL,        49157UL,         98317UL,
       196613UL,       393241UL,       786433UL,       1572869UL,
@@ -63,6 +64,12 @@ HashTable * HT_construct(void * func)
    table->iterOK        = True;
    table->free_func     = func;
      
+   #if DEBUG_ALLOCATION
+   int i = 0;
+   for (i = 0; i < n_chains; i++)
+      add_alloc(HTNC);
+   #endif
+
    return table;
 }
 
@@ -97,6 +104,12 @@ static void resize (HashTable * table)
    vg_assert(new_chains > old_chains);
    vg_assert(new_chains > primes[0] 
              && new_chains <= primes[N_HASH_PRIMES-1]);
+
+   #if DEBUG_ALLOCATION
+   int q = 0;
+   for (q = 0; q < (new_chains - table->n_chains); q++)
+      add_alloc(HTNC);
+   #endif
 
    table->n_chains = new_chains;
    sz = new_chains * sizeof(HashNode *);
