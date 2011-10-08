@@ -109,6 +109,7 @@ void print_cct_graph(FILE * f, CCTNode* root, UInt parent_id, char * parent_name
 }
 #endif
 
+/*
 static void print_CCT(CCTNode* root) {
 	if (root == NULL) return;
 	
@@ -128,6 +129,6 @@ static void print_CCT(CCTNode* root) {
 	}
 
 }
-
+*/
 
 #endif

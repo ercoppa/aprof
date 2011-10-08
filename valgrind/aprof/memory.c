@@ -75,12 +75,13 @@ VG_REGPARM(3) void trace_access(UWord type, Addr addr, SizeT size) {
 		}
 		
 		#else
+		Activation * act = get_activation(tdata, tdata->stack_depth);
 		UInt old_aid = SUF_insert( tdata->accesses, 
 									addr+(i*ADDR_MULTIPLE), 
-									tdata->curr_aid);
+									act->aid);
 		
-		if (old_aid < tdata->curr_aid && (type == LOAD || type == MODIFY)) {
-			get_activation(tdata, tdata->stack_depth)->sms++;
+		if (old_aid < act->aid && (type == LOAD || type == MODIFY)) {
+			act->sms++;
 			//VG_(printf)("Incremented SMS\n");
 			if (old_aid > 0 && old_aid >= get_activation(tdata, 1)->aid) {
 				get_activation_by_aid(tdata, old_aid)->sms--;

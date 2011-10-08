@@ -60,7 +60,7 @@
 #define DEBUG_ALLOCATION	0	// if 1, check every allocation maded by aprof
 #define IGNORE_DL_RUNTIME	1	// if 1, disable analysis for dl_runtime_resolve (and its children)
 #define REPORT_VERSION		1	// see documentation on  our site
-#define DISCARD_UNKNOWN		0	// discard info about PLT or unknown function (but this not implies to discard info about its children)
+#define DISCARD_UNKNOWN		1	// discard info about PLT or unknown function (but this not implies to discard info about its children)
 
 /* Some constants */
 #define STACK_SIZE		64		// Initial stack size
@@ -213,7 +213,6 @@ typedef struct {
 	#endif
 	#if SUF == 2
 	UInt			aid;				// Activation ID
-	UInt			old_aid;			// Activation ID of the caller
 	#endif
 	#if TRACE_FUNCTION
 	UWord			sp;					// Stack pointer when entered this function
@@ -244,7 +243,6 @@ typedef struct ThreadData {
 	#endif
 	#if SUF == 2
 	UInt			next_aid;			// Activation aid that will be assigned to the next Activation
-	UInt			curr_aid;			// Current Activation aid (runtime)
 	#if SUF2_SEARCH == STATS
 	ULong			avg_depth;			// Sum of stack depth when doing all get_activation_by_aid
 	ULong			avg_iteration;		// Sum of iterations when doing backwarding in all get_activation_by_aid
