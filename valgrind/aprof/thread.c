@@ -132,6 +132,20 @@ void thread_exit (ThreadId tid){
 	return;
 	#endif
 	
+	#if 0
+	/* Some functions are not transformed in routines, see which: */
+	HT_ResetIter(fn_ht);
+	Function * fn = HT_Next(fn_ht);
+	while(fn != NULL) {
+		
+		RoutineInfo * rtn = HT_lookup(tdata->routine_hash_table, (UWord) fn);
+		if (rtn == NULL) 
+		VG_(printf)("Function %s not a routine for this thread\n", fn->name);
+		
+		fn = HT_Next(fn_ht);
+	}
+	#endif
+	
 	generate_report(tdata, tid);
 	
 	/* destroy all thread data data */

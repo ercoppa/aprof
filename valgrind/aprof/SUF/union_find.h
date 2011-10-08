@@ -14,9 +14,7 @@
 #define UPM_SIZE 65536 * 8 // 32GB address space
 #endif
 
-#if ADDR_MULTIPLE == 1
-#define USM_SIZE 65536
-#elif ADDR_MULTIPLE == 4
+#if ADDR_MULTIPLE == 4
 #define USM_SIZE 16384
 #else
 #error "ADDR_MULTIPLE nor supported"
@@ -26,11 +24,11 @@ typedef struct Node Node;
 typedef struct Representative Representative;
 
 struct Representative {
-	UWord rank;			// Height of the tree
+	UInt rank;					// Height of the tree
 	Representative * next;		// Next representive
 	Node * tree;				// The tree
-	UWord real_nodes;	// # real nodes in the tree
-	UWord dummies;		// # dummies nodes in the tree
+	UInt real_nodes;			// # real nodes in the tree
+	UInt dummies;				// # dummies nodes in the tree
 	int stack_depth;			// stack depth associated with this rep
 };
 

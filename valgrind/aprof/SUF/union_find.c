@@ -60,7 +60,7 @@ UnionFind * UF_create() {
 void UF_destroy(UnionFind * uf){
 
 	int i = 0;
-	while (i < USM_SIZE) {
+	while (i < UPM_SIZE) {
 		if (uf->table[i] != NULL) 
 			VG_(free)(uf->table[i]);
 		i++;

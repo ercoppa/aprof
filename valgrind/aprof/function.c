@@ -37,15 +37,22 @@ RoutineInfo * new_routine_info(ThreadData * tdata, Function * fn, UWord target) 
 	#endif
 	
 	rtn_info->key = target;
-	rtn_info->routine_id = tdata->next_routine_id++;
 	rtn_info->fn = fn;
 	
+	/*
 	rtn_info->total_self_time = 0;
 	rtn_info->total_cumulative_time = 0;
 	rtn_info->calls = 0;
 	rtn_info->recursive = 0;
 	rtn_info->recursion_pending = 0;
+	*/
 	
+	#if DISCARD_UNKNOWN
+	if (!rtn_info->fn->discard_info) {
+	#endif
+	
+	rtn_info->routine_id = tdata->next_routine_id++;
+
 	#if CCT
 	rtn_info->context_sms_map = HT_construct(HT_destruct);
 	#if DEBUG
@@ -67,6 +74,10 @@ RoutineInfo * new_routine_info(ThreadData * tdata, Function * fn, UWord target) 
 	add_alloc(HT);
 	#endif
 	
+	#endif
+	
+	#if DISCARD_UNKNOWN
+	}
 	#endif
 	
 	HT_add_node(tdata->routine_hash_table, rtn_info->key, rtn_info);
@@ -122,6 +133,24 @@ void function_enter(ThreadData * tdata, Activation * act) {
 	act->aid                 = tdata->next_aid++;
 	act->old_aid             = tdata->curr_aid;
 	tdata->curr_aid          = act->aid;
+	
+	/* check overflow */
+	if (act->aid == 0) {
+		
+		/* Collect all valid aid */
+		UInt * arr_aid = VG_(calloc)("arr rid", tdata->stack_depth, sizeof(UInt));
+		int j = 0;
+		for (j = 0; j < tdata->stack_depth; j++)
+			arr_aid[j] = get_activation(tdata, j + 1)->aid;
+			
+		SUF_compress(tdata->accesses, arr_aid, tdata->stack_depth);
+		VG_(free)(arr_aid);
+		
+	}
+	#endif
+	
+	#if DISCARD_UNKNOWN
+	if (!rtn_info->fn->discard_info) {
 	#endif
 	
 	#if CCT
@@ -166,6 +195,10 @@ void function_enter(ThreadData * tdata, Activation * act) {
 	act->node = cnode;
 	#endif
 	
+	#if DISCARD_UNKNOWN
+	}
+	#endif
+	
 	#if TRACE_FUNCTION
 	if (act->skip) tdata->skip = True;
 	#endif
@@ -195,6 +228,11 @@ void function_exit(ThreadData * tdata, Activation * act) {
 	RoutineInfo * rtn_info = act->rtn_info;
 
 	ULong partial_cumulative = start - act->entry_time;
+	
+	#if DISCARD_UNKNOWN
+	if (!rtn_info->fn->discard_info) {
+	#endif
+	
 	if (rtn_info->recursion_pending < 2) 
 		rtn_info->total_cumulative_time += partial_cumulative;
 
@@ -251,7 +289,7 @@ void function_exit(ThreadData * tdata, Activation * act) {
 		#endif
 		
 		// init minimum cumulative time for sms entry
-		info_access->min_cumulative_time = (UWord)-1;
+		info_access->min_cumulative_time = (UInt)-1;
 		
 		info_access->key = act->sms;
 		#if CCT
@@ -285,6 +323,10 @@ void function_exit(ThreadData * tdata, Activation * act) {
 	if (info_access->min_cumulative_time > partial_cumulative) 
 		info_access->min_cumulative_time = partial_cumulative;
 	
+	#if DISCARD_UNKNOWN
+	}
+	#endif
+	
 	rtn_info->recursion_pending--;
 	
 	// merge accesses of current activation with those of the parent activation
@@ -308,7 +350,11 @@ void function_exit(ThreadData * tdata, Activation * act) {
 			parent_activation->total_children_time += partial_cumulative;
 		#if TRACE_FUNCTION
 		} else {
+			#if TIME == BB_COUNT
 			tdata->bb_c -= partial_cumulative;
+			#else
+			AP_ASSERT(0, "With RDTSC you can't ignore dl_runtime_resolve");
+			#endif
 		}
 		#endif
 	}

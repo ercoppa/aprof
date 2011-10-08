@@ -19,7 +19,7 @@ IRSB* instrument (  VgCallbackClosure* closure,
 	IRTypeEnv* tyenv = sbIn->tyenv;
 	
 	#if TRACE_FUNCTION
-	UWord instr_offset = 0;
+	UInt instr_offset = 0;
 	#endif
 
 	if (gWordTy != hWordTy) /* We don't currently support this case. */
