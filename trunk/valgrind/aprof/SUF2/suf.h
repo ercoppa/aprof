@@ -28,5 +28,6 @@ void SUF_destroy(StackUF * uf);
 UInt SUF_insert(StackUF * uf, UWord addr, UInt rid);
 UInt SUF_lookup(StackUF * uf, UWord addr);
 void SUF_compress(StackUF * uf, UInt * arr_rid, UInt size_arr);
+//void SUF_print(StackUF * uf);
 
 #endif

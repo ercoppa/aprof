@@ -131,20 +131,34 @@ void function_enter(ThreadData * tdata, Activation * act) {
 	
 	#if SUF == 2
 	act->aid                 = tdata->next_aid++;
-	act->old_aid             = tdata->curr_aid;
-	tdata->curr_aid          = act->aid;
 	
 	/* check overflow */
+	//if ((act->aid % 100000) == 0) {
 	if (act->aid == 0) {
 		
+		//SUF_print(tdata->accesses);
+		
+		//VG_(printf)("\nSUF compress\n");
+		
 		/* Collect all valid aid */
-		UInt * arr_aid = VG_(calloc)("arr rid", tdata->stack_depth, sizeof(UInt));
+		UInt * arr_aid = VG_(calloc)("arr rid", tdata->stack_depth - 1, sizeof(UInt));
 		int j = 0;
-		for (j = 0; j < tdata->stack_depth; j++)
-			arr_aid[j] = get_activation(tdata, j + 1)->aid;
-			
-		SUF_compress(tdata->accesses, arr_aid, tdata->stack_depth);
+		for (j = 0; j < tdata->stack_depth - 1; j++) {
+			Activation * act_c = get_activation(tdata, j + 1);
+			arr_aid[j] = act_c->aid;
+			act_c->aid = j + 1;
+			//VG_(printf)("Aid was %u, now is %u\n", arr_aid[j], j+1);
+		}
+		SUF_compress(tdata->accesses, arr_aid, tdata->stack_depth -1);
 		VG_(free)(arr_aid);
+		
+		tdata->next_aid = tdata->stack_depth;
+		act->aid = tdata->next_aid++;
+		
+		//VG_(printf)("Current aid is %u\nNext aid is %u\n", act->aid, tdata->next_aid);
+		
+		//SUF_print(tdata->accesses);
+		//AP_ASSERT(0, "");
 		
 	}
 	#endif
@@ -339,8 +353,6 @@ void function_exit(ThreadData * tdata, Activation * act) {
 
 		#if SUF == 1
 		UF_merge(tdata->accesses, tdata->stack_depth);
-		#elif SUF == 2
-		tdata->curr_aid = act->old_aid;
 		#endif
 
 		#if TRACE_FUNCTION

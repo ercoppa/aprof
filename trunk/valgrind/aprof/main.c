@@ -280,6 +280,28 @@ static void fini(Int exitcode) {
 	HT_destruct(fn_ht);
 	HT_destruct(obj_ht);
 
+	#if 0
+	/* test compression SUF2 */
+	StackUF * uf = SUF_create();
+	SUF_insert(uf, 0, 5);
+	SUF_insert(uf, 5, 5);
+	SUF_insert(uf, 9, 5);
+	SUF_print(uf);
+	SUF_insert(uf, 13, 10);
+	SUF_insert(uf, 5, 10);
+	SUF_insert(uf, 9, 10);
+	SUF_print(uf);
+	SUF_insert(uf, 15, 15);
+	SUF_insert(uf, 9, 15);
+	SUF_print(uf);
+	SUF_insert(uf, 15, 20);
+	SUF_print(uf);
+	
+	UInt arr_aid[2] = { 5, 20 };
+	SUF_compress(uf, arr_aid, 2);
+	SUF_print(uf);
+	#endif
+
 }
 
 void signal(ThreadId tid, Int sigNo, Bool alt_stack);
@@ -292,7 +314,7 @@ void signal(ThreadId tid, Int sigNo, Bool alt_stack) {
 static void pre_clo_init(void) {
 
 	VG_(details_name)				("Aprof");
-	VG_(details_version)			("0.1_alpha");
+	VG_(details_version)			("-1");
 	VG_(details_description)		("Asymptotic Profiler");
 	VG_(details_copyright_author)	("By Camil Demetrescu, Irene Finocchi, Bruno Aleandri, Emilio Coppa");
 	VG_(details_bug_reports_to)		("ercoppa@gmail.com");

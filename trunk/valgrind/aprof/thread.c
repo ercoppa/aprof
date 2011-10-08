@@ -86,7 +86,6 @@ static ThreadData * thread_start(ThreadId tid){
 	
 	#if SUF == 2
 	tdata->next_aid = 1;
-	tdata->curr_aid = 0;
 	#endif
 
 	return tdata;
