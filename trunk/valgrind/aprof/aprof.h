@@ -57,7 +57,7 @@
 								// with -finstrument-functions
 #define MEM_TRACE			1	// if 0 disable mem instrumentation
 #define CCT_GRAPHIC			0	// if 1, create a report compatible with graphviz about CCT tree
-#define DEBUG_ALLOCATION	0	// if 1, check every allocation maded by aprof
+#define DEBUG_ALLOCATION	1	// if 1, check every allocation maded by aprof
 #define IGNORE_DL_RUNTIME	1	// if 1, disable analysis for dl_runtime_resolve (and its children)
 #define REPORT_VERSION		1	// see documentation on  our site
 #define DISCARD_UNKNOWN		1	// discard info about PLT or unknown function (but this not implies to discard info about its children)

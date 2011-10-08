@@ -35,7 +35,7 @@
 /*--- Declarations                                                 ---*/
 /*--------------------------------------------------------------------*/
 
-#define CHAIN_NO(key,tbl) (((UInt)(key)) % tbl->n_chains)
+#define CHAIN_NO(key,tbl) (((UWord)(key)) % tbl->n_chains)
 
 #define N_HASH_PRIMES 20
 
@@ -106,7 +106,7 @@ static void resize (HashTable * table)
       node = table->chains[i];
       while (node != NULL) {
          HashNode * next = node->next;
-         UInt chain = CHAIN_NO(node->key, table);
+         UWord chain = CHAIN_NO(node->key, table);
          node->next = chains[chain];
          chains[chain] = node;
          node = next;
@@ -120,11 +120,11 @@ static void resize (HashTable * table)
 
 /* Puts a new, heap allocated VgHashNode, into the VgHashTable.  Prepends
    the node to the appropriate chain.  No duplicate key detection is done. */
-void HT_add_node (HashTable * table, UInt key, void * n)
+void HT_add_node (HashTable * table, UWord key, void * n)
 {
    HashNode * node      = (HashNode *) n;
    node->next           = NULL;
-   UInt chain          = CHAIN_NO(key, table);
+   UWord chain          = CHAIN_NO(key, table);
    node->next           = table->chains[chain];
    table->chains[chain] = node;
    table->n_elements++;
@@ -137,7 +137,7 @@ void HT_add_node (HashTable * table, UInt key, void * n)
 }
 
 /* Looks up a VgHashNode in the table.  Returns NULL if not found. */
-void * HT_lookup (HashTable * table, UInt key)
+void * HT_lookup (HashTable * table, UWord key)
 {
 	HashNode * curr = table->chains[ CHAIN_NO(key, table) ];
 
@@ -150,9 +150,9 @@ void * HT_lookup (HashTable * table, UInt key)
 }
 
 /* Removes a VgHashNode from the table.  Returns NULL if not found. */
-void * HT_remove (HashTable * table, UInt key)
+void * HT_remove (HashTable * table, UWord key)
 {
-   UInt      chain         = CHAIN_NO(key, table);
+   UWord      chain         = CHAIN_NO(key, table);
    HashNode*  curr          = table->chains[chain];
    HashNode** prev_next_ptr = &(table->chains[chain]);
 
