@@ -672,6 +672,15 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 				#endif
 				
 				f->key = hash;
+				
+				/* 
+				 * fn is a buffer of 4096, if possible try to minimize
+				 * the wasted space
+				 */
+				char * fn_c = VG_(strdup)("fn_name", fn);
+				VG_(free)(fn);
+				fn = fn_c;
+				
 				f->name = fn;
 				
 				#if DISCARD_UNKNOWN
@@ -688,6 +697,12 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 						VG_(sprintf)(mangled, "below_main");
 					}
 					if (VG_(strcmp)(f->name, mangled) != 0) {
+						
+						/* try min wasted space */
+						char * mangled_c = VG_(strdup)("mangle_name", mangled);
+						VG_(free)(mangled);
+						mangled = mangled_c;
+						
 						f->mangled = mangled;
 						
 						#if DEBUG_ALLOCATION
