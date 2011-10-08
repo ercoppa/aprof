@@ -60,6 +60,7 @@
 #define DEBUG_ALLOCATION	0	// if 1, check every allocation maded by aprof
 #define IGNORE_DL_RUNTIME	1	// if 1, disable analysis for dl_runtime_resolve (and its children)
 #define REPORT_VERSION		1	// see documentation on  our site
+#define DISCARD_UNKNOWN		1	// discard info about PLT or unknown function (but this not implies to discard info about its children)
 
 /* Some constants */
 #define STACK_SIZE		64		// Initial stack size
@@ -102,7 +103,7 @@ typedef enum alloc_type {
 	TS, FN_NAME, ACT,
 	OBJ_NAME, POOL_PAGE, HTN,
 	SEG_SUF, SMS, HT,
-	CCTS, OBJ,
+	CCTS, OBJ, MANGLED,
 	A_NONE
 } alloc_type;
 #endif
@@ -124,6 +125,9 @@ typedef struct Function {
 	char *		name;					// name of routine (demangled full)
 	Object *	obj;					// name of library the routine belongs to
 	char *		mangled;				// name of routine (mangled)
+	#if DISCARD_UNKNOWN
+	Bool		discard_info;			// discard SMS/cost for this function (but not for its children!)
+	#endif
 } Function;
 
 #if TRACE_FUNCTION
@@ -133,11 +137,11 @@ typedef struct BB {
 
 	UWord		key;					// Basic block address (unique)
 	void *		next;					// HT node attr...
-	UWord		instr_offset;			// length of BB (# bytes) 
+	UInt		instr_offset;			// length of BB (# bytes) 
 	jump_t		exit;					// jumpking of this BB
 	VgSectKind	obj_section;			// ELF Object section (of the function)
 	Bool		is_dl_runtime_resolve;	// Is this BB part of dl_runtime_resolve?
-	Bool		is_entry;				// Is this BB first one of a function? 
+	Bool		is_entry;				// Is this BB first one of a function?
 	Function *	fn;						// Info about the associated function
 	
 } BB;
@@ -164,7 +168,7 @@ typedef struct CCTNode {
 	struct CCTNode *	firstChild;		// first child of the node in the CCT
 	struct CCTNode *	nextSibling;	// next sibling of the node in the CCT
 	ULong				routine_id;		// the routine id associated with this CCT node
-	UWord				context_id;		// the context id associated with this CCT node
+	UInt				context_id;		// the context id associated with this CCT node
 	#if CCT_GRAPHIC
 	char * 				name;			// Name of routine assiated to this node
 	#endif
@@ -179,7 +183,7 @@ typedef struct {
 	Function *	fn;						// Info (name, file, etc) about this routine
 	ULong	 	total_self_time;		// total self time for this routine
 	ULong		total_cumulative_time;	// printf("curr_depth = %d\n", curr_depth); total cumulative time for this routine
-	UWord		calls;					// number times this routine has been called
+	UInt		calls;					// number times this routine has been called
 	Int			recursive;				// 1 if the routine has ever been called recursively
 	Int			recursion_pending;		// number of pending activations (> 1 means recursive)
 	#if !CCT
@@ -192,8 +196,8 @@ typedef struct {
 typedef struct {
 	UWord	key;						// sms value for this record
 	void *	next;						// HT node value
-	UWord	max_cumulative_time;		// maximum time spent by the routine in calls with this sms
-	UWord	min_cumulative_time;		// minimum time spent by the routine in calls with this sms
+	UInt	max_cumulative_time;		// maximum time spent by the routine in calls with this sms
+	UInt	min_cumulative_time;		// minimum time spent by the routine in calls with this sms
 	ULong	cumulative_time_sum;		// total time spent by the routine in calls with this sms
 	ULong	calls_number;				// number of times the routine has been called with this sms
 	ULong	cumulative_time_sqr_sum;	// sum of squares of times spent by the routine in calls with this sms
@@ -202,14 +206,14 @@ typedef struct {
 typedef struct {
 	ULong			entry_time;			// time stamp at activation entry
 	ULong			total_children_time;// total time spent in children
-	UWord			sms;				// SMS of activation (always positive when an activation ends)
+	UInt			sms;				// SMS of activation (always positive when an activation ends)
 	RoutineInfo *	rtn_info;			// pointer to info record of activated routine
 	#if CCT
 	CCTNode *		node;				// pointer to the CCT node associated with the call
 	#endif
 	#if SUF == 2
-	UWord			aid;				// Activation ID
-	UWord			old_aid;			// Activation ID of the caller
+	UInt			aid;				// Activation ID
+	UInt			old_aid;			// Activation ID of the caller
 	#endif
 	#if TRACE_FUNCTION
 	UWord			sp;					// Stack pointer when entered this function
@@ -227,7 +231,7 @@ typedef struct ThreadData {
 	HashTable *		routine_hash_table;	// table of all encountered routines
 	int				stack_depth;		// stack depth
 	Activation *	stack;				// activation stack
-	UWord			max_stack_size;		// max stack size
+	UInt			max_stack_size;		// max stack size
 	ULong			next_routine_id;	// the routine_id that will be assigned to the next routine_info
 	#if CCT
 	CCTNode *		root;				// root of the CCT
@@ -239,8 +243,8 @@ typedef struct ThreadData {
 	ULong			bb_c;				// Counter BB executed
 	#endif
 	#if SUF == 2
-	UWord			next_aid;			// Activation aid that will be assigned to the next Activation
-	UWord			curr_aid;			// Current Activation aid (runtime)
+	UInt			next_aid;			// Activation aid that will be assigned to the next Activation
+	UInt			curr_aid;			// Current Activation aid (runtime)
 	#if SUF2_SEARCH == STATS
 	ULong			avg_depth;			// Sum of stack depth when doing all get_activation_by_aid
 	ULong			avg_iteration;		// Sum of iterations when doing backwarding in all get_activation_by_aid
@@ -299,10 +303,10 @@ void generate_report(ThreadData * tdata, ThreadId tid);
 #if CCT
 CCTNode * parent_CCT(ThreadData * tdata);
 void freeTree(CCTNode * root);
-void print_cct_info(FILE * f, CCTNode * root, UWord parent_id);
+void print_cct_info(FILE * f, CCTNode * root, UInt parent_id);
 
 #if CCT_GRAPHIC
-void print_cct_graph(FILE * f, CCTNode* root, UWord parent_id, char * parent_name);
+void print_cct_graph(FILE * f, CCTNode* root, UInt parent_id, char * parent_name);
 #endif
 
 #endif
@@ -335,7 +339,7 @@ void addEvent_Dw (IRSB* sb, IRAtom* daddr, Int dsize);
 
 /* Callstack management */
 #if SUF == 2
-Activation * get_activation_by_aid(ThreadData * tdata, UWord aid);
+Activation * get_activation_by_aid(ThreadData * tdata, UInt aid);
 #endif
 
 #define get_activation(tdata, depth) ((depth-1 >= tdata->max_stack_size) ? \

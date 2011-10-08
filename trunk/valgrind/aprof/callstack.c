@@ -84,7 +84,7 @@ Activation * resize_stack(ThreadData * tdata, unsigned int depth) {
 
 #if SUF == 2
 
-Activation * get_activation_by_aid(ThreadData * tdata, UWord aid) {
+Activation * get_activation_by_aid(ThreadData * tdata, UInt aid) {
 	
 	#if DEBUG
 	AP_ASSERT(tdata != NULL, "Invalid tdata");
@@ -158,6 +158,17 @@ Activation * get_activation_by_aid(ThreadData * tdata, UWord aid) {
 }
 
 #endif
+
+static UInt str_hash(const Char *s) {
+	
+	UInt hash_value = 0;
+	for ( ; *s; s++)
+		hash_value = 31 * hash_value + *s;
+	
+	AP_ASSERT(hash_value > 0, "Invalid hash value for this function or obj");
+	
+	return hash_value;
+}
 
 #if TRACE_FUNCTION
 
@@ -357,17 +368,6 @@ static Bool search_runtime_resolve(char * obj_name, UWord obj_start,
 
 /* End callgrind functions */
 
-static UWord str_hash(const Char *s) {
-	
-	UWord hash_value = 0;
-	for ( ; *s; s++)
-		hash_value = 31 * hash_value + *s;
-	
-	AP_ASSERT(hash_value > 0, "Invalid hash value for this function or obj");
-	
-	return hash_value;
-}
-
 /* Push a new activation on the stack */
 static void push_stack(ThreadData * tdata, UWord sp, Function * f, Bool skip) {
 	
@@ -411,10 +411,10 @@ static void push_stack(ThreadData * tdata, UWord sp, Function * f, Bool skip) {
  * and CSP == SP, pop out n_frames activation.
  * Return how many activations are removed from the stack.
  */
-static UWord pop_stack(ThreadData * tdata, UWord csp, UWord n_frames,
+static UInt pop_stack(ThreadData * tdata, UWord csp, UInt n_frames,
 												Activation * current) {
 	
-	UWord n_pop = 0;
+	UInt n_pop = 0;
 	
 	#if DEBUG
 	AP_ASSERT(tdata != NULL, "Invalid tdata");
@@ -540,8 +540,7 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 			f = HT_lookup(fn_ht, hash);
 			
 			while (f != NULL && VG_(strcmp)(f->name, fn) != 0) {
-				if (f->key == hash) f = f->next;
-				else f = NULL;
+				f = f->next;
 			}
 		}
 		
@@ -565,8 +564,7 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 				obj = HT_lookup(obj_ht, hash_obj);
 				
 				while (obj != NULL && VG_(strcmp)(obj->name, obj_name) != 0) {
-					if (obj->key == hash) obj = obj->next;
-					else obj = NULL;
+					obj = obj->next;
 				}
 				
 				if (obj == NULL) {
@@ -583,9 +581,9 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 					HT_add_node(obj_ht, obj->key, obj);
 					
 					#if DEBUG_ALLOCATION
+					add_alloc(HTN);
 					add_alloc(OBJ_NAME);
-					if (obj != NULL)
-						add_alloc(OBJ);
+					add_alloc(OBJ);
 					#endif
 					
 				}
@@ -635,6 +633,7 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 		 * directly in assembly, maybe get for this also more
 		 * info about filename/line/dir as callgrind does )
 		 */
+		Bool unknown = False;
 		if (!info_fn) {
 			
 			if (bb->obj_section == Vg_SectPLT)
@@ -643,6 +642,7 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 				VG_(sprintf)(fn, "%p", (void *)bb->key);
 				
 			info_fn = True;
+			unknown = True;
 			
 		}
 				
@@ -656,8 +656,7 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 				f = HT_lookup(fn_ht, hash);
 				
 				while (f != NULL && VG_(strcmp)(f->name, fn) != 0) {
-					if (f->key == hash) f = f->next;
-					else f = NULL;
+					f = f->next;
 				}
 			}
 			
@@ -675,6 +674,10 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 				f->key = hash;
 				f->name = fn;
 				
+				#if DISCARD_UNKNOWN
+				if (unknown) f->discard_info = True;
+				#endif
+				
 				char * mangled = VG_(calloc)("mangled", NAME_SIZE, 1);
 				#if DEBUG
 				AP_ASSERT(mangled != NULL, "mangled name not allocable");
@@ -686,6 +689,11 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 					}
 					if (VG_(strcmp)(f->name, mangled) != 0) {
 						f->mangled = mangled;
+						
+						#if DEBUG_ALLOCATION
+						add_alloc(MANGLED);
+						#endif
+						
 					} else
 						VG_(free)(mangled);
 				}
@@ -754,7 +762,7 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 	Bool ret_as_call = False;
 	
 	/* Estimation of number of returned functions */ 
-	UWord n_pop = 1;
+	UInt n_pop = 1;
 	
 	/* Current activation */
 	Activation * current = NULL;
@@ -802,7 +810,7 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 			//VG_(printf)("Try to convert RET to CALL for BB(%lu) because SP=CSP=%lu\n", target, csp);
 			
 			Activation * c = current;
-			UWord depth = tdata->stack_depth;
+			UInt depth = tdata->stack_depth;
 			while(c != NULL) {
 				
 				if (c->ret_addr == target) break;
@@ -964,6 +972,15 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 		
 	}
 	
+	#if 0
+	if (tdata->stack_depth > 0) {
+		Activation * acta = get_activation(tdata, tdata->stack_depth);
+		if (acta->rtn_info->fn != bb->fn)
+			VG_(printf)("Skipped function %s\n", bb->fn->name);
+	} else
+		VG_(printf)("Skipped function %s\n", bb->fn->name);
+	#endif
+	
 	/* Update pointer last BB executed */
 	tdata->last_bb = bb;
 	
@@ -1001,10 +1018,26 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 		AP_ASSERT(act != NULL, "Invalid activation info");
 		#endif
 		
-		RoutineInfo * rtn_info = HT_lookup(tdata->routine_hash_table, target); 
+		char * rtn_name = VG_(calloc)("rtn_name", NAME_SIZE, 1);
+		#if DEBUG
+		AP_ASSERT(rtn_name != NULL, "rtn_name not allocable");
+		#endif
+		
+		#if DEBUG_ALLOCATION
+		add_alloc(FN_NAME);
+		#endif
+		
+		if (!VG_(get_fnname)(target, rtn_name, NAME_SIZE))
+			VG_(sprintf)(rtn_name, "%p", (void *) target);
+		
+		Function * fn = NULL;
+		fn = HT_lookup(fn_ht, target);
+		
+		RoutineInfo * rtn_info = NULL;
+		if (fn != NULL) {
+			rtn_info = HT_lookup(tdata->routine_hash_table, target); 
+		}
 		if (rtn_info == NULL) {
-			
-			Function * fn = HT_lookup(fn_ht, target);
 			
 			if (fn == NULL) {
 				
@@ -1017,27 +1050,20 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 				add_alloc(FNS);
 				#endif
 				
-				char * rtn_name = VG_(calloc)("rtn_name", NAME_SIZE, 1);
-				#if DEBUG
-				AP_ASSERT(rtn_name != NULL, "rtn_name not allocable");
-				#endif
-				
-				#if DEBUG_ALLOCATION
-				add_alloc(FN_NAME);
-				#endif
-				
-				if (!VG_(get_fnname)(target, rtn_name, NAME_SIZE))
-					VG_(sprintf)(rtn_name, "%p", (void *) target);
-				
 				char * mangled = VG_(calloc)("mangled", NAME_SIZE, 1);
 				#if DEBUG
 				AP_ASSERT(mangled != NULL, "mangled name not allocable");
 				#endif
 				if(	VG_(get_fnname_no_cxx_demangle)(target, mangled, NAME_SIZE)
 					&& VG_(strcmp)(rtn_name, mangled) != 0
-					)
+					) {
 					fn->mangled = mangled;
-				else VG_(free)(mangled);
+					
+					#if DEBUG_ALLOCATION
+					add_alloc(MANGLED);
+					#endif
+					
+				} else VG_(free)(mangled);
 				
 				DebugInfo * di = VG_(find_DebugInfo)(target);
 				#if DEBUG
@@ -1048,25 +1074,41 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 				#if DEBUG
 				AP_ASSERT(obj_name != NULL, "Invalid object name");
 				#endif
-				obj_name = VG_(strdup)("copy obj", obj_name);
-				#if DEBUG
-				AP_ASSERT(obj_name != NULL, "Invalid copy of object name");
-				#endif
 				
-				Object * obj = VG_(calloc)("obj", sizeof(Object), 1);
-				#if DEBUG
-				AP_ASSERT(obj != NULL, "Invalid object");
-				#endif
+				Object * obj = NULL;
+				UInt hash_obj = str_hash(obj_name);
+				obj = HT_lookup(obj_ht, hash_obj);
+				while(obj != NULL && VG_(strcmp)(obj->name, obj_name) != 0)
+					obj = obj->next;
 				
-				#if DEBUG_ALLOCATION
-				add_alloc(OBJ_NAME);
-				add_alloc(OBJ);
-				#endif
+				if (obj == NULL) {
+					
+					obj_name = VG_(strdup)("copy obj", obj_name);
+					#if DEBUG
+					AP_ASSERT(obj_name != NULL, "Invalid copy of object name");
+					#endif
+					
+					obj = VG_(calloc)("obj", sizeof(Object), 1);
+					#if DEBUG
+					AP_ASSERT(obj != NULL, "Invalid object");
+					#endif
+					
+					#if DEBUG_ALLOCATION
+					add_alloc(OBJ_NAME);
+					add_alloc(OBJ);
+					add_alloc(HTN);
+					#endif
+					
+					obj->name = obj_name;
+					obj->key = hash_obj;
+					
+					HT_add_node(obj_ht, obj->key, obj);
+					
+				}
 				
 				fn->key = target;
 				fn->name = rtn_name;
 				fn->obj = obj;
-				obj->name = obj_name;
 				
 				HT_add_node(fn_ht, fn->key, fn);
 				

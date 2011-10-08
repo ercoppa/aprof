@@ -29,7 +29,10 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 	
 	Char filename_priv[2048];
 	Char * prog_name = (Char *) VG_(args_the_exename);
-	VG_(sprintf)(filename_priv, "%s_%u.vg2.aprof", basename(prog_name), tid - 1);
+	if (tid > 1)
+		VG_(sprintf)(filename_priv, "%s_%u.vg2.aprof", basename(prog_name), tid - 1);
+	else
+		VG_(sprintf)(filename_priv, "%s.vg2.aprof", basename(prog_name));
 	//VG_(sprintf)(filename_priv, "%d_%u.aprof", VG_(getpid), tid - 1);
 	/* Add path to log filename */
 	Char * filename = VG_(expand_file_name)("aprof log", filename_priv);
@@ -108,6 +111,10 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 		AP_ASSERT(rtn_info->fn->name != NULL, "Invalid name fn");
 		#endif
 		
+		#if DISCARD_UNKNOWN
+		if (!rtn_info->fn->discard_info) {
+		#endif
+		
 		char * obj_name = "NONE";
 		if (rtn_info->fn->obj != NULL) obj_name = rtn_info->fn->obj->name; 
 		
@@ -150,9 +157,9 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 								ht->key, info_access->key, time_exec,
 								info_access->calls_number);
 				#elif REPORT_VERSION == 1
-				VG_(sprintf)(buffer, "q %lu %lu %lu %lu %llu %llu %lu\n",
-					context_sms_map_key, 
-					sms_map_key,
+				VG_(sprintf)(buffer, "q %lu %lu %u %u %llu %llu %llu\n",
+					ht->key, 
+					info_access->key,
 					info_access->min_cumulative_time,
 					info_access->max_cumulative_time,
 					info_access->cumulative_time_sum, 
@@ -176,7 +183,7 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 		while (info_access != NULL) {
 			
 			#if REPORT_VERSION == 1
-			VG_(sprintf)(buffer, "p %llu %lu %lu %lu %llu %llu %llu\n", 
+			VG_(sprintf)(buffer, "p %llu %lu %u %u %llu %llu %llu\n", 
 				rtn_info->routine_id,
 				info_access->key,
 				info_access->min_cumulative_time,
@@ -195,6 +202,10 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 			ap_fwrite(report, buffer, VG_(strlen)(buffer));
 			
 			info_access = HT_Next(rtn_info->sms_map);
+		}
+		#endif
+		
+		#if DISCARD_UNKNOWN
 		}
 		#endif
 

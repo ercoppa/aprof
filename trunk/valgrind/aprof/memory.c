@@ -42,7 +42,7 @@ VG_REGPARM(3) void trace_access(UWord type, Addr addr, SizeT size) {
 	#else
 	
 	#if ADDR_MULTIPLE > 1
-	UWord diff = addr & (ADDR_MULTIPLE-1);
+	UInt diff = addr & (ADDR_MULTIPLE-1);
 	addr -= diff;
 	if (size + diff < ADDR_MULTIPLE) 
 		size = 1;
@@ -75,7 +75,7 @@ VG_REGPARM(3) void trace_access(UWord type, Addr addr, SizeT size) {
 		}
 		
 		#else
-		UWord old_aid = SUF_insert( tdata->accesses, 
+		UInt old_aid = SUF_insert( tdata->accesses, 
 									addr+(i*ADDR_MULTIPLE), 
 									tdata->curr_aid);
 		

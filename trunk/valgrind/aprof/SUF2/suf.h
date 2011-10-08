@@ -16,7 +16,7 @@
 #endif
 
 typedef struct SSM {
-	UWord table[SSM_SIZE];
+	UInt table[SSM_SIZE];
 } SSM;
 
 typedef struct SPM {
@@ -25,7 +25,8 @@ typedef struct SPM {
 
 StackUF * SUF_create(void);
 void SUF_destroy(StackUF * uf);
-UWord SUF_insert(StackUF * uf, UWord addr, UWord rid);
-UWord SUF_lookup(StackUF * uf, UWord addr);
+UInt SUF_insert(StackUF * uf, UWord addr, UInt rid);
+UInt SUF_lookup(StackUF * uf, UWord addr);
+void SUF_compress(StackUF * uf, UInt * arr_rid, UInt size_arr);
 
 #endif

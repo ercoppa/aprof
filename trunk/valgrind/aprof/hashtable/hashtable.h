@@ -69,15 +69,15 @@ extern HashTable * HT_construct (void * free_func);
 extern Int HT_count_nodes (HashTable * table);
 
 /* Add a node to the table.  Duplicate keys are permitted. */
-extern void HT_add_node (HashTable * t, UWord key, void * node);
+extern void HT_add_node (HashTable * t, UInt key, void * node);
 
 /* Looks up a VgHashNode in the table.  Returns NULL if not found.  If entries
  * with duplicate keys are present, the most recently-added of the dups will
  * be returned, but it's probably better to avoid dups altogether. */
-extern void * HT_lookup (HashTable * table, UWord key);
+extern void * HT_lookup (HashTable * table, UInt key);
 
 /* Removes a VgHashNode from the table.  Returns NULL if not found. */
-extern void * HT_remove (HashTable * table, UWord key);
+extern void * HT_remove (HashTable * table, UInt key);
 
 /* Reset the table's iterator to point to the first element. */
 extern void HT_ResetIter (HashTable * table);
