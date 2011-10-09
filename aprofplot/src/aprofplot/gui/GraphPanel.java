@@ -187,9 +187,7 @@ public class GraphPanel extends javax.swing.JPanel {
         jPanel2 = new javax.swing.JPanel();
         jToggleButton1 = new javax.swing.JToggleButton();
         jToggleButton2 = new javax.swing.JToggleButton();
-        toggleButtonGroup = new javax.swing.ButtonGroup();
-        jToggleButton3 = new javax.swing.JToggleButton();
-        jToggleButton4 = new javax.swing.JToggleButton();
+        jButton2 = new javax.swing.JButton();
         jToggleButton6 = new javax.swing.JToggleButton();
         jToggleButton7 = new javax.swing.JToggleButton();
         jButton1 = new javax.swing.JButton();
@@ -198,12 +196,12 @@ public class GraphPanel extends javax.swing.JPanel {
         jLabel2 = new javax.swing.JLabel();
 
         jPopupMenu1.addPopupMenuListener(new javax.swing.event.PopupMenuListener() {
-            public void popupMenuWillBecomeVisible(javax.swing.event.PopupMenuEvent evt) {
+            public void popupMenuCanceled(javax.swing.event.PopupMenuEvent evt) {
             }
             public void popupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent evt) {
                 jPopupMenu1PopupMenuWillBecomeInvisible(evt);
             }
-            public void popupMenuCanceled(javax.swing.event.PopupMenuEvent evt) {
+            public void popupMenuWillBecomeVisible(javax.swing.event.PopupMenuEvent evt) {
             }
         });
 
@@ -263,12 +261,12 @@ public class GraphPanel extends javax.swing.JPanel {
         groupMenuButtonGroup.add(jRadioButtonMenuItem6);
 
         jPopupMenu2.addPopupMenuListener(new javax.swing.event.PopupMenuListener() {
-            public void popupMenuWillBecomeVisible(javax.swing.event.PopupMenuEvent evt) {
+            public void popupMenuCanceled(javax.swing.event.PopupMenuEvent evt) {
             }
             public void popupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent evt) {
                 jPopupMenu2PopupMenuWillBecomeInvisible(evt);
             }
-            public void popupMenuCanceled(javax.swing.event.PopupMenuEvent evt) {
+            public void popupMenuWillBecomeVisible(javax.swing.event.PopupMenuEvent evt) {
             }
         });
 
@@ -394,6 +392,8 @@ public class GraphPanel extends javax.swing.JPanel {
 
         jToggleButton1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Xlog-icon.png"))); // NOI18N
         jToggleButton1.setToolTipText("toggle x axis logarithmic scale");
+        jToggleButton1.setBorderPainted(false);
+        jToggleButton1.setFocusTraversalPolicyProvider(true);
         jToggleButton1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jToggleButton1ActionPerformed(evt);
@@ -403,6 +403,7 @@ public class GraphPanel extends javax.swing.JPanel {
 
         jToggleButton2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Ylog-icon.png"))); // NOI18N
         jToggleButton2.setToolTipText("toggle y axis logarithmic scale");
+        jToggleButton2.setBorderPainted(false);
         jToggleButton2.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jToggleButton2ActionPerformed(evt);
@@ -410,27 +411,18 @@ public class GraphPanel extends javax.swing.JPanel {
         });
         jPanel2.add(jToggleButton2);
 
-        jToggleButton3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Maximize-icon.png"))); // NOI18N
-        jToggleButton3.setSelected(true);
-        jToggleButton3.setToolTipText("maximize graph");
-        jToggleButton3.addActionListener(new java.awt.event.ActionListener() {
+        jButton2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Maximize-icon.png"))); // NOI18N
+        jButton2.setBorderPainted(false);
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jToggleButton3ActionPerformed(evt);
+                jButton2ActionPerformed(evt);
             }
         });
-        jPanel2.add(jToggleButton3);
-
-        jToggleButton4.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Minimize-icon.png"))); // NOI18N
-        jToggleButton4.setToolTipText("autoscale graph");
-        jToggleButton4.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jToggleButton4ActionPerformed(evt);
-            }
-        });
-        jPanel2.add(jToggleButton4);
+        jPanel2.add(jButton2);
 
         jToggleButton6.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Incorporate-icon.png"))); // NOI18N
         jToggleButton6.setToolTipText("group graph points");
+        jToggleButton6.setBorderPainted(false);
         jToggleButton6.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jToggleButton6ActionPerformed(evt);
@@ -441,6 +433,7 @@ public class GraphPanel extends javax.swing.JPanel {
 
         jToggleButton7.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/RatioType-icon.png"))); // NOI18N
         jToggleButton7.setToolTipText("select ratio type");
+        jToggleButton7.setBorderPainted(false);
         jToggleButton7.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jToggleButton7ActionPerformed(evt);
@@ -451,6 +444,7 @@ public class GraphPanel extends javax.swing.JPanel {
 
         jButton1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/SavePlot-icon.png"))); // NOI18N
         jButton1.setToolTipText("export as PNG image");
+        jButton1.setBorderPainted(false);
         jButton1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton1ActionPerformed(evt);
@@ -603,8 +597,6 @@ public class GraphPanel extends javax.swing.JPanel {
 
     public void setViewBounds(double min_x, double max_x, double min_y, double max_y) {
         maximized = autoscaled = false;
-        jToggleButton3.setSelected(false);
-        jToggleButton4.setSelected(false);
         this.min_x = min_x;
         this.min_y = min_y;
         this.min_y = min_y;
@@ -663,9 +655,8 @@ public class GraphPanel extends javax.swing.JPanel {
     }
 
     public void maximize() {
-        jToggleButton3.setSelected(true);
         autoscaled = false;
-        maximized = false;
+        maximized = true;
         magnified = false;
         resetXAxis();
         resetYAxis();
@@ -682,7 +673,6 @@ public class GraphPanel extends javax.swing.JPanel {
     }
 
     public void autoscale() {
-        jToggleButton4.setSelected(true);
         autoscaled = true;
         maximized = false;
         magnified = false;
@@ -755,7 +745,7 @@ public class GraphPanel extends javax.swing.JPanel {
     }
 
     private void jToggleButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton1ActionPerformed
-        // TODO add your handling code here:
+
         boolean logscale;
         if (jToggleButton1.isSelected()) logscale = true;
         else logscale = false;
@@ -764,7 +754,7 @@ public class GraphPanel extends javax.swing.JPanel {
     }//GEN-LAST:event_jToggleButton1ActionPerformed
 
     private void jToggleButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton2ActionPerformed
-        // TODO add your handling code here:
+       
         boolean logscale;
         if (jToggleButton2.isSelected()) logscale = true;
         else logscale = false;
@@ -772,22 +762,8 @@ public class GraphPanel extends javax.swing.JPanel {
         if (this.main_window.getLinkPlots()) main_window.setYLogScaleAll(graph_type, logscale);
     }//GEN-LAST:event_jToggleButton2ActionPerformed
 
-    private void jToggleButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton3ActionPerformed
-        // TODO add your handling code here:
-//        graphArea.removeMouseListeners();
-        maximize();
-        if (this.main_window.getLinkPlots()) main_window.maximizeAll(graph_type);
-    }//GEN-LAST:event_jToggleButton3ActionPerformed
-
-    private void jToggleButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton4ActionPerformed
-        // TODO add your handling code here:
-//        graphArea.removeMouseListeners();
-        autoscale();
-        if (this.main_window.getLinkPlots()) main_window.autoscaleAll(graph_type);
-    }//GEN-LAST:event_jToggleButton4ActionPerformed
-
     private void jToggleButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton6ActionPerformed
-        // TODO add your handling code here:
+        
         if (jToggleButton6.isSelected()) {
             jPopupMenu1.show(jToggleButton6, 0, jToggleButton6.getHeight());
         }
@@ -797,42 +773,42 @@ public class GraphPanel extends javax.swing.JPanel {
     }//GEN-LAST:event_jToggleButton6ActionPerformed
 
     private void jPopupMenu1PopupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent evt) {//GEN-FIRST:event_jPopupMenu1PopupMenuWillBecomeInvisible
-        // TODO add your handling code here:
+        
         jToggleButton6.setSelected(false);
     }//GEN-LAST:event_jPopupMenu1PopupMenuWillBecomeInvisible
 
     private void jRadioButtonMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem1ActionPerformed
-        // TODO add your handling code here:
+        
         setGroupThreshold(1);
         if (this.main_window.getLinkPlots()) main_window.setGroupThresholdAll(graph_type, 1);
     }//GEN-LAST:event_jRadioButtonMenuItem1ActionPerformed
 
     private void jRadioButtonMenuItem2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem2ActionPerformed
-        // TODO add your handling code here:
+        
         setGroupThreshold(5);
         if (this.main_window.getLinkPlots()) main_window.setGroupThresholdAll(graph_type, 5);
     }//GEN-LAST:event_jRadioButtonMenuItem2ActionPerformed
 
     private void jRadioButtonMenuItem3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem3ActionPerformed
-        // TODO add your handling code here:
+        
         setGroupThreshold(10);
         if (this.main_window.getLinkPlots()) main_window.setGroupThresholdAll(graph_type, 10);
     }//GEN-LAST:event_jRadioButtonMenuItem3ActionPerformed
 
     private void jRadioButtonMenuItem4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem4ActionPerformed
-        // TODO add your handling code here:
+        
         setGroupThreshold(20);
         if (this.main_window.getLinkPlots()) main_window.setGroupThresholdAll(graph_type, 20);
     }//GEN-LAST:event_jRadioButtonMenuItem4ActionPerformed
 
     private void jRadioButtonMenuItem5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem5ActionPerformed
-        // TODO add your handling code here:
+       
         setGroupThreshold(50);
         if (this.main_window.getLinkPlots()) main_window.setGroupThresholdAll(graph_type, 50);
     }//GEN-LAST:event_jRadioButtonMenuItem5ActionPerformed
 
     private void jRadioButtonMenuItem6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem6ActionPerformed
-        // TODO add your handling code here:
+       
         setGroupThreshold(100);
         if (this.main_window.getLinkPlots()) main_window.setGroupThresholdAll(graph_type, 100);
     }//GEN-LAST:event_jRadioButtonMenuItem6ActionPerformed
@@ -1072,6 +1048,26 @@ public class GraphPanel extends javax.swing.JPanel {
         main_window.refreshTables();
     }//GEN-LAST:event_jMenuItem14ActionPerformed
 
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        
+        if (!maximized) {
+            jButton2.setToolTipText("maximize graph");
+            jButton2.setIcon(new javax.swing.
+                    ImageIcon(getClass()
+                    .getResource("/aprofplot/gui/resources/Maximize-icon.png"))); // NOI18N
+            maximize();
+        } else {
+            autoscale();
+            jButton2.setToolTipText("autoscale graph");
+            jButton2.setIcon(new javax.swing.
+                    ImageIcon(getClass()
+                    .getResource("/aprofplot/gui/resources/Minimize-icon.png"))); // NOI18N
+
+        }
+//        graphArea.removeMouseListeners();
+        if (this.main_window.getLinkPlots()) main_window.maximizeAll(graph_type);
+    }//GEN-LAST:event_jButton2ActionPerformed
+
     private boolean filterTimeEntry(SmsEntry t) {
         if (filters == null) return true;
         if (filters[0] != null) {
@@ -1218,6 +1214,7 @@ public class GraphPanel extends javax.swing.JPanel {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton2;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JMenuItem jMenuItem10;
@@ -1247,8 +1244,6 @@ public class GraphPanel extends javax.swing.JPanel {
     private javax.swing.JRadioButtonMenuItem jRadioButtonMenuItem6;
     private javax.swing.JToggleButton jToggleButton1;
     private javax.swing.JToggleButton jToggleButton2;
-    private javax.swing.JToggleButton jToggleButton3;
-    private javax.swing.JToggleButton jToggleButton4;
     private javax.swing.JToggleButton jToggleButton6;
     private javax.swing.JToggleButton jToggleButton7;
     // End of variables declaration//GEN-END:variables

@@ -525,6 +525,6 @@ public class AprofReport {
     }
     
     public String getName() {
-        return this.file.getName();
+        return this.file.toString();
     }
 }
