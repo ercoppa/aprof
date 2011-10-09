@@ -102,7 +102,7 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 	// iterate over routines
 	HT_ResetIter(tdata->routine_hash_table);
 
-	RoutineInfo * rtn_info = HT_Next(tdata->routine_hash_table);
+	RoutineInfo * rtn_info = HT_RemoveNext(tdata->routine_hash_table);
 	while (rtn_info != NULL) {
 		
 		#if DEBUG
@@ -140,12 +140,12 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 		#if CCT
 
 		HT_ResetIter(rtn_info->context_sms_map);
-		HashTable * ht = HT_Next(rtn_info->context_sms_map);
+		HashTable * ht = HT_RemoveNext(rtn_info->context_sms_map);
 		
 		while (ht != NULL) {
 			
 			HT_ResetIter(ht);
-			SMSInfo * info_access = HT_Next(ht);
+			SMSInfo * info_access = HT_RemoveNext(ht);
 			
 			while (info_access != NULL) {
 				
@@ -168,17 +168,19 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 				#endif
 				ap_fwrite(report, buffer, VG_(strlen)(buffer));
 
-				info_access = HT_Next(ht);
+				VG_(free)(info_access);
+				info_access = HT_RemoveNext(ht);
 
 			}
 			
-			ht = HT_Next(rtn_info->context_sms_map);
+			HT_destruct(ht);
+			ht = HT_RemoveNext(rtn_info->context_sms_map);
 		}
 		#else
 
 		// iterate over sms records of current routine
 		HT_ResetIter(rtn_info->sms_map);
-		SMSInfo * info_access = HT_Next(rtn_info->sms_map);
+		SMSInfo * info_access = HT_RemoveNext(rtn_info->sms_map);
 		
 		while (info_access != NULL) {
 			
@@ -201,7 +203,8 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 			
 			ap_fwrite(report, buffer, VG_(strlen)(buffer));
 			
-			info_access = HT_Next(rtn_info->sms_map);
+			VG_(free)(info_access);
+			info_access = HT_RemoveNext(rtn_info->sms_map);
 		}
 		#endif
 		
@@ -209,7 +212,13 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 		}
 		#endif
 
-		rtn_info = HT_Next(tdata->routine_hash_table);
+		#if CCT
+		HT_destruct(rtn_info->context_sms_map);
+		#else
+		HT_destruct(rtn_info->sms_map);
+		#endif
+		VG_(free)(rtn_info);
+		rtn_info = HT_RemoveNext(tdata->routine_hash_table);
 
 	}
 	

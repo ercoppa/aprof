@@ -27,7 +27,8 @@ static ThreadData * thread_start(ThreadId tid){
 	
 	threads[tid-1] = tdata;
 
-	tdata->routine_hash_table = HT_construct(destroy_routine_info);
+	//tdata->routine_hash_table = HT_construct(destroy_routine_info);
+	tdata->routine_hash_table = HT_construct(NULL);
 	AP_ASSERT(tdata->routine_hash_table != NULL, "rtn ht not allocable");
 	
 	#if DEBUG_ALLOCATION
@@ -159,6 +160,8 @@ void thread_exit (ThreadId tid){
 	// deallocate CCT
 	freeTree(tdata->root);
 	#endif
+	
+	HT_destruct(tdata->routine_hash_table);
 	
 	VG_(free)(tdata->stack);
 	VG_(free)(tdata);

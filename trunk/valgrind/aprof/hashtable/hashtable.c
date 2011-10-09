@@ -218,6 +218,35 @@ void * HT_Next(HashTable * table)
    return NULL;
 }
 
+void * HT_RemoveNext(HashTable * table)
+{
+   Int i;
+   vg_assert(table);
+   /* See long comment on HT_Next prototype in pub_tool_hashtable.h.
+      In short if this fails, it means the caller tried to modify the
+      table whilst iterating over it, which is a bug. */
+   vg_assert(table->iterOK);
+
+   if (table->chains[table->iterChain] != NULL) {
+      void * node = table->chains[table->iterChain];
+      table->chains[table->iterChain] = table->chains[table->iterChain]->next;
+      table->n_elements--;
+      return node;
+   }
+
+   for (i = table->iterChain + 1; i < table->n_chains; i++) {
+      if (table->chains[i] != NULL) {
+         void * node = table->chains[i];
+         table->iterChain = i; 
+         table->chains[i] = table->chains[i]->next;
+         table->n_elements--;
+         return node;
+      }
+   }
+   
+   return NULL;
+}
+
 void HT_destruct(HashTable * table)
 {
     
@@ -225,14 +254,14 @@ void HT_destruct(HashTable * table)
    
    UInt       i;
    HashNode *node, *node_next;
-
-   for (i = 0; i < table->n_chains; i++) {
-      for (node = table->chains[i]; node != NULL; node = node_next) {
-         node_next = node->next;
-         if (table->free_func != NULL)
+   
+   if (table->n_elements > 0 && table->free_func != NULL) 
+       for (i = 0; i < table->n_chains; i++) {
+          for (node = table->chains[i]; node != NULL; node = node_next) {
+             node_next = node->next;
              table->free_func(node);
-      }
-   }
+          }
+       }
    //VG_(printf)("I will free %p for %p\n", table->chains, table);
    VG_(free)(table->chains);
    VG_(free)(table);

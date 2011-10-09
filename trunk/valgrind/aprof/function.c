@@ -54,7 +54,8 @@ RoutineInfo * new_routine_info(ThreadData * tdata, Function * fn, UWord target) 
 	rtn_info->routine_id = tdata->next_routine_id++;
 
 	#if CCT
-	rtn_info->context_sms_map = HT_construct(HT_destruct);
+	//rtn_info->context_sms_map = HT_construct(HT_destruct);
+	rtn_info->context_sms_map = HT_construct(NULL);
 	#if DEBUG
 	AP_ASSERT(rtn_info->context_sms_map != NULL, "context_sms_map not allocable");
 	#endif
@@ -65,7 +66,8 @@ RoutineInfo * new_routine_info(ThreadData * tdata, Function * fn, UWord target) 
 	
 	#else
 	
-	rtn_info->sms_map = HT_construct(VG_(free));
+	//rtn_info->sms_map = HT_construct(VG_(free));
+	rtn_info->sms_map = HT_construct(NULL);
 	#if DEBUG
 	AP_ASSERT(rtn_info->sms_map != NULL, "sms_map not allocable");
 	#endif
@@ -262,7 +264,8 @@ void function_exit(ThreadData * tdata, Activation * act) {
 	if (sms_map == NULL) {
 		
 		//VG_(printf)("New sms map\n");
-		sms_map = HT_construct(VG_(free));
+		//sms_map = HT_construct(VG_(free));
+		sms_map = HT_construct(NULL);
 		#if DEBUG
 		AP_ASSERT(sms_map != NULL, "sms_map not allocable");
 		#endif
