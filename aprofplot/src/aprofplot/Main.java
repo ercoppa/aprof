@@ -9,6 +9,7 @@ import aprofplot.gui.*;
 import java.awt.*;
 import java.util.*;
 import java.io.*;
+import java.util.regex.MatchResult;
 
 /**
  *
@@ -110,9 +111,8 @@ public class Main {
             out.print("rtn_display ");
             if (rtn_display_mode == DEMANGLED) out.println("0");
             else out.println("1");
-            out.print("recent ");
-            for (int i = 0; i < recent_files.size(); i++) out.print(recent_files.get(i) + " ");
-            out.println("");
+            for (int i = 0; i < recent_files.size(); i++) 
+                out.println("recent " + recent_files.get(i));
             out.close();
         }
         catch (Exception e) {
@@ -133,9 +133,18 @@ public class Main {
             tokenizer = new StringTokenizer(in.readLine());
             tokenizer.nextToken();
             rtn_display_mode = Integer.parseInt(tokenizer.nextToken());
-            tokenizer = new StringTokenizer(in.readLine());
-            tokenizer.nextToken();
-            while (tokenizer.hasMoreTokens()) recent_files.add(new File(tokenizer.nextToken()));
+            
+            String str = null;
+            while ((str = in.readLine()) != null) {
+                
+                try {
+                    Scanner s = new Scanner(str);
+                    s.findInLine("recent (.+)");
+                    MatchResult result = s.match();
+                    recent_files.add(new File(result.group(1)));
+                } catch (IllegalStateException e) {}
+            
+            }
             in.close();
         }
         catch (FileNotFoundException e) {
