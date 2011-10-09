@@ -254,16 +254,13 @@ VG_(run_innerloop__dispatch_unprofiled):
 		r3  (=CIA = next guest address)
 		r29 (=dispatch_ctr)
 		r31 (=guest_state)
-	   Stack state:
-		44(r1) (=orig guest_state)
 	*/
 	/* Has the guest state pointer been messed with?  If yes, exit.
            Also set up & VG_(tt_fast) early in an attempt at better
            scheduling. */
-        lwz     9,44(1)              /* original guest_state ptr */
         lis	5,VG_(tt_fast)@ha
         addi    5,5,VG_(tt_fast)@l   /* & VG_(tt_fast) */
-        cmpw    9,31
+        andi.   0,31,1
         bne	gsp_changed
 
         /* save the jump address in the guest state */
@@ -308,16 +305,13 @@ VG_(run_innerloop__dispatch_profiled):
 		r3  (=CIA = next guest address)
 		r29 (=dispatch_ctr)
 		r31 (=guest_state)
-	   Stack state:
-		44(r1) (=orig guest_state)
 	*/
 	/* Has the guest state pointer been messed with?  If yes, exit.
            Also set up & VG_(tt_fast) early in an attempt at better
            scheduling. */
-        lwz     9,44(1)              /* original guest_state ptr */
         lis	5,VG_(tt_fast)@ha
         addi    5,5,VG_(tt_fast)@l   /* & VG_(tt_fast) */
-        cmpw    9,31
+        andi.   0,31,1
         bne	gsp_changed
 
         /* save the jump address in the guest state */

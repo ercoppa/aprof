@@ -49,6 +49,15 @@
 #include "memcheck.h"   /* for client requests */
 
 
+/* We really want this frame-pointer-less on all platforms, since the
+   helper functions are small and called very frequently.  By default
+   on x86-linux, though, Makefile.all.am doesn't specify it, so do it
+   here.  Requires gcc >= 4.4, unfortunately. */
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 4)
+# pragma GCC optimize("-fomit-frame-pointer")
+#endif
+
+
 /* Set to 1 to do a little more sanity checking */
 #define VG_DEBUG_MEMORY 0
 
@@ -1099,9 +1108,7 @@ static Bool parse_ignore_ranges ( UChar* str0 )
 /* --------------- Load/store slow cases. --------------- */
 
 static
-#ifndef PERF_FAST_LOADV
-INLINE
-#endif
+__attribute__((noinline))
 ULong mc_LOADVn_slow ( Addr a, SizeT nBits, Bool bigendian )
 {
    /* Make up a 64-bit result V word, which contains the loaded data for
@@ -1188,9 +1195,7 @@ ULong mc_LOADVn_slow ( Addr a, SizeT nBits, Bool bigendian )
 
 
 static
-#ifndef PERF_FAST_STOREV
-INLINE
-#endif
+__attribute__((noinline))
 void mc_STOREVn_slow ( Addr a, SizeT nBits, ULong vbytes, Bool bigendian )
 {
    SizeT szB = nBits / 8;
@@ -4204,8 +4209,8 @@ UWord mc_LOADV16 ( Addr a, Bool isBigEndian )
       // Handle common case quickly: a is suitably aligned, is mapped, and is
       // addressible.
       // Convert V bits from compact memory form to expanded register form
-      if      (vabits8 == VA_BITS8_DEFINED  ) { return V_BITS16_DEFINED;   }
-      else if (vabits8 == VA_BITS8_UNDEFINED) { return V_BITS16_UNDEFINED; }
+      if      (LIKELY(vabits8 == VA_BITS8_DEFINED  )) { return V_BITS16_DEFINED;   }
+      else if (LIKELY(vabits8 == VA_BITS8_UNDEFINED)) { return V_BITS16_UNDEFINED; }
       else {
          // The 4 (yes, 4) bytes are not all-defined or all-undefined, check
          // the two sub-bytes.
@@ -4316,8 +4321,8 @@ UWord MC_(helperc_LOADV8) ( Addr a )
       // Convert V bits from compact memory form to expanded register form
       // Handle common case quickly: a is mapped, and the entire
       // word32 it lives in is addressible.
-      if      (vabits8 == VA_BITS8_DEFINED  ) { return V_BITS8_DEFINED;   }
-      else if (vabits8 == VA_BITS8_UNDEFINED) { return V_BITS8_UNDEFINED; }
+      if      (LIKELY(vabits8 == VA_BITS8_DEFINED  )) { return V_BITS8_DEFINED;   }
+      else if (LIKELY(vabits8 == VA_BITS8_UNDEFINED)) { return V_BITS8_UNDEFINED; }
       else {
          // The 4 (yes, 4) bytes are not all-defined or all-undefined, check
          // the single byte.
@@ -4928,28 +4933,27 @@ static void show_client_block_stats ( void )
       cgb_allocs, cgb_discards, cgb_used_MAX, cgb_search 
    );
 }
-
 static void print_monitor_help ( void )
 {
    VG_(gdb_printf) 
       (
 "\n"
 "memcheck monitor commands:\n"
-"  mc.get_vbits <addr> [<len>]\n"
+"  get_vbits <addr> [<len>]\n"
 "        returns validity bits for <len> (or 1) bytes at <addr>\n"
 "            bit values 0 = valid, 1 = invalid, __ = unaddressable byte\n"
-"        Example: mc.get_vbits 0x8049c78 10\n"
-"  mc.make_memory [noaccess|undefined\n"
-"                     |defined|ifaddressabledefined] <addr> [<len>]\n"
+"        Example: get_vbits 0x8049c78 10\n"
+"  make_memory [noaccess|undefined\n"
+"                     |defined|Definedifaddressable] <addr> [<len>]\n"
 "        mark <len> (or 1) bytes at <addr> with the given accessibility\n"
-"  mc.check_memory [addressable|defined] <addr> [<len>]\n"
+"  check_memory [addressable|defined] <addr> [<len>]\n"
 "        check that <len> (or 1) bytes at <addr> have the given accessibility\n"
 "            and outputs a description of <addr>\n"
-"  mc.leak_check [full*|summary]\n"
-"                [reachable|leakpossible*|definiteleak]\n"
+"  leak_check [full*|summary] [reachable|possibleleak*|definiteleak]\n"
+"                [increased*|changed|any]\n"
 "            * = defaults\n"
-"        Examples: mc.leak_check\n"
-"                  mc.leak_check any summary\n"
+"        Examples: leak_check\n"
+"                  leak_check summary any\n"
 "\n");
 }
 
@@ -4964,10 +4968,10 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
 
    wcmd = VG_(strtok_r) (s, " ", &ssaveptr);
    /* NB: if possible, avoid introducing a new command below which
-      starts with the same 4 first letters as an already existing
+      starts with the same first letter(s) as an already existing
       command. This ensures a shorter abbreviation for the user. */
    switch (VG_(keyword_id) 
-           ("help mc.get_vbits mc.leak_check mc.make_memory mc.check_memory", 
+           ("help get_vbits leak_check make_memory check_memory", 
             wcmd, kwd_report_duplicated_matches)) {
    case -2: /* multiple matches */
       return True;
@@ -4976,7 +4980,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
    case  0: /* help */
       print_monitor_help();
       return True;
-   case  1: { /* mc.get_vbits */
+   case  1: { /* get_vbits */
       Addr address;
       SizeT szB = 1;
       VG_(strtok_get_address_and_size) (&address, &szB, &ssaveptr);
@@ -5011,50 +5015,60 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
       }
       return True;
    }
-   case  2: { /* mc.leak_check */
+   case  2: { /* leak_check */
       Int err = 0;
-      Bool save_clo_show_reachable = MC_(clo_show_reachable);
-      Bool save_clo_show_possibly_lost = MC_(clo_show_possibly_lost);
+      LeakCheckParams lcp;
       Char* kw;
-
-      LeakCheckMode mode;
       
-      MC_(clo_show_reachable) = False;
-      mode = LC_Full;
+      lcp.mode               = LC_Full;
+      lcp.show_reachable     = False;
+      lcp.show_possibly_lost = True;
+      lcp.deltamode          = LCD_Increased;
+      lcp.requested_by_monitor_command = True;
       
       for (kw = VG_(strtok_r) (NULL, " ", &ssaveptr); 
            kw != NULL; 
            kw = VG_(strtok_r) (NULL, " ", &ssaveptr)) {
          switch (VG_(keyword_id) 
                  ("full summary "
-                  "reachable leakpossible definiteleak",
+                  "reachable possibleleak definiteleak "
+                  "increased changed any",
                   kw, kwd_report_all)) {
          case -2: err++; break;
          case -1: err++; break;
-         case  0: mode = LC_Full; break;
-         case  1: mode = LC_Summary; break;
-         case  2: MC_(clo_show_reachable) = True; 
-                  MC_(clo_show_possibly_lost) = True; break;
-         case  3: MC_(clo_show_reachable) = False;
-                  MC_(clo_show_possibly_lost) = True; break;
-         case  4: MC_(clo_show_reachable) = False;
-                  MC_(clo_show_possibly_lost) = False; break;
-         default: tl_assert (0);
+         case  0: /* full */
+            lcp.mode = LC_Full; break;
+         case  1: /* summary */
+            lcp.mode = LC_Summary; break;
+         case  2: /* reachable */
+            lcp.show_reachable = True; 
+            lcp.show_possibly_lost = True; break;
+         case  3: /* possibleleak */
+            lcp.show_reachable = False;
+            lcp.show_possibly_lost = True; break;
+         case  4: /* definiteleak */
+            lcp.show_reachable = False;
+            lcp.show_possibly_lost = False; break;
+         case  5: /* increased */
+            lcp.deltamode = LCD_Increased; break;
+         case  6: /* changed */
+            lcp.deltamode = LCD_Changed; break;
+         case  7: /* any */
+            lcp.deltamode = LCD_Any; break;
+         default:
+            tl_assert (0);
          }
       }
       if (!err)
-         MC_(detect_memory_leaks)(tid, mode);
-      
-      MC_(clo_show_reachable) = save_clo_show_reachable;
-      MC_(clo_show_possibly_lost) = save_clo_show_possibly_lost;
+         MC_(detect_memory_leaks)(tid, lcp);
       return True;
    }
       
-   case  3: { /* mc.make_memory */
+   case  3: { /* make_memory */
       Addr address;
       SizeT szB = 1;
       int kwdid = VG_(keyword_id) 
-         ("noaccess undefined defined ifaddressabledefined",
+         ("noaccess undefined defined Definedifaddressable",
           VG_(strtok_r) (NULL, " ", &ssaveptr), kwd_report_all);
       VG_(strtok_get_address_and_size) (&address, &szB, &ssaveptr);
       if (address == (Addr) 0 && szB == 0) return True;
@@ -5071,7 +5085,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
       return True;
    }
 
-   case  4: { /* mc.check_memory */
+   case  4: { /* check_memory */
       Addr address;
       SizeT szB = 1;
       Addr bad_addr;
@@ -5189,10 +5203,40 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
          break;
       }
 
-      case VG_USERREQ__DO_LEAK_CHECK:
-         MC_(detect_memory_leaks)(tid, arg[1] ? LC_Summary : LC_Full);
+      case VG_USERREQ__DO_LEAK_CHECK: {
+         LeakCheckParams lcp;
+         
+         if (arg[1] == 0)
+            lcp.mode = LC_Full;
+         else if (arg[1] == 1)
+            lcp.mode = LC_Summary;
+         else {
+            VG_(message)(Vg_UserMsg, 
+                         "Warning: unknown memcheck leak search mode\n");
+            lcp.mode = LC_Full;
+         }
+          
+         lcp.show_reachable = MC_(clo_show_reachable);
+         lcp.show_possibly_lost = MC_(clo_show_possibly_lost);
+
+         if (arg[2] == 0)
+            lcp.deltamode = LCD_Any;
+         else if (arg[2] == 1)
+            lcp.deltamode = LCD_Increased;
+         else if (arg[2] == 2)
+            lcp.deltamode = LCD_Changed;
+         else {
+            VG_(message)
+               (Vg_UserMsg, 
+                "Warning: unknown memcheck leak search deltamode\n");
+            lcp.deltamode = LCD_Any;
+         }
+         lcp.requested_by_monitor_command = False;
+         
+         MC_(detect_memory_leaks)(tid, lcp);
          *ret = 0; /* return value is meaningless */
          break;
+      }
 
       case VG_USERREQ__MAKE_MEM_NOACCESS:
          MC_(make_mem_noaccess) ( arg[1], arg[2] );
@@ -5854,7 +5898,13 @@ static void mc_fini ( Int exitcode )
    MC_(print_malloc_stats)();
 
    if (MC_(clo_leak_check) != LC_Off) {
-      MC_(detect_memory_leaks)(1/*bogus ThreadId*/, MC_(clo_leak_check));
+      LeakCheckParams lcp;
+      lcp.mode = MC_(clo_leak_check);
+      lcp.show_reachable = MC_(clo_show_reachable);
+      lcp.show_possibly_lost = MC_(clo_show_possibly_lost);
+      lcp.deltamode = LCD_Any;
+      lcp.requested_by_monitor_command = False;
+      MC_(detect_memory_leaks)(1/*bogus ThreadId*/, lcp);
    } else {
       if (VG_(clo_verbosity) == 1 && !VG_(clo_xml)) {
          VG_(umsg)(

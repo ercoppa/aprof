@@ -301,7 +301,7 @@ typedef enum { OpLoad=0, OpStore=1, OpAlu=2 } Op;
 
 /* --- Types --- */
 
-#define N_TYPES 9
+#define N_TYPES 10
 
 static Int type2index ( IRType ty )
 {
@@ -908,8 +908,8 @@ IRSB* lk_instrument ( VgCallbackClosure* closure,
 
 static void lk_fini(Int exitcode)
 {
-   char percentify_buf[4]; /* Two digits, '%' and 0. */
-   const int percentify_size = sizeof(percentify_buf);
+   char percentify_buf[5]; /* Two digits, '%' and 0. */
+   const int percentify_size = sizeof(percentify_buf) - 1;
    const int percentify_decs = 0;
    
    tl_assert(clo_fnname);

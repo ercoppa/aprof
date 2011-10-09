@@ -3,9 +3,11 @@ include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS =		    \
 	compare_error_count_with    \
+	filter_error_count	    \
 	filter_error_summary	    \
 	filter_stderr               \
 	filter_stderr_and_thread_no \
+	filter_stderr_and_thread_no_and_offset \
 	run_openmp_test             \
 	supported_libpthread	    \
 	supported_sem_init
@@ -33,6 +35,8 @@ EXTRA_DIST =                                        \
 	annotate_publish_hg.vgtest		    \
 	annotate_smart_pointer.stderr.exp	    \
 	annotate_smart_pointer.vgtest		    \
+	annotate_smart_pointer2.stderr.exp	    \
+	annotate_smart_pointer2.vgtest		    \
 	annotate_spinlock.stderr.exp		    \
 	annotate_spinlock.vgtest		    \
 	annotate_rwlock.stderr.exp		    \
@@ -129,6 +133,9 @@ EXTRA_DIST =                                        \
 	pth_barrier_race.vgtest                     \
 	pth_barrier_reinit.stderr.exp               \
 	pth_barrier_reinit.vgtest                   \
+	pth_barrier_thr_cr.stderr.exp               \
+	pth_barrier_thr_cr.vgtest                   \
+	pth_barrier_thr_cr.supp                     \
 	pth_broadcast.stderr.exp                    \
 	pth_broadcast.vgtest                        \
 	pth_cancel_locked.stderr.exp		    \
@@ -338,7 +345,8 @@ check_PROGRAMS += omp_matinv omp_prime omp_printf
 endif
 
 if HAVE_PTHREAD_BARRIER
-check_PROGRAMS += matinv pth_barrier pth_barrier_race pth_barrier_reinit
+check_PROGRAMS += matinv pth_barrier pth_barrier_race pth_barrier_reinit \
+	pth_barrier_thr_cr
 endif
 
 if HAVE_PTHREAD_CREATE_GLIBC_2_0

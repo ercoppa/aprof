@@ -1,4 +1,3 @@
-
 /*---------------------------------------------------------------*/
 /*--- begin                                   host_arm_defs.h ---*/
 /*---------------------------------------------------------------*/
@@ -587,6 +586,7 @@ typedef
       ARMin_VCvtID,
       ARMin_FPSCR,
       ARMin_MFence,
+      ARMin_CLREX,
       /* Neon */
       ARMin_NLdStQ,
       ARMin_NLdStD,
@@ -709,18 +709,21 @@ typedef
          struct {
             ARMMulOp op;
          } Mul;
-         /* LDREX{,H,B} r0, [r1]
+         /* LDREX{,H,B} r2, [r4]  and
+            LDREXD r2, r3, [r4]   (on LE hosts, transferred value is r3:r2)
             Again, hardwired registers since this is not performance
             critical, and there are possibly constraints on the
             registers that we can't express in the register allocator.*/
          struct {
-            Int  szB; /* currently only 4 is allowed */
+            Int  szB; /* 1, 2, 4 or 8 */
          } LdrEX;
-         /* STREX{,H,B} r0, r1, [r2]
-            r0 = SC( [r2] = r1 )
+         /* STREX{,H,B} r0, r2, [r4]  and  
+            STREXD r0, r2, r3, [r4]   (on LE hosts, transferred value is r3:r2)
+            r0 = SC( [r4] = r2 )      (8, 16, 32 bit transfers)
+            r0 = SC( [r4] = r3:r2)    (64 bit transfers)
             Ditto comment re fixed registers. */
          struct {
-            Int  szB; /* currently only 4 is allowed */
+            Int  szB; /* 1, 2, 4 or 8 */
          } StrEX;
          /* VFP INSTRUCTIONS */
          /* 64-bit Fp load/store */
@@ -824,6 +827,9 @@ typedef
          */
          struct {
          } MFence;
+         /* A CLREX instruction. */
+         struct {
+         } CLREX;
          /* Neon data processing instruction: 3 registers of the same
             length */
          struct {
@@ -937,6 +943,7 @@ extern ARMInstr* ARMInstr_VCvtID   ( Bool iToD, Bool syned,
                                      HReg dst, HReg src );
 extern ARMInstr* ARMInstr_FPSCR    ( Bool toFPSCR, HReg iReg );
 extern ARMInstr* ARMInstr_MFence   ( void );
+extern ARMInstr* ARMInstr_CLREX    ( void );
 extern ARMInstr* ARMInstr_NLdStQ   ( Bool isLoad, HReg, ARMAModeN* );
 extern ARMInstr* ARMInstr_NLdStD   ( Bool isLoad, HReg, ARMAModeN* );
 extern ARMInstr* ARMInstr_NUnary   ( ARMNeonUnOp, HReg, HReg, UInt, Bool );
@@ -960,7 +967,9 @@ extern void getRegUsage_ARMInstr ( HRegUsage*, ARMInstr*, Bool );
 extern void mapRegs_ARMInstr     ( HRegRemap*, ARMInstr*, Bool );
 extern Bool isMove_ARMInstr      ( ARMInstr*, HReg*, HReg* );
 extern Int  emit_ARMInstr        ( UChar* buf, Int nbuf, ARMInstr*, 
-                                   Bool, void* dispatch );
+                                   Bool,
+                                   void* dispatch_unassisted,
+                                   void* dispatch_assisted );
 
 extern void genSpill_ARM  ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
                             HReg rreg, Int offset, Bool );

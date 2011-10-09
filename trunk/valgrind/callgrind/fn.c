@@ -509,8 +509,7 @@ fn_node* CLG_(get_fn_node)(BB* bb)
 
 	/* Use address as found in library */
 	if (sizeof(Addr) == 4)
-	    //p = VG_(sprintf)(fnname, "%#08lx", bb->offset);
-	    p = VG_(sprintf)(fnname, "%p", bb_addr(bb));
+	    p = VG_(sprintf)(fnname, "%#08lx", bb->offset);
 	else 	    
 	    // 64bit address
 	    p = VG_(sprintf)(fnname, "%#016lx", bb->offset);

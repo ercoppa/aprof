@@ -211,8 +211,8 @@ static ARMAMode2*  iselIntExpr_AMode2     ( ISelEnv* env, IRExpr* e );
 static ARMAModeV*  iselIntExpr_AModeV_wrk ( ISelEnv* env, IRExpr* e );
 static ARMAModeV*  iselIntExpr_AModeV     ( ISelEnv* env, IRExpr* e );
 
-static ARMAModeN* iselIntExpr_AModeN_wrk  ( ISelEnv* env, IRExpr* e );
-static ARMAModeN* iselIntExpr_AModeN      ( ISelEnv* env, IRExpr* e );
+static ARMAModeN*  iselIntExpr_AModeN_wrk ( ISelEnv* env, IRExpr* e );
+static ARMAModeN*  iselIntExpr_AModeN     ( ISelEnv* env, IRExpr* e );
 
 static ARMRI84*    iselIntExpr_RI84_wrk
         ( /*OUT*/Bool* didInv, Bool mayInv, ISelEnv* env, IRExpr* e );
@@ -3351,64 +3351,64 @@ static HReg iselNeon64Expr_wrk ( ISelEnv* env, IRExpr* e )
             addInstr(env, ARMInstr_NUnary(ARMneon_NOT, res, tmp, 4, False));
             return res;
          }
-         case Iop_Shorten16x8:
-         case Iop_Shorten32x4:
-         case Iop_Shorten64x2: {
+         case Iop_NarrowUn16to8x8:
+         case Iop_NarrowUn32to16x4:
+         case Iop_NarrowUn64to32x2: {
             HReg res = newVRegD(env);
             HReg arg = iselNeonExpr(env, e->Iex.Unop.arg);
             UInt size = 0;
             switch(e->Iex.Binop.op) {
-               case Iop_Shorten16x8: size = 0; break;
-               case Iop_Shorten32x4: size = 1; break;
-               case Iop_Shorten64x2: size = 2; break;
+               case Iop_NarrowUn16to8x8:  size = 0; break;
+               case Iop_NarrowUn32to16x4: size = 1; break;
+               case Iop_NarrowUn64to32x2: size = 2; break;
                default: vassert(0);
             }
             addInstr(env, ARMInstr_NUnary(ARMneon_COPYN,
                                           res, arg, size, False));
             return res;
          }
-         case Iop_QShortenS16Sx8:
-         case Iop_QShortenS32Sx4:
-         case Iop_QShortenS64Sx2: {
+         case Iop_QNarrowUn16Sto8Sx8:
+         case Iop_QNarrowUn32Sto16Sx4:
+         case Iop_QNarrowUn64Sto32Sx2: {
             HReg res = newVRegD(env);
             HReg arg = iselNeonExpr(env, e->Iex.Unop.arg);
             UInt size = 0;
             switch(e->Iex.Binop.op) {
-               case Iop_QShortenS16Sx8: size = 0; break;
-               case Iop_QShortenS32Sx4: size = 1; break;
-               case Iop_QShortenS64Sx2: size = 2; break;
+               case Iop_QNarrowUn16Sto8Sx8:  size = 0; break;
+               case Iop_QNarrowUn32Sto16Sx4: size = 1; break;
+               case Iop_QNarrowUn64Sto32Sx2: size = 2; break;
                default: vassert(0);
             }
             addInstr(env, ARMInstr_NUnary(ARMneon_COPYQNSS,
                                           res, arg, size, False));
             return res;
          }
-         case Iop_QShortenU16Sx8:
-         case Iop_QShortenU32Sx4:
-         case Iop_QShortenU64Sx2: {
+         case Iop_QNarrowUn16Sto8Ux8:
+         case Iop_QNarrowUn32Sto16Ux4:
+         case Iop_QNarrowUn64Sto32Ux2: {
             HReg res = newVRegD(env);
             HReg arg = iselNeonExpr(env, e->Iex.Unop.arg);
             UInt size = 0;
             switch(e->Iex.Binop.op) {
-               case Iop_QShortenU16Sx8: size = 0; break;
-               case Iop_QShortenU32Sx4: size = 1; break;
-               case Iop_QShortenU64Sx2: size = 2; break;
+               case Iop_QNarrowUn16Sto8Ux8:  size = 0; break;
+               case Iop_QNarrowUn32Sto16Ux4: size = 1; break;
+               case Iop_QNarrowUn64Sto32Ux2: size = 2; break;
                default: vassert(0);
             }
             addInstr(env, ARMInstr_NUnary(ARMneon_COPYQNUS,
                                           res, arg, size, False));
             return res;
          }
-         case Iop_QShortenU16Ux8:
-         case Iop_QShortenU32Ux4:
-         case Iop_QShortenU64Ux2: {
+         case Iop_QNarrowUn16Uto8Ux8:
+         case Iop_QNarrowUn32Uto16Ux4:
+         case Iop_QNarrowUn64Uto32Ux2: {
             HReg res = newVRegD(env);
             HReg arg = iselNeonExpr(env, e->Iex.Unop.arg);
             UInt size = 0;
             switch(e->Iex.Binop.op) {
-               case Iop_QShortenU16Ux8: size = 0; break;
-               case Iop_QShortenU32Ux4: size = 1; break;
-               case Iop_QShortenU64Ux2: size = 2; break;
+               case Iop_QNarrowUn16Uto8Ux8:  size = 0; break;
+               case Iop_QNarrowUn32Uto16Ux4: size = 1; break;
+               case Iop_QNarrowUn64Uto32Ux2: size = 2; break;
                default: vassert(0);
             }
             addInstr(env, ARMInstr_NUnary(ARMneon_COPYQNUU,
@@ -3974,32 +3974,32 @@ static HReg iselNeonExpr_wrk ( ISelEnv* env, IRExpr* e )
             addInstr(env, ARMInstr_NUnary(ARMneon_NOT, res, tmp, 4, True));
             return res;
          }
-         case Iop_Longen8Ux8:
-         case Iop_Longen16Ux4:
-         case Iop_Longen32Ux2: {
+         case Iop_Widen8Uto16x8:
+         case Iop_Widen16Uto32x4:
+         case Iop_Widen32Uto64x2: {
             HReg res = newVRegV(env);
             HReg arg = iselNeon64Expr(env, e->Iex.Unop.arg);
             UInt size;
             switch (e->Iex.Unop.op) {
-               case Iop_Longen8Ux8: size = 0; break;
-               case Iop_Longen16Ux4: size = 1; break;
-               case Iop_Longen32Ux2: size = 2; break;
+               case Iop_Widen8Uto16x8:  size = 0; break;
+               case Iop_Widen16Uto32x4: size = 1; break;
+               case Iop_Widen32Uto64x2: size = 2; break;
                default: vassert(0);
             }
             addInstr(env, ARMInstr_NUnary(ARMneon_COPYLU,
                                           res, arg, size, True));
             return res;
          }
-         case Iop_Longen8Sx8:
-         case Iop_Longen16Sx4:
-         case Iop_Longen32Sx2: {
+         case Iop_Widen8Sto16x8:
+         case Iop_Widen16Sto32x4:
+         case Iop_Widen32Sto64x2: {
             HReg res = newVRegV(env);
             HReg arg = iselNeon64Expr(env, e->Iex.Unop.arg);
             UInt size;
             switch (e->Iex.Unop.op) {
-               case Iop_Longen8Sx8: size = 0; break;
-               case Iop_Longen16Sx4: size = 1; break;
-               case Iop_Longen32Sx2: size = 2; break;
+               case Iop_Widen8Sto16x8:  size = 0; break;
+               case Iop_Widen16Sto32x4: size = 1; break;
+               case Iop_Widen32Sto64x2: size = 2; break;
                default: vassert(0);
             }
             addInstr(env, ARMInstr_NUnary(ARMneon_COPYLS,
@@ -4217,7 +4217,42 @@ static HReg iselNeonExpr_wrk ( ISelEnv* env, IRExpr* e )
                   }
                }
             }
-            /* Does not match "VMOV Reg, Imm" form */
+            /* Does not match "VMOV Reg, Imm" form.  We'll have to do
+               it the slow way. */
+            { 
+               /* local scope */
+               /* Done via the stack for ease of use. */
+               /* FIXME: assumes little endian host */
+               HReg       w3, w2, w1, w0;
+               HReg       res  = newVRegV(env);
+               ARMAMode1* sp_0  = ARMAMode1_RI(hregARM_R13(), 0);
+               ARMAMode1* sp_4  = ARMAMode1_RI(hregARM_R13(), 4);
+               ARMAMode1* sp_8  = ARMAMode1_RI(hregARM_R13(), 8);
+               ARMAMode1* sp_12 = ARMAMode1_RI(hregARM_R13(), 12);
+               ARMRI84*   c_16  = ARMRI84_I84(16,0);
+               /* Make space for SP */
+               addInstr(env, ARMInstr_Alu(ARMalu_SUB, hregARM_R13(),
+                                                      hregARM_R13(), c_16));
+
+               /* Store the less significant 64 bits */
+               iselInt64Expr(&w1, &w0, env, e->Iex.Binop.arg2);
+               addInstr(env, ARMInstr_LdSt32(False/*store*/, w0, sp_0));
+               addInstr(env, ARMInstr_LdSt32(False/*store*/, w1, sp_4));
+         
+               /* Store the more significant 64 bits */
+               iselInt64Expr(&w3, &w2, env, e->Iex.Binop.arg1);
+               addInstr(env, ARMInstr_LdSt32(False/*store*/, w2, sp_8));
+               addInstr(env, ARMInstr_LdSt32(False/*store*/, w3, sp_12));
+         
+                /* Load result back from stack. */
+                addInstr(env, ARMInstr_NLdStQ(True/*load*/, res,
+                                              mkARMAModeN_R(hregARM_R13())));
+
+                /* Restore SP */
+                addInstr(env, ARMInstr_Alu(ARMalu_ADD, hregARM_R13(),
+                                           hregARM_R13(), c_16));
+                return res;
+            } /* local scope */
             goto neon_expr_bad;
          case Iop_AndV128: {
             HReg res = newVRegV(env);
@@ -5820,50 +5855,86 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          /* LL */
          IRTemp res = stmt->Ist.LLSC.result;
          IRType ty  = typeOfIRTemp(env->type_env, res);
-         if (ty == Ity_I32 || ty == Ity_I8) {
+         if (ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8) {
             Int  szB   = 0;
             HReg r_dst = lookupIRTemp(env, res);
             HReg raddr = iselIntExpr_R(env, stmt->Ist.LLSC.addr);
             switch (ty) {
                case Ity_I8:  szB = 1; break;
+               case Ity_I16: szB = 2; break;
                case Ity_I32: szB = 4; break;
                default:      vassert(0);
             }
-            addInstr(env, mk_iMOVds_RR(hregARM_R1(), raddr));
+            addInstr(env, mk_iMOVds_RR(hregARM_R4(), raddr));
             addInstr(env, ARMInstr_LdrEX(szB));
-            addInstr(env, mk_iMOVds_RR(r_dst, hregARM_R0()));
+            addInstr(env, mk_iMOVds_RR(r_dst, hregARM_R2()));
             return;
          }
-         /* else fall thru; is unhandled */
+         if (ty == Ity_I64) {
+            HReg raddr = iselIntExpr_R(env, stmt->Ist.LLSC.addr);
+            addInstr(env, mk_iMOVds_RR(hregARM_R4(), raddr));
+            addInstr(env, ARMInstr_LdrEX(8));
+            /* Result is in r3:r2.  On a non-NEON capable CPU, we must
+               move it into a result register pair.  On a NEON capable
+               CPU, the result register will be a 64 bit NEON
+               register, so we must move it there instead. */
+            if (arm_hwcaps & VEX_HWCAPS_ARM_NEON) {
+               HReg dst = lookupIRTemp(env, res);
+               addInstr(env, ARMInstr_VXferD(True, dst, hregARM_R3(),
+                                                        hregARM_R2()));
+            } else {
+               HReg r_dst_hi, r_dst_lo;
+               lookupIRTemp64(&r_dst_hi, &r_dst_lo, env, res);
+               addInstr(env, mk_iMOVds_RR(r_dst_lo, hregARM_R2()));
+               addInstr(env, mk_iMOVds_RR(r_dst_hi, hregARM_R3()));
+            }
+            return;
+         }
+         /*NOTREACHED*/
+         vassert(0); 
       } else {
          /* SC */
-         IRTemp res = stmt->Ist.LLSC.result;
-         IRType ty  = typeOfIRTemp(env->type_env, res);
          IRType tyd = typeOfIRExpr(env->type_env, stmt->Ist.LLSC.storedata);
-         vassert(ty == Ity_I1);
-         if (tyd == Ity_I32 || tyd == Ity_I8) {
-            Int  szB     = 0;
-            HReg r_res   = lookupIRTemp(env, res);
-            HReg rD      = iselIntExpr_R(env, stmt->Ist.LLSC.storedata);
-            HReg rA      = iselIntExpr_R(env, stmt->Ist.LLSC.addr);
-            ARMRI84* one = ARMRI84_I84(1,0);
+         if (tyd == Ity_I32 || tyd == Ity_I16 || tyd == Ity_I8) {
+            Int  szB = 0;
+            HReg rD  = iselIntExpr_R(env, stmt->Ist.LLSC.storedata);
+            HReg rA  = iselIntExpr_R(env, stmt->Ist.LLSC.addr);
             switch (tyd) {
                case Ity_I8:  szB = 1; break;
+               case Ity_I16: szB = 2; break;
                case Ity_I32: szB = 4; break;
                default:      vassert(0);
             }
-            addInstr(env, mk_iMOVds_RR(hregARM_R1(), rD));
-            addInstr(env, mk_iMOVds_RR(hregARM_R2(), rA));
+            addInstr(env, mk_iMOVds_RR(hregARM_R2(), rD));
+            addInstr(env, mk_iMOVds_RR(hregARM_R4(), rA));
             addInstr(env, ARMInstr_StrEX(szB));
-            /* now r0 is 1 if failed, 0 if success.  Change to IR
-               conventions (0 is fail, 1 is success).  Also transfer
-               result to r_res. */
-            addInstr(env, ARMInstr_Alu(ARMalu_XOR, r_res, hregARM_R0(), one));
-            /* And be conservative -- mask off all but the lowest bit */
-            addInstr(env, ARMInstr_Alu(ARMalu_AND, r_res, r_res, one));
-            return;
+         } else {
+            vassert(tyd == Ity_I64);
+            /* This is really ugly.  There is no is/is-not NEON
+               decision akin to the case for LL, because iselInt64Expr
+               fudges this for us, and always gets the result into two
+               GPRs even if this means moving it from a NEON
+               register. */
+            HReg rDhi, rDlo;
+            iselInt64Expr(&rDhi, &rDlo, env, stmt->Ist.LLSC.storedata);
+            HReg rA = iselIntExpr_R(env, stmt->Ist.LLSC.addr);
+            addInstr(env, mk_iMOVds_RR(hregARM_R2(), rDlo));
+            addInstr(env, mk_iMOVds_RR(hregARM_R3(), rDhi));
+            addInstr(env, mk_iMOVds_RR(hregARM_R4(), rA));
+            addInstr(env, ARMInstr_StrEX(8));
          }
-         /* else fall thru; is unhandled */
+         /* now r0 is 1 if failed, 0 if success.  Change to IR
+            conventions (0 is fail, 1 is success).  Also transfer
+            result to r_res. */
+         IRTemp   res   = stmt->Ist.LLSC.result;
+         IRType   ty    = typeOfIRTemp(env->type_env, res);
+         HReg     r_res = lookupIRTemp(env, res);
+         ARMRI84* one   = ARMRI84_I84(1,0);
+         vassert(ty == Ity_I1);
+         addInstr(env, ARMInstr_Alu(ARMalu_XOR, r_res, hregARM_R0(), one));
+         /* And be conservative -- mask off all but the lowest bit */
+         addInstr(env, ARMInstr_Alu(ARMalu_AND, r_res, r_res, one));
+         return;
       }
       break;
    }
@@ -5872,7 +5943,10 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
    case Ist_MBE:
       switch (stmt->Ist.MBE.event) {
          case Imbe_Fence:
-            addInstr(env,ARMInstr_MFence());
+            addInstr(env, ARMInstr_MFence());
+            return;
+         case Imbe_CancelReservation:
+            addInstr(env, ARMInstr_CLREX());
             return;
          default:
             break;

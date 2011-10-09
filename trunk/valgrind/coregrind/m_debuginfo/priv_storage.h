@@ -45,19 +45,37 @@
 
 /* --------------------- SYMBOLS --------------------- */
 
-/* A structure to hold an ELF/XCOFF symbol (very crudely). */
+/* A structure to hold an ELF/MachO symbol (very crudely).  Usually
+   the symbol only has one name, which is stored in ::pri_name, and
+   ::sec_names is NULL.  If there are other names, these are stored in
+   ::sec_names, which is a NULL terminated vector holding the names.
+   The vector is allocated in VG_AR_DINFO, the names themselves live
+   in DebugInfo::strchunks.
+
+   From the point of view of ELF, the primary vs secondary distinction
+   is artificial: they are all just names associated with the address,
+   none of which has higher precedence than any other.  However, from
+   the point of view of mapping an address to a name to display to the
+   user, we need to choose one "preferred" name, and so that might as
+   well be installed as the pri_name, whilst all others can live in
+   sec_names[].  This has the convenient side effect that, in the
+   common case where there is only one name for the address,
+   sec_names[] does not need to be allocated.
+*/
 typedef 
    struct { 
-      Addr  addr;    /* lowest address of entity */
-      Addr  tocptr;  /* ppc64-linux only: value that R2 should have */
-      UChar *name;   /* name */
-      // XXX: this could be shrunk (on 32-bit platforms) by using 31 bits for
-      // the size and 1 bit for the isText.  If you do this, make sure that
-      // all assignments to isText use 0 or 1 (or True or False), and that a
-      // positive number larger than 1 is never used to represent True.
-      UInt  size;    /* size in bytes */
-      Bool  isText;
-      Bool  isIFunc; /* symbol is an indirect function? */
+      Addr    addr;    /* lowest address of entity */
+      Addr    tocptr;  /* ppc64-linux only: value that R2 should have */
+      UChar*  pri_name;  /* primary name, never NULL */
+      UChar** sec_names; /* NULL, or a NULL term'd array of other names */
+      // XXX: this could be shrunk (on 32-bit platforms) by using 30
+      // bits for the size and 1 bit each for isText and isIFunc.  If you
+      // do this, make sure that all assignments to the latter two use
+      // 0 or 1 (or True or False), and that a positive number larger
+      // than 1 is never used to represent True.
+      UInt    size;    /* size in bytes */
+      Bool    isText;
+      Bool    isIFunc; /* symbol is an indirect function? */
    }
    DiSym;
 
@@ -249,7 +267,15 @@ typedef
       Cop_Add=0x321,
       Cop_Sub,
       Cop_And,
-      Cop_Mul
+      Cop_Mul,
+      Cop_Shl,
+      Cop_Shr,
+      Cop_Eq,
+      Cop_Ge,
+      Cop_Gt,
+      Cop_Le,
+      Cop_Lt,
+      Cop_Ne
    }
    CfiOp;
 
@@ -368,7 +394,77 @@ ML_(cmp_for_DiAddrRange_range) ( const void* keyV, const void* elemV );
    information pertaining to one mapped ELF object.  This type is
    exported only abstractly - in pub_tool_debuginfo.h. */
 
+/* First though, here's an auxiliary data structure.  It is only ever
+   used as part of a struct _DebugInfo.  We use it to record
+   observations about mappings and permission changes to the
+   associated file, so as to decide when to read debug info.  It's
+   essentially an ultra-trivial finite state machine which, when it
+   reaches an accept state, signals that we should now read debug info
+   from the object into the associated struct _DebugInfo.  The accept
+   state is arrived at when have_rx_map and have_rw_map both become
+   true.  The initial state is one in which we have no observations,
+   so have_rx_map and have_rw_map are both false.
+
+   This is all rather ad-hoc; for example it has no way to record more
+   than one rw or rx mapping for a given object, not because such
+   events have never been observed, but because we've never needed to
+   note more than the first one of any such in order when to decide to
+   read debug info.  It may be that in future we need to track more
+   state in order to make the decision, so this struct would then get
+   expanded.
+
+   The normal sequence of events is one of
+
+   start  -->  r-x mapping  -->  rw- mapping  -->  accept
+   start  -->  rw- mapping  -->  r-x mapping  -->  accept
+
+   that is, take the first r-x and rw- mapping we see, and we're done.
+
+   On MacOSX 10.7, 32-bit, there appears to be a new variant:
+
+   start  -->  r-- mapping  -->  rw- mapping  
+          -->  upgrade r-- mapping to r-x mapping  -->  accept
+
+   where the upgrade is done by a call to vm_protect.  Hence we
+   need to also track this possibility.
+*/
+struct _DebugInfoFSM
+{
+   /* --- all targets --- */
+   UChar* filename; /* in mallocville (VG_AR_DINFO) */
+
+   Bool  have_rx_map; /* did we see a r?x mapping yet for the file? */
+   Bool  have_rw_map; /* did we see a rw? mapping yet for the file? */
+
+   Addr  rx_map_avma; /* these fields record the file offset, length */
+   SizeT rx_map_size; /* and map address of the r?x mapping we believe */
+   OffT  rx_map_foff; /* is the .text segment mapping */
+
+   Addr  rw_map_avma; /* ditto, for the rw? mapping we believe is the */
+   SizeT rw_map_size; /* .data segment mapping */
+   OffT  rw_map_foff;
+
+   /* --- OSX 10.7, 32-bit only --- */
+   Bool  have_ro_map; /* did we see a r-- mapping yet for the file? */
+
+   Addr  ro_map_avma; /* file offset, length, avma for said mapping */
+   SizeT ro_map_size;
+   OffT  ro_map_foff;
+};
+
+
+/* To do with the string table in struct _DebugInfo (::strchunks) */
 #define SEGINFO_STRCHUNKSIZE (64*1024)
+
+
+/* We may encounter more than one .eh_frame section in an object --
+   unusual but apparently allowed by ELF.  See
+   http://sourceware.org/bugzilla/show_bug.cgi?id=12675
+*/
+#define N_EHFRAME_SECTS 2
+
+
+/* So, the main structure for holding debug info for one object. */
 
 struct _DebugInfo {
 
@@ -399,29 +495,20 @@ struct _DebugInfo {
    Bool ddump_line;   /* mimic /usr/bin/readelf --debug-dump=line */
    Bool ddump_frames; /* mimic /usr/bin/readelf --debug-dump=frames */
 
-   /* Fields that must be filled in before we can start reading
-      anything from the ELF file.  These fields are filled in by
-      VG_(di_notify_mmap) and its immediate helpers. */
+   /* The "decide when it is time to read debuginfo" state machine.
+      This structure must get filled in before we can start reading
+      anything from the ELF/MachO file.  This structure is filled in
+      by VG_(di_notify_mmap) and its immediate helpers. */
+   struct _DebugInfoFSM fsm;
 
-   UChar* filename; /* in mallocville (VG_AR_DINFO) */
-   UChar* memname;  /* also in VG_AR_DINFO.  AIX5 only: .a member name */
-
-   Bool  have_rx_map; /* did we see a r?x mapping yet for the file? */
-   Bool  have_rw_map; /* did we see a rw? mapping yet for the file? */
-
-   Addr  rx_map_avma; /* these fields record the file offset, length */
-   SizeT rx_map_size; /* and map address of the r?x mapping we believe */
-   OffT  rx_map_foff; /* is the .text segment mapping */
-
-   Addr  rw_map_avma; /* ditto, for the rw? mapping we believe is the */
-   SizeT rw_map_size; /* .data segment mapping */
-   OffT  rw_map_foff;
-
-   /* Once both a rw? and r?x mapping for .filename have been
-      observed, we can go on to read the symbol tables and debug info.
-      .have_dinfo flags when that has happened. */
-   /* If have_dinfo is False, then all fields except "*rx_map*" and
-      "*rw_map*" are invalid and should not be consulted. */
+   /* Once the ::fsm has reached an accept state -- typically, when
+      both a rw? and r?x mapping for .filename have been observed --
+      we can go on to read the symbol tables and debug info.
+      .have_dinfo changes from False to True when the debug info has
+      been completely read in and postprocessed (canonicalised) and is
+      now suitable for querying. */
+   /* If have_dinfo is False, then all fields below this point are
+      invalid and should not be consulted. */
    Bool  have_dinfo; /* initially False */
 
    /* All the rest of the fields in this structure are filled in once
@@ -626,10 +713,11 @@ struct _DebugInfo {
    Bool   opd_present;
    Addr   opd_avma;
    SizeT  opd_size;
-   /* .ehframe -- needed on amd64-linux for stack unwinding */
-   Bool   ehframe_present;
-   Addr   ehframe_avma;
-   SizeT  ehframe_size;
+   /* .ehframe -- needed on amd64-linux for stack unwinding.  We might
+      see more than one, hence the arrays. */
+   UInt   n_ehframe;  /* 0 .. N_EHFRAME_SECTS */
+   Addr   ehframe_avma[N_EHFRAME_SECTS];
+   SizeT  ehframe_size[N_EHFRAME_SECTS];
 
    /* Sorted tables of stuff we snarfed from the file.  This is the
       eventual product of reading the debug info.  All this stuff
@@ -711,7 +799,11 @@ struct _DebugInfo {
 
 /* ------ Adding ------ */
 
-/* Add a symbol to si's symbol table. */
+/* Add a symbol to si's symbol table.  The contents of 'sym' are
+   copied.  It is assumed (and checked) that 'sym' only contains one
+   name, so there is no auxiliary ::sec_names vector to duplicate.
+   IOW, the copy is a shallow copy, and there are assertions in place
+   to ensure that's OK. */
 extern void ML_(addSym) ( struct _DebugInfo* di, DiSym* sym );
 
 /* Add a line-number record to a DebugInfo. */
@@ -720,12 +812,6 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
                         UChar*   filename, 
                         UChar*   dirname,  /* NULL is allowable */
                         Addr this, Addr next, Int lineno, Int entry);
-
-/* Shrink completed tables to save memory. */
-extern 
-void ML_(shrinkSym) ( struct _DebugInfo *di );
-extern 
-void ML_(shrinkLineInfo) ( struct _DebugInfo *di );
 
 /* Add a CFI summary record.  The supplied DiCfSI is copied. */
 extern void ML_(addDiCfSI) ( struct _DebugInfo* di, DiCfSI* cfsi );

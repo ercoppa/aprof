@@ -60,11 +60,6 @@
 # include "priv_readelf.h"
 # include "priv_readdwarf3.h"
 # include "priv_readpdb.h"
-#elif defined(VGO_aix5)
-# include "pub_core_debuglog.h"
-# include "pub_core_libcproc.h"
-# include "pub_core_libcfile.h"
-# include "priv_readxcoff.h"
 #elif defined(VGO_darwin)
 # include "priv_readmacho.h"
 # include "priv_readpdb.h"
@@ -173,8 +168,7 @@ static ULong handle_counter = 1;
 
 /* Allocate and zero out a new DebugInfo record. */
 static 
-DebugInfo* alloc_DebugInfo( const UChar* filename,
-                            const UChar* memname )
+DebugInfo* alloc_DebugInfo( const UChar* filename )
 {
    Bool       traceme;
    DebugInfo* di;
@@ -182,17 +176,13 @@ DebugInfo* alloc_DebugInfo( const UChar* filename,
    vg_assert(filename);
 
    di = ML_(dinfo_zalloc)("di.debuginfo.aDI.1", sizeof(DebugInfo));
-   di->handle    = handle_counter++;
-   di->filename  = ML_(dinfo_strdup)("di.debuginfo.aDI.2", filename);
-   di->memname   = memname ? ML_(dinfo_strdup)("di.debuginfo.aDI.3", memname)
-                           : NULL;
+   di->handle       = handle_counter++;
+   di->fsm.filename = ML_(dinfo_strdup)("di.debuginfo.aDI.2", filename);
 
-   /* Everything else -- pointers, sizes, arrays -- is zeroed by calloc.
-      Now set up the debugging-output flags. */
+   /* Everything else -- pointers, sizes, arrays -- is zeroed by
+      ML_(dinfo_zalloc).  Now set up the debugging-output flags. */
    traceme 
-      = VG_(string_match)( VG_(clo_trace_symtab_patt), filename )
-        || (memname && VG_(string_match)( VG_(clo_trace_symtab_patt), 
-                                          memname ));
+      = VG_(string_match)( VG_(clo_trace_symtab_patt), filename );
    if (traceme) {
       di->trace_symtab = VG_(clo_trace_symtab);
       di->trace_cfi    = VG_(clo_trace_cfi);
@@ -214,12 +204,24 @@ static void free_DebugInfo ( DebugInfo* di )
    GExpr* gexpr;
 
    vg_assert(di != NULL);
-   if (di->filename)   ML_(dinfo_free)(di->filename);
-   if (di->symtab)     ML_(dinfo_free)(di->symtab);
-   if (di->loctab)     ML_(dinfo_free)(di->loctab);
-   if (di->cfsi)       ML_(dinfo_free)(di->cfsi);
-   if (di->cfsi_exprs) VG_(deleteXA)(di->cfsi_exprs);
-   if (di->fpo)        ML_(dinfo_free)(di->fpo);
+   if (di->fsm.filename) ML_(dinfo_free)(di->fsm.filename);
+   if (di->loctab)       ML_(dinfo_free)(di->loctab);
+   if (di->cfsi)         ML_(dinfo_free)(di->cfsi);
+   if (di->cfsi_exprs)   VG_(deleteXA)(di->cfsi_exprs);
+   if (di->fpo)          ML_(dinfo_free)(di->fpo);
+
+   if (di->symtab) {
+      /* We have to visit all the entries so as to free up any
+         sec_names arrays that might exist. */
+      n = di->symtab_used;
+      for (i = 0; i < n; i++) {
+         DiSym* sym = &di->symtab[i];
+         if (sym->sec_names)
+            ML_(dinfo_free)(sym->sec_names);
+      }
+      /* and finally .. */
+      ML_(dinfo_free)(di->symtab);
+   }
 
    for (chunk = di->strchunks; chunk != NULL; chunk = next) {
       next = chunk->next;
@@ -291,13 +293,7 @@ static void free_DebugInfo ( DebugInfo* di )
 */
 static void discard_DebugInfo ( DebugInfo* di )
 {
-#  if defined(VGP_ppc32_aix5)
-   HChar* reason = "__unload";
-#  elif defined(VGP_ppc64_aix5)
-   HChar* reason = "kunload64";
-#  else
    HChar* reason = "munmap";
-#  endif
 
    DebugInfo** prev_next_ptr = &debugInfo_list;
    DebugInfo*  curr          =  debugInfo_list;
@@ -311,7 +307,8 @@ static void discard_DebugInfo ( DebugInfo* di )
                          "Discarding syms at %#lx-%#lx in %s due to %s()\n",
                          di->text_avma, 
                          di->text_avma + di->text_size,
-                         curr->filename ? curr->filename : (UChar*)"???",
+                         curr->fsm.filename ? curr->fsm.filename
+                                            : (UChar*)"???",
                          reason);
          vg_assert(*prev_next_ptr == curr);
          *prev_next_ptr = curr->next;
@@ -394,24 +391,24 @@ static Bool do_DebugInfos_overlap ( DebugInfo* di1, DebugInfo* di2 )
    vg_assert(di1);
    vg_assert(di2);
 
-   if (di1->have_rx_map && di2->have_rx_map
-       && ranges_overlap(di1->rx_map_avma, di1->rx_map_size,
-                         di2->rx_map_avma, di2->rx_map_size))
+   if (di1->fsm.have_rx_map && di2->fsm.have_rx_map
+       && ranges_overlap(di1->fsm.rx_map_avma, di1->fsm.rx_map_size,
+                         di2->fsm.rx_map_avma, di2->fsm.rx_map_size))
       return True;
 
-   if (di1->have_rx_map && di2->have_rw_map
-       && ranges_overlap(di1->rx_map_avma, di1->rx_map_size,
-                         di2->rw_map_avma, di2->rw_map_size))
+   if (di1->fsm.have_rx_map && di2->fsm.have_rw_map
+       && ranges_overlap(di1->fsm.rx_map_avma, di1->fsm.rx_map_size,
+                         di2->fsm.rw_map_avma, di2->fsm.rw_map_size))
       return True;
 
-   if (di1->have_rw_map && di2->have_rx_map
-       && ranges_overlap(di1->rw_map_avma, di1->rw_map_size,
-                         di2->rx_map_avma, di2->rx_map_size))
+   if (di1->fsm.have_rw_map && di2->fsm.have_rx_map
+       && ranges_overlap(di1->fsm.rw_map_avma, di1->fsm.rw_map_size,
+                         di2->fsm.rx_map_avma, di2->fsm.rx_map_size))
       return True;
 
-   if (di1->have_rw_map && di2->have_rw_map
-       && ranges_overlap(di1->rw_map_avma, di1->rw_map_size,
-                         di2->rw_map_avma, di2->rw_map_size))
+   if (di1->fsm.have_rw_map && di2->fsm.have_rw_map
+       && ranges_overlap(di1->fsm.rw_map_avma, di1->fsm.rw_map_size,
+                         di2->fsm.rw_map_avma, di2->fsm.rw_map_size))
       return True;
 
    return False;
@@ -445,9 +442,6 @@ static void discard_marked_DebugInfos ( void )
 /* Discard any elements of debugInfo_list which overlap with diRef.
    Clearly diRef must have its rx_ and rw_ mapping information set to
    something sane. */
-#if defined(VGO_aix5)
-__attribute__((unused))
-#endif
 static void discard_DebugInfos_which_overlap_with ( DebugInfo* diRef )
 {
    DebugInfo* di;
@@ -466,25 +460,20 @@ static void discard_DebugInfos_which_overlap_with ( DebugInfo* diRef )
 }
 
 
-/* Find the existing DebugInfo for (memname,filename) or if not found,
-   create one.  In the latter case memname and filename are strdup'd
-   into VG_AR_DINFO, and the new DebugInfo is added to
-   debugInfo_list. */
-static
-DebugInfo* find_or_create_DebugInfo_for ( UChar* filename, UChar* memname )
+/* Find the existing DebugInfo for |filename| or if not found, create
+   one.  In the latter case |filename| is strdup'd into VG_AR_DINFO,
+   and the new DebugInfo is added to debugInfo_list. */
+static DebugInfo* find_or_create_DebugInfo_for ( UChar* filename )
 {
    DebugInfo* di;
    vg_assert(filename);
    for (di = debugInfo_list; di; di = di->next) {
-      vg_assert(di->filename);
-      if (0==VG_(strcmp)(di->filename, filename)
-          && ( (memname && di->memname) 
-                  ? 0==VG_(strcmp)(memname, di->memname)
-                  : True ))
+      vg_assert(di->fsm.filename);
+      if (0==VG_(strcmp)(di->fsm.filename, filename))
          break;
    }
    if (!di) {
-      di = alloc_DebugInfo(filename, memname);
+      di = alloc_DebugInfo(filename);
       vg_assert(di);
       di->next = debugInfo_list;
       debugInfo_list = di;
@@ -504,31 +493,33 @@ static void check_CFSI_related_invariants ( DebugInfo* di )
    /* This fn isn't called until after debuginfo for this object has
       been successfully read.  And that shouldn't happen until we have
       both a r-x and rw- mapping for the object.  Hence: */
-   vg_assert(di->have_rx_map);
-   vg_assert(di->have_rw_map);
+   vg_assert(di->fsm.have_rx_map);
+   vg_assert(di->fsm.have_rw_map);
    /* degenerate case: r-x section is empty */
-   if (di->rx_map_size == 0) {
+   if (di->fsm.rx_map_size == 0) {
       vg_assert(di->cfsi == NULL);
       return;
    }
    /* normal case: r-x section is nonempty */
    /* invariant (0) */
-   vg_assert(di->rx_map_size > 0);
+   vg_assert(di->fsm.rx_map_size > 0);
    /* invariant (1) */
    for (di2 = debugInfo_list; di2; di2 = di2->next) {
       if (di2 == di)
          continue;
-      if (di2->rx_map_size == 0)
+      if (di2->fsm.rx_map_size == 0)
          continue;
-      vg_assert(di->rx_map_avma + di->rx_map_size <= di2->rx_map_avma
-                || di2->rx_map_avma + di2->rx_map_size <= di->rx_map_avma);
+      vg_assert(
+         di->fsm.rx_map_avma + di->fsm.rx_map_size <= di2->fsm.rx_map_avma
+         || di2->fsm.rx_map_avma + di2->fsm.rx_map_size <= di->fsm.rx_map_avma
+      );
    }
    di2 = NULL;
    /* invariant (2) */
    if (di->cfsi) {
       vg_assert(di->cfsi_minavma <= di->cfsi_maxavma); /* duh! */
-      vg_assert(di->cfsi_minavma >= di->rx_map_avma);
-      vg_assert(di->cfsi_maxavma < di->rx_map_avma + di->rx_map_size);
+      vg_assert(di->cfsi_minavma >= di->fsm.rx_map_avma);
+      vg_assert(di->cfsi_maxavma < di->fsm.rx_map_avma + di->fsm.rx_map_size);
    }
    /* invariants (3) and (4) */
    if (di->cfsi) {
@@ -580,10 +571,87 @@ void VG_(di_initialise) ( void )
 #if defined(VGO_linux)  ||  defined(VGO_darwin)
 
 /* The debug info system is driven by notifications that a text
-   segment has been mapped in, or unmapped.  When that happens it
-   tries to acquire/discard whatever info is available for the
-   corresponding object.  This section contains the notification
-   handlers. */
+   segment has been mapped in, or unmapped, or when sections change
+   permission.  It's all a bit kludgey and basically means watching
+   syscalls, trying to second-guess when the system's dynamic linker
+   is done with mapping in a new object for execution.  This is all
+   tracked using the DebugInfoFSM struct for the object.  Anyway, once
+   we finally decide we've got to an accept state, this section then
+   will acquire whatever info is available for the corresponding
+   object.  This section contains the notification handlers, which
+   update the FSM and determine when an accept state has been reached.
+*/
+
+/* When the sequence of observations causes a DebugInfoFSM to move
+   into the accept state, call here to actually get the debuginfo read
+   in.  Returns a ULong whose purpose is described in comments 
+   preceding VG_(di_notify_mmap) just below.
+*/
+static ULong di_notify_ACHIEVE_ACCEPT_STATE ( struct _DebugInfo* di )
+{
+   ULong di_handle;
+   Bool  ok;
+
+   vg_assert(di->fsm.filename);
+   TRACE_SYMTAB("\n");
+   TRACE_SYMTAB("------ start ELF OBJECT "
+                "------------------------------\n");
+   TRACE_SYMTAB("------ name = %s\n", di->fsm.filename);
+   TRACE_SYMTAB("\n");
+
+   /* We're going to read symbols and debug info for the avma
+      ranges [rx_map_avma, +rx_map_size) and [rw_map_avma,
+      +rw_map_size).  First get rid of any other DebugInfos which
+      overlap either of those ranges (to avoid total confusion). */
+   discard_DebugInfos_which_overlap_with( di );
+
+   /* .. and acquire new info. */
+#  if defined(VGO_linux)
+   ok = ML_(read_elf_debug_info)( di );
+#  elif defined(VGO_darwin)
+   ok = ML_(read_macho_debug_info)( di );
+#  else
+#    error "unknown OS"
+#  endif
+
+   if (ok) {
+
+      TRACE_SYMTAB("\n------ Canonicalising the "
+                   "acquired info ------\n");
+      /* invalidate the CFI unwind cache. */
+      cfsi_cache__invalidate();
+      /* prepare read data for use */
+      ML_(canonicaliseTables)( di );
+      /* notify m_redir about it */
+      TRACE_SYMTAB("\n------ Notifying m_redir ------\n");
+      VG_(redir_notify_new_DebugInfo)( di );
+      /* Note that we succeeded */
+      di->have_dinfo = True;
+      tl_assert(di->handle > 0);
+      di_handle = di->handle;
+      /* Check invariants listed in
+         Comment_on_IMPORTANT_REPRESENTATIONAL_INVARIANTS in
+         priv_storage.h. */
+      check_CFSI_related_invariants(di);
+
+   } else {
+      TRACE_SYMTAB("\n------ ELF reading failed ------\n");
+      /* Something went wrong (eg. bad ELF file).  Should we delete
+         this DebugInfo?  No - it contains info on the rw/rx
+         mappings, at least. */
+      di_handle = 0;
+      vg_assert(di->have_dinfo == False);
+   }
+
+   TRACE_SYMTAB("\n");
+   TRACE_SYMTAB("------ name = %s\n", di->fsm.filename);
+   TRACE_SYMTAB("------ end ELF OBJECT "
+                "------------------------------\n");
+   TRACE_SYMTAB("\n");
+
+   return di_handle;
+}
+
 
 /* Notify the debuginfo system about a new mapping.  This is the way
    new debug information gets loaded.  If allow_SkFileV is True, it
@@ -603,9 +671,8 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
 {
    NSegment const * seg;
    HChar*     filename;
-   Bool       ok, is_rx_map, is_rw_map;
+   Bool       is_rx_map, is_rw_map, is_ro_map;
    DebugInfo* di;
-   ULong      di_handle;
    SysRes     fd;
    Int        nread, oflags;
    HChar      buf1k[1024];
@@ -655,7 +722,7 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
       Bool quiet = VG_(strstr)(filename, "/var/run/nscd/") != NULL;
       if (!quiet && VG_(clo_verbosity) > 1) {
          VG_(memset)(&fake_di, 0, sizeof(fake_di));
-         fake_di.filename = filename;
+         fake_di.fsm.filename = filename;
          ML_(symerr)(&fake_di, True, "failed to stat64/stat this file");
       }
       return 0;
@@ -716,6 +783,8 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
    */
    is_rx_map = False;
    is_rw_map = False;
+   is_ro_map = False;
+
 #  if defined(VGA_x86) || defined(VGA_ppc32)
    is_rx_map = seg->hasR && seg->hasX;
    is_rw_map = seg->hasR && seg->hasW;
@@ -729,12 +798,16 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
 #    error "Unknown platform"
 #  endif
 
+#  if defined(VGP_x86_darwin) && DARWIN_VERS == DARWIN_10_7
+   is_ro_map = seg->hasR && !seg->hasW && !seg->hasX;
+#  endif
+
    if (debug)
       VG_(printf)("di_notify_mmap-3: is_rx_map %d, is_rw_map %d\n",
                   (Int)is_rx_map, (Int)is_rw_map);
 
-   /* If it is neither text-ish nor data-ish, we're not interested. */
-   if (!(is_rx_map || is_rw_map))
+   /* Ignore mappings with permissions we can't possibly be interested in. */
+   if (!(is_rx_map || is_rw_map || is_ro_map))
       return 0;
 
    /* Peer at the first few bytes of the file, to see if it is an ELF */
@@ -749,7 +822,7 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
       if (sr_Err(fd) != VKI_EACCES) {
          DebugInfo fake_di;
          VG_(memset)(&fake_di, 0, sizeof(fake_di));
-         fake_di.filename = filename;
+         fake_di.fsm.filename = filename;
          ML_(symerr)(&fake_di, True, "can't open file to inspect ELF header");
       }
       return 0;
@@ -762,36 +835,35 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
    if (nread < 0) {
       DebugInfo fake_di;
       VG_(memset)(&fake_di, 0, sizeof(fake_di));
-      fake_di.filename = filename;
+      fake_di.fsm.filename = filename;
       ML_(symerr)(&fake_di, True, "can't read file to inspect ELF header");
       return 0;
    }
    vg_assert(nread > 0 && nread <= sizeof(buf1k) );
 
    /* We're only interested in mappings of object files. */
-   // Nb: AIX5 doesn't use this file and so isn't represented here.
-#if defined(VGO_linux)
+#  if defined(VGO_linux)
    if (!ML_(is_elf_object_file)( buf1k, (SizeT)nread ))
       return 0;
-#elif defined(VGO_darwin)
+#  elif defined(VGO_darwin)
    if (!ML_(is_macho_object_file)( buf1k, (SizeT)nread ))
       return 0;
-#else
-#  error "unknown OS"
-#endif
+#  else
+#    error "unknown OS"
+#  endif
 
    /* See if we have a DebugInfo for this filename.  If not,
       create one. */
-   di = find_or_create_DebugInfo_for( filename, NULL/*membername*/ );
+   di = find_or_create_DebugInfo_for( filename );
    vg_assert(di);
 
    if (is_rx_map) {
       /* We have a text-like mapping.  Note the details. */
-      if (!di->have_rx_map) {
-         di->have_rx_map = True;
-         di->rx_map_avma = a;
-         di->rx_map_size = seg->end + 1 - seg->start;
-         di->rx_map_foff = seg->offset;
+      if (!di->fsm.have_rx_map) {
+         di->fsm.have_rx_map = True;
+         di->fsm.rx_map_avma = a;
+         di->fsm.rx_map_size = seg->end + 1 - seg->start;
+         di->fsm.rx_map_foff = seg->offset;
       } else {
          /* FIXME: complain about a second text-like mapping */
       }
@@ -799,82 +871,40 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV )
 
    if (is_rw_map) {
       /* We have a data-like mapping.  Note the details. */
-      if (!di->have_rw_map) {
-         di->have_rw_map = True;
-         di->rw_map_avma = a;
-         di->rw_map_size = seg->end + 1 - seg->start;
-         di->rw_map_foff = seg->offset;
+      if (!di->fsm.have_rw_map) {
+         di->fsm.have_rw_map = True;
+         di->fsm.rw_map_avma = a;
+         di->fsm.rw_map_size = seg->end + 1 - seg->start;
+         di->fsm.rw_map_foff = seg->offset;
       } else {
          /* FIXME: complain about a second data-like mapping */
       }
    }
 
-   /* If we don't have an rx and rw mapping, or if we already have
-      debuginfo for this mapping for whatever reason, go no
-      further. */
-   if ( ! (di->have_rx_map && di->have_rw_map && !di->have_dinfo) )
-      return 0;
-
-   /* Ok, so, finally, let's try to read the debuginfo. */
-   vg_assert(di->filename);
-   TRACE_SYMTAB("\n");
-   TRACE_SYMTAB("------ start ELF OBJECT "
-                "------------------------------\n");
-   TRACE_SYMTAB("------ name = %s\n", di->filename);
-   TRACE_SYMTAB("\n");
-
-   /* We're going to read symbols and debug info for the avma
-      ranges [rx_map_avma, +rx_map_size) and [rw_map_avma,
-      +rw_map_size).  First get rid of any other DebugInfos which
-      overlap either of those ranges (to avoid total confusion). */
-   discard_DebugInfos_which_overlap_with( di );
-
-   /* .. and acquire new info. */
-   // Nb: AIX5 doesn't use this file and so isn't represented here.
-#if defined(VGO_linux)
-   ok = ML_(read_elf_debug_info)( di );
-#elif defined(VGO_darwin)
-   ok = ML_(read_macho_debug_info)( di );
-#else
-#  error "unknown OS"
-#endif
-
-   if (ok) {
-
-      TRACE_SYMTAB("\n------ Canonicalising the "
-                   "acquired info ------\n");
-      /* invalidate the CFI unwind cache. */
-      cfsi_cache__invalidate();
-      /* prepare read data for use */
-      ML_(canonicaliseTables)( di );
-      /* notify m_redir about it */
-      TRACE_SYMTAB("\n------ Notifying m_redir ------\n");
-      VG_(redir_notify_new_DebugInfo)( di );
-      /* Note that we succeeded */
-      di->have_dinfo = True;
-      tl_assert(di->handle > 0);
-      di_handle = di->handle;
-      /* Check invariants listed in
-         Comment_on_IMPORTANT_REPRESENTATIONAL_INVARIANTS in
-         priv_storage.h. */
-      check_CFSI_related_invariants(di);
-
-   } else {
-      TRACE_SYMTAB("\n------ ELF reading failed ------\n");
-      /* Something went wrong (eg. bad ELF file).  Should we delete
-         this DebugInfo?  No - it contains info on the rw/rx
-         mappings, at least. */
-      di_handle = 0;
-      vg_assert(di->have_dinfo == False);
+   if (is_ro_map) {
+      /* We have a r-- mapping.  Note the details (OSX 10.7, 32-bit only) */
+      if (!di->fsm.have_ro_map) {
+         di->fsm.have_ro_map = True;
+         di->fsm.ro_map_avma = a;
+         di->fsm.ro_map_size = seg->end + 1 - seg->start;
+         di->fsm.ro_map_foff = seg->offset;
+      } else {
+         /* FIXME: complain about a second r-- mapping */
+      }
    }
 
-   TRACE_SYMTAB("\n");
-   TRACE_SYMTAB("------ name = %s\n", di->filename);
-   TRACE_SYMTAB("------ end ELF OBJECT "
-                "------------------------------\n");
-   TRACE_SYMTAB("\n");
-
-   return di_handle;
+   /* So, finally, are we in an accept state? */
+   if (di->fsm.have_rx_map && di->fsm.have_rw_map && !di->have_dinfo) {
+      /* Ok, so, finally, we found what we need, and we haven't
+         already read debuginfo for this object.  So let's do so now.
+         Yee-ha! */
+      return di_notify_ACHIEVE_ACCEPT_STATE ( di );
+   } else {
+      /* If we don't have an rx and rw mapping, or if we already have
+         debuginfo for this mapping for whatever reason, go no
+         further. */
+      return 0;
+   }
 }
 
 
@@ -906,6 +936,72 @@ void VG_(di_notify_mprotect)( Addr a, SizeT len, UInt prot )
          cfsi_cache__invalidate();
    }
 }
+
+
+/* This is a MacOSX 10.7 32-bit only special.  See comments on the
+   declaration of struct _DebugInfoFSM for details. */
+void VG_(di_notify_vm_protect)( Addr a, SizeT len, UInt prot )
+{
+   Bool do_nothing = True;
+#  if defined(VGP_x86_darwin) && DARWIN_VERS == DARWIN_10_7
+   do_nothing = False;
+#  endif
+   if (do_nothing /* wrong platform */)
+      return;
+
+   Bool r_ok = toBool(prot & VKI_PROT_READ);
+   Bool w_ok = toBool(prot & VKI_PROT_WRITE);
+   Bool x_ok = toBool(prot & VKI_PROT_EXEC);
+   if (! (r_ok && !w_ok && x_ok))
+      return; /* not an upgrade to r-x */
+
+   /* Find a DebugInfo containing a FSM that has [a, +len) previously
+      observed as a r-- mapping, plus some other rw- mapping.  If such
+      is found, conclude we're in an accept state and read debuginfo
+      accordingly. */
+   DebugInfo* di;
+   for (di = debugInfo_list; di; di = di->next) {
+      vg_assert(di->fsm.filename);
+      if (di->have_dinfo)
+         continue; /* already have debuginfo for this object */
+      if (!di->fsm.have_ro_map)
+         continue; /* need to have a r-- mapping for this object */
+      if (di->fsm.have_rx_map)
+         continue; /* rx- mapping already exists */
+      if (!di->fsm.have_rw_map)
+         continue; /* need to have a rw- mapping */
+      if (di->fsm.ro_map_avma != a || di->fsm.ro_map_size != len)
+         continue; /* this isn't an upgrade of the r-- mapping */
+      /* looks like we're in luck! */
+      break;
+   }
+   if (di == NULL)
+      return; /* didn't find anything */
+
+   /* Do the upgrade.  Copy the RO map info into the RX map info and
+      pretend we never saw the RO map at all. */
+   vg_assert(di->fsm.have_rw_map);
+   vg_assert(di->fsm.have_ro_map);
+   vg_assert(!di->fsm.have_rx_map);
+
+   di->fsm.have_rx_map = True;
+   di->fsm.rx_map_avma = di->fsm.ro_map_avma;
+   di->fsm.rx_map_size = di->fsm.ro_map_size;
+   di->fsm.rx_map_foff = di->fsm.ro_map_foff;
+
+   di->fsm.have_ro_map = False;
+   di->fsm.ro_map_avma = 0;
+   di->fsm.ro_map_size = 0;
+   di->fsm.ro_map_foff = 0;
+
+   /* And since we're now in an accept state, read debuginfo.  Finally. */
+   ULong di_handle __attribute__((unused))
+      = di_notify_ACHIEVE_ACCEPT_STATE( di );
+   /* di_handle is ignored. That's not a problem per se -- it just
+      means nobody will ever be able to refer to this debuginfo by
+      handle since nobody will know what the handle value is. */
+}
+
 
 /*--------- PDB (windows debug info) reading --------- */
 
@@ -1111,10 +1207,10 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
    /* dump old info for this range, if any */
    discard_syms_in_range( avma_obj, total_size );
 
-   { DebugInfo* di = find_or_create_DebugInfo_for(exename, NULL/*membername*/ );
+   { DebugInfo* di = find_or_create_DebugInfo_for(exename);
 
      /* this di must be new, since we just nuked any old stuff in the range */
-     vg_assert(di && !di->have_rx_map && !di->have_rw_map);
+     vg_assert(di && !di->fsm.have_rx_map && !di->fsm.have_rw_map);
      vg_assert(!di->have_dinfo);
 
      /* don't set up any of the di-> fields; let
@@ -1139,107 +1235,6 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
 }
 
 #endif /* defined(VGO_linux) || defined(VGO_darwin) */
-
-
-/*-------------------------------------------------------------*/
-/*---                                                       ---*/
-/*--- TOP LEVEL: NOTIFICATION (ACQUIRE/DISCARD INFO) (AIX5) ---*/
-/*---                                                       ---*/
-/*-------------------------------------------------------------*/
-
-#if defined(VGO_aix5)
-
-/* The supplied parameters describe a code segment and its associated
-   data segment, that have recently been mapped in -- so we need to
-   read debug info for it -- or conversely, have recently been dumped,
-   in which case the relevant debug info has to be unloaded. */
-
-ULong VG_(di_aix5_notify_segchange)( 
-               Addr   code_start,
-               Word   code_len,
-               Addr   data_start,
-               Word   data_len,
-               UChar* file_name,
-               UChar* mem_name,
-               Bool   is_mainexe,
-               Bool   acquire )
-{
-   ULong hdl = 0;
-
-   /* play safe; always invalidate the CFI cache.  Not
-      that it should be used on AIX, but still .. */
-   cfsi_cache__invalidate();
-
-   if (acquire) {
-
-      Bool       ok;
-      DebugInfo* di;
-      di = find_or_create_DebugInfo_for( file_name, mem_name );
-      vg_assert(di);
-
-      if (code_len > 0) {
-         di->text_present = True;
-         di->text_svma = 0; /* don't know yet */
-         di->text_bias = 0; /* don't know yet */
-         di->text_avma = code_start;
-         di->text_size = code_len;
-      }
-      if (data_len > 0) {
-         di->data_present = True;
-         di->data_svma = 0; /* don't know yet */
-         di->data_bias = 0; /* don't know yet */
-         di->data_avma = data_start;
-         di->data_size = data_len;
-      }
-
-      /* These need to be filled in in order to keep various
-         assertions in storage.c happy.  In particular see
-         "Comment_Regarding_Text_Range_Checks" in that file. */
-      di->have_rx_map = True;
-      di->rx_map_avma = code_start;
-      di->rx_map_size = code_len;
-      di->have_rw_map = True;
-      di->rw_map_avma = data_start;
-      di->rw_map_size = data_len;
-
-      ok = ML_(read_xcoff_debug_info) ( di, is_mainexe );
-
-      if (ok) {
-         /* prepare read data for use */
-         ML_(canonicaliseTables)( di );
-         /* notify m_redir about it */
-         VG_(redir_notify_new_DebugInfo)( di );
-         /* Note that we succeeded */
-         di->have_dinfo = True;
-         hdl = di->handle;
-         vg_assert(hdl > 0);
-         /* Check invariants listed in
-            Comment_on_IMPORTANT_REPRESENTATIONAL_INVARIANTS in
-            priv_storage.h. */
-         check_CFSI_related_invariants(di);
-      } else {
-         /*  Something went wrong (eg. bad XCOFF file). */
-         discard_DebugInfo( di );
-         di = NULL;
-      }
-
-   } else {
-
-      /* Dump all the debugInfos whose text segments intersect
-         code_start/code_len. */
-      /* CFI cache is always invalidated at start of this routine.
-         Hence it's safe to ignore the return value of
-         discard_syms_in_range. */
-      if (code_len > 0)
-         (void)discard_syms_in_range( code_start, code_len );
-
-   }
-
-   return hdl;
-}
-        
-
-#endif /* defined(VGO_aix5) */
 
 
 /*------------------------------------------------------------*/
@@ -1287,10 +1282,10 @@ static void search_all_symtabs ( Addr ptr, /*OUT*/DebugInfo** pdi,
          /* Consider any symbol in the r-x mapped area to be text.
             See Comment_Regarding_Text_Range_Checks in storage.c for
             details. */
-         inRange = di->have_rx_map
-                   && di->rx_map_size > 0
-                   && di->rx_map_avma <= ptr
-                   && ptr < di->rx_map_avma + di->rx_map_size;
+         inRange = di->fsm.have_rx_map
+                   && di->fsm.rx_map_size > 0
+                   && di->fsm.rx_map_avma <= ptr
+                   && ptr < di->fsm.rx_map_avma + di->fsm.rx_map_size;
       } else {
          inRange = (di->data_present
                     && di->data_size > 0
@@ -1380,8 +1375,9 @@ Bool get_sym_name ( Bool do_cxx_demangling, Bool do_z_demangling,
    if (di == NULL) 
       return False;
 
+   vg_assert(di->symtab[sno].pri_name);
    VG_(demangle) ( do_cxx_demangling, do_z_demangling,
-                   di->symtab[sno].name, buf, nbuf );
+                   di->symtab[sno].pri_name, buf, nbuf );
 
    /* Do the below-main hack */
    // To reduce the endless nuisance of multiple different names 
@@ -1512,8 +1508,6 @@ Vg_FnNameKind VG_(get_fnname_kind) ( Char* name )
 #      if defined(VGO_linux)
        VG_STREQ("__libc_start_main",  name) ||  // glibc glibness
        VG_STREQ("generic_start_main", name) ||  // Yellow Dog doggedness
-#      elif defined(VGO_aix5)
-       VG_STREQ("__start", name)            ||  // AIX aches
 #      elif defined(VGO_darwin)
        // See readmacho.c for an explanation of this.
        VG_STREQ("start_according_to_valgrind", name) ||  // Darwin, darling
@@ -1572,7 +1566,6 @@ Bool VG_(get_datasym_and_offset)( Addr data_addr,
    require debug info.  Caller supplies buf and nbuf. */
 Bool VG_(get_objname) ( Addr a, Char* buf, Int nbuf )
 {
-   Int used;
    DebugInfo* di;
    const NSegment *seg;
    HChar* filename;
@@ -1584,18 +1577,7 @@ Bool VG_(get_objname) ( Addr a, Char* buf, Int nbuf )
           && di->text_size > 0
           && di->text_avma <= a 
           && a < di->text_avma + di->text_size) {
-         VG_(strncpy_safely)(buf, di->filename, nbuf);
-         if (di->memname) {
-            used = VG_(strlen)(buf);
-            if (used < nbuf) 
-               VG_(strncpy_safely)(&buf[used], "(", nbuf-used);
-            used = VG_(strlen)(buf);
-            if (used < nbuf) 
-               VG_(strncpy_safely)(&buf[used], di->memname, nbuf-used);
-            used = VG_(strlen)(buf);
-            if (used < nbuf) 
-               VG_(strncpy_safely)(&buf[used], ")", nbuf-used);
-         }
+         VG_(strncpy_safely)(buf, di->fsm.filename, nbuf);
          buf[nbuf-1] = 0;
          return True;
       }
@@ -1731,11 +1713,26 @@ Bool VG_(lookup_symbol_SLOW)(UChar* sopatt, UChar* name,
          continue;
       }
       for (i = 0; i < si->symtab_used; i++) {
-         if (0==VG_(strcmp)(name, si->symtab[i].name)
+         UChar* pri_name = si->symtab[i].pri_name;
+         tl_assert(pri_name);
+         if (0==VG_(strcmp)(name, pri_name)
              && (require_pToc ? si->symtab[i].tocptr : True)) {
             *pEnt = si->symtab[i].addr;
             *pToc = si->symtab[i].tocptr;
             return True;
+         }
+         UChar** sec_names = si->symtab[i].sec_names;
+         if (sec_names) {
+            tl_assert(sec_names[0]);
+            while (*sec_names) {
+               if (0==VG_(strcmp)(name, *sec_names)
+                   && (require_pToc ? si->symtab[i].tocptr : True)) {
+                  *pEnt = si->symtab[i].addr;
+                  *pToc = si->symtab[i].tocptr;
+                  return True;
+               }
+               sec_names++;
+            }
          }
       }
    }
@@ -1999,6 +1996,14 @@ UWord evalCfiExpr ( XArray* exprs, Int ix,
             case Cop_Sub: return wL - wR;
             case Cop_And: return wL & wR;
             case Cop_Mul: return wL * wR;
+            case Cop_Shl: return wL << wR;
+            case Cop_Shr: return wL >> wR;
+            case Cop_Eq: return wL == wR ? 1 : 0;
+            case Cop_Ge: return (Word) wL >= (Word) wR ? 1 : 0;
+            case Cop_Gt: return (Word) wL > (Word) wR ? 1 : 0;
+            case Cop_Le: return (Word) wL <= (Word) wR ? 1 : 0;
+            case Cop_Lt: return (Word) wL < (Word) wR ? 1 : 0;
+            case Cop_Ne: return wL != wR ? 1 : 0;
             default: goto unhandled;
          }
          /*NOTREACHED*/
@@ -2036,7 +2041,7 @@ UWord evalCfiExpr ( XArray* exprs, Int ix,
             return 0;
          }
          /* let's hope it doesn't trap! */
-         return * ((UWord*)a);
+         return ML_(read_UWord)((void *)a);
       default: 
          goto unhandled;
    }
@@ -2237,7 +2242,7 @@ static Addr compute_cfa ( D3UnwindRegs* uregs,
          Addr a = uregs->sp + cfsi->cfa_off;
          if (a < min_accessible || a > max_accessible-sizeof(Addr))
             break;
-         cfa = *(Addr*)a;
+         cfa = ML_(read_Addr)((void *)a);
          break;
       }
       case CFIR_SAME:
@@ -2380,7 +2385,7 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
                if (a < min_accessible                   \
                    || a > max_accessible-sizeof(Addr))  \
                   return False;                         \
-               _prev = *(Addr*)a;                       \
+               _prev = ML_(read_Addr)((void *)a);       \
                break;                                   \
             }                                           \
             case CFIR_CFAREL:                           \
@@ -2542,10 +2547,10 @@ Bool VG_(use_FPO_info) ( /*MOD*/Addr* ipP,
  
    spHere = *spP;
 
-   *ipP = *(Addr *)(spHere + 4*(fpo->cbRegs + fpo->cdwLocals));
-   *spP =           spHere + 4*(fpo->cbRegs + fpo->cdwLocals + 1 
-                                            + fpo->cdwParams);
-   *fpP = *(Addr *)(spHere + 4*2);
+   *ipP = ML_(read_Addr)((void *)(spHere + 4*(fpo->cbRegs + fpo->cdwLocals)));
+   *spP =                         spHere + 4*(fpo->cbRegs + fpo->cdwLocals + 1 
+                                                          + fpo->cdwParams);
+   *fpP = ML_(read_Addr)((void *)(spHere + 4*2));
    return True;
 }
 
@@ -2558,14 +2563,14 @@ Bool VG_(use_FPO_info) ( /*MOD*/Addr* ipP,
 /*--------------------------------------------------------------*/
 
 /* Try to make p2XA(dst, fmt, args..) turn into
-   VG_(xaprintf_no_f_c)(dst, fmt, args) without having to resort to
+   VG_(xaprintf)(dst, fmt, args) without having to resort to
    vararg macros.  As usual with everything to do with varargs, it's
    an ugly hack.
 
    //#define p2XA(dstxa, format, args...)
-   //   VG_(xaprintf_no_f_c)(dstxa, format, ##args)
+   //   VG_(xaprintf)(dstxa, format, ##args)
 */
-#define  p2XA  VG_(xaprintf_no_f_c)
+#define  p2XA  VG_(xaprintf)
 
 /* Add a zero-terminating byte to DST, which must be an XArray* of
    HChar. */
@@ -2707,7 +2712,7 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
       if (xml) {
          TAGL( dn1 );
          p2XA( dn1,
-               "Location 0x%lx is %lu byte%s inside local var \"%t\",",
+               "Location 0x%lx is %lu byte%s inside local var \"%pS\",",
                data_addr, var_offset, vo_plural, var->name );
          TAGR( dn1 );
          TAGL( dn2 );
@@ -2731,18 +2736,18 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
       if (xml) {
          TAGL( dn1 );
          p2XA( dn1,
-               "Location 0x%lx is %lu byte%s inside local var \"%t\"",
+               "Location 0x%lx is %lu byte%s inside local var \"%pS\"",
                data_addr, var_offset, vo_plural, var->name );
          TAGR( dn1 );
          XAGL( dn2 );
          TXTL( dn2 );
          p2XA( dn2,
-               "declared at %t:%d, in frame #%d of thread %d",
+               "declared at %pS:%d, in frame #%d of thread %d",
                var->fileName, var->lineNo, frameNo, (Int)tid );
          TXTR( dn2 );
          // FIXME: also do <dir>
          p2XA( dn2,
-               " <file>%t</file> <line>%d</line> ", 
+               " <file>%pS</file> <line>%d</line> ", 
                var->fileName, var->lineNo );
          XAGR( dn2 );
       } else {
@@ -2763,7 +2768,7 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
       if (xml) {
          TAGL( dn1 );
          p2XA( dn1,
-               "Location 0x%lx is %lu byte%s inside %t%t",
+               "Location 0x%lx is %lu byte%s inside %pS%pS",
                data_addr, residual_offset, ro_plural, var->name,
                (HChar*)(VG_(indexXA)(described,0)) );
          TAGR( dn1 );
@@ -2787,19 +2792,19 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
       if (xml) {
          TAGL( dn1 );
          p2XA( dn1,
-               "Location 0x%lx is %lu byte%s inside %t%t,",
+               "Location 0x%lx is %lu byte%s inside %pS%pS,",
                data_addr, residual_offset, ro_plural, var->name,
                (HChar*)(VG_(indexXA)(described,0)) );
          TAGR( dn1 );
          XAGL( dn2 );
          TXTL( dn2 );
          p2XA( dn2,
-               "declared at %t:%d, in frame #%d of thread %d",
+               "declared at %pS:%d, in frame #%d of thread %d",
                var->fileName, var->lineNo, frameNo, (Int)tid );
          TXTR( dn2 );
          // FIXME: also do <dir>
          p2XA( dn2,
-               " <file>%t</file> <line>%d</line> ",
+               " <file>%pS</file> <line>%d</line> ",
                var->fileName, var->lineNo );
          XAGR( dn2 );
       } else {
@@ -2821,7 +2826,7 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
       if (xml) {
          TAGL( dn1 );
          p2XA( dn1,
-               "Location 0x%lx is %lu byte%s inside global var \"%t\"",
+               "Location 0x%lx is %lu byte%s inside global var \"%pS\"",
                data_addr, var_offset, vo_plural, var->name );
          TAGR( dn1 );
       } else {
@@ -2839,18 +2844,18 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
       if (xml) {
          TAGL( dn1 );
          p2XA( dn1,
-               "Location 0x%lx is %lu byte%s inside global var \"%t\"",
+               "Location 0x%lx is %lu byte%s inside global var \"%pS\"",
                data_addr, var_offset, vo_plural, var->name );
          TAGR( dn1 );
          XAGL( dn2 );
          TXTL( dn2 );
          p2XA( dn2,
-               "declared at %t:%d",
+               "declared at %pS:%d",
                var->fileName, var->lineNo);
          TXTR( dn2 );
          // FIXME: also do <dir>
          p2XA( dn2,
-               " <file>%t</file> <line>%d</line> ",
+               " <file>%pS</file> <line>%d</line> ",
                var->fileName, var->lineNo );
          XAGR( dn2 );
       } else {
@@ -2871,7 +2876,7 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
       if (xml) {
          TAGL( dn1 );
          p2XA( dn1,
-               "Location 0x%lx is %lu byte%s inside %t%t,",
+               "Location 0x%lx is %lu byte%s inside %pS%pS,",
                data_addr, residual_offset, ro_plural, var->name,
                (HChar*)(VG_(indexXA)(described,0)) );
          TAGR( dn1 );
@@ -2895,19 +2900,19 @@ static void format_message ( /*MOD*/XArray* /* of HChar */ dn1,
       if (xml) {
          TAGL( dn1 );
          p2XA( dn1,
-               "Location 0x%lx is %lu byte%s inside %t%t,",
+               "Location 0x%lx is %lu byte%s inside %pS%pS,",
                data_addr, residual_offset, ro_plural, var->name,
                (HChar*)(VG_(indexXA)(described,0)) );
          TAGR( dn1 );
          XAGL( dn2 );
          TXTL( dn2 );
          p2XA( dn2,
-               "a global variable declared at %t:%d",
+               "a global variable declared at %pS:%d",
                var->fileName, var->lineNo);
          TXTR( dn2 );
          // FIXME: also do <dir>
          p2XA( dn2,
-               " <file>%t</file> <line>%d</line> ",
+               " <file>%pS</file> <line>%d</line> ",
                var->fileName, var->lineNo );
          XAGR( dn2 );
       } else {
@@ -3707,7 +3712,7 @@ const UChar* VG_(DebugInfo_get_soname)(const DebugInfo* di)
 
 const UChar* VG_(DebugInfo_get_filename)(const DebugInfo* di)
 {
-   return di->filename;
+   return di->fsm.filename;
 }
 
 PtrdiffT VG_(DebugInfo_get_text_bias)(const DebugInfo* di)
@@ -3722,20 +3727,22 @@ Int VG_(DebugInfo_syms_howmany) ( const DebugInfo *si )
 
 void VG_(DebugInfo_syms_getidx) ( const DebugInfo *si, 
                                         Int idx,
-                                  /*OUT*/Addr*   avma,
-                                  /*OUT*/Addr*   tocptr,
-                                  /*OUT*/UInt*   size,
-                                  /*OUT*/HChar** name,
-                                  /*OUT*/Bool*   isText,
-                                  /*OUT*/Bool*   isIFunc )
+                                  /*OUT*/Addr*    avma,
+                                  /*OUT*/Addr*    tocptr,
+                                  /*OUT*/UInt*    size,
+                                  /*OUT*/UChar**  pri_name,
+                                  /*OUT*/UChar*** sec_names,
+                                  /*OUT*/Bool*    isText,
+                                  /*OUT*/Bool*    isIFunc )
 {
    vg_assert(idx >= 0 && idx < si->symtab_used);
-   if (avma)    *avma    = si->symtab[idx].addr;
-   if (tocptr)  *tocptr  = si->symtab[idx].tocptr;
-   if (size)    *size    = si->symtab[idx].size;
-   if (name)    *name    = (HChar*)si->symtab[idx].name;
-   if (isText)  *isText  = si->symtab[idx].isText;
-   if (isIFunc) *isIFunc = si->symtab[idx].isIFunc;
+   if (avma)      *avma      = si->symtab[idx].addr;
+   if (tocptr)    *tocptr    = si->symtab[idx].tocptr;
+   if (size)      *size      = si->symtab[idx].size;
+   if (pri_name)  *pri_name  = si->symtab[idx].pri_name;
+   if (sec_names) *sec_names = si->symtab[idx].sec_names;
+   if (isText)    *isText    = si->symtab[idx].isText;
+   if (isIFunc)   *isIFunc   = si->symtab[idx].isIFunc;
 }
 
 
@@ -3777,7 +3784,7 @@ VgSectKind VG_(DebugInfo_sect_kind)( /*OUT*/UChar* name, SizeT n_name,
          VG_(printf)(
             "addr=%#lx di=%p %s got=%#lx,%ld plt=%#lx,%ld "
             "data=%#lx,%ld bss=%#lx,%ld\n",
-            a, di, di->filename,
+            a, di, di->fsm.filename,
             di->got_avma,  di->got_size,
             di->plt_avma,  di->plt_size,
             di->data_avma, di->data_size,
@@ -3847,9 +3854,9 @@ VgSectKind VG_(DebugInfo_sect_kind)( /*OUT*/UChar* name, SizeT n_name,
 
       vg_assert(n_name >= 8);
 
-      if (di && di->filename) {
+      if (di && di->fsm.filename) {
          Int i, j;
-         Int fnlen = VG_(strlen)(di->filename);
+         Int fnlen = VG_(strlen)(di->fsm.filename);
          Int start_at = 1 + fnlen - n_name;
          if (start_at < 0) start_at = 0;
          vg_assert(start_at < fnlen);
@@ -3857,8 +3864,8 @@ VgSectKind VG_(DebugInfo_sect_kind)( /*OUT*/UChar* name, SizeT n_name,
          while (True) {
             vg_assert(j >= 0 && j < n_name);
             vg_assert(i >= 0 && i <= fnlen);
-            name[j] = di->filename[i];
-            if (di->filename[i] == 0) break;
+            name[j] = di->fsm.filename[i];
+            if (di->fsm.filename[i] == 0) break;
             i++; j++;
          }
          vg_assert(i == fnlen);

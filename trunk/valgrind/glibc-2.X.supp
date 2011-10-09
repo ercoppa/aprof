@@ -168,9 +168,9 @@
    Memcheck:Param
    socketcall.sendto(msg)
    fun:__sendto_nocancel
-   obj:/*libc-2.13.so
-   obj:/*libc-2.13.so
-   obj:/*libc-2.13.so
+   obj:/*libc-2.13*.so
+   obj:/*libc-2.13*.so
+   obj:/*libc-2.13*.so
 }
 {
    glibc24-64bit-padding-1c
@@ -180,7 +180,7 @@
    fun:__nscd_get_map_ref
    fun:nscd_get*_r
    fun:*nscd*
-   obj:/*libc-2.13.so
+   obj:/*libc-2.13*.so
 }
 
 
@@ -199,18 +199,18 @@
    Memcheck:Param
    socketcall.sendto(msg)
    fun:send
-   obj:/*libc-2.13.so
-   obj:/*libc-2.13.so
-   obj:/*libc-2.13.so
+   obj:/*libc-2.13*.so
+   obj:/*libc-2.13*.so
+   obj:/*libc-2.13*.so
 }
 {
    X11-64bit-padding-4b
    Memcheck:Param
    socketcall.send(msg)
    fun:send
-   obj:/*libc-2.13.so
-   obj:/*libc-2.13.so
-   obj:/*libc-2.13.so
+   obj:/*libc-2.13*.so
+   obj:/*libc-2.13*.so
+   obj:/*libc-2.13*.so
 }
 
 ##----------------------------------------------------------------------##

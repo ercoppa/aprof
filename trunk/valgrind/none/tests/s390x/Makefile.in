@@ -64,7 +64,9 @@ am__EXEEXT_1 = clc$(EXEEXT) clcle$(EXEEXT) cvb$(EXEEXT) cvd$(EXEEXT) \
 	flogr$(EXEEXT) sub_EI$(EXEEXT) add_EI$(EXEEXT) and_EI$(EXEEXT) \
 	or_EI$(EXEEXT) xor_EI$(EXEEXT) insert_EI$(EXEEXT) \
 	mul_GE$(EXEEXT) add_GE$(EXEEXT) condloadstore$(EXEEXT) \
-	op_exception$(EXEEXT) fgx$(EXEEXT)
+	op_exception$(EXEEXT) fgx$(EXEEXT) stck$(EXEEXT) \
+	stckf$(EXEEXT) stcke$(EXEEXT) stfle$(EXEEXT) op00$(EXEEXT) \
+	cksm$(EXEEXT) mvcl$(EXEEXT) clcl$(EXEEXT)
 add_SOURCES = add.c
 add_OBJECTS = add.$(OBJEXT)
 add_LDADD = $(LDADD)
@@ -80,9 +82,15 @@ and_LDADD = $(LDADD)
 and_EI_SOURCES = and_EI.c
 and_EI_OBJECTS = and_EI.$(OBJEXT)
 and_EI_LDADD = $(LDADD)
+cksm_SOURCES = cksm.c
+cksm_OBJECTS = cksm.$(OBJEXT)
+cksm_LDADD = $(LDADD)
 clc_SOURCES = clc.c
 clc_OBJECTS = clc.$(OBJEXT)
 clc_LDADD = $(LDADD)
+clcl_SOURCES = clcl.c
+clcl_OBJECTS = clcl.$(OBJEXT)
+clcl_LDADD = $(LDADD)
 clcle_SOURCES = clcle.c
 clcle_OBJECTS = clcle.$(OBJEXT)
 clcle_LDADD = $(LDADD)
@@ -136,9 +144,15 @@ mul_LDADD = $(LDADD)
 mul_GE_SOURCES = mul_GE.c
 mul_GE_OBJECTS = mul_GE.$(OBJEXT)
 mul_GE_LDADD = $(LDADD)
+mvcl_SOURCES = mvcl.c
+mvcl_OBJECTS = mvcl.$(OBJEXT)
+mvcl_LDADD = $(LDADD)
 mvst_SOURCES = mvst.c
 mvst_OBJECTS = mvst.$(OBJEXT)
 mvst_LDADD = $(LDADD)
+op00_SOURCES = op00.c
+op00_OBJECTS = op00.$(OBJEXT)
+op00_LDADD = $(LDADD)
 op_exception_SOURCES = op_exception.c
 op_exception_OBJECTS = op_exception.$(OBJEXT)
 op_exception_LDADD = $(LDADD)
@@ -151,6 +165,18 @@ or_EI_LDADD = $(LDADD)
 srst_SOURCES = srst.c
 srst_OBJECTS = srst.$(OBJEXT)
 srst_LDADD = $(LDADD)
+stck_SOURCES = stck.c
+stck_OBJECTS = stck.$(OBJEXT)
+stck_LDADD = $(LDADD)
+stcke_SOURCES = stcke.c
+stcke_OBJECTS = stcke.$(OBJEXT)
+stcke_LDADD = $(LDADD)
+stckf_SOURCES = stckf.c
+stckf_OBJECTS = stckf.$(OBJEXT)
+stckf_LDADD = $(LDADD)
+stfle_SOURCES = stfle.c
+stfle_OBJECTS = stfle.$(OBJEXT)
+stfle_LDADD = $(LDADD)
 sub_SOURCES = sub.c
 sub_OBJECTS = sub.$(OBJEXT)
 sub_LDADD = $(LDADD)
@@ -180,16 +206,18 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = add.c add_EI.c add_GE.c and.c and_EI.c clc.c clcle.c \
-	condloadstore.c cvb.c cvd.c div.c ex_clone.c ex_sig.c fgx.c \
-	flogr.c fold_And16.c icm.c insert.c insert_EI.c lam_stam.c \
-	lpr.c mul.c mul_GE.c mvst.c op_exception.c or.c or_EI.c srst.c \
-	sub.c sub_EI.c tcxb.c xc.c xor.c xor_EI.c
-DIST_SOURCES = add.c add_EI.c add_GE.c and.c and_EI.c clc.c clcle.c \
-	condloadstore.c cvb.c cvd.c div.c ex_clone.c ex_sig.c fgx.c \
-	flogr.c fold_And16.c icm.c insert.c insert_EI.c lam_stam.c \
-	lpr.c mul.c mul_GE.c mvst.c op_exception.c or.c or_EI.c srst.c \
-	sub.c sub_EI.c tcxb.c xc.c xor.c xor_EI.c
+SOURCES = add.c add_EI.c add_GE.c and.c and_EI.c cksm.c clc.c clcl.c \
+	clcle.c condloadstore.c cvb.c cvd.c div.c ex_clone.c ex_sig.c \
+	fgx.c flogr.c fold_And16.c icm.c insert.c insert_EI.c \
+	lam_stam.c lpr.c mul.c mul_GE.c mvcl.c mvst.c op00.c \
+	op_exception.c or.c or_EI.c srst.c stck.c stcke.c stckf.c \
+	stfle.c sub.c sub_EI.c tcxb.c xc.c xor.c xor_EI.c
+DIST_SOURCES = add.c add_EI.c add_GE.c and.c and_EI.c cksm.c clc.c \
+	clcl.c clcle.c condloadstore.c cvb.c cvd.c div.c ex_clone.c \
+	ex_sig.c fgx.c flogr.c fold_And16.c icm.c insert.c insert_EI.c \
+	lam_stam.c lpr.c mul.c mul_GE.c mvcl.c mvst.c op00.c \
+	op_exception.c or.c or_EI.c srst.c stck.c stcke.c stckf.c \
+	stfle.c sub.c sub_EI.c tcxb.c xc.c xor.c xor_EI.c
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -226,8 +254,6 @@ EXEEXT = @EXEEXT@
 FLAG_FNO_STACK_PROTECTOR = @FLAG_FNO_STACK_PROTECTOR@
 FLAG_M32 = @FLAG_M32@
 FLAG_M64 = @FLAG_M64@
-FLAG_MAIX32 = @FLAG_MAIX32@
-FLAG_MAIX64 = @FLAG_MAIX64@
 FLAG_MMMX = @FLAG_MMMX@
 FLAG_MSSE = @FLAG_MSSE@
 FLAG_NO_BUILD_ID = @FLAG_NO_BUILD_ID@
@@ -235,6 +261,8 @@ FLAG_UNLIMITED_INLINE_UNIT_GROWTH = @FLAG_UNLIMITED_INLINE_UNIT_GROWTH@
 FLAG_W_EXTRA = @FLAG_W_EXTRA@
 FLAG_W_NO_EMPTY_BODY = @FLAG_W_NO_EMPTY_BODY@
 FLAG_W_NO_FORMAT_ZERO_LENGTH = @FLAG_W_NO_FORMAT_ZERO_LENGTH@
+FLAG_W_NO_NONNULL = @FLAG_W_NO_NONNULL@
+FLAG_W_NO_OVERFLOW = @FLAG_W_NO_OVERFLOW@
 FLAG_W_NO_UNINITIALIZED = @FLAG_W_NO_UNINITIALIZED@
 GDB = @GDB@
 GLIBC_VERSION = @GLIBC_VERSION@
@@ -277,6 +305,7 @@ VGCONF_ARCH_SEC = @VGCONF_ARCH_SEC@
 VGCONF_OS = @VGCONF_OS@
 VGCONF_PLATFORM_PRI_CAPS = @VGCONF_PLATFORM_PRI_CAPS@
 VGCONF_PLATFORM_SEC_CAPS = @VGCONF_PLATFORM_SEC_CAPS@
+VGCONF_PLATVARIANT = @VGCONF_PLATVARIANT@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -336,6 +365,8 @@ inplacedir = $(top_builddir)/.in_place
 
 # Baseline flags for all compilations.  Aim here is to maximise
 # performance and get whatever useful warnings we can out of gcc.
+# -fno-builtin is important for defeating LLVM's idiom recognition
+# that somehow causes VG_(memset) to get into infinite recursion.
 AM_CFLAGS_BASE = \
 	-O2 -g \
 	-Wall \
@@ -345,16 +376,20 @@ AM_CFLAGS_BASE = \
 	-Wstrict-prototypes \
 	-Wmissing-declarations \
 	@FLAG_W_NO_FORMAT_ZERO_LENGTH@ \
-	-fno-strict-aliasing
+	-fno-strict-aliasing \
+	-fno-builtin
 
-@VGCONF_OS_IS_DARWIN_FALSE@AM_CFLAGS_PIC = -fpic -O -g -fno-omit-frame-pointer -fno-strict-aliasing
+@VGCONF_OS_IS_DARWIN_FALSE@AM_CFLAGS_PIC = -fpic -O -g -fno-omit-frame-pointer -fno-strict-aliasing \
+@VGCONF_OS_IS_DARWIN_FALSE@		-fno-builtin
+
 
 # These flags are used for building the preload shared objects.
 # The aim is to give reasonable performance but also to have good
 # stack traces, since users often see stack traces extending 
 # into (and through) the preloads.
 @VGCONF_OS_IS_DARWIN_TRUE@AM_CFLAGS_PIC = -dynamic -O -g -fno-omit-frame-pointer -fno-strict-aliasing \
-@VGCONF_OS_IS_DARWIN_TRUE@		-mno-dynamic-no-pic -fpic -fPIC
+@VGCONF_OS_IS_DARWIN_TRUE@		-mno-dynamic-no-pic -fpic -fPIC \
+@VGCONF_OS_IS_DARWIN_TRUE@		-fno-builtin
 
 
 # Flags for specific targets.
@@ -375,7 +410,8 @@ AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@ = \
 	-I$(top_srcdir)/VEX/pub \
 	-DVGA_@VGCONF_ARCH_PRI@=1 \
 	-DVGO_@VGCONF_OS@=1 \
-	-DVGP_@VGCONF_ARCH_PRI@_@VGCONF_OS@=1
+	-DVGP_@VGCONF_ARCH_PRI@_@VGCONF_OS@=1 \
+	-DVGPV_@VGCONF_ARCH_PRI@_@VGCONF_OS@_@VGCONF_PLATVARIANT@=1
 
 @VGCONF_HAVE_PLATFORM_SEC_TRUE@AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@ = \
 @VGCONF_HAVE_PLATFORM_SEC_TRUE@	-I$(top_srcdir) \
@@ -383,7 +419,8 @@ AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@ = \
 @VGCONF_HAVE_PLATFORM_SEC_TRUE@	-I$(top_srcdir)/VEX/pub \
 @VGCONF_HAVE_PLATFORM_SEC_TRUE@	-DVGA_@VGCONF_ARCH_SEC@=1 \
 @VGCONF_HAVE_PLATFORM_SEC_TRUE@	-DVGO_@VGCONF_OS@=1 \
-@VGCONF_HAVE_PLATFORM_SEC_TRUE@	-DVGP_@VGCONF_ARCH_SEC@_@VGCONF_OS@=1
+@VGCONF_HAVE_PLATFORM_SEC_TRUE@	-DVGP_@VGCONF_ARCH_SEC@_@VGCONF_OS@=1 \
+@VGCONF_HAVE_PLATFORM_SEC_TRUE@	-DVGPV_@VGCONF_ARCH_SEC@_@VGCONF_OS@_@VGCONF_PLATVARIANT@=1
 
 AM_FLAG_M3264_X86_LINUX = @FLAG_M32@
 AM_CFLAGS_X86_LINUX = @FLAG_M32@ @PREFERRED_STACK_BOUNDARY@ \
@@ -403,18 +440,10 @@ AM_CFLAGS_PPC64_LINUX = @FLAG_M64@ $(AM_CFLAGS_BASE)
 AM_CCASFLAGS_PPC64_LINUX = $(AM_CPPFLAGS_PPC64_LINUX) @FLAG_M64@ -g
 AM_FLAG_M3264_ARM_LINUX = @FLAG_M32@
 AM_CFLAGS_ARM_LINUX = @FLAG_M32@ @PREFERRED_STACK_BOUNDARY@ \
-			 	$(AM_CFLAGS_BASE) -marm
+			 	$(AM_CFLAGS_BASE) -marm -mcpu=cortex-a8
 
-AM_CCASFLAGS_ARM_LINUX = $(AM_CPPFLAGS_ARM_LINUX) @FLAG_M32@ -marm -g
-AM_FLAG_M3264_PPC32_AIX5 = @FLAG_MAIX32@
-AM_CFLAGS_PPC32_AIX5 = @FLAG_MAIX32@ -mcpu=powerpc $(AM_CFLAGS_BASE)
-AM_CCASFLAGS_PPC32_AIX5 = $(AM_CPPFLAGS_PPC32_AIX5) \
-			    @FLAG_MAIX32@ -mcpu=powerpc -g
-
-AM_FLAG_M3264_PPC64_AIX5 = @FLAG_MAIX64@
-AM_CFLAGS_PPC64_AIX5 = @FLAG_MAIX64@ -mcpu=powerpc64 $(AM_CFLAGS_BASE)
-AM_CCASFLAGS_PPC64_AIX5 = $(AM_CPPFLAGS_PPC64_AIX5) \
-			    @FLAG_MAIX64@ -mcpu=powerpc64 -g
+AM_CCASFLAGS_ARM_LINUX = $(AM_CPPFLAGS_ARM_LINUX) @FLAG_M32@ \
+				-marm -mcpu=cortex-a8 -g
 
 AM_FLAG_M3264_X86_DARWIN = -arch i386
 AM_CFLAGS_X86_DARWIN = $(WERROR) -arch i386 $(AM_CFLAGS_BASE) \
@@ -447,24 +476,22 @@ AM_CCASFLAGS_PRI = $(AM_CCASFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
 # Baseline link flags for making vgpreload shared objects.
 #
 PRELOAD_LDFLAGS_COMMON_LINUX = -nodefaultlibs -shared -Wl,-z,interpose,-z,initfirst
-PRELOAD_LDFLAGS_COMMON_AIX5 = -nodefaultlibs -shared -Wl,-G -Wl,-bnogc
 PRELOAD_LDFLAGS_COMMON_DARWIN = -dynamic -dynamiclib -all_load
 PRELOAD_LDFLAGS_X86_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M32@
 PRELOAD_LDFLAGS_AMD64_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M64@
 PRELOAD_LDFLAGS_PPC32_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M32@
 PRELOAD_LDFLAGS_PPC64_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M64@
 PRELOAD_LDFLAGS_ARM_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M32@
-PRELOAD_LDFLAGS_PPC32_AIX5 = $(PRELOAD_LDFLAGS_COMMON_AIX5)  @FLAG_MAIX32@
-PRELOAD_LDFLAGS_PPC64_AIX5 = $(PRELOAD_LDFLAGS_COMMON_AIX5)  @FLAG_MAIX64@
 PRELOAD_LDFLAGS_X86_DARWIN = $(PRELOAD_LDFLAGS_COMMON_DARWIN) -arch i386
 PRELOAD_LDFLAGS_AMD64_DARWIN = $(PRELOAD_LDFLAGS_COMMON_DARWIN) -arch x86_64
 PRELOAD_LDFLAGS_S390X_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M64@
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
 		-I$(top_srcdir)/coregrind -I$(top_builddir)/include \
 		-I$(top_srcdir)/VEX/pub \
-		-DVGA_$(VGCONF_ARCH_PRI)=1 \
-		-DVGO_$(VGCONF_OS)=1 \
-		-DVGP_$(VGCONF_ARCH_PRI)_$(VGCONF_OS)=1
+		-DVGA_@VGCONF_ARCH_PRI@=1 \
+		-DVGO_@VGCONF_OS@=1 \
+		-DVGP_@VGCONF_ARCH_PRI@_@VGCONF_OS@=1 \
+		-DVGPV_@VGCONF_ARCH_PRI@_@VGCONF_OS@_@VGCONF_PLATVARIANT@=1
 
 # Nb: Tools need to augment these flags with an arch-selection option, such
 # as $(AM_FLAG_M3264_PRI).
@@ -478,7 +505,7 @@ dist_noinst_SCRIPTS = filter_stderr
 INSN_TESTS = clc clcle cvb cvd icm lpr tcxb lam_stam xc mvst add sub mul \
              and or xor insert div srst fold_And16 flogr sub_EI add_EI \
              and_EI or_EI xor_EI insert_EI mul_GE add_GE condloadstore \
-             op_exception fgx
+             op_exception fgx stck stckf stcke stfle op00 cksm mvcl clcl
 
 EXTRA_DIST = \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
@@ -543,9 +570,15 @@ and$(EXEEXT): $(and_OBJECTS) $(and_DEPENDENCIES)
 and_EI$(EXEEXT): $(and_EI_OBJECTS) $(and_EI_DEPENDENCIES) 
 	@rm -f and_EI$(EXEEXT)
 	$(LINK) $(and_EI_OBJECTS) $(and_EI_LDADD) $(LIBS)
+cksm$(EXEEXT): $(cksm_OBJECTS) $(cksm_DEPENDENCIES) 
+	@rm -f cksm$(EXEEXT)
+	$(LINK) $(cksm_OBJECTS) $(cksm_LDADD) $(LIBS)
 clc$(EXEEXT): $(clc_OBJECTS) $(clc_DEPENDENCIES) 
 	@rm -f clc$(EXEEXT)
 	$(LINK) $(clc_OBJECTS) $(clc_LDADD) $(LIBS)
+clcl$(EXEEXT): $(clcl_OBJECTS) $(clcl_DEPENDENCIES) 
+	@rm -f clcl$(EXEEXT)
+	$(LINK) $(clcl_OBJECTS) $(clcl_LDADD) $(LIBS)
 clcle$(EXEEXT): $(clcle_OBJECTS) $(clcle_DEPENDENCIES) 
 	@rm -f clcle$(EXEEXT)
 	$(LINK) $(clcle_OBJECTS) $(clcle_LDADD) $(LIBS)
@@ -597,9 +630,15 @@ mul$(EXEEXT): $(mul_OBJECTS) $(mul_DEPENDENCIES)
 mul_GE$(EXEEXT): $(mul_GE_OBJECTS) $(mul_GE_DEPENDENCIES) 
 	@rm -f mul_GE$(EXEEXT)
 	$(LINK) $(mul_GE_OBJECTS) $(mul_GE_LDADD) $(LIBS)
+mvcl$(EXEEXT): $(mvcl_OBJECTS) $(mvcl_DEPENDENCIES) 
+	@rm -f mvcl$(EXEEXT)
+	$(LINK) $(mvcl_OBJECTS) $(mvcl_LDADD) $(LIBS)
 mvst$(EXEEXT): $(mvst_OBJECTS) $(mvst_DEPENDENCIES) 
 	@rm -f mvst$(EXEEXT)
 	$(LINK) $(mvst_OBJECTS) $(mvst_LDADD) $(LIBS)
+op00$(EXEEXT): $(op00_OBJECTS) $(op00_DEPENDENCIES) 
+	@rm -f op00$(EXEEXT)
+	$(LINK) $(op00_OBJECTS) $(op00_LDADD) $(LIBS)
 op_exception$(EXEEXT): $(op_exception_OBJECTS) $(op_exception_DEPENDENCIES) 
 	@rm -f op_exception$(EXEEXT)
 	$(LINK) $(op_exception_OBJECTS) $(op_exception_LDADD) $(LIBS)
@@ -612,6 +651,18 @@ or_EI$(EXEEXT): $(or_EI_OBJECTS) $(or_EI_DEPENDENCIES)
 srst$(EXEEXT): $(srst_OBJECTS) $(srst_DEPENDENCIES) 
 	@rm -f srst$(EXEEXT)
 	$(LINK) $(srst_OBJECTS) $(srst_LDADD) $(LIBS)
+stck$(EXEEXT): $(stck_OBJECTS) $(stck_DEPENDENCIES) 
+	@rm -f stck$(EXEEXT)
+	$(LINK) $(stck_OBJECTS) $(stck_LDADD) $(LIBS)
+stcke$(EXEEXT): $(stcke_OBJECTS) $(stcke_DEPENDENCIES) 
+	@rm -f stcke$(EXEEXT)
+	$(LINK) $(stcke_OBJECTS) $(stcke_LDADD) $(LIBS)
+stckf$(EXEEXT): $(stckf_OBJECTS) $(stckf_DEPENDENCIES) 
+	@rm -f stckf$(EXEEXT)
+	$(LINK) $(stckf_OBJECTS) $(stckf_LDADD) $(LIBS)
+stfle$(EXEEXT): $(stfle_OBJECTS) $(stfle_DEPENDENCIES) 
+	@rm -f stfle$(EXEEXT)
+	$(LINK) $(stfle_OBJECTS) $(stfle_LDADD) $(LIBS)
 sub$(EXEEXT): $(sub_OBJECTS) $(sub_DEPENDENCIES) 
 	@rm -f sub$(EXEEXT)
 	$(LINK) $(sub_OBJECTS) $(sub_LDADD) $(LIBS)
@@ -642,7 +693,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/add_GE.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/and.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/and_EI.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cksm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clcl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clcle.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/condloadstore.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cvb.Po@am__quote@
@@ -660,11 +713,17 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lpr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mul.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mul_GE.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mvcl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mvst.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/op00.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/op_exception.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/or.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/or_EI.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/srst.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stck.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stcke.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stckf.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stfle.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sub.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sub_EI.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tcxb-tcxb.Po@am__quote@

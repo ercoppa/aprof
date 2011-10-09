@@ -76,6 +76,9 @@ static Bool     s_trace_fork_join = False;
 static Bool     s_segment_merging = True;
 static Bool     s_new_segments_since_last_merge;
 static int      s_segment_merge_interval = 10;
+static unsigned s_join_list_vol = 10;
+static unsigned s_deletion_head;
+static unsigned s_deletion_tail;
 
 
 /* Function definitions. */
@@ -133,6 +136,11 @@ void DRD_(thread_set_segment_merge_interval)(const int i)
    s_segment_merge_interval = i;
 }
 
+void DRD_(thread_set_join_list_vol)(const int jlv)
+{
+   s_join_list_vol = jlv;
+}
+
 /**
  * Convert Valgrind's ThreadId into a DrdThreadId.
  *
@@ -167,12 +175,11 @@ static DrdThreadId DRD_(VgThreadIdToNewDrdThreadId)(const ThreadId tid)
 
    for (i = 1; i < DRD_N_THREADS; i++)
    {
-      if (DRD_(g_threadinfo)[i].vg_thread_exists == False
-          && DRD_(g_threadinfo)[i].posix_thread_exists == False
-          && DRD_(g_threadinfo)[i].detached_posix_thread == False)
+      if (!DRD_(g_threadinfo)[i].valid)
       {
          tl_assert(! DRD_(IsValidDrdThreadId)(i));
 
+         DRD_(g_threadinfo)[i].valid         = True;
          DRD_(g_threadinfo)[i].vg_thread_exists = True;
          DRD_(g_threadinfo)[i].vg_threadid   = tid;
          DRD_(g_threadinfo)[i].pt_threadid   = INVALID_POSIX_THREADID;
@@ -186,6 +193,7 @@ static DrdThreadId DRD_(VgThreadIdToNewDrdThreadId)(const ThreadId tid)
          DRD_(g_threadinfo)[i].is_recording_stores = True;
          DRD_(g_threadinfo)[i].pthread_create_nesting_level = 0;
          DRD_(g_threadinfo)[i].synchr_nesting = 0;
+         DRD_(g_threadinfo)[i].deletion_seq = s_deletion_tail - 1;
          tl_assert(DRD_(g_threadinfo)[i].first == 0);
          tl_assert(DRD_(g_threadinfo)[i].last == 0);
 
@@ -323,6 +331,32 @@ DrdThreadId DRD_(thread_post_create)(const ThreadId vg_created)
    return created;
 }
 
+static void DRD_(thread_delayed_delete)(const DrdThreadId tid)
+{
+   int j;
+
+   DRD_(g_threadinfo)[tid].vg_thread_exists = False;
+   DRD_(g_threadinfo)[tid].posix_thread_exists = False;
+   DRD_(g_threadinfo)[tid].deletion_seq = s_deletion_head++;
+#if 0
+   VG_(message)(Vg_DebugMsg, "Adding thread %d to the deletion list\n", tid);
+#endif
+   if (s_deletion_head - s_deletion_tail >= s_join_list_vol) {
+      for (j = 0; j < DRD_N_THREADS; ++j) {
+         if (DRD_(IsValidDrdThreadId)(j)
+             && DRD_(g_threadinfo)[j].deletion_seq == s_deletion_tail)
+         {
+            s_deletion_tail++;
+#if 0
+            VG_(message)(Vg_DebugMsg, "Delayed delete of thread %d\n", j);
+#endif
+            DRD_(thread_delete)(j, False);
+            break;
+         }
+      }
+   }
+}
+
 /**
  * Process VG_USERREQ__POST_THREAD_JOIN. This client request is invoked just
  * after thread drd_joiner joined thread drd_joinee.
@@ -356,7 +390,7 @@ void DRD_(thread_post_join)(DrdThreadId drd_joiner, DrdThreadId drd_joinee)
                        ", new vc: %s", vc);
          VG_(free)(vc);
       }
-      VG_(message)(Vg_DebugMsg, "%s\n", msg);
+      DRD_(trace_msg)("%s\n", msg);
       VG_(free)(msg);
    }
 
@@ -367,7 +401,7 @@ void DRD_(thread_post_join)(DrdThreadId drd_joiner, DrdThreadId drd_joinee)
                                DRD_(thread_get_stack_max)(drd_joinee));
    }
    DRD_(clientobj_delete_thread)(drd_joinee);
-   DRD_(thread_delete)(drd_joinee, False);
+   DRD_(thread_delayed_delete)(drd_joinee);
 }
 
 /**
@@ -447,8 +481,7 @@ Int DRD_(thread_get_threads_on_alt_stack)(void)
 }
 
 /**
- * Clean up thread-specific data structures. Call this just after
- * pthread_join().
+ * Clean up thread-specific data structures.
  */
 void DRD_(thread_delete)(const DrdThreadId tid, const Bool detached)
 {
@@ -465,6 +498,7 @@ void DRD_(thread_delete)(const DrdThreadId tid, const Bool detached)
       sg->next = 0;
       DRD_(sg_put)(sg);
    }
+   DRD_(g_threadinfo)[tid].valid = False;
    DRD_(g_threadinfo)[tid].vg_thread_exists = False;
    DRD_(g_threadinfo)[tid].posix_thread_exists = False;
    if (detached)
@@ -530,8 +564,8 @@ void DRD_(thread_pre_cancel)(const DrdThreadId tid)
    tl_assert(DRD_(g_threadinfo)[tid].pt_threadid != INVALID_POSIX_THREADID);
 
    if (DRD_(thread_get_trace_fork_join)())
-      VG_(message)(Vg_UserMsg, "[%d] drd_thread_pre_cancel %d\n",
-		   DRD_(g_drd_running_tid), tid);
+      DRD_(trace_msg)("[%d] drd_thread_pre_cancel %d\n",
+                      DRD_(g_drd_running_tid), tid);
 }
 
 /**
@@ -1152,34 +1186,14 @@ void DRD_(thread_new_segment_and_combine_vc)(DrdThreadId tid, const Segment* sg)
  */
 void DRD_(thread_stop_using_mem)(const Addr a1, const Addr a2)
 {
-   DrdThreadId other_user;
    unsigned i;
+   Segment* p;
 
-   /* For all threads, mark the range [ a1, a2 [ as no longer in use. */
-   other_user = DRD_INVALID_THREADID;
    for (i = 0; i < DRD_N_THREADS; i++)
-   {
-      Segment* p;
-      for (p = DRD_(g_threadinfo)[i].first; p; p = p->next) {
-         if (other_user == DRD_INVALID_THREADID
-             && i != DRD_(g_drd_running_tid)) {
-            if (UNLIKELY(DRD_(bm_test_and_clear)(DRD_(sg_bm)(p), a1, a2)))
-               other_user = i;
-         } else
-            DRD_(bm_clear)(DRD_(sg_bm)(p), a1, a2);
-      }
-   }
+      for (p = DRD_(g_threadinfo)[i].first; p; p = p->next)
+         DRD_(bm_clear)(DRD_(sg_bm)(p), a1, a2);
 
-   /*
-    * If any other thread had accessed memory in [ a1, a2 [, update the
-    * conflict set.
-    */
-   if (other_user != DRD_INVALID_THREADID
-       && DRD_(bm_has_any_access)(DRD_(g_conflict_set), a1, a2))
-   {
-      thread_compute_conflict_set(&DRD_(g_conflict_set),
-                                  DRD_(thread_get_running_tid)());
-   }
+   DRD_(bm_clear)(DRD_(g_conflict_set), a1, a2);
 }
 
 /** Specify whether memory loads should be recorded. */
@@ -1217,9 +1231,10 @@ void DRD_(thread_print_all)(void)
       if (DRD_(g_threadinfo)[i].first)
       {
          VG_(printf)("**************\n"
-                     "* thread %3d (%d/%d/%d/0x%lx/%d) *\n"
+                     "* thread %3d (%d/%d/%d/%d/0x%lx/%d) *\n"
                      "**************\n",
                      i,
+                     DRD_(g_threadinfo)[i].valid,
                      DRD_(g_threadinfo)[i].vg_thread_exists,
                      DRD_(g_threadinfo)[i].vg_threadid,
                      DRD_(g_threadinfo)[i].posix_thread_exists,
@@ -1496,6 +1511,7 @@ void DRD_(thread_update_conflict_set)(const DrdThreadId tid,
    }
 
    new_vc = &DRD_(g_threadinfo)[tid].last->vc;
+   tl_assert(DRD_(vc_lte)(old_vc, new_vc));
 
    DRD_(bm_unmark)(DRD_(g_conflict_set));
 
@@ -1506,59 +1522,65 @@ void DRD_(thread_update_conflict_set)(const DrdThreadId tid,
       if (j == tid || ! DRD_(IsValidDrdThreadId)(j))
          continue;
 
-      for (q = DRD_(g_threadinfo)[j].last; q; q = q->prev)
-      {
-         const int included_in_old_conflict_set
-            = ! DRD_(vc_lte)(&q->vc, old_vc)
-            && ! DRD_(vc_lte)(old_vc, &q->vc);
-         const int included_in_new_conflict_set
-            = ! DRD_(vc_lte)(&q->vc, new_vc)
-            && ! DRD_(vc_lte)(new_vc, &q->vc);
+      for (q = DRD_(g_threadinfo)[j].last;
+           q && !DRD_(vc_lte)(&q->vc, new_vc);
+           q = q->prev) {
+         const Bool included_in_old_conflict_set
+            = !DRD_(vc_lte)(old_vc, &q->vc);
+         const Bool included_in_new_conflict_set
+            = !DRD_(vc_lte)(new_vc, &q->vc);
+
+         if (UNLIKELY(s_trace_conflict_set)) {
+            char* str;
+
+            str = DRD_(vc_aprint)(&q->vc);
+            VG_(message)(Vg_DebugMsg,
+                         "conflict set: [%d] %s segment %s\n", j,
+                         included_in_old_conflict_set
+                         != included_in_new_conflict_set
+                         ? "merging" : "ignoring", str);
+            VG_(free)(str);
+         }
          if (included_in_old_conflict_set != included_in_new_conflict_set)
-         {
-            if (s_trace_conflict_set)
-            {
-               char* str;
-
-               str = DRD_(vc_aprint)(&q->vc);
-               VG_(message)(Vg_DebugMsg,
-                            "conflict set: [%d] merging segment %s\n", j, str);
-               VG_(free)(str);
-            }
             DRD_(bm_mark)(DRD_(g_conflict_set), DRD_(sg_bm)(q));
-         }
-         else
-         {
-            if (s_trace_conflict_set)
-            {
-               char* str;
+      }
 
-               str = DRD_(vc_aprint)(&q->vc);
-               VG_(message)(Vg_DebugMsg,
-                            "conflict set: [%d] ignoring segment %s\n", j, str);
-               VG_(free)(str);
-            }
+      for ( ; q && !DRD_(vc_lte)(&q->vc, old_vc); q = q->prev) {
+         const Bool included_in_old_conflict_set
+            = !DRD_(vc_lte)(old_vc, &q->vc);
+         const Bool included_in_new_conflict_set
+            = !DRD_(vc_lte)(&q->vc, new_vc)
+            && !DRD_(vc_lte)(new_vc, &q->vc);
+
+         if (UNLIKELY(s_trace_conflict_set)) {
+            char* str;
+
+            str = DRD_(vc_aprint)(&q->vc);
+            VG_(message)(Vg_DebugMsg,
+                         "conflict set: [%d] %s segment %s\n", j,
+                         included_in_old_conflict_set
+                         != included_in_new_conflict_set
+                         ? "merging" : "ignoring", str);
+            VG_(free)(str);
          }
+         if (included_in_old_conflict_set != included_in_new_conflict_set)
+            DRD_(bm_mark)(DRD_(g_conflict_set), DRD_(sg_bm)(q));
       }
    }
 
    DRD_(bm_clear_marked)(DRD_(g_conflict_set));
 
    p = DRD_(g_threadinfo)[tid].last;
+   for (j = 0; j < DRD_N_THREADS; j++)
    {
-      for (j = 0; j < DRD_N_THREADS; j++)
+      if (j != tid && DRD_(IsValidDrdThreadId)(j))
       {
-         if (j != tid && DRD_(IsValidDrdThreadId)(j))
-         {
-            Segment* q;
-            for (q = DRD_(g_threadinfo)[j].last; q; q = q->prev)
-            {
-               if (! DRD_(vc_lte)(&q->vc, &p->vc)
-                   && ! DRD_(vc_lte)(&p->vc, &q->vc))
-               {
-                  DRD_(bm_merge2_marked)(DRD_(g_conflict_set), DRD_(sg_bm)(q));
-               }
-            }
+         Segment* q;
+         for (q = DRD_(g_threadinfo)[j].last;
+              q && !DRD_(vc_lte)(&q->vc, &p->vc);
+              q = q->prev) {
+            if (!DRD_(vc_lte)(&p->vc, &q->vc))
+               DRD_(bm_merge2_marked)(DRD_(g_conflict_set), DRD_(sg_bm)(q));
          }
       }
    }

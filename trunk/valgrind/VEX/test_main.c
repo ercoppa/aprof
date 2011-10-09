@@ -76,7 +76,7 @@ static Bool verbose = True;
 
 /* Forwards */
 #if 1 /* UNUSED */
-static IRSB* ac_instrument ( IRSB*, VexGuestLayout*, IRType );
+//static IRSB* ac_instrument ( IRSB*, VexGuestLayout*, IRType );
 static
 IRSB* mc_instrument ( void* closureV,
                       IRSB* bb_in, VexGuestLayout* layout, 
@@ -84,7 +84,12 @@ IRSB* mc_instrument ( void* closureV,
                       IRType gWordTy, IRType hWordTy );
 #endif
 
-static Bool chase_into_not_ok ( void* opaque, Addr64 dst ) { return False; }
+static Bool chase_into_not_ok ( void* opaque, Addr64 dst ) {
+   return False;
+}
+static UInt needs_self_check ( void* opaque, VexGuestExtents* vge ) {
+   return 0;
+}
 
 int main ( int argc, char** argv )
 {
@@ -128,7 +133,8 @@ int main ( int argc, char** argv )
 
    while (!feof(f)) {
 
-      fgets(linebuf, N_LINEBUF,f);
+      __attribute__((unused))
+      char* unused1 = fgets(linebuf, N_LINEBUF,f);
       if (linebuf[0] == 0) continue;
       if (linebuf[0] != '.') continue;
 
@@ -141,7 +147,8 @@ int main ( int argc, char** argv )
                                  & orig_addr, & orig_nbytes ));
       assert(orig_nbytes >= 1);
       assert(!feof(f));
-      fgets(linebuf, N_LINEBUF,f);
+      __attribute__((unused))
+      char* unused2 = fgets(linebuf, N_LINEBUF,f);
       assert(linebuf[0] == '.');
 
       /* second line is:   . byte byte byte etc */
@@ -210,11 +217,12 @@ int main ( int argc, char** argv )
       vta.instrument1     = mc_instrument;
       vta.instrument2     = NULL;
 #endif
-      vta.do_self_check   = False;
+      vta.needs_self_check  = needs_self_check;
       vta.preamble_function = NULL;
       vta.traceflags      = TEST_FLAGS;
 #if 1 /* x86, amd64 hosts */
-      vta.dispatch        = (void*)0x12345678;
+      vta.dispatch_unassisted = (void*)0x12345678;
+      vta.dispatch_assisted   = (void*)0x12345678;
 #else /* ppc32, ppc64 hosts */
       vta.dispatch        = NULL;
 #endif
@@ -224,9 +232,10 @@ int main ( int argc, char** argv )
       for (i = 0; i < TEST_N_ITERS; i++)
          tres = LibVEX_Translate ( &vta );
 
-      if (tres != VexTransOK)
-         printf("\ntres = %d\n", (Int)tres);
-      assert(tres == VexTransOK);
+      if (tres.status != VexTransOK)
+         printf("\ntres = %d\n", (Int)tres.status);
+      assert(tres.status == VexTransOK);
+      assert(tres.n_sc_extents == 0);
       assert(vge.n_used == 1);
       assert((UInt)(vge.len[0]) == orig_nbytes);
 
@@ -1284,6 +1293,7 @@ IRAtom* mkLazyN ( MCEnv* mce,
 /*------------------------------------------------------------*/
 
 static
+__attribute__((unused))
 IRAtom* expensiveAdd32 ( MCEnv* mce, IRAtom* qaa, IRAtom* qbb, 
                                      IRAtom* aa,  IRAtom* bb )
 {
@@ -1524,9 +1534,9 @@ IRAtom* vectorNarrowV128 ( MCEnv* mce, IROp narrow_op,
    IRAtom *at1, *at2, *at3;
    IRAtom* (*pcast)( MCEnv*, IRAtom* );
    switch (narrow_op) {
-      case Iop_QNarrow32Sx4: pcast = mkPCast32x4; break;
-      case Iop_QNarrow16Sx8: pcast = mkPCast16x8; break;
-      case Iop_QNarrow16Ux8: pcast = mkPCast16x8; break;
+      case Iop_QNarrowBin32Sto16Sx8: pcast = mkPCast32x4; break;
+      case Iop_QNarrowBin16Sto8Sx16: pcast = mkPCast16x8; break;
+      case Iop_QNarrowBin16Sto8Ux16: pcast = mkPCast16x8; break;
       default: VG_(tool_panic)("vectorNarrowV128");
    }
    tl_assert(isShadowAtom(mce,vatom1));
@@ -1664,9 +1674,9 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_QAdd64Sx2:
          return binary64Ix2(mce, vatom1, vatom2);
 
-      case Iop_QNarrow32Sx4:
-      case Iop_QNarrow16Sx8:
-      case Iop_QNarrow16Ux8:
+      case Iop_QNarrowBin32Sto16Sx8:
+      case Iop_QNarrowBin16Sto8Sx16:
+      case Iop_QNarrowBin16Sto8Ux16:
          return vectorNarrowV128(mce, op, vatom1, vatom2);
 
       case Iop_Sub64Fx2:
@@ -2512,6 +2522,7 @@ static Bool isBogusAtom ( IRAtom* at )
            || n == 1010100);
 }
 
+__attribute__((unused))
 static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
 {
    Int     i;

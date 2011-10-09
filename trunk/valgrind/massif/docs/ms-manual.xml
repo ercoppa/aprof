@@ -861,14 +861,20 @@ in a particular column, which makes following the allocation chains easier.
 <sect1 id="ms-manual.monitor-commands" xreflabel="Massif Monitor Commands">
 <title>Massif Monitor Commands</title>
 <para>The Massif tool provides monitor commands handled by the Valgrind
-gdbserver (see <xref linkend="manual-core.gdbserver-commandhandling"/>).
+gdbserver (see <xref linkend="manual-core-adv.gdbserver-commandhandling"/>).
 </para>
 
 <itemizedlist>
   <listitem>
-    <para><varname>ms.snapshot [&lt;filename&gt;] [detailed]</varname> requests to take
-    a snapshot and save it in the given &lt;filename&gt; (default massif.vgdb.out).
-    If present, the 'detailed' argument indicates to take a detailed snapshot.
+    <para><varname>snapshot [&lt;filename&gt;]</varname> requests
+    to take a snapshot and save it in the given &lt;filename&gt;
+    (default massif.vgdb.out).
+    </para>
+  </listitem>
+  <listitem>
+    <para><varname>detailed_snapshot [&lt;filename&gt;]</varname>
+    requests to take a detailed snapshot and save it in the given
+    &lt;filename&gt; (default massif.vgdb.out).
     </para>
   </listitem>
 </itemizedlist>

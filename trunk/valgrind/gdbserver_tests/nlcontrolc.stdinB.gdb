@@ -1,10 +1,11 @@
 # connect gdb to Valgrind gdbserver:
 target remote | ./vgdb --wait=60 --vgdb-prefix=./vgdb-prefix-nlcontrolc
-monitor vg.set vgdb-error 999999
+echo vgdb launched process attached\n
+monitor v.set vgdb-error 999999
 #
 #
 # simulate control-c in a few seconds
-shell ./simulate_control_c --vgdb-prefix=./vgdb-prefix-nlcontrolc 10
+shell ./simulate_control_c --vgdb-prefix=./vgdb-prefix-nlcontrolc 1 grep main nlcontrolc.stderr.out
 #
 continue
 #
@@ -22,8 +23,9 @@ p t[2].tv_sec = 0
 p t[3].tv_sec = 0
 #
 # We will change the burning parameters in a few  seconds
-shell ./simulate_control_c --vgdb-prefix=./vgdb-prefix-nlcontrolc 10
+shell ./simulate_control_c --vgdb-prefix=./vgdb-prefix-nlcontrolc 1 grep changed nlcontrolc.stdoutB.out
 #
+echo changed burning parameters\n
 continue
 #
 # Threads are burning cpu now

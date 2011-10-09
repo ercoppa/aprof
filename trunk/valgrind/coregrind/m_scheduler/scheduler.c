@@ -160,6 +160,21 @@ void print_sched_event ( ThreadId tid, Char* what )
    VG_(message)(Vg_DebugMsg, "  SCHED[%d]: %s\n", tid, what );
 }
 
+/* For showing SB counts, if the user asks to see them. */
+#define SHOW_SBCOUNT_EVERY (20ULL * 1000 * 1000)
+static ULong bbs_done_lastcheck = 0;
+
+static
+void maybe_show_sb_counts ( void )
+{
+   Long delta = bbs_done - bbs_done_lastcheck;
+   vg_assert(delta >= 0);
+   if (UNLIKELY(delta >= SHOW_SBCOUNT_EVERY)) {
+      VG_(umsg)("%'lld superblocks executed\n", bbs_done);
+      bbs_done_lastcheck = bbs_done;
+   }
+}
+
 static
 HChar* name_of_sched_event ( UInt event )
 {
@@ -413,10 +428,6 @@ static void os_state_clear(ThreadState *tst)
    tst->os_state.threadgroup = 0;
 #  if defined(VGO_linux)
    /* no other fields to clear */
-#  elif defined(VGO_aix5)
-   tst->os_state.cancel_async    = False;
-   tst->os_state.cancel_disabled = False;
-   tst->os_state.cancel_progress = Canc_NoRequest;
 #  elif defined(VGO_darwin)
    tst->os_state.post_mach_trap_fn = NULL;
    tst->os_state.pthread           = 0;
@@ -538,6 +549,7 @@ ThreadId VG_(scheduler_init_phase1) ( void )
       VG_(threads)[i].status                    = VgTs_Empty;
       VG_(threads)[i].client_stack_szB          = 0;
       VG_(threads)[i].client_stack_highest_word = (Addr)NULL;
+      VG_(threads)[i].err_disablement_level     = 0;
    }
 
    tid_main = VG_(alloc_ThreadState)();
@@ -585,18 +597,19 @@ void VG_(scheduler_init_phase2) ( ThreadId tid_main,
    ------------------------------------------------------------------ */
 
 /* Use gcc's built-in setjmp/longjmp.  longjmp must not restore signal
-   mask state, but does need to pass "val" through. */
+   mask state, but does need to pass "val" through.  jumped must be a
+   volatile UWord. */
 #define SCHEDSETJMP(tid, jumped, stmt)					\
    do {									\
       ThreadState * volatile _qq_tst = VG_(get_ThreadState)(tid);	\
 									\
       (jumped) = VG_MINIMAL_SETJMP(_qq_tst->sched_jmpbuf);              \
-      if ((jumped) == 0) {						\
+      if ((jumped) == ((UWord)0)) {                                     \
 	 vg_assert(!_qq_tst->sched_jmpbuf_valid);			\
 	 _qq_tst->sched_jmpbuf_valid = True;				\
 	 stmt;								\
       }	else if (VG_(clo_trace_sched))					\
-	 VG_(printf)("SCHEDSETJMP(line %d) tid %d, jumped=%d\n",        \
+	 VG_(printf)("SCHEDSETJMP(line %d) tid %d, jumped=%ld\n",       \
                      __LINE__, tid, jumped);                            \
       vg_assert(_qq_tst->sched_jmpbuf_valid);				\
       _qq_tst->sched_jmpbuf_valid = False;				\
@@ -711,7 +724,7 @@ void VG_(force_vgdb_poll) ( void )
    indicating why VG_(run_innerloop) stopped. */
 static UInt run_thread_for_a_while ( ThreadId tid )
 {
-   volatile Int          jumped;
+   volatile UWord        jumped;
    volatile ThreadState* tst = NULL; /* stop gcc complaining */
    volatile UInt         trc;
    volatile Int          dispatch_ctr_SAVED;
@@ -728,22 +741,6 @@ static UInt run_thread_for_a_while ( ThreadId tid )
 
    trc = 0;
    dispatch_ctr_SAVED = VG_(dispatch_ctr);
-
-#  if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-   /* On AIX, we need to get a plausible value for SPRG3 for this
-      thread, since it's used I think as a thread-state pointer.  It
-      is presumably set by the kernel for each dispatched thread and
-      cannot be changed by user space.  It therefore seems safe enough
-      to copy the host's value of it into the guest state at the point
-      the thread is dispatched.
-      (Later): Hmm, looks like SPRG3 is only used in 32-bit mode.
-      Oh well. */
-   { UWord host_sprg3;
-     __asm__ __volatile__( "mfspr %0,259\n" : "=b"(host_sprg3) );
-    VG_(threads)[tid].arch.vex.guest_SPRG3_RO = host_sprg3;
-    vg_assert(sizeof(VG_(threads)[tid].arch.vex.guest_SPRG3_RO) == sizeof(void*));
-   }
-#  endif
 
    /* there should be no undealt-with signals */
    //vg_assert(VG_(threads)[tid].siginfo.si_signo == 0);
@@ -775,7 +772,7 @@ static UInt run_thread_for_a_while ( ThreadId tid )
    vg_assert(VG_(in_generated_code) == True);
    VG_(in_generated_code) = False;
 
-   if (jumped) {
+   if (jumped != (UWord)0) {
       /* We get here if the client took a fault that caused our signal
          handler to longjmp. */
       vg_assert(trc == 0);
@@ -809,7 +806,7 @@ static UInt run_thread_for_a_while ( ThreadId tid )
    VG_TRC_* value. */
 static UInt run_noredir_translation ( Addr hcode, ThreadId tid )
 {
-   volatile Int          jumped;
+   volatile UWord        jumped;
    volatile ThreadState* tst; 
    volatile UWord        argblock[4];
    volatile UInt         retval;
@@ -861,7 +858,7 @@ static UInt run_noredir_translation ( Addr hcode, ThreadId tid )
 
    VG_(in_generated_code) = False;
 
-   if (jumped) {
+   if (jumped != (UWord)0) {
       /* We get here if the client took a fault that caused our signal
          handler to longjmp. */
       vg_assert(argblock[2] == 0); /* next guest IP was not written */
@@ -884,11 +881,6 @@ static UInt run_noredir_translation ( Addr hcode, ThreadId tid )
    VG_TRACK( stop_client_code, tid, bbs_done );
 
    return retval;
-}
-
-ULong VG_(bbs_done) (void)
-{
-   return bbs_done;
 }
 
 
@@ -924,7 +916,7 @@ static void handle_tt_miss ( ThreadId tid )
 static void handle_syscall(ThreadId tid, UInt trc)
 {
    ThreadState * volatile tst = VG_(get_ThreadState)(tid);
-   Bool jumped; 
+   volatile UWord jumped; 
 
    /* Syscall may or may not block; either way, it will be
       complete by the time this call returns, and we'll be
@@ -944,7 +936,7 @@ static void handle_syscall(ThreadId tid, UInt trc)
 		  tid, VG_(running_tid), tid, tst->status);
    vg_assert(VG_(is_running_thread)(tid));
    
-   if (jumped) {
+   if (jumped != (UWord)0) {
       block_signals();
       VG_(poll_signals)(tid);
    }
@@ -1042,18 +1034,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
          /* As we are initializing, VG_(dyn_vgdb_error) can't have been
             changed yet. */
 
-         if (VG_(dyn_vgdb_error) == 0) {
-            /* The below call allows gdb to attach at startup
-               before the first guest instruction is executed. */
-            VG_(umsg)("(action at startup) vgdb me ... \n");
-            VG_(gdbserver)(1); 
-         } else {
-            /* User has activated gdbserver => initialize now the FIFOs
-               to let vgdb/gdb contact us either via the scheduler poll
-               mechanism or via vgdb ptrace-ing valgrind. */
-            if (VG_(gdbserver_activity) (1))
-               VG_(gdbserver) (1);
-         }
+         VG_(gdbserver_prerun_action) (1);
       } else {
          VG_(disable_vgdb_poll) ();
       }
@@ -1070,17 +1051,9 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 
       if (VG_(dispatch_ctr) == 1) {
 
-#        if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-         /* Note: count runnable threads before dropping The Lock. */
-         Int rt = VG_(count_runnable_threads)();
-#        endif
-
 	 /* Our slice is done, so yield the CPU to another thread.  On
             Linux, this doesn't sleep between sleeping and running,
-            since that would take too much time.  On AIX, we have to
-            prod the scheduler to get it consider other threads; not
-            doing so appears to cause very long delays before other
-            runnable threads get rescheduled. */
+            since that would take too much time. */
 
 	 /* 4 July 06: it seems that a zero-length nsleep is needed to
             cause async thread cancellation (canceller.c) to terminate
@@ -1098,20 +1071,6 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 	 VG_(release_BigLock)(tid, VgTs_Yielding, 
                                    "VG_(scheduler):timeslice");
 	 /* ------------ now we don't have The Lock ------------ */
-
-#        if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-         { static Int ctr=0;
-           vg_assert(__NR_AIX5__nsleep != __NR_AIX5_UNKNOWN);
-           vg_assert(__NR_AIX5_yield   != __NR_AIX5_UNKNOWN);
-           if (1 && rt > 0 && ((++ctr % 3) == 0)) { 
-              //struct vki_timespec ts;
-              //ts.tv_sec = 0;
-              //ts.tv_nsec = 0*1000*1000;
-              //VG_(do_syscall2)(__NR_AIX5__nsleep, (UWord)&ts, (UWord)NULL);
-	      VG_(do_syscall0)(__NR_AIX5_yield);
-           }
-         }
-#        endif
 
 	 VG_(acquire_BigLock)(tid, "VG_(scheduler):timeslice");
 	 /* ------------ now we do have The Lock ------------ */
@@ -1358,6 +1317,9 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 	 break;
 
       } /* switch (trc) */
+
+      if (0)
+         maybe_show_sb_counts();
    }
 
    if (VG_(clo_trace_sched))
@@ -1676,6 +1638,22 @@ void do_client_request ( ThreadId tid )
             buf64[0] = 0;
          }
 
+         SET_CLREQ_RETVAL( tid, 0 ); /* return value is meaningless */
+         break;
+      }
+
+      case VG_USERREQ__CHANGE_ERR_DISABLEMENT: {
+         Word delta = arg[1];
+         vg_assert(delta == 1 || delta == -1);
+         ThreadState* tst = VG_(get_ThreadState)(tid);
+         vg_assert(tst);
+         if (delta == 1 && tst->err_disablement_level < 0xFFFFFFFF) {
+            tst->err_disablement_level++;
+         }
+         else
+         if (delta == -1 && tst->err_disablement_level > 0) {
+            tst->err_disablement_level--;
+         }
          SET_CLREQ_RETVAL( tid, 0 ); /* return value is meaningless */
          break;
       }

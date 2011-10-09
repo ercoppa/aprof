@@ -25,6 +25,7 @@ EXTRA_DIST = \
 	internals/3_3_BUGSTATUS.txt \
 	internals/3_4_BUGSTATUS.txt \
 	internals/3_5_BUGSTATUS.txt \
+	internals/arm_thumb_notes_gdbserver.txt \
 	internals/BIG_APP_NOTES.txt \
 	internals/Darwin-notes.txt \
 	internals/directory-structure.txt \
@@ -109,6 +110,7 @@ XSL_FO_STYLE          = $(mylibdir)/vg-fo.xsl
 XSL_TEXT_STYLE        = $(mylibdir)/vg-faq2txt.xsl
 XSL_WEBSITE_STYLE     = $(mylibdir)/vg-html-website.xsl
 XSL_MAN_STYLES = \
+    /usr/share/sgml/docbook/xsl-stylesheets/manpages/docbook.xsl \
     /usr/share/xml/docbook/stylesheet/nwalsh/current/manpages/docbook.xsl \
     /usr/share/xml/docbook/stylesheet/nwalsh/manpages/docbook.xsl
 

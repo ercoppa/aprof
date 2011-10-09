@@ -69,6 +69,7 @@ static Bool s_trace_alloc;
 static Bool DRD_(process_cmd_line_option)(Char* arg)
 {
    int check_stack_accesses   = -1;
+   int join_list_vol          = -1;
    int exclusive_threshold_ms = -1;
    int first_race_only        = -1;
    int report_signal_unlocked = -1;
@@ -92,6 +93,7 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
    Char* trace_address        = 0;
 
    if      VG_BOOL_CLO(arg, "--check-stack-var",     check_stack_accesses) {}
+   else if VG_INT_CLO (arg, "--join-list-vol",       join_list_vol) {}
    else if VG_BOOL_CLO(arg, "--drd-stats",           s_print_stats) {}
    else if VG_BOOL_CLO(arg, "--first-race-only",     first_race_only) {}
    else if VG_BOOL_CLO(arg, "--free-is-write",       DRD_(g_free_is_write)) {}
@@ -134,6 +136,8 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
    {
       DRD_(set_first_race_only)(first_race_only);
    }
+   if (join_list_vol != -1)
+      DRD_(thread_set_join_list_vol)(join_list_vol);
    if (report_signal_unlocked != -1)
    {
       DRD_(cond_set_report_signal_unlocked)(report_signal_unlocked);
@@ -307,9 +311,9 @@ void drd_start_using_mem(const Addr a1, const SizeT len,
    tl_assert(a1 <= a2);
 
    if (!is_stack_mem && s_trace_alloc)
-      VG_(message)(Vg_UserMsg, "Started using memory range 0x%lx + %ld%s\n",
-                   a1, len, DRD_(running_thread_inside_pthread_create)()
-                   ? " (inside pthread_create())" : "");
+      DRD_(trace_msg)("Started using memory range 0x%lx + %ld%s\n",
+                      a1, len, DRD_(running_thread_inside_pthread_create)()
+                      ? " (inside pthread_create())" : "");
 
    if (!is_stack_mem && DRD_(g_free_is_write))
       DRD_(thread_stop_using_mem)(a1, a2);
@@ -351,8 +355,8 @@ void drd_stop_using_mem(const Addr a1, const SizeT len,
       DRD_(trace_mem_access)(a1, len, eEnd);
 
    if (!is_stack_mem && s_trace_alloc)
-      VG_(message)(Vg_UserMsg, "Stopped using memory range 0x%lx + %ld\n",
-                   a1, len);
+      DRD_(trace_msg)("Stopped using memory range 0x%lx + %ld\n",
+                      a1, len);
 
    if (!is_stack_mem || DRD_(get_check_stack_accesses)())
    {

@@ -121,7 +121,9 @@ void set_ptracer(void)
 
    o = VG_(open) (ptrace_scope_setting_file, VKI_O_RDONLY, 0);
    if (sr_isError(o)) {
-      sr_perror(o, "error VG_(open) %s\n", ptrace_scope_setting_file);
+      if (VG_(debugLog_getLevel)() >= 1) {
+         sr_perror(o, "error VG_(open) %s\n", ptrace_scope_setting_file);
+      }
       /* can't read setting. Assuming ptrace can be called by vgdb. */
       return;
    }
@@ -212,53 +214,93 @@ void safe_mknod (char *nod)
    NAME is the filename used for communication.  
    For Valgrind, name is the prefix for the two read and write FIFOs
    The two FIFOs names will be build by appending 
-   -from-vgdb-to-pid and -to-vgdb-from-pid
+   -from-vgdb-to-pid-by-user-on-host and -to-vgdb-from-pid-by-user-on-host
    with pid being the pidnr of the valgrind process These two FIFOs
    will be created if not existing yet. They will be removed when
    the gdbserver connection is closed or the process exits */
 
 void remote_open (char *name)
 {
-   int save_fcntl_flags;
+   const HChar *user, *host;
+   int save_fcntl_flags, len;
    VgdbShared vgdbinit = 
       {0, 0, 0, (Addr) VG_(invoke_gdbserver),
        (Addr) VG_(threads), sizeof(ThreadState), 
        offsetof(ThreadState, status),
        offsetof(ThreadState, os_state) + offsetof(ThreadOSstate, lwpid)};
    const int pid = VG_(getpid)();
-   const int name_default = strcmp(name, VG_CLO_VGDB_PREFIX_DEFAULT) == 0;
+   const int name_default = strcmp(name, VG_(vgdb_prefix_default)()) == 0;
    Addr addr_shared;
    SysRes o;
    int shared_mem_fd = INVALID_DESCRIPTOR;
    
+   user = VG_(getenv)("LOGNAME");
+   if (user == NULL) user = VG_(getenv)("USER");
+   if (user == NULL) user = "???";
+
+   host = VG_(getenv)("HOST");
+   if (host == NULL) host = VG_(getenv)("HOSTNAME");
+   if (host == NULL) host = "???";
+
+   len = strlen(name) + strlen(user) + strlen(host) + 40;
+
    if (from_gdb != NULL) 
       free (from_gdb);
-   from_gdb = malloc (strlen(name) + 30);
+   from_gdb = malloc (len);
    if (to_gdb != NULL)
       free (to_gdb);
-   to_gdb = malloc (strlen(name) + 30);
+   to_gdb = malloc (len);
    if (shared_mem != NULL)
       free (shared_mem);
-   shared_mem = malloc (strlen(name) + 30);
+   shared_mem = malloc (len);
    /* below 3 lines must match the equivalent in vgdb.c */
-   VG_(sprintf) (from_gdb,   "%s-from-vgdb-to-%d",    name, pid);
-   VG_(sprintf) (to_gdb,     "%s-to-vgdb-from-%d",    name, pid);
-   VG_(sprintf) (shared_mem, "%s-shared-mem-vgdb-%d", name, pid);
+   VG_(sprintf) (from_gdb,   "%s-from-vgdb-to-%d-by-%s-on-%s",    name,
+                 pid, user, host);
+   VG_(sprintf) (to_gdb,     "%s-to-vgdb-from-%d-by-%s-on-%s",    name,
+                 pid, user, host);
+   VG_(sprintf) (shared_mem, "%s-shared-mem-vgdb-%d-by-%s-on-%s", name,
+                 pid, user, host);
    if (VG_(clo_verbosity) > 1) {
       VG_(umsg)("embedded gdbserver: reading from %s\n", from_gdb);
       VG_(umsg)("embedded gdbserver: writing to   %s\n", to_gdb);
       VG_(umsg)("embedded gdbserver: shared mem   %s\n", shared_mem);
-      VG_(umsg)("CONTROL ME using: vgdb --pid=%d%s%s ...command...\n",
-                pid, (name_default ? "" : " --vgdb="),
+      VG_(umsg)("\n");
+      VG_(umsg)("TO CONTROL THIS PROCESS USING vgdb (which you probably\n"
+                "don't want to do, unless you know exactly what you're doing,\n"
+                "or are doing some strange experiment):\n"
+                "  %s/../../bin/vgdb --pid=%d%s%s ...command...\n",
+                VG_LIBDIR,
+                pid, (name_default ? "" : " --vgdb-prefix="),
                 (name_default ? "" : name));
-      VG_(umsg)("DEBUG ME using: (gdb) target remote | vgdb --pid=%d%s%s\n",
-                pid, (name_default ? "" : " --vgdb="), 
-                (name_default ? "" : name));
-      VG_(umsg)("   --pid optional if only one valgrind process is running\n");
+   }
+   if (VG_(clo_verbosity) > 1 
+       || VG_(clo_vgdb_error) < 999999999) {
+      VG_(umsg)("\n");
+      VG_(umsg)(
+         "TO DEBUG THIS PROCESS USING GDB: start GDB like this\n"
+         "  /path/to/gdb %s\n"
+         "and then give GDB the following command\n"
+         "  target remote | %s/../../bin/vgdb --pid=%d%s%s\n",
+         VG_(args_the_exename),
+         VG_LIBDIR,
+         pid, (name_default ? "" : " --vgdb-prefix="), 
+         (name_default ? "" : name)
+      );
+      VG_(umsg)("--pid is optional if only one valgrind process is running\n");
+      VG_(umsg)("\n");
    }
 
    if (!mknod_done) {
       mknod_done++;
+
+      /*
+       * Unlink just in case a previous process with the same PID had been
+       * killed and hence Valgrind hasn't had the chance yet to remove these.
+       */
+      VG_(unlink)(from_gdb);
+      VG_(unlink)(to_gdb);
+      VG_(unlink)(shared_mem);
+
       safe_mknod(from_gdb);
       safe_mknod(to_gdb);
 
@@ -277,10 +319,6 @@ void remote_open (char *name)
          fatal("error writing %d bytes to shared mem %s\n",
                (int) sizeof(VgdbShared), shared_mem);
       }
-      shared_mem_fd = VG_(safe_fd)(shared_mem_fd);
-      if (shared_mem_fd == -1) {
-         fatal("safe_fd for vgdb shared_mem %s failed\n", shared_mem);
-      }
       {
          SysRes res = VG_(am_shared_mmap_file_float_valgrind)
             (sizeof(VgdbShared), VKI_PROT_READ|VKI_PROT_WRITE, 
@@ -293,6 +331,7 @@ void remote_open (char *name)
          addr_shared = sr_Res (res);
       }
       shared = (VgdbShared*) addr_shared;
+      VG_(close) (shared_mem_fd);
    }
    
    /* we open the read side FIFO in non blocking mode
@@ -1034,3 +1073,19 @@ int decode_X_packet (char *from, int packet_len, CORE_ADDR *mem_addr_ptr,
    return 0;
 }
 
+
+/* Return the path prefix for the named pipes (FIFOs) used by vgdb/gdb
+   to communicate with valgrind */
+HChar *
+VG_(vgdb_prefix_default)(void)
+{
+   const HChar *tmpdir;
+   HChar *prefix;
+   
+   tmpdir = VG_(tmpdir)();
+   prefix = malloc(strlen(tmpdir) + strlen("/vgdb-pipe") + 1);
+   strcpy(prefix, tmpdir);
+   strcat(prefix, "/vgdb-pipe");
+
+   return prefix;
+}

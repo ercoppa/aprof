@@ -1,8 +1,8 @@
 /* config.h.  Generated from config.h.in by configure.  */
 /* config.h.in.  Generated from configure.in by autoheader.  */
 
-/* Define to 1 if you're using AIX 5.1 or 5.2 or 5.3 */
-/* #undef AIX5_LIBC */
+/* Define to 1 if you're using Bionic */
+/* #undef BIONIC_LIBC */
 
 /* DARWIN_VERS value for Mac OS X 10.5 */
 /* #undef DARWIN_10_5 */
@@ -36,6 +36,9 @@
 
 /* Define to 1 if you're using glibc 2.13.x */
 #define GLIBC_2_13 1
+
+/* Define to 1 if you're using glibc 2.14.x */
+/* #undef GLIBC_2_14 */
 
 /* Define to 1 if you're using glibc 2.2.x */
 /* #undef GLIBC_2_2 */
@@ -172,6 +175,9 @@
    constant. */
 #define HAVE_PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP 1
 
+/* Define to 1 if you have the `pthread_rwlock_t' type. */
+#define HAVE_PTHREAD_RWLOCK_T 1
+
 /* Define to 1 if you have the `pthread_rwlock_timedrdlock' function. */
 #define HAVE_PTHREAD_RWLOCK_TIMEDRDLOCK 1
 
@@ -268,13 +274,16 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #define HAVE_UNISTD_H 1
 
+/* Define to 1 if you have a usable <linux/futex.h> header file. */
+#define HAVE_USABLE_LINUX_FUTEX_H 1
+
 /* Define to 1 if you have the `utimensat' function. */
 #define HAVE_UTIMENSAT 1
 
 /* Define to 1 if you're using Linux 2.4.x */
 /* #undef KERNEL_2_4 */
 
-/* Define to 1 if you're using Linux 2.6.x */
+/* Define to 1 if you're using Linux 2.6.x or Linux 3.x */
 #define KERNEL_2_6 1
 
 /* Define to 1 if your C compiler doesn't accept -c and -o together. */
@@ -312,6 +321,9 @@
 
 /* Version number of package */
 #define VERSION "3.7.0.SVN"
+
+/* Temporary files directory */
+#define VG_TMPDIR "/tmp"
 
 /* Define to `int' if <sys/types.h> doesn't define. */
 /* #undef gid_t */

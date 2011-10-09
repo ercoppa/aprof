@@ -1,6 +1,7 @@
 # connect gdb to Valgrind gdbserver:
 target remote | ./vgdb --wait=60 --vgdb-prefix=./vgdb-prefix-mcsignopass
-monitor vg.set vgdb-error 999999
+echo vgdb launched process attached\n
+monitor v.set vgdb-error 999999
 #
 # instruct gdb to not pass (i.e. ignore) these signals.
 #

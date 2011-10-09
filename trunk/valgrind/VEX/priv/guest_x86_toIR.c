@@ -2392,18 +2392,13 @@ UInt dis_Grp2 ( UChar sorb,
    }
 
    isShift = False;
-   switch (gregOfRM(modrm)) { case 4: case 5: case 7: isShift = True; }
+   switch (gregOfRM(modrm)) { case 4: case 5: case 6: case 7: isShift = True; }
 
    isRotate = False;
    switch (gregOfRM(modrm)) { case 0: case 1: isRotate = True; }
 
    isRotateC = False;
    switch (gregOfRM(modrm)) { case 2: case 3: isRotateC = True; }
-
-   if (gregOfRM(modrm) == 6) {
-      *decode_OK = False;
-      return delta;
-   }
 
    if (!isShift && !isRotate && !isRotateC) {
       /*NOTREACHED*/
@@ -2449,6 +2444,7 @@ UInt dis_Grp2 ( UChar sorb,
       switch (gregOfRM(modrm)) { 
          case 4: op32 = Iop_Shl32; break;
          case 5: op32 = Iop_Shr32; break;
+         case 6: op32 = Iop_Shl32; break;
          case 7: op32 = Iop_Sar32; break;
          /*NOTREACHED*/
          default: vpanic("dis_Grp2:shift"); break;
@@ -5475,9 +5471,9 @@ UInt dis_MMXop_regmem_to_reg ( UChar  sorb,
       case 0x65: op = Iop_CmpGT16Sx4; break;
       case 0x66: op = Iop_CmpGT32Sx2; break;
 
-      case 0x6B: op = Iop_QNarrow32Sx2; eLeft = True; break;
-      case 0x63: op = Iop_QNarrow16Sx4; eLeft = True; break;
-      case 0x67: op = Iop_QNarrow16Ux4; eLeft = True; break;
+      case 0x6B: op = Iop_QNarrowBin32Sto16Sx4; eLeft = True; break;
+      case 0x63: op = Iop_QNarrowBin16Sto8Sx8;  eLeft = True; break;
+      case 0x67: op = Iop_QNarrowBin16Sto8Ux8;  eLeft = True; break;
 
       case 0x68: op = Iop_InterleaveHI8x8;  eLeft = True; break;
       case 0x69: op = Iop_InterleaveHI16x4; eLeft = True; break;
@@ -10532,21 +10528,24 @@ DisResult disInstr_X86_WRK (
    /* 66 0F 6B = PACKSSDW */
    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x6B) {
       delta = dis_SSEint_E_to_G( sorb, delta+2, 
-                                 "packssdw", Iop_QNarrow32Sx4, True );
+                                 "packssdw",
+                                 Iop_QNarrowBin32Sto16Sx8, True );
       goto decode_success;
    }
 
    /* 66 0F 63 = PACKSSWB */
    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x63) {
       delta = dis_SSEint_E_to_G( sorb, delta+2, 
-                                 "packsswb", Iop_QNarrow16Sx8, True );
+                                 "packsswb",
+                                 Iop_QNarrowBin16Sto8Sx16, True );
       goto decode_success;
    }
 
    /* 66 0F 67 = PACKUSWB */
    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x67) {
       delta = dis_SSEint_E_to_G( sorb, delta+2, 
-                                 "packuswb", Iop_QNarrow16Ux8, True );
+                                 "packuswb",
+                                 Iop_QNarrowBin16Sto8Ux16, True );
       goto decode_success;
    }
 
@@ -15003,11 +15002,12 @@ DisResult disInstr_X86_WRK (
          break;
       }
 
+      case 0x0E: /* FEMMS */
       case 0x77: /* EMMS */
          if (sz != 4)
             goto decode_failure;
          do_EMMS_preamble();
-         DIP("emms\n");
+         DIP("{f}emms\n");
          break;
 
       /* =-=-=-=-=-=-=-=-=- SGDT and SIDT =-=-=-=-=-=-=-=-=-=-= */

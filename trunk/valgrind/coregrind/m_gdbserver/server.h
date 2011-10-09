@@ -94,7 +94,19 @@ extern void remote_finish(FinishReason reason);
       and does VG_(umsg). If info != NULL, info added in VG_(usmg). */
 extern void reset_valgrind_sink(char* info);
 
+/* For ARM usage.
+   Guesses if pc is a thumb pc.
+   In this case, returns pc with the thumb bit set (bit0)
+   else just returns pc.
+
+   The guess is based on the following set of check:
+   if bit0 set      => thumb
+   else if bit1 set => thumb
+   else uses the debuginfo to guess.
    
+   If debug info not found for this pc, assumes arm */
+extern Addr thumb_pc (Addr pc);
+
 /* True if gdbserver is single stepping the valgrind process */
 extern Bool valgrind_single_stepping(void);
 
@@ -230,7 +242,7 @@ extern Bool gdbserver_deliver_signal (Int sigNo);
    A 0 indicates gdb has to be consulted to see if signal has
    or has not to be passed. The gdb consultation is to
    be done using the above two functions. */
-int pass_signals[TARGET_SIGNAL_LAST];
+extern int pass_signals[];
 
 
 #include "target.h"

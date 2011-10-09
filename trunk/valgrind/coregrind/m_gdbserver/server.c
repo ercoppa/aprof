@@ -26,12 +26,15 @@
 #include "pub_core_options.h"
 #include "pub_core_translate.h"
 #include "pub_core_mallocfree.h"
+#include "pub_core_initimg.h"
 
 unsigned long cont_thread;
 unsigned long general_thread;
 unsigned long step_thread;
 unsigned long thread_from_wait;
 unsigned long old_thread_from_wait;
+
+int pass_signals[TARGET_SIGNAL_LAST];
 
 /* for a gdbserver integrated in valgrind, resuming the process consists
    in returning the control to valgrind.
@@ -112,7 +115,7 @@ void kill_request (char *msg)
    Note that in case of ambiguous command, 1 is returned.
 
    *sink_wanted_at_return is modified if one of the commands 
-   'vg.set *_output' is handled.
+   'v.set *_output' is handled.
 */
 static
 int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
@@ -130,9 +133,9 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
    strcpy (s, mon);
    wcmd = strtok_r (s, " ", &ssaveptr);
    /* NB: if possible, avoid introducing a new command below which
-      starts with the same 4 first letters as an already existing
+      starts with the same 3 first letters as an already existing
       command. This ensures a shorter abbreviation for the user. */
-   switch (VG_(keyword_id) ("help vg.set vg.info vg.wait vg.kill vg.translate",
+   switch (VG_(keyword_id) ("help v.set v.info v.wait v.kill v.translate",
                             wcmd, kwd_report_duplicated_matches)) {
    case -2:
       ret = 1;
@@ -156,26 +159,26 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
       VG_(gdb_printf) (
 "general valgrind monitor commands:\n"
 "  help [debug]             : monitor command help. With debug: + debugging commands\n"
-"  vg.wait [<ms>]           : sleep <ms> (default 0) then continue\n"
-"  vg.info all_errors       : show all errors found so far\n"
-"  vg.info last_error       : show last error found\n"
-"  vg.info n_errs_found     : show the nr of errors found so far\n"
-"  vg.kill                  : kill the Valgrind process\n"
-"  vg.set gdb_output        : set valgrind output to gdb\n"
-"  vg.set log_output        : set valgrind output to log\n"
-"  vg.set mixed_output      : set valgrind output to log, interactive output to gdb\n"
-"  vg.set vgdb-error <errornr> : debug me at error >= <errornr> \n");
+"  v.wait [<ms>]           : sleep <ms> (default 0) then continue\n"
+"  v.info all_errors       : show all errors found so far\n"
+"  v.info last_error       : show last error found\n"
+"  v.info n_errs_found     : show the nr of errors found so far\n"
+"  v.kill                  : kill the Valgrind process\n"
+"  v.set gdb_output        : set valgrind output to gdb\n"
+"  v.set log_output        : set valgrind output to log\n"
+"  v.set mixed_output      : set valgrind output to log, interactive output to gdb\n"
+"  v.set vgdb-error <errornr> : debug me at error >= <errornr> \n");
       if (int_value) { VG_(gdb_printf) (
 "debugging valgrind internals monitor commands:\n"
-"  vg.info gdbserver_status : show gdbserver status\n"
-"  vg.info memory           : show valgrind heap memory stats\n"
-"  vg.set debuglog <level>  : set valgrind debug log level to <level>\n"
-"  vg.translate <addr> [<traceflags>]  : debug translation of <addr> with <traceflags>\n"
+"  v.info gdbserver_status : show gdbserver status\n"
+"  v.info memory           : show valgrind heap memory stats\n"
+"  v.set debuglog <level>  : set valgrind debug log level to <level>\n"
+"  v.translate <addr> [<traceflags>]  : debug translation of <addr> with <traceflags>\n"
 "    (default traceflags 0b00100000 : show after instrumentation)\n"
 "   An additional flag  0b100000000 allows to show gdbserver instrumentation\n");
       }
       break;
-   case  1: /* vg.set */
+   case  1: /* v.set */
       ret = 1;
       wcmd = strtok_r (NULL, " ", &ssaveptr);
       switch (kwdid = VG_(keyword_id) 
@@ -227,7 +230,7 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
          vg_assert (0);
       }
       break;
-   case  2: /* vg.info */ {
+   case  2: /* v.info */ {
       ret = 1;
       wcmd = strtok_r (NULL, " ", &ssaveptr);
       switch (kwdid = VG_(keyword_id) 
@@ -262,7 +265,7 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
       }
       break;
    }
-   case  3: /* vg.wait */
+   case  3: /* v.wait */
       wcmd = strtok_r (NULL, " ", &ssaveptr);
       if (wcmd != NULL) {
          int_value = strtol (wcmd, &endptr, 10);
@@ -272,10 +275,10 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
       VG_(gdb_printf) ("gdbserver: continuing after wait ...\n");
       ret = 1;
       break;
-   case  4: /* vg.kill */
+   case  4: /* v.kill */
       kill_request ("monitor command request to kill this process\n");
       break;
-   case  5: { /* vg.translate */
+   case  5: { /* v.translate */
       Addr address;
       SizeT verbosity = 0x20;
       
@@ -294,6 +297,12 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
             valgrind_set_single_stepping(True); 
             // to force gdbserver instrumentation.
          }
+#        if defined(VGA_arm)
+         // on arm, we need to (potentially) convert this address
+         // to the thumb form.
+         address = thumb_pc (address);
+#        endif
+
          VG_(translate) ( 0 /* dummy ThreadId; irrelevant due to debugging*/,
                           address,
                           /*debugging*/True, 
@@ -572,6 +581,59 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
       }
    }
 
+   if (strncmp ("qXfer:auxv:read:", arg_own_buf, 16) == 0) {
+      unsigned char *data;
+      int n;
+      CORE_ADDR ofs;
+      unsigned int len;
+      char *annex;
+
+      /* Reject any annex; grab the offset and length.  */
+      if (decode_xfer_read (arg_own_buf + 16, &annex, &ofs, &len) < 0
+          || annex[0] != '\0') {
+         strcpy (arg_own_buf, "E00");
+         return;
+      }
+
+      if (len > PBUFSIZ - 2)
+         len = PBUFSIZ - 2;
+      data = malloc (len);
+
+      {
+         UWord *client_auxv = VG_(client_auxv);
+         unsigned int client_auxv_len = 0;
+         while (*client_auxv != 0) {
+            dlog(4, "auxv %lld %llx\n",
+                 (ULong)*client_auxv,
+                 (ULong)*(client_auxv+1));
+            client_auxv++;
+            client_auxv++;
+            client_auxv_len += 2 * sizeof(UWord);
+         }
+         client_auxv_len += 2 * sizeof(UWord);
+         dlog(4, "auxv len %d\n", client_auxv_len);
+
+         if (ofs >= client_auxv_len)
+            n = -1;
+         else {
+            n = client_auxv_len - ofs;
+            VG_(memcpy) (data, (unsigned char *) VG_(client_auxv), n);
+         }
+      }
+
+      if (n < 0)
+         write_enn (arg_own_buf);
+      else if (n > len)
+         *new_packet_len_p = write_qxfer_response (arg_own_buf, data, len, 1);
+      else
+         *new_packet_len_p = write_qxfer_response (arg_own_buf, data, n, 0);
+      
+      free (data);
+      
+      return;
+   }
+
+
    /* Protocol features query.  */
    if (strncmp ("qSupported", arg_own_buf, 10) == 0
        && (arg_own_buf[10] == ':' || arg_own_buf[10] == '\0')) {
@@ -581,6 +643,8 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
       
       strcat (arg_own_buf, ";QStartNoAckMode+");
       strcat (arg_own_buf, ";QPassSignals+");
+      if (VG_(client_auxv))
+         strcat (arg_own_buf, ";qXfer:auxv:read+");
 
       if ((*the_target->target_xml)() != NULL
           || (*the_target->shadow_target_xml)() != NULL) {
@@ -606,7 +670,7 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
 
 /* Handle all of the extended 'v' packets.  */
 static
-void handle_v_requests (char *arg_own_buf, char *status, int *signal)
+void handle_v_requests (char *arg_own_buf, char *status, int *zignal)
 {
    /* vcont packet code from gdb 6.6 removed */
 
@@ -665,14 +729,14 @@ void gdbserver_terminate (void)
 void server_main (void)
 {
    static char status;
-   static int signal;
+   static int zignal;
 
    char ch;
    int i = 0;
    unsigned int len;
    CORE_ADDR mem_addr;
 
-   signal = mywait (&status);
+   zignal = mywait (&status);
    if (VG_MINIMAL_SETJMP(toplevel)) {
       dlog(0, "error caused VG_MINIMAL_LONGJMP to server_main\n");
    }
@@ -683,7 +747,7 @@ void server_main (void)
       
       if (resume_packet_needed) {
          resume_packet_needed = False;
-         prepare_resume_reply (own_buf, status, signal);
+         prepare_resume_reply (own_buf, status, zignal);
          putpkt (own_buf);
       }
 
@@ -724,7 +788,7 @@ void server_main (void)
          own_buf[0] = '\0';
          break;
       case '?':
-         prepare_resume_reply (own_buf, status, signal);
+         prepare_resume_reply (own_buf, status, zignal);
          break;
       case 'H':
          if (own_buf[1] == 'c' || own_buf[1] == 'g' || own_buf[1] == 's') {
@@ -824,20 +888,20 @@ void server_main (void)
       case 'C':
          convert_ascii_to_int (own_buf + 1, &sig, 1);
          if (target_signal_to_host_p (sig))
-            signal = target_signal_to_host (sig);
+            zignal = target_signal_to_host (sig);
          else
-            signal = 0;
+            zignal = 0;
          set_desired_inferior (0);
-         myresume (0, signal);
+         myresume (0, zignal);
          return; // return control to valgrind
       case 'S':
          convert_ascii_to_int (own_buf + 1, &sig, 1);
          if (target_signal_to_host_p (sig))
-            signal = target_signal_to_host (sig);
+            zignal = target_signal_to_host (sig);
          else
-            signal = 0;
+            zignal = 0;
          set_desired_inferior (0);
-         myresume (1, signal);
+         myresume (1, zignal);
          return; // return control to valgrind
       case 'c':
          set_desired_inferior (0);
@@ -928,7 +992,7 @@ void server_main (void)
          break;
       case 'v':
          /* Extended (long) request.  */
-         handle_v_requests (own_buf, &status, &signal);
+         handle_v_requests (own_buf, &status, &zignal);
          break;
       default:
          /* It is a request we don't understand.  Respond with an
@@ -944,11 +1008,11 @@ void server_main (void)
          putpkt (own_buf);
       
       if (status == 'W')
-         VG_(umsg) ("\nChild exited with status %d\n", signal);
+         VG_(umsg) ("\nChild exited with status %d\n", zignal);
       if (status == 'X')
-         VG_(umsg) ("\nChild terminated with signal = 0x%x (%s)\n",
-                    target_signal_to_host (signal),
-                    target_signal_to_name (signal));
+         VG_(umsg) ("\nChild terminated with zignal = 0x%x (%s)\n",
+                    target_signal_to_host (zignal),
+                    target_signal_to_name (zignal));
       if (status == 'W' || status == 'X') {
          VG_(umsg) ("Process exiting\n");
          VG_(exit) (0);

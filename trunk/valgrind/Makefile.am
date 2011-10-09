@@ -10,13 +10,12 @@ TOOLS =		memcheck \
 		lackey \
 		none \
 		helgrind \
-		drd \
-		aprof \
-		tf
+		drd 
 
-EXP_TOOLS = 	exp-ptrcheck \
+EXP_TOOLS = 	exp-sgcheck \
 		exp-bbv \
-		exp-dhat
+		exp-dhat \
+		aprof
 
 # DDD: once all tools work on Darwin, TEST_TOOLS and TEST_EXP_TOOLS can be
 # replaced with TOOLS and EXP_TOOLS.
@@ -48,13 +47,15 @@ DIST_SUBDIRS  = $(SUBDIRS)
 SUPP_FILES = \
 	glibc-2.2.supp glibc-2.3.supp glibc-2.4.supp glibc-2.5.supp \
 	glibc-2.6.supp glibc-2.7.supp glibc-2.X.supp.in \
-	aix5libc.supp xfree-3.supp xfree-4.supp \
+	xfree-3.supp xfree-4.supp \
 	glibc-2.34567-NPTL-helgrind.supp \
 	glibc-2.2-LinuxThreads-helgrind.supp \
 	glibc-2.X-drd.supp \
-	exp-ptrcheck.supp \
+	exp-sgcheck.supp \
 	darwin9.supp darwin9-drd.supp \
-	darwin10.supp darwin10-drd.supp
+	darwin10.supp darwin10-drd.supp \
+	darwin11.supp \
+	bionic.supp
 DEFAULT_SUPP_FILES = @DEFAULT_SUPP@
 
 # We include all the base .supp files in the distribution, but not
@@ -101,6 +102,7 @@ EXTRA_DIST = \
 	README_PACKAGERS \
 	README_MISSING_SYSCALL_OR_IOCTL \
 	README.s390 \
+	README.android \
 	valgrind.pc.in \
 	valgrind.spec.in \
 	valgrind.spec
@@ -116,4 +118,5 @@ all-local: default.supp
 clean-local:
 	rm -rf $(inplacedir)
 
-
+# Need config.h in the installed tree, since some files depend on it
+pkginclude_HEADERS = config.h

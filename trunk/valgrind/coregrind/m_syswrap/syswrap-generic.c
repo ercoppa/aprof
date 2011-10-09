@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Wrappers for generic (non-AIX5!) Unix system calls           ---*/
+/*--- Wrappers for generic Unix system calls                       ---*/
 /*---                                            syswrap-generic.c ---*/
 /*--------------------------------------------------------------------*/
 
@@ -43,6 +43,7 @@
 #include "pub_core_clientstate.h"   // VG_(brk_base), VG_(brk_limit)
 #include "pub_core_debuglog.h"
 #include "pub_core_errormgr.h"
+#include "pub_tool_gdbserver.h"     // VG_(gdbserver)
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcfile.h"
@@ -277,8 +278,9 @@ SysRes do_mremap( Addr old_addr, SizeT old_len,
       goto eINVAL;
 
    /* reject wraparounds */
-   if (old_addr + old_len < old_addr
-       || new_addr + new_len < new_len)
+   if (old_addr + old_len < old_addr)
+      goto eINVAL;
+   if (f_fixed == True && new_addr + new_len < new_len)
       goto eINVAL;
 
    /* kernel rejects all fixed, no-move requests (which are
@@ -770,7 +772,6 @@ void init_preopened_fds_without_proc_self_fd(void)
 
 void VG_(init_preopened_fds)(void)
 {
-// Nb: AIX5 is handled in syswrap-aix5.c.
 // DDD: should probably use HAVE_PROC here or similar, instead.
 #if defined(VGO_linux)
    Int ret;
@@ -2411,6 +2412,7 @@ PRE(sys_sync)
 
 PRE(sys_fstatfs)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_fstatfs ( %ld, %#lx )",ARG1,ARG2);
    PRE_REG_READ2(long, "fstatfs",
                  unsigned int, fd, struct statfs *, buf);
@@ -2424,6 +2426,7 @@ POST(sys_fstatfs)
 
 PRE(sys_fstatfs64)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_fstatfs64 ( %ld, %llu, %#lx )",ARG1,(ULong)ARG2,ARG3);
    PRE_REG_READ3(long, "fstatfs64",
                  unsigned int, fd, vki_size_t, size, struct statfs64 *, buf);
@@ -2470,6 +2473,7 @@ POST(sys_pread64)
 
 PRE(sys_mknod)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_mknod ( %#lx(%s), 0x%lx, 0x%lx )", ARG1, (char*)ARG1, ARG2, ARG3 );
    PRE_REG_READ3(long, "mknod",
                  const char *, pathname, int, mode, unsigned, dev);
@@ -2602,6 +2606,16 @@ PRE(sys_execve)
 
    /* After this point, we can't recover if the execve fails. */
    VG_(debugLog)(1, "syswrap", "Exec of %s\n", (Char*)ARG1);
+
+   
+   // Terminate gdbserver if it is active.
+   if (VG_(clo_vgdb)  != Vg_VgdbNo) {
+      // If the child will not be traced, we need to terminate gdbserver
+      // to cleanup the gdbserver resources (e.g. the FIFO files).
+      // If child will be traced, we also terminate gdbserver: the new 
+      // Valgrind will start a fresh gdbserver after exec.
+      VG_(gdbserver) (0);
+   }
 
    /* Resistance is futile.  Nuke all other threads.  POSIX mandates
       this. (Really, nuke them all, since the new process will make
@@ -2838,6 +2852,7 @@ PRE(sys_brk)
 
 PRE(sys_chdir)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_chdir ( %#lx(%s) )", ARG1,(char*)ARG1);
    PRE_REG_READ1(long, "chdir", const char *, path);
    PRE_MEM_RASCIIZ( "chdir(path)", ARG1 );
@@ -2845,6 +2860,7 @@ PRE(sys_chdir)
 
 PRE(sys_chmod)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_chmod ( %#lx(%s), %ld )", ARG1,(char*)ARG1,ARG2);
    PRE_REG_READ2(long, "chmod", const char *, path, vki_mode_t, mode);
    PRE_MEM_RASCIIZ( "chmod(path)", ARG1 );
@@ -2852,6 +2868,7 @@ PRE(sys_chmod)
 
 PRE(sys_chown)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_chown ( %#lx(%s), 0x%lx, 0x%lx )", ARG1,(char*)ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "chown",
                  const char *, path, vki_uid_t, owner, vki_gid_t, group);
@@ -2860,6 +2877,7 @@ PRE(sys_chown)
 
 PRE(sys_lchown)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_lchown ( %#lx(%s), 0x%lx, 0x%lx )", ARG1,(char*)ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "lchown",
                  const char *, path, vki_uid_t, owner, vki_gid_t, group);
@@ -2868,6 +2886,7 @@ PRE(sys_lchown)
 
 PRE(sys_close)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_close ( %ld )", ARG1);
    PRE_REG_READ1(long, "close", unsigned int, fd);
 
@@ -2919,12 +2938,14 @@ POST(sys_dup2)
 
 PRE(sys_fchdir)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_fchdir ( %ld )", ARG1);
    PRE_REG_READ1(long, "fchdir", unsigned int, fd);
 }
 
 PRE(sys_fchown)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_fchown ( %ld, %ld, %ld )", ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "fchown",
                  unsigned int, fd, vki_uid_t, owner, vki_gid_t, group);
@@ -2932,12 +2953,14 @@ PRE(sys_fchown)
 
 PRE(sys_fchmod)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_fchmod ( %ld, %ld )", ARG1,ARG2);
    PRE_REG_READ2(long, "fchmod", unsigned int, fildes, vki_mode_t, mode);
 }
 
 PRE(sys_newfstat)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_newfstat ( %ld, %#lx )", ARG1,ARG2);
    PRE_REG_READ2(long, "fstat", unsigned int, fd, struct stat *, buf);
    PRE_MEM_WRITE( "fstat(buf)", ARG2, sizeof(struct vki_stat) );
@@ -2970,7 +2993,7 @@ PRE(sys_fork)
 
    if (!SUCCESS) return;
 
-#if defined(VGO_linux) || defined(VGO_aix5)
+#if defined(VGO_linux)
    // RES is 0 for child, non-0 (the child's PID) for parent.
    is_child = ( RES == 0 ? True : False );
    child_pid = ( is_child ? -1 : RES );
@@ -3730,6 +3753,7 @@ POST(sys_poll)
 
 PRE(sys_readlink)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    Word saved = SYSNO;
 
    PRINT("sys_readlink ( %#lx(%s), %#lx, %llu )", ARG1,(char*)ARG1,ARG2,(ULong)ARG3);
@@ -3811,6 +3835,7 @@ POST(sys_readv)
 
 PRE(sys_rename)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_rename ( %#lx(%s), %#lx(%s) )", ARG1,(char*)ARG1,ARG2,(char*)ARG2);
    PRE_REG_READ2(long, "rename", const char *, oldpath, const char *, newpath);
    PRE_MEM_RASCIIZ( "rename(oldpath)", ARG1 );
@@ -4110,6 +4135,7 @@ PRE(sys_writev)
 
 PRE(sys_utimes)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_utimes ( %#lx(%s), %#lx )", ARG1,(char*)ARG1,ARG2);
    PRE_REG_READ2(long, "utimes", char *, filename, struct timeval *, tvp);
    PRE_MEM_RASCIIZ( "utimes(filename)", ARG1 );

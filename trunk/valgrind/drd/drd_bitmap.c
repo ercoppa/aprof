@@ -1051,12 +1051,8 @@ void DRD_(bm_mark)(struct bitmap* bml, struct bitmap* bmr)
         (bm2r = VG_(OSetGen_Next)(bmr->oset)) != 0;
         )
    {
-      /*if (DRD_(bm_has_any_access(bmr, make_address(bm2r->addr, 0),
-        make_address(bm2r->addr + 1, 0))))*/
-      {
-         bm2l = bm2_lookup_or_insert(bml, bm2r->addr);
-         bm2l->recalc = True;
-      }
+      bm2l = bm2_lookup_or_insert(bml, bm2r->addr);
+      bm2l->recalc = True;
    }
 }
 
@@ -1079,8 +1075,6 @@ void DRD_(bm_merge2_marked)(struct bitmap* const lhs, struct bitmap* const rhs)
 {
    struct bitmap2* bm2l;
    struct bitmap2* bm2r;
-
-   tl_assert(lhs != rhs);
 
    /*
     * It's not possible to have two independent iterators over the same OSet,

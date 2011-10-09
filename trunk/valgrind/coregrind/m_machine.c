@@ -127,11 +127,6 @@ void VG_(set_syscall_return_shadows) ( ThreadId tid,
 #  elif defined(VGP_arm_linux)
    VG_(threads)[tid].arch.vex_shadow1.guest_R0 = s1res;
    VG_(threads)[tid].arch.vex_shadow2.guest_R0 = s2res;
-#  elif defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-   VG_(threads)[tid].arch.vex_shadow1.guest_GPR3 = s1res;
-   VG_(threads)[tid].arch.vex_shadow2.guest_GPR3 = s2res;
-   VG_(threads)[tid].arch.vex_shadow1.guest_GPR4 = s1err;
-   VG_(threads)[tid].arch.vex_shadow2.guest_GPR4 = s2err;
 #  elif defined(VGO_darwin)
    // GrP fixme darwin syscalls may return more values (2 registers plus error)
 #  elif defined(VGP_s390x_linux)
@@ -517,6 +512,7 @@ static UInt VG_(get_machine_model)(void)
       { "2097", VEX_S390X_MODEL_Z10_EC },
       { "2098", VEX_S390X_MODEL_Z10_BC },
       { "2817", VEX_S390X_MODEL_Z196 },
+      { "2818", VEX_S390X_MODEL_Z114 },
    };
 
    Int    model, n, fh;
@@ -621,7 +617,7 @@ Bool VG_(machine_get_hwcaps)( void )
         /* we can't do cpuid at all.  Give up. */
         return False;
 
-     VG_(cpuid)(0, &eax, &ebx, &ecx, &edx);
+     VG_(cpuid)(0, 0, &eax, &ebx, &ecx, &edx);
      if (eax < 1)
         /* we can't ask for cpuid(x) for x > 0.  Give up. */
         return False;
@@ -633,11 +629,11 @@ Bool VG_(machine_get_hwcaps)( void )
      VG_(memcpy)(&vstr[8], &ecx, 4);
      vstr[12] = 0;
 
-     VG_(cpuid)(0x80000000, &eax, &ebx, &ecx, &edx);
+     VG_(cpuid)(0x80000000, 0, &eax, &ebx, &ecx, &edx);
      max_extended = eax;
 
      /* get capabilities bits into edx */
-     VG_(cpuid)(1, &eax, &ebx, &ecx, &edx);
+     VG_(cpuid)(1, 0, &eax, &ebx, &ecx, &edx);
 
      have_sse1 = (edx & (1<<25)) != 0; /* True => have sse insns */
      have_sse2 = (edx & (1<<26)) != 0; /* True => have sse2 insns */
@@ -653,7 +649,7 @@ Bool VG_(machine_get_hwcaps)( void )
      have_lzcnt = False;
      if (0 == VG_(strcmp)(vstr, "AuthenticAMD")
          && max_extended >= 0x80000001) {
-        VG_(cpuid)(0x80000001, &eax, &ebx, &ecx, &edx);
+        VG_(cpuid)(0x80000001, 0, &eax, &ebx, &ecx, &edx);
         have_lzcnt = (ecx & (1<<5)) != 0; /* True => have LZCNT */
      }
 
@@ -691,7 +687,7 @@ Bool VG_(machine_get_hwcaps)( void )
         /* we can't do cpuid at all.  Give up. */
         return False;
 
-     VG_(cpuid)(0, &eax, &ebx, &ecx, &edx);
+     VG_(cpuid)(0, 0, &eax, &ebx, &ecx, &edx);
      if (eax < 1)
         /* we can't ask for cpuid(x) for x > 0.  Give up. */
         return False;
@@ -703,11 +699,11 @@ Bool VG_(machine_get_hwcaps)( void )
      VG_(memcpy)(&vstr[8], &ecx, 4);
      vstr[12] = 0;
 
-     VG_(cpuid)(0x80000000, &eax, &ebx, &ecx, &edx);
+     VG_(cpuid)(0x80000000, 0, &eax, &ebx, &ecx, &edx);
      max_extended = eax;
 
      /* get capabilities bits into edx */
-     VG_(cpuid)(1, &eax, &ebx, &ecx, &edx);
+     VG_(cpuid)(1, 0, &eax, &ebx, &ecx, &edx);
 
      // we assume that SSE1 and SSE2 are available by default
      have_sse3 = (ecx & (1<<0)) != 0;  /* True => have sse3 insns */
@@ -729,7 +725,7 @@ Bool VG_(machine_get_hwcaps)( void )
      have_lzcnt = False;
      if (0 == VG_(strcmp)(vstr, "AuthenticAMD")
          && max_extended >= 0x80000001) {
-        VG_(cpuid)(0x80000001, &eax, &ebx, &ecx, &edx);
+        VG_(cpuid)(0x80000001, 0, &eax, &ebx, &ecx, &edx);
         have_lzcnt = (ecx & (1<<5)) != 0; /* True => have LZCNT */
      }
 
@@ -1280,21 +1276,20 @@ void VG_(machine_get_VexArchInfo)( /*OUT*/VexArch* pVa,
 // produce a pointer to the actual entry point for the function.
 void* VG_(fnptr_to_fnentry)( void* f )
 {
-#if defined(VGP_x86_linux) || defined(VGP_amd64_linux)  \
-    || defined(VGP_arm_linux)                           \
-    || defined(VGP_ppc32_linux) || defined(VGO_darwin)  \
-    || defined(VGP_s390x_linux)
+#  if defined(VGP_x86_linux) || defined(VGP_amd64_linux)  \
+      || defined(VGP_arm_linux)                           \
+      || defined(VGP_ppc32_linux) || defined(VGO_darwin)  \
+      || defined(VGP_s390x_linux)
    return f;
-#elif defined(VGP_ppc64_linux) || defined(VGP_ppc32_aix5) \
-                               || defined(VGP_ppc64_aix5)
-   /* All other ppc variants use the AIX scheme, in which f is a
-      pointer to a 3-word function descriptor, of which the first word
-      is the entry address. */
+#  elif defined(VGP_ppc64_linux)
+   /* ppc64-linux uses the AIX scheme, in which f is a pointer to a
+      3-word function descriptor, of which the first word is the entry
+      address. */
    UWord* descr = (UWord*)f;
    return (void*)(descr[0]);
-#else
-#  error "Unknown platform"
-#endif
+#  else
+#    error "Unknown platform"
+#  endif
 }
 
 /*--------------------------------------------------------------------*/

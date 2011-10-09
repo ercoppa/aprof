@@ -166,17 +166,6 @@ UInt VG_(printf_xml) ( const HChar *format, ... )
    return ret;
 }
 
-/* An exact clone of VG_(printf_xml), unfortunately. */
-UInt VG_(printf_xml_no_f_c) ( const HChar *format, ... )
-{
-   UInt ret;
-   va_list vargs;
-   va_start(vargs, format);
-   ret = VG_(vprintf_xml)(format, vargs);
-   va_end(vargs);
-   return ret;
-}
-
 
 /* --------- sprintf --------- */
 
@@ -499,17 +488,6 @@ UInt VG_(vmessage) ( VgMsgKind kind, const HChar* format, va_list vargs )
    return ret;
 }
 
-/* Send a simple single-part XML message. */
-UInt VG_(message_no_f_c) ( VgMsgKind kind, const HChar* format, ... )
-{
-   UInt count;
-   va_list vargs;
-   va_start(vargs,format);
-   count = VG_(vmessage) ( kind, format, vargs );
-   va_end(vargs);
-   return count;
-}
-
 /* Send a simple single-part message. */
 UInt VG_(message) ( VgMsgKind kind, const HChar* format, ... )
 {
@@ -590,12 +568,16 @@ void VG_(err_missing_prog) ( void  )
 }
 
 __attribute__((noreturn))
-void VG_(err_config_error) ( Char* msg )
+void VG_(err_config_error) ( Char* format, ... )
 {
+   va_list vargs;
+   va_start(vargs,format);
    revert_to_stderr();
-   VG_(fmsg)("Startup or configuration error:\n   %s\n", msg);
-   VG_(fmsg)("Unable to start up properly.  Giving up.\n");
+   VG_(message) (Vg_FailMsg, "Startup or configuration error:\n   ");
+   VG_(vmessage)(Vg_FailMsg, format, vargs );
+   VG_(message) (Vg_FailMsg, "Unable to start up properly.  Giving up.\n");
    VG_(exit)(1);
+   va_end(vargs);
 }
 
 
