@@ -37,8 +37,9 @@ VG_REGPARM(3) void trace_access(UWord type, Addr addr, SizeT size) {
 	#endif
 	
 	#if COSTANT_MEM_ACCESS
+	//addr = (addr>>2)<<2;
 	addr = addr & ~(ADDR_MULTIPLE-1);
-	size = 1;
+	//size = 1;
 	#else
 	
 	#if ADDR_MULTIPLE > 1
@@ -54,15 +55,20 @@ VG_REGPARM(3) void trace_access(UWord type, Addr addr, SizeT size) {
 	
 	#endif
 	
-	unsigned int i = 0;
-	
 	#if !COSTANT_MEM_ACCESS
+	unsigned int i = 0;
 	for (i = 0; i < size; i++) {
 	#endif
 		
 		#if SUF == 1
 
-		int addr_depth = UF_insert(tdata->accesses, addr+(i*ADDR_MULTIPLE), tdata->stack_depth);
+		int addr_depth = UF_insert(tdata->accesses, 
+									#if !COSTANT_MEM_ACCESS
+									addr+(i*ADDR_MULTIPLE),
+									#else
+									addr,
+									#endif 
+									tdata->stack_depth);
 		
 		if (tdata->stack_depth > addr_depth) {
 			
@@ -77,7 +83,11 @@ VG_REGPARM(3) void trace_access(UWord type, Addr addr, SizeT size) {
 		#else
 		Activation * act = get_activation(tdata, tdata->stack_depth);
 		UInt old_aid = SUF_insert( tdata->accesses, 
-									addr+(i*ADDR_MULTIPLE), 
+									#if !COSTANT_MEM_ACCESS
+									addr+(i*ADDR_MULTIPLE),
+									#else
+									addr,
+									#endif
 									act->aid);
 		
 		if (old_aid < act->aid && (type == LOAD || type == MODIFY)) {

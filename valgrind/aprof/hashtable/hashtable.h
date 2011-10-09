@@ -92,11 +92,22 @@ extern void HT_ResetIter (HashTable * table);
    the table will not get resized whilst iteration is happening.
    Since resizing only happens as a result of calling HT_add_node,
    disallowing HT_add_node during iteration should give the required
-   assurance. */
+   assurance.
+   Do not interleaved call to HT_RemoveNext and HT_Next, they use
+   in different ways the iterator (so you have to reset the iterator
+   if you want to interleave) */
 extern void * HT_Next (HashTable * table);
 
 /* Destroy a table. */
 extern void HT_destruct (HashTable * t);
+
+/* 
+ * Return a node that is removed from the ht, 
+ * Do not interleaved calls to HT_RemoveNext and HT_Next, they use
+ * in different ways the iterator (so you have to reset the iterator
+ * if you want to interleave).
+ */
+void * HT_RemoveNext(HashTable * table);
 
 #endif 
 
