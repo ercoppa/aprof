@@ -1966,6 +1966,7 @@ config.status:1123: creating aprof/tests/Makefile
 config.status:1123: creating coregrind/link_tool_exe_linux
 config.status:1123: creating coregrind/link_tool_exe_darwin
 config.status:1123: creating config.h
+config.status:1303: config.h is unchanged
 config.status:1351: executing depfiles commands
 
 ## ---------------- ##
