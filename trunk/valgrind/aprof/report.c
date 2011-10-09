@@ -35,7 +35,7 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 	else
 		VG_(sprintf)(filename_priv, "%s.vg2.aprof", basename(prog_name));
 	*/
-	VG_(sprintf)(filename_priv, "%d_%u.aprof", VG_(getpid), tid - 1);
+	VG_(sprintf)(filename_priv, "%d_%u.aprof", VG_(getpid)(), tid - 1);
 	/* Add path to log filename */
 	Char * filename = VG_(expand_file_name)("aprof log", filename_priv);
 
