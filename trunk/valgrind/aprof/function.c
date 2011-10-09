@@ -366,7 +366,8 @@ void function_exit(ThreadData * tdata, Activation * act) {
 		#if TRACE_FUNCTION
 		} else {
 			#if TIME == BB_COUNT
-			tdata->bb_c -= partial_cumulative;
+			if (act->skip)
+				tdata->bb_c -= partial_cumulative;
 			#else
 			AP_ASSERT(0, "With RDTSC you can't ignore dl_runtime_resolve");
 			#endif
