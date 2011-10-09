@@ -104,7 +104,7 @@
 
    One Vex IR translation for this code would be this:
 
-     ------ IMark(0x24F275, 7) ------
+     ------ IMark(0x24F275, 7, 0) ------
      t3 = GET:I32(0)             # get %eax, a 32-bit integer
      t2 = GET:I32(12)            # get %ebx, a 32-bit integer
      t1 = Add32(t3,t2)           # addl
@@ -147,7 +147,7 @@
    This becomes (again ignoring condition code and instruction pointer
    updates):
 
-     ------ IMark(0x4000ABA, 3) ------
+     ------ IMark(0x4000ABA, 3, 0) ------
      t3 = Add32(GET:I32(0),0x4:I32)
      t2 = LDle:I32(t3)
      t1 = GET:I32(8)
@@ -469,6 +469,10 @@ typedef
       Iop_DivS32,   // ditto, signed
       Iop_DivU64,   // :: I64,I64 -> I64 (simple div, no mod)
       Iop_DivS64,   // ditto, signed
+      Iop_DivU64E,  // :: I64,I64 -> I64 (dividend is 64-bit arg (hi) concat with 64 0's (low))
+      Iop_DivS64E,  // ditto, signed
+      Iop_DivU32E,  // :: I32,I32 -> I32 (dividend is 32-bit arg (hi) concat with 32 0's (low))
+      Iop_DivS32E,  // ditto, signed
 
       Iop_DivModU64to32, // :: I64,I32 -> I64
                          // of which lo half is div and hi half is mod
@@ -611,6 +615,7 @@ typedef
       Iop_F64toI16S, /* IRRoundingMode(I32) x F64 -> signed I16 */
       Iop_F64toI32S, /* IRRoundingMode(I32) x F64 -> signed I32 */
       Iop_F64toI64S, /* IRRoundingMode(I32) x F64 -> signed I64 */
+      Iop_F64toI64U, /* IRRoundingMode(I32) x F64 -> unsigned I64 */
 
       Iop_F64toI32U, /* IRRoundingMode(I32) x F64 -> unsigned I32 */
 
@@ -895,10 +900,29 @@ typedef
       Iop_QShlN8x8, Iop_QShlN16x4, Iop_QShlN32x2, Iop_QShlN64x1,
       Iop_QSalN8x8, Iop_QSalN16x4, Iop_QSalN32x2, Iop_QSalN64x1,
 
-      /* NARROWING -- narrow 2xI64 into 1xI64, hi half from left arg */
-      Iop_QNarrow16Ux4,
-      Iop_QNarrow16Sx4,
-      Iop_QNarrow32Sx2,
+      /* NARROWING (binary) 
+         -- narrow 2xI64 into 1xI64, hi half from left arg */
+      /* For saturated narrowing, I believe there are 4 variants of
+         the basic arithmetic operation, depending on the signedness
+         of argument and result.  Here are examples that exemplify
+         what I mean:
+
+         QNarrow16Uto8U ( UShort x )  if (x >u 255) x = 255;
+                                      return x[7:0];
+
+         QNarrow16Sto8S ( Short x )   if (x <s -128) x = -128;
+                                      if (x >s  127) x = 127;
+                                      return x[7:0];
+
+         QNarrow16Uto8S ( UShort x )  if (x >u 127) x = 127;
+                                      return x[7:0];
+
+         QNarrow16Sto8U ( Short x )   if (x <s 0)   x = 0;
+                                      if (x >s 255) x = 255;
+                                      return x[7:0];
+      */
+      Iop_QNarrowBin16Sto8Ux8,
+      Iop_QNarrowBin16Sto8Sx8, Iop_QNarrowBin32Sto16Sx4,
 
       /* INTERLEAVING */
       /* Interleave lanes from low or high halves of
@@ -1017,6 +1041,7 @@ typedef
       Iop_Fixed32UToF32x4_RN, Iop_Fixed32SToF32x4_RN, /* fixed-point -> fp */
 
       /* --- Single to/from half conversion --- */
+      /* FIXME: what kind of rounding in F32x4 -> F16x4 case? */
       Iop_F32toF16x4, Iop_F16toF32x4,         /* F32x4 <-> F16x4      */
 
       /* --- 32x4 lowest-lane-only scalar FP --- */
@@ -1175,30 +1200,32 @@ typedef
       Iop_QShlN8x16, Iop_QShlN16x8, Iop_QShlN32x4, Iop_QShlN64x2,
       Iop_QSalN8x16, Iop_QSalN16x8, Iop_QSalN32x4, Iop_QSalN64x2,
 
-      /* NARROWING -- narrow 2xV128 into 1xV128, hi half from left arg */
-      /* Note: the 16{U,S} and 32{U,S} are the pre-narrow lane widths. */
-      Iop_QNarrow16Ux8, Iop_QNarrow32Ux4,
-      Iop_QNarrow16Sx8, Iop_QNarrow32Sx4,
-      Iop_Narrow16x8, Iop_Narrow32x4,
-      /* Shortening V128->I64, lo half from each element */
-      Iop_Shorten16x8, Iop_Shorten32x4, Iop_Shorten64x2,
-      /* Saturating shortening from signed source to signed/unsigned destination */
-      Iop_QShortenS16Sx8, Iop_QShortenS32Sx4, Iop_QShortenS64Sx2,
-      Iop_QShortenU16Sx8, Iop_QShortenU32Sx4, Iop_QShortenU64Sx2,
-      /* Saturating shortening from unsigned source to unsigned destination */
-      Iop_QShortenU16Ux8, Iop_QShortenU32Ux4, Iop_QShortenU64Ux2,
+      /* NARROWING (binary) 
+         -- narrow 2xV128 into 1xV128, hi half from left arg */
+      /* See comments above w.r.t. U vs S issues in saturated narrowing. */
+      Iop_QNarrowBin16Sto8Ux16, Iop_QNarrowBin32Sto16Ux8,
+      Iop_QNarrowBin16Sto8Sx16, Iop_QNarrowBin32Sto16Sx8,
+      Iop_QNarrowBin16Uto8Ux16, Iop_QNarrowBin32Uto16Ux8,
+      Iop_NarrowBin16to8x16, Iop_NarrowBin32to16x8,
 
-      /* WIDENING */
-      /* Longening --- sign or zero extends each element of the argument
-         vector to the twice original size. The resulting vector consists of
+      /* NARROWING (unary) -- narrow V128 into I64 */
+      Iop_NarrowUn16to8x8, Iop_NarrowUn32to16x4, Iop_NarrowUn64to32x2,
+      /* Saturating narrowing from signed source to signed/unsigned destination */
+      Iop_QNarrowUn16Sto8Sx8, Iop_QNarrowUn32Sto16Sx4, Iop_QNarrowUn64Sto32Sx2,
+      Iop_QNarrowUn16Sto8Ux8, Iop_QNarrowUn32Sto16Ux4, Iop_QNarrowUn64Sto32Ux2,
+      /* Saturating narrowing from unsigned source to unsigned destination */
+      Iop_QNarrowUn16Uto8Ux8, Iop_QNarrowUn32Uto16Ux4, Iop_QNarrowUn64Uto32Ux2,
+
+      /* WIDENING -- sign or zero extend each element of the argument
+         vector to the twice original size.  The resulting vector consists of
          the same number of elements but each element and the vector itself
-         are two times wider.
+         are twice as wide.
          All operations are I64->V128.
          Example
-            Iop_Longen32Sx2( [a, b] ) = [c, d]
+            Iop_Widen32Sto64x2( [a, b] ) = [c, d]
                where c = Iop_32Sto64(a) and d = Iop_32Sto64(b) */
-      Iop_Longen8Ux8, Iop_Longen16Ux4, Iop_Longen32Ux2,
-      Iop_Longen8Sx8, Iop_Longen16Sx4, Iop_Longen32Sx2,
+      Iop_Widen8Uto16x8, Iop_Widen16Uto32x4, Iop_Widen32Uto64x2,
+      Iop_Widen8Sto16x8, Iop_Widen16Sto32x4, Iop_Widen32Sto64x2,
 
       /* INTERLEAVING */
       /* Interleave lanes from low or high halves of
@@ -1745,6 +1772,10 @@ IRDirty* unsafeIRDirty_1_N ( IRTemp dst,
 typedef
    enum { 
       Imbe_Fence=0x18000, 
+      /* Needed only on ARM.  It cancels a reservation made by a
+         preceding Linked-Load, and needs to be handed through to the
+         back end, just as LL and SC themselves are. */
+      Imbe_CancelReservation
    }
    IRMBusEvent;
 
@@ -1894,12 +1925,27 @@ typedef
             the IRSB).  Contains the address and length of the
             instruction.
 
-            ppIRStmt output: ------ IMark(<addr>, <len>) ------,
-                         eg. ------ IMark(0x4000792, 5) ------,
+            It also contains a delta value.  The delta must be
+            subtracted from a guest program counter value before
+            attempting to establish, by comparison with the address
+            and length values, whether or not that program counter
+            value refers to this instruction.  For x86, amd64, ppc32,
+            ppc64 and arm, the delta value is zero.  For Thumb
+            instructions, the delta value is one.  This is because, on
+            Thumb, guest PC values (guest_R15T) are encoded using the
+            top 31 bits of the instruction address and a 1 in the lsb;
+            hence they appear to be (numerically) 1 past the start of
+            the instruction they refer to.  IOW, guest_R15T on ARM
+            holds a standard ARM interworking address.
+
+            ppIRStmt output: ------ IMark(<addr>, <len>, <delta>) ------,
+                         eg. ------ IMark(0x4000792, 5, 0) ------,
          */
          struct {
             Addr64 addr;   /* instruction address */
             Int    len;    /* instruction length */
+            UChar  delta;  /* addr = program counter as encoded in guest state
+                                     - delta */
          } IMark;
 
          /* META: An ABI hint, which says something about this
@@ -2076,7 +2122,7 @@ typedef
 
 /* Statement constructors. */
 extern IRStmt* IRStmt_NoOp    ( void );
-extern IRStmt* IRStmt_IMark   ( Addr64 addr, Int len );
+extern IRStmt* IRStmt_IMark   ( Addr64 addr, Int len, UChar delta );
 extern IRStmt* IRStmt_AbiHint ( IRExpr* base, Int len, IRExpr* nia );
 extern IRStmt* IRStmt_Put     ( Int off, IRExpr* data );
 extern IRStmt* IRStmt_PutI    ( IRRegArray* descr, IRExpr* ix, Int bias, 

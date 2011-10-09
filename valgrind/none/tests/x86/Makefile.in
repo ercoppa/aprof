@@ -140,8 +140,10 @@ fpu_lazy_eflags_LDADD = $(LDADD)
 fpu_lazy_eflags_LINK = $(CCLD) $(fpu_lazy_eflags_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 fxtract_SOURCES = fxtract.c
-fxtract_OBJECTS = fxtract.$(OBJEXT)
+fxtract_OBJECTS = fxtract-fxtract.$(OBJEXT)
 fxtract_DEPENDENCIES =
+fxtract_LINK = $(CCLD) $(fxtract_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
 getseg_SOURCES = getseg.c
 getseg_OBJECTS = getseg.$(OBJEXT)
 getseg_LDADD = $(LDADD)
@@ -288,8 +290,6 @@ EXEEXT = @EXEEXT@
 FLAG_FNO_STACK_PROTECTOR = @FLAG_FNO_STACK_PROTECTOR@
 FLAG_M32 = @FLAG_M32@
 FLAG_M64 = @FLAG_M64@
-FLAG_MAIX32 = @FLAG_MAIX32@
-FLAG_MAIX64 = @FLAG_MAIX64@
 FLAG_MMMX = @FLAG_MMMX@
 FLAG_MSSE = @FLAG_MSSE@
 FLAG_NO_BUILD_ID = @FLAG_NO_BUILD_ID@
@@ -297,6 +297,8 @@ FLAG_UNLIMITED_INLINE_UNIT_GROWTH = @FLAG_UNLIMITED_INLINE_UNIT_GROWTH@
 FLAG_W_EXTRA = @FLAG_W_EXTRA@
 FLAG_W_NO_EMPTY_BODY = @FLAG_W_NO_EMPTY_BODY@
 FLAG_W_NO_FORMAT_ZERO_LENGTH = @FLAG_W_NO_FORMAT_ZERO_LENGTH@
+FLAG_W_NO_NONNULL = @FLAG_W_NO_NONNULL@
+FLAG_W_NO_OVERFLOW = @FLAG_W_NO_OVERFLOW@
 FLAG_W_NO_UNINITIALIZED = @FLAG_W_NO_UNINITIALIZED@
 GDB = @GDB@
 GLIBC_VERSION = @GLIBC_VERSION@
@@ -339,6 +341,7 @@ VGCONF_ARCH_SEC = @VGCONF_ARCH_SEC@
 VGCONF_OS = @VGCONF_OS@
 VGCONF_PLATFORM_PRI_CAPS = @VGCONF_PLATFORM_PRI_CAPS@
 VGCONF_PLATFORM_SEC_CAPS = @VGCONF_PLATFORM_SEC_CAPS@
+VGCONF_PLATVARIANT = @VGCONF_PLATVARIANT@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -398,6 +401,8 @@ inplacedir = $(top_builddir)/.in_place
 
 # Baseline flags for all compilations.  Aim here is to maximise
 # performance and get whatever useful warnings we can out of gcc.
+# -fno-builtin is important for defeating LLVM's idiom recognition
+# that somehow causes VG_(memset) to get into infinite recursion.
 AM_CFLAGS_BASE = \
 	-O2 -g \
 	-Wall \
@@ -407,16 +412,20 @@ AM_CFLAGS_BASE = \
 	-Wstrict-prototypes \
 	-Wmissing-declarations \
 	@FLAG_W_NO_FORMAT_ZERO_LENGTH@ \
-	-fno-strict-aliasing
+	-fno-strict-aliasing \
+	-fno-builtin
 
-@VGCONF_OS_IS_DARWIN_FALSE@AM_CFLAGS_PIC = -fpic -O -g -fno-omit-frame-pointer -fno-strict-aliasing
+@VGCONF_OS_IS_DARWIN_FALSE@AM_CFLAGS_PIC = -fpic -O -g -fno-omit-frame-pointer -fno-strict-aliasing \
+@VGCONF_OS_IS_DARWIN_FALSE@		-fno-builtin
+
 
 # These flags are used for building the preload shared objects.
 # The aim is to give reasonable performance but also to have good
 # stack traces, since users often see stack traces extending 
 # into (and through) the preloads.
 @VGCONF_OS_IS_DARWIN_TRUE@AM_CFLAGS_PIC = -dynamic -O -g -fno-omit-frame-pointer -fno-strict-aliasing \
-@VGCONF_OS_IS_DARWIN_TRUE@		-mno-dynamic-no-pic -fpic -fPIC
+@VGCONF_OS_IS_DARWIN_TRUE@		-mno-dynamic-no-pic -fpic -fPIC \
+@VGCONF_OS_IS_DARWIN_TRUE@		-fno-builtin
 
 
 # Flags for specific targets.
@@ -437,7 +446,8 @@ AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@ = \
 	-I$(top_srcdir)/VEX/pub \
 	-DVGA_@VGCONF_ARCH_PRI@=1 \
 	-DVGO_@VGCONF_OS@=1 \
-	-DVGP_@VGCONF_ARCH_PRI@_@VGCONF_OS@=1
+	-DVGP_@VGCONF_ARCH_PRI@_@VGCONF_OS@=1 \
+	-DVGPV_@VGCONF_ARCH_PRI@_@VGCONF_OS@_@VGCONF_PLATVARIANT@=1
 
 @VGCONF_HAVE_PLATFORM_SEC_TRUE@AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@ = \
 @VGCONF_HAVE_PLATFORM_SEC_TRUE@	-I$(top_srcdir) \
@@ -445,7 +455,8 @@ AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@ = \
 @VGCONF_HAVE_PLATFORM_SEC_TRUE@	-I$(top_srcdir)/VEX/pub \
 @VGCONF_HAVE_PLATFORM_SEC_TRUE@	-DVGA_@VGCONF_ARCH_SEC@=1 \
 @VGCONF_HAVE_PLATFORM_SEC_TRUE@	-DVGO_@VGCONF_OS@=1 \
-@VGCONF_HAVE_PLATFORM_SEC_TRUE@	-DVGP_@VGCONF_ARCH_SEC@_@VGCONF_OS@=1
+@VGCONF_HAVE_PLATFORM_SEC_TRUE@	-DVGP_@VGCONF_ARCH_SEC@_@VGCONF_OS@=1 \
+@VGCONF_HAVE_PLATFORM_SEC_TRUE@	-DVGPV_@VGCONF_ARCH_SEC@_@VGCONF_OS@_@VGCONF_PLATVARIANT@=1
 
 AM_FLAG_M3264_X86_LINUX = @FLAG_M32@
 AM_CFLAGS_X86_LINUX = @FLAG_M32@ @PREFERRED_STACK_BOUNDARY@ \
@@ -465,18 +476,10 @@ AM_CFLAGS_PPC64_LINUX = @FLAG_M64@ $(AM_CFLAGS_BASE)
 AM_CCASFLAGS_PPC64_LINUX = $(AM_CPPFLAGS_PPC64_LINUX) @FLAG_M64@ -g
 AM_FLAG_M3264_ARM_LINUX = @FLAG_M32@
 AM_CFLAGS_ARM_LINUX = @FLAG_M32@ @PREFERRED_STACK_BOUNDARY@ \
-			 	$(AM_CFLAGS_BASE) -marm
+			 	$(AM_CFLAGS_BASE) -marm -mcpu=cortex-a8
 
-AM_CCASFLAGS_ARM_LINUX = $(AM_CPPFLAGS_ARM_LINUX) @FLAG_M32@ -marm -g
-AM_FLAG_M3264_PPC32_AIX5 = @FLAG_MAIX32@
-AM_CFLAGS_PPC32_AIX5 = @FLAG_MAIX32@ -mcpu=powerpc $(AM_CFLAGS_BASE)
-AM_CCASFLAGS_PPC32_AIX5 = $(AM_CPPFLAGS_PPC32_AIX5) \
-			    @FLAG_MAIX32@ -mcpu=powerpc -g
-
-AM_FLAG_M3264_PPC64_AIX5 = @FLAG_MAIX64@
-AM_CFLAGS_PPC64_AIX5 = @FLAG_MAIX64@ -mcpu=powerpc64 $(AM_CFLAGS_BASE)
-AM_CCASFLAGS_PPC64_AIX5 = $(AM_CPPFLAGS_PPC64_AIX5) \
-			    @FLAG_MAIX64@ -mcpu=powerpc64 -g
+AM_CCASFLAGS_ARM_LINUX = $(AM_CPPFLAGS_ARM_LINUX) @FLAG_M32@ \
+				-marm -mcpu=cortex-a8 -g
 
 AM_FLAG_M3264_X86_DARWIN = -arch i386
 AM_CFLAGS_X86_DARWIN = $(WERROR) -arch i386 $(AM_CFLAGS_BASE) \
@@ -509,24 +512,22 @@ AM_CCASFLAGS_PRI = $(AM_CCASFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
 # Baseline link flags for making vgpreload shared objects.
 #
 PRELOAD_LDFLAGS_COMMON_LINUX = -nodefaultlibs -shared -Wl,-z,interpose,-z,initfirst
-PRELOAD_LDFLAGS_COMMON_AIX5 = -nodefaultlibs -shared -Wl,-G -Wl,-bnogc
 PRELOAD_LDFLAGS_COMMON_DARWIN = -dynamic -dynamiclib -all_load
 PRELOAD_LDFLAGS_X86_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M32@
 PRELOAD_LDFLAGS_AMD64_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M64@
 PRELOAD_LDFLAGS_PPC32_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M32@
 PRELOAD_LDFLAGS_PPC64_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M64@
 PRELOAD_LDFLAGS_ARM_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M32@
-PRELOAD_LDFLAGS_PPC32_AIX5 = $(PRELOAD_LDFLAGS_COMMON_AIX5)  @FLAG_MAIX32@
-PRELOAD_LDFLAGS_PPC64_AIX5 = $(PRELOAD_LDFLAGS_COMMON_AIX5)  @FLAG_MAIX64@
 PRELOAD_LDFLAGS_X86_DARWIN = $(PRELOAD_LDFLAGS_COMMON_DARWIN) -arch i386
 PRELOAD_LDFLAGS_AMD64_DARWIN = $(PRELOAD_LDFLAGS_COMMON_DARWIN) -arch x86_64
 PRELOAD_LDFLAGS_S390X_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M64@
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
 		-I$(top_srcdir)/coregrind -I$(top_builddir)/include \
 		-I$(top_srcdir)/VEX/pub \
-		-DVGA_$(VGCONF_ARCH_PRI)=1 \
-		-DVGO_$(VGCONF_OS)=1 \
-		-DVGP_$(VGCONF_ARCH_PRI)_$(VGCONF_OS)=1
+		-DVGA_@VGCONF_ARCH_PRI@=1 \
+		-DVGO_@VGCONF_OS@=1 \
+		-DVGP_@VGCONF_ARCH_PRI@_@VGCONF_OS@=1 \
+		-DVGPV_@VGCONF_ARCH_PRI@_@VGCONF_OS@_@VGCONF_PLATVARIANT@=1
 
 # Nb: Tools need to augment these flags with an arch-selection option, such
 # as $(AM_FLAG_M3264_PRI).
@@ -565,6 +566,7 @@ EXTRA_DIST = \
 	fpu_lazy_eflags.stderr.exp fpu_lazy_eflags.stdout.exp \
 	fpu_lazy_eflags.vgtest \
 	fxtract.stdout.exp fxtract.stderr.exp fxtract.vgtest \
+	fxtract.stdout.exp-older-glibc \
 	getseg.stdout.exp getseg.stderr.exp getseg.vgtest \
 	incdec_alt.stdout.exp incdec_alt.stderr.exp incdec_alt.vgtest \
 	int.stderr.exp int.stdout.exp int.disabled \
@@ -591,6 +593,7 @@ EXTRA_DIST = \
 cpuid_SOURCES = cpuid_c.c cpuid_s.S
 # fpu_lazy_eflags must use these flags -- the bug only occurred with them.
 fpu_lazy_eflags_CFLAGS = $(AM_CFLAGS) -O2 -march=pentiumpro
+fxtract_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_OVERFLOW@
 fxtract_LDADD = -lm
 insn_basic_SOURCES = insn_basic.def
 insn_basic_LDADD = -lm
@@ -699,7 +702,7 @@ fpu_lazy_eflags$(EXEEXT): $(fpu_lazy_eflags_OBJECTS) $(fpu_lazy_eflags_DEPENDENC
 	$(fpu_lazy_eflags_LINK) $(fpu_lazy_eflags_OBJECTS) $(fpu_lazy_eflags_LDADD) $(LIBS)
 fxtract$(EXEEXT): $(fxtract_OBJECTS) $(fxtract_DEPENDENCIES) 
 	@rm -f fxtract$(EXEEXT)
-	$(LINK) $(fxtract_OBJECTS) $(fxtract_LDADD) $(LIBS)
+	$(fxtract_LINK) $(fxtract_OBJECTS) $(fxtract_LDADD) $(LIBS)
 getseg$(EXEEXT): $(getseg_OBJECTS) $(getseg_DEPENDENCIES) 
 	@rm -f getseg$(EXEEXT)
 	$(LINK) $(getseg_OBJECTS) $(getseg_LDADD) $(LIBS)
@@ -799,7 +802,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/faultstatus.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fcmovnu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fpu_lazy_eflags-fpu_lazy_eflags.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fxtract.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fxtract-fxtract.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getseg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/incdec_alt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/insn_basic.Po@am__quote@
@@ -867,6 +870,20 @@ fpu_lazy_eflags-fpu_lazy_eflags.obj: fpu_lazy_eflags.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='fpu_lazy_eflags.c' object='fpu_lazy_eflags-fpu_lazy_eflags.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fpu_lazy_eflags_CFLAGS) $(CFLAGS) -c -o fpu_lazy_eflags-fpu_lazy_eflags.obj `if test -f 'fpu_lazy_eflags.c'; then $(CYGPATH_W) 'fpu_lazy_eflags.c'; else $(CYGPATH_W) '$(srcdir)/fpu_lazy_eflags.c'; fi`
+
+fxtract-fxtract.o: fxtract.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fxtract_CFLAGS) $(CFLAGS) -MT fxtract-fxtract.o -MD -MP -MF $(DEPDIR)/fxtract-fxtract.Tpo -c -o fxtract-fxtract.o `test -f 'fxtract.c' || echo '$(srcdir)/'`fxtract.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/fxtract-fxtract.Tpo $(DEPDIR)/fxtract-fxtract.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='fxtract.c' object='fxtract-fxtract.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fxtract_CFLAGS) $(CFLAGS) -c -o fxtract-fxtract.o `test -f 'fxtract.c' || echo '$(srcdir)/'`fxtract.c
+
+fxtract-fxtract.obj: fxtract.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fxtract_CFLAGS) $(CFLAGS) -MT fxtract-fxtract.obj -MD -MP -MF $(DEPDIR)/fxtract-fxtract.Tpo -c -o fxtract-fxtract.obj `if test -f 'fxtract.c'; then $(CYGPATH_W) 'fxtract.c'; else $(CYGPATH_W) '$(srcdir)/fxtract.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/fxtract-fxtract.Tpo $(DEPDIR)/fxtract-fxtract.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='fxtract.c' object='fxtract-fxtract.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fxtract_CFLAGS) $(CFLAGS) -c -o fxtract-fxtract.obj `if test -f 'fxtract.c'; then $(CYGPATH_W) 'fxtract.c'; else $(CYGPATH_W) '$(srcdir)/fxtract.c'; fi`
 
 x86locked-x86locked.o: x86locked.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(x86locked_CFLAGS) $(CFLAGS) -MT x86locked-x86locked.o -MD -MP -MF $(DEPDIR)/x86locked-x86locked.Tpo -c -o x86locked-x86locked.o `test -f 'x86locked.c' || echo '$(srcdir)/'`x86locked.c

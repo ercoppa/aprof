@@ -277,10 +277,10 @@ static Long read_leb128S( UChar **data )
 */
 static ULong read_initial_length_field ( UChar* p_img, /*OUT*/Bool* is64 )
 {
-   UInt w32 = *((UInt*)p_img);
+   UInt w32 = ML_(read_UInt)(p_img);
    if (w32 == 0xFFFFFFFF) {
       *is64 = True;
-      return *((ULong*)(p_img+4));
+      return ML_(read_ULong)(p_img+4);
    } else {
       *is64 = False;
       return (ULong)w32;
@@ -393,7 +393,7 @@ Word process_extended_line_op( struct _DebugInfo* di,
          break;
 
       case DW_LNE_set_address:
-         adr = *((Addr *)data);
+         adr = ML_(read_Addr)(data);
          state_machine_regs.address = adr;
          if (di->ddump_line)
             VG_(printf)("  Extended opcode %d: set Address to 0x%lx\n",
@@ -514,7 +514,7 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
    }
 
    /* Check its version number.  */
-   info.li_version = * ((UShort *)external);
+   info.li_version = ML_(read_UShort)(external);
    external += 2;
    if (di->ddump_line)
       VG_(printf)("  DWARF Version:               %d\n", 
@@ -527,8 +527,8 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
       goto out;
    }
 
-   info.li_header_length = ui->dw64 ? *((ULong*)external) 
-                                    : (ULong)(*((UInt*)external));
+   info.li_header_length = ui->dw64 ? ML_(read_ULong)(external) 
+                                    : (ULong)(ML_(read_UInt)(external));
    external += ui->dw64 ? 8 : 4;
    if (di->ddump_line)
       VG_(printf)("  Prologue Length:             %llu\n", 
@@ -889,7 +889,7 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
 
          case DW_LNS_fixed_advance_pc:
             /* XXX: Need something to get 2 bytes */
-            adv = *((UShort *)data);
+            adv = ML_(read_UShort)(data);
             data += 2;
             state_machine_regs.address += adv;
             if (0) VG_(printf)("smr.a += %#x\n", adv );
@@ -1007,11 +1007,11 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
    p += ui->dw64 ? 12 : 4;
 
    /* version should be 2, 3 or 4 */
-   /* ver = *((UShort*)p); */
+   /* ver = ML_(read_UShort)(p); */
    p += 2;
 
    /* get offset in abbrev */
-   atoffs = ui->dw64 ? *((ULong*)p) : (ULong)(*((UInt*)p));
+   atoffs = ui->dw64 ? ML_(read_ULong)(p) : (ULong)(ML_(read_UInt)(p));
    p += ui->dw64 ? 8 : 4;
 
    /* Address size */
@@ -1084,44 +1084,36 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
             handle FORM_addr too. */
          switch( form ) {
             /* Those cases extract the data properly */
-            case 0x05: /* FORM_data2 */     cval = *((UShort*)p); p +=2; break;
-            case 0x06: /* FORM_data4 */     cval = *((UInt*)p);p +=4; break;
+            case 0x05: /* FORM_data2 */     cval = ML_(read_UShort)(p); p +=2; break;
+            case 0x06: /* FORM_data4 */     cval = ML_(read_UInt)(p);   p +=4; break;
             case 0x0e: /* FORM_strp */      /* pointer in .debug_str */
                        /* 2006-01-01: only generate a value if
                           debugstr is non-NULL (which means that a
                           debug_str section was found) */
                                             if (debugstr_img && !ui->dw64)
-                                               sval = debugstr_img + *((UInt*)p); 
+                                               sval = debugstr_img + ML_(read_UInt)(p); 
                                             if (debugstr_img && ui->dw64)
-                                               sval = debugstr_img + *((ULong*)p); 
+                                               sval = debugstr_img + ML_(read_ULong)(p); 
                                             p += ui->dw64 ? 8 : 4; 
                                             break;
             case 0x08: /* FORM_string */    sval = (Char*)p; 
                                             p += VG_(strlen)((Char*)p) + 1; break;
             case 0x0b: /* FORM_data1 */     cval = *p; p++; break;
             case 0x17: /* FORM_sec_offset */if (ui->dw64) {
-                                               cval = *((ULong*)p); p += 8;
+                                               cval = ML_(read_ULong)(p); p += 8;
                                             } else {
-                                               cval = *((UInt*)p); p += 4;
+                                               cval = ML_(read_UInt)(p); p += 4;
                                             }; break;
 
-            case 0x07: /* FORM_data8 */     if (ui->dw64) cval = *((ULong*)p);
+            case 0x07: /* FORM_data8 */     if (ui->dw64) cval = ML_(read_ULong)(p);
                                             p += 8; break;
                                             /* perhaps should assign
                                                unconditionally to cval? */
 
-            case 0x01: /* FORM_addr */      if (addr_size == 4) {
-                                               cval = *(UInt*)p;
-                                            } else if (addr_size == 8) {
-                                               cval = *(ULong*)p;
-                                            } else {
-                                               /* wtf, Houston? */
-                                            }
-                                            p += addr_size; break;
-
             /* TODO : Following ones just skip data - implement if you need */
-            case 0x03: /* FORM_block2 */    p += *((UShort*)p) + 2; break;
-            case 0x04: /* FORM_block4 */    p += *((UInt*)p) + 4; break;
+            case 0x01: /* FORM_addr */      p += addr_size; break;
+            case 0x03: /* FORM_block2 */    p += ML_(read_UShort)(p) + 2; break;
+            case 0x04: /* FORM_block4 */    p += ML_(read_UInt)(p) + 4; break;
             case 0x09: /* FORM_block */     p += read_leb128U( &p ); break;
             case 0x0a: /* FORM_block1 */    p += *p + 1; break;
             case 0x0c: /* FORM_flag */      p++; break;
@@ -1213,7 +1205,7 @@ void ML_(read_debuginfo_dwarf3)
       }
 
       /* version should be 2 */
-      ver = *((UShort*)( block_img + blklen_len ));
+      ver = ML_(read_UShort)( block_img + blklen_len );
       if ( ver != 2 && ver != 3 && ver != 4 ) {
          ML_(symerr)( di, True,
                       "Ignoring non-Dwarf2/3/4 block in .debug_info" );
@@ -1421,8 +1413,8 @@ void ML_(read_debuginfo_dwarf1) (
    while (True) {
       if (die_offset >= dwarf1d_sz) break;
 
-      die_szb  = *(Int*)(dwarf1d + die_offset);
-      die_kind = *(UShort*)(dwarf1d + die_offset + 4);
+      die_szb  = ML_(read_Int)(dwarf1d + die_offset);
+      die_kind = ML_(read_UShort)(dwarf1d + die_offset + 4);
 
       /* We're only interested in compile_unit DIEs; ignore others. */
       if (die_kind != TAG_compile_unit) {
@@ -1450,7 +1442,7 @@ void ML_(read_debuginfo_dwarf1) (
       while (True) {
          if (at_offset >= die_szb-6) break;
 
-         at_kind = *(UShort*)(at_base + at_offset);
+         at_kind = ML_(read_UShort)(at_base + at_offset);
          if (0) VG_(printf)("atoffset %d, attag 0x%x\n", 
                             at_offset, (Int)at_kind );
          at_offset += 2; /* step over the attribute itself */
@@ -1462,7 +1454,7 @@ void ML_(read_debuginfo_dwarf1) (
             case AT_sibling:
                if (at_kind == AT_stmt_list) {
                   stmt_list_found = True;
-                  stmt_list = *(Int*)(at_base+at_offset);
+                  stmt_list = ML_(read_Int)(at_base+at_offset);
                }
                at_offset += 4; break;
             case AT_high_pc:
@@ -1510,16 +1502,16 @@ void ML_(read_debuginfo_dwarf1) (
          prev_line = prev_delta = 0;
 
          ptr = dwarf1l + stmt_list;
-         len  =        *(Int*)ptr;    ptr += sizeof(Int);
-         base = (Addr)(*(void**)ptr); ptr += sizeof(void*);
+         len  = ML_(read_Int)(ptr);  ptr += sizeof(Int);
+         base = ML_(read_Addr)(ptr); ptr += sizeof(void*);
          len -= (sizeof(Int) + sizeof(void*));
          while (len > 0) {
             UInt   line;
             UShort col;
             UInt   delta;
-            line = *(UInt*)ptr;  ptr += sizeof(UInt);
-            col = *(UShort*)ptr;  ptr += sizeof(UShort);
-            delta = *(UShort*)ptr;  ptr += sizeof(UInt);
+            line = ML_(read_UInt)(ptr);    ptr += sizeof(UInt);
+            col  = ML_(read_UShort)(ptr);  ptr += sizeof(UShort);
+            delta = ML_(read_UInt)(ptr);   ptr += sizeof(UInt);
 	    if (0) VG_(printf)("line %d, col %d, delta %d\n", 
                                line, (Int)col, delta );
             len -= (sizeof(UInt) + sizeof(UShort) + sizeof(UInt));
@@ -2490,135 +2482,13 @@ static void ppUnwindContext_summary ( UnwindContext* ctx )
 
 /* ------------ Pick apart DWARF2 byte streams ------------ */
 
-static inline Bool host_is_little_endian ( void )
-{
-   UInt x = 0x76543210;
-   UChar* p = (UChar*)(&x);
-   return toBool(*p == 0x10);
-}
-
-static Short read_Short ( UChar* data )
-{
-   Short r = 0;
-   if (host_is_little_endian()) {
-      r = data[0]
-          | ( ((UInt)data[1]) << 8 );
-   } else {
-      r = data[1]
-          | ( ((UInt)data[0]) << 8 );
-   }
-   return r;
-}
-
-static Int read_Int ( UChar* data )
-{
-   Int r = 0;
-   if (host_is_little_endian()) {
-      r = data[0]
-          | ( ((UInt)data[1]) << 8 )
-          | ( ((UInt)data[2]) << 16 )
-          | ( ((UInt)data[3]) << 24 );
-   } else {
-      r = data[3]
-          | ( ((UInt)data[2]) << 8 )
-          | ( ((UInt)data[1]) << 16 )
-          | ( ((UInt)data[0]) << 24 );
-   }
-   return r;
-}
-
-static Long read_Long ( UChar* data )
-{
-   Long r = 0;
-   if (host_is_little_endian()) {
-      r = data[0]
-          | ( ((ULong)data[1]) << 8 )
-          | ( ((ULong)data[2]) << 16 )
-          | ( ((ULong)data[3]) << 24 )
-          | ( ((ULong)data[4]) << 32 )
-          | ( ((ULong)data[5]) << 40 )
-          | ( ((ULong)data[6]) << 48 )
-          | ( ((ULong)data[7]) << 56 );
-   } else {
-      r = data[7]
-          | ( ((ULong)data[6]) << 8 )
-          | ( ((ULong)data[5]) << 16 )
-          | ( ((ULong)data[4]) << 24 )
-          | ( ((ULong)data[3]) << 32 )
-          | ( ((ULong)data[2]) << 40 )
-          | ( ((ULong)data[1]) << 48 )
-          | ( ((ULong)data[0]) << 56 );
-   }
-   return r;
-}
-
-static UShort read_UShort ( UChar* data )
-{
-   UInt r = 0;
-   if (host_is_little_endian()) {
-      r = data[0]
-          | ( ((UInt)data[1]) << 8 );
-   } else {
-      r = data[1]
-          | ( ((UInt)data[0]) << 8 );
-   }
-   return r;
-}
-
-static UInt read_UInt ( UChar* data )
-{
-   UInt r = 0;
-   if (host_is_little_endian()) {
-      r = data[0]
-          | ( ((UInt)data[1]) << 8 )
-          | ( ((UInt)data[2]) << 16 )
-          | ( ((UInt)data[3]) << 24 );
-   } else {
-      r = data[3]
-          | ( ((UInt)data[2]) << 8 )
-          | ( ((UInt)data[1]) << 16 )
-          | ( ((UInt)data[0]) << 24 );
-   }
-   return r;
-}
-
-static ULong read_ULong ( UChar* data )
-{
-   ULong r = 0;
-   if (host_is_little_endian()) {
-      r = data[0]
-       | ( ((ULong)data[1]) << 8 )
-       | ( ((ULong)data[2]) << 16 )
-       | ( ((ULong)data[3]) << 24 )
-       | ( ((ULong)data[4]) << 32 )
-       | ( ((ULong)data[5]) << 40 )
-       | ( ((ULong)data[6]) << 48 )
-       | ( ((ULong)data[7]) << 56 );
-   } else {
-      r = data[7]
-       | ( ((ULong)data[6]) << 8 )
-       | ( ((ULong)data[5]) << 16 )
-       | ( ((ULong)data[4]) << 24 )
-       | ( ((ULong)data[3]) << 32 )
-       | ( ((ULong)data[2]) << 40 )
-       | ( ((ULong)data[1]) << 48 )
-       | ( ((ULong)data[0]) << 56 );
-   }
-   return r;
-}
-
-static UChar read_UChar ( UChar* data )
-{
-   return data[0];
-}
-
 static ULong read_le_u_encoded_literal ( UChar* data, UInt size )
 {
    switch (size) {
-      case 8:  return (ULong)read_ULong( data );
-      case 4:  return (ULong)read_UInt( data );
-      case 2:  return (ULong)read_UShort( data );
-      case 1:  return (ULong)read_UChar( data );
+      case 8:  return (ULong)ML_(read_ULong)( data );
+      case 4:  return (ULong)ML_(read_UInt)( data );
+      case 2:  return (ULong)ML_(read_UShort)( data );
+      case 1:  return (ULong)ML_(read_UChar)( data );
       default: vg_assert(0); /*NOTREACHED*/ return 0;
    }
 }
@@ -2728,22 +2598,22 @@ static Addr read_encoded_Addr ( /*OUT*/Int* nbytes,
    switch (encoding & 0x0f) {
       case DW_EH_PE_udata2:
          *nbytes += sizeof(UShort);
-         return base + read_UShort(data);
+         return base + ML_(read_UShort)(data);
       case DW_EH_PE_udata4:
          *nbytes += sizeof(UInt);
-         return base + read_UInt(data);
+         return base + ML_(read_UInt)(data);
       case DW_EH_PE_udata8:
          *nbytes += sizeof(ULong);
-         return base + read_ULong(data);
+         return base + ML_(read_ULong)(data);
       case DW_EH_PE_sdata2:
          *nbytes += sizeof(Short);
-         return base + read_Short(data);
+         return base + ML_(read_Short)(data);
       case DW_EH_PE_sdata4:
          *nbytes += sizeof(Int);
-         return base + read_Int(data);
+         return base + ML_(read_Int)(data);
       case DW_EH_PE_sdata8:
          *nbytes += sizeof(Long);
-         return base + read_Long(data);
+         return base + ML_(read_Long)(data);
       default:
          vg_assert2(0, "read encoded address %d\n", encoding & 0x0f);
    }
@@ -2907,6 +2777,22 @@ static Int dwarfexpr_to_dag ( UnwindContext* ctx,
             op = Cop_And; opname = "and"; goto binop;
          case DW_OP_mul:
             op = Cop_Mul; opname = "mul"; goto binop;
+         case DW_OP_shl:
+            op = Cop_Shl; opname = "shl"; goto binop;
+         case DW_OP_shr:
+            op = Cop_Shr; opname = "shr"; goto binop;
+         case DW_OP_eq:
+            op = Cop_Eq; opname = "eq"; goto binop;
+         case DW_OP_ge:
+            op = Cop_Ge; opname = "ge"; goto binop;
+         case DW_OP_gt:
+            op = Cop_Gt; opname = "gt"; goto binop;
+         case DW_OP_le:
+            op = Cop_Le; opname = "le"; goto binop;
+         case DW_OP_lt:
+            op = Cop_Lt; opname = "lt"; goto binop;
+         case DW_OP_ne:
+            op = Cop_Ne; opname = "ne"; goto binop;
          binop:
             POP( ix );
             POP( ix2 );
@@ -3034,7 +2920,7 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
             VG_(printf)("  rci:DW_CFA_set_loc\n");
          break;
       case DW_CFA_advance_loc1:
-         delta = (UInt)read_UChar(&instr[i]); i+= sizeof(UChar);
+         delta = (UInt)ML_(read_UChar)(&instr[i]); i+= sizeof(UChar);
          delta *= ctx->code_a_f;
          ctx->loc += delta;
          if (di->ddump_frames)
@@ -3042,7 +2928,7 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
                         (Int)delta, (Addr)ctx->loc + printing_bias);
          break;
       case DW_CFA_advance_loc2:
-         delta = (UInt)read_UShort(&instr[i]); i+= sizeof(UShort);
+         delta = (UInt)ML_(read_UShort)(&instr[i]); i+= sizeof(UShort);
          delta *= ctx->code_a_f;
          ctx->loc += delta;
          if (di->ddump_frames)
@@ -3050,7 +2936,7 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
                         (Int)delta, (Addr)ctx->loc + printing_bias);
          break;
       case DW_CFA_advance_loc4:
-         delta = (UInt)read_UInt(&instr[i]); i+= sizeof(UInt);
+         delta = (UInt)ML_(read_UInt)(&instr[i]); i+= sizeof(UInt);
          delta *= ctx->code_a_f;
          ctx->loc += delta;
          if (di->ddump_frames)
@@ -3441,17 +3327,17 @@ static Int show_CF_instruction ( UChar* instr,
          break;
 
       case DW_CFA_advance_loc1:
-         delta = (UInt)read_UChar(&instr[i]); i+= sizeof(UChar);
+         delta = (UInt)ML_(read_UChar)(&instr[i]); i+= sizeof(UChar);
          VG_(printf)("  sci:DW_CFA_advance_loc1(%d)\n", delta); 
          break;
 
       case DW_CFA_advance_loc2:
-         delta = (UInt)read_UShort(&instr[i]); i+= sizeof(UShort);
+         delta = (UInt)ML_(read_UShort)(&instr[i]); i+= sizeof(UShort);
          VG_(printf)("  sci:DW_CFA_advance_loc2(%d)\n", delta); 
          break;
 
       case DW_CFA_advance_loc4:
-         delta = (UInt)read_UInt(&instr[i]); i+= sizeof(UInt);
+         delta = (UInt)ML_(read_UInt)(&instr[i]); i+= sizeof(UInt);
          VG_(printf)("  DW_CFA_advance_loc4(%d)\n", delta); 
          break;
 
@@ -3716,36 +3602,48 @@ static void init_CIE ( CIE* cie )
 static CIE the_CIEs[N_CIEs];
 
 
+/* Read, summarise and store CFA unwind info from .eh_frame and
+   .debug_frame sections.  is_ehframe tells us which kind we are
+   dealing with -- they are slightly different. */
 void ML_(read_callframe_info_dwarf3)
-        ( /*OUT*/struct _DebugInfo* di, UChar* frame_image, SizeT frame_size,
-          Bool for_eh )
+        ( /*OUT*/struct _DebugInfo* di,
+          UChar* frame_image, SizeT frame_size, Addr frame_avma,
+          Bool is_ehframe )
 {
    Int    nbytes;
    HChar* how = NULL;
    Int    n_CIEs = 0;
    UChar* data = frame_image;
-   UWord  ehframe_cfsis = 0;
-   Addr   frame_avma = for_eh ? di->ehframe_avma : 0;
+   UWord  cfsi_used_orig;
+
+   /* If we're dealing with a .debug_frame, assume zero frame_avma. */
+   if (!is_ehframe)
+      vg_assert(frame_avma == 0);
 
 #  if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
    /* These targets don't use CFI-based stack unwinding.  */
    return;
 #  endif
 
-   /* If we are reading .debug_frame after .eh_frame has been read, only
-      add FDEs which weren't covered in .eh_frame.  To be able to quickly
-      search the FDEs, the records must be sorted.  */
-   if ( ! for_eh && di->ehframe_size && di->cfsi_used ) {
+   /* If we read more than one .debug_frame or .eh_frame for this
+      DebugInfo*, the second and subsequent reads should only add FDEs
+      for address ranges not already covered by the FDEs already
+      present.  To be able to quickly check which address ranges are
+      already present, any existing records (DiCFSIs) must be sorted,
+      so we can binary-search them in the code below.  We also record
+      di->cfsi_used so that we know where the boundary is between
+      existing and new records. */
+   if (di->cfsi_used > 0) {
       ML_(canonicaliseCFI) ( di );
-      ehframe_cfsis = di->cfsi_used;
    }
+   cfsi_used_orig = di->cfsi_used;
 
    if (di->trace_cfi) {
       VG_(printf)("\n-----------------------------------------------\n");
       VG_(printf)("CFI info: szB %ld, _avma %#lx, _image %p\n",
                   frame_size, frame_avma, frame_image );
       VG_(printf)("CFI info: name %s\n",
-                  di->filename );
+                  di->fsm.filename );
    }
 
    /* Loop over CIEs/FDEs */
@@ -3794,7 +3692,7 @@ void ML_(read_callframe_info_dwarf3)
                      ciefde_start,
                      ciefde_start - frame_image + 0UL);
 
-      ciefde_len = (ULong) read_UInt(data); data += sizeof(UInt);
+      ciefde_len = (ULong)ML_(read_UInt)(data); data += sizeof(UInt);
       if (di->trace_cfi) 
          VG_(printf)("cie/fde.length  = %lld\n", ciefde_len);
 
@@ -3815,16 +3713,16 @@ void ML_(read_callframe_info_dwarf3)
       dw64 = False;
       if (ciefde_len == 0xFFFFFFFFUL) {
          dw64 = True;
-         ciefde_len = read_ULong(data); data += sizeof(ULong);
+         ciefde_len = ML_(read_ULong)(data); data += sizeof(ULong);
       }
 
       /* Now get the CIE ID, whose size depends on the DWARF 32 vs
 	 64-ness. */
       if (dw64) {
-         cie_pointer = read_ULong(data); 
+         cie_pointer = ML_(read_ULong)(data); 
          data += sizeof(ULong); /* XXX see XXX below */
       } else {
-         cie_pointer = (ULong)read_UInt(data); 
+         cie_pointer = (ULong)ML_(read_UInt)(data); 
          data += sizeof(UInt); /* XXX see XXX below */
       }
 
@@ -3833,7 +3731,7 @@ void ML_(read_callframe_info_dwarf3)
 
       /* If cie_pointer is zero for .eh_frame or all ones for .debug_frame,
          we've got a CIE; else it's an FDE. */
-      if (cie_pointer == (for_eh ? 0ULL
+      if (cie_pointer == (is_ehframe ? 0ULL
                           : dw64 ? 0xFFFFFFFFFFFFFFFFULL : 0xFFFFFFFFULL)) {
 
          Int    this_CIE;
@@ -3866,7 +3764,7 @@ void ML_(read_callframe_info_dwarf3)
                         (Addr)ciefde_len,
                         (Addr)(UWord)cie_pointer );
 
-         cie_version = read_UChar(data); data += sizeof(UChar);
+         cie_version = ML_(read_UChar)(data); data += sizeof(UChar);
          if (di->trace_cfi)
             VG_(printf)("cie.version     = %d\n", (Int)cie_version);
          if (di->ddump_frames)
@@ -3889,12 +3787,12 @@ void ML_(read_callframe_info_dwarf3)
          }
 
          if (cie_version >= 4) {
-            if (read_UChar(data) != sizeof(Addr)) {
+            if (ML_(read_UChar)(data) != sizeof(Addr)) {
                how = "unexpected address size";
                goto bad;
             }
             data += sizeof(UChar);
-            if (read_UChar(data) != 0) {
+            if (ML_(read_UChar)(data) != 0) {
                how = "unexpected non-zero segment size";
                goto bad;
             }
@@ -3920,7 +3818,7 @@ void ML_(read_callframe_info_dwarf3)
                         (Int)the_CIEs[this_CIE].data_a_f);
 
          if (cie_version == 1) {
-            the_CIEs[this_CIE].ra_reg = (Int)read_UChar(data); 
+            the_CIEs[this_CIE].ra_reg = (Int)ML_(read_UChar)(data); 
             data += sizeof(UChar);
          } else {
             the_CIEs[this_CIE].ra_reg = read_leb128( data, &nbytes, 0);
@@ -3967,11 +3865,11 @@ void ML_(read_callframe_info_dwarf3)
                   break;
                case 'R':
                   the_CIEs[this_CIE].address_encoding 
-                     = read_UChar(data); data += sizeof(UChar);
+                     = ML_(read_UChar)(data); data += sizeof(UChar);
                   cie_augmentation++;
                   break;
                case 'P':
-                  data += size_of_encoded_Addr( read_UChar(data) );
+                  data += size_of_encoded_Addr( ML_(read_UChar)(data) );
                   data++;
                   cie_augmentation++;
                   break;
@@ -4048,7 +3946,7 @@ void ML_(read_callframe_info_dwarf3)
             cie_pointer bytes back from here. */
 
          /* re sizeof(UInt) / sizeof(ULong), matches XXX above. */
-         if (for_eh)
+         if (is_ehframe)
             look_for = (data - (dw64 ? sizeof(ULong) : sizeof(UInt)) 
                              - frame_image) 
                        - cie_pointer;
@@ -4138,11 +4036,14 @@ void ML_(read_callframe_info_dwarf3)
 
 	 data += fde_ilen;
 
-         if (ehframe_cfsis) {
+         /* If this object's DebugInfo* had some DiCFSIs from a
+            previous .eh_frame or .debug_frame read, we must check
+            that we're not adding a duplicate. */
+         if (cfsi_used_orig > 0) {
             Addr a_mid_lo, a_mid_hi;
             Word mid, size, 
                  lo = 0, 
-                 hi = ehframe_cfsis-1;
+                 hi = cfsi_used_orig-1;
             while (True) {
                /* current unsearched space is from lo to hi, inclusive. */
                if (lo > hi) break; /* not found */

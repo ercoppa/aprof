@@ -917,6 +917,22 @@ static Bool sameIRTempsOrIcoU32s ( IRExpr* e1, IRExpr* e2 )
    }
 }
 
+/* Is this literally IRExpr_Const(IRConst_U32(0)) ? */
+static Bool isZeroU32 ( IRExpr* e )
+{
+   return toBool( e->tag == Iex_Const 
+                  && e->Iex.Const.con->tag == Ico_U32
+                  && e->Iex.Const.con->Ico.U32 == 0);
+}
+
+/* Is this literally IRExpr_Const(IRConst_U64(0)) ? */
+static Bool isZeroU64 ( IRExpr* e )
+{
+   return toBool( e->tag == Iex_Const 
+                  && e->Iex.Const.con->tag == Ico_U64
+                  && e->Iex.Const.con->Ico.U64 == 0);
+}
+
 static Bool notBool ( Bool b )
 {
    if (b == True) return False;
@@ -1594,11 +1610,18 @@ static IRExpr* fold_Expr ( IRExpr* e )
             e2 = e->Iex.Binop.arg1;
          } else
 
-         /* Or32/Add32/Max32U(x,0) ==> x */
-         if ((e->Iex.Binop.op == Iop_Add32 
-              || e->Iex.Binop.op == Iop_Or32 || e->Iex.Binop.op == Iop_Max32U)
-             && e->Iex.Binop.arg2->tag == Iex_Const
-             && e->Iex.Binop.arg2->Iex.Const.con->Ico.U32 == 0) {
+         /* Or32/Add32/Max32U(x,0) ==> x
+            Or32/Add32/Max32U(0,x) ==> x */
+         if (e->Iex.Binop.op == Iop_Add32
+             || e->Iex.Binop.op == Iop_Or32 || e->Iex.Binop.op == Iop_Max32U) {
+            if (isZeroU32(e->Iex.Binop.arg2))
+               e2 = e->Iex.Binop.arg1;
+            else if (isZeroU32(e->Iex.Binop.arg1))
+               e2 = e->Iex.Binop.arg2;
+         } else
+
+         /* Sub64(x,0) ==> x */
+         if (e->Iex.Binop.op == Iop_Sub64 && isZeroU64(e->Iex.Binop.arg2)) {
             e2 = e->Iex.Binop.arg1;
          } else
 
@@ -1639,11 +1662,13 @@ static IRExpr* fold_Expr ( IRExpr* e )
          } else
          /* NB no Add16(t,t) case yet as no known test case exists */
 
-         /* Or64/Add64(x,0) ==> x */
-         if ((e->Iex.Binop.op == Iop_Add64 || e->Iex.Binop.op == Iop_Or64)
-             && e->Iex.Binop.arg2->tag == Iex_Const
-             && e->Iex.Binop.arg2->Iex.Const.con->Ico.U64 == 0) {
-            e2 = e->Iex.Binop.arg1;
+         /* Or64/Add64(x,0) ==> x
+            Or64/Add64(0,x) ==> x */
+         if (e->Iex.Binop.op == Iop_Add64 || e->Iex.Binop.op == Iop_Or64) {
+            if (isZeroU64(e->Iex.Binop.arg2))
+               e2 = e->Iex.Binop.arg1;
+            else if (isZeroU64(e->Iex.Binop.arg1))
+               e2 = e->Iex.Binop.arg2;
          } else
 
          /* And32(x,0xFFFFFFFF) ==> x */
@@ -1671,20 +1696,6 @@ static IRExpr* fold_Expr ( IRExpr* e )
          if (e->Iex.Binop.op == Iop_Or8
              && e->Iex.Binop.arg1->tag == Iex_Const
              && e->Iex.Binop.arg1->Iex.Const.con->Ico.U8 == 0) {
-            e2 = e->Iex.Binop.arg2;
-         } else
-
-         /* Or32/Max32U(0,x) ==> x */
-         if ((e->Iex.Binop.op == Iop_Or32 || e->Iex.Binop.op == Iop_Max32U)
-             && e->Iex.Binop.arg1->tag == Iex_Const
-             && e->Iex.Binop.arg1->Iex.Const.con->Ico.U32 == 0) {
-            e2 = e->Iex.Binop.arg2;
-         } else
-
-         /* Or64(0,x) ==> x */
-         if (e->Iex.Binop.op == Iop_Or64
-             && e->Iex.Binop.arg1->tag == Iex_Const
-             && e->Iex.Binop.arg1->Iex.Const.con->Ico.U64 == 0) {
             e2 = e->Iex.Binop.arg2;
          } else
 
@@ -1997,7 +2008,9 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
       }
 
       case Ist_IMark:
-         return IRStmt_IMark(st->Ist.IMark.addr, st->Ist.IMark.len);
+         return IRStmt_IMark(st->Ist.IMark.addr,
+                             st->Ist.IMark.len,
+                             st->Ist.IMark.delta);
 
       case Ist_NoOp:
          return IRStmt_NoOp();
@@ -4048,6 +4061,14 @@ static IRExpr* fold_IRExpr_Binop ( IROp op, IRExpr* a1, IRExpr* a2 )
                              IRExpr_Binop( Iop_Or32, a1->Iex.Unop.arg, 
                                                      a2->Iex.Unop.arg ) );
       break;
+
+   case Iop_CmpNE32:
+      /* Since X has type Ity_I1 we can simplify:
+         CmpNE32(1Uto32(X),0)) ==> X */
+      if (is_Unop(a1, Iop_1Uto32) && isZeroU32(a2))
+         return a1->Iex.Unop.arg;
+      break;
+
    default:
       break;
    }
@@ -4090,6 +4111,14 @@ static IRExpr* fold_IRExpr_Unop ( IROp op, IRExpr* aa )
       /* CmpNEZ32( Left32(x) ) --> CmpNEZ32(x) */
       if (is_Unop(aa, Iop_Left32)) 
          return IRExpr_Unop(Iop_CmpNEZ32, aa->Iex.Unop.arg);
+      /* CmpNEZ32( 1Uto32(X) ) --> X */
+      if (is_Unop(aa, Iop_1Uto32))
+         return aa->Iex.Unop.arg;
+      break;
+   case Iop_CmpNEZ8:
+      /* CmpNEZ8( 1Uto8(X) ) --> X */
+      if (is_Unop(aa, Iop_1Uto8))
+         return aa->Iex.Unop.arg;
       break;
    case Iop_Left32:
       /* Left32( Left32(x) ) --> Left32(x) */
@@ -4269,7 +4298,9 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
                    st->Ist.Exit.dst
                 );
       case Ist_IMark:
-         return IRStmt_IMark(st->Ist.IMark.addr, st->Ist.IMark.len);
+         return IRStmt_IMark(st->Ist.IMark.addr,
+                             st->Ist.IMark.len,
+                             st->Ist.IMark.delta);
       case Ist_NoOp:
          return IRStmt_NoOp();
       case Ist_MBE:

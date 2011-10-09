@@ -1,5 +1,3 @@
-Remote debugging using | ./vgdb --wait=60 --vgdb-prefix=./vgdb-prefix-mcsigpass
-0x........ in _start () from ...start file...
 Continuing.
 Program received signal SIGSEGV, Segmentation fault.
 0x........ in test1 () at faultstatus.c:105
@@ -14,6 +12,3 @@ Program received signal SIGBUS, Bus error.
 115		mapping[FILESIZE+10];
 Continuing.
 Program received signal SIGFPE, Arithmetic exception.
-0x........ in test4 () at faultstatus.c:120
-120		volatile int v = 44/zero();
-Continuing.

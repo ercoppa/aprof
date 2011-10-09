@@ -49,19 +49,20 @@ DIST_COMMON = $(dist_noinst_SCRIPTS) $(srcdir)/Makefile.am \
 check_PROGRAMS = annotate_hbefore$(EXEEXT) free_is_write$(EXEEXT) \
 	hg01_all_ok$(EXEEXT) hg02_deadlock$(EXEEXT) \
 	hg03_inherit$(EXEEXT) hg04_race$(EXEEXT) hg05_race2$(EXEEXT) \
-	hg06_readshared$(EXEEXT) tc01_simple_race$(EXEEXT) \
-	tc02_simple_tls$(EXEEXT) tc03_re_excl$(EXEEXT) \
-	tc04_free_lock$(EXEEXT) tc05_simple_race$(EXEEXT) \
-	tc06_two_races$(EXEEXT) tc07_hbl1$(EXEEXT) tc08_hbl2$(EXEEXT) \
-	tc09_bad_unlock$(EXEEXT) tc10_rec_lock$(EXEEXT) \
-	tc11_XCHG$(EXEEXT) tc12_rwl_trivial$(EXEEXT) \
-	tc13_laog1$(EXEEXT) tc14_laog_dinphils$(EXEEXT) \
-	tc15_laog_lockdel$(EXEEXT) tc16_byterace$(EXEEXT) \
-	tc17_sembar$(EXEEXT) tc18_semabuse$(EXEEXT) \
-	tc19_shadowmem$(EXEEXT) tc21_pthonce$(EXEEXT) \
-	tc23_bogus_condwait$(EXEEXT) tc24_nonzero_sem$(EXEEXT) \
-	$(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
-	$(am__EXEEXT_4)
+	hg06_readshared$(EXEEXT) locked_vs_unlocked1$(EXEEXT) \
+	locked_vs_unlocked2$(EXEEXT) locked_vs_unlocked3$(EXEEXT) \
+	tc01_simple_race$(EXEEXT) tc02_simple_tls$(EXEEXT) \
+	tc03_re_excl$(EXEEXT) tc04_free_lock$(EXEEXT) \
+	tc05_simple_race$(EXEEXT) tc06_two_races$(EXEEXT) \
+	tc07_hbl1$(EXEEXT) tc08_hbl2$(EXEEXT) tc09_bad_unlock$(EXEEXT) \
+	tc10_rec_lock$(EXEEXT) tc11_XCHG$(EXEEXT) \
+	tc12_rwl_trivial$(EXEEXT) tc13_laog1$(EXEEXT) \
+	tc14_laog_dinphils$(EXEEXT) tc15_laog_lockdel$(EXEEXT) \
+	tc16_byterace$(EXEEXT) tc17_sembar$(EXEEXT) \
+	tc18_semabuse$(EXEEXT) tc19_shadowmem$(EXEEXT) \
+	tc21_pthonce$(EXEEXT) tc23_bogus_condwait$(EXEEXT) \
+	tc24_nonzero_sem$(EXEEXT) $(am__EXEEXT_1) $(am__EXEEXT_2) \
+	$(am__EXEEXT_3) $(am__EXEEXT_4)
 
 # DDD: it seg faults, and then the Valgrind exit path hangs
 # JRS 29 July 09: it craps out in the stack unwinder, in
@@ -149,6 +150,18 @@ hg06_readshared_SOURCES = hg06_readshared.c
 hg06_readshared_OBJECTS = hg06_readshared.$(OBJEXT)
 hg06_readshared_LDADD = $(LDADD)
 hg06_readshared_DEPENDENCIES =
+locked_vs_unlocked1_SOURCES = locked_vs_unlocked1.c
+locked_vs_unlocked1_OBJECTS = locked_vs_unlocked1.$(OBJEXT)
+locked_vs_unlocked1_LDADD = $(LDADD)
+locked_vs_unlocked1_DEPENDENCIES =
+locked_vs_unlocked2_SOURCES = locked_vs_unlocked2.c
+locked_vs_unlocked2_OBJECTS = locked_vs_unlocked2.$(OBJEXT)
+locked_vs_unlocked2_LDADD = $(LDADD)
+locked_vs_unlocked2_DEPENDENCIES =
+locked_vs_unlocked3_SOURCES = locked_vs_unlocked3.c
+locked_vs_unlocked3_OBJECTS = locked_vs_unlocked3.$(OBJEXT)
+locked_vs_unlocked3_LDADD = $(LDADD)
+locked_vs_unlocked3_DEPENDENCIES =
 tc01_simple_race_SOURCES = tc01_simple_race.c
 tc01_simple_race_OBJECTS = tc01_simple_race.$(OBJEXT)
 tc01_simple_race_LDADD = $(LDADD)
@@ -260,22 +273,24 @@ CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = annotate_hbefore.c annotate_rwlock.c bar_bad.c bar_trivial.c \
 	free_is_write.c hg01_all_ok.c hg02_deadlock.c hg03_inherit.c \
-	hg04_race.c hg05_race2.c hg06_readshared.c tc01_simple_race.c \
-	tc02_simple_tls.c tc03_re_excl.c tc04_free_lock.c \
-	tc05_simple_race.c tc06_two_races.c tc07_hbl1.c tc08_hbl2.c \
-	tc09_bad_unlock.c tc10_rec_lock.c tc11_XCHG.c \
-	tc12_rwl_trivial.c tc13_laog1.c tc14_laog_dinphils.c \
-	tc15_laog_lockdel.c tc16_byterace.c tc17_sembar.c \
-	tc18_semabuse.c tc19_shadowmem.c tc20_verifywrap.c \
-	tc21_pthonce.c tc22_exit_w_lock.c tc23_bogus_condwait.c \
-	tc24_nonzero_sem.c
+	hg04_race.c hg05_race2.c hg06_readshared.c \
+	locked_vs_unlocked1.c locked_vs_unlocked2.c \
+	locked_vs_unlocked3.c tc01_simple_race.c tc02_simple_tls.c \
+	tc03_re_excl.c tc04_free_lock.c tc05_simple_race.c \
+	tc06_two_races.c tc07_hbl1.c tc08_hbl2.c tc09_bad_unlock.c \
+	tc10_rec_lock.c tc11_XCHG.c tc12_rwl_trivial.c tc13_laog1.c \
+	tc14_laog_dinphils.c tc15_laog_lockdel.c tc16_byterace.c \
+	tc17_sembar.c tc18_semabuse.c tc19_shadowmem.c \
+	tc20_verifywrap.c tc21_pthonce.c tc22_exit_w_lock.c \
+	tc23_bogus_condwait.c tc24_nonzero_sem.c
 DIST_SOURCES = annotate_hbefore.c annotate_rwlock.c bar_bad.c \
 	bar_trivial.c free_is_write.c hg01_all_ok.c hg02_deadlock.c \
 	hg03_inherit.c hg04_race.c hg05_race2.c hg06_readshared.c \
-	tc01_simple_race.c tc02_simple_tls.c tc03_re_excl.c \
-	tc04_free_lock.c tc05_simple_race.c tc06_two_races.c \
-	tc07_hbl1.c tc08_hbl2.c tc09_bad_unlock.c tc10_rec_lock.c \
-	tc11_XCHG.c tc12_rwl_trivial.c tc13_laog1.c \
+	locked_vs_unlocked1.c locked_vs_unlocked2.c \
+	locked_vs_unlocked3.c tc01_simple_race.c tc02_simple_tls.c \
+	tc03_re_excl.c tc04_free_lock.c tc05_simple_race.c \
+	tc06_two_races.c tc07_hbl1.c tc08_hbl2.c tc09_bad_unlock.c \
+	tc10_rec_lock.c tc11_XCHG.c tc12_rwl_trivial.c tc13_laog1.c \
 	tc14_laog_dinphils.c tc15_laog_lockdel.c tc16_byterace.c \
 	tc17_sembar.c tc18_semabuse.c tc19_shadowmem.c \
 	tc20_verifywrap.c tc21_pthonce.c tc22_exit_w_lock.c \
@@ -316,8 +331,6 @@ EXEEXT = @EXEEXT@
 FLAG_FNO_STACK_PROTECTOR = @FLAG_FNO_STACK_PROTECTOR@
 FLAG_M32 = @FLAG_M32@
 FLAG_M64 = @FLAG_M64@
-FLAG_MAIX32 = @FLAG_MAIX32@
-FLAG_MAIX64 = @FLAG_MAIX64@
 FLAG_MMMX = @FLAG_MMMX@
 FLAG_MSSE = @FLAG_MSSE@
 FLAG_NO_BUILD_ID = @FLAG_NO_BUILD_ID@
@@ -325,6 +338,8 @@ FLAG_UNLIMITED_INLINE_UNIT_GROWTH = @FLAG_UNLIMITED_INLINE_UNIT_GROWTH@
 FLAG_W_EXTRA = @FLAG_W_EXTRA@
 FLAG_W_NO_EMPTY_BODY = @FLAG_W_NO_EMPTY_BODY@
 FLAG_W_NO_FORMAT_ZERO_LENGTH = @FLAG_W_NO_FORMAT_ZERO_LENGTH@
+FLAG_W_NO_NONNULL = @FLAG_W_NO_NONNULL@
+FLAG_W_NO_OVERFLOW = @FLAG_W_NO_OVERFLOW@
 FLAG_W_NO_UNINITIALIZED = @FLAG_W_NO_UNINITIALIZED@
 GDB = @GDB@
 GLIBC_VERSION = @GLIBC_VERSION@
@@ -367,6 +382,7 @@ VGCONF_ARCH_SEC = @VGCONF_ARCH_SEC@
 VGCONF_OS = @VGCONF_OS@
 VGCONF_PLATFORM_PRI_CAPS = @VGCONF_PLATFORM_PRI_CAPS@
 VGCONF_PLATFORM_SEC_CAPS = @VGCONF_PLATFORM_SEC_CAPS@
+VGCONF_PLATVARIANT = @VGCONF_PLATVARIANT@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -426,6 +442,8 @@ inplacedir = $(top_builddir)/.in_place
 
 # Baseline flags for all compilations.  Aim here is to maximise
 # performance and get whatever useful warnings we can out of gcc.
+# -fno-builtin is important for defeating LLVM's idiom recognition
+# that somehow causes VG_(memset) to get into infinite recursion.
 AM_CFLAGS_BASE = \
 	-O2 -g \
 	-Wall \
@@ -435,16 +453,20 @@ AM_CFLAGS_BASE = \
 	-Wstrict-prototypes \
 	-Wmissing-declarations \
 	@FLAG_W_NO_FORMAT_ZERO_LENGTH@ \
-	-fno-strict-aliasing
+	-fno-strict-aliasing \
+	-fno-builtin
 
-@VGCONF_OS_IS_DARWIN_FALSE@AM_CFLAGS_PIC = -fpic -O -g -fno-omit-frame-pointer -fno-strict-aliasing
+@VGCONF_OS_IS_DARWIN_FALSE@AM_CFLAGS_PIC = -fpic -O -g -fno-omit-frame-pointer -fno-strict-aliasing \
+@VGCONF_OS_IS_DARWIN_FALSE@		-fno-builtin
+
 
 # These flags are used for building the preload shared objects.
 # The aim is to give reasonable performance but also to have good
 # stack traces, since users often see stack traces extending 
 # into (and through) the preloads.
 @VGCONF_OS_IS_DARWIN_TRUE@AM_CFLAGS_PIC = -dynamic -O -g -fno-omit-frame-pointer -fno-strict-aliasing \
-@VGCONF_OS_IS_DARWIN_TRUE@		-mno-dynamic-no-pic -fpic -fPIC
+@VGCONF_OS_IS_DARWIN_TRUE@		-mno-dynamic-no-pic -fpic -fPIC \
+@VGCONF_OS_IS_DARWIN_TRUE@		-fno-builtin
 
 
 # Flags for specific targets.
@@ -465,7 +487,8 @@ AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@ = \
 	-I$(top_srcdir)/VEX/pub \
 	-DVGA_@VGCONF_ARCH_PRI@=1 \
 	-DVGO_@VGCONF_OS@=1 \
-	-DVGP_@VGCONF_ARCH_PRI@_@VGCONF_OS@=1
+	-DVGP_@VGCONF_ARCH_PRI@_@VGCONF_OS@=1 \
+	-DVGPV_@VGCONF_ARCH_PRI@_@VGCONF_OS@_@VGCONF_PLATVARIANT@=1
 
 @VGCONF_HAVE_PLATFORM_SEC_TRUE@AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@ = \
 @VGCONF_HAVE_PLATFORM_SEC_TRUE@	-I$(top_srcdir) \
@@ -473,7 +496,8 @@ AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@ = \
 @VGCONF_HAVE_PLATFORM_SEC_TRUE@	-I$(top_srcdir)/VEX/pub \
 @VGCONF_HAVE_PLATFORM_SEC_TRUE@	-DVGA_@VGCONF_ARCH_SEC@=1 \
 @VGCONF_HAVE_PLATFORM_SEC_TRUE@	-DVGO_@VGCONF_OS@=1 \
-@VGCONF_HAVE_PLATFORM_SEC_TRUE@	-DVGP_@VGCONF_ARCH_SEC@_@VGCONF_OS@=1
+@VGCONF_HAVE_PLATFORM_SEC_TRUE@	-DVGP_@VGCONF_ARCH_SEC@_@VGCONF_OS@=1 \
+@VGCONF_HAVE_PLATFORM_SEC_TRUE@	-DVGPV_@VGCONF_ARCH_SEC@_@VGCONF_OS@_@VGCONF_PLATVARIANT@=1
 
 AM_FLAG_M3264_X86_LINUX = @FLAG_M32@
 AM_CFLAGS_X86_LINUX = @FLAG_M32@ @PREFERRED_STACK_BOUNDARY@ \
@@ -493,18 +517,10 @@ AM_CFLAGS_PPC64_LINUX = @FLAG_M64@ $(AM_CFLAGS_BASE)
 AM_CCASFLAGS_PPC64_LINUX = $(AM_CPPFLAGS_PPC64_LINUX) @FLAG_M64@ -g
 AM_FLAG_M3264_ARM_LINUX = @FLAG_M32@
 AM_CFLAGS_ARM_LINUX = @FLAG_M32@ @PREFERRED_STACK_BOUNDARY@ \
-			 	$(AM_CFLAGS_BASE) -marm
+			 	$(AM_CFLAGS_BASE) -marm -mcpu=cortex-a8
 
-AM_CCASFLAGS_ARM_LINUX = $(AM_CPPFLAGS_ARM_LINUX) @FLAG_M32@ -marm -g
-AM_FLAG_M3264_PPC32_AIX5 = @FLAG_MAIX32@
-AM_CFLAGS_PPC32_AIX5 = @FLAG_MAIX32@ -mcpu=powerpc $(AM_CFLAGS_BASE)
-AM_CCASFLAGS_PPC32_AIX5 = $(AM_CPPFLAGS_PPC32_AIX5) \
-			    @FLAG_MAIX32@ -mcpu=powerpc -g
-
-AM_FLAG_M3264_PPC64_AIX5 = @FLAG_MAIX64@
-AM_CFLAGS_PPC64_AIX5 = @FLAG_MAIX64@ -mcpu=powerpc64 $(AM_CFLAGS_BASE)
-AM_CCASFLAGS_PPC64_AIX5 = $(AM_CPPFLAGS_PPC64_AIX5) \
-			    @FLAG_MAIX64@ -mcpu=powerpc64 -g
+AM_CCASFLAGS_ARM_LINUX = $(AM_CPPFLAGS_ARM_LINUX) @FLAG_M32@ \
+				-marm -mcpu=cortex-a8 -g
 
 AM_FLAG_M3264_X86_DARWIN = -arch i386
 AM_CFLAGS_X86_DARWIN = $(WERROR) -arch i386 $(AM_CFLAGS_BASE) \
@@ -537,24 +553,22 @@ AM_CCASFLAGS_PRI = $(AM_CCASFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
 # Baseline link flags for making vgpreload shared objects.
 #
 PRELOAD_LDFLAGS_COMMON_LINUX = -nodefaultlibs -shared -Wl,-z,interpose,-z,initfirst
-PRELOAD_LDFLAGS_COMMON_AIX5 = -nodefaultlibs -shared -Wl,-G -Wl,-bnogc
 PRELOAD_LDFLAGS_COMMON_DARWIN = -dynamic -dynamiclib -all_load
 PRELOAD_LDFLAGS_X86_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M32@
 PRELOAD_LDFLAGS_AMD64_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M64@
 PRELOAD_LDFLAGS_PPC32_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M32@
 PRELOAD_LDFLAGS_PPC64_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M64@
 PRELOAD_LDFLAGS_ARM_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M32@
-PRELOAD_LDFLAGS_PPC32_AIX5 = $(PRELOAD_LDFLAGS_COMMON_AIX5)  @FLAG_MAIX32@
-PRELOAD_LDFLAGS_PPC64_AIX5 = $(PRELOAD_LDFLAGS_COMMON_AIX5)  @FLAG_MAIX64@
 PRELOAD_LDFLAGS_X86_DARWIN = $(PRELOAD_LDFLAGS_COMMON_DARWIN) -arch i386
 PRELOAD_LDFLAGS_AMD64_DARWIN = $(PRELOAD_LDFLAGS_COMMON_DARWIN) -arch x86_64
 PRELOAD_LDFLAGS_S390X_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M64@
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
 		-I$(top_srcdir)/coregrind -I$(top_builddir)/include \
 		-I$(top_srcdir)/VEX/pub \
-		-DVGA_$(VGCONF_ARCH_PRI)=1 \
-		-DVGO_$(VGCONF_OS)=1 \
-		-DVGP_$(VGCONF_ARCH_PRI)_$(VGCONF_OS)=1
+		-DVGA_@VGCONF_ARCH_PRI@=1 \
+		-DVGO_@VGCONF_OS@=1 \
+		-DVGP_@VGCONF_ARCH_PRI@_@VGCONF_OS@=1 \
+		-DVGPV_@VGCONF_ARCH_PRI@_@VGCONF_OS@_@VGCONF_PLATVARIANT@=1
 
 # Nb: Tools need to augment these flags with an arch-selection option, such
 # as $(AM_FLAG_M3264_PRI).
@@ -583,6 +597,18 @@ EXTRA_DIST = \
 	hg05_race2.vgtest hg05_race2.stdout.exp hg05_race2.stderr.exp \
 	hg06_readshared.vgtest hg06_readshared.stdout.exp \
 		hg06_readshared.stderr.exp \
+	locked_vs_unlocked1_fwd.vgtest \
+		locked_vs_unlocked1_fwd.stderr.exp \
+		locked_vs_unlocked1_fwd.stdout.exp \
+	locked_vs_unlocked1_rev.vgtest \
+		locked_vs_unlocked1_rev.stderr.exp \
+		locked_vs_unlocked1_rev.stdout.exp \
+	locked_vs_unlocked2.vgtest \
+		locked_vs_unlocked2.stderr.exp \
+		locked_vs_unlocked2.stdout.exp \
+	locked_vs_unlocked3.vgtest \
+		locked_vs_unlocked3.stderr.exp \
+		locked_vs_unlocked3.stdout.exp \
 	pth_barrier1.vgtest pth_barrier1.stdout.exp pth_barrier1.stderr.exp \
 	pth_barrier2.vgtest pth_barrier2.stdout.exp pth_barrier2.stderr.exp \
 	pth_barrier3.vgtest pth_barrier3.stdout.exp pth_barrier3.stderr.exp \
@@ -606,9 +632,7 @@ EXTRA_DIST = \
 	tc07_hbl1.vgtest tc07_hbl1.stdout.exp tc07_hbl1.stderr.exp \
 	tc08_hbl2.vgtest tc08_hbl2.stdout.exp tc08_hbl2.stderr.exp \
 	tc09_bad_unlock.vgtest tc09_bad_unlock.stdout.exp \
-		tc09_bad_unlock.stderr.exp-glibc23-amd64 \
 		tc09_bad_unlock.stderr.exp-glibc25-amd64 \
-		tc09_bad_unlock.stderr.exp-glibc25-x86 \
 	tc10_rec_lock.vgtest tc10_rec_lock.stdout.exp tc10_rec_lock.stderr.exp \
 	tc11_XCHG.vgtest tc11_XCHG.stdout.exp tc11_XCHG.stderr.exp \
 	tc12_rwl_trivial.vgtest tc12_rwl_trivial.stdout.exp \
@@ -624,12 +648,10 @@ EXTRA_DIST = \
 	tc17_sembar.vgtest tc17_sembar.stdout.exp \
 		tc17_sembar.stderr.exp \
 	tc18_semabuse.vgtest tc18_semabuse.stdout.exp \
-		tc18_semabuse.stderr.exp-glibc25-amd64 \
 		tc18_semabuse.stderr.exp-glibc28-amd64 \
 	tc19_shadowmem.vgtest tc19_shadowmem.stdout.exp \
 		tc19_shadowmem.stderr.exp \
 	tc20_verifywrap.vgtest tc20_verifywrap.stdout.exp \
-		tc20_verifywrap.stderr.exp-glibc25-amd64 \
 		tc20_verifywrap.stderr.exp-glibc27-amd64 \
 	tc21_pthonce.vgtest tc21_pthonce.stdout.exp tc21_pthonce.stderr.exp \
 	tc22_exit_w_lock.vgtest tc22_exit_w_lock.stdout.exp \
@@ -718,6 +740,15 @@ hg05_race2$(EXEEXT): $(hg05_race2_OBJECTS) $(hg05_race2_DEPENDENCIES)
 hg06_readshared$(EXEEXT): $(hg06_readshared_OBJECTS) $(hg06_readshared_DEPENDENCIES) 
 	@rm -f hg06_readshared$(EXEEXT)
 	$(LINK) $(hg06_readshared_OBJECTS) $(hg06_readshared_LDADD) $(LIBS)
+locked_vs_unlocked1$(EXEEXT): $(locked_vs_unlocked1_OBJECTS) $(locked_vs_unlocked1_DEPENDENCIES) 
+	@rm -f locked_vs_unlocked1$(EXEEXT)
+	$(LINK) $(locked_vs_unlocked1_OBJECTS) $(locked_vs_unlocked1_LDADD) $(LIBS)
+locked_vs_unlocked2$(EXEEXT): $(locked_vs_unlocked2_OBJECTS) $(locked_vs_unlocked2_DEPENDENCIES) 
+	@rm -f locked_vs_unlocked2$(EXEEXT)
+	$(LINK) $(locked_vs_unlocked2_OBJECTS) $(locked_vs_unlocked2_LDADD) $(LIBS)
+locked_vs_unlocked3$(EXEEXT): $(locked_vs_unlocked3_OBJECTS) $(locked_vs_unlocked3_DEPENDENCIES) 
+	@rm -f locked_vs_unlocked3$(EXEEXT)
+	$(LINK) $(locked_vs_unlocked3_OBJECTS) $(locked_vs_unlocked3_LDADD) $(LIBS)
 tc01_simple_race$(EXEEXT): $(tc01_simple_race_OBJECTS) $(tc01_simple_race_DEPENDENCIES) 
 	@rm -f tc01_simple_race$(EXEEXT)
 	$(LINK) $(tc01_simple_race_OBJECTS) $(tc01_simple_race_LDADD) $(LIBS)
@@ -808,6 +839,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hg04_race.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hg05_race2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hg06_readshared.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/locked_vs_unlocked1.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/locked_vs_unlocked2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/locked_vs_unlocked3.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tc01_simple_race.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tc02_simple_tls.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tc03_re_excl.Po@am__quote@

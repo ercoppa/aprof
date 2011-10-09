@@ -325,7 +325,7 @@ void read_symtab( /*OUT*/XArray* /* DiSym */ syms,
 {
    Int    i;
    Addr   sym_addr;
-   DiSym  risym;
+   DiSym  disym;
    UChar* name;
 
    static UChar* s_a_t_v = NULL; /* do not make non-static */
@@ -363,43 +363,45 @@ void read_symtab( /*OUT*/XArray* /* DiSym */ syms,
       if (*name == 0)
          continue;
 
-      risym.tocptr = 0;
-      risym.addr = sym_addr;
-      risym.size = // let canonicalize fix it
-                   di->text_avma+di->text_size - sym_addr;
-      risym.name = ML_(addStr)(di, name, -1);
-      risym.isText = True;
-      risym.isIFunc = False;
+      disym.addr      = sym_addr;
+      disym.tocptr    = 0;
+      disym.pri_name  = ML_(addStr)(di, name, -1);
+      disym.sec_names = NULL;
+      disym.size      = // let canonicalize fix it
+                        di->text_avma+di->text_size - sym_addr;
+      disym.isText    = True;
+      disym.isIFunc   = False;
       // Lots of user function names get prepended with an underscore.  Eg. the
       // function 'f' becomes the symbol '_f'.  And the "below main"
       // function is called "start".  So we skip the leading underscore, and
       // if we see 'start' and --show-below-main=no, we rename it as
       // "start_according_to_valgrind", which makes it easy to spot later
       // and display as "(below main)".
-      if (risym.name[0] == '_') {
-         risym.name++;
-      } else if (!VG_(clo_show_below_main) && VG_STREQ(risym.name, "start")) {
+      if (disym.pri_name[0] == '_') {
+         disym.pri_name++;
+      } 
+      else if (!VG_(clo_show_below_main) && VG_STREQ(disym.pri_name, "start")) {
          if (s_a_t_v == NULL)
             s_a_t_v = ML_(addStr)(di, "start_according_to_valgrind", -1);
          vg_assert(s_a_t_v);
-         risym.name = s_a_t_v;
+         disym.pri_name = s_a_t_v;
       }
 
-      vg_assert(risym.name);
-      VG_(addToXA)( syms, &risym );
+      vg_assert(disym.pri_name);
+      VG_(addToXA)( syms, &disym );
    }
 }
 
 
 /* Compare DiSyms by their start address, and for equal addresses, use
-   the name as a secondary sort key. */
+   the primary name as a secondary sort key. */
 static Int cmp_DiSym_by_start_then_name ( void* v1, void* v2 )
 {
    DiSym* s1 = (DiSym*)v1;
    DiSym* s2 = (DiSym*)v2;
    if (s1->addr < s2->addr) return -1;
    if (s1->addr > s2->addr) return 1;
-   return VG_(strcmp)(s1->name, s2->name);
+   return VG_(strcmp)(s1->pri_name, s2->pri_name);
 }
 
 /* 'cand' is a bunch of candidate symbols obtained by reading
@@ -468,13 +470,13 @@ static void tidy_up_cand_syms ( /*MOD*/XArray* /* of DiSym */ syms,
          s_i  = (DiSym*)VG_(indexXA)(syms, i);
          if (s_i->addr != s_j1->addr
              || s_i->size != s_j1->size
-             || 0 != VG_(strcmp)(s_i->name, s_j1->name)) {
+             || 0 != VG_(strcmp)(s_i->pri_name, s_j1->pri_name)) {
             *s_j = *s_i;
             j++;
          } else {
             if (trace_symtab)
                VG_(printf)("nlist cleanup: dump duplicate avma %010lx  %s\n",
-                           s_i->addr, s_i->name );
+                           s_i->addr, s_i->pri_name );
          }
       }
    }
@@ -680,17 +682,18 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
 
    if (VG_(clo_verbosity) > 1)
       VG_(message)(Vg_DebugMsg,
-                   "%s (%#lx)\n", di->filename, di->rx_map_avma );
+                   "%s (%#lx)\n", di->fsm.filename, di->fsm.rx_map_avma );
 
-   /* This should be ensured by our caller. */
-   vg_assert(di->have_rx_map);
-   vg_assert(di->have_rw_map);
+   /* This should be ensured by our caller (that we're in the accept
+      state). */
+   vg_assert(di->fsm.have_rx_map);
+   vg_assert(di->fsm.have_rw_map);
 
    VG_(memset)(&ii,   0, sizeof(ii));
    VG_(memset)(&iid,  0, sizeof(iid));
    VG_(memset)(&uuid, 0, sizeof(uuid));
 
-   ok = map_image_aboard( di, &ii, di->filename );
+   ok = map_image_aboard( di, &ii, di->fsm.filename );
    if (!ok) goto fail;
 
    vg_assert(ii.macho_img != NULL && ii.macho_img_szB > 0);
@@ -776,7 +779,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
                 && seg->fileoff == 0 && seg->filesize != 0) {
                di->text_present = True;
                di->text_svma = (Addr)seg->vmaddr;
-               di->text_avma = di->rx_map_avma;
+               di->text_avma = di->fsm.rx_map_avma;
                di->text_size = seg->vmsize;
                di->text_bias = di->text_avma - di->text_svma;
                /* Make the _debug_ values be the same as the
@@ -793,7 +796,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
                 /* && DDD:seg->fileoff == 0 */ && seg->filesize != 0) {
                di->data_present = True;
                di->data_svma = (Addr)seg->vmaddr;
-               di->data_avma = di->rw_map_avma;
+               di->data_avma = di->fsm.rw_map_avma;
                di->data_size = seg->vmsize;
                di->data_bias = di->data_avma - di->data_svma;
                di->data_debug_svma = di->data_svma;
@@ -810,6 +813,12 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
 
    if (!di->soname) {
       di->soname = ML_(dinfo_strdup)("di.readmacho.noname", "NONE");
+   }
+
+   if (di->trace_symtab) {
+      VG_(printf)("\n");
+      VG_(printf)("SONAME = %s\n", di->soname);
+      VG_(printf)("\n");
    }
 
    /* Now we have the base object to hand.  Read symbols from it. */
@@ -870,9 +879,12 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
       nCandSyms = VG_(sizeXA)( candSyms );
       for (i = 0; i < nCandSyms; i++) {
          DiSym* cand = (DiSym*) VG_(indexXA)( candSyms, i );
+         vg_assert(cand->pri_name != NULL);
+         vg_assert(cand->sec_names == NULL);
          if (di->trace_symtab)
             VG_(printf)("nlist final: acquire  avma %010lx-%010lx  %s\n",
-                        cand->addr, cand->addr + cand->size - 1, cand->name );
+                        cand->addr, cand->addr + cand->size - 1,
+                        cand->pri_name );
          ML_(addSym)( di, cand );
       }
       VG_(deleteXA)( candSyms );
@@ -892,7 +904,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
    /* mmap the dSYM file to look for DWARF debug info.  If successful,
       use the .macho_img and .macho_img_szB in iid. */
 
-   dsymfilename = find_separate_debug_file( di->filename );
+   dsymfilename = find_separate_debug_file( di->fsm.filename );
 
    /* Try to load it. */
    if (dsymfilename) {
@@ -925,13 +937,13 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
       give up.  (possible reasons: is system lib, or in /usr etc, or
       the dsym dir would not be writable by the user, or we're running
       as root) */
-   vg_assert(di->filename);
-   if (is_systemish_library_name(di->filename))
+   vg_assert(di->fsm.filename);
+   if (is_systemish_library_name(di->fsm.filename))
       goto success;
 
    if (!VG_(clo_dsymutil)) {
       if (VG_(clo_verbosity) == 1) {
-         VG_(message)(Vg_DebugMsg, "%s:\n", di->filename);
+         VG_(message)(Vg_DebugMsg, "%s:\n", di->fsm.filename);
       }
       if (VG_(clo_verbosity) > 0)
          VG_(message)(Vg_DebugMsg, "%sdSYM directory %s; consider using "
@@ -947,19 +959,19 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
      HChar* dsymutil = "/usr/bin/dsymutil ";
      HChar* cmd = ML_(dinfo_zalloc)( "di.readmacho.tmp1", 
                                      VG_(strlen)(dsymutil)
-                                     + VG_(strlen)(di->filename)
+                                     + VG_(strlen)(di->fsm.filename)
                                      + 32 /* misc */ );
      VG_(strcpy)(cmd, dsymutil);
      if (0) VG_(strcat)(cmd, "--verbose ");
      VG_(strcat)(cmd, "\"");
-     VG_(strcat)(cmd, di->filename);
+     VG_(strcat)(cmd, di->fsm.filename);
      VG_(strcat)(cmd, "\"");
      VG_(message)(Vg_DebugMsg, "run: %s\n", cmd);
      r = VG_(system)( cmd );
      if (r)
         VG_(message)(Vg_DebugMsg, "run: %s FAILED\n", dsymutil);
      ML_(dinfo_free)(cmd);
-     dsymfilename = find_separate_debug_file(di->filename);
+     dsymfilename = find_separate_debug_file(di->fsm.filename);
    }
 
    /* Try again to load it. */
@@ -989,7 +1001,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
                (UInt)uuid[11], (UInt)uuid[12], (UInt)uuid[13],
                (UInt)uuid[14], (UInt)uuid[15] );
             VG_(message)(Vg_DebugMsg,
-                         "WARNING: for %s\n", di->filename);
+                         "WARNING: for %s\n", di->fsm.filename);
          }
          unmap_image( &iid );
          /* unmap_image zeroes the fields, so the following test makes
@@ -1046,7 +1058,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
             VG_(message)(Vg_DebugMsg,
                          "Reading dwarf3 for %s (%#lx) from %s"
                          " (%ld %ld %ld %ld %ld %ld)\n",
-                         di->filename, di->text_avma, dsymfilename,
+                         di->fsm.filename, di->text_avma, dsymfilename,
                          debug_info_sz, debug_abbv_sz, debug_line_sz, 
                          debug_str_sz, debug_ranges_sz, debug_loc_sz
                          );

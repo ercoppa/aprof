@@ -149,8 +149,10 @@ exec_sigmask_SOURCES = exec-sigmask.c
 exec_sigmask_OBJECTS = exec-sigmask.$(OBJEXT)
 exec_sigmask_LDADD = $(LDADD)
 execve_SOURCES = execve.c
-execve_OBJECTS = execve.$(OBJEXT)
+execve_OBJECTS = execve-execve.$(OBJEXT)
 execve_LDADD = $(LDADD)
+execve_LINK = $(CCLD) $(execve_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
 faultstatus_SOURCES = faultstatus.c
 faultstatus_OBJECTS = faultstatus.$(OBJEXT)
 faultstatus_LDADD = $(LDADD)
@@ -469,8 +471,6 @@ EXEEXT = @EXEEXT@
 FLAG_FNO_STACK_PROTECTOR = @FLAG_FNO_STACK_PROTECTOR@
 FLAG_M32 = @FLAG_M32@
 FLAG_M64 = @FLAG_M64@
-FLAG_MAIX32 = @FLAG_MAIX32@
-FLAG_MAIX64 = @FLAG_MAIX64@
 FLAG_MMMX = @FLAG_MMMX@
 FLAG_MSSE = @FLAG_MSSE@
 FLAG_NO_BUILD_ID = @FLAG_NO_BUILD_ID@
@@ -478,6 +478,8 @@ FLAG_UNLIMITED_INLINE_UNIT_GROWTH = @FLAG_UNLIMITED_INLINE_UNIT_GROWTH@
 FLAG_W_EXTRA = @FLAG_W_EXTRA@
 FLAG_W_NO_EMPTY_BODY = @FLAG_W_NO_EMPTY_BODY@
 FLAG_W_NO_FORMAT_ZERO_LENGTH = @FLAG_W_NO_FORMAT_ZERO_LENGTH@
+FLAG_W_NO_NONNULL = @FLAG_W_NO_NONNULL@
+FLAG_W_NO_OVERFLOW = @FLAG_W_NO_OVERFLOW@
 FLAG_W_NO_UNINITIALIZED = @FLAG_W_NO_UNINITIALIZED@
 GDB = @GDB@
 GLIBC_VERSION = @GLIBC_VERSION@
@@ -520,6 +522,7 @@ VGCONF_ARCH_SEC = @VGCONF_ARCH_SEC@
 VGCONF_OS = @VGCONF_OS@
 VGCONF_PLATFORM_PRI_CAPS = @VGCONF_PLATFORM_PRI_CAPS@
 VGCONF_PLATFORM_SEC_CAPS = @VGCONF_PLATFORM_SEC_CAPS@
+VGCONF_PLATVARIANT = @VGCONF_PLATVARIANT@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -579,6 +582,8 @@ inplacedir = $(top_builddir)/.in_place
 
 # Baseline flags for all compilations.  Aim here is to maximise
 # performance and get whatever useful warnings we can out of gcc.
+# -fno-builtin is important for defeating LLVM's idiom recognition
+# that somehow causes VG_(memset) to get into infinite recursion.
 AM_CFLAGS_BASE = \
 	-O2 -g \
 	-Wall \
@@ -588,16 +593,20 @@ AM_CFLAGS_BASE = \
 	-Wstrict-prototypes \
 	-Wmissing-declarations \
 	@FLAG_W_NO_FORMAT_ZERO_LENGTH@ \
-	-fno-strict-aliasing
+	-fno-strict-aliasing \
+	-fno-builtin
 
-@VGCONF_OS_IS_DARWIN_FALSE@AM_CFLAGS_PIC = -fpic -O -g -fno-omit-frame-pointer -fno-strict-aliasing
+@VGCONF_OS_IS_DARWIN_FALSE@AM_CFLAGS_PIC = -fpic -O -g -fno-omit-frame-pointer -fno-strict-aliasing \
+@VGCONF_OS_IS_DARWIN_FALSE@		-fno-builtin
+
 
 # These flags are used for building the preload shared objects.
 # The aim is to give reasonable performance but also to have good
 # stack traces, since users often see stack traces extending 
 # into (and through) the preloads.
 @VGCONF_OS_IS_DARWIN_TRUE@AM_CFLAGS_PIC = -dynamic -O -g -fno-omit-frame-pointer -fno-strict-aliasing \
-@VGCONF_OS_IS_DARWIN_TRUE@		-mno-dynamic-no-pic -fpic -fPIC
+@VGCONF_OS_IS_DARWIN_TRUE@		-mno-dynamic-no-pic -fpic -fPIC \
+@VGCONF_OS_IS_DARWIN_TRUE@		-fno-builtin
 
 
 # Flags for specific targets.
@@ -618,7 +627,8 @@ AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@ = \
 	-I$(top_srcdir)/VEX/pub \
 	-DVGA_@VGCONF_ARCH_PRI@=1 \
 	-DVGO_@VGCONF_OS@=1 \
-	-DVGP_@VGCONF_ARCH_PRI@_@VGCONF_OS@=1
+	-DVGP_@VGCONF_ARCH_PRI@_@VGCONF_OS@=1 \
+	-DVGPV_@VGCONF_ARCH_PRI@_@VGCONF_OS@_@VGCONF_PLATVARIANT@=1
 
 @VGCONF_HAVE_PLATFORM_SEC_TRUE@AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@ = \
 @VGCONF_HAVE_PLATFORM_SEC_TRUE@	-I$(top_srcdir) \
@@ -626,7 +636,8 @@ AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@ = \
 @VGCONF_HAVE_PLATFORM_SEC_TRUE@	-I$(top_srcdir)/VEX/pub \
 @VGCONF_HAVE_PLATFORM_SEC_TRUE@	-DVGA_@VGCONF_ARCH_SEC@=1 \
 @VGCONF_HAVE_PLATFORM_SEC_TRUE@	-DVGO_@VGCONF_OS@=1 \
-@VGCONF_HAVE_PLATFORM_SEC_TRUE@	-DVGP_@VGCONF_ARCH_SEC@_@VGCONF_OS@=1
+@VGCONF_HAVE_PLATFORM_SEC_TRUE@	-DVGP_@VGCONF_ARCH_SEC@_@VGCONF_OS@=1 \
+@VGCONF_HAVE_PLATFORM_SEC_TRUE@	-DVGPV_@VGCONF_ARCH_SEC@_@VGCONF_OS@_@VGCONF_PLATVARIANT@=1
 
 AM_FLAG_M3264_X86_LINUX = @FLAG_M32@
 AM_CFLAGS_X86_LINUX = @FLAG_M32@ @PREFERRED_STACK_BOUNDARY@ \
@@ -646,18 +657,10 @@ AM_CFLAGS_PPC64_LINUX = @FLAG_M64@ $(AM_CFLAGS_BASE)
 AM_CCASFLAGS_PPC64_LINUX = $(AM_CPPFLAGS_PPC64_LINUX) @FLAG_M64@ -g
 AM_FLAG_M3264_ARM_LINUX = @FLAG_M32@
 AM_CFLAGS_ARM_LINUX = @FLAG_M32@ @PREFERRED_STACK_BOUNDARY@ \
-			 	$(AM_CFLAGS_BASE) -marm
+			 	$(AM_CFLAGS_BASE) -marm -mcpu=cortex-a8
 
-AM_CCASFLAGS_ARM_LINUX = $(AM_CPPFLAGS_ARM_LINUX) @FLAG_M32@ -marm -g
-AM_FLAG_M3264_PPC32_AIX5 = @FLAG_MAIX32@
-AM_CFLAGS_PPC32_AIX5 = @FLAG_MAIX32@ -mcpu=powerpc $(AM_CFLAGS_BASE)
-AM_CCASFLAGS_PPC32_AIX5 = $(AM_CPPFLAGS_PPC32_AIX5) \
-			    @FLAG_MAIX32@ -mcpu=powerpc -g
-
-AM_FLAG_M3264_PPC64_AIX5 = @FLAG_MAIX64@
-AM_CFLAGS_PPC64_AIX5 = @FLAG_MAIX64@ -mcpu=powerpc64 $(AM_CFLAGS_BASE)
-AM_CCASFLAGS_PPC64_AIX5 = $(AM_CPPFLAGS_PPC64_AIX5) \
-			    @FLAG_MAIX64@ -mcpu=powerpc64 -g
+AM_CCASFLAGS_ARM_LINUX = $(AM_CPPFLAGS_ARM_LINUX) @FLAG_M32@ \
+				-marm -mcpu=cortex-a8 -g
 
 AM_FLAG_M3264_X86_DARWIN = -arch i386
 AM_CFLAGS_X86_DARWIN = $(WERROR) -arch i386 $(AM_CFLAGS_BASE) \
@@ -690,24 +693,22 @@ AM_CCASFLAGS_PRI = $(AM_CCASFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
 # Baseline link flags for making vgpreload shared objects.
 #
 PRELOAD_LDFLAGS_COMMON_LINUX = -nodefaultlibs -shared -Wl,-z,interpose,-z,initfirst
-PRELOAD_LDFLAGS_COMMON_AIX5 = -nodefaultlibs -shared -Wl,-G -Wl,-bnogc
 PRELOAD_LDFLAGS_COMMON_DARWIN = -dynamic -dynamiclib -all_load
 PRELOAD_LDFLAGS_X86_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M32@
 PRELOAD_LDFLAGS_AMD64_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M64@
 PRELOAD_LDFLAGS_PPC32_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M32@
 PRELOAD_LDFLAGS_PPC64_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M64@
 PRELOAD_LDFLAGS_ARM_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M32@
-PRELOAD_LDFLAGS_PPC32_AIX5 = $(PRELOAD_LDFLAGS_COMMON_AIX5)  @FLAG_MAIX32@
-PRELOAD_LDFLAGS_PPC64_AIX5 = $(PRELOAD_LDFLAGS_COMMON_AIX5)  @FLAG_MAIX64@
 PRELOAD_LDFLAGS_X86_DARWIN = $(PRELOAD_LDFLAGS_COMMON_DARWIN) -arch i386
 PRELOAD_LDFLAGS_AMD64_DARWIN = $(PRELOAD_LDFLAGS_COMMON_DARWIN) -arch x86_64
 PRELOAD_LDFLAGS_S390X_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M64@
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
 		-I$(top_srcdir)/coregrind -I$(top_builddir)/include \
 		-I$(top_srcdir)/VEX/pub \
-		-DVGA_$(VGCONF_ARCH_PRI)=1 \
-		-DVGO_$(VGCONF_OS)=1 \
-		-DVGP_$(VGCONF_ARCH_PRI)_$(VGCONF_OS)=1
+		-DVGA_@VGCONF_ARCH_PRI@=1 \
+		-DVGO_@VGCONF_OS@=1 \
+		-DVGP_@VGCONF_ARCH_PRI@_@VGCONF_OS@=1 \
+		-DVGPV_@VGCONF_ARCH_PRI@_@VGCONF_OS@_@VGCONF_PLATVARIANT@=1
 
 # Nb: Tools need to augment these flags with an arch-selection option, such
 # as $(AM_FLAG_M3264_PRI).
@@ -727,6 +728,7 @@ dist_noinst_SCRIPTS = \
 	filter_fdleak \
 	filter_linenos \
 	filter_none_discards \
+	filter_shell_output \
 	filter_stderr \
 	filter_timestamp
 
@@ -840,6 +842,7 @@ EXTRA_DIST = \
 
 # Extra stuff for C tests
 ansi_CFLAGS = $(AM_CFLAGS) -ansi
+execve_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 floored_LDADD = -lm
 manythreads_LDADD = -lpthread
 @VGCONF_OS_IS_DARWIN_FALSE@nestedfns_CFLAGS = $(AM_CFLAGS)
@@ -858,26 +861,22 @@ pth_mutexspeed_LDADD = -lpthread
 pth_once_LDADD = -lpthread
 pth_rwlock_LDADD = -lpthread
 pth_stackalign_LDADD = -lpthread
-@VGCONF_OS_IS_AIX5_FALSE@res_search_LDADD = -lresolv -lpthread
-@VGCONF_OS_IS_AIX5_TRUE@res_search_LDADD = -lpthread
-@VGCONF_OS_IS_AIX5_FALSE@resolv_LDADD = -lresolv -lpthread
+res_search_LDADD = -lresolv -lpthread
+resolv_LDADD = -lresolv -lpthread
 semlimit_LDADD = -lpthread
 thread_exits_LDADD = -lpthread
 threaded_fork_LDADD = -lpthread
 threadederrno_LDADD = -lpthread
 tls_SOURCES = tls.c tls2.c
 tls_DEPENDENCIES = tls.so tls2.so
-@VGCONF_OS_IS_AIX5_FALSE@tls_LDFLAGS = -Wl,-rpath,$(top_builddir)/none/tests
-@VGCONF_OS_IS_AIX5_TRUE@tls_LDFLAGS = 
+tls_LDFLAGS = -Wl,-rpath,$(top_builddir)/none/tests
 tls_LDADD = tls.so tls2.so -lpthread
 tls_so_SOURCES = tls_so.c
 tls_so_DEPENDENCIES = tls2.so
-@VGCONF_OS_IS_AIX5_FALSE@@VGCONF_OS_IS_DARWIN_FALSE@tls_so_LDFLAGS = -Wl,-rpath,$(top_builddir)/none/tests -shared -fPIC
-@VGCONF_OS_IS_AIX5_FALSE@@VGCONF_OS_IS_DARWIN_TRUE@tls_so_LDFLAGS = -dynamic -dynamiclib -all_load -fpic
-@VGCONF_OS_IS_AIX5_TRUE@tls_so_LDFLAGS = -shared -fPIC
-@VGCONF_OS_IS_AIX5_FALSE@@VGCONF_OS_IS_DARWIN_FALSE@tls_so_LDADD = tls2.so
-@VGCONF_OS_IS_AIX5_FALSE@@VGCONF_OS_IS_DARWIN_TRUE@tls_so_LDADD = `pwd`/tls2.so
-@VGCONF_OS_IS_AIX5_TRUE@tls_so_LDADD = `pwd`/tls2.so
+@VGCONF_OS_IS_DARWIN_FALSE@tls_so_LDFLAGS = -Wl,-rpath,$(top_builddir)/none/tests -shared -fPIC
+@VGCONF_OS_IS_DARWIN_TRUE@tls_so_LDFLAGS = -dynamic -dynamiclib -all_load -fpic
+@VGCONF_OS_IS_DARWIN_FALSE@tls_so_LDADD = tls2.so
+@VGCONF_OS_IS_DARWIN_TRUE@tls_so_LDADD = `pwd`/tls2.so
 tls_so_CFLAGS = $(AM_CFLAGS) -fPIC
 tls2_so_SOURCES = tls2_so.c
 @VGCONF_OS_IS_DARWIN_FALSE@tls2_so_LDFLAGS = -shared
@@ -957,7 +956,7 @@ exec-sigmask$(EXEEXT): $(exec_sigmask_OBJECTS) $(exec_sigmask_DEPENDENCIES)
 	$(LINK) $(exec_sigmask_OBJECTS) $(exec_sigmask_LDADD) $(LIBS)
 execve$(EXEEXT): $(execve_OBJECTS) $(execve_DEPENDENCIES) 
 	@rm -f execve$(EXEEXT)
-	$(LINK) $(execve_OBJECTS) $(execve_LDADD) $(LIBS)
+	$(execve_LINK) $(execve_OBJECTS) $(execve_LDADD) $(LIBS)
 faultstatus$(EXEEXT): $(faultstatus_OBJECTS) $(faultstatus_DEPENDENCIES) 
 	@rm -f faultstatus$(EXEEXT)
 	$(LINK) $(faultstatus_OBJECTS) $(faultstatus_LDADD) $(LIBS)
@@ -1161,7 +1160,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/coolo_strlen.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/discard.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exec-sigmask.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/execve.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/execve-execve.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/faultstatus.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fcntl_setown.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fdleak_cmsg.Po@am__quote@
@@ -1253,6 +1252,20 @@ ansi-ansi.obj: ansi.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='ansi.c' object='ansi-ansi.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ansi_CFLAGS) $(CFLAGS) -c -o ansi-ansi.obj `if test -f 'ansi.c'; then $(CYGPATH_W) 'ansi.c'; else $(CYGPATH_W) '$(srcdir)/ansi.c'; fi`
+
+execve-execve.o: execve.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(execve_CFLAGS) $(CFLAGS) -MT execve-execve.o -MD -MP -MF $(DEPDIR)/execve-execve.Tpo -c -o execve-execve.o `test -f 'execve.c' || echo '$(srcdir)/'`execve.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/execve-execve.Tpo $(DEPDIR)/execve-execve.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='execve.c' object='execve-execve.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(execve_CFLAGS) $(CFLAGS) -c -o execve-execve.o `test -f 'execve.c' || echo '$(srcdir)/'`execve.c
+
+execve-execve.obj: execve.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(execve_CFLAGS) $(CFLAGS) -MT execve-execve.obj -MD -MP -MF $(DEPDIR)/execve-execve.Tpo -c -o execve-execve.obj `if test -f 'execve.c'; then $(CYGPATH_W) 'execve.c'; else $(CYGPATH_W) '$(srcdir)/execve.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/execve-execve.Tpo $(DEPDIR)/execve-execve.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='execve.c' object='execve-execve.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(execve_CFLAGS) $(CFLAGS) -c -o execve-execve.obj `if test -f 'execve.c'; then $(CYGPATH_W) 'execve.c'; else $(CYGPATH_W) '$(srcdir)/execve.c'; fi`
 
 nestedfns-nestedfns.o: nestedfns.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(nestedfns_CFLAGS) $(CFLAGS) -MT nestedfns-nestedfns.o -MD -MP -MF $(DEPDIR)/nestedfns-nestedfns.Tpo -c -o nestedfns-nestedfns.o `test -f 'nestedfns.c' || echo '$(srcdir)/'`nestedfns.c

@@ -804,7 +804,6 @@ DECL_TEMPLATE(x86_linux, sys_modify_ldt);
 DECL_TEMPLATE(x86_linux, sys_set_thread_area);
 DECL_TEMPLATE(x86_linux, sys_get_thread_area);
 DECL_TEMPLATE(x86_linux, sys_ptrace);
-DECL_TEMPLATE(x86_linux, sys_sigaction);
 DECL_TEMPLATE(x86_linux, sys_sigsuspend);
 DECL_TEMPLATE(x86_linux, old_select);
 DECL_TEMPLATE(x86_linux, sys_vm86old);
@@ -1405,6 +1404,7 @@ POST(sys_lstat64)
 
 PRE(sys_stat64)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_stat64 ( %#lx(%s), %#lx )",ARG1,(char*)ARG1,ARG2);
    PRE_REG_READ2(long, "stat64", char *, file_name, struct stat64 *, buf);
    PRE_MEM_RASCIIZ( "stat64(file_name)", ARG1 );
@@ -1418,6 +1418,7 @@ POST(sys_stat64)
 
 PRE(sys_fstatat64)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_fstatat64 ( %ld, %#lx(%s), %#lx )",ARG1,ARG2,(char*)ARG2,ARG3);
    PRE_REG_READ3(long, "fstatat64",
                  int, dfd, char *, file_name, struct stat64 *, buf);
@@ -1708,71 +1709,8 @@ POST(sys_socketcall)
 #  undef ARG2_5
 }
 
-/* Convert from non-RT to RT sigset_t's */
-static 
-void convert_sigset_to_rt(const vki_old_sigset_t *oldset, vki_sigset_t *set)
-{
-   VG_(sigemptyset)(set);
-   set->sig[0] = *oldset;
-}
-PRE(sys_sigaction)
-{
-   vki_sigaction_toK_t   new, *newp;
-   vki_sigaction_fromK_t old, *oldp;
-
-   PRINT("sys_sigaction ( %ld, %#lx, %#lx )", ARG1,ARG2,ARG3);
-   PRE_REG_READ3(int, "sigaction",
-                 int, signum, const struct old_sigaction *, act,
-                 struct old_sigaction *, oldact);
-
-   newp = oldp = NULL;
-
-   if (ARG2 != 0) {
-      struct vki_old_sigaction *sa = (struct vki_old_sigaction *)ARG2;
-      PRE_MEM_READ( "sigaction(act->sa_handler)", (Addr)&sa->ksa_handler, sizeof(sa->ksa_handler));
-      PRE_MEM_READ( "sigaction(act->sa_mask)", (Addr)&sa->sa_mask, sizeof(sa->sa_mask));
-      PRE_MEM_READ( "sigaction(act->sa_flags)", (Addr)&sa->sa_flags, sizeof(sa->sa_flags));
-      if (ML_(safe_to_deref)(sa,sizeof(sa)) 
-          && (sa->sa_flags & VKI_SA_RESTORER))
-         PRE_MEM_READ( "sigaction(act->sa_restorer)", (Addr)&sa->sa_restorer, sizeof(sa->sa_restorer));
-   }
-
-   if (ARG3 != 0) {
-      PRE_MEM_WRITE( "sigaction(oldact)", ARG3, sizeof(struct vki_old_sigaction));
-      oldp = &old;
-   }
-
-   //jrs 20050207: what?!  how can this make any sense?
-   //if (VG_(is_kerror)(SYSRES))
-   //   return;
-
-   if (ARG2 != 0) {
-      struct vki_old_sigaction *oldnew = (struct vki_old_sigaction *)ARG2;
-      new.ksa_handler = oldnew->ksa_handler;
-      new.sa_flags    = oldnew->sa_flags;
-      new.sa_restorer = oldnew->sa_restorer;
-      convert_sigset_to_rt(&oldnew->sa_mask, &new.sa_mask);
-      newp = &new;
-   }
-
-   SET_STATUS_from_SysRes( VG_(do_sys_sigaction)(ARG1, newp, oldp) );
-
-   if (ARG3 != 0 && SUCCESS && RES == 0) {
-      struct vki_old_sigaction *oldold = (struct vki_old_sigaction *)ARG3;
-      oldold->ksa_handler = oldp->ksa_handler;
-      oldold->sa_flags    = oldp->sa_flags;
-      oldold->sa_restorer = oldp->sa_restorer;
-      oldold->sa_mask = oldp->sa_mask.sig[0];
-   }
-}
-
-POST(sys_sigaction)
-{
-   vg_assert(SUCCESS);
-   if (RES == 0 && ARG3 != 0)
-      POST_MEM_WRITE( ARG3, sizeof(struct vki_old_sigaction));
-}
-
+/* NB: arm-linux has a clone of this one, and ppc32-linux has an almost
+   identical version. */
 PRE(sys_sigsuspend)
 {
    /* The C library interface to sigsuspend just takes a pointer to
@@ -1954,7 +1892,7 @@ static SyscallTableEntry syscall_table[] = {
 
    GENX_(__NR_getpgrp,           sys_getpgrp),        // 65
    GENX_(__NR_setsid,            sys_setsid),         // 66
-   PLAXY(__NR_sigaction,         sys_sigaction),      // 67
+   LINXY(__NR_sigaction,         sys_sigaction),      // 67
 //zz    //   (__NR_sgetmask,          sys_sgetmask),       // 68 */* (ANSI C)
 //zz    //   (__NR_ssetmask,          sys_ssetmask),       // 69 */* (ANSI C)
 //zz 
@@ -2280,7 +2218,19 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_pwritev,           sys_pwritev),          // 334
 
    LINXY(__NR_rt_tgsigqueueinfo, sys_rt_tgsigqueueinfo),// 335
-   LINXY(__NR_perf_counter_open, sys_perf_counter_open) // 336
+   LINXY(__NR_perf_event_open,   sys_perf_event_open),  // 336
+//   LINX_(__NR_recvmmsg,          sys_ni_syscall),       // 337
+//   LINX_(__NR_fanotify_init,     sys_ni_syscall),       // 338
+//   LINX_(__NR_fanotify_mark,     sys_ni_syscall),       // 339
+
+   LINXY(__NR_prlimit64,         sys_prlimit64)         // 340
+//   LINX_(__NR_name_to_handle_at, sys_ni_syscall),       // 341
+//   LINX_(__NR_open_by_handle_at, sys_ni_syscall),       // 342
+//   LINX_(__NR_clock_adjtime,     sys_ni_syscall),       // 343
+//   LINX_(__NR_syncfs,            sys_ni_syscall),       // 344
+
+//   LINX_(__NR_sendmmsg,          sys_ni_syscall),       // 345
+//   LINX_(__NR_setns,             sys_ni_syscall),       // 346
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry) ( UInt sysno )

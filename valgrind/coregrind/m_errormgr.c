@@ -309,12 +309,12 @@ static void printSuppForIp_XML(UInt n, Addr ip, void* uu_opaque)
 {
    static UChar buf[ERRTXT_LEN];
    if ( VG_(get_fnname_no_cxx_demangle) (ip, buf,  ERRTXT_LEN) ) {
-      VG_(printf_xml_no_f_c)("    <sframe> <fun>%t</fun> </sframe>\n", buf);
+      VG_(printf_xml)("    <sframe> <fun>%pS</fun> </sframe>\n", buf);
    } else
    if ( VG_(get_objname)(ip, buf, ERRTXT_LEN) ) {
-      VG_(printf_xml_no_f_c)("    <sframe> <obj>%t</obj> </sframe>\n", buf);
+      VG_(printf_xml)("    <sframe> <obj>%pS</obj> </sframe>\n", buf);
    } else {
-      VG_(printf_xml_no_f_c)("    <sframe> <obj>*</obj> </sframe>\n");
+      VG_(printf_xml)("    <sframe> <obj>*</obj> </sframe>\n");
    }
 }
 
@@ -346,14 +346,6 @@ static void gen_suppression(Error* err)
 
    vg_assert(err);
 
-   /* In XML mode, we also need to print the plain text version of the
-      suppresion in a CDATA section.  What that really means is, we
-      need to generate the plaintext version both in XML and text
-      mode.  So generate it into TEXT. */
-   text = VG_(newXA)( VG_(malloc), "errormgr.gen_suppression.1",
-                      VG_(free), sizeof(HChar) );
-   vg_assert(text);
-
    ec = VG_(get_error_where)(err);
    vg_assert(ec);
 
@@ -363,6 +355,14 @@ static void gen_suppression(Error* err)
                 VG_(details).name);
       return;
    }
+
+   /* In XML mode, we also need to print the plain text version of the
+      suppresion in a CDATA section.  What that really means is, we
+      need to generate the plaintext version both in XML and text
+      mode.  So generate it into TEXT. */
+   text = VG_(newXA)( VG_(malloc), "errormgr.gen_suppression.1",
+                      VG_(free), sizeof(HChar) );
+   vg_assert(text);
 
    /* Ok.  Generate the plain text version into TEXT. */
    VG_(xaprintf)(text, "{\n");
@@ -405,10 +405,10 @@ static void gen_suppression(Error* err)
          again. */
       VG_(printf_xml)("  <suppression>\n");
       VG_(printf_xml)("    <sname>%s</sname>\n", dummy_name);
-      VG_(printf_xml_no_f_c)(
-                      "    <skind>%t:%t</skind>\n", VG_(details).name, name);
+      VG_(printf_xml)(
+                      "    <skind>%pS:%pS</skind>\n", VG_(details).name, name);
       if (anyXtra)
-         VG_(printf_xml_no_f_c)("    <skaux>%t</skaux>\n", xtra);
+         VG_(printf_xml)("    <skaux>%pS</skaux>\n", xtra);
 
       // Print stack trace elements
       VG_(apply_StackTrace)(printSuppForIp_XML,
@@ -693,6 +693,12 @@ void VG_(maybe_record_error) ( ThreadId tid,
       return;
    }
 
+   /* Ignore it if error acquisition is disabled for this thread. */
+   { ThreadState* tst = VG_(get_ThreadState)(tid);
+     if (tst->err_disablement_level > 0)
+        return;
+   }
+
    /* After M_COLLECT_ERRORS_SLOWLY_AFTER different errors have
       been found, be much more conservative about collecting new
       ones. */
@@ -817,6 +823,11 @@ Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, Char* s,
    Error err;
    Supp *su;
 
+   /* Ignore it if error acquisition is disabled for this thread. */
+   ThreadState* tst = VG_(get_ThreadState)(tid);
+   if (tst->err_disablement_level > 0)
+      return False; /* ignored, not suppressed */
+   
    /* Build ourselves the error */
    construct_error ( &err, tid, ekind, a, s, extra, where );
 
@@ -874,9 +885,9 @@ static Bool show_used_suppressions ( void )
       if (su->count <= 0)
          continue;
       if (VG_(clo_xml)) {
-         VG_(printf_xml_no_f_c)( "  <pair>\n"
+         VG_(printf_xml)( "  <pair>\n"
                                  "    <count>%d</count>\n"
-                                 "    <name>%t</name>\n"
+                                 "    <name>%pS</name>\n"
                                  "  </pair>\n",
                                  su->count, su->sname );
       } else {

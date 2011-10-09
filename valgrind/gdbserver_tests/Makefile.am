@@ -7,6 +7,7 @@ dist_noinst_SCRIPTS = \
 	filter_memcheck_monitor filter_stderr filter_vgdb
 
 EXTRA_DIST = \
+	README_DEVELOPERS \
 	mcbreak.stderrB.exp \
 	mcbreak.stderr.exp \
 	mcbreak.stdinB.gdb \
@@ -43,6 +44,17 @@ EXTRA_DIST = \
 	mcleak.stdinB.gdb \
 	mcleak.stdoutB.exp \
 	mcleak.vgtest \
+	mcmain_pic.stderrB.exp \
+	mcmain_pic.stderr.exp \
+	mcmain_pic.stdinB.gdb \
+	mcmain_pic.stdoutB.exp \
+	mcmain_pic.stdout.exp \
+	mcmain_pic.vgtest \
+	mcmain_pic.stderrB.exp \
+	mcmain_pic.stderr.exp \
+	mcmain_pic.stdinB.gdb \
+	mcmain_pic.stdoutB.exp \
+	mcmain_pic.stdout.exp \
 	mcsignopass.stderrB.exp \
 	mcsignopass.stderr.exp \
 	mcsignopass.stdinB.gdb \
@@ -72,11 +84,26 @@ EXTRA_DIST = \
 	nlcontrolc.stderr.exp \
 	nlcontrolc.stdinB.gdb \
 	nlcontrolc.stdoutB.exp \
-	nlcontrolc.vgtest
+	nlcontrolc.vgtest \
+	nlfork_chain.stderr.exp \
+	nlfork_chain.stdout.exp \
+	nlfork_chain.vgtest \
+	nlpasssigalrm.vgtest \
+	nlpasssigalrm.stderrB.exp \
+	nlpasssigalrm.stderr.exp \
+	nlpasssigalrm.stdinB.gdb \
+	nlpasssigalrm.stdoutB.exp \
+	nlsigvgdb.vgtest \
+	nlsigvgdb.stderr.exp \
+	nlsigvgdb.stderrB.exp \
+	nlsigvgdb.stdinB.gdb
 
 check_PROGRAMS = \
 	clean_after_fork \
+	fork_chain \
+	passsigalrm \
 	sleepers \
+	main_pic \
 	t \
 	watchpoints
 
@@ -84,3 +111,6 @@ AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
 LDADD = -lpthread
+
+main_pic_LDFLAGS = -pie
+main_pic_CFLAGS	 = $(AM_CFLAGS) -fPIC

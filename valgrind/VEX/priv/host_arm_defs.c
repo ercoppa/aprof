@@ -588,7 +588,7 @@ ULong ARMNImm_to_Imm64 ( ARMNImm* imm ) {
          return x;
       case 10:
          x |= (x & 0x80) << 5;
-         x |= ~(x & 0x40) << 5;
+         x |= (~x & 0x40) << 5;
          x &= 0x187F; /* 0001 1000 0111 1111 */
          x |= (x & 0x40) << 4;
          x |= (x & 0x40) << 3;
@@ -1206,14 +1206,14 @@ ARMInstr* ARMInstr_LdrEX ( Int szB ) {
    ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
    i->tag             = ARMin_LdrEX;
    i->ARMin.LdrEX.szB = szB;
-   vassert(szB == 4 || szB == 1);
+   vassert(szB == 8 || szB == 4 || szB == 2 || szB == 1);
    return i;
 }
 ARMInstr* ARMInstr_StrEX ( Int szB ) {
    ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
    i->tag             = ARMin_StrEX;
    i->ARMin.StrEX.szB = szB;
-   vassert(szB == 4 || szB == 1);
+   vassert(szB == 8 || szB == 4 || szB == 2 || szB == 1);
    return i;
 }
 ARMInstr* ARMInstr_VLdStD ( Bool isLoad, HReg dD, ARMAModeV* am ) {
@@ -1336,6 +1336,11 @@ ARMInstr* ARMInstr_FPSCR ( Bool toFPSCR, HReg iReg ) {
 ARMInstr* ARMInstr_MFence ( void ) {
    ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
    i->tag      = ARMin_MFence;
+   return i;
+}
+ARMInstr* ARMInstr_CLREX( void ) {
+   ARMInstr* i = LibVEX_Alloc(sizeof(ARMInstr));
+   i->tag      = ARMin_CLREX;
    return i;
 }
 
@@ -1603,16 +1608,28 @@ void ppARMInstr ( ARMInstr* i ) {
             vex_printf("r1:r0, r2, r3");
          }
          return;
-      case ARMin_LdrEX:
-         vex_printf("ldrex%s ", i->ARMin.LdrEX.szB == 1 ? "b"
-                                : i->ARMin.LdrEX.szB == 2 ? "h" : "");
-         vex_printf("r0, [r1]");
+      case ARMin_LdrEX: {
+         HChar* sz = "";
+         switch (i->ARMin.LdrEX.szB) {
+            case 1: sz = "b"; break; case 2: sz = "h"; break;
+            case 8: sz = "d"; break; case 4: break;
+            default: vassert(0);
+         }      
+         vex_printf("ldrex%s %sr2, [r4]",
+                    sz, i->ARMin.LdrEX.szB == 8 ? "r3:" : "");
          return;
-      case ARMin_StrEX:
-         vex_printf("strex%s ", i->ARMin.StrEX.szB == 1 ? "b"
-                                : i->ARMin.StrEX.szB == 2 ? "h" : "");
-         vex_printf("r0, r1, [r2]");
+      }
+      case ARMin_StrEX: {
+         HChar* sz = "";
+         switch (i->ARMin.StrEX.szB) {
+            case 1: sz = "b"; break; case 2: sz = "h"; break;
+            case 8: sz = "d"; break; case 4: break;
+            default: vassert(0);
+         }      
+         vex_printf("strex%s r0, %sr2, [r4]",
+                    sz, i->ARMin.StrEX.szB == 8 ? "r3:" : "");
          return;
+      }
       case ARMin_VLdStD:
          if (i->ARMin.VLdStD.isLoad) {
             vex_printf("fldd  ");
@@ -1747,6 +1764,9 @@ void ppARMInstr ( ARMInstr* i ) {
          vex_printf("mfence (mcr 15,0,r0,c7,c10,4; 15,0,r0,c7,c10,5; "
                     "15,0,r0,c7,c5,4)");
          return;
+      case ARMin_CLREX:
+         vex_printf("clrex");
+         return;
       case ARMin_NLdStQ:
          if (i->ARMin.NLdStQ.isLoad)
             vex_printf("vld1.32 {");
@@ -1799,8 +1819,8 @@ void ppARMInstr ( ARMInstr* i ) {
          return;
       case ARMin_NUnaryS:
          vex_printf("%s%s%s  ",
-                    showARMNeonUnOp(i->ARMin.NUnary.op),
-                    showARMNeonUnOpDataType(i->ARMin.NUnary.op),
+                    showARMNeonUnOpS(i->ARMin.NUnaryS.op),
+                    showARMNeonUnOpSDataType(i->ARMin.NUnaryS.op),
                     showARMNeonDataSize(i));
          ppARMNRS(i->ARMin.NUnaryS.dst);
          vex_printf(", ");
@@ -1989,13 +2009,17 @@ void getRegUsage_ARMInstr ( HRegUsage* u, ARMInstr* i, Bool mode64 )
             addHRegUse(u, HRmWrite, hregARM_R1());
          return;
       case ARMin_LdrEX:
-         addHRegUse(u, HRmWrite, hregARM_R0());
-         addHRegUse(u, HRmRead, hregARM_R1());
+         addHRegUse(u, HRmRead, hregARM_R4());
+         addHRegUse(u, HRmWrite, hregARM_R2());
+         if (i->ARMin.LdrEX.szB == 8)
+            addHRegUse(u, HRmWrite, hregARM_R3());
          return;
       case ARMin_StrEX:
+         addHRegUse(u, HRmRead, hregARM_R4());
          addHRegUse(u, HRmWrite, hregARM_R0());
-         addHRegUse(u, HRmRead, hregARM_R1());
          addHRegUse(u, HRmRead, hregARM_R2());
+         if (i->ARMin.StrEX.szB == 8)
+            addHRegUse(u, HRmRead, hregARM_R3());
          return;
       case ARMin_VLdStD:
          addRegUsage_ARMAModeV(u, i->ARMin.VLdStD.amode);
@@ -2080,6 +2104,8 @@ void getRegUsage_ARMInstr ( HRegUsage* u, ARMInstr* i, Bool mode64 )
             addHRegUse(u, HRmWrite, i->ARMin.FPSCR.iReg);
          return;
       case ARMin_MFence:
+         return;
+      case ARMin_CLREX:
          return;
       case ARMin_NLdStQ:
          if (i->ARMin.NLdStQ.isLoad)
@@ -2259,6 +2285,8 @@ void mapRegs_ARMInstr ( HRegRemap* m, ARMInstr* i, Bool mode64 )
          return;
       case ARMin_MFence:
          return;
+      case ARMin_CLREX:
+         return;
       case ARMin_NLdStQ:
          i->ARMin.NLdStQ.dQ = lookupHRegRemap(m, i->ARMin.NLdStQ.dQ);
          mapRegs_ARMAModeN(m, i->ARMin.NLdStQ.amode);
@@ -2337,11 +2365,17 @@ Bool isMove_ARMInstr ( ARMInstr* i, HReg* src, HReg* dst )
             return True;
          }
          break;
+      case ARMin_NUnary:
+         if (i->ARMin.NUnary.op == ARMneon_COPY) {
+            *src = i->ARMin.NUnary.src;
+            *dst = i->ARMin.NUnary.dst;
+            return True;
+         }
+         break;
       default:
          break;
    }
 
-   // todo: float, vector moves
    return False;
 }
 
@@ -2672,14 +2706,13 @@ static UInt* imm32_to_iregNo ( UInt* p, Int rD, UInt imm32 )
 
 
 Int emit_ARMInstr ( UChar* buf, Int nbuf, ARMInstr* i,
-                    Bool mode64, void* dispatch ) 
+                    Bool mode64,
+                    void* dispatch_unassisted, void* dispatch_assisted ) 
 {
    UInt* p = (UInt*)buf;
    vassert(nbuf >= 32);
    vassert(mode64 == False);
    vassert(0 == (((HWord)buf) & 3));
-   /* since we branch to lr(r13) to get back to dispatch: */
-   vassert(dispatch == NULL);
 
    switch (i->tag) {
       case ARMin_Alu: {
@@ -2867,6 +2900,9 @@ Int emit_ARMInstr ( UChar* buf, Int nbuf, ARMInstr* i,
          ARMCondCode cond  = i->ARMin.Goto.cond;
          UInt        rnext = iregNo(i->ARMin.Goto.gnext);
          Int         trc   = -1;
+         /* since we branch to lr(r13) to get back to dispatch: */
+         vassert(dispatch_unassisted == NULL);
+         vassert(dispatch_assisted == NULL);
          switch (jk) {
             case Ijk_Ret: case Ijk_Call: case Ijk_Boring:
                break; /* no need to set GST in these common cases */
@@ -2957,27 +2993,31 @@ Int emit_ARMInstr ( UChar* buf, Int nbuf, ARMInstr* i,
          goto bad;
       }
       case ARMin_LdrEX: {
-         /* E1910F9F   ldrex    r0, [r1]
-            E1F10F9F   ldrexh   r0, [r1]
-            E1D10F9F   ldrexb   r0, [r1]
+         /* E1D42F9F   ldrexb r2, [r4]
+            E1F42F9F   ldrexh r2, [r4]
+            E1942F9F   ldrex  r2, [r4]
+            E1B42F9F   ldrexd r2, r3, [r4]
          */
          switch (i->ARMin.LdrEX.szB) {
-            case 4: *p++ = 0xE1910F9F; goto done;
-            //case 2: *p++ = 0xE1F10F9F; goto done;
-            case 1: *p++ = 0xE1D10F9F; goto done;
+            case 1: *p++ = 0xE1D42F9F; goto done;
+            case 2: *p++ = 0xE1F42F9F; goto done;
+            case 4: *p++ = 0xE1942F9F; goto done;
+            case 8: *p++ = 0xE1B42F9F; goto done;
             default: break;
          }
          goto bad;
       }
       case ARMin_StrEX: {
-         /* E1820F91   strex   r0, r1, [r2]
-            E1E20F91   strexh  r0, r1, [r2]
-            E1C20F91   strexb  r0, r1, [r2]
+         /* E1C40F92   strexb r0, r2, [r4]
+            E1E40F92   strexh r0, r2, [r4]
+            E1840F92   strex  r0, r2, [r4]
+            E1A40F92   strexd r0, r2, r3, [r4]
          */
          switch (i->ARMin.StrEX.szB) {
-            case 4: *p++ = 0xE1820F91; goto done;
-            //case 2: *p++ = 0xE1E20F91; goto done;
-            case 1: *p++ = 0xE1C20F91; goto done;
+            case 1: *p++ = 0xE1C40F92; goto done;
+            case 2: *p++ = 0xE1E40F92; goto done;
+            case 4: *p++ = 0xE1840F92; goto done;
+            case 8: *p++ = 0xE1A40F92; goto done;
             default: break;
          }
          goto bad;
@@ -3258,6 +3298,11 @@ Int emit_ARMInstr ( UChar* buf, Int nbuf, ARMInstr* i,
          *p++ = 0xEE070F95; /* mcr 15,0,r0,c7,c5,4  (ISB) */
          goto done;
       }
+      case ARMin_CLREX: {
+         *p++ = 0xF57FF01F; /* clrex */
+         goto done;
+      }
+
       case ARMin_NLdStQ: {
          UInt regD = qregNo(i->ARMin.NLdStQ.dQ) << 1;
          UInt regN, regM;

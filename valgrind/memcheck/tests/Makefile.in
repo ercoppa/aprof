@@ -70,16 +70,18 @@ check_PROGRAMS = addressable$(EXEEXT) atomic_incs$(EXEEXT) \
 	custom_alloc$(EXEEXT) custom-overlap$(EXEEXT) \
 	deep_templates$(EXEEXT) describe-block$(EXEEXT) \
 	doublefree$(EXEEXT) error_counts$(EXEEXT) errs1$(EXEEXT) \
-	exitprog$(EXEEXT) execve$(EXEEXT) execve2$(EXEEXT) \
-	erringfds$(EXEEXT) file_locking$(EXEEXT) fprw$(EXEEXT) \
-	fwrite$(EXEEXT) inits$(EXEEXT) inline$(EXEEXT) leak-0$(EXEEXT) \
-	leak-cases$(EXEEXT) leak-cycle$(EXEEXT) leak-pool$(EXEEXT) \
-	leak-tree$(EXEEXT) long_namespace_xml$(EXEEXT) \
-	long-supps$(EXEEXT) mallinfo$(EXEEXT) \
-	malloc_free_fill$(EXEEXT) malloc_usable$(EXEEXT) \
-	malloc1$(EXEEXT) malloc2$(EXEEXT) malloc3$(EXEEXT) \
-	manuel1$(EXEEXT) manuel2$(EXEEXT) manuel3$(EXEEXT) \
-	match-overrun$(EXEEXT) memalign_test$(EXEEXT) \
+	exitprog$(EXEEXT) execve1$(EXEEXT) execve2$(EXEEXT) \
+	erringfds$(EXEEXT) err_disable1$(EXEEXT) err_disable2$(EXEEXT) \
+	err_disable3$(EXEEXT) err_disable4$(EXEEXT) \
+	file_locking$(EXEEXT) fprw$(EXEEXT) fwrite$(EXEEXT) \
+	inits$(EXEEXT) inline$(EXEEXT) leak-0$(EXEEXT) \
+	leak-cases$(EXEEXT) leak-cycle$(EXEEXT) leak-delta$(EXEEXT) \
+	leak-pool$(EXEEXT) leak-tree$(EXEEXT) \
+	long_namespace_xml$(EXEEXT) long-supps$(EXEEXT) \
+	mallinfo$(EXEEXT) malloc_free_fill$(EXEEXT) \
+	malloc_usable$(EXEEXT) malloc1$(EXEEXT) malloc2$(EXEEXT) \
+	malloc3$(EXEEXT) manuel1$(EXEEXT) manuel2$(EXEEXT) \
+	manuel3$(EXEEXT) match-overrun$(EXEEXT) memalign_test$(EXEEXT) \
 	memalign2$(EXEEXT) memcmptest$(EXEEXT) mempool$(EXEEXT) \
 	mempool2$(EXEEXT) mmaptest$(EXEEXT) mismatches$(EXEEXT) \
 	new_override$(EXEEXT) metadata$(EXEEXT) nanoleak_supp$(EXEEXT) \
@@ -91,18 +93,18 @@ check_PROGRAMS = addressable$(EXEEXT) atomic_incs$(EXEEXT) \
 	partial_load$(EXEEXT) pdb-realloc$(EXEEXT) \
 	pdb-realloc2$(EXEEXT) pipe$(EXEEXT) pointer-trace$(EXEEXT) \
 	post-syscall$(EXEEXT) realloc1$(EXEEXT) realloc2$(EXEEXT) \
-	realloc3$(EXEEXT) sh-mem$(EXEEXT) sh-mem-random$(EXEEXT) \
-	sigaltstack$(EXEEXT) signal2$(EXEEXT) sigprocmask$(EXEEXT) \
-	sigkill$(EXEEXT) strchr$(EXEEXT) str_tester$(EXEEXT) \
-	supp_unknown$(EXEEXT) supp1$(EXEEXT) supp2$(EXEEXT) \
-	suppfree$(EXEEXT) trivialleak$(EXEEXT) unit_libcbase$(EXEEXT) \
-	unit_oset$(EXEEXT) varinfo1$(EXEEXT) varinfo2$(EXEEXT) \
-	varinfo3$(EXEEXT) varinfo4$(EXEEXT) varinfo5$(EXEEXT) \
-	varinfo5so.so$(EXEEXT) varinfo6$(EXEEXT) vcpu_fbench$(EXEEXT) \
-	vcpu_fnfns$(EXEEXT) xml1$(EXEEXT) wrap1$(EXEEXT) \
-	wrap2$(EXEEXT) wrap3$(EXEEXT) wrap4$(EXEEXT) wrap5$(EXEEXT) \
-	wrap6$(EXEEXT) wrap7$(EXEEXT) wrap7so.so$(EXEEXT) \
-	wrap8$(EXEEXT) writev$(EXEEXT)
+	realloc3$(EXEEXT) sbfragment$(EXEEXT) sh-mem$(EXEEXT) \
+	sh-mem-random$(EXEEXT) sigaltstack$(EXEEXT) signal2$(EXEEXT) \
+	sigprocmask$(EXEEXT) sigkill$(EXEEXT) strchr$(EXEEXT) \
+	str_tester$(EXEEXT) supp_unknown$(EXEEXT) supp1$(EXEEXT) \
+	supp2$(EXEEXT) suppfree$(EXEEXT) trivialleak$(EXEEXT) \
+	unit_libcbase$(EXEEXT) unit_oset$(EXEEXT) varinfo1$(EXEEXT) \
+	varinfo2$(EXEEXT) varinfo3$(EXEEXT) varinfo4$(EXEEXT) \
+	varinfo5$(EXEEXT) varinfo5so.so$(EXEEXT) varinfo6$(EXEEXT) \
+	vcpu_fbench$(EXEEXT) vcpu_fnfns$(EXEEXT) xml1$(EXEEXT) \
+	wrap1$(EXEEXT) wrap2$(EXEEXT) wrap3$(EXEEXT) wrap4$(EXEEXT) \
+	wrap5$(EXEEXT) wrap6$(EXEEXT) wrap7$(EXEEXT) \
+	wrap7so.so$(EXEEXT) wrap8$(EXEEXT) writev1$(EXEEXT)
 @VGCONF_PLATFORMS_INCLUDE_ARM_LINUX_TRUE@am__append_9 = -mfloat-abi=softfp
 @VGCONF_PLATFORMS_INCLUDE_ARM_LINUX_TRUE@am__append_10 = -mfloat-abi=softfp
 subdir = memcheck/tests
@@ -172,6 +174,18 @@ describe_block_LDADD = $(LDADD)
 doublefree_SOURCES = doublefree.c
 doublefree_OBJECTS = doublefree.$(OBJEXT)
 doublefree_LDADD = $(LDADD)
+err_disable1_SOURCES = err_disable1.c
+err_disable1_OBJECTS = err_disable1.$(OBJEXT)
+err_disable1_LDADD = $(LDADD)
+err_disable2_SOURCES = err_disable2.c
+err_disable2_OBJECTS = err_disable2.$(OBJEXT)
+err_disable2_LDADD = $(LDADD)
+err_disable3_SOURCES = err_disable3.c
+err_disable3_OBJECTS = err_disable3.$(OBJEXT)
+err_disable3_DEPENDENCIES =
+err_disable4_SOURCES = err_disable4.c
+err_disable4_OBJECTS = err_disable4.$(OBJEXT)
+err_disable4_DEPENDENCIES =
 erringfds_SOURCES = erringfds.c
 erringfds_OBJECTS = erringfds.$(OBJEXT)
 erringfds_LDADD = $(LDADD)
@@ -183,12 +197,16 @@ error_counts_LINK = $(CCLD) $(error_counts_CFLAGS) $(CFLAGS) \
 errs1_SOURCES = errs1.c
 errs1_OBJECTS = errs1.$(OBJEXT)
 errs1_LDADD = $(LDADD)
-execve_SOURCES = execve.c
-execve_OBJECTS = execve.$(OBJEXT)
-execve_LDADD = $(LDADD)
+execve1_SOURCES = execve1.c
+execve1_OBJECTS = execve1-execve1.$(OBJEXT)
+execve1_LDADD = $(LDADD)
+execve1_LINK = $(CCLD) $(execve1_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
 execve2_SOURCES = execve2.c
-execve2_OBJECTS = execve2.$(OBJEXT)
+execve2_OBJECTS = execve2-execve2.$(OBJEXT)
 execve2_LDADD = $(LDADD)
+execve2_LINK = $(CCLD) $(execve2_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
 exitprog_SOURCES = exitprog.c
 exitprog_OBJECTS = exitprog.$(OBJEXT)
 exitprog_LDADD = $(LDADD)
@@ -218,6 +236,9 @@ leak_cases_LDADD = $(LDADD)
 leak_cycle_SOURCES = leak-cycle.c
 leak_cycle_OBJECTS = leak-cycle.$(OBJEXT)
 leak_cycle_LDADD = $(LDADD)
+leak_delta_SOURCES = leak-delta.c
+leak_delta_OBJECTS = leak-delta.$(OBJEXT)
+leak_delta_LDADD = $(LDADD)
 leak_pool_SOURCES = leak-pool.c
 leak_pool_OBJECTS = leak-pool.$(OBJEXT)
 leak_pool_LDADD = $(LDADD)
@@ -370,6 +391,9 @@ realloc2_LDADD = $(LDADD)
 realloc3_SOURCES = realloc3.c
 realloc3_OBJECTS = realloc3.$(OBJEXT)
 realloc3_LDADD = $(LDADD)
+sbfragment_SOURCES = sbfragment.c
+sbfragment_OBJECTS = sbfragment.$(OBJEXT)
+sbfragment_LDADD = $(LDADD)
 sh_mem_SOURCES = sh-mem.c
 sh_mem_OBJECTS = sh-mem.$(OBJEXT)
 sh_mem_LDADD = $(LDADD)
@@ -441,8 +465,7 @@ am_varinfo5_OBJECTS = varinfo5-varinfo5.$(OBJEXT)
 varinfo5_OBJECTS = $(am_varinfo5_OBJECTS)
 varinfo5_LINK = $(CCLD) $(varinfo5_CFLAGS) $(CFLAGS) \
 	$(varinfo5_LDFLAGS) $(LDFLAGS) -o $@
-am__varinfo5so_so_SOURCES_DIST = varinfo5so.c
-@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@am_varinfo5so_so_OBJECTS = varinfo5so_so-varinfo5so.$(OBJEXT)
+am_varinfo5so_so_OBJECTS = varinfo5so_so-varinfo5so.$(OBJEXT)
 varinfo5so_so_OBJECTS = $(am_varinfo5so_so_OBJECTS)
 varinfo5so_so_LDADD = $(LDADD)
 varinfo5so_so_LINK = $(CCLD) $(varinfo5so_so_CFLAGS) $(CFLAGS) \
@@ -465,41 +488,28 @@ vcpu_fnfns_LINK = $(CCLD) $(vcpu_fnfns_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 wrap1_SOURCES = wrap1.c
 wrap1_OBJECTS = wrap1.$(OBJEXT)
 wrap1_LDADD = $(LDADD)
-wrap1_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(wrap1_LDFLAGS) \
-	$(LDFLAGS) -o $@
 wrap2_SOURCES = wrap2.c
 wrap2_OBJECTS = wrap2.$(OBJEXT)
 wrap2_LDADD = $(LDADD)
-wrap2_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(wrap2_LDFLAGS) \
-	$(LDFLAGS) -o $@
 wrap3_SOURCES = wrap3.c
 wrap3_OBJECTS = wrap3.$(OBJEXT)
 wrap3_LDADD = $(LDADD)
-wrap3_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(wrap3_LDFLAGS) \
-	$(LDFLAGS) -o $@
 wrap4_SOURCES = wrap4.c
 wrap4_OBJECTS = wrap4.$(OBJEXT)
 wrap4_LDADD = $(LDADD)
-wrap4_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(wrap4_LDFLAGS) \
-	$(LDFLAGS) -o $@
 wrap5_SOURCES = wrap5.c
 wrap5_OBJECTS = wrap5.$(OBJEXT)
 wrap5_LDADD = $(LDADD)
-wrap5_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(wrap5_LDFLAGS) \
-	$(LDFLAGS) -o $@
 wrap6_SOURCES = wrap6.c
 wrap6_OBJECTS = wrap6-wrap6.$(OBJEXT)
 wrap6_LDADD = $(LDADD)
-wrap6_LINK = $(CCLD) $(wrap6_CFLAGS) $(CFLAGS) $(wrap6_LDFLAGS) \
+wrap6_LINK = $(CCLD) $(wrap6_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-am__wrap7_SOURCES_DIST = wrap7.c
-@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@am_wrap7_OBJECTS =  \
-@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@	wrap7.$(OBJEXT)
+am_wrap7_OBJECTS = wrap7.$(OBJEXT)
 wrap7_OBJECTS = $(am_wrap7_OBJECTS)
 wrap7_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(wrap7_LDFLAGS) \
 	$(LDFLAGS) -o $@
-am__wrap7so_so_SOURCES_DIST = wrap7so.c
-@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@am_wrap7so_so_OBJECTS = wrap7so_so-wrap7so.$(OBJEXT)
+am_wrap7so_so_OBJECTS = wrap7so_so-wrap7so.$(OBJEXT)
 wrap7so_so_OBJECTS = $(am_wrap7so_so_OBJECTS)
 wrap7so_so_LDADD = $(LDADD)
 wrap7so_so_LINK = $(CCLD) $(wrap7so_so_CFLAGS) $(CFLAGS) \
@@ -507,11 +517,9 @@ wrap7so_so_LINK = $(CCLD) $(wrap7so_so_CFLAGS) $(CFLAGS) \
 wrap8_SOURCES = wrap8.c
 wrap8_OBJECTS = wrap8.$(OBJEXT)
 wrap8_LDADD = $(LDADD)
-wrap8_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(wrap8_LDFLAGS) \
-	$(LDFLAGS) -o $@
-writev_SOURCES = writev.c
-writev_OBJECTS = writev.$(OBJEXT)
-writev_LDADD = $(LDADD)
+writev1_SOURCES = writev1.c
+writev1_OBJECTS = writev1.$(OBJEXT)
+writev1_LDADD = $(LDADD)
 xml1_SOURCES = xml1.c
 xml1_OBJECTS = xml1.$(OBJEXT)
 xml1_LDADD = $(LDADD)
@@ -533,55 +541,60 @@ SOURCES = addressable.c atomic_incs.c badaddrvalue.c badfree.c \
 	badjump.c badjump2.c badloop.c badpoll.c badrw.c brk2.c \
 	buflen_check.c calloc-overflow.c clientperm.c custom-overlap.c \
 	custom_alloc.c $(deep_templates_SOURCES) describe-block.c \
-	doublefree.c erringfds.c error_counts.c errs1.c execve.c \
+	doublefree.c err_disable1.c err_disable2.c err_disable3.c \
+	err_disable4.c erringfds.c error_counts.c errs1.c execve1.c \
 	execve2.c exitprog.c file_locking.c fprw.c fwrite.c inits.c \
-	inline.c leak-0.c leak-cases.c leak-cycle.c leak-pool.c \
-	leak-tree.c long-supps.c $(long_namespace_xml_SOURCES) \
-	mallinfo.c malloc1.c malloc2.c malloc3.c malloc_free_fill.c \
-	malloc_usable.c manuel1.c manuel2.c manuel3.c match-overrun.c \
-	memalign2.c memalign_test.c memcmptest.c mempool.c mempool2.c \
-	metadata.c $(mismatches_SOURCES) mmaptest.c nanoleak2.c \
-	nanoleak_supp.c $(new_nothrow_SOURCES) $(new_override_SOURCES) \
-	noisy_child.c null_socket.c origin1-yes.c origin2-not-quite.c \
-	origin3-no.c origin4-many.c origin5-bz2.c origin6-fp.c \
-	overlap.c partial_load.c partiallydefinedeq.c pdb-realloc.c \
+	inline.c leak-0.c leak-cases.c leak-cycle.c leak-delta.c \
+	leak-pool.c leak-tree.c long-supps.c \
+	$(long_namespace_xml_SOURCES) mallinfo.c malloc1.c malloc2.c \
+	malloc3.c malloc_free_fill.c malloc_usable.c manuel1.c \
+	manuel2.c manuel3.c match-overrun.c memalign2.c \
+	memalign_test.c memcmptest.c mempool.c mempool2.c metadata.c \
+	$(mismatches_SOURCES) mmaptest.c nanoleak2.c nanoleak_supp.c \
+	$(new_nothrow_SOURCES) $(new_override_SOURCES) noisy_child.c \
+	null_socket.c origin1-yes.c origin2-not-quite.c origin3-no.c \
+	origin4-many.c origin5-bz2.c origin6-fp.c overlap.c \
+	partial_load.c partiallydefinedeq.c pdb-realloc.c \
 	pdb-realloc2.c pipe.c pointer-trace.c post-syscall.c \
-	realloc1.c realloc2.c realloc3.c sh-mem.c sh-mem-random.c \
-	sigaltstack.c sigkill.c signal2.c sigprocmask.c str_tester.c \
-	strchr.c $(supp1_SOURCES) $(supp2_SOURCES) \
-	$(supp_unknown_SOURCES) suppfree.c trivialleak.c \
-	unit_libcbase.c unit_oset.c varinfo1.c varinfo2.c varinfo3.c \
-	varinfo4.c $(varinfo5_SOURCES) $(varinfo5so_so_SOURCES) \
-	varinfo6.c vcpu_fbench.c vcpu_fnfns.c wrap1.c wrap2.c wrap3.c \
-	wrap4.c wrap5.c wrap6.c $(wrap7_SOURCES) $(wrap7so_so_SOURCES) \
-	wrap8.c writev.c xml1.c
+	realloc1.c realloc2.c realloc3.c sbfragment.c sh-mem.c \
+	sh-mem-random.c sigaltstack.c sigkill.c signal2.c \
+	sigprocmask.c str_tester.c strchr.c $(supp1_SOURCES) \
+	$(supp2_SOURCES) $(supp_unknown_SOURCES) suppfree.c \
+	trivialleak.c unit_libcbase.c unit_oset.c varinfo1.c \
+	varinfo2.c varinfo3.c varinfo4.c $(varinfo5_SOURCES) \
+	$(varinfo5so_so_SOURCES) varinfo6.c vcpu_fbench.c vcpu_fnfns.c \
+	wrap1.c wrap2.c wrap3.c wrap4.c wrap5.c wrap6.c \
+	$(wrap7_SOURCES) $(wrap7so_so_SOURCES) wrap8.c writev1.c \
+	xml1.c
 DIST_SOURCES = addressable.c atomic_incs.c badaddrvalue.c badfree.c \
 	badjump.c badjump2.c badloop.c badpoll.c badrw.c brk2.c \
 	buflen_check.c calloc-overflow.c clientperm.c custom-overlap.c \
 	custom_alloc.c $(deep_templates_SOURCES) describe-block.c \
-	doublefree.c erringfds.c error_counts.c errs1.c execve.c \
+	doublefree.c err_disable1.c err_disable2.c err_disable3.c \
+	err_disable4.c erringfds.c error_counts.c errs1.c execve1.c \
 	execve2.c exitprog.c file_locking.c fprw.c fwrite.c inits.c \
-	inline.c leak-0.c leak-cases.c leak-cycle.c leak-pool.c \
-	leak-tree.c long-supps.c $(long_namespace_xml_SOURCES) \
-	mallinfo.c malloc1.c malloc2.c malloc3.c malloc_free_fill.c \
-	malloc_usable.c manuel1.c manuel2.c manuel3.c match-overrun.c \
-	memalign2.c memalign_test.c memcmptest.c mempool.c mempool2.c \
-	metadata.c $(mismatches_SOURCES) mmaptest.c nanoleak2.c \
-	nanoleak_supp.c $(new_nothrow_SOURCES) $(new_override_SOURCES) \
-	noisy_child.c null_socket.c origin1-yes.c origin2-not-quite.c \
-	origin3-no.c origin4-many.c origin5-bz2.c origin6-fp.c \
-	overlap.c partial_load.c partiallydefinedeq.c pdb-realloc.c \
+	inline.c leak-0.c leak-cases.c leak-cycle.c leak-delta.c \
+	leak-pool.c leak-tree.c long-supps.c \
+	$(long_namespace_xml_SOURCES) mallinfo.c malloc1.c malloc2.c \
+	malloc3.c malloc_free_fill.c malloc_usable.c manuel1.c \
+	manuel2.c manuel3.c match-overrun.c memalign2.c \
+	memalign_test.c memcmptest.c mempool.c mempool2.c metadata.c \
+	$(mismatches_SOURCES) mmaptest.c nanoleak2.c nanoleak_supp.c \
+	$(new_nothrow_SOURCES) $(new_override_SOURCES) noisy_child.c \
+	null_socket.c origin1-yes.c origin2-not-quite.c origin3-no.c \
+	origin4-many.c origin5-bz2.c origin6-fp.c overlap.c \
+	partial_load.c partiallydefinedeq.c pdb-realloc.c \
 	pdb-realloc2.c pipe.c pointer-trace.c post-syscall.c \
-	realloc1.c realloc2.c realloc3.c sh-mem.c sh-mem-random.c \
-	sigaltstack.c sigkill.c signal2.c sigprocmask.c str_tester.c \
-	strchr.c $(supp1_SOURCES) $(supp2_SOURCES) \
-	$(supp_unknown_SOURCES) suppfree.c trivialleak.c \
-	unit_libcbase.c unit_oset.c varinfo1.c varinfo2.c varinfo3.c \
-	varinfo4.c $(varinfo5_SOURCES) \
-	$(am__varinfo5so_so_SOURCES_DIST) varinfo6.c vcpu_fbench.c \
-	vcpu_fnfns.c wrap1.c wrap2.c wrap3.c wrap4.c wrap5.c wrap6.c \
-	$(am__wrap7_SOURCES_DIST) $(am__wrap7so_so_SOURCES_DIST) \
-	wrap8.c writev.c xml1.c
+	realloc1.c realloc2.c realloc3.c sbfragment.c sh-mem.c \
+	sh-mem-random.c sigaltstack.c sigkill.c signal2.c \
+	sigprocmask.c str_tester.c strchr.c $(supp1_SOURCES) \
+	$(supp2_SOURCES) $(supp_unknown_SOURCES) suppfree.c \
+	trivialleak.c unit_libcbase.c unit_oset.c varinfo1.c \
+	varinfo2.c varinfo3.c varinfo4.c $(varinfo5_SOURCES) \
+	$(varinfo5so_so_SOURCES) varinfo6.c vcpu_fbench.c vcpu_fnfns.c \
+	wrap1.c wrap2.c wrap3.c wrap4.c wrap5.c wrap6.c \
+	$(wrap7_SOURCES) $(wrap7so_so_SOURCES) wrap8.c writev1.c \
+	xml1.c
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-dvi-recursive install-exec-recursive \
@@ -656,8 +669,6 @@ EXEEXT = @EXEEXT@
 FLAG_FNO_STACK_PROTECTOR = @FLAG_FNO_STACK_PROTECTOR@
 FLAG_M32 = @FLAG_M32@
 FLAG_M64 = @FLAG_M64@
-FLAG_MAIX32 = @FLAG_MAIX32@
-FLAG_MAIX64 = @FLAG_MAIX64@
 FLAG_MMMX = @FLAG_MMMX@
 FLAG_MSSE = @FLAG_MSSE@
 FLAG_NO_BUILD_ID = @FLAG_NO_BUILD_ID@
@@ -665,6 +676,8 @@ FLAG_UNLIMITED_INLINE_UNIT_GROWTH = @FLAG_UNLIMITED_INLINE_UNIT_GROWTH@
 FLAG_W_EXTRA = @FLAG_W_EXTRA@
 FLAG_W_NO_EMPTY_BODY = @FLAG_W_NO_EMPTY_BODY@
 FLAG_W_NO_FORMAT_ZERO_LENGTH = @FLAG_W_NO_FORMAT_ZERO_LENGTH@
+FLAG_W_NO_NONNULL = @FLAG_W_NO_NONNULL@
+FLAG_W_NO_OVERFLOW = @FLAG_W_NO_OVERFLOW@
 FLAG_W_NO_UNINITIALIZED = @FLAG_W_NO_UNINITIALIZED@
 GDB = @GDB@
 GLIBC_VERSION = @GLIBC_VERSION@
@@ -707,6 +720,7 @@ VGCONF_ARCH_SEC = @VGCONF_ARCH_SEC@
 VGCONF_OS = @VGCONF_OS@
 VGCONF_PLATFORM_PRI_CAPS = @VGCONF_PLATFORM_PRI_CAPS@
 VGCONF_PLATFORM_SEC_CAPS = @VGCONF_PLATFORM_SEC_CAPS@
+VGCONF_PLATVARIANT = @VGCONF_PLATVARIANT@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -766,6 +780,8 @@ inplacedir = $(top_builddir)/.in_place
 
 # Baseline flags for all compilations.  Aim here is to maximise
 # performance and get whatever useful warnings we can out of gcc.
+# -fno-builtin is important for defeating LLVM's idiom recognition
+# that somehow causes VG_(memset) to get into infinite recursion.
 AM_CFLAGS_BASE = \
 	-O2 -g \
 	-Wall \
@@ -775,16 +791,20 @@ AM_CFLAGS_BASE = \
 	-Wstrict-prototypes \
 	-Wmissing-declarations \
 	@FLAG_W_NO_FORMAT_ZERO_LENGTH@ \
-	-fno-strict-aliasing
+	-fno-strict-aliasing \
+	-fno-builtin
 
-@VGCONF_OS_IS_DARWIN_FALSE@AM_CFLAGS_PIC = -fpic -O -g -fno-omit-frame-pointer -fno-strict-aliasing
+@VGCONF_OS_IS_DARWIN_FALSE@AM_CFLAGS_PIC = -fpic -O -g -fno-omit-frame-pointer -fno-strict-aliasing \
+@VGCONF_OS_IS_DARWIN_FALSE@		-fno-builtin
+
 
 # These flags are used for building the preload shared objects.
 # The aim is to give reasonable performance but also to have good
 # stack traces, since users often see stack traces extending 
 # into (and through) the preloads.
 @VGCONF_OS_IS_DARWIN_TRUE@AM_CFLAGS_PIC = -dynamic -O -g -fno-omit-frame-pointer -fno-strict-aliasing \
-@VGCONF_OS_IS_DARWIN_TRUE@		-mno-dynamic-no-pic -fpic -fPIC
+@VGCONF_OS_IS_DARWIN_TRUE@		-mno-dynamic-no-pic -fpic -fPIC \
+@VGCONF_OS_IS_DARWIN_TRUE@		-fno-builtin
 
 
 # Flags for specific targets.
@@ -805,7 +825,8 @@ AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@ = \
 	-I$(top_srcdir)/VEX/pub \
 	-DVGA_@VGCONF_ARCH_PRI@=1 \
 	-DVGO_@VGCONF_OS@=1 \
-	-DVGP_@VGCONF_ARCH_PRI@_@VGCONF_OS@=1
+	-DVGP_@VGCONF_ARCH_PRI@_@VGCONF_OS@=1 \
+	-DVGPV_@VGCONF_ARCH_PRI@_@VGCONF_OS@_@VGCONF_PLATVARIANT@=1
 
 @VGCONF_HAVE_PLATFORM_SEC_TRUE@AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@ = \
 @VGCONF_HAVE_PLATFORM_SEC_TRUE@	-I$(top_srcdir) \
@@ -813,7 +834,8 @@ AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@ = \
 @VGCONF_HAVE_PLATFORM_SEC_TRUE@	-I$(top_srcdir)/VEX/pub \
 @VGCONF_HAVE_PLATFORM_SEC_TRUE@	-DVGA_@VGCONF_ARCH_SEC@=1 \
 @VGCONF_HAVE_PLATFORM_SEC_TRUE@	-DVGO_@VGCONF_OS@=1 \
-@VGCONF_HAVE_PLATFORM_SEC_TRUE@	-DVGP_@VGCONF_ARCH_SEC@_@VGCONF_OS@=1
+@VGCONF_HAVE_PLATFORM_SEC_TRUE@	-DVGP_@VGCONF_ARCH_SEC@_@VGCONF_OS@=1 \
+@VGCONF_HAVE_PLATFORM_SEC_TRUE@	-DVGPV_@VGCONF_ARCH_SEC@_@VGCONF_OS@_@VGCONF_PLATVARIANT@=1
 
 AM_FLAG_M3264_X86_LINUX = @FLAG_M32@
 AM_CFLAGS_X86_LINUX = @FLAG_M32@ @PREFERRED_STACK_BOUNDARY@ \
@@ -833,18 +855,10 @@ AM_CFLAGS_PPC64_LINUX = @FLAG_M64@ $(AM_CFLAGS_BASE)
 AM_CCASFLAGS_PPC64_LINUX = $(AM_CPPFLAGS_PPC64_LINUX) @FLAG_M64@ -g
 AM_FLAG_M3264_ARM_LINUX = @FLAG_M32@
 AM_CFLAGS_ARM_LINUX = @FLAG_M32@ @PREFERRED_STACK_BOUNDARY@ \
-			 	$(AM_CFLAGS_BASE) -marm
+			 	$(AM_CFLAGS_BASE) -marm -mcpu=cortex-a8
 
-AM_CCASFLAGS_ARM_LINUX = $(AM_CPPFLAGS_ARM_LINUX) @FLAG_M32@ -marm -g
-AM_FLAG_M3264_PPC32_AIX5 = @FLAG_MAIX32@
-AM_CFLAGS_PPC32_AIX5 = @FLAG_MAIX32@ -mcpu=powerpc $(AM_CFLAGS_BASE)
-AM_CCASFLAGS_PPC32_AIX5 = $(AM_CPPFLAGS_PPC32_AIX5) \
-			    @FLAG_MAIX32@ -mcpu=powerpc -g
-
-AM_FLAG_M3264_PPC64_AIX5 = @FLAG_MAIX64@
-AM_CFLAGS_PPC64_AIX5 = @FLAG_MAIX64@ -mcpu=powerpc64 $(AM_CFLAGS_BASE)
-AM_CCASFLAGS_PPC64_AIX5 = $(AM_CPPFLAGS_PPC64_AIX5) \
-			    @FLAG_MAIX64@ -mcpu=powerpc64 -g
+AM_CCASFLAGS_ARM_LINUX = $(AM_CPPFLAGS_ARM_LINUX) @FLAG_M32@ \
+				-marm -mcpu=cortex-a8 -g
 
 AM_FLAG_M3264_X86_DARWIN = -arch i386
 AM_CFLAGS_X86_DARWIN = $(WERROR) -arch i386 $(AM_CFLAGS_BASE) \
@@ -877,24 +891,22 @@ AM_CCASFLAGS_PRI = $(AM_CCASFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
 # Baseline link flags for making vgpreload shared objects.
 #
 PRELOAD_LDFLAGS_COMMON_LINUX = -nodefaultlibs -shared -Wl,-z,interpose,-z,initfirst
-PRELOAD_LDFLAGS_COMMON_AIX5 = -nodefaultlibs -shared -Wl,-G -Wl,-bnogc
 PRELOAD_LDFLAGS_COMMON_DARWIN = -dynamic -dynamiclib -all_load
 PRELOAD_LDFLAGS_X86_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M32@
 PRELOAD_LDFLAGS_AMD64_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M64@
 PRELOAD_LDFLAGS_PPC32_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M32@
 PRELOAD_LDFLAGS_PPC64_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M64@
 PRELOAD_LDFLAGS_ARM_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M32@
-PRELOAD_LDFLAGS_PPC32_AIX5 = $(PRELOAD_LDFLAGS_COMMON_AIX5)  @FLAG_MAIX32@
-PRELOAD_LDFLAGS_PPC64_AIX5 = $(PRELOAD_LDFLAGS_COMMON_AIX5)  @FLAG_MAIX64@
 PRELOAD_LDFLAGS_X86_DARWIN = $(PRELOAD_LDFLAGS_COMMON_DARWIN) -arch i386
 PRELOAD_LDFLAGS_AMD64_DARWIN = $(PRELOAD_LDFLAGS_COMMON_DARWIN) -arch x86_64
 PRELOAD_LDFLAGS_S390X_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M64@
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
 		-I$(top_srcdir)/coregrind -I$(top_builddir)/include \
 		-I$(top_srcdir)/VEX/pub \
-		-DVGA_$(VGCONF_ARCH_PRI)=1 \
-		-DVGO_$(VGCONF_OS)=1 \
-		-DVGP_$(VGCONF_ARCH_PRI)_$(VGCONF_OS)=1
+		-DVGA_@VGCONF_ARCH_PRI@=1 \
+		-DVGO_@VGCONF_OS@=1 \
+		-DVGP_@VGCONF_ARCH_PRI@_@VGCONF_OS@=1 \
+		-DVGPV_@VGCONF_ARCH_PRI@_@VGCONF_OS@_@VGCONF_PLATVARIANT@=1
 
 # Nb: Tools need to augment these flags with an arch-selection option, such
 # as $(AM_FLAG_M3264_PRI).
@@ -945,11 +957,15 @@ EXTRA_DIST = \
 	deep_templates.stdout.exp deep_templates.stderr.exp \
 	describe-block.stderr.exp describe-block.vgtest \
 	doublefree.stderr.exp doublefree.vgtest \
+	err_disable1.vgtest err_disable1.stderr.exp err_disable1.stdout.exp \
+	err_disable2.vgtest err_disable2.stderr.exp err_disable2.stdout.exp \
+	err_disable3.vgtest err_disable3.stderr.exp err_disable3.stdout.exp \
+	err_disable4.vgtest err_disable4.stderr.exp err_disable4.stdout.exp \
 	erringfds.stderr.exp erringfds.stdout.exp erringfds.vgtest \
 	error_counts.stderr.exp error_counts.vgtest \
 	errs1.stderr.exp errs1.vgtest \
 	exitprog.stderr.exp exitprog.vgtest \
-	execve.stderr.exp execve.vgtest \
+	execve1.stderr.exp execve1.vgtest \
 	execve2.stderr.exp execve2.vgtest \
 	file_locking.stderr.exp file_locking.vgtest \
 	fprw.stderr.exp fprw.vgtest \
@@ -961,6 +977,7 @@ EXTRA_DIST = \
 	leak-cases-possible.vgtest leak-cases-possible.stderr.exp \
 	leak-cases-summary.vgtest leak-cases-summary.stderr.exp \
 	leak-cycle.vgtest leak-cycle.stderr.exp \
+	leak-delta.vgtest leak-delta.stderr.exp \
 	leak-pool-0.vgtest leak-pool-0.stderr.exp \
 	leak-pool-1.vgtest leak-pool-1.stderr.exp \
 	leak-pool-2.vgtest leak-pool-2.stderr.exp \
@@ -1029,6 +1046,7 @@ EXTRA_DIST = \
 	realloc1.stderr.exp realloc1.vgtest \
 	realloc2.stderr.exp realloc2.vgtest \
 	realloc3.stderr.exp realloc3.vgtest \
+	sbfragment.stdout.exp sbfragment.stderr.exp sbfragment.vgtest \
 	sh-mem.stderr.exp sh-mem.vgtest \
 	sh-mem-random.stderr.exp sh-mem-random.stdout.exp64 \
 	sh-mem-random.stdout.exp sh-mem-random.vgtest \
@@ -1068,14 +1086,18 @@ EXTRA_DIST = \
 	wrap7.vgtest wrap7.stdout.exp wrap7.stderr.exp \
 	wrap8.vgtest wrap8.stdout.exp wrap8.stderr.exp \
 	wrap8.stdout.exp2 wrap8.stderr.exp2 \
-	writev.stderr.exp writev.vgtest \
+	writev1.stderr.exp writev1.vgtest \
 	xml1.stderr.exp xml1.stdout.exp xml1.vgtest
 
 @VGCONF_OS_IS_DARWIN_FALSE@atomic_incs_CFLAGS = $(AM_CFLAGS)
 @VGCONF_OS_IS_DARWIN_TRUE@atomic_incs_CFLAGS = $(AM_CFLAGS) -mdynamic-no-pic
 deep_templates_SOURCES = deep_templates.cpp
 deep_templates_CXXFLAGS = $(AM_CFLAGS) -O -gstabs
+err_disable3_LDADD = -lpthread
+err_disable4_LDADD = -lpthread
 error_counts_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
+execve1_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
+execve2_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 inits_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 long_namespace_xml_SOURCES = long_namespace_xml.cpp
 manuel1_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
@@ -1114,60 +1136,41 @@ varinfo3_CFLAGS = $(AM_CFLAGS) -O
 varinfo4_CFLAGS = $(AM_CFLAGS) -O
 varinfo5_CFLAGS = $(AM_CFLAGS) -O
 varinfo6_CFLAGS = $(AM_CFLAGS) -O
-@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_TRUE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@wrap1_LDFLAGS = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
-@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_TRUE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@wrap2_LDFLAGS = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
-@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_TRUE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@wrap3_LDFLAGS = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
-@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_TRUE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@wrap4_LDFLAGS = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
-@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_TRUE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@wrap5_LDFLAGS = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
-@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_TRUE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@wrap6_LDFLAGS = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
-@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_TRUE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@wrap8_LDFLAGS = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
 
 # Build shared object for varinfo5
 varinfo5_SOURCES = varinfo5.c
 varinfo5_DEPENDENCIES = varinfo5so.so
-@VGCONF_OS_IS_DARWIN_FALSE@@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_FALSE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@varinfo5_LDADD = varinfo5so.so
-@VGCONF_OS_IS_DARWIN_TRUE@@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_FALSE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@varinfo5_LDADD = `pwd`/varinfo5so.so
-@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_TRUE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@varinfo5_LDADD = `pwd`/varinfo5so.so
-@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_TRUE@varinfo5_LDADD = `pwd`/varinfo5so.so
-@VGCONF_OS_IS_DARWIN_FALSE@@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_FALSE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@varinfo5_LDFLAGS = $(AM_FLAG_M3264_PRI) \
-@VGCONF_OS_IS_DARWIN_FALSE@@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_FALSE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@				-Wl,-rpath,$(top_builddir)/memcheck/tests
+@VGCONF_OS_IS_DARWIN_FALSE@varinfo5_LDADD = varinfo5so.so
+@VGCONF_OS_IS_DARWIN_TRUE@varinfo5_LDADD = `pwd`/varinfo5so.so
+@VGCONF_OS_IS_DARWIN_FALSE@varinfo5_LDFLAGS = $(AM_FLAG_M3264_PRI) \
+@VGCONF_OS_IS_DARWIN_FALSE@				-Wl,-rpath,$(top_builddir)/memcheck/tests
 
-@VGCONF_OS_IS_DARWIN_TRUE@@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_FALSE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@varinfo5_LDFLAGS = $(AM_FLAG_M3264_PRI)
-@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_TRUE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@varinfo5_LDFLAGS = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
-@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_TRUE@varinfo5_LDFLAGS = $(AM_FLAG_M3264_PRI)
-@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@varinfo5so_so_SOURCES = varinfo5so.c
-@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@varinfo5so_so_CFLAGS = $(AM_CFLAGS) -fpic -O -Wno-shadow
-@VGCONF_OS_IS_DARWIN_FALSE@@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_FALSE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@varinfo5so_so_LDFLAGS = -fpic $(AM_FLAG_M3264_PRI) -shared \
-@VGCONF_OS_IS_DARWIN_FALSE@@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_FALSE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@				-Wl,-soname -Wl,varinfo5so.so
+@VGCONF_OS_IS_DARWIN_TRUE@varinfo5_LDFLAGS = $(AM_FLAG_M3264_PRI)
+varinfo5so_so_SOURCES = varinfo5so.c
+varinfo5so_so_CFLAGS = $(AM_CFLAGS) -fpic -O -Wno-shadow
+@VGCONF_OS_IS_DARWIN_FALSE@varinfo5so_so_LDFLAGS = -fpic $(AM_FLAG_M3264_PRI) -shared \
+@VGCONF_OS_IS_DARWIN_FALSE@				-Wl,-soname -Wl,varinfo5so.so
 
-@VGCONF_OS_IS_DARWIN_TRUE@@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_FALSE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@varinfo5so_so_LDFLAGS = -fpic $(AM_FLAG_M3264_PRI) -dynamic \
-@VGCONF_OS_IS_DARWIN_TRUE@@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_FALSE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@				-dynamiclib -all_load
-
-@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_TRUE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@varinfo5so_so_LDFLAGS = -fpic $(AM_FLAG_M3264_PRI) -shared \
-@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_TRUE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@				-Wl,-G -Wl,-bnogc
+@VGCONF_OS_IS_DARWIN_TRUE@varinfo5so_so_LDFLAGS = -fpic $(AM_FLAG_M3264_PRI) -dynamic \
+@VGCONF_OS_IS_DARWIN_TRUE@				-dynamiclib -all_load
 
 
 # Build shared object for wrap7
-@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@wrap7_SOURCES = wrap7.c
-@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@wrap7_DEPENDENCIES = wrap7so.so
-@VGCONF_OS_IS_DARWIN_FALSE@@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_FALSE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@wrap7_LDADD = wrap7so.so
-@VGCONF_OS_IS_DARWIN_TRUE@@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_FALSE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@wrap7_LDADD = `pwd`/wrap7so.so
-@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_TRUE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@wrap7_LDADD = `pwd`/wrap7so.so
-@VGCONF_OS_IS_DARWIN_FALSE@@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_FALSE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@wrap7_LDFLAGS = $(AM_FLAG_M3264_PRI) \
-@VGCONF_OS_IS_DARWIN_FALSE@@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_FALSE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@				-Wl,-rpath,$(top_builddir)/memcheck/tests
+wrap7_SOURCES = wrap7.c
+wrap7_DEPENDENCIES = wrap7so.so
+@VGCONF_OS_IS_DARWIN_FALSE@wrap7_LDADD = wrap7so.so
+@VGCONF_OS_IS_DARWIN_TRUE@wrap7_LDADD = `pwd`/wrap7so.so
+@VGCONF_OS_IS_DARWIN_FALSE@wrap7_LDFLAGS = $(AM_FLAG_M3264_PRI) \
+@VGCONF_OS_IS_DARWIN_FALSE@				-Wl,-rpath,$(top_builddir)/memcheck/tests
 
-@VGCONF_OS_IS_DARWIN_TRUE@@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_FALSE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@wrap7_LDFLAGS = $(AM_FLAG_M3264_PRI)
-@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_TRUE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@wrap7_LDFLAGS = $(AM_FLAG_M3264_PRI) -Wl,-G -Wl,-bnogc
-@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@wrap7so_so_SOURCES = wrap7so.c
-@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@wrap7so_so_CFLAGS = $(AM_CFLAGS) -fpic
-@VGCONF_OS_IS_DARWIN_FALSE@@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_FALSE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@wrap7so_so_LDFLAGS = -fpic $(AM_FLAG_M3264_PRI) -shared \
-@VGCONF_OS_IS_DARWIN_FALSE@@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_FALSE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@				-Wl,-soname -Wl,wrap7so.so
+@VGCONF_OS_IS_DARWIN_TRUE@wrap7_LDFLAGS = $(AM_FLAG_M3264_PRI)
+wrap7so_so_SOURCES = wrap7so.c
+wrap7so_so_CFLAGS = $(AM_CFLAGS) -fpic
+@VGCONF_OS_IS_DARWIN_FALSE@wrap7so_so_LDFLAGS = -fpic $(AM_FLAG_M3264_PRI) -shared \
+@VGCONF_OS_IS_DARWIN_FALSE@				-Wl,-soname -Wl,wrap7so.so
 
-@VGCONF_OS_IS_DARWIN_TRUE@@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_FALSE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@wrap7so_so_LDFLAGS = -fpic $(AM_FLAG_M3264_PRI) -dynamic \
-@VGCONF_OS_IS_DARWIN_TRUE@@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_FALSE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@				-dynamiclib -all_load
-
-@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_TRUE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@wrap7so_so_LDFLAGS = -fpic $(AM_FLAG_M3264_PRI) -shared \
-@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_TRUE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@				-Wl,-G -Wl,-bnogc
+@VGCONF_OS_IS_DARWIN_TRUE@wrap7so_so_LDFLAGS = -fpic $(AM_FLAG_M3264_PRI) -dynamic \
+@VGCONF_OS_IS_DARWIN_TRUE@				-dynamiclib -all_load
 
 all: all-recursive
 
@@ -1260,6 +1263,18 @@ describe-block$(EXEEXT): $(describe_block_OBJECTS) $(describe_block_DEPENDENCIES
 doublefree$(EXEEXT): $(doublefree_OBJECTS) $(doublefree_DEPENDENCIES) 
 	@rm -f doublefree$(EXEEXT)
 	$(LINK) $(doublefree_OBJECTS) $(doublefree_LDADD) $(LIBS)
+err_disable1$(EXEEXT): $(err_disable1_OBJECTS) $(err_disable1_DEPENDENCIES) 
+	@rm -f err_disable1$(EXEEXT)
+	$(LINK) $(err_disable1_OBJECTS) $(err_disable1_LDADD) $(LIBS)
+err_disable2$(EXEEXT): $(err_disable2_OBJECTS) $(err_disable2_DEPENDENCIES) 
+	@rm -f err_disable2$(EXEEXT)
+	$(LINK) $(err_disable2_OBJECTS) $(err_disable2_LDADD) $(LIBS)
+err_disable3$(EXEEXT): $(err_disable3_OBJECTS) $(err_disable3_DEPENDENCIES) 
+	@rm -f err_disable3$(EXEEXT)
+	$(LINK) $(err_disable3_OBJECTS) $(err_disable3_LDADD) $(LIBS)
+err_disable4$(EXEEXT): $(err_disable4_OBJECTS) $(err_disable4_DEPENDENCIES) 
+	@rm -f err_disable4$(EXEEXT)
+	$(LINK) $(err_disable4_OBJECTS) $(err_disable4_LDADD) $(LIBS)
 erringfds$(EXEEXT): $(erringfds_OBJECTS) $(erringfds_DEPENDENCIES) 
 	@rm -f erringfds$(EXEEXT)
 	$(LINK) $(erringfds_OBJECTS) $(erringfds_LDADD) $(LIBS)
@@ -1269,12 +1284,12 @@ error_counts$(EXEEXT): $(error_counts_OBJECTS) $(error_counts_DEPENDENCIES)
 errs1$(EXEEXT): $(errs1_OBJECTS) $(errs1_DEPENDENCIES) 
 	@rm -f errs1$(EXEEXT)
 	$(LINK) $(errs1_OBJECTS) $(errs1_LDADD) $(LIBS)
-execve$(EXEEXT): $(execve_OBJECTS) $(execve_DEPENDENCIES) 
-	@rm -f execve$(EXEEXT)
-	$(LINK) $(execve_OBJECTS) $(execve_LDADD) $(LIBS)
+execve1$(EXEEXT): $(execve1_OBJECTS) $(execve1_DEPENDENCIES) 
+	@rm -f execve1$(EXEEXT)
+	$(execve1_LINK) $(execve1_OBJECTS) $(execve1_LDADD) $(LIBS)
 execve2$(EXEEXT): $(execve2_OBJECTS) $(execve2_DEPENDENCIES) 
 	@rm -f execve2$(EXEEXT)
-	$(LINK) $(execve2_OBJECTS) $(execve2_LDADD) $(LIBS)
+	$(execve2_LINK) $(execve2_OBJECTS) $(execve2_LDADD) $(LIBS)
 exitprog$(EXEEXT): $(exitprog_OBJECTS) $(exitprog_DEPENDENCIES) 
 	@rm -f exitprog$(EXEEXT)
 	$(LINK) $(exitprog_OBJECTS) $(exitprog_LDADD) $(LIBS)
@@ -1302,6 +1317,9 @@ leak-cases$(EXEEXT): $(leak_cases_OBJECTS) $(leak_cases_DEPENDENCIES)
 leak-cycle$(EXEEXT): $(leak_cycle_OBJECTS) $(leak_cycle_DEPENDENCIES) 
 	@rm -f leak-cycle$(EXEEXT)
 	$(LINK) $(leak_cycle_OBJECTS) $(leak_cycle_LDADD) $(LIBS)
+leak-delta$(EXEEXT): $(leak_delta_OBJECTS) $(leak_delta_DEPENDENCIES) 
+	@rm -f leak-delta$(EXEEXT)
+	$(LINK) $(leak_delta_OBJECTS) $(leak_delta_LDADD) $(LIBS)
 leak-pool$(EXEEXT): $(leak_pool_OBJECTS) $(leak_pool_DEPENDENCIES) 
 	@rm -f leak-pool$(EXEEXT)
 	$(LINK) $(leak_pool_OBJECTS) $(leak_pool_LDADD) $(LIBS)
@@ -1437,6 +1455,9 @@ realloc2$(EXEEXT): $(realloc2_OBJECTS) $(realloc2_DEPENDENCIES)
 realloc3$(EXEEXT): $(realloc3_OBJECTS) $(realloc3_DEPENDENCIES) 
 	@rm -f realloc3$(EXEEXT)
 	$(LINK) $(realloc3_OBJECTS) $(realloc3_LDADD) $(LIBS)
+sbfragment$(EXEEXT): $(sbfragment_OBJECTS) $(sbfragment_DEPENDENCIES) 
+	@rm -f sbfragment$(EXEEXT)
+	$(LINK) $(sbfragment_OBJECTS) $(sbfragment_LDADD) $(LIBS)
 sh-mem$(EXEEXT): $(sh_mem_OBJECTS) $(sh_mem_DEPENDENCIES) 
 	@rm -f sh-mem$(EXEEXT)
 	$(LINK) $(sh_mem_OBJECTS) $(sh_mem_LDADD) $(LIBS)
@@ -1511,19 +1532,19 @@ vcpu_fnfns$(EXEEXT): $(vcpu_fnfns_OBJECTS) $(vcpu_fnfns_DEPENDENCIES)
 	$(vcpu_fnfns_LINK) $(vcpu_fnfns_OBJECTS) $(vcpu_fnfns_LDADD) $(LIBS)
 wrap1$(EXEEXT): $(wrap1_OBJECTS) $(wrap1_DEPENDENCIES) 
 	@rm -f wrap1$(EXEEXT)
-	$(wrap1_LINK) $(wrap1_OBJECTS) $(wrap1_LDADD) $(LIBS)
+	$(LINK) $(wrap1_OBJECTS) $(wrap1_LDADD) $(LIBS)
 wrap2$(EXEEXT): $(wrap2_OBJECTS) $(wrap2_DEPENDENCIES) 
 	@rm -f wrap2$(EXEEXT)
-	$(wrap2_LINK) $(wrap2_OBJECTS) $(wrap2_LDADD) $(LIBS)
+	$(LINK) $(wrap2_OBJECTS) $(wrap2_LDADD) $(LIBS)
 wrap3$(EXEEXT): $(wrap3_OBJECTS) $(wrap3_DEPENDENCIES) 
 	@rm -f wrap3$(EXEEXT)
-	$(wrap3_LINK) $(wrap3_OBJECTS) $(wrap3_LDADD) $(LIBS)
+	$(LINK) $(wrap3_OBJECTS) $(wrap3_LDADD) $(LIBS)
 wrap4$(EXEEXT): $(wrap4_OBJECTS) $(wrap4_DEPENDENCIES) 
 	@rm -f wrap4$(EXEEXT)
-	$(wrap4_LINK) $(wrap4_OBJECTS) $(wrap4_LDADD) $(LIBS)
+	$(LINK) $(wrap4_OBJECTS) $(wrap4_LDADD) $(LIBS)
 wrap5$(EXEEXT): $(wrap5_OBJECTS) $(wrap5_DEPENDENCIES) 
 	@rm -f wrap5$(EXEEXT)
-	$(wrap5_LINK) $(wrap5_OBJECTS) $(wrap5_LDADD) $(LIBS)
+	$(LINK) $(wrap5_OBJECTS) $(wrap5_LDADD) $(LIBS)
 wrap6$(EXEEXT): $(wrap6_OBJECTS) $(wrap6_DEPENDENCIES) 
 	@rm -f wrap6$(EXEEXT)
 	$(wrap6_LINK) $(wrap6_OBJECTS) $(wrap6_LDADD) $(LIBS)
@@ -1535,10 +1556,10 @@ wrap7so.so$(EXEEXT): $(wrap7so_so_OBJECTS) $(wrap7so_so_DEPENDENCIES)
 	$(wrap7so_so_LINK) $(wrap7so_so_OBJECTS) $(wrap7so_so_LDADD) $(LIBS)
 wrap8$(EXEEXT): $(wrap8_OBJECTS) $(wrap8_DEPENDENCIES) 
 	@rm -f wrap8$(EXEEXT)
-	$(wrap8_LINK) $(wrap8_OBJECTS) $(wrap8_LDADD) $(LIBS)
-writev$(EXEEXT): $(writev_OBJECTS) $(writev_DEPENDENCIES) 
-	@rm -f writev$(EXEEXT)
-	$(LINK) $(writev_OBJECTS) $(writev_LDADD) $(LIBS)
+	$(LINK) $(wrap8_OBJECTS) $(wrap8_LDADD) $(LIBS)
+writev1$(EXEEXT): $(writev1_OBJECTS) $(writev1_DEPENDENCIES) 
+	@rm -f writev1$(EXEEXT)
+	$(LINK) $(writev1_OBJECTS) $(writev1_LDADD) $(LIBS)
 xml1$(EXEEXT): $(xml1_OBJECTS) $(xml1_DEPENDENCIES) 
 	@rm -f xml1$(EXEEXT)
 	$(LINK) $(xml1_OBJECTS) $(xml1_LDADD) $(LIBS)
@@ -1567,11 +1588,15 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/deep_templates-deep_templates.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/describe-block.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/doublefree.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/err_disable1.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/err_disable2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/err_disable3.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/err_disable4.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/erringfds.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/error_counts-error_counts.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/errs1.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/execve.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/execve2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/execve1-execve1.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/execve2-execve2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exitprog.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/file_locking.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fprw.Po@am__quote@
@@ -1581,6 +1606,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/leak-0.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/leak-cases.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/leak-cycle.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/leak-delta.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/leak-pool.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/leak-tree.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/long-supps.Po@am__quote@
@@ -1626,6 +1652,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/realloc1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/realloc2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/realloc3.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sbfragment.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sh-mem-random.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sh-mem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sigaltstack.Po@am__quote@
@@ -1657,7 +1684,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wrap7.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wrap7so_so-wrap7so.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wrap8.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/writev.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/writev1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xml1.Po@am__quote@
 
 .c.o:
@@ -1701,6 +1728,34 @@ error_counts-error_counts.obj: error_counts.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='error_counts.c' object='error_counts-error_counts.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(error_counts_CFLAGS) $(CFLAGS) -c -o error_counts-error_counts.obj `if test -f 'error_counts.c'; then $(CYGPATH_W) 'error_counts.c'; else $(CYGPATH_W) '$(srcdir)/error_counts.c'; fi`
+
+execve1-execve1.o: execve1.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(execve1_CFLAGS) $(CFLAGS) -MT execve1-execve1.o -MD -MP -MF $(DEPDIR)/execve1-execve1.Tpo -c -o execve1-execve1.o `test -f 'execve1.c' || echo '$(srcdir)/'`execve1.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/execve1-execve1.Tpo $(DEPDIR)/execve1-execve1.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='execve1.c' object='execve1-execve1.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(execve1_CFLAGS) $(CFLAGS) -c -o execve1-execve1.o `test -f 'execve1.c' || echo '$(srcdir)/'`execve1.c
+
+execve1-execve1.obj: execve1.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(execve1_CFLAGS) $(CFLAGS) -MT execve1-execve1.obj -MD -MP -MF $(DEPDIR)/execve1-execve1.Tpo -c -o execve1-execve1.obj `if test -f 'execve1.c'; then $(CYGPATH_W) 'execve1.c'; else $(CYGPATH_W) '$(srcdir)/execve1.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/execve1-execve1.Tpo $(DEPDIR)/execve1-execve1.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='execve1.c' object='execve1-execve1.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(execve1_CFLAGS) $(CFLAGS) -c -o execve1-execve1.obj `if test -f 'execve1.c'; then $(CYGPATH_W) 'execve1.c'; else $(CYGPATH_W) '$(srcdir)/execve1.c'; fi`
+
+execve2-execve2.o: execve2.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(execve2_CFLAGS) $(CFLAGS) -MT execve2-execve2.o -MD -MP -MF $(DEPDIR)/execve2-execve2.Tpo -c -o execve2-execve2.o `test -f 'execve2.c' || echo '$(srcdir)/'`execve2.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/execve2-execve2.Tpo $(DEPDIR)/execve2-execve2.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='execve2.c' object='execve2-execve2.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(execve2_CFLAGS) $(CFLAGS) -c -o execve2-execve2.o `test -f 'execve2.c' || echo '$(srcdir)/'`execve2.c
+
+execve2-execve2.obj: execve2.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(execve2_CFLAGS) $(CFLAGS) -MT execve2-execve2.obj -MD -MP -MF $(DEPDIR)/execve2-execve2.Tpo -c -o execve2-execve2.obj `if test -f 'execve2.c'; then $(CYGPATH_W) 'execve2.c'; else $(CYGPATH_W) '$(srcdir)/execve2.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/execve2-execve2.Tpo $(DEPDIR)/execve2-execve2.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='execve2.c' object='execve2-execve2.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(execve2_CFLAGS) $(CFLAGS) -c -o execve2-execve2.obj `if test -f 'execve2.c'; then $(CYGPATH_W) 'execve2.c'; else $(CYGPATH_W) '$(srcdir)/execve2.c'; fi`
 
 inits-inits.o: inits.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(inits_CFLAGS) $(CFLAGS) -MT inits-inits.o -MD -MP -MF $(DEPDIR)/inits-inits.Tpo -c -o inits-inits.o `test -f 'inits.c' || echo '$(srcdir)/'`inits.c
@@ -2404,11 +2459,6 @@ clean-noinst_DSYMS:
 check-local: build-noinst_DSYMS
 
 clean-local: clean-noinst_DSYMS
-
-@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_TRUE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@ # persuade the AIX linker not to junk apparently unused
-@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_TRUE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@ # function descriptors.  Unfortunately -Wl,-G -Wl,-bnogc
-@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_TRUE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@ # produces a link error on 64-bit AIX, hence only 32-bit
-@VGCONF_PLATFORMS_INCLUDE_PPC32_AIX5_TRUE@@VGCONF_PLATFORMS_INCLUDE_PPC64_AIX5_FALSE@ # gets these flags.
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

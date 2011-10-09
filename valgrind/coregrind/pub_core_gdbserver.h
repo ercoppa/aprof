@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2011 Philippe Waroquiers
+   Copyright (C) 2011-2011 Philippe Waroquiers
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -31,6 +31,17 @@
 #define __PUB_CORE_GDBSERVER_H
 
 #include "pub_tool_gdbserver.h"
+
+/* Return the path prefix for the named pipes (FIFOs) used by vgdb/gdb
+   to communicate with valgrind */
+HChar*  VG_(vgdb_prefix_default)(void);
+
+// After a fork or after an exec, call the below to (possibly) terminate
+// the previous gdbserver and then activate a new gdbserver
+// before any guest code execution, to e.g. allow the user to set
+// breakpoints before execution.
+// If VG_(clo_vgdb) == No, the below has no effect.
+void VG_(gdbserver_prerun_action) (ThreadId tid);
 
 // True if there is some activity from vgdb
 // If it returns True, then extern void VG_(gdbserver) can be called

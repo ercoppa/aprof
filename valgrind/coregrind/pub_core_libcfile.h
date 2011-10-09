@@ -78,10 +78,10 @@ extern Int VG_(access) ( const HChar* path, Bool irusr, Bool iwusr,
 extern Int VG_(check_executable)(/*OUT*/Bool* is_setuid,
                                  const HChar* f, Bool allow_setuid);
 
-/* DDD: Note this moves (or at least, is believed to move) the file pointer
-   on Linux and AIX5 but doesn't on Darwin.  This inconsistency should
-   be fixed.  (In other words, why isn't the Linux/AIX5 version implemented in
-   terms of pread()?) */
+/* DDD: Note this moves (or at least, is believed to move) the file
+   pointer on Linux but doesn't on Darwin.  This inconsistency should
+   be fixed.  (In other words, why isn't the Linux version implemented
+   in terms of pread()?) */
 extern SysRes VG_(pread) ( Int fd, void* buf, Int count, OffT offset );
 
 /* Create and open (-rw------) a tmp file name incorporating said arg.
@@ -89,6 +89,9 @@ extern SysRes VG_(pread) ( Int fd, void* buf, Int count, OffT offset );
    non-NULL, the file's name is written into it.  The number of bytes
    written is guaranteed not to exceed 64+strlen(part_of_name). */
 extern Int VG_(mkstemp) ( HChar* part_of_name, /*OUT*/HChar* fullname );
+
+/* Return the name of a directory for temporary files. */
+extern const HChar* VG_(tmpdir)(void);
 
 /* Record the process' working directory at startup.  Is intended to
    be called exactly once, at startup, before the working directory

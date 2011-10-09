@@ -31,19 +31,12 @@ EXTRA_DIST = \
 
 bin_PROGRAMS = \
 	valgrind \
-	vgdb \
-	no_op_client_for_valgrind
+	vgdb
 
 if VGCONF_OS_IS_LINUX
 valgrind_SOURCES = \
 	launcher-linux.c \
 	m_debuglog.c
-endif
-if VGCONF_OS_IS_AIX5
-valgrind_SOURCES = \
-	launcher-aix5.c \
-	m_debuglog.c \
-	m_vkiscnums.c
 endif
 if VGCONF_OS_IS_DARWIN
 valgrind_SOURCES = \
@@ -63,15 +56,12 @@ vgdb_SOURCES = vgdb.c
 vgdb_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
 vgdb_CFLAGS    = $(AM_CFLAGS_PRI)
 vgdb_CCASFLAGS = $(AM_CCASFLAGS_PRI)
-vgdb_LDFLAGS   = $(AM_CFLAGS_PRI) -lpthread
-
-no_op_client_for_valgrind_SOURCES = no_op_client_for_valgrind.c
-no_op_client_for_valgrind_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
-no_op_client_for_valgrind_CFLAGS    = $(AM_CFLAGS_PRI)
-no_op_client_for_valgrind_CCASFLAGS = $(AM_CCASFLAGS_PRI)
-no_op_client_for_valgrind_LDFLAGS   = $(AM_CFLAGS_PRI)
+vgdb_LDFLAGS   = $(AM_CFLAGS_PRI)
+if !VGCONF_PLATVARIANT_IS_ANDROID
+vgdb_LDFLAGS   += -lpthread
+endif
 if VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
-no_op_client_for_valgrind_LDFLAGS   += -Wl,-read_only_relocs -Wl,suppress
+vgdb_LDFLAGS   += -Wl,-read_only_relocs -Wl,suppress
 endif
 
 #----------------------------------------------------------------------------
@@ -136,7 +126,6 @@ $(mach_hdrs): $(mach_defs) $(mach_user_srcs) $(abs_builddir)/m_mach
 #----------------------------------------------------------------------------
 
 noinst_HEADERS = \
-	launcher-aix5-bootblock.h \
 	pub_core_aspacehl.h	\
 	pub_core_aspacemgr.h	\
 	pub_core_basics.h	\
@@ -203,7 +192,6 @@ noinst_HEADERS = \
 	m_debuginfo/priv_readdwarf3.h	\
 	m_debuginfo/priv_readelf.h	\
 	m_debuginfo/priv_readmacho.h	\
-	m_debuginfo/priv_readxcoff.h	\
 	m_demangle/ansidecl.h	\
 	m_demangle/cp-demangle.h \
 	m_demangle/dyn-string.h	\
@@ -223,7 +211,6 @@ noinst_HEADERS = \
 	m_syswrap/priv_syswrap-generic.h \
 	m_syswrap/priv_syswrap-linux.h \
 	m_syswrap/priv_syswrap-linux-variants.h \
-	m_syswrap/priv_syswrap-aix5.h \
 	m_syswrap/priv_syswrap-darwin.h \
 	m_syswrap/priv_syswrap-main.h \
 	m_ume/priv_ume.h
@@ -280,10 +267,8 @@ COREGRIND_SOURCES_COMMON = \
 	m_aspacehl.c \
 	m_aspacemgr/aspacemgr-common.c \
 	m_aspacemgr/aspacemgr-linux.c \
-	m_aspacemgr/aspacemgr-aix5.c \
 	m_coredump/coredump-elf.c \
 	m_coredump/coredump-macho.c \
-	m_coredump/coredump-xcoff.c \
 	m_debuginfo/misc.c \
 	m_debuginfo/d3basics.c \
 	m_debuginfo/debuginfo.c \
@@ -293,7 +278,6 @@ COREGRIND_SOURCES_COMMON = \
 	m_debuginfo/readmacho.c \
 	m_debuginfo/readpdb.c \
 	m_debuginfo/readstabs.c \
-	m_debuginfo/readxcoff.c \
 	m_debuginfo/storage.c \
 	m_debuginfo/tytypes.c \
 	m_demangle/cp-demangle.c \
@@ -307,8 +291,6 @@ COREGRIND_SOURCES_COMMON = \
 	m_dispatch/dispatch-ppc64-linux.S \
 	m_dispatch/dispatch-arm-linux.S \
 	m_dispatch/dispatch-s390x-linux.S \
-	m_dispatch/dispatch-ppc32-aix5.S \
-	m_dispatch/dispatch-ppc64-aix5.S \
 	m_dispatch/dispatch-x86-darwin.S \
 	m_dispatch/dispatch-amd64-darwin.S \
 	m_gdbserver/m_gdbserver.c \
@@ -329,7 +311,6 @@ COREGRIND_SOURCES_COMMON = \
 	m_gdbserver/valgrind-low-s390x.c \
 	m_gdbserver/version.c \
 	m_initimg/initimg-linux.c \
-	m_initimg/initimg-aix5.c \
 	m_initimg/initimg-darwin.c \
 	m_initimg/initimg-pathscan.c \
 	m_mach/mach_basics.c \
@@ -345,8 +326,6 @@ COREGRIND_SOURCES_COMMON = \
 	m_sigframe/sigframe-ppc64-linux.c \
 	m_sigframe/sigframe-arm-linux.c \
 	m_sigframe/sigframe-s390x-linux.c \
-	m_sigframe/sigframe-ppc32-aix5.c \
-	m_sigframe/sigframe-ppc64-aix5.c \
 	m_sigframe/sigframe-x86-darwin.c \
 	m_sigframe/sigframe-amd64-darwin.c \
 	m_syswrap/syscall-x86-linux.S \
@@ -355,15 +334,12 @@ COREGRIND_SOURCES_COMMON = \
 	m_syswrap/syscall-ppc64-linux.S \
 	m_syswrap/syscall-arm-linux.S \
 	m_syswrap/syscall-s390x-linux.S \
-	m_syswrap/syscall-ppc32-aix5.S \
-	m_syswrap/syscall-ppc64-aix5.S \
 	m_syswrap/syscall-x86-darwin.S \
 	m_syswrap/syscall-amd64-darwin.S \
 	m_syswrap/syswrap-main.c \
 	m_syswrap/syswrap-generic.c \
 	m_syswrap/syswrap-linux.c \
 	m_syswrap/syswrap-linux-variants.c \
-	m_syswrap/syswrap-aix5.c \
 	m_syswrap/syswrap-darwin.c \
 	m_syswrap/syswrap-x86-linux.c \
 	m_syswrap/syswrap-amd64-linux.c \
@@ -371,8 +347,6 @@ COREGRIND_SOURCES_COMMON = \
 	m_syswrap/syswrap-ppc64-linux.c \
 	m_syswrap/syswrap-arm-linux.c \
 	m_syswrap/syswrap-s390x-linux.c \
-	m_syswrap/syswrap-ppc32-aix5.c \
-	m_syswrap/syswrap-ppc64-aix5.c \
 	m_syswrap/syswrap-x86-darwin.c \
 	m_syswrap/syswrap-amd64-darwin.c \
 	m_ume/elf.c \
@@ -403,9 +377,6 @@ libcoregrind_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CCASFLAGS = \
     $(AM_CCASFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
 endif
 
-libcoregrind_ppc32_aix5_a_AR = $(AR) -X32 cru
-libcoregrind_ppc64_aix5_a_AR = $(AR) -X64 cru
-
 #----------------------------------------------------------------------------
 # libreplacemalloc_toolpreload-<platform>.a
 #----------------------------------------------------------------------------
@@ -429,10 +400,6 @@ libreplacemalloc_toolpreload_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CPPFLAGS = \
 libreplacemalloc_toolpreload_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CFLAGS = \
 	$(AM_CFLAGS_@VGCONF_PLATFORM_SEC_CAPS@) $(AM_CFLAGS_PIC)
 endif
-
-# Special AR for AIX.
-libreplacemalloc_toolpreload_ppc32_aix5_a_AR = $(AR) -X32 cru
-libreplacemalloc_toolpreload_ppc64_aix5_a_AR = $(AR) -X64 cru
 
 #----------------------------------------------------------------------------
 # vgpreload_core-<platform>.a
@@ -467,90 +434,64 @@ endif
 #----------------------------------------------------------------------------
 # gdbserver xml target descriptions
 #----------------------------------------------------------------------------
-pkglib_DATA =
 
-if VGCONF_ARCHS_INCLUDE_ARM
-pkglib_DATA += 	m_gdbserver/arm-core-valgrind-s1.xml \
-		m_gdbserver/arm-core-valgrind-s2.xml \
-		m_gdbserver/arm-core.xml \
-		m_gdbserver/arm-vfpv3-valgrind-s1.xml \
-		m_gdbserver/arm-vfpv3-valgrind-s2.xml \
-		m_gdbserver/arm-vfpv3.xml \
-		m_gdbserver/arm-with-vfpv3-valgrind.xml \
-		m_gdbserver/arm-with-vfpv3.xml
-endif
+GDBSERVER_XML_FILES = \
+	m_gdbserver/32bit-core-valgrind-s1.xml \
+	m_gdbserver/32bit-core-valgrind-s2.xml \
+	m_gdbserver/32bit-core.xml \
+	m_gdbserver/32bit-linux-valgrind-s1.xml \
+	m_gdbserver/32bit-linux-valgrind-s2.xml \
+	m_gdbserver/32bit-linux.xml \
+	m_gdbserver/32bit-sse-valgrind-s1.xml \
+	m_gdbserver/32bit-sse-valgrind-s2.xml \
+	m_gdbserver/32bit-sse.xml \
+	m_gdbserver/64bit-core-valgrind-s1.xml \
+	m_gdbserver/64bit-core-valgrind-s2.xml \
+	m_gdbserver/64bit-core.xml \
+	m_gdbserver/64bit-linux-valgrind-s1.xml \
+	m_gdbserver/64bit-linux-valgrind-s2.xml \
+	m_gdbserver/64bit-linux.xml \
+	m_gdbserver/64bit-sse-valgrind-s1.xml \
+	m_gdbserver/64bit-sse-valgrind-s2.xml \
+	m_gdbserver/64bit-sse.xml \
+	m_gdbserver/amd64-coresse-valgrind.xml \
+	m_gdbserver/amd64-linux-valgrind.xml \
+	m_gdbserver/arm-core-valgrind-s1.xml \
+	m_gdbserver/arm-core-valgrind-s2.xml \
+	m_gdbserver/arm-core.xml \
+	m_gdbserver/arm-vfpv3-valgrind-s1.xml \
+	m_gdbserver/arm-vfpv3-valgrind-s2.xml \
+	m_gdbserver/arm-vfpv3.xml \
+	m_gdbserver/arm-with-vfpv3-valgrind.xml \
+	m_gdbserver/arm-with-vfpv3.xml \
+	m_gdbserver/i386-coresse-valgrind.xml \
+	m_gdbserver/i386-linux-valgrind.xml \
+	m_gdbserver/power64-core-valgrind-s1.xml \
+	m_gdbserver/power64-core-valgrind-s2.xml \
+	m_gdbserver/power64-core.xml \
+	m_gdbserver/power64-linux-valgrind-s1.xml \
+	m_gdbserver/power64-linux-valgrind-s2.xml \
+	m_gdbserver/power64-linux.xml \
+	m_gdbserver/power-altivec-valgrind-s1.xml \
+	m_gdbserver/power-altivec-valgrind-s2.xml \
+	m_gdbserver/power-altivec.xml \
+	m_gdbserver/power-core.xml \
+	m_gdbserver/power-fpu-valgrind-s1.xml \
+	m_gdbserver/power-fpu-valgrind-s2.xml \
+	m_gdbserver/power-fpu.xml \
+	m_gdbserver/power-linux-valgrind-s1.xml \
+	m_gdbserver/power-linux-valgrind-s2.xml \
+	m_gdbserver/power-linux.xml \
+	m_gdbserver/powerpc-altivec32l-valgrind.xml \
+	m_gdbserver/powerpc-altivec32l.xml \
+	m_gdbserver/powerpc-altivec64l-valgrind.xml \
+	m_gdbserver/powerpc-altivec64l.xml
 
-if VGCONF_ARCHS_INCLUDE_X86
-pkglib_DATA += 	m_gdbserver/32bit-core-valgrind-s1.xml \
-		m_gdbserver/32bit-core-valgrind-s2.xml \
-		m_gdbserver/32bit-core.xml \
-		m_gdbserver/32bit-sse-valgrind-s1.xml \
-		m_gdbserver/32bit-sse-valgrind-s2.xml \
-		m_gdbserver/32bit-sse.xml
-if VGCONF_OS_IS_LINUX
-pkglib_DATA +=	m_gdbserver/32bit-linux-valgrind-s1.xml \
-		m_gdbserver/32bit-linux-valgrind-s2.xml \
-		m_gdbserver/32bit-linux.xml \
-		m_gdbserver/i386-linux-valgrind.xml
-endif
-if VGCONF_OS_IS_DARWIN
-pkglib_DATA +=	m_gdbserver/i386-coresse-valgrind.xml
-endif
-endif
+# so as to make sure these get copied into the install tree
+pkglib_DATA  = $(GDBSERVER_XML_FILES)
 
-if VGCONF_ARCHS_INCLUDE_AMD64
-pkglib_DATA +=	m_gdbserver/64bit-core-valgrind-s1.xml \
-		m_gdbserver/64bit-core-valgrind-s2.xml \
-		m_gdbserver/64bit-core.xml \
-		m_gdbserver/64bit-sse-valgrind-s1.xml \
-		m_gdbserver/64bit-sse-valgrind-s2.xml \
-		m_gdbserver/64bit-sse.xml
-
-if VGCONF_OS_IS_LINUX
-pkglib_DATA +=	m_gdbserver/64bit-linux-valgrind-s1.xml \
-		m_gdbserver/64bit-linux-valgrind-s2.xml \
-		m_gdbserver/64bit-linux.xml \
-		m_gdbserver/amd64-linux-valgrind.xml
-endif
-if VGCONF_OS_IS_DARWIN
-pkglib_DATA +=	m_gdbserver/amd64-coresse-valgrind.xml
-endif
-endif
-
-if VGCONF_ARCHS_INCLUDE_PPC32
-pkglib_DATA +=	m_gdbserver/power-altivec-valgrind-s1.xml \
-		m_gdbserver/power-altivec-valgrind-s2.xml \
-		m_gdbserver/power-altivec.xml \
-		m_gdbserver/power-core.xml \
-		m_gdbserver/power-fpu-valgrind-s1.xml \
-		m_gdbserver/power-fpu-valgrind-s2.xml \
-		m_gdbserver/power-fpu.xml \
-		m_gdbserver/power-linux-valgrind-s1.xml \
-		m_gdbserver/power-linux-valgrind-s2.xml \
-		m_gdbserver/power-linux.xml \
-		m_gdbserver/powerpc-altivec32l-valgrind.xml \
-		m_gdbserver/powerpc-altivec32l.xml
-endif
-
-if VGCONF_ARCHS_INCLUDE_PPC64
-pkglib_DATA +=	m_gdbserver/power64-core-valgrind-s1.xml \
-		m_gdbserver/power64-core-valgrind-s2.xml \
-		m_gdbserver/power64-core.xml \
-		m_gdbserver/power64-linux-valgrind-s1.xml \
-		m_gdbserver/power64-linux-valgrind-s2.xml \
-		m_gdbserver/power64-linux.xml \
-		m_gdbserver/powerpc-altivec64l-valgrind.xml \
-		m_gdbserver/powerpc-altivec64l.xml
-if ! VGCONF_ARCHS_INCLUDE_PPC32
-pkglib_DATA +=	m_gdbserver/power-altivec-valgrind-s1.xml \
-		m_gdbserver/power-altivec-valgrind-s2.xml \
-		m_gdbserver/power-altivec.xml \
-		m_gdbserver/power-fpu-valgrind-s1.xml \
-		m_gdbserver/power-fpu-valgrind-s2.xml \
-		m_gdbserver/power-fpu.xml
-endif
-endif
-
+# so as to make sure these get copied into the tarball
+EXTRA_DIST  += $(GDBSERVER_XML_FILES)
 
 #----------------------------------------------------------------------------
 # General stuff

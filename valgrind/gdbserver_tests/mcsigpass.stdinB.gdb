@@ -1,6 +1,7 @@
 # connect gdb to Valgrind gdbserver:
 target remote | ./vgdb --wait=60 --vgdb-prefix=./vgdb-prefix-mcsigpass
-monitor vg.set vgdb-error 999999
+echo vgdb launched process attached\n
+monitor v.set vgdb-error 999999
 #
 # After this continue, we will receive 5 signals.
 continue
@@ -19,6 +20,7 @@ continue
 #
 # SIGFPE  : line 114
 continue
+echo after continue SIGFPE
 #
 # program will exit
 quit

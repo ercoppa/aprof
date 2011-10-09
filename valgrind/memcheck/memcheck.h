@@ -184,19 +184,35 @@ typedef
 
 /* Do a full memory leak check (like --leak-check=full) mid-execution. */
 #define VALGRIND_DO_LEAK_CHECK                                   \
-   {unsigned long _qzz_res __attribute((unused));                \
-    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                      \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                           \
                             VG_USERREQ__DO_LEAK_CHECK,           \
-                            0, 0, 0, 0, 0);                      \
-   }
+                            0, 0, 0, 0, 0)
+
+/* Same as VALGRIND_DO_LEAK_CHECK but only showing the entries for
+   which there was an increase in leaked bytes or leaked nr of blocks
+   since the previous leak search. */
+#define VALGRIND_DO_ADDED_LEAK_CHECK                            \
+  do {                                                          \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                          \
+                                    VG_USERREQ__DO_LEAK_CHECK,  \
+                                    0, 1, 0, 0, 0);             \
+  } while (0)
+
+/* Same as VALGRIND_DO_ADDED_LEAK_CHECK but showing entries with
+   increased or decreased leaked bytes/blocks since previous leak
+   search. */
+#define VALGRIND_DO_CHANGED_LEAK_CHECK                          \
+  do {                                                          \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                          \
+                                    VG_USERREQ__DO_LEAK_CHECK,  \
+                                    0, 2, 0, 0, 0);             \
+  } while (0)
 
 /* Do a summary memory leak check (like --leak-check=summary) mid-execution. */
-#define VALGRIND_DO_QUICK_LEAK_CHECK				 \
-   {unsigned long _qzz_res __attribute((unused));                \
-    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                      \
+#define VALGRIND_DO_QUICK_LEAK_CHECK                             \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                           \
                             VG_USERREQ__DO_LEAK_CHECK,           \
-                            1, 0, 0, 0, 0);                      \
-   }
+                            1, 0, 0, 0, 0)
 
 /* Return number of leaked, dubious, reachable and suppressed bytes found by
    all previous leak checks.  They must be lvalues.  */
@@ -207,10 +223,10 @@ typedef
       are.  We also initialise '_qzz_leaked', etc because
       VG_USERREQ__COUNT_LEAKS doesn't mark the values returned as
       defined. */                                                        \
-   {unsigned long _qzz_res __attribute((unused));                        \
+   {                                                                     \
     unsigned long _qzz_leaked    = 0, _qzz_dubious    = 0;               \
     unsigned long _qzz_reachable = 0, _qzz_suppressed = 0;               \
-    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                              \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                                   \
                                VG_USERREQ__COUNT_LEAKS,                  \
                                &_qzz_leaked, &_qzz_dubious,              \
                                &_qzz_reachable, &_qzz_suppressed, 0);    \
@@ -229,10 +245,10 @@ typedef
       are.  We also initialise '_qzz_leaked', etc because
       VG_USERREQ__COUNT_LEAKS doesn't mark the values returned as
       defined. */                                                        \
-   {unsigned long _qzz_res __attribute((unused));                        \
+   {                                                                     \
     unsigned long _qzz_leaked    = 0, _qzz_dubious    = 0;               \
     unsigned long _qzz_reachable = 0, _qzz_suppressed = 0;               \
-    VALGRIND_DO_CLIENT_REQUEST(_qzz_res, 0,                              \
+    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                                   \
                                VG_USERREQ__COUNT_LEAK_BLOCKS,            \
                                &_qzz_leaked, &_qzz_dubious,              \
                                &_qzz_reachable, &_qzz_suppressed, 0);    \
@@ -253,7 +269,7 @@ typedef
    impossible to segfault your system by using this call.
 */
 #define VALGRIND_GET_VBITS(zza,zzvbits,zznbytes)                \
-    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                          \
+    (unsigned)VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                \
                                     VG_USERREQ__GET_VBITS,      \
                                     (const char*)(zza),         \
                                     (char*)(zzvbits),           \
@@ -269,7 +285,7 @@ typedef
    impossible to segfault your system by using this call.
 */
 #define VALGRIND_SET_VBITS(zza,zzvbits,zznbytes)                \
-    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                          \
+    (unsigned)VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                \
                                     VG_USERREQ__SET_VBITS,      \
                                     (const char*)(zza),         \
                                     (const char*)(zzvbits),     \

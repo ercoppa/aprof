@@ -543,7 +543,7 @@ struct vki_termios {
 #define VKI_FIONBIO		_VKI_IOW('f', 126, int)
 #define VKI_FIONREAD		_VKI_IOR('f', 127, int)
 //#define VKI_TIOCINQ		VKI_FIONREAD
-//#define VKI_FIOQSIZE		_VKI_IOR('f', 128, vki_loff_t)
+#define VKI_FIOQSIZE		_VKI_IOR('f', 128, vki_loff_t)
 
 //#define VKI_TIOCGETP		_VKI_IOR('t', 8, struct vki_sgttyb)
 //#define VKI_TIOCSETP		_VKI_IOW('t', 9, struct vki_sgttyb)

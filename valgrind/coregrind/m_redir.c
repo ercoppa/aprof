@@ -77,14 +77,18 @@
    table).
 
    Redirect specifications are really symbols with "funny" prefixes
-   (_vgrZU_ and _vgrZZ_).  These names tell m_redir that the
+   (_vgrNNNNZU_ and _vgrNNNNZZ_).  These names tell m_redir that the
    associated code should replace the standard entry point for some
    set of functions.  The set of functions is specified by a (soname
    pattern, function name pattern) pair which is encoded in the symbol
    name following the prefix.  The names use a Z-encoding scheme so
    that they may contain punctuation characters and wildcards (*).
    The encoding scheme is described in pub_tool_redir.h and is decoded
-   by VG_(maybe_Z_demangle).
+   by VG_(maybe_Z_demangle).  The NNNN are behavioural equivalence
+   class tags, and are used to by code in this module to resolve
+   situations where one address appears to be redirected to more than
+   one replacement/wrapper.  This is also described in
+   pub_tool_redir.h.
 
    When a shared object is unloaded, this module learns of it via a
    call to VG_(redir_notify_delete_DebugInfo).  It then removes from
@@ -226,6 +230,12 @@ typedef
       HChar* from_fnpatt;  /* from fnname pattern  */
       Addr   to_addr;      /* where redirecting to */
       Bool   isWrap;       /* wrap or replacement? */
+      Int    becTag; /* 0 through 9999.  Behavioural equivalance class tag.
+                        If two wrappers have the same (non-zero) tag, they
+                        are promising that they behave identically. */
+      Int    becPrio; /* 0 through 9.  Behavioural equivalence class prio.
+                         Used to choose between competing wrappers with
+                         the same (non-zero) tag. */
       const HChar** mandatory; /* non-NULL ==> abort V and print the
                                   strings if from_sopatt is loaded but
                                   from_fnpatt cannot be found */
@@ -270,6 +280,8 @@ typedef
       Addr     to_addr;     /* where redirecting to */
       TopSpec* parent_spec; /* the TopSpec which supplied the Spec */
       TopSpec* parent_sym;  /* the TopSpec which supplied the symbol */
+      Int      becTag;      /* behavioural eclass tag for ::to_addr */
+      Int      becPrio;     /* and its priority */
       Bool     isWrap;      /* wrap or replacement? */
       Bool     isIFunc;     /* indirect function? */
    }
@@ -291,7 +303,6 @@ static void*  dinfo_zalloc(HChar* ec, SizeT);
 static void   dinfo_free(void*);
 static HChar* dinfo_strdup(HChar* ec, HChar*);
 static Bool   is_plausible_guest_addr(Addr);
-static Bool   is_aix5_glink_idiom(Addr);
 
 static void   show_redir_state ( HChar* who );
 static void   show_active ( HChar* left, Active* act );
@@ -315,6 +326,45 @@ void generate_and_add_actives (
         TopSpec* parent_sym 
      );
 
+
+/* Copy all the names from a given symbol into an AR_DINFO allocated,
+   NULL terminated array, for easy iteration.  Caller must pass also
+   the address of a 2-entry array which can be used in the common case
+   to avoid dynamic allocation. */
+static UChar** alloc_symname_array ( UChar* pri_name, UChar** sec_names,
+                                     UChar** twoslots )
+{
+   /* Special-case the common case: only one name.  We expect the
+      caller to supply a stack-allocated 2-entry array for this. */
+   if (sec_names == NULL) {
+      twoslots[0] = pri_name;
+      twoslots[1] = NULL;
+      return twoslots;
+   }
+   /* Else must use dynamic allocation.  Figure out size .. */
+   Word    n_req = 1;
+   UChar** pp    = sec_names;
+   while (*pp) { n_req++; pp++; }
+   /* .. allocate and copy in. */
+   UChar** arr = dinfo_zalloc( "redir.asa.1", (n_req+1) * sizeof(UChar*) );
+   Word    i   = 0;
+   arr[i++] = pri_name;
+   pp = sec_names;
+   while (*pp) { arr[i++] = *pp; pp++; }
+   tl_assert(i == n_req);
+   tl_assert(arr[n_req] == NULL);
+   return arr;
+}
+
+
+/* Free the array allocated by alloc_symname_array, if any. */
+static void free_symname_array ( UChar** names, UChar** twoslots )
+{
+   if (names != twoslots)
+      dinfo_free(names);
+}
+
+
 /* Notify m_redir of the arrival of a new DebugInfo.  This is fairly
    complex, but the net effect is to (1) add a new entry to the
    topspecs list, and (2) figure out what new binding are now active,
@@ -322,105 +372,127 @@ void generate_and_add_actives (
 
 #define N_DEMANGLED 256
 
-void VG_(redir_notify_new_DebugInfo)( DebugInfo* newsi )
+void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
 {
    Bool         ok, isWrap;
-   Int          i, nsyms;
+   Int          i, nsyms, becTag, becPrio;
    Spec*        specList;
    Spec*        spec;
    TopSpec*     ts;
    TopSpec*     newts;
-   HChar*       sym_name;
+   UChar*       sym_name_pri;
+   UChar**      sym_names_sec;
    Addr         sym_addr, sym_toc;
    HChar        demangled_sopatt[N_DEMANGLED];
    HChar        demangled_fnpatt[N_DEMANGLED];
    Bool         check_ppcTOCs = False;
    Bool         isText;
-   const UChar* newsi_soname;
+   const UChar* newdi_soname;
 
 #  if defined(VG_PLAT_USES_PPCTOC)
    check_ppcTOCs = True;
 #  endif
 
-   vg_assert(newsi);
-   newsi_soname = VG_(DebugInfo_get_soname)(newsi);
-   vg_assert(newsi_soname != NULL);
+   vg_assert(newdi);
+   newdi_soname = VG_(DebugInfo_get_soname)(newdi);
+   vg_assert(newdi_soname != NULL);
 
    /* stay sane: we don't already have this. */
    for (ts = topSpecs; ts; ts = ts->next)
-      vg_assert(ts->seginfo != newsi);
+      vg_assert(ts->seginfo != newdi);
 
    /* scan this DebugInfo's symbol table, pulling out and demangling
       any specs found */
 
    specList = NULL; /* the spec list we're building up */
 
-   nsyms = VG_(DebugInfo_syms_howmany)( newsi );
+   nsyms = VG_(DebugInfo_syms_howmany)( newdi );
    for (i = 0; i < nsyms; i++) {
-      VG_(DebugInfo_syms_getidx)( newsi, i, &sym_addr, &sym_toc,
-                                  NULL, &sym_name, &isText, NULL );
-      ok = VG_(maybe_Z_demangle)( sym_name, demangled_sopatt, N_DEMANGLED,
-                                  demangled_fnpatt, N_DEMANGLED, &isWrap );
-      /* ignore data symbols */
-      if (!isText)
-         continue;
-      if (!ok) {
-         /* It's not a full-scale redirect, but perhaps it is a load-notify
-            fn?  Let the load-notify department see it. */
-         handle_maybe_load_notifier( newsi_soname, sym_name, sym_addr );
-         continue; 
+      VG_(DebugInfo_syms_getidx)( newdi, i, &sym_addr, &sym_toc,
+                                  NULL, &sym_name_pri, &sym_names_sec,
+                                  &isText, NULL );
+      /* Set up to conveniently iterate over all names for this symbol. */
+      UChar*  twoslots[2];
+      UChar** names_init = alloc_symname_array(sym_name_pri, sym_names_sec,
+                                               &twoslots[0]);
+      UChar** names;
+      for (names = names_init; *names; names++) {
+         ok = VG_(maybe_Z_demangle)( *names,
+                                     demangled_sopatt, N_DEMANGLED,
+                                     demangled_fnpatt, N_DEMANGLED,
+                                     &isWrap, &becTag, &becPrio );
+         /* ignore data symbols */
+         if (!isText)
+            continue;
+         if (!ok) {
+            /* It's not a full-scale redirect, but perhaps it is a load-notify
+               fn?  Let the load-notify department see it. */
+            handle_maybe_load_notifier( newdi_soname, *names, sym_addr );
+            continue; 
+         }
+         if (check_ppcTOCs && sym_toc == 0) {
+            /* This platform uses toc pointers, but none could be found
+               for this symbol, so we can't safely redirect/wrap to it.
+               Just skip it; we'll make a second pass over the symbols in
+               the following loop, and complain at that point. */
+            continue;
+         }
+         spec = dinfo_zalloc("redir.rnnD.1", sizeof(Spec));
+         vg_assert(spec);
+         spec->from_sopatt = dinfo_strdup("redir.rnnD.2", demangled_sopatt);
+         spec->from_fnpatt = dinfo_strdup("redir.rnnD.3", demangled_fnpatt);
+         vg_assert(spec->from_sopatt);
+         vg_assert(spec->from_fnpatt);
+         spec->to_addr = sym_addr;
+         spec->isWrap = isWrap;
+         spec->becTag = becTag;
+         spec->becPrio = becPrio;
+         /* check we're not adding manifestly stupid destinations */
+         vg_assert(is_plausible_guest_addr(sym_addr));
+         spec->next = specList;
+         spec->mark = False; /* not significant */
+         spec->done = False; /* not significant */
+         specList = spec;
       }
-      if (check_ppcTOCs && sym_toc == 0) {
-         /* This platform uses toc pointers, but none could be found
-            for this symbol, so we can't safely redirect/wrap to it.
-            Just skip it; we'll make a second pass over the symbols in
-            the following loop, and complain at that point. */
-         continue;
-      }
-      spec = dinfo_zalloc("redir.rnnD.1", sizeof(Spec));
-      vg_assert(spec);
-      spec->from_sopatt = dinfo_strdup("redir.rnnD.2", demangled_sopatt);
-      spec->from_fnpatt = dinfo_strdup("redir.rnnD.3", demangled_fnpatt);
-      vg_assert(spec->from_sopatt);
-      vg_assert(spec->from_fnpatt);
-      spec->to_addr = sym_addr;
-      spec->isWrap = isWrap;
-      /* check we're not adding manifestly stupid destinations */
-      vg_assert(is_plausible_guest_addr(sym_addr));
-      spec->next = specList;
-      spec->mark = False; /* not significant */
-      spec->done = False; /* not significant */
-      specList = spec;
+      free_symname_array(names_init, &twoslots[0]);
    }
 
    if (check_ppcTOCs) {
       for (i = 0; i < nsyms; i++) {
-         VG_(DebugInfo_syms_getidx)( newsi, i, &sym_addr, &sym_toc,
-                                     NULL, &sym_name, &isText, NULL );
-         ok = isText
-              && VG_(maybe_Z_demangle)( 
-                    sym_name, demangled_sopatt, N_DEMANGLED,
-                    demangled_fnpatt, N_DEMANGLED, &isWrap );
-         if (!ok)
-            /* not a redirect.  Ignore. */
-            continue;
-         if (sym_toc != 0)
-            /* has a valid toc pointer.  Ignore. */
-            continue;
+         VG_(DebugInfo_syms_getidx)( newdi, i, &sym_addr, &sym_toc,
+                                     NULL, &sym_name_pri, &sym_names_sec,
+                                     &isText, NULL );
+         UChar*  twoslots[2];
+         UChar** names_init = alloc_symname_array(sym_name_pri, sym_names_sec,
+                                                  &twoslots[0]);
+         UChar** names;
+         for (names = names_init; *names; names++) {
+            ok = isText
+                 && VG_(maybe_Z_demangle)( 
+                       *names, demangled_sopatt, N_DEMANGLED,
+                       demangled_fnpatt, N_DEMANGLED, &isWrap, NULL, NULL );
+            if (!ok)
+               /* not a redirect.  Ignore. */
+               continue;
+            if (sym_toc != 0)
+               /* has a valid toc pointer.  Ignore. */
+               continue;
 
-         for (spec = specList; spec; spec = spec->next) 
-            if (0 == VG_(strcmp)(spec->from_sopatt, demangled_sopatt)
-                && 0 == VG_(strcmp)(spec->from_fnpatt, demangled_fnpatt))
-               break;
-         if (spec)
-            /* a redirect to some other copy of that symbol, which
-               does have a TOC value, already exists */
-            continue;
+            for (spec = specList; spec; spec = spec->next) 
+               if (0 == VG_(strcmp)(spec->from_sopatt, demangled_sopatt)
+                   && 0 == VG_(strcmp)(spec->from_fnpatt, demangled_fnpatt))
+                  break;
+            if (spec)
+               /* a redirect to some other copy of that symbol, which
+                  does have a TOC value, already exists */
+               continue;
 
-         /* Complain */
-         VG_(message)(Vg_DebugMsg,
-                      "WARNING: no TOC ptr for redir/wrap to %s %s\n",
-                      demangled_sopatt, demangled_fnpatt);
+            /* Complain */
+            VG_(message)(Vg_DebugMsg,
+                         "WARNING: no TOC ptr for redir/wrap to %s %s\n",
+                         demangled_sopatt, demangled_fnpatt);
+         }
+         free_symname_array(names_init, &twoslots[0]);
       }
    }
 
@@ -429,7 +501,7 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newsi )
    newts = dinfo_zalloc("redir.rnnD.4", sizeof(TopSpec));
    vg_assert(newts);
    newts->next    = NULL; /* not significant */
-   newts->seginfo = newsi;
+   newts->seginfo = newdi;
    newts->specs   = specList;
    newts->mark    = False; /* not significant */
 
@@ -439,10 +511,10 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newsi )
       (1) actives formed by matching the new specs in specList against
           all symbols currently listed in topSpecs
 
-      (2) actives formed by matching the new symbols in newsi against
+      (2) actives formed by matching the new symbols in newdi against
           all specs currently listed in topSpecs
 
-      (3) actives formed by matching the new symbols in newsi against
+      (3) actives formed by matching the new symbols in newdi against
           the new specs in specList
 
       This is necessary in order to maintain the invariant that
@@ -460,12 +532,12 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newsi )
    /* Case (2) */
    for (ts = topSpecs; ts; ts = ts->next) {
       generate_and_add_actives( ts->specs, ts, 
-                                newsi,     newts );
+                                newdi,     newts );
    }
 
    /* Case (3) */
    generate_and_add_actives( specList, newts, 
-                             newsi,    newts );
+                             newdi,    newts );
 
    /* Finally, add the new TopSpec. */
    newts->next = topSpecs;
@@ -477,7 +549,7 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newsi )
    /* Really finally (quite unrelated to all the above) check the
       names in the module against any --require-text-symbol=
       specifications we might have. */
-   handle_require_text_symbols(newsi);
+   handle_require_text_symbols(newdi);
 }
 
 #undef N_DEMANGLED
@@ -502,7 +574,8 @@ void VG_(redir_add_ifunc_target)( Addr old_from, Addr new_from )
 
     if (VG_(clo_trace_redir)) {
        VG_(message)( Vg_DebugMsg,
-                     "Adding redirect for indirect function 0x%llx from 0x%llx -> 0x%llx\n",
+                     "Adding redirect for indirect function "
+                     "0x%llx from 0x%llx -> 0x%llx\n",
                      (ULong)old_from, (ULong)new_from, (ULong)new.to_addr );
     }
 }
@@ -522,12 +595,13 @@ void generate_and_add_actives (
         TopSpec* parent_sym 
      )
 {
-   Spec*  sp;
-   Bool   anyMark, isText, isIFunc;
-   Active act;
-   Int    nsyms, i;
-   Addr   sym_addr;
-   HChar* sym_name;
+   Spec*   sp;
+   Bool    anyMark, isText, isIFunc;
+   Active  act;
+   Int     nsyms, i;
+   Addr    sym_addr;
+   UChar*  sym_name_pri;
+   UChar** sym_names_sec;
 
    /* First figure out which of the specs match the seginfo's soname.
       Also clear the 'done' bits, so that after the main loop below
@@ -548,38 +622,39 @@ void generate_and_add_actives (
       of trashing the caches less. */
    nsyms = VG_(DebugInfo_syms_howmany)( di );
    for (i = 0; i < nsyms; i++) {
-      VG_(DebugInfo_syms_getidx)( di, i, &sym_addr, NULL, NULL,
-                                  &sym_name, &isText, &isIFunc );
+      VG_(DebugInfo_syms_getidx)( di, i, &sym_addr, NULL,
+                                  NULL, &sym_name_pri, &sym_names_sec,
+                                  &isText, &isIFunc );
+      UChar*  twoslots[2];
+      UChar** names_init = alloc_symname_array(sym_name_pri, sym_names_sec,
+                                               &twoslots[0]);
+      UChar** names;
+      for (names = names_init; *names; names++) {
 
-      /* ignore data symbols */
-      if (!isText)
-         continue;
+         /* ignore data symbols */
+         if (!isText)
+            continue;
 
-      /* On AIX, we cannot redirect calls to a so-called glink
-         function for reasons which are not obvious - something to do
-         with saving r2 across the call.  Not a problem, as we don't
-         want to anyway; presumably it is the target of the glink we
-         need to redirect.  Hence just spot them and ignore them.
-         They are always of a very specific (more or less
-         ABI-mandated) form. */
-      if (is_aix5_glink_idiom(sym_addr))
-         continue;
+         for (sp = specs; sp; sp = sp->next) {
+            if (!sp->mark)
+               continue; /* soname doesn't match */
+            if (VG_(string_match)( sp->from_fnpatt, *names )) {
+               /* got a new binding.  Add to collection. */
+               act.from_addr   = sym_addr;
+               act.to_addr     = sp->to_addr;
+               act.parent_spec = parent_spec;
+               act.parent_sym  = parent_sym;
+               act.becTag      = sp->becTag;
+               act.becPrio     = sp->becPrio;
+               act.isWrap      = sp->isWrap;
+               act.isIFunc     = isIFunc;
+               sp->done = True;
+               maybe_add_active( act );
+            }
+         } /* for (sp = specs; sp; sp = sp->next) */
 
-      for (sp = specs; sp; sp = sp->next) {
-         if (!sp->mark)
-            continue; /* soname doesn't match */
-         if (VG_(string_match)( sp->from_fnpatt, sym_name )) {
-            /* got a new binding.  Add to collection. */
-            act.from_addr   = sym_addr;
-            act.to_addr     = sp->to_addr;
-            act.parent_spec = parent_spec;
-            act.parent_sym  = parent_sym;
-            act.isWrap      = sp->isWrap;
-            act.isIFunc     = isIFunc;
-            sp->done = True;
-            maybe_add_active( act );
-         }
-      } /* for (sp = specs; sp; sp = sp->next) */
+      } /* iterating over names[] */
+      free_symname_array(names_init, &twoslots[0]);
    } /* for (i = 0; i < nsyms; i++)  */
 
    /* Now, finally, look for Specs which were marked to be done, but
@@ -638,8 +713,9 @@ void generate_and_add_actives (
    conflicting bindings. */
 static void maybe_add_active ( Active act )
 {
-   HChar*  what = NULL;
-   Active* old;
+   HChar*  what    = NULL;
+   Active* old     = NULL;
+   Bool    add_act = False;
 
    /* Complain and ignore manifestly bogus 'from' addresses.
 
@@ -666,16 +742,72 @@ static void maybe_add_active ( Active act )
       /* Dodgy.  Conflicting binding. */
       vg_assert(old->from_addr == act.from_addr);
       if (old->to_addr != act.to_addr) {
-         /* we have to ignore it -- otherwise activeSet would contain
-            conflicting bindings. */
-         what = "new redirection conflicts with existing -- ignoring it";
-         goto bad;
+         /* We've got a conflicting binding -- that is, from_addr is
+            specified to redirect to two different destinations,
+            old->to_addr and act.to_addr.  If we can prove that they
+            are behaviourally equivalent then that's no problem.  So
+            we can look at the behavioural eclass tags for both
+            functions to see if that's so.  If they are equal, and
+            nonzero, then that's fine.  But if not, we can't show they
+            are equivalent, so we have to complain, and ignore the new
+            binding. */
+         vg_assert(old->becTag  >= 0 && old->becTag  <= 9999);
+         vg_assert(old->becPrio >= 0 && old->becPrio <= 9);
+         vg_assert(act.becTag   >= 0 && act.becTag   <= 9999);
+         vg_assert(act.becPrio  >= 0 && act.becPrio  <= 9);
+         if (old->becTag == 0)
+            vg_assert(old->becPrio == 0);
+         if (act.becTag == 0)
+            vg_assert(act.becPrio == 0);
+
+         if (old->becTag == 0 || act.becTag == 0 || old->becTag != act.becTag) {
+            /* We can't show that they are equivalent.  Complain and
+               ignore. */
+            what = "new redirection conflicts with existing -- ignoring it";
+            goto bad;
+         }
+         /* They have the same eclass tag.  Use the priorities to
+            resolve the ambiguity. */
+         if (act.becPrio <= old->becPrio) {
+            /* The new one doesn't have a higher priority, so just
+               ignore it. */
+            if (VG_(clo_verbosity) > 2) {
+               VG_(message)(Vg_UserMsg, "Ignoring %s redirection:\n",
+                            act.becPrio < old->becPrio ? "lower priority" 
+                                                       : "duplicate");
+               show_active(             "    old: ", old);
+               show_active(             "    new: ", &act);
+            }
+         } else {
+            /* The tricky case.  The new one has a higher priority, so
+               we need to get the old one out of the OSet and install
+               this one in its place. */
+            if (VG_(clo_verbosity) > 1) {
+               VG_(message)(Vg_UserMsg, 
+                           "Preferring higher priority redirection:\n");
+               show_active(             "    old: ", old);
+               show_active(             "    new: ", &act);
+            }
+            add_act = True;
+            void* oldNd = VG_(OSetGen_Remove)( activeSet, &act.from_addr );
+            vg_assert(oldNd == old);
+            VG_(OSetGen_FreeNode)( activeSet, old );
+            old = NULL;
+         }
       } else {
          /* This appears to be a duplicate of an existing binding.
             Safe(ish) -- ignore. */
          /* XXXXXXXXXXX COMPLAIN if new and old parents differ */
       }
+
    } else {
+      /* There's no previous binding for this from_addr, so we must
+         add 'act' to the active set. */
+      add_act = True;
+   }
+
+   /* So, finally, actually add it. */
+   if (add_act) {
       Active* a = VG_(OSetGen_AllocNode)(activeSet, sizeof(Active));
       vg_assert(a);
       *a = act;
@@ -689,13 +821,21 @@ static void maybe_add_active ( Active act )
                                  "redir_new_DebugInfo(from_addr)");
       VG_(discard_translations)( (Addr64)act.to_addr, 1,
                                  "redir_new_DebugInfo(to_addr)");
+      if (VG_(clo_verbosity) > 2) {
+         VG_(message)(Vg_UserMsg, "Adding active redirection:\n");
+         show_active(             "    new: ", &act);
+      }
    }
    return;
 
   bad:
    vg_assert(what);
+   vg_assert(!add_act);
    if (VG_(clo_verbosity) > 1) {
       VG_(message)(Vg_UserMsg, "WARNING: %s\n", what);
+      if (old) {
+         show_active(             "    old: ", old);
+      }
       show_active(             "    new: ", &act);
    }
 }
@@ -840,6 +980,8 @@ static void add_hardwired_active ( Addr from, Addr to )
    act.to_addr     = to;
    act.parent_spec = NULL;
    act.parent_sym  = NULL;
+   act.becTag      = 0; /* "not equivalent to any other fn" */
+   act.becPrio     = 0; /* mandatory when becTag == 0 */
    act.isWrap      = False;
    act.isIFunc     = False;
    maybe_add_active( act );
@@ -1040,12 +1182,6 @@ void VG_(redir_initialise) ( void )
    }
    /* nothing so far */
 
-#  elif defined(VGP_ppc32_aix5)
-   /* nothing so far */
-
-#  elif defined(VGP_ppc64_aix5)
-   /* nothing so far */
-
 #  elif defined(VGP_x86_darwin)
    /* If we're using memcheck, use these intercepts right from
       the start, otherwise dyld makes a lot of noise. */
@@ -1126,43 +1262,6 @@ static Bool is_plausible_guest_addr(Addr a)
           && (seg->hasX || seg->hasR); /* crude x86-specific hack */
 }
 
-/* A function which spots AIX 'glink' functions.  A 'glink' function
-   is a stub function which has something to do with AIX-style dynamic
-   linking, and jumps to the real target (with which it typically
-   shares the same name).  See also comment where this function is
-   used (above). */
-static Bool is_aix5_glink_idiom ( Addr sym_addr )
-{
-#  if defined(VGP_ppc32_aix5)
-   UInt* w = (UInt*)sym_addr;
-   if (VG_IS_4_ALIGNED(w)
-       && is_plausible_guest_addr((Addr)(w+0))
-       && is_plausible_guest_addr((Addr)(w+6))
-       && (w[0] & 0xFFFF0000) == 0x81820000 /* lwz r12,func@toc(r2) */
-       && w[1] == 0x90410014                /* stw r2,20(r1) */
-       && w[2] == 0x800c0000                /* lwz r0,0(r12) */
-       && w[3] == 0x804c0004                /* lwz r2,4(r12) */
-       && w[4] == 0x7c0903a6                /* mtctr r0 */
-       && w[5] == 0x4e800420                /* bctr */
-       && w[6] == 0x00000000                /* illegal */)
-      return True;
-#  elif defined(VGP_ppc64_aix5)
-   UInt* w = (UInt*)sym_addr;
-   if (VG_IS_4_ALIGNED(w)
-       && is_plausible_guest_addr((Addr)(w+0))
-       && is_plausible_guest_addr((Addr)(w+6))
-       && (w[0] & 0xFFFF0000) == 0xE9820000 /* ld  r12,func@toc(r2) */
-       && w[1] == 0xF8410028                /* std r2,40(r1) */
-       && w[2] == 0xE80C0000                /* ld  r0,0(r12) */
-       && w[3] == 0xE84C0008                /* ld  r2,8(r12) */
-       && w[4] == 0x7c0903a6                /* mtctr r0 */
-       && w[5] == 0x4e800420                /* bctr */
-       && w[6] == 0x00000000                /* illegal */)
-      return True;
-#  endif
-   return False;
-}
-
 
 /*------------------------------------------------------------*/
 /*--- NOTIFY-ON-LOAD FUNCTIONS                             ---*/
@@ -1195,7 +1294,8 @@ void handle_maybe_load_notifier( const UChar* soname,
 
    if (VG_(strcmp)(symbol, VG_STRINGIFY(VG_NOTIFY_ON_LOAD(freeres))) == 0)
       VG_(client___libc_freeres_wrapper) = addr;
-   else if (VG_(strcmp)(symbol, VG_STRINGIFY(VG_NOTIFY_ON_LOAD(ifunc_wrapper))) == 0)
+   else
+   if (VG_(strcmp)(symbol, VG_STRINGIFY(VG_NOTIFY_ON_LOAD(ifunc_wrapper))) == 0)
       iFuncWrapper = addr;
    else
       vg_assert2(0, "unrecognised load notification function: %s", symbol);
@@ -1264,23 +1364,34 @@ static void handle_require_text_symbols ( DebugInfo* di )
       This isn't terribly efficient but it happens rarely, so no big
       deal. */
    for (i = 0; i < fnpatts_used; i++) {
-      Bool   found = False;
+      Bool   found  = False;
       HChar* fnpatt = fnpatts[i];
-      Int    nsyms = VG_(DebugInfo_syms_howmany)(di);
+      Int    nsyms  = VG_(DebugInfo_syms_howmany)(di);
       for (j = 0; j < nsyms; j++) {
-         Bool   isText   = False;
-         HChar* sym_name = NULL;
+         Bool    isText        = False;
+         UChar*  sym_name_pri  = NULL;
+         UChar** sym_names_sec = NULL;
          VG_(DebugInfo_syms_getidx)( di, j, NULL, NULL,
-                                     NULL, &sym_name, &isText, NULL );
-         /* ignore data symbols */
-         if (0) VG_(printf)("QQQ %s\n", sym_name);
-         vg_assert(sym_name);
-         if (!isText)
-            continue;
-         if (VG_(string_match)(fnpatt, sym_name)) {
-            found = True;
-            break;
+                                     NULL, &sym_name_pri, &sym_names_sec,
+                                     &isText, NULL );
+         UChar*  twoslots[2];
+         UChar** names_init = alloc_symname_array(sym_name_pri, sym_names_sec,
+                                                  &twoslots[0]);
+         UChar** names;
+         for (names = names_init; *names; names++) {
+            /* ignore data symbols */
+            if (0) VG_(printf)("QQQ %s\n", *names);
+            vg_assert(sym_name_pri);
+            if (!isText)
+               continue;
+            if (VG_(string_match)(fnpatt, *names)) {
+               found = True;
+               break;
+            }
          }
+         free_symname_array(names_init, &twoslots[0]);
+         if (found)
+            break;
       }
 
       if (!found) {
@@ -1317,10 +1428,11 @@ static void handle_require_text_symbols ( DebugInfo* di )
 static void show_spec ( HChar* left, Spec* spec )
 {
    VG_(message)( Vg_DebugMsg, 
-                 "%s%25s %30s %s-> 0x%08llx\n",
+                 "%s%25s %30s %s-> (%04d.%d) 0x%08llx\n",
                  left,
                  spec->from_sopatt, spec->from_fnpatt,
                  spec->isWrap ? "W" : "R",
+                 spec->becTag, spec->becPrio,
                  (ULong)spec->to_addr );
 }
 
@@ -1335,10 +1447,11 @@ static void show_active ( HChar* left, Active* act )
    ok = VG_(get_fnname_w_offset)(act->to_addr, name2, 64);
    if (!ok) VG_(strcpy)(name2, "???");
 
-   VG_(message)(Vg_DebugMsg, "%s0x%08llx (%20s) %s-> 0x%08llx %s\n", 
+   VG_(message)(Vg_DebugMsg, "%s0x%08llx (%20s) %s-> (%04d.%d) 0x%08llx %s\n", 
                              left, 
                              (ULong)act->from_addr, name1,
                              act->isWrap ? "W" : "R",
+                             act->becTag, act->becPrio,
                              (ULong)act->to_addr, name2 );
 }
 

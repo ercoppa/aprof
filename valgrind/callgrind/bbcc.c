@@ -621,10 +621,9 @@ void CLG_(setup_bbcc)(BB* bb)
 
   /* A return not matching the top call in our callstack is a jump */
   if ( (jmpkind == Ijk_Ret) && (csp >0)) {
-      
       Int csp_up = csp-1;      
       call_entry* top_ce = &(CLG_(current_call_stack).entry[csp_up]);
-      
+
       /* We have a real return if
        * - the stack pointer (SP) left the current stack frame, or
        * - SP has the same value as when reaching the current function
@@ -634,18 +633,10 @@ void CLG_(setup_bbcc)(BB* bb)
        * The latter condition is needed because on PPC, SP can stay
        * the same over CALL=b(c)l / RET=b(c)lr boundaries
        */
-      if (sp < top_ce->sp)  {
-	  //VG_(printf)("On BB %lu, RET to CALL because SP(%lu) < TOP_SP(%lu)\n", bb_addr(bb), sp, top_ce->sp);
-	  popcount_on_return = 0;
-	}
+      if (sp < top_ce->sp) popcount_on_return = 0;
       else if (top_ce->sp == sp) {
 	  while(1) {
-		//VG_(printf)("Try to convert RET to CALL for BB(%lu) because SP=CSP=%lu\n", bb_addr(bb), sp);
-	      
-		if (top_ce->ret_addr == bb_addr(bb)) {
-		    //VG_(printf)("Match on %lu\n", bb_addr(bb));
-		    break;
-		}
+	      if (top_ce->ret_addr == bb_addr(bb)) break;
 	      if (csp_up>0) {
 		  csp_up--;
 		  top_ce = &(CLG_(current_call_stack).entry[csp_up]);
@@ -655,14 +646,12 @@ void CLG_(setup_bbcc)(BB* bb)
 		  }
 	      }
 	      popcount_on_return = 0;
-	      //VG_(printf)("No match found BB(%lu)\n", bb_addr(bb));
 	      break;
 	  }
-      } 
+      }
       if (popcount_on_return == 0) {
 	  jmpkind = Ijk_Boring;
 	  ret_without_call = True;
-	  //VG_(printf)("RET converted in CALL %lu\n", bb_addr(bb));
       }
   }
 
@@ -757,7 +746,6 @@ void CLG_(setup_bbcc)(BB* bb)
     if (unwind_count > 0) {
       /* if unwinding was done, this actually is a return */
       jmpkind = Ijk_Ret;
-      //VG_(printf)("CALL converted to RET\n");
     }
     
     if (jmpkind == Ijk_Call) {

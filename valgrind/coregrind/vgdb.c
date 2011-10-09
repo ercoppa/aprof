@@ -6,7 +6,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2011 Philippe Waroquiers
+   Copyright (C) 2011-2011 Philippe Waroquiers
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -25,12 +25,30 @@
 
    The GNU General Public License is contained in the file COPYING.
 */
+
+/* Too difficult to make this work on Android right now.  Let's
+   skip for the time being at least. */
+#if defined(VGPV_arm_linux_android)
+
+#include <stdio.h>
+int main (int argc, char** argv)
+{
+   fprintf(stderr,
+           "%s: is not currently available on Android, sorry.\n",
+           argv[0]);
+   return 0;
+}
+
+#else /* all other (Linux?) platforms */
+
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
 #include "pub_core_libcsetjmp.h"
 #include "pub_core_threadstate.h"
 #include "pub_core_gdbserver.h"
+#include "config.h"
 
+#include <limits.h>
 #include <unistd.h>
 #include <string.h>
 #include <poll.h>
@@ -46,12 +64,13 @@
 #include <sys/mman.h>
 #include <sys/ptrace.h>
 #include <sys/wait.h>
-#include "assert.h"
+#include <assert.h>
 #include <sys/user.h>
 
-#  if defined(VGO_linux)
-#include <sys/prctl.h>
-#  endif
+#if defined(VGO_linux)
+#  include <sys/prctl.h>
+#  include <linux/ptrace.h>
+#endif
 
 /* vgdb has two usages:
    1. relay application between gdb and the gdbserver embedded in valgrind.
@@ -92,6 +111,10 @@ I_die_here : (PTRACEINVOKER) architecture missing in vgdb.c
 #undef PTRACEINVOKER
 #endif
 
+// Outputs information for the user about ptrace_scope protection
+// or ptrace not working.
+static void ptrace_restrictions_msg(void);
+
 static int debuglevel;
 static struct timeval dbgtv;
 /* if level <= debuglevel, print timestamp, then print provided by debug info */
@@ -119,7 +142,7 @@ static struct timeval dbgtv;
                             fflush(stderr),                              \
                             exit(1))
 
-static char *vgdb_prefix = "/tmp/vgdb-pipe";
+static char *vgdb_prefix = NULL;
 
 /* Will be set to True when any condition indicating we have to shutdown
    is encountered. */
@@ -154,6 +177,35 @@ void *vrealloc(void *ptr,size_t size)
    if (mem == NULL)
       XERROR (errno, "can't reallocate memory\n");
    return mem;
+}
+
+/* Return the name of a directory for temporary files. */
+static
+const char *vgdb_tmpdir(void)
+{
+   const char *tmpdir;
+
+   tmpdir = getenv("TMPDIR");
+   if (tmpdir == NULL || *tmpdir == '\0') tmpdir = VG_TMPDIR;
+   if (tmpdir == NULL || *tmpdir == '\0') tmpdir = "/tmp";    /* fallback */
+
+   return tmpdir;
+}
+
+/* Return the path prefix for the named pipes (FIFOs) used by vgdb/gdb
+   to communicate with valgrind */
+static
+char *vgdb_prefix_default(void)
+{
+   const char *tmpdir;
+   HChar *prefix;
+   
+   tmpdir = vgdb_tmpdir();
+   prefix = vmalloc(strlen(tmpdir) + strlen("/vgdb-pipe") + 1);
+   strcpy(prefix, tmpdir);
+   strcat(prefix, "/vgdb-pipe");
+
+   return prefix;
 }
 
 /* add nrw to the written_by_vgdb field of shared32 or shared64 */ 
@@ -475,14 +527,26 @@ static
 Bool attach (int pid, char *msg)
 {
    long res;
+   static Bool output_error = True;
+   static Bool initial_attach = True;
+   // For a ptrace_scope protected system, we do not want to output 
+   // repetitively attach error. We will output once an error
+   // for the initial_attach. Once the 1st attach has succeeded, we
+   // again show all errors.
 
    DEBUG(1, "%s PTRACE_ATTACH pid %d\n", msg, pid);
    res = ptrace (PTRACE_ATTACH, pid, NULL, NULL);
    if (res != 0) {
-      ERROR(errno, "%s PTRACE_ATTACH pid %d %ld\n", msg, pid, res);
+      if (output_error || debuglevel > 0) {
+         ERROR(errno, "%s PTRACE_ATTACH pid %d %ld\n", msg, pid, res);
+         if (initial_attach)
+            output_error = False;
+      }
       return False;
    }
 
+   initial_attach = False;
+   output_error = True;
    return waitstopped(pid, SIGSTOP, msg);
 }
 
@@ -624,67 +688,137 @@ void detach_from_all_threads(int pid)
 static int pid_of_save_regs = 0;
 static struct user user_save;
 
+// The below indicates if ptrace_getregs (and ptrace_setregs) can be used.
+// Note that some linux versions are defining PTRACE_GETREGS but using
+// it gives back EIO.
+// has_working_ptrace_getregs can take the following values:
+//  -1 : PTRACE_GETREGS is defined
+//       runtime check not yet done.
+//   0 : PTRACE_GETREGS runtime check has failed.
+//   1 : PTRACE_GETREGS defined and runtime check ok.
+#ifdef PTRACE_GETREGS
+static int has_working_ptrace_getregs = -1;
+#endif
+
 /* Get the registers from pid into regs.
+   regs_bsz value gives the length of *regs. 
    Returns True if all ok, otherwise False. */
 static
-Bool getregs (int pid, void *regs)
+Bool getregs (int pid, void *regs, long regs_bsz)
 {
-#  ifdef VGA_s390x
-   char *pregs = (char *) regs;
-   long offset;
-   errno = 0;
-   DEBUG(1, "getregs PTRACE_PEEKUSER(s)\n");
-   for (offset = 0; offset < PT_ENDREGS; offset = offset + sizeof(long)) {
-      *(long *)(pregs+offset) = ptrace(PTRACE_PEEKUSER, pid, offset, NULL);
-      if (errno != 0) {
-         ERROR(errno, "PTRACE_PEEKUSER offset %ld\n", offset);
+   DEBUG(1, "getregs regs_bsz %ld\n", regs_bsz);
+#  ifdef PTRACE_GETREGS
+   if (has_working_ptrace_getregs) {
+      // Platforms having GETREGS
+      long res;
+      DEBUG(1, "getregs PTRACE_GETREGS\n");
+      res = ptrace (PTRACE_GETREGS, pid, NULL, regs);
+      if (res == 0) {
+         if (has_working_ptrace_getregs == -1) {
+            // First call to PTRACE_GETREGS succesful =>
+            has_working_ptrace_getregs = 1;
+            DEBUG(1, "detected a working PTRACE_GETREGS\n");
+         }
+         assert (has_working_ptrace_getregs == 1);
+         return True;
+      }
+      else if (has_working_ptrace_getregs == 1) {
+         // We had a working call, but now it fails.
+         // This is unexpected.
+         ERROR(errno, "PTRACE_GETREGS %ld\n", res);
          return False;
+      } else {
+         // Check this is the first call:
+         assert (has_working_ptrace_getregs == -1);
+         if (errno == EIO) {
+            DEBUG(1, "detected a broken PTRACE_GETREGS with EIO\n");
+            has_working_ptrace_getregs = 0;
+            // Fall over to the PTRACE_PEEKUSER case.
+         } else {
+            ERROR(errno, "broken PTRACE_GETREGS unexpected errno %ld\n", res);
+            return False;
+         }
       }
    }
-   return True;
-#  else
-   // Platforms having GETREGS
-   long res;
-   DEBUG(1, "getregs PTRACE_GETREGS\n");
-   res = ptrace (PTRACE_GETREGS, pid, NULL, regs);
-   if (res != 0) {
-      ERROR(errno, "PTRACE_GETREGS %ld\n", res);
-      return False;
-   }
-   return True;
 #  endif
+
+   // We assume  PTRACE_PEEKUSER is defined everywhere.
+   {
+#     ifdef PT_ENDREGS
+      long peek_bsz = PT_ENDREGS;
+      assert (peek_bsz <= regs_bsz);
+#     else
+      long peek_bsz = regs_bsz-1;
+#     endif
+      char *pregs = (char *) regs;
+      long offset;
+      errno = 0;
+      DEBUG(1, "getregs PTRACE_PEEKUSER(s) peek_bsz %ld\n", peek_bsz);
+      for (offset = 0; offset < peek_bsz; offset = offset + sizeof(long)) {
+         *(long *)(pregs+offset) = ptrace(PTRACE_PEEKUSER, pid, offset, NULL);
+         if (errno != 0) {
+            ERROR(errno, "PTRACE_PEEKUSER offset %ld\n", offset);
+            return False;
+         }
+      }
+      return True;
+   }
+
+   // If neither PTRACE_GETREGS not PTRACE_PEEKUSER have returned,
+   // then we are in serious trouble.
+   assert (0);
 }
 
 /* Set the registers of pid to regs.
+   regs_bsz value gives the length of *regs. 
    Returns True if all ok, otherwise False. */
 static
-Bool setregs (int pid, void *regs)
+Bool setregs (int pid, void *regs, long regs_bsz)
 {
-#  ifdef VGA_s390x
-   char *pregs = (char *) regs;
-   long offset;
-   long res;
-   errno = 0;
-   DEBUG(1, "setregs PTRACE_POKEUSER(s)\n");
-   for (offset = 0; offset < PT_ENDREGS; offset = offset + sizeof(long)) {
-      res = ptrace(PTRACE_POKEUSER, pid, offset, *(long*)(pregs+offset));
-      if (errno != 0) {
-         ERROR(errno, "PTRACE_POKEUSER offset %ld res %ld\n", offset, res);
+   DEBUG(1, "setregs regs_bsz %ld\n", regs_bsz);
+// Note : the below is checking for GETREGS, not SETREGS
+// as if one is defined and working, the other one should also work.
+#  ifdef PTRACE_GETREGS
+   if (has_working_ptrace_getregs) {
+      // Platforms having SETREGS
+      long res;
+      // setregs can never be called before getregs has done a runtime check.
+      assert (has_working_ptrace_getregs == 1);
+      DEBUG(1, "setregs PTRACE_SETREGS\n");
+      res = ptrace (PTRACE_SETREGS, pid, NULL, regs);
+      if (res != 0) {
+         ERROR(errno, "PTRACE_SETREGS %ld\n", res);
          return False;
       }
+      return True;
    }
-   return True;
-#  else
-   // Platforms having SETREGS
-   long res;
-   DEBUG(1, "setregs PTRACE_SETREGS\n");
-   res = ptrace (PTRACE_SETREGS, pid, NULL, regs);
-   if (res != 0) {
-      ERROR(errno, "PTRACE_SETREGS %ld\n", res);
-      return False;
-   }
-   return True;
 #  endif
+
+   {
+      char *pregs = (char *) regs;
+      long offset;
+      long res;
+#     ifdef PT_ENDREGS
+      long peek_bsz = PT_ENDREGS;
+      assert (peek_bsz <= regs_bsz);
+#     else
+      long peek_bsz = regs_bsz-1;
+#     endif
+      errno = 0;
+      DEBUG(1, "setregs PTRACE_POKEUSER(s) %ld\n", peek_bsz);
+      for (offset = 0; offset < peek_bsz; offset = offset + sizeof(long)) {
+         res = ptrace(PTRACE_POKEUSER, pid, offset, *(long*)(pregs+offset));
+         if (errno != 0) {
+            ERROR(errno, "PTRACE_POKEUSER offset %ld res %ld\n", offset, res);
+            return False;
+         }
+      }
+      return True;
+   }
+
+   // If neither PTRACE_SETREGS not PTRACE_POKEUSER have returned,
+   // then we are in serious trouble.
+   assert (0);
 }
 
 /* Restore the registers to the saved value, then detaches from all threads */
@@ -701,7 +835,7 @@ void restore_and_detach(int pid)
       }
 
       DEBUG(1, "setregs restore registers pid %d\n", pid_of_save_regs);
-      if (!setregs(pid_of_save_regs, &user_save.regs)) {
+      if (!setregs(pid_of_save_regs, &user_save.regs, sizeof(user_save.regs))) {
          ERROR(errno, "setregs restore registers pid %d after cont\n",
                pid_of_save_regs);
       }
@@ -720,6 +854,7 @@ void restore_and_detach(int pid)
 static
 Bool invoke_gdbserver (int pid)
 {
+   static Bool ptrace_restrictions_msg_given = False;
    long res;
    Bool stopped;
    struct user user_mod;
@@ -742,7 +877,11 @@ Bool invoke_gdbserver (int pid)
 
    DEBUG(1, "attach to 'main' pid %d\n", pid);
    if (!attach(pid, "attach main pid")) {
-      ERROR(0, "error attach main pid %d\n", pid);
+      if (!ptrace_restrictions_msg_given) {
+         ptrace_restrictions_msg_given = True;
+         ERROR(0, "error attach main pid %d\n", pid);
+         ptrace_restrictions_msg();
+      }
       return False;
    }
 
@@ -757,7 +896,7 @@ Bool invoke_gdbserver (int pid)
       return False;
    }
 
-   if (!getregs(pid, &user_mod.regs)) {
+   if (!getregs(pid, &user_mod.regs, sizeof(user_mod.regs))) {
       detach_from_all_threads(pid);
       return False;
    }
@@ -944,7 +1083,7 @@ Bool invoke_gdbserver (int pid)
       assert(0);
    }
    
-   if (!setregs(pid, &user_mod.regs)) {
+   if (!setregs(pid, &user_mod.regs, sizeof(user_mod.regs))) {
       detach_from_all_threads(pid);
       return False;
    }
@@ -970,8 +1109,8 @@ Bool invoke_gdbserver (int pid)
       return False;
    }
    pid_of_save_regs_continued = True;
-   
-   stopped = waitstopped (pid, SIGTRAP,
+   /* Wait for SIGSTOP generated by m_gdbserver.c give_control_back_to_vgdb */
+   stopped = waitstopped (pid, SIGSTOP,
                           "waitpid status after PTRACE_CONT to invoke");
    if (stopped) {
       /* Here pid has properly stopped on the break. */
@@ -1003,14 +1142,21 @@ void cleanup_restore_and_detach(void *v_pid)
    (if PTRACE_INVOKER is defined) to ensure that the gdbserver code is
    called soon by valgrind. */
 static int max_invoke_ms = 100;
+#define NEVER 99999999
+static int cmd_time_out = NEVER;
 static
 void *invoke_gdbserver_in_valgrind(void *v_pid)
 {
+   struct timeval cmd_max_end_time;
+   Bool cmd_started = False;
+   struct timeval invoke_time;
+
    int pid = *(int *)v_pid;
    int written_by_vgdb_before_sleep;
    int seen_by_valgrind_before_sleep;
    
    int invoked_written = -1;
+   unsigned int usecs;
 
    pthread_cleanup_push(cleanup_restore_and_detach, v_pid);
 
@@ -1022,15 +1168,44 @@ void *invoke_gdbserver_in_valgrind(void *v_pid)
             "seen_by_valgrind_before_sleep %d\n",
             written_by_vgdb_before_sleep,
             seen_by_valgrind_before_sleep);
-      if (usleep(1000 * max_invoke_ms) != 0) {
+      if (cmd_time_out != NEVER
+          && !cmd_started
+          && written_by_vgdb_before_sleep > seen_by_valgrind_before_sleep) {
+         /* A command was started. Record the time at which it was started. */
+         DEBUG(1, "IO for command started\n");
+         gettimeofday(&cmd_max_end_time, NULL);
+         cmd_max_end_time.tv_sec += cmd_time_out;
+         cmd_started = True;
+      }
+      if (max_invoke_ms > 0) {
+         usecs = 1000 * max_invoke_ms;
+         gettimeofday(&invoke_time, NULL);
+         invoke_time.tv_sec += max_invoke_ms / 1000;
+         invoke_time.tv_usec += 1000 * (max_invoke_ms % 1000);
+         invoke_time.tv_sec += invoke_time.tv_usec / (1000 * 1000);
+         invoke_time.tv_usec = invoke_time.tv_usec % (1000 * 1000);
+      } else {
+         usecs = 0;
+      }
+      if (cmd_started) {
+         // 0 usecs here means the thread just has to check gdbserver eats
+         // the characters in <= cmd_time_out seconds.
+         // We will just wait by 1 second max at a time.
+         if (usecs == 0 || usecs > 1000 * 1000)
+            usecs = 1000 * 1000;
+      }
+      if (usleep(usecs) != 0) {
          if (errno == EINTR)
             continue;
          XERROR (errno, "error usleep\n");
       }
-      /* if nothing happened during our sleep, let's try to wake up valgrind */
+      /* If nothing happened during our sleep, let's try to wake up valgrind
+         or check for cmd time out. */
       if (written_by_vgdb_before_sleep == VS_written_by_vgdb
           && seen_by_valgrind_before_sleep == VS_seen_by_valgrind
           && VS_written_by_vgdb > VS_seen_by_valgrind) {
+         struct timeval now;
+         gettimeofday(&now, NULL);
          DEBUG(2,
                "after sleep "
                "written_by_vgdb %d "
@@ -1044,20 +1219,33 @@ void *invoke_gdbserver_in_valgrind(void *v_pid)
            XERROR (errno, 
                    "invoke_gdbserver_in_valgrind: "
                    "check for pid %d existence failed\n", pid);
-
-         #if defined(PTRACEINVOKER)
-         /* only need to wake up if the nr written has changed since
-            last invoke. */
-         if (invoked_written != written_by_vgdb_before_sleep) {
-            if (invoke_gdbserver(pid)) {
-               /* If invoke succesful, no need to invoke again
-                  for the same value of written_by_vgdb_before_sleep. */
-               invoked_written = written_by_vgdb_before_sleep;
-            }
+         if (cmd_started) {
+            if (timercmp (&now, &cmd_max_end_time, >))
+               XERROR (0, 
+                       "pid %d did not handle a command in %d seconds\n",
+                       pid, cmd_time_out);
          }
-         #else
-         DEBUG(2, "invoke_gdbserver via ptrace not (yet) implemented\n");
-         #endif
+         if (max_invoke_ms > 0 && timercmp (&now, &invoke_time, >=)) {
+            #if defined(PTRACEINVOKER)
+            /* only need to wake up if the nr written has changed since
+               last invoke. */
+            if (invoked_written != written_by_vgdb_before_sleep) {
+               if (invoke_gdbserver(pid)) {
+                  /* If invoke succesful, no need to invoke again
+                     for the same value of written_by_vgdb_before_sleep. */
+                  invoked_written = written_by_vgdb_before_sleep;
+               }
+            }
+            #else
+            DEBUG(2, "invoke_gdbserver via ptrace not (yet) implemented\n");
+            #endif
+         }
+      } else {
+         // Something happened => restart timer check.
+         if (cmd_time_out != NEVER) {
+            DEBUG(2, "some IO was done => restart command\n");
+            cmd_started = False;
+         }
       }
    }
    pthread_cleanup_pop(0);
@@ -1223,13 +1411,28 @@ Bool read_from_pid_write_to_gdb(int from_pid)
 static
 void prepare_fifos_and_shared_mem(int pid)
 {
-   from_gdb_to_pid = vmalloc (strlen(vgdb_prefix) + 30);
-   to_gdb_from_pid = vmalloc (strlen(vgdb_prefix) + 30);
-   shared_mem      = vmalloc (strlen(vgdb_prefix) + 30);
+   const HChar *user, *host;
+   unsigned len;
+
+   user = getenv("LOGNAME");
+   if (user == NULL) user = getenv("USER");
+   if (user == NULL) user = "???";
+
+   host = getenv("HOST");
+   if (host == NULL) host = getenv("HOSTNAME");
+   if (host == NULL) host = "???";
+
+   len = strlen(vgdb_prefix) + strlen(user) + strlen(host) + 40;
+   from_gdb_to_pid = vmalloc (len);
+   to_gdb_from_pid = vmalloc (len);
+   shared_mem      = vmalloc (len);
    /* below 3 lines must match the equivalent in remote-utils.c */
-   sprintf(from_gdb_to_pid, "%s-from-vgdb-to-%d",    vgdb_prefix, pid);
-   sprintf(to_gdb_from_pid, "%s-to-vgdb-from-%d",    vgdb_prefix, pid);
-   sprintf(shared_mem,      "%s-shared-mem-vgdb-%d", vgdb_prefix, pid);
+   sprintf(from_gdb_to_pid, "%s-from-vgdb-to-%d-by-%s-on-%s",    vgdb_prefix,
+           pid, user, host);
+   sprintf(to_gdb_from_pid, "%s-to-vgdb-from-%d-by-%s-on-%s",    vgdb_prefix,
+           pid, user, host);
+   sprintf(shared_mem,      "%s-shared-mem-vgdb-%d-by-%s-on-%s", vgdb_prefix,
+           pid, user, host);
    DEBUG (1, "vgdb: using %s %s %s\n", 
           from_gdb_to_pid, to_gdb_from_pid, shared_mem);
 
@@ -1460,7 +1663,7 @@ void close_connection(int to_pid, int from_pid)
       in the valgrind process can stay stopped if vgdb main
       exits before the invoke thread had time to detach from
       all valgrind threads. */
-   if (max_invoke_ms > 0) {
+   if (max_invoke_ms > 0 || cmd_time_out != NEVER) {
       int join;
 
       /* It is surprisingly complex to properly shutdown or exit the
@@ -1475,7 +1678,7 @@ void close_connection(int to_pid, int from_pid)
          call exit.  But a ptraced process will be blocked in exit,
          waiting for the ptracing process to detach or die. vgdb
          cannot detach unconditionally as otherwise, in the normal
-         case, the valgrind process would die abnormally with SIGTRAP
+         case, the valgrind process would stop abnormally with SIGSTOP
          (as vgdb would not be there to catch it). vgdb can also not
          die unconditionally otherwise again, similar problem.  So, we
          assume that most of the time, we arrive here in the normal
@@ -1485,7 +1688,7 @@ void close_connection(int to_pid, int from_pid)
          signal to be sent after a few seconds. This means that in the
          normal case, the gdbserver code in valgrind process must have
          returned the control in less than the alarm nr of seconds,
-         otherwise, valgrind will die abnormally with SIGTRAP. */
+         otherwise, valgrind will stop abnormally with SIGSTOP. */
       (void) alarm (3);
 
       DEBUG(1, "joining with invoke_gdbserver_in_valgrind_thread\n");
@@ -1634,7 +1837,7 @@ void standalone_send_commands(int pid,
    int nc;
 
 
-   if (max_invoke_ms > 0)
+   if (max_invoke_ms > 0 || cmd_time_out != NEVER)
       pthread_create(&invoke_gdbserver_in_valgrind_thread, NULL, 
                      invoke_gdbserver_in_valgrind, (void *) &pid);
 
@@ -1732,7 +1935,7 @@ void standalone_send_commands(int pid,
 /* report to user the existence of a vgdb-able valgrind process 
    with given pid */
 static
-void report_pid (int pid)
+void report_pid (int pid, Bool on_stdout)
 {
    char cmdline_file[100];
    char cmdline[1000];
@@ -1751,15 +1954,16 @@ void report_pid (int pid)
          if (cmdline[i] == 0)
             cmdline[i] = ' ';
       cmdline[sz] = 0;
+      close (fd);
    }  
-   fprintf(stderr, "use --pid=%d for %s\n", pid, cmdline);
-   fflush(stderr);
+   fprintf((on_stdout ? stdout : stderr), "use --pid=%d for %s\n", pid, cmdline);
+   fflush((on_stdout ? stdout : stderr));
 }
 
-/* Eventually produces additional usage information documenting the
+/* Possibly produces additional usage information documenting the
    ptrace restrictions. */
 static
-void ptrace_restrictions(void)
+void ptrace_restrictions_msg(void)
 {
 #  ifdef PR_SET_PTRACER
    char *ptrace_scope_setting_file = "/proc/sys/kernel/yama/ptrace_scope";
@@ -1773,8 +1977,10 @@ void ptrace_restrictions(void)
                "blocked in a system call *after* an initial successful attach\n",
                ptrace_scope_setting_file);
    } else if (ptrace_scope == 'X') {
-      fprintf(stderr, "Could not determine ptrace scope from %s\n",
-              ptrace_scope_setting_file);
+      DEBUG (1, 
+             "PR_SET_PTRACER defined"
+             " but could not determine ptrace scope from %s\n",
+             ptrace_scope_setting_file);
    }
    if (fd >= 0)
       close (fd);
@@ -1801,25 +2007,37 @@ void usage(void)
 "     Only OPTION(s) can be given.\n"
 "\n"
 " OPTIONS are [--pid=<number>] [--vgdb-prefix=<prefix>]\n"
-"             [--max-invoke-ms=<number>] [--wait=<number>] [-d] -D]\n"
+"             [--wait=<number>] [--max-invoke-ms=<number>]\n"
+"             [--cmd-time-out=<number>] [-l] [-D] [-d]\n"
+"             \n"
 "  --pid arg must be given if multiple Valgrind gdbservers are found.\n"
 "  --vgdb-prefix arg must be given to both Valgrind and vgdb utility\n"
 "      if you want to change the default prefix for the FIFOs communication\n"
 "      between the Valgrind gdbserver and vgdb.\n"
-"  --wait arg tells vgdb to check during the specified number\n"
+"  --wait (default 0) tells vgdb to check during the specified number\n"
 "      of seconds if a Valgrind gdbserver can be found.\n"
-"  --max-invoke-ms gives the nr of milli-seconds after which vgdb will force\n"
-"      the invocation of the Valgrind gdbserver (if the Valgrind process\n"
-"           is blocked in a system call).\n"
-"  -d  arg tells to show debug info. Multiple -d args for more debug info\n"
+"  --max-invoke-ms (default 100) gives the nr of milli-seconds after which vgdb\n"
+"      will force the invocation of the Valgrind gdbserver (if the Valgrind\n"
+"         process is blocked in a system call).\n"
+"  --cmd-time-out (default 99999999) tells vgdb to exit if the found Valgrind\n"
+"     gdbserver has not processed a command after number seconds\n"
+"  -l  arg tells to show the list of running Valgrind gdbserver and then exit.\n"
 "  -D  arg tells to show shared mem status and then exit.\n"
+"  -d  arg tells to show debug info. Multiple -d args for more debug info\n"
+"\n"
+"  -h --help shows this message\n"
+"  To get help from the Valgrind gdbserver, use vgdb help\n"
 "\n"
            );
-   ptrace_restrictions();  
+   ptrace_restrictions_msg();  
 }
 
-/* If arg_pid == -1, waits maximum check_trials seconds to discover
+/* If show_list, outputs on stdout the list of Valgrind processes with gdbserver activated.
+                 and then exits.
+
+   else if arg_pid == -1, waits maximum check_trials seconds to discover
    a valgrind pid appearing.
+
    Otherwise verify arg_pid is valid and corresponds to a Valgrind process
    with gdbserver activated.
 
@@ -1827,7 +2045,7 @@ void usage(void)
    or exits in case of error (e.g. no pid found corresponding to arg_pid */
 
 static
-int search_arg_pid(int arg_pid, int check_trials)
+int search_arg_pid(int arg_pid, int check_trials, Bool show_list)
 {
    int i;
    int pid = -1;
@@ -1869,6 +2087,7 @@ int search_arg_pid(int arg_pid, int check_trials)
 
       /* try to find FIFOs with valid pid.
          On exit of the loop, pid is set to:
+         the last pid found if show_list (or -1 if no process was listed)
          -1 if no FIFOs matching a running process is found
          -2 if multiple FIFOs of running processes are found
          otherwise it is set to the (only) pid found that can be debugged
@@ -1905,10 +2124,13 @@ int search_arg_pid(int arg_pid, int check_trials)
                             strlen (vgdb_format)) == 0) {
                   newpid = strtol(pathname + strlen (vgdb_format), 
                                   &wrongpid, 10);
-                  if (*wrongpid == '\0' && newpid > 0 
+                  if (*wrongpid == '-' && newpid > 0 
                       && kill (newpid, 0) == 0) {
                      nr_valid_pid++;
-                     if (arg_pid != -1) {
+                     if (show_list) {
+                        report_pid (newpid, /*on_stdout*/ True);
+                        pid = newpid;
+                     } else if (arg_pid != -1) {
                         if (arg_pid == newpid) {
                            pid = newpid;
                         }
@@ -1918,10 +2140,10 @@ int search_arg_pid(int arg_pid, int check_trials)
                               (stderr, 
                                "no --pid= arg given"
                                " and multiple valgrind pids found:\n");
-                           report_pid (pid);
+                           report_pid (pid, /*on_stdout*/ False);
                         }
                         pid = -2;
-                        report_pid (newpid);
+                        report_pid (newpid, /*on_stdout*/ False);
                      } else {
                         pid = newpid;
                      }
@@ -1942,8 +2164,10 @@ int search_arg_pid(int arg_pid, int check_trials)
       free (vgdb_dir_name);
       free (vgdb_format);
    }
-
-   if (pid == -1) {
+   
+   if (show_list) {
+      exit (1);
+   } else if (pid == -1) {
       if (arg_pid == -1)
          fprintf (stderr, "vgdb error: no FIFO found and no pid given\n");
       else
@@ -1969,14 +2193,18 @@ Bool numeric_val(char* arg, int *value)
 {
    const char *eq_pos = strchr(arg, '=');
    char *wrong;
+   long long int long_value;
 
    if (eq_pos == NULL)
       return False;
 
-   *value = strtol(eq_pos+1, &wrong, 10);
+   long_value = strtoll(eq_pos+1, &wrong, 10);
+   if (long_value < 0 || long_value > INT_MAX)
+      return False;
    if (*wrong)
       return False;
 
+   *value = (int) long_value;
    return True;
 }
 
@@ -1999,12 +2227,14 @@ Bool is_opt(char* arg, char *option)
 static
 void parse_options(int argc, char** argv,
                    Bool *p_show_shared_mem,
+                   Bool *p_show_list,
                    int *p_arg_pid,
                    int *p_check_trials,
                    int *p_last_command,
                    char *commands[])
 {
    Bool show_shared_mem = False;
+   Bool show_list = False;
    int arg_pid = -1;
    int check_trials = 1;
    int last_command = -1;
@@ -2020,25 +2250,32 @@ void parse_options(int argc, char** argv,
          debuglevel++;
       } else if (is_opt(argv[i], "-D")) {
          show_shared_mem = True;
+      } else if (is_opt(argv[i], "-l")) {
+         show_list = True;
       } else if (is_opt(argv[i], "--pid=")) {
          int newpid;
          if (!numeric_val(argv[i], &newpid)) {
-            fprintf (stderr, "invalid pid argument %s\n", argv[i]);
+            fprintf (stderr, "invalid --pid argument %s\n", argv[i]);
             arg_errors++;
          } else if (arg_pid != -1) {
-            fprintf (stderr, "multiple pid arguments given\n");
+            fprintf (stderr, "multiple --pid arguments given\n");
             arg_errors++;
          } else {
             arg_pid = newpid;
          }
       } else if (is_opt(argv[i], "--wait=")) {
          if (!numeric_val(argv[i], &check_trials)) {
-            fprintf (stderr, "invalid wait argument %s\n", argv[i]);
+            fprintf (stderr, "invalid --wait argument %s\n", argv[i]);
             arg_errors++;
          }
       } else if (is_opt(argv[i], "--max-invoke-ms=")) {
          if (!numeric_val(argv[i], &max_invoke_ms)) {
-            fprintf (stderr, "invalid max-invoke-ms argument %s\n", argv[i]);
+            fprintf (stderr, "invalid --max-invoke-ms argument %s\n", argv[i]);
+            arg_errors++;
+         }
+      } else if (is_opt(argv[i], "--cmd-time-out=")) {
+         if (!numeric_val(argv[i], &cmd_time_out)) {
+            fprintf (stderr, "invalid --cmd-time-out argument %s\n", argv[i]);
             arg_errors++;
          }
       } else if (is_opt(argv[i], "--vgdb-prefix=")) {
@@ -2071,12 +2308,46 @@ void parse_options(int argc, char** argv,
             
       }
    }
+
+   if (vgdb_prefix == NULL)
+      vgdb_prefix = vgdb_prefix_default();
+
+   if (isatty(0) 
+       && !show_shared_mem 
+       && !show_list
+       && last_command == -1) {
+      arg_errors++;
+      fprintf (stderr, 
+               "Using vgdb standalone implies to give -D or -l or a COMMAND\n");
+   }
+
+   if (show_shared_mem && show_list) {
+      arg_errors++;
+      fprintf (stderr,
+               "Can't use both -D and -l options\n");
+   }
+
+   if (max_invoke_ms > 0 
+       && cmd_time_out != NEVER
+       && (cmd_time_out * 1000) <= max_invoke_ms) {
+      arg_errors++;
+      fprintf (stderr,
+               "--max-invoke-ms must be < --cmd-time-out * 1000\n");
+   }
+
+   if (show_list && arg_pid != -1) {
+      arg_errors++;
+      fprintf (stderr,
+               "Can't use both --pid and -l options\n");
+   }
+
    if (arg_errors > 0) {
       fprintf (stderr, "args error. Try `vgdb --help` for more information\n");
       exit(1);
    }
 
    *p_show_shared_mem = show_shared_mem;
+   *p_show_list = show_list;
    *p_arg_pid = arg_pid;
    *p_check_trials = check_trials;
    *p_last_command = last_command;
@@ -2088,6 +2359,7 @@ int main(int argc, char** argv)
    int pid;
 
    Bool show_shared_mem;
+   Bool show_list;
    int arg_pid;
    int check_trials;
    int last_command;
@@ -2095,6 +2367,7 @@ int main(int argc, char** argv)
 
    parse_options(argc, argv,
                  &show_shared_mem,
+                 &show_list,
                  &arg_pid,
                  &check_trials,
                  &last_command,
@@ -2107,7 +2380,7 @@ int main(int argc, char** argv)
    if (max_invoke_ms > 0 || last_command == -1)
       install_handlers();
 
-   pid = search_arg_pid (arg_pid, check_trials);
+   pid = search_arg_pid (arg_pid, check_trials, show_list);
 
    prepare_fifos_and_shared_mem(pid);
 
@@ -2139,3 +2412,5 @@ int main(int argc, char** argv)
       free (commands[i]);
    return 0;
 }
+
+#endif /* !defined(VGPV_arm_linux_android) */

@@ -71,7 +71,7 @@ static UInt n_SP_updates_generic_unknown = 0;
 
 void VG_(print_translation_stats) ( void )
 {
-   Char buf[6];
+   Char buf[7];
    UInt n_SP_updates = n_SP_updates_fast + n_SP_updates_generic_known
                                          + n_SP_updates_generic_unknown;
    VG_(percentify)(n_SP_updates_fast, n_SP_updates, 1, 6, buf);
@@ -729,41 +729,87 @@ static Bool translations_allowable_from_seg ( NSegment const* seg )
 }
 
 
-/* Is a self-check required for a translation of a guest address
-   inside segment SEG when requested by thread TID ? */
+/* Produce a bitmask stating which of the supplied extents needs a
+   self-check.  See documentation of
+   VexTranslateArgs::needs_self_check for more details about the
+   return convention. */
 
-static Bool self_check_required ( NSegment const* seg, ThreadId tid )
+static UInt needs_self_check ( void* closureV,
+                               VexGuestExtents* vge )
 {
-#if defined(VGO_darwin)
-   // GrP fixme hack - dyld i386 IMPORT gets rewritten
-   // to really do this correctly, we'd need to flush the 
-   // translation cache whenever a segment became +WX
-   if (seg->hasX  && seg->hasW) {
-      return True;
+   VgCallbackClosure* closure = (VgCallbackClosure*)closureV;
+   UInt i, bitset;
+
+   vg_assert(vge->n_used >= 1 && vge->n_used <= 3);
+   bitset = 0;
+
+   for (i = 0; i < vge->n_used; i++) {
+      Bool  check = False;
+      Addr  addr  = (Addr)vge->base[i];
+      SizeT len   = (SizeT)vge->len[i];
+      NSegment const* segA = NULL;
+
+#     if defined(VGO_darwin)
+      // GrP fixme hack - dyld i386 IMPORT gets rewritten.
+      // To really do this correctly, we'd need to flush the 
+      // translation cache whenever a segment became +WX.
+      segA = VG_(am_find_nsegment)(addr);
+      if (segA && segA->hasX && segA->hasW)
+         check = True;
+#     endif
+
+      if (!check) {
+         switch (VG_(clo_smc_check)) {
+            case Vg_SmcNone:
+               /* never check (except as per Darwin hack above) */
+               break;
+            case Vg_SmcAll: 
+               /* always check */
+               check = True;
+               break;
+            case Vg_SmcStack: {
+               /* check if the address is in the same segment as this
+                  thread's stack pointer */
+               Addr sp = VG_(get_SP)(closure->tid);
+               if (!segA) {
+                  segA = VG_(am_find_nsegment)(addr);
+               }
+               NSegment const* segSP = VG_(am_find_nsegment)(sp);
+               if (segA && segSP && segA == segSP)
+                  check = True;
+               break;
+            }
+            case Vg_SmcAllNonFile: {
+               /* check if any part of the extent is not in a
+                  file-mapped segment */
+               if (!segA) {
+                  segA = VG_(am_find_nsegment)(addr);
+               }
+               if (segA && segA->kind == SkFileC && segA->start <= addr
+                   && (len == 0 || addr + len <= segA->end + 1)) {
+                  /* in a file-mapped segment; skip the check */
+               } else {
+                  check = True;
+               }
+               break;
+            }
+            default:
+               vg_assert(0);
+         }
+      }
+
+      if (check)
+         bitset |= (1 << i);
    }
-#endif
-   switch (VG_(clo_smc_check)) {
-      case Vg_SmcNone:  return False;
-      case Vg_SmcAll:   return True;
-      case Vg_SmcStack: 
-         return seg 
-                ? (seg->start <= VG_(get_SP)(tid)
-                   && VG_(get_SP)(tid)+sizeof(Word)-1 <= seg->end)
-                : False;
-         break;
-      default: 
-         vg_assert2(0, "unknown VG_(clo_smc_check) value");
-   }
+
+   return bitset;
 }
 
 
 /* This is a callback passed to LibVEX_Translate.  It stops Vex from
    chasing into function entry points that we wish to redirect.
    Chasing across them obviously defeats the redirect mechanism, with
-   bad effects for Memcheck, Addrcheck, and possibly others.
-
-   Also, we must stop Vex chasing into blocks for which we might want
-   to self checking.
+   bad effects for Memcheck, Helgrind, DRD, Massif, and possibly others.
 */
 static Bool chase_into_ok ( void* closureV, Addr64 addr64 )
 {
@@ -796,6 +842,18 @@ static Bool chase_into_ok ( void* closureV, Addr64 addr64 )
    if (addr == TRANSTAB_BOGUS_GUEST_ADDR)
       goto dontchase;
 
+#  if defined(VGA_s390x)
+   /* Never chase into an EX instruction. Generating IR for EX causes
+      a round-trip through the scheduler including VG_(discard_translations).
+      And that's expensive as shown by perf/tinycc.c:
+      Chasing into EX increases the number of EX translations from 21 to
+      102666 causing a 7x runtime increase for "none" and a 3.2x runtime
+      increase for memcheck. */
+   if (((UChar *)ULong_to_Ptr(addr))[0] == 0x44 ||   /* EX */
+       ((UChar *)ULong_to_Ptr(addr))[0] == 0xC6)     /* EXRL */
+     goto dontchase;
+#  endif
+
    /* well, ok then.  go on and chase. */
    return True;
 
@@ -810,7 +868,7 @@ static Bool chase_into_ok ( void* closureV, Addr64 addr64 )
 
 /* --------------- helpers for with-TOC platforms --------------- */
 
-/* NOTE: with-TOC platforms are: ppc64-linux, ppc32-aix5, ppc64-aix5. */
+/* NOTE: with-TOC platforms are: ppc64-linux. */
 
 static IRExpr* mkU64 ( ULong n ) {
    return IRExpr_Const(IRConst_U64(n));
@@ -842,7 +900,7 @@ static void gen_PUSH ( IRSB* bb, IRExpr* e )
    IRTemp      t1;
    IRExpr*     one;
 
-#  if defined(VGP_ppc64_linux) || defined(VGP_ppc64_aix5)
+#  if defined(VGP_ppc64_linux)
    Int    stack_size       = VEX_GUEST_PPC64_REDIR_STACK_SIZE;
    Int    offB_REDIR_SP    = offsetof(VexGuestPPC64State,guest_REDIR_SP);
    Int    offB_REDIR_STACK = offsetof(VexGuestPPC64State,guest_REDIR_STACK);
@@ -933,7 +991,7 @@ static void gen_PUSH ( IRSB* bb, IRExpr* e )
 
 static IRTemp gen_POP ( IRSB* bb )
 {
-#  if defined(VGP_ppc64_linux) || defined(VGP_ppc64_aix5)
+#  if defined(VGP_ppc64_linux)
    Int    stack_size       = VEX_GUEST_PPC64_REDIR_STACK_SIZE;
    Int    offB_REDIR_SP    = offsetof(VexGuestPPC64State,guest_REDIR_SP);
    Int    offB_REDIR_STACK = offsetof(VexGuestPPC64State,guest_REDIR_STACK);
@@ -1022,7 +1080,7 @@ static IRTemp gen_POP ( IRSB* bb )
 
 static void gen_push_and_set_LR_R2 ( IRSB* bb, Addr64 new_R2_value )
 {
-#  if defined(VGP_ppc64_linux) || defined(VGP_ppc64_aix5)
+#  if defined(VGP_ppc64_linux)
    Addr64 bogus_RA  = (Addr64)&VG_(ppctoc_magic_redirect_return_stub);
    Int    offB_GPR2 = offsetof(VexGuestPPC64State,guest_GPR2);
    Int    offB_LR   = offsetof(VexGuestPPC64State,guest_LR);
@@ -1031,15 +1089,6 @@ static void gen_push_and_set_LR_R2 ( IRSB* bb, Addr64 new_R2_value )
    addStmtToIRSB( bb, IRStmt_Put( offB_LR,   mkU64( bogus_RA )) );
    addStmtToIRSB( bb, IRStmt_Put( offB_GPR2, mkU64( new_R2_value )) );
 
-#  elif defined(VGP_ppc32_aix5)
-   Addr32 bogus_RA  = (Addr32)&VG_(ppctoc_magic_redirect_return_stub);
-   Int    offB_GPR2 = offsetof(VexGuestPPC32State,guest_GPR2);
-   Int    offB_LR   = offsetof(VexGuestPPC32State,guest_LR);
-   gen_PUSH( bb, IRExpr_Get(offB_LR,   Ity_I32) );
-   gen_PUSH( bb, IRExpr_Get(offB_GPR2, Ity_I32) );
-   addStmtToIRSB( bb, IRStmt_Put( offB_LR,   mkU32( bogus_RA )) );
-   addStmtToIRSB( bb, IRStmt_Put( offB_GPR2, mkU32( new_R2_value )) );
-
 #  else
 #    error Platform is not TOC-afflicted, fortunately
 #  endif
@@ -1047,7 +1096,7 @@ static void gen_push_and_set_LR_R2 ( IRSB* bb, Addr64 new_R2_value )
 
 static void gen_pop_R2_LR_then_bLR ( IRSB* bb )
 {
-#  if defined(VGP_ppc64_linux) || defined(VGP_ppc64_aix5)
+#  if defined(VGP_ppc64_linux)
    Int    offB_GPR2 = offsetof(VexGuestPPC64State,guest_GPR2);
    Int    offB_LR   = offsetof(VexGuestPPC64State,guest_LR);
    IRTemp old_R2    = newIRTemp( bb->tyenv, Ity_I64 );
@@ -1065,25 +1114,6 @@ static void gen_pop_R2_LR_then_bLR ( IRSB* bb )
    bb->jumpkind = Ijk_Boring;
    bb->next = IRExpr_Binop(Iop_And64, IRExpr_RdTmp(old_LR), mkU64(~(3ULL)));
 
-#  elif defined(VGP_ppc32_aix5)
-   Int    offB_GPR2 = offsetof(VexGuestPPC32State,guest_GPR2);
-   Int    offB_LR   = offsetof(VexGuestPPC32State,guest_LR);
-   IRTemp old_R2    = newIRTemp( bb->tyenv, Ity_I32 );
-   IRTemp old_LR    = newIRTemp( bb->tyenv, Ity_I32 );
-   /* Restore R2 */
-   old_R2 = gen_POP( bb );
-   addStmtToIRSB( bb, IRStmt_Put( offB_GPR2, IRExpr_RdTmp(old_R2)) );
-   /* Restore LR */
-   old_LR = gen_POP( bb );
-   addStmtToIRSB( bb, IRStmt_Put( offB_LR, IRExpr_RdTmp(old_LR)) );
-
-   /* Branch to LR */
-   /* re boring, we arrived here precisely because a wrapped fn did a
-      blr (hence Ijk_Ret); so we should just mark this jump as Boring,
-      else one _Call will have resulted in two _Rets. */
-   bb->jumpkind = Ijk_Boring;
-   bb->next = IRExpr_Binop(Iop_And32, IRExpr_RdTmp(old_LR), mkU32(~3));
-
 #  else
 #    error Platform is not TOC-afflicted, fortunately
 #  endif
@@ -1096,7 +1126,7 @@ Bool mk_preamble__ppctoc_magic_return_stub ( void* closureV, IRSB* bb )
    /* Since we're creating the entire IRSB right here, give it a
       proper IMark, as it won't get one any other way, and cachegrind
       will barf if it doesn't have one (fair enough really). */
-   addStmtToIRSB( bb, IRStmt_IMark( closure->readdr, 4 ) );
+   addStmtToIRSB( bb, IRStmt_IMark( closure->readdr, 4, 0 ) );
    /* Generate the magic sequence:
          pop R2 from hidden stack
          pop LR from hidden stack
@@ -1179,8 +1209,7 @@ Bool mk_preamble__set_NRADDR_to_nraddr ( void* closureV, IRSB* bb )
             : IRExpr_Const(IRConst_U32( (UInt)closure->nraddr ))
       )
    );
-#  if defined(VGP_ppc64_linux) || defined(VGP_ppc32_aix5) \
-                               || defined(VGP_ppc64_aix5)
+#  if defined(VGP_ppc64_linux)
    addStmtToIRSB( 
       bb,
       IRStmt_Put( 
@@ -1199,48 +1228,6 @@ Bool mk_preamble__set_NRADDR_to_nraddr ( void* closureV, IRSB* bb )
 __attribute__((unused))
 static Bool const_True ( Addr64 guest_addr )
 {
-   return True;
-}
-
-__attribute__((unused))
-static Bool bl_RZ_zap_ok_for_AIX ( Addr64 bl_target )
-{
-   /* paranoia */
-   if (sizeof(void*) == 4)
-      bl_target &= 0xFFFFFFFFULL;
-
-   /* don't zap the redzone for calls to millicode. */
-   if (bl_target < 0x10000ULL)
-      return False;
-
-   /* don't zap the redzone for calls to .$SAVEF14 .. .$SAVEF31.
-      First we need to be reasonably sure we won't segfault by looking
-      at the branch target. */
-   { NSegment const*const seg = VG_(am_find_nsegment)( (Addr)bl_target );
-     if (seg && seg->hasR) {
-        switch ( *(UInt*)(Addr)bl_target ) {
-           case 0xd9c1ff70: /* stfd f14,-144(r1) */
-           case 0xd9e1ff78: /* stfd f15,-136(r1) */
-           case 0xda01ff80: /* stfd f16,-128(r1) */
-           case 0xda21ff88: /* stfd f17,-120(r1) */
-           case 0xda41ff90: /* stfd f18,-112(r1) */
-           case 0xda61ff98: /* stfd f19,-104(r1) */
-           case 0xda81ffa0: /* stfd f20,-96(r1) */
-           case 0xdaa1ffa8: /* stfd f21,-88(r1) */
-           case 0xdac1ffb0: /* stfd f22,-80(r1) */
-           case 0xdae1ffb8: /* stfd f23,-72(r1) */
-           case 0xdb01ffc0: /* stfd f24,-64(r1) */
-           case 0xdb21ffc8: /* stfd f25,-56(r1) */
-           case 0xdb41ffd0: /* stfd f26,-48(r1) */
-           case 0xdb61ffd8: /* stfd f27,-40(r1) */
-           case 0xdb81ffe0: /* stfd f28,-32(r1) */
-           case 0xdba1ffe8: /* stfd f29,-24(r1) */
-           case 0xdbc1fff0: /* stfd f30,-16(r1) */
-           case 0xdbe1fff8: /* stfd f31,-8(r1) */
-              return False;
-        }
-     }
-   }
    return True;
 }
 
@@ -1284,7 +1271,6 @@ Bool VG_(translate) ( ThreadId tid,
    Addr64             addr;
    T_Kind             kind;
    Int                tmpbuf_used, verbosity, i;
-   Bool               do_self_check;
    Bool (*preamble_fn)(void*,IRSB*);
    VexArch            vex_arch;
    VexArchInfo        vex_archinfo;
@@ -1392,9 +1378,6 @@ Bool VG_(translate) ( ThreadId tid,
       return False;
    }
 
-   /* Do we want a self-checking translation? */
-   do_self_check = self_check_required( seg, tid );
-
    /* True if a debug trans., or if bit N set in VG_(clo_trace_codegen). */
    verbosity = 0;
    if (debugging_translation) {
@@ -1457,12 +1440,6 @@ Bool VG_(translate) ( ThreadId tid,
    vex_abiinfo.guest_ppc_zap_RZ_at_bl         = const_True;
    vex_abiinfo.host_ppc_calls_use_fndescrs    = True;
 #  endif
-#  if defined(VGP_ppc32_aix5) || defined(VGP_ppc64_aix5)
-   vex_abiinfo.guest_ppc_zap_RZ_at_blr        = False;
-   vex_abiinfo.guest_ppc_zap_RZ_at_bl         = bl_RZ_zap_ok_for_AIX;
-   vex_abiinfo.guest_ppc_sc_continues_at_LR   = True;
-   vex_abiinfo.host_ppc_calls_use_fndescrs    = True;
-#  endif
 
    /* Set up closure args. */
    closure.tid    = tid;
@@ -1509,29 +1486,47 @@ Bool VG_(translate) ( ThreadId tid,
    vta.finaltidy        = VG_(needs).final_IR_tidy_pass
                              ? VG_(tdict).tool_final_IR_tidy_pass
                              : NULL;
-   vta.do_self_check    = do_self_check;
+   vta.needs_self_check = needs_self_check;
    vta.traceflags       = verbosity;
 
    /* Set up the dispatch-return info.  For archs without a link
       register, vex generates a jump back to the specified dispatch
       address.  Else, it just generates a branch-to-LR. */
-#  if defined(VGA_x86) || defined(VGA_amd64)
-   vta.dispatch 
-      = (!allow_redirection)
-        ? /* It's a no-redir translation.  Will be run with the nonstandard
-           dispatcher VG_(run_a_noredir_translation)
-           and so needs a nonstandard return point. */
-          (void*) &VG_(run_a_noredir_translation__return_point)
 
-        : /* normal translation.  Uses VG_(run_innerloop).  Return
-             point depends on whether we're profiling bbs or not. */
-          VG_(clo_profile_flags) > 0
-          ? (void*) &VG_(run_innerloop__dispatch_profiled)
-          : (void*) &VG_(run_innerloop__dispatch_unprofiled);
+#  if defined(VGA_x86) || defined(VGA_amd64)
+   if (!allow_redirection) {
+      /* It's a no-redir translation.  Will be run with the
+         nonstandard dispatcher VG_(run_a_noredir_translation) and so
+         needs a nonstandard return point. */
+      vta.dispatch_assisted
+         = (void*) &VG_(run_a_noredir_translation__return_point);
+      vta.dispatch_unassisted
+         = vta.dispatch_assisted;
+   }
+   else
+   if (VG_(clo_profile_flags) > 0) {
+      /* normal translation; although we're profiling. */
+      vta.dispatch_assisted
+         = (void*) &VG_(run_innerloop__dispatch_assisted_profiled);
+      vta.dispatch_unassisted
+         = (void*) &VG_(run_innerloop__dispatch_unassisted_profiled);
+   }
+   else {
+      /* normal translation and we're not profiling (the normal case) */
+      vta.dispatch_assisted
+         = (void*) &VG_(run_innerloop__dispatch_assisted_unprofiled);
+      vta.dispatch_unassisted
+         = (void*) &VG_(run_innerloop__dispatch_unassisted_unprofiled);
+   }
+
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64) \
         || defined(VGA_arm) || defined(VGA_s390x)
-   /* See comment libvex.h; machine has link register --> dipatch = NULL */
-   vta.dispatch = NULL;
+   /* See comment in libvex.h.  This target uses a
+      return-to-link-register scheme to get back to the dispatcher, so
+      both fields are NULL. */
+   vta.dispatch_assisted   = NULL;
+   vta.dispatch_unassisted = NULL;
+
 #  else
 #    error "Unknown arch"
 #  endif
@@ -1539,7 +1534,8 @@ Bool VG_(translate) ( ThreadId tid,
    /* Sheesh.  Finally, actually _do_ the translation! */
    tres = LibVEX_Translate ( &vta );
 
-   vg_assert(tres == VexTransOK);
+   vg_assert(tres.status == VexTransOK);
+   vg_assert(tres.n_sc_extents >= 0 && tres.n_sc_extents <= 3);
    vg_assert(tmpbuf_used <= N_TMPBUF);
    vg_assert(tmpbuf_used > 0);
 
@@ -1576,7 +1572,7 @@ Bool VG_(translate) ( ThreadId tid,
                                 nraddr,
                                 (Addr)(&tmpbuf[0]), 
                                 tmpbuf_used,
-                                do_self_check );
+                                tres.n_sc_extents > 0 );
       } else {
           VG_(add_to_unredir_transtab)( &vge,
                                         nraddr,

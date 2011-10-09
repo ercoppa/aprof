@@ -235,9 +235,9 @@ int main ( void )
 int shared_var = 0;  // is not raced upon
 
 
-void delay100ms ( void )
+void delay500ms ( void )
 {
-   struct timespec ts = { 0, 100 * 1000 * 1000 };
+   struct timespec ts = { 0, 500 * 1000 * 1000 };
    nanosleep(&ts, NULL);
 }
 
@@ -261,11 +261,11 @@ void do_signal ( UWord* w )
 void* thread_fn1 ( void* arg )
 {
   UWord* w = (UWord*)arg;
-  delay100ms();    // ensure t2 gets to its wait first
+  delay500ms();    // ensure t2 gets to its wait first
   shared_var = 1;  // first access
   do_signal(w);    // cause h-b edge to second thread
 
-  delay100ms();
+  delay500ms();
   return NULL;
 }
 
@@ -275,7 +275,7 @@ void* thread_fn2 ( void* arg )
   do_wait(w);      // wait for h-b edge from first thread
   shared_var = 2;  // second access
 
-  delay100ms();
+  delay500ms();
   return NULL;
 }
 

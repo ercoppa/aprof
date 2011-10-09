@@ -35,6 +35,7 @@
 #include "libvex_guest_s390x.h"
 #include "libvex_ir.h"
 #include "libvex.h"
+#include "libvex_s390x_common.h"
 
 #include "main_util.h"
 #include "guest_generic_bb_to_IR.h"
@@ -147,13 +148,13 @@ LibVEX_GuestS390X_initialise(VexGuestS390XState *state)
 Bool
 guest_s390x_state_requires_precise_mem_exns(Int minoff, Int maxoff)
 {
-   Int lr_min = offsetof(VexGuestS390XState, guest_LR);
+   Int lr_min = S390X_GUEST_OFFSET(guest_LR);
    Int lr_max = lr_min + 8 - 1;
-   Int sp_min = offsetof(VexGuestS390XState, guest_SP);
+   Int sp_min = S390X_GUEST_OFFSET(guest_SP);
    Int sp_max = sp_min + 8 - 1;
-   Int fp_min = offsetof(VexGuestS390XState, guest_FP);
+   Int fp_min = S390X_GUEST_OFFSET(guest_FP);
    Int fp_max = fp_min + 8 - 1;
-   Int ia_min = offsetof(VexGuestS390XState, guest_IA);
+   Int ia_min = S390X_GUEST_OFFSET(guest_IA);
    Int ia_max = ia_min + 8 - 1;
 
    if (maxoff < lr_min || minoff > lr_max) {
@@ -185,7 +186,7 @@ guest_s390x_state_requires_precise_mem_exns(Int minoff, Int maxoff)
 
 
 #define ALWAYSDEFD(field)                             \
-    { offsetof(VexGuestS390XState, field),            \
+    { S390X_GUEST_OFFSET(field),            \
       (sizeof ((VexGuestS390XState*)0)->field) }
 
 VexGuestLayout s390xGuest_layout = {
@@ -194,15 +195,15 @@ VexGuestLayout s390xGuest_layout = {
    .total_sizeB = sizeof(VexGuestS390XState),
 
    /* Describe the stack pointer. */
-   .offset_SP = offsetof(VexGuestS390XState, guest_SP),
+   .offset_SP = S390X_GUEST_OFFSET(guest_SP),
    .sizeof_SP = 8,
 
    /* Describe the frame pointer. */
-   .offset_FP = offsetof(VexGuestS390XState, guest_FP),
+   .offset_FP = S390X_GUEST_OFFSET(guest_FP),
    .sizeof_FP = 8,
 
    /* Describe the instruction pointer. */
-   .offset_IP = offsetof(VexGuestS390XState, guest_IA),
+   .offset_IP = S390X_GUEST_OFFSET(guest_IA),
    .sizeof_IP = 8,
 
    /* Describe any sections to be regarded by Memcheck as
@@ -226,6 +227,23 @@ VexGuestLayout s390xGuest_layout = {
 };
 
 /*------------------------------------------------------------*/
+/*--- Dirty helper for invalid opcode 00                   ---*/
+/*------------------------------------------------------------*/
+#if defined(VGA_s390x)
+void
+s390x_dirtyhelper_00(VexGuestS390XState *guest_state)
+{
+   /* Avoid infinite loop in case SIGILL is caught. See also
+      none/tests/s390x/op_exception.c */
+   guest_state->guest_IA += 2;
+
+   asm volatile(".hword 0\n");
+}
+#else
+void s390x_dirtyhelper_00(VexGuestS390XState *guest_state) { }
+#endif
+
+/*------------------------------------------------------------*/
 /*--- Dirty helper for EXecute                             ---*/
 /*------------------------------------------------------------*/
 void
@@ -233,6 +251,89 @@ s390x_dirtyhelper_EX(ULong torun)
 {
    last_execute_target = torun;
 }
+
+
+/*------------------------------------------------------------*/
+/*--- Dirty helper for Clock instructions                  ---*/
+/*------------------------------------------------------------*/
+#if defined(VGA_s390x)
+ULong s390x_dirtyhelper_STCK(ULong *addr)
+{
+   int cc;
+
+   asm volatile("stck %0\n"
+                "ipm %1\n"
+                "srl %1,28\n"
+                : "+Q" (*addr), "=d" (cc) : : "cc");
+   return cc;
+}
+
+ULong s390x_dirtyhelper_STCKE(ULong *addr)
+{
+   int cc;
+
+   asm volatile("stcke %0\n"
+                "ipm %1\n"
+                "srl %1,28\n"
+                : "+Q" (*addr), "=d" (cc) : : "cc");
+   return cc;
+}
+
+ULong s390x_dirtyhelper_STCKF(ULong *addr)
+{
+   int cc;
+
+   asm volatile(".insn s,0xb27c0000,%0\n"
+                "ipm %1\n"
+                "srl %1,28\n"
+                : "+Q" (*addr), "=d" (cc) : : "cc");
+   return cc;
+}
+#else
+ULong s390x_dirtyhelper_STCK(ULong *addr)  {return 3;}
+ULong s390x_dirtyhelper_STCKF(ULong *addr) {return 3;}
+ULong s390x_dirtyhelper_STCKE(ULong *addr) {return 3;}
+#endif /* VGA_s390x */
+
+/*------------------------------------------------------------*/
+/*--- Dirty helper for Store Facility instruction          ---*/
+/*------------------------------------------------------------*/
+#if defined(VGA_s390x)
+ULong
+s390x_dirtyhelper_STFLE(VexGuestS390XState *guest_state, HWord addr)
+{
+   ULong hoststfle[S390_NUM_FACILITY_DW], cc, num_dw, i;
+   register ULong reg0 asm("0") = guest_state->guest_r0 & 0xF;  /* r0[56:63] */
+
+   /* We cannot store more than S390_NUM_FACILITY_DW
+      (and it makes not much sense to do so anyhow) */
+   if (reg0 > S390_NUM_FACILITY_DW - 1)
+      reg0 = S390_NUM_FACILITY_DW - 1;
+
+   num_dw = reg0 + 1;  /* number of double words written */
+
+   asm volatile(" .insn s,0xb2b00000,%0\n"   /* stfle */
+                "ipm    %2\n"
+                "srl    %2,28\n"
+                : "=m" (hoststfle), "+d"(reg0), "=d"(cc) : : "cc", "memory");
+
+   /* Update guest register 0  with what STFLE set r0 to */
+   guest_state->guest_r0 = reg0;
+
+   for (i = 0; i < num_dw; ++i)
+      ((ULong *)addr)[i] = hoststfle[i];
+
+   return cc;
+}
+
+#else
+
+ULong
+s390x_dirtyhelper_STFLE(VexGuestS390XState *guest_state, HWord addr)
+{
+   return 3;
+}
+#endif /* VGA_s390x */
 
 /*------------------------------------------------------------*/
 /*--- Helper for condition code.                           ---*/

@@ -129,8 +129,6 @@ template <bool b> struct vki_static_assert { int m_bitfield:(2*b-1); };
 
 # define __user
 
-# define __attribute_const__    /* unimplemented */
-
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/posix_types.h
 //----------------------------------------------------------------------
@@ -214,6 +212,7 @@ typedef unsigned int	        vki_uint;
 //----------------------------------------------------------------------
 
 typedef		__vki_s32	vki_int32_t;
+typedef		__vki_s64	vki_int64_t;
 
 typedef		__vki_u8	vki_uint8_t;
 typedef		__vki_u16	vki_uint16_t;
@@ -929,6 +928,11 @@ struct	vki_rusage {
 struct vki_rlimit {
 	unsigned long	rlim_cur;
 	unsigned long	rlim_max;
+};
+
+struct vki_rlimit64 {
+	__vki_u64 rlim_cur;
+	__vki_u64 rlim_max;
 };
 
 //----------------------------------------------------------------------
@@ -1967,7 +1971,9 @@ struct vki_hd_geometry {
 //----------------------------------------------------------------------
 
 #define VKI_FBIOGET_VSCREENINFO	0x4600
+#define VKI_FBIOPUT_VSCREENINFO	0x4601
 #define VKI_FBIOGET_FSCREENINFO	0x4602
+#define VKI_FBIOPAN_DISPLAY	0x4606
 
 struct vki_fb_fix_screeninfo {
 	char id[16];			/* identification string eg "TT Builtin" */
@@ -2625,10 +2631,10 @@ struct	vki_iwreq
 };
 
 /*--------------------------------------------------------------------*/
-// From linux-2.6.31.5/include/linux/perf_counter.h
+// From linux-2.6.31.5/include/linux/perf_event.h
 /*--------------------------------------------------------------------*/
 
-struct vki_perf_counter_attr {
+struct vki_perf_event_attr {
 
 	/*
 	 * Major type: hardware/software/tracepoint/etc.
@@ -2667,13 +2673,37 @@ struct vki_perf_counter_attr {
 					inherit_stat   :  1, /* per task counts       */
 					enable_on_exec :  1, /* next exec enables     */
 					task           :  1, /* trace fork/exit       */
+					watermark      :  1, /* wakeup_watermark      */
+					/*
+					 * precise_ip:
+					 *
+					 *  0 - SAMPLE_IP can have arbitrary skid
+					 *  1 - SAMPLE_IP must have constant skid
+					 *  2 - SAMPLE_IP requested to have 0 skid
+					 *  3 - SAMPLE_IP must have 0 skid
+					 *
+					 *  See also PERF_RECORD_MISC_EXACT_IP
+					 */
+					precise_ip     :  2, /* skid constraint       */
+					mmap_data      :  1, /* non-exec mmap data    */
+					sample_id_all  :  1, /* sample_type all events */
 
-					__reserved_1   : 50;
+					__reserved_1   : 45;
 
-	__vki_u32			wakeup_events;	/* wakeup every n events */
-	__vki_u32			__reserved_2;
+	union {
+		__vki_u32		wakeup_events;	  /* wakeup every n events */
+		__vki_u32		wakeup_watermark; /* bytes before wakeup   */
+	};
 
-	__vki_u64			__reserved_3;
+	__vki_u32			bp_type;
+	union {
+		__vki_u64		bp_addr;
+		__vki_u64		config1; /* extension of config */
+	};
+	union {
+		__vki_u64		bp_len;
+		__vki_u64		config2; /* extension of config1 */
+	};
 };
 
 /*--------------------------------------------------------------------*/
@@ -2721,6 +2751,75 @@ struct vki_getcpu_cache {
 #define VKI_EV_FF_STATUS	0x17
 #define VKI_EV_MAX		0x1f
 #define VKI_EV_CNT		(VKI_EV_MAX+1)
+
+//----------------------------------------------------------------------
+// From linux-2.6.39-rc2/include/asm_generic/ioctls.h
+//----------------------------------------------------------------------
+
+#ifndef VKI_FIOQSIZE
+#define VKI_FIOQSIZE 0x5460     /* Value differs on some platforms */
+#endif
+
+//----------------------------------------------------------------------
+// From kernel/common/include/linux/ashmem.h
+//----------------------------------------------------------------------
+
+#if defined(VGPV_arm_linux_android)
+
+#define VKI_ASHMEM_NAME_LEN 256
+
+#define VKI_ASHMEM_NAME_DEF "dev/ashmem"
+
+#define VKI_ASHMEM_NOT_PURGED 0
+#define VKI_ASHMEM_WAS_PURGED 1
+
+#define VKI_ASHMEM_IS_UNPINNED 0
+#define VKI_ASHMEM_IS_PINNED 1
+
+struct vki_ashmem_pin {
+   vki_uint32_t offset;
+   vki_uint32_t len;
+};
+
+#define __VKI_ASHMEMIOC 0x77
+
+#define VKI_ASHMEM_SET_NAME _VKI_IOW(__VKI_ASHMEMIOC, 1, char[VKI_ASHMEM_NAME_LEN])
+#define VKI_ASHMEM_GET_NAME _VKI_IOR(__VKI_ASHMEMIOC, 2, char[VKI_ASHMEM_NAME_LEN])
+#define VKI_ASHMEM_SET_SIZE _VKI_IOW(__VKI_ASHMEMIOC, 3, vki_size_t)
+#define VKI_ASHMEM_GET_SIZE _VKI_IO(__VKI_ASHMEMIOC, 4)
+#define VKI_ASHMEM_SET_PROT_MASK _VKI_IOW(__VKI_ASHMEMIOC, 5, unsigned long)
+#define VKI_ASHMEM_GET_PROT_MASK _VKI_IO(__VKI_ASHMEMIOC, 6)
+#define VKI_ASHMEM_PIN _VKI_IOW(__VKI_ASHMEMIOC, 7, struct vki_ashmem_pin)
+#define VKI_ASHMEM_UNPIN _VKI_IOW(__VKI_ASHMEMIOC, 8, struct vki_ashmem_pin)
+#define VKI_ASHMEM_GET_PIN_STATUS _VKI_IO(__VKI_ASHMEMIOC, 9)
+#define VKI_ASHMEM_PURGE_ALL_CACHES _VKI_IO(__VKI_ASHMEMIOC, 10)
+
+//----------------------------------------------------------------------
+// From kernel/common/include/linux/binder.h
+//----------------------------------------------------------------------
+
+struct vki_binder_write_read {
+ signed long write_size;
+ signed long write_consumed;
+ unsigned long write_buffer;
+ signed long read_size;
+ signed long read_consumed;
+ unsigned long read_buffer;
+};
+
+struct vki_binder_version {
+ signed long protocol_version;
+};
+
+#define VKI_BINDER_WRITE_READ _VKI_IOWR('b', 1, struct vki_binder_write_read)
+#define VKI_BINDER_SET_IDLE_TIMEOUT _VKI_IOW('b', 3, vki_int64_t)
+#define VKI_BINDER_SET_MAX_THREADS _VKI_IOW('b', 5, vki_size_t)
+#define VKI_BINDER_SET_IDLE_PRIORITY _VKI_IOW('b', 6, int)
+#define VKI_BINDER_SET_CONTEXT_MGR _VKI_IOW('b', 7, int)
+#define VKI_BINDER_THREAD_EXIT _VKI_IOW('b', 8, int)
+#define VKI_BINDER_VERSION _VKI_IOWR('b', 9, struct vki_binder_version)
+
+#endif /* defined(VGPV_arm_linux_android) */
 
 #endif // __VKI_LINUX_H
 
