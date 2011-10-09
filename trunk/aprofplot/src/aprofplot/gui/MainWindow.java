@@ -14,6 +14,8 @@ package aprofplot.gui;
 import aprofplot.*;
 import java.util.ArrayList;
 import javax.swing.JOptionPane;
+import javax.swing.RowFilter;
+import javax.swing.table.TableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import java.util.*;
@@ -63,6 +65,7 @@ public class MainWindow extends javax.swing.JFrame {
         jButton3 = new javax.swing.JButton();
         jButton1 = new javax.swing.JButton();
         jButton7 = new javax.swing.JButton();
+        jButton9 = new javax.swing.JButton();
         jSeparator2 = new javax.swing.JToolBar.Separator();
         jButton6 = new javax.swing.JButton();
         jSeparator5 = new javax.swing.JToolBar.Separator();
@@ -206,6 +209,19 @@ public class MainWindow extends javax.swing.JFrame {
             }
         });
         jToolBar1.add(jButton7);
+
+        jButton9.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/refresh.png"))); // NOI18N
+        jButton9.setToolTipText("Reload this report");
+        jButton9.setEnabled(false);
+        jButton9.setFocusable(false);
+        jButton9.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButton9.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jButton9.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton9ActionPerformed(evt);
+            }
+        });
+        jToolBar1.add(jButton9);
         jToolBar1.add(jSeparator2);
 
         jButton6.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Merge-icon.png"))); // NOI18N
@@ -580,7 +596,7 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jMenu1.add(jMenuItem6);
 
-        jMenuItem8.setText("Export sms of selected routine");
+        jMenuItem8.setText("Export sms about selected routine");
         jMenuItem8.setEnabled(false);
         jMenuItem8.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -720,6 +736,7 @@ public class MainWindow extends javax.swing.JFrame {
     }
 
     protected void loadReport(java.io.File file) throws Exception {
+        jButton9.setEnabled(true);
         jMenuItem9.setEnabled(true);
         report = new AprofReport(file);
         //routines_filter_criteria = new String[5];
@@ -898,7 +915,7 @@ public class MainWindow extends javax.swing.JFrame {
     }//GEN-LAST:event_jToggleButton3ActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        // TODO add your handling code here:
+
         openFile();
     }//GEN-LAST:event_jButton1ActionPerformed
 
@@ -984,17 +1001,17 @@ public class MainWindow extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton4ActionPerformed
 
     private void jMenuItem5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem5ActionPerformed
-        // TODO add your handling code here:
+
         openFile();
     }//GEN-LAST:event_jMenuItem5ActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-        // TODO add your handling code here:
+
         Main.newWindow();
     }//GEN-LAST:event_jButton3ActionPerformed
 
     private void jMenuItem3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem3ActionPerformed
-        // TODO add your handling code here:
+
         (new AboutDialog(this, true)).setVisible(true);
     }//GEN-LAST:event_jMenuItem3ActionPerformed
 
@@ -1252,8 +1269,7 @@ public class MainWindow extends javax.swing.JFrame {
         if (this.rtn_info == null) return;
         ArrayList<SmsEntry> ss = this.rtn_info.getTimeEntries();
         try {
-            File tmp = new File(Main.getLastReportPath() + "/" 
-                                + this.report.getName() + "."
+            File tmp = new File(this.report.getName() + "."
                                 + this.rtn_info.getName() + ".sms");
             tmp.createNewFile();
             PrintWriter out = new PrintWriter(new FileWriter(tmp));
@@ -1273,21 +1289,36 @@ public class MainWindow extends javax.swing.JFrame {
     private void jMenuItem9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem9ActionPerformed
         ArrayList<RoutineInfo> els = this.report.getRoutines();
         try {
-            File tmp = new File(Main.getLastReportPath() + "/" + this.report.getName() + ".sms");
+            File tmp = new File(this.report.getName() + ".sms");
             tmp.createNewFile();
             PrintWriter out = new PrintWriter(new FileWriter(tmp));
             for (int i = 0; i < els.size(); i++) {
                 RoutineInfo el = els.get(i);
                 out.println(el.getID() + " " +
                             (int) el.getSizeTimeEntries() + " " +
-                            (long) el.getTotalTime() + " " +
-                            (long) el.getTotalCalls() + " " +
+                            (int) el.getTotalTime() + " " +
+                            (int) el.getTotalCalls() + " " +
                             el.getName()
                             );
             }
             out.close();
         } catch(java.io.IOException e) {}
     }//GEN-LAST:event_jMenuItem9ActionPerformed
+
+    private void jButton9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton9ActionPerformed
+        if (report == null) return;
+        try {
+            File file = new File(this.report.getName());
+            loadReport(file);
+            Main.addRecentFile(file);
+            this.refreshRecentFiles();
+        }
+        catch (Exception e) {
+            javax.swing.JOptionPane.showMessageDialog(this, "Couldn't open the selected file", "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+        
+    }//GEN-LAST:event_jButton9ActionPerformed
 
     protected void removeRoutineTableFilter() {
         this.routines_filter_criteria = new String[5];
@@ -1302,7 +1333,7 @@ public class MainWindow extends javax.swing.JFrame {
         this.routines_filter_criteria = criteria;
         java.util.ArrayList<String> blacklist = Main.getBlackList();
         //if (Main.getBlackList().size() == 0 && criteria[0] == null && criteria[1] == null && criteria[2] == null && criteria[3] == null) routines_table_sorter.setRowFilter(null); // no filters
-        java.util.List<javax.swing.RowFilter<Object, Object>> filters = new java.util.ArrayList<javax.swing.RowFilter<Object, Object>>(4);
+        List<RowFilter<TableModel, Integer>> filters = new ArrayList<RowFilter<TableModel, Integer>>(4);
         if (Main.getBlackListEnabled() && blacklist.size() > 0) {
             java.util.List<javax.swing.RowFilter<javax.swing.table.TableModel,Integer>> blacklist_filters = new java.util.ArrayList<javax.swing.RowFilter<javax.swing.table.TableModel,Integer>>();
             for (int i = 0; i < blacklist.size(); i++) {
@@ -1315,7 +1346,8 @@ public class MainWindow extends javax.swing.JFrame {
                 }
                 blacklist_filters.add(javax.swing.RowFilter.notFilter(blacklist_filter));
             }
-            filters.add(javax.swing.RowFilter.andFilter(blacklist_filters));
+            RowFilter<TableModel, Integer> f = RowFilter.andFilter(blacklist_filters);
+            filters.add(f);
         }
         if (criteria[0] != null) {
             java.util.List<javax.swing.RowFilter<javax.swing.table.TableModel,Integer>> timeperc_filters = new java.util.ArrayList<javax.swing.RowFilter<javax.swing.table.TableModel,Integer>>(2);
@@ -1330,7 +1362,8 @@ public class MainWindow extends javax.swing.JFrame {
             }
             timeperc_filters.add(timeperc_equal_filter);
             timeperc_filters.add(timeperc_greater_filter);
-            filters.add(javax.swing.RowFilter.orFilter(timeperc_filters));
+            RowFilter<TableModel, Integer> f = javax.swing.RowFilter.orFilter(timeperc_filters);
+            filters.add(f);
         }
         if (criteria[1] != null) {
             java.util.List<javax.swing.RowFilter<javax.swing.table.TableModel,Integer>> lib_filters = new java.util.ArrayList<javax.swing.RowFilter<javax.swing.table.TableModel,Integer>>(1);
@@ -1342,7 +1375,8 @@ public class MainWindow extends javax.swing.JFrame {
                 return;
             }
             lib_filters.add(lib_filter);
-            filters.add(javax.swing.RowFilter.andFilter(lib_filters));
+            RowFilter<TableModel, Integer> f4 = RowFilter.andFilter(lib_filters);
+            filters.add(f4);
         }
         if (criteria[2] != null) {
             java.util.List<javax.swing.RowFilter<javax.swing.table.TableModel,Integer>> callsperc_filters = new java.util.ArrayList<javax.swing.RowFilter<javax.swing.table.TableModel,Integer>>(2);
@@ -1357,7 +1391,8 @@ public class MainWindow extends javax.swing.JFrame {
             }
             callsperc_filters.add(callsperc_equal_filter);
             callsperc_filters.add(callsperc_greater_filter);
-            filters.add(javax.swing.RowFilter.orFilter(callsperc_filters));
+            RowFilter<TableModel, Integer> f5 = RowFilter.orFilter(callsperc_filters);
+            filters.add(f5);
         }
         if (criteria[3] != null) {
             java.util.List<javax.swing.RowFilter<javax.swing.table.TableModel,Integer>> avgratio_filters = new java.util.ArrayList<javax.swing.RowFilter<javax.swing.table.TableModel,Integer>>(2);
@@ -1372,7 +1407,8 @@ public class MainWindow extends javax.swing.JFrame {
             }
             avgratio_filters.add(avgratio_equal_filter);
             avgratio_filters.add(avgratio_greater_filter);
-            filters.add(javax.swing.RowFilter.orFilter(avgratio_filters));
+            RowFilter<TableModel, Integer> f6 = RowFilter.orFilter(avgratio_filters);
+            filters.add(f6);
         }
         if (criteria[4] != null) {
             java.util.List<javax.swing.RowFilter<javax.swing.table.TableModel,Integer>> nsms_filters = new java.util.ArrayList<javax.swing.RowFilter<javax.swing.table.TableModel,Integer>>(2);
@@ -1387,7 +1423,8 @@ public class MainWindow extends javax.swing.JFrame {
             }
             nsms_filters.add(nsms_equal_filter);
             nsms_filters.add(nsms_greater_filter);
-            filters.add(javax.swing.RowFilter.orFilter(nsms_filters));
+            RowFilter<TableModel, Integer> f7 = RowFilter.orFilter(nsms_filters);
+            filters.add(f7);
         }
         routines_table_sorter.setRowFilter(javax.swing.RowFilter.andFilter(filters));
     }
@@ -1406,7 +1443,7 @@ public class MainWindow extends javax.swing.JFrame {
         this.sms_filter_criteria = criteria;
         refresPlotFilter();
         if (criteria[0] == null && criteria[1] == null && criteria[2] == null) sms_table_sorter.setRowFilter(null); // no filters
-        java.util.List<javax.swing.RowFilter<Object, Object>> filters = new java.util.ArrayList<javax.swing.RowFilter<Object, Object>>(3);
+        ArrayList<RowFilter<TableModel, Integer>> filters = new ArrayList<RowFilter<TableModel, Integer>>(3);
         if (criteria[0] != null) {
             java.util.List<javax.swing.RowFilter<javax.swing.table.TableModel,Integer>> time_filters = new java.util.ArrayList<javax.swing.RowFilter<javax.swing.table.TableModel,Integer>>(2);
             javax.swing.RowFilter<javax.swing.table.TableModel, Integer> time_equal_filter = null;
@@ -1420,7 +1457,8 @@ public class MainWindow extends javax.swing.JFrame {
             }
             time_filters.add(time_equal_filter);
             time_filters.add(time_greater_filter);
-            filters.add(javax.swing.RowFilter.orFilter(time_filters));
+            RowFilter<TableModel, Integer> f = RowFilter.orFilter(time_filters);
+            filters.add(f);
         }
         if (criteria[1] != null) {
             java.util.List<javax.swing.RowFilter<javax.swing.table.TableModel,Integer>> ratio_filters = new java.util.ArrayList<javax.swing.RowFilter<javax.swing.table.TableModel,Integer>>(2);
@@ -1435,7 +1473,8 @@ public class MainWindow extends javax.swing.JFrame {
             }
             ratio_filters.add(ratio_equal_filter);
             ratio_filters.add(ratio_greater_filter);
-            filters.add(javax.swing.RowFilter.orFilter(ratio_filters));
+            RowFilter<TableModel, Integer> f = RowFilter.orFilter(ratio_filters);
+            filters.add(f);
         }
         if (criteria[2] != null) {
             java.util.List<javax.swing.RowFilter<javax.swing.table.TableModel,Integer>> freq_filters = new java.util.ArrayList<javax.swing.RowFilter<javax.swing.table.TableModel,Integer>>(2);
@@ -1450,7 +1489,8 @@ public class MainWindow extends javax.swing.JFrame {
             }
             freq_filters.add(freq_equal_filter);
             freq_filters.add(freq_greater_filter);
-            filters.add(javax.swing.RowFilter.orFilter(freq_filters));
+            RowFilter<TableModel, Integer> f = RowFilter.orFilter(freq_filters);
+            filters.add(f);
         }
         sms_table_sorter.setRowFilter(javax.swing.RowFilter.andFilter(filters));
     }
@@ -1555,6 +1595,7 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JButton jButton6;
     private javax.swing.JButton jButton7;
     private javax.swing.JButton jButton8;
+    private javax.swing.JButton jButton9;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem1;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem2;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem3;
