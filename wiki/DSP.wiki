@@ -31,6 +31,7 @@ DSP(callgrind --cache-sim=yes): space 73308 ~ time real 0m55.567s
 DSP(memcheck): space 145236 kB ~ time real 9.85 sec
 DSP(TOOL:none): space 59372 kB ~ time real 0m2.010s
 }}}
+Valgrind tools are those shipped with Valgrind 3.6.1
 
 Aprof based on [http://www.pintool.org/ PIN]:
 {{{
@@ -92,4 +93,9 @@ DSP(aprof): space 78000 kB ~ time real 0m19.460s ~ CCT=0, SUF=2, TIME=BB_COUNT, 
 Revision 214:
 {{{
 DSP(aprof): space 73904 kB ~ time real 0m19.286s ~ CCT=0, SUF=2, TIME=BB_COUNT, ADDR_MULTIPLE=4, COSTANT_MEM_ACCESS=1, IGNORE_DL_RUNTIME=1, DISCARD_UNKNOWN=1
+}}}
+
+Revision 218: 
+{{{
+DSP(aprof): space 70664 kB ~ time real 0m19.168s ~ CCT=0, SUF=2, TIME=BB_COUNT, ADDR_MULTIPLE=4, COSTANT_MEM_ACCESS=1, IGNORE_DL_RUNTIME=1, DISCARD_UNKNOWN=1
 }}}
