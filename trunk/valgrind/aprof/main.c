@@ -203,7 +203,7 @@ IRSB* instrument (  VgCallbackClosure* closure,
 			}
 
 			case Ist_Exit: {
-				#if TRACE_MEM
+				#if MEM_TRACE
 				flushEvents(sbOut);
 				#endif
 				addStmtToIRSB( sbOut, st );      // Original statement
