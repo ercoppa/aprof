@@ -203,6 +203,9 @@ IRSB* instrument (  VgCallbackClosure* closure,
 			}
 
 			case Ist_Exit: {
+				#if TRACE_MEM
+				flushEvents(sbOut);
+				#endif
 				addStmtToIRSB( sbOut, st );      // Original statement
 				break;
 			}
@@ -222,11 +225,17 @@ IRSB* instrument (  VgCallbackClosure* closure,
 	 * Set a global var last_exit (saved/restored when there is
 	 * a switch btw thread) to the type of final jump for this BB
 	 */
-	addStmtToIRSB( sbOut, IRStmt_Store(Endness, 
-					IRExpr_Const(hWordTy == Ity_I32 ?
-								 IRConst_U32( (UWord) &last_exit ) :
-								 IRConst_U64( (UWord) &last_exit )),
-					IRExpr_Const(IRConst_U32(bb->exit)) )
+	addStmtToIRSB(	sbOut, IRStmt_Store(Endness, 
+					IRExpr_Const(
+									hWordTy == Ity_I32 ?
+									IRConst_U32( (UWord) &last_exit ) :
+									IRConst_U64( (UWord) &last_exit )
+								),
+					IRExpr_Const(
+									hWordTy == Ity_I32 ?
+									IRConst_U32( (UWord) bb->exit ) :
+									IRConst_U64( (UWord) bb->exit )
+								))
 				);
 	
 	bb->instr_offset = instr_offset;
@@ -314,8 +323,8 @@ void signal(ThreadId tid, Int sigNo, Bool alt_stack) {
 static void pre_clo_init(void) {
 
 	VG_(details_name)				("Aprof");
-	VG_(details_version)			("-1");
-	VG_(details_description)		("Asymptotic Profiler");
+	VG_(details_version)			("?");
+	VG_(details_description)		("Input sensttive profiler");
 	VG_(details_copyright_author)	("By Camil Demetrescu, Irene Finocchi, Bruno Aleandri, Emilio Coppa");
 	VG_(details_bug_reports_to)		("ercoppa@gmail.com");
 
