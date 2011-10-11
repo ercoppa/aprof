@@ -24,6 +24,7 @@ VG_REGPARM(3) void trace_access(UWord type, Addr addr, SizeT size) {
 	if (type == LOAD) tdata->num_read++;
 	else if (type == STORE) tdata->num_write++;
 	else if (type == MODIFY) tdata->num_modify++;
+	else AP_ASSERT(0, "Invalid type")
 	#endif
 	
 	#if EMPTY_ANALYSIS
