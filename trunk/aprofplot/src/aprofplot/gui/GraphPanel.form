@@ -304,7 +304,7 @@
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jToggleButton7ActionPerformed"/>
               </Events>
               <AuxValues>
-                <AuxValue name="JavaCodeGenerator_AddingCodePre" type="java.lang.String" value="if (graph_type == TIME_PLOT || graph_type == FREQ_PLOT) jToggleButton7.setVisible(false);"/>
+                <AuxValue name="JavaCodeGenerator_AddingCodePre" type="java.lang.String" value="if (graph_type != RATIO_PLOT) jToggleButton7.setVisible(false);"/>
               </AuxValues>
             </Component>
             <Component class="javax.swing.JButton" name="jButton1">
@@ -341,7 +341,7 @@
           <SubComponents>
             <Component class="javax.swing.JLabel" name="jLabel2">
               <AuxValues>
-                <AuxValue name="JavaCodeGenerator_InitCodePost" type="java.lang.String" value="if (graph_type == FREQ_PLOT) jLabel2.setIcon(new javax.swing.ImageIcon(getClass().getResource(&quot;/aprofplot/gui/resources/Dummy.png&quot;))); // NOI18N&#xa;else {&#xa;    jLabel2.setIcon(new javax.swing.ImageIcon(getClass().getResource(&quot;/aprofplot/gui/resources/Color-scale.png&quot;))); // NOI18N&#xa;    //jLabel2.setBorder(new javax.swing.border.LineBorder(java.awt.Color.BLACK));&#xa;}"/>
+                <AuxValue name="JavaCodeGenerator_InitCodePost" type="java.lang.String" value="if (graph_type == FREQ_PLOT || graph_type == MMM_PLOT) jLabel2.setIcon(new javax.swing.ImageIcon(getClass().getResource(&quot;/aprofplot/gui/resources/Dummy.png&quot;))); // NOI18N&#xa;else {&#xa;    jLabel2.setIcon(new javax.swing.ImageIcon(getClass().getResource(&quot;/aprofplot/gui/resources/Color-scale.png&quot;))); // NOI18N&#xa;    //jLabel2.setBorder(new javax.swing.border.LineBorder(java.awt.Color.BLACK));&#xa;}"/>
               </AuxValues>
             </Component>
           </SubComponents>
