@@ -14,6 +14,7 @@ package aprofplot.gui;
 import aprofplot.*;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.geom.Rectangle2D;
 import org.jfree.chart.ChartFactory;
@@ -40,6 +41,10 @@ public class GraphPanel extends javax.swing.JPanel {
     public static final int TIME_PLOT = 0;
     public static final int RATIO_PLOT = 1;
     public static final int FREQ_PLOT = 2;
+    public static final int MMM_PLOT = 3;
+    public static final int SUM_PLOT = 4;
+    public static final int VAR_PLOT = 5;
+
 
     private int graph_type;
     private MainWindow main_window;
@@ -90,6 +95,9 @@ public class GraphPanel extends javax.swing.JPanel {
         this.min_x = this.min_y = 0;
         this.max_x = this.max_y = 10;
 
+        Dimension d = new Dimension(370, 300);
+        this.setPreferredSize(d);
+
         data = new XYSeriesCollection();
         series = new XYSeries[12];
         for (int i = 0; i < series.length; i++) {
@@ -115,9 +123,18 @@ public class GraphPanel extends javax.swing.JPanel {
         renderer = plot.getRenderer();
         //System.out.println(renderer.getClass());
         for (int i = 0; i < series.length; i++) {
+            if (
+                graph_type == GraphPanel.MMM_PLOT ||
+                graph_type == GraphPanel.SUM_PLOT ||
+                graph_type == GraphPanel.VAR_PLOT
+                ) {
+                renderer.setSeriesShape(i, new Rectangle2D.Double(-1.0, -1.0, 2.0, 2.0));
+                renderer.setSeriesOutlinePaint(i, colors[i]);
+            } else {
+                renderer.setSeriesShape(i, new Rectangle2D.Double(-4.0, -4.0, 8.0, 8.0));
+                renderer.setSeriesOutlinePaint(i, Color.BLACK);
+            }
             renderer.setSeriesPaint(i, colors[i]);
-            renderer.setSeriesShape(i, new Rectangle2D.Double(-4.0, -4.0, 8.0, 8.0));
-            renderer.setSeriesOutlinePaint(i, Color.BLACK);
 
         }
         ((XYLineAndShapeRenderer)renderer).setUseOutlinePaint(true);
@@ -145,7 +162,7 @@ public class GraphPanel extends javax.swing.JPanel {
 
         initComponents();
         this.add(chartPanel, BorderLayout.CENTER);
-
+        
         updateGraphTitle();
         updateXAxis();
         updateYAxis();
@@ -439,7 +456,7 @@ public class GraphPanel extends javax.swing.JPanel {
                 jToggleButton7ActionPerformed(evt);
             }
         });
-        if (graph_type == TIME_PLOT || graph_type == FREQ_PLOT) jToggleButton7.setVisible(false);
+        if (graph_type != RATIO_PLOT) jToggleButton7.setVisible(false);
         jPanel2.add(jToggleButton7);
 
         jButton1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/SavePlot-icon.png"))); // NOI18N
@@ -455,7 +472,7 @@ public class GraphPanel extends javax.swing.JPanel {
         jPanel1.add(jPanel2, java.awt.BorderLayout.WEST);
         jPanel1.add(jPanel3, java.awt.BorderLayout.CENTER);
 
-        if (graph_type == FREQ_PLOT) jLabel2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Dummy.png"))); // NOI18N
+        if (graph_type == FREQ_PLOT || graph_type == MMM_PLOT) jLabel2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Dummy.png"))); // NOI18N
         else {
             jLabel2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Color-scale.png"))); // NOI18N
             //jLabel2.setBorder(new javax.swing.border.LineBorder(java.awt.Color.BLACK));
@@ -490,14 +507,14 @@ public class GraphPanel extends javax.swing.JPanel {
 
     private void resetXAxis() {
         if (x_log_scale) {
-            LogarithmicAxis newDomainAxis = new LogarithmicAxis("sms");
+            LogarithmicAxis newDomainAxis = new LogarithmicAxis("seen memory size");
             newDomainAxis.setAllowNegativesFlag(false);
             //NumberFormat nf = NumberFormat.getNumberInstance();
             newDomainAxis.setStrictValuesFlag(false);
             this.domainAxis = newDomainAxis;
         }
         else {
-            NumberAxis newDomainAxis = new NumberAxis("sms");
+            NumberAxis newDomainAxis = new NumberAxis("seen memory size");
             this.domainAxis = newDomainAxis;
         }
         this.domainAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
@@ -506,7 +523,7 @@ public class GraphPanel extends javax.swing.JPanel {
 
     private void resetYAxis() {
 
-        String label = (graph_type == GraphPanel.FREQ_PLOT)? "occurrences" : "time (μs)";
+        String label = (graph_type == GraphPanel.FREQ_PLOT)? "occurrences" : "cost";
         if (y_log_scale) {
             LogarithmicAxis newRangeAxis = new LogarithmicAxis(label);
             newRangeAxis.setAllowNegativesFlag(false);
@@ -525,14 +542,14 @@ public class GraphPanel extends javax.swing.JPanel {
 
     private void updateXAxis() {
         if (x_log_scale) {
-            LogarithmicAxis newDomainAxis = new LogarithmicAxis("sms");
+            LogarithmicAxis newDomainAxis = new LogarithmicAxis("seen memory size");
             newDomainAxis.setAllowNegativesFlag(false);
             //NumberFormat nf = NumberFormat.getNumberInstance();
             newDomainAxis.setStrictValuesFlag(false);
             this.domainAxis = newDomainAxis;
         }
         else {
-            NumberAxis newDomainAxis = new NumberAxis("sms");
+            NumberAxis newDomainAxis = new NumberAxis("seen memory size");
             this.domainAxis = newDomainAxis;
         }
         this.domainAxis.setLowerBound(min_x);
@@ -543,7 +560,7 @@ public class GraphPanel extends javax.swing.JPanel {
 
     private void updateYAxis() {
 
-        String label = (graph_type == GraphPanel.FREQ_PLOT)? "occurrences" : "time (μs)";
+        String label = (graph_type == GraphPanel.FREQ_PLOT)? "occurrences" : "cost";
         if (y_log_scale) {
             LogarithmicAxis newRangeAxis = new LogarithmicAxis(label);
             newRangeAxis.setAllowNegativesFlag(false);
@@ -565,8 +582,11 @@ public class GraphPanel extends javax.swing.JPanel {
     private void updateGraphTitle() {
         String s = "";
         switch (this.graph_type) {
-            case TIME_PLOT: s = "Time plot"; break;
+            case TIME_PLOT: s = "Cost plot"; break;
             case FREQ_PLOT: s = "Frequency plot"; break;
+            case MMM_PLOT: s = "Min/Avg/Max cost plot"; break;
+            case SUM_PLOT: s = "Total cost plot"; break;
+            case VAR_PLOT: s = "Variance plot"; break;
             case RATIO_PLOT: s = "Ratio plot - T(n) / ";
                             double[] rc = SmsEntry.getRatioConfig();
                             int n = 0;
@@ -680,10 +700,18 @@ public class GraphPanel extends javax.swing.JPanel {
             int first, last, middle;
             int totalCalls = rtn_info.getTotalCalls();
             switch (this.graph_type) {
-                case TIME_PLOT: rtn_info.sortTimeEntriesByTime();
+                case TIME_PLOT:
+                case MMM_PLOT:
+                                rtn_info.sortTimeEntriesByTime();
+                                break;
+                case SUM_PLOT:
+                                rtn_info.sortTimeEntriesBySum();
+                                break;
+                case VAR_PLOT:
+                                rtn_info.sortTimeEntriesByVar();
                                 break;
                 case RATIO_PLOT: rtn_info.sortTimeEntriesByRatio();
-                                break;
+                                 break;
                 case FREQ_PLOT: rtn_info.sortTimeEntriesByOccurrences();
                                 break;
             }
@@ -708,6 +736,8 @@ public class GraphPanel extends javax.swing.JPanel {
 //                                int i = 0;
 //                                while ((min_y = rtn_info.getTimeEntries().get(i).getCost()) == 0 && i < rtn_info.getTimeEntries().size()) i++;
                                 break;
+                case MMM_PLOT:  max_y = rtn_info.getTimeEntries().get(middle).getMaxCost();
+                                break;
                 case RATIO_PLOT: max_y = rtn_info.getTimeEntries().get(middle).getRatio();
 //                                i = 0;
 //                                while ((min_y = rtn_info.getTimeEntries().get(i).getRatio()) == 0 && i < rtn_info.getTimeEntries().size()) i++;
@@ -715,6 +745,12 @@ public class GraphPanel extends javax.swing.JPanel {
                 case FREQ_PLOT: max_y = rtn_info.getTimeEntries().get(middle).getOcc();
 //                                i = 0;
 //                                while ((min_y = rtn_info.getTimeEntries().get(i).getOcc()) == 0 && i < rtn_info.getTimeEntries().size()) i++;
+                                break;
+                case SUM_PLOT:
+                                max_y = rtn_info.getTimeEntries().get(last).getSumCost();
+                                break;
+                case VAR_PLOT:
+                                max_y = rtn_info.getTimeEntries().get(last).getVar();
                                 break;
             }
 
@@ -814,10 +850,13 @@ public class GraphPanel extends javax.swing.JPanel {
     }//GEN-LAST:event_jRadioButtonMenuItem6ActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        // TODO add your handling code here:
+        
         if (this.rtn_info == null) return;
         String filename = this.rtn_info.getName();
         if (this.graph_type == TIME_PLOT) filename += "_time_plot.png";
+        else if (this.graph_type == MMM_PLOT) filename += "_mmm_plot.png";
+        else if (this.graph_type == SUM_PLOT) filename += "_sum_plot.png";
+        else if (this.graph_type == VAR_PLOT) filename += "_var_plot.png";
         else if (this.graph_type == RATIO_PLOT) filename += "_ratio_plot.png";
         else filename += "_freq_plot.png";
         java.io.File f = new java.io.File(filename);
@@ -848,7 +887,7 @@ public class GraphPanel extends javax.swing.JPanel {
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jToggleButton7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton7ActionPerformed
-        // TODO add your handling code here:
+        
         if (jToggleButton7.isSelected()) {
             jPopupMenu2.show(jToggleButton7, 0, jToggleButton7.getHeight());
         }
@@ -1107,12 +1146,29 @@ public class GraphPanel extends javax.swing.JPanel {
                 SmsEntry te = this.rtn_info.getTimeEntries().get(i);
                 if (filterTimeEntry(te)) {
                     double x = te.getSms();
-                    double y;
-                    if (this.graph_type == GraphPanel.TIME_PLOT) y = te.getCost();
-                    else if (this.graph_type == GraphPanel.RATIO_PLOT) y = te.getRatio();
-                    else y = te.getOcc();
-                    if (this.graph_type == GraphPanel.FREQ_PLOT) series[0].add(x, y);
-                    else {
+                    double y = 0;
+                    if (this.graph_type == GraphPanel.TIME_PLOT) 
+                        y = te.getCost(); 
+                    else if (this.graph_type == GraphPanel.RATIO_PLOT) 
+                        y = te.getRatio();
+                    else if (this.graph_type == GraphPanel.SUM_PLOT) 
+                        y = te.getSumCost();
+                    else if (this.graph_type == GraphPanel.VAR_PLOT) 
+                        y = te.getVar();
+                    
+                    if (this.graph_type == GraphPanel.MMM_PLOT) {
+                    
+                        y = te.getMinCost();
+                        series[0].add(x, y);
+                        y = te.getAvgCost();
+                        series[5].add(x, y);
+                        y = te.getMaxCost();
+                        series[11].add(x, y);
+                    
+                    } else if (this.graph_type == GraphPanel.FREQ_PLOT) {
+                        y = te.getOcc();
+                        series[0].add(x, y);
+                    } else {
                         double index = Math.round(Math.log10(te.getOcc()) / Math.log10(2));
                         if (index > 11) index = 11;
                         if (index < 0) index = 0;
@@ -1133,6 +1189,7 @@ public class GraphPanel extends javax.swing.JPanel {
                     double x = te.getSms();
                     double y;
                     if (graph_type == GraphPanel.TIME_PLOT) y = te.getCost();
+                    else if(graph_type == GraphPanel.MMM_PLOT) y = te.getCost();
                     else if (graph_type == GraphPanel.RATIO_PLOT) y = te.getRatio();
                     else y = te.getOcc();
                     double current_slot = x - (x % group_threshold);
@@ -1187,6 +1244,10 @@ public class GraphPanel extends javax.swing.JPanel {
     }
 
     public void setData(RoutineInfo r) {
+        if (r == null) {
+            clearData();
+            return;
+        }
         this.rtn_info = r;
         populateChart();
         if (autoscaled) autoscale();

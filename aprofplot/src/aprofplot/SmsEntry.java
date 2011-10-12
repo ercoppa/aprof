@@ -66,6 +66,14 @@ public class SmsEntry implements Comparable<SmsEntry> {
         return this.cost_sqr_sum;
     }
 
+    public double getVar() {
+        double variance = ( 
+                    ( getSumSquareCost() / getOcc() ) -
+                    ((getSumCost() * getSumCost()) / (getOcc() * getOcc()))
+                );
+        return variance;
+    }
+
     public double getAvgCost() {
         return (double)this.cost_sum / this.occ;
     }

@@ -184,4 +184,24 @@ public abstract class RoutineInfo implements Comparable<RoutineInfo> {
            }
         });
     }
+    
+    public void sortTimeEntriesByVar() {
+        Collections.sort(time_entries, new Comparator<SmsEntry> () {
+           public int compare(SmsEntry t1, SmsEntry t2) {
+               if (t1.getVar() == t2.getVar()) return 0;
+               if (t1.getVar() > t2.getVar()) return 1;
+               return -1;
+           }
+        });
+    }
+    
+    public void sortTimeEntriesBySum() {
+        Collections.sort(time_entries, new Comparator<SmsEntry> () {
+           public int compare(SmsEntry t1, SmsEntry t2) {
+               if (t1.getSumCost() == t2.getSumCost()) return 0;
+               if (t1.getSumCost() > t2.getSumCost()) return 1;
+               return -1;
+           }
+        });
+    }
 }
