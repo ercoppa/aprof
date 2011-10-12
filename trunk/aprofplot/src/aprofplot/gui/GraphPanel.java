@@ -123,17 +123,8 @@ public class GraphPanel extends javax.swing.JPanel {
         renderer = plot.getRenderer();
         //System.out.println(renderer.getClass());
         for (int i = 0; i < series.length; i++) {
-            if (
-                graph_type == GraphPanel.MMM_PLOT ||
-                graph_type == GraphPanel.SUM_PLOT ||
-                graph_type == GraphPanel.VAR_PLOT
-                ) {
-                renderer.setSeriesShape(i, new Rectangle2D.Double(-1.0, -1.0, 2.0, 2.0));
-                renderer.setSeriesOutlinePaint(i, colors[i]);
-            } else {
-                renderer.setSeriesShape(i, new Rectangle2D.Double(-4.0, -4.0, 8.0, 8.0));
-                renderer.setSeriesOutlinePaint(i, Color.BLACK);
-            }
+            renderer.setSeriesShape(i, new Rectangle2D.Double(-1.0, -1.0, 2.0, 2.0));
+            renderer.setSeriesOutlinePaint(i, colors[i]);
             renderer.setSeriesPaint(i, colors[i]);
 
         }

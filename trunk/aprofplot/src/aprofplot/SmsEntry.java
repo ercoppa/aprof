@@ -69,7 +69,7 @@ public class SmsEntry implements Comparable<SmsEntry> {
     public double getVar() {
         double variance = ( 
                     ( getSumSquareCost() / getOcc() ) -
-                    ((getSumCost() * getSumCost()) / (getOcc() * getOcc()))
+                    ((getSumCost() / getOcc()) * (getSumCost() / getOcc()))
                 );
         return variance;
     }
