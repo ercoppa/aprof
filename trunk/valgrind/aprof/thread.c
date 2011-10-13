@@ -116,6 +116,11 @@ void thread_exit (ThreadId tid){
 	VG_(printf)("[TID=%d] Modify: %llu\n", tid, tdata->num_modify);
 	VG_(printf)("[TID=%d] Function entry: %llu\n", tid, tdata->num_func_enter);
 	VG_(printf)("[TID=%d] Function exit: %llu\n", tid, tdata->num_func_exit);
+	VG_(printf)("[TID=%d] Total accesses: %llu\n", tid, 
+													tdata->num_modify +
+													tdata->num_write +
+													tdata->num_read
+													);
 	#endif
 	
 	#if SUF == 2 && SUF2_SEARCH == STATS

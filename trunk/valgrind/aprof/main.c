@@ -7,6 +7,53 @@
 
 #include "aprof.h"
 
+#if MEM_TRACE && IGNORE_REPEAT_ACC
+
+#if !COSTANT_MEM_ACCESS
+#error "IGNORE_REPEAT_ACC only works with COSTANT_MEM_ACCESS enabled"
+#endif
+
+#define INIT_SIZE_ADDR_ACC 32
+static UInt addr_accessed_size = INIT_SIZE_ADDR_ACC;
+static IRExpr ** addr_accessed = NULL;
+
+static Bool do_access(IRExpr * e) {
+	
+	#if DEBUG
+	AP_ASSERT(e != NULL, "Invalid IRExpr");
+	AP_ASSERT(isIRAtom(e), "Invalid IRExpr");
+	#endif
+	
+	int i = 0;
+	for(; i < addr_accessed_size; i++) {
+		if (addr_accessed[i] == NULL) break;
+		if (eqIRAtom(addr_accessed[i], e)) {
+			//VG_(printf)("Addr already accessed\n");
+			//addr_accessed[i] = e;
+			return False;
+		}
+	}
+	
+	if (i >= addr_accessed_size) {
+		//VG_(printf)("Relocate addr_accessed\n");
+		IRExpr ** addr_accessed2 = VG_(calloc)("addr acc", 
+								sizeof(IRExpr *), addr_accessed_size*2);
+		int j = 0;
+		for (; j < addr_accessed_size; j++) 
+			addr_accessed2[j] = addr_accessed[j];
+		addr_accessed_size = addr_accessed_size * 2;
+		VG_(free)(addr_accessed);
+		addr_accessed = addr_accessed2;
+	} 
+	addr_accessed[i] = e;
+	
+	return True;
+}
+
+#endif
+
+extern Int events_used;
+
 static
 IRSB* instrument (  VgCallbackClosure* closure, 
 					IRSB* sbIn,
@@ -17,6 +64,11 @@ IRSB* instrument (  VgCallbackClosure* closure,
 	Int        i;
 	IRSB*      sbOut;
 	IRTypeEnv* tyenv = sbIn->tyenv;
+	events_used = 0;
+
+	#if MEM_TRACE && IGNORE_REPEAT_ACC
+	addr_accessed = VG_(calloc)("addr acc", sizeof(IRExpr *), addr_accessed_size);
+	#endif
 	
 	#if TRACE_FUNCTION
 	UInt instr_offset = 0;
@@ -38,7 +90,9 @@ IRSB* instrument (  VgCallbackClosure* closure,
 	#if TRACE_FUNCTION
 	
 	BB * bb = get_BB(sbIn->stmts[i]->Ist.IMark.addr);
+	#if DEBUG
 	AP_ASSERT(bb != NULL, "Invalid BB")
+	#endif
 
 	IRExpr  * e3 = mkIRExpr_HWord ( (HWord) bb );
 	IRExpr  * e2 = mkIRExpr_HWord ( (HWord) (Addr)sbIn->stmts[i]->Ist.IMark.addr );
@@ -55,6 +109,13 @@ IRSB* instrument (  VgCallbackClosure* closure,
 	VG_(fnptr_to_fnentry)( &add_one_guest_BB ), 
 								mkIRExprVec_0() );
 	addStmtToIRSB( sbOut, IRStmt_Dirty(di2) );
+	#endif
+   
+	#if MEM_TRACE && IGNORE_REPEAT_ACC
+	Char * helperNameA;
+	void * helperAddrA;
+	IRExpr * * argvA;
+	IRDirty * diA;
 	#endif
    
 	for (/*use current i*/; i < sbIn->stmts_used; i++) {
@@ -92,8 +153,14 @@ IRSB* instrument (  VgCallbackClosure* closure,
 				#endif
 
 				#if MEM_TRACE
+				
+				#if IGNORE_REPEAT_ACC
+				//do_access(mkIRExpr_HWord( (HWord)st->Ist.IMark.addr ));
+				#else
 				addEvent_Ir( sbOut, mkIRExpr_HWord( (HWord)st->Ist.IMark.addr ),
 								st->Ist.IMark.len );
+				#endif
+				
 				#endif
 				
 				#if TRACE_FUNCTION
@@ -112,8 +179,24 @@ IRSB* instrument (  VgCallbackClosure* closure,
 				#if MEM_TRACE
 				IRExpr* data = st->Ist.WrTmp.data;
 				if (data->tag == Iex_Load) {
+					#if IGNORE_REPEAT_ACC
+					IRExpr * a = data->Iex.Load.addr;
+					if (do_access(a)) {
+						helperNameA = "trace_load";
+						argvA = mkIRExprVec_3(	mkIRExpr_HWord(LOAD),
+												a, 
+												mkIRExpr_HWord( sizeofIRType(data->Iex.Load.ty) )
+											);
+						helperAddrA = trace_access;
+						diA = unsafeIRDirty_0_N( 3, helperNameA, 
+									VG_(fnptr_to_fnentry)( helperAddrA ),
+									argvA );
+						addStmtToIRSB( sbOut, IRStmt_Dirty(diA) );
+					}
+					#else
 					addEvent_Dr( sbOut, data->Iex.Load.addr,
-					sizeofIRType(data->Iex.Load.ty) );
+									sizeofIRType(data->Iex.Load.ty) );
+					#endif
 				}
 				#endif
 
@@ -124,9 +207,25 @@ IRSB* instrument (  VgCallbackClosure* closure,
 			case Ist_Store: {
 				
 				#if MEM_TRACE
-				IRExpr* data  = st->Ist.Store.data;
+				IRExpr * data  = st->Ist.Store.data;
+				#if IGNORE_REPEAT_ACC
+				IRExpr * a = st->Ist.Store.addr;
+				if (do_access(a)) {
+					helperNameA = "trace_store";
+					argvA = mkIRExprVec_3(	mkIRExpr_HWord(STORE),
+											a, 
+											mkIRExpr_HWord( sizeofIRType(typeOfIRExpr(tyenv, data)) )
+										);
+					helperAddrA = trace_access;
+					diA = unsafeIRDirty_0_N( 3, helperNameA, 
+								VG_(fnptr_to_fnentry)( helperAddrA ),
+								argvA );
+					addStmtToIRSB( sbOut, IRStmt_Dirty(diA) );
+				}
+				#else
 				addEvent_Dw(sbOut, st->Ist.Store.addr,
 							sizeofIRType(typeOfIRExpr(tyenv, data)) );
+				#endif
 				#endif
 
 				addStmtToIRSB( sbOut, st );
@@ -143,10 +242,44 @@ IRSB* instrument (  VgCallbackClosure* closure,
 					tl_assert(d->mAddr != NULL);
 					tl_assert(d->mSize != 0);
 					dsize = d->mSize;
-					if (d->mFx == Ifx_Read || d->mFx == Ifx_Modify)
+					#if IGNORE_REPEAT_ACC
+					IRExpr * a = d->mAddr;
+					if (d->mFx == Ifx_Read || d->mFx == Ifx_Modify) {
+						if (do_access(a)) {
+							helperNameA = "trace_load";
+							argvA = mkIRExprVec_3(	mkIRExpr_HWord(LOAD),
+														a, 
+														mkIRExpr_HWord( dsize )
+													);
+							helperAddrA = trace_access;
+							diA = unsafeIRDirty_0_N( 3, helperNameA, 
+										VG_(fnptr_to_fnentry)( helperAddrA ),
+										argvA );
+							addStmtToIRSB( sbOut, IRStmt_Dirty(diA) );
+						}
+					}
+					else if (d->mFx == Ifx_Write) {
+						if (do_access(a)) {
+							helperNameA = "trace_store";
+							argvA = mkIRExprVec_3(	mkIRExpr_HWord(STORE),
+														a, 
+														mkIRExpr_HWord( dsize )
+													);
+							helperAddrA = trace_access;
+							diA = unsafeIRDirty_0_N( 3, helperNameA, 
+										VG_(fnptr_to_fnentry)( helperAddrA ),
+										argvA );
+							addStmtToIRSB( sbOut, IRStmt_Dirty(diA) );
+						}
+					}
+					#else
+					if (d->mFx == Ifx_Read || d->mFx == Ifx_Modify) {
 						addEvent_Dr( sbOut, d->mAddr, dsize );
-					if (d->mFx == Ifx_Write || d->mFx == Ifx_Modify)
+					}
+					if (d->mFx == Ifx_Write || d->mFx == Ifx_Modify) {
 						addEvent_Dw( sbOut, d->mAddr, dsize );
+					}
+					#endif
 				} else {
 					tl_assert(d->mAddr == NULL);
 					tl_assert(d->mSize == 0);
@@ -174,9 +307,26 @@ IRSB* instrument (  VgCallbackClosure* closure,
 				dataSize = sizeofIRType(dataTy);
 				if (cas->dataHi != NULL)
 					dataSize *= 2; /* since it's a doubleword-CAS */
-
+				
+				#if IGNORE_REPEAT_ACC
+				IRExpr * a = cas->addr;
+				if (do_access(a)) {
+					helperNameA = "trace_load";
+					argvA = mkIRExprVec_3(	mkIRExpr_HWord(LOAD),
+											a, 
+											mkIRExpr_HWord( dataSize )
+										);
+					helperAddrA = trace_access;
+					diA = unsafeIRDirty_0_N( 3, helperNameA, 
+								VG_(fnptr_to_fnentry)( helperAddrA ),
+								argvA );
+					addStmtToIRSB( sbOut, IRStmt_Dirty(diA) );
+				}
+				#else
 				addEvent_Dr( sbOut, cas->addr, dataSize );
 				addEvent_Dw( sbOut, cas->addr, dataSize );
+				#endif
+				
 				#endif
 
 				addStmtToIRSB( sbOut, st );
@@ -190,11 +340,43 @@ IRSB* instrument (  VgCallbackClosure* closure,
 				if (st->Ist.LLSC.storedata == NULL) {
 					/* LL */
 					dataTy = typeOfIRTemp(tyenv, st->Ist.LLSC.result);
+					#if IGNORE_REPEAT_ACC
+					IRExpr * a = st->Ist.LLSC.addr;
+					if (do_access(a)) {
+						helperNameA = "trace_load";
+						argvA = mkIRExprVec_3(	mkIRExpr_HWord(LOAD),
+												a, 
+												mkIRExpr_HWord( sizeofIRType(dataTy) )
+											);
+						helperAddrA = trace_access;
+						diA = unsafeIRDirty_0_N( 3, helperNameA, 
+									VG_(fnptr_to_fnentry)( helperAddrA ),
+									argvA );
+						addStmtToIRSB( sbOut, IRStmt_Dirty(diA) );
+					}
+					#else
 					addEvent_Dr( sbOut, st->Ist.LLSC.addr, sizeofIRType(dataTy) );
+					#endif
 				} else {
 					/* SC */
 					dataTy = typeOfIRExpr(tyenv, st->Ist.LLSC.storedata);
+					#if IGNORE_REPEAT_ACC
+					IRExpr * a = st->Ist.LLSC.addr;
+					if (do_access(a)) {
+						helperNameA = "trace_store";
+						argvA = mkIRExprVec_3(	mkIRExpr_HWord(STORE),
+												a, 
+												mkIRExpr_HWord( sizeofIRType(dataTy) )
+											);
+						helperAddrA = trace_access;
+						diA = unsafeIRDirty_0_N( 3, helperNameA, 
+									VG_(fnptr_to_fnentry)( helperAddrA ),
+									argvA );
+						addStmtToIRSB( sbOut, IRStmt_Dirty(diA) );
+					}
+					#else
 					addEvent_Dw( sbOut, st->Ist.LLSC.addr, sizeofIRType(dataTy) );
+					#endif
 				}
 				#endif
 				
@@ -203,7 +385,7 @@ IRSB* instrument (  VgCallbackClosure* closure,
 			}
 
 			case Ist_Exit: {
-				#if MEM_TRACE
+				#if MEM_TRACE && !IGNORE_REPEAT_ACC
 				flushEvents(sbOut);
 				#endif
 				addStmtToIRSB( sbOut, st );      // Original statement
@@ -225,17 +407,14 @@ IRSB* instrument (  VgCallbackClosure* closure,
 	 * Set a global var last_exit (saved/restored when there is
 	 * a switch btw thread) to the type of final jump for this BB
 	 */
-	addStmtToIRSB(	sbOut, IRStmt_Store(Endness, 
+	addStmtToIRSB( sbOut, IRStmt_Store(Endness, 
 					IRExpr_Const(
 									hWordTy == Ity_I32 ?
 									IRConst_U32( (UWord) &last_exit ) :
 									IRConst_U64( (UWord) &last_exit )
 								),
-					IRExpr_Const(
-									hWordTy == Ity_I32 ?
-									IRConst_U32( (UWord) bb->exit ) :
-									IRConst_U64( (UWord) bb->exit )
-								))
+					IRExpr_Const(IRConst_U32(bb->exit))
+					)
 				);
 	
 	bb->instr_offset = instr_offset;
@@ -243,8 +422,15 @@ IRSB* instrument (  VgCallbackClosure* closure,
 	#endif
 
 	#if MEM_TRACE
+	
+	#if !IGNORE_REPEAT_ACC
 	/* At the end of the sbIn.  Flush outstandings. */
 	flushEvents(sbOut);
+	#else
+	VG_(free)(addr_accessed);
+	addr_accessed_size = INIT_SIZE_ADDR_ACC;
+	#endif
+	
 	#endif
 
 	return sbOut;
@@ -324,7 +510,7 @@ static void pre_clo_init(void) {
 
 	VG_(details_name)				("Aprof");
 	VG_(details_version)			("?");
-	VG_(details_description)		("Input sensttive profiler");
+	VG_(details_description)		("Input-sensitive Profiler");
 	VG_(details_copyright_author)	("By Camil Demetrescu, Irene Finocchi, Bruno Aleandri, Emilio Coppa");
 	VG_(details_bug_reports_to)		("ercoppa@gmail.com");
 
