@@ -74,8 +74,10 @@ Activation * resize_stack(ThreadData * tdata, unsigned int depth) {
 		AP_ASSERT(tdata->stack, "stack not reallocable");
 		#endif
 		
-		/* Safety check, better always run this :) */
+		/* Safety check */
+		#if DEBUG
 		AP_ASSERT(depth - 1 < tdata->max_stack_size, "This is absurd...")
+		#endif
 	}
 	
 	return tdata->stack + depth - 1;
@@ -399,7 +401,7 @@ static void push_stack(ThreadData * tdata, UWord sp, Function * f, Bool skip) {
 	#endif
 	
 	act->sp = sp;
-	act->ret_addr = 0;
+	act->ret_addr = 0; /* We change this maybe in the future if this fn calls another fn */
 	act->rtn_info = rtn_info;
 	
 	function_enter(tdata, act);

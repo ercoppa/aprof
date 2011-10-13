@@ -50,7 +50,7 @@ typedef struct {
 } Event;
 
 static Event events[N_EVENTS];
-static Int   events_used = 0;
+Int   events_used = 0;
 
 void flushEvents(IRSB* sb) {
 	
