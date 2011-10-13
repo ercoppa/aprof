@@ -1,7 +1,5 @@
 #include "aprof.h"
 
-#define CHECK_ADDR_OVERFLOW(x) AP_ASSERT(((x) <= (UWord) SPM_SIZE * 65536), "Address overflow"); \
-
 StackUF * SUF_create(void)
 {
 	StackUF * s = VG_(calloc)("suf pm", sizeof(struct SPM), 1);
@@ -22,11 +20,13 @@ void SUF_destroy(StackUF * suf)
 
 UInt SUF_insert(StackUF * suf, UWord addr, UInt rid)
 {
-	#if !defined(__i386__) && CHECK_SUF_OVERFLOW
-	CHECK_ADDR_OVERFLOW(addr);
-	#endif
 	
 	UWord i = addr >> 16;
+	
+	#if !defined(__i386__) && CHECK_SUF_OVERFLOW
+	AP_ASSERT((i <= SPM_SIZE), "Address overflow");
+	#endif
+	
 	#if ADDR_MULTIPLE == 1
 	UWord j = (addr & 0xffff);
 	#elif ADDR_MULTIPLE == 4
@@ -57,11 +57,12 @@ UInt SUF_insert(StackUF * suf, UWord addr, UInt rid)
 
 UInt SUF_lookup(StackUF * suf, UWord addr)
 {
-	#if !defined(__i386__) && CHECK_SUF_OVERFLOW
-	CHECK_ADDR_OVERFLOW(addr);
-	#endif
 	
 	UWord i = addr >> 16;
+	#if !defined(__i386__) && CHECK_SUF_OVERFLOW
+	AP_ASSERT((i <= SPM_SIZE), "Address overflow");
+	#endif
+	
 	if (suf->table[i] == NULL) return 0;
 	
 	#if ADDR_MULTIPLE == 1
