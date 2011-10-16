@@ -93,8 +93,92 @@ Activation * get_activation_by_aid(ThreadData * tdata, UInt aid) {
 	AP_ASSERT(aid > 0, "Invalid aid");
 	#endif
 	
-	/* Linear search... maybe better binary search??? */
-	#if SUF2_SEARCH == LINEAR
+	#if SUF2_SEARCH == BACKLOG
+	
+	//VG_(printf)("\nSearch for %u [%u]\n", aid, tdata->stack_depth);
+	
+	Activation * act = &tdata->stack[tdata->stack_depth - 2];
+	//VG_(printf)("Analyse %u\n", act->aid);
+	if (act->aid <= aid) {
+		//VG_(printf)("Return %u\n", act->aid);
+		return act;
+	}
+
+	/* try one step back */
+	#if DEBUG
+	AP_ASSERT(tdata->stack_depth - 2 > 0, "Invalid depth");
+	#endif
+	act--;
+	//VG_(printf)("Analyse %u\n", act->aid);
+	if (act->aid <= aid) {
+		//VG_(printf)("Return %u\n", act->aid);
+		return act;
+	}
+	
+	/* 
+	 * ok, now try 2^i steps back, remeber min and max act 
+	 * and eventually do binary search between them...
+	 */
+	int max = tdata->stack_depth - 3;
+	int min = tdata->stack_depth - 3;
+	int step = 2;
+	while (1) {
+		
+		act -= step;
+		if (act < &tdata->stack[0]) {
+			//VG_(printf)("underflow\n");
+			min = 0;
+			break;
+		}
+		
+		//VG_(printf)("Analyse exp %u\n", act->aid);
+		if (act->aid == aid) return act;
+		
+		max = min;
+		min -= step;
+		if (act->aid < aid) break;
+		
+		step = step<<1;
+	}
+	
+	//VG_(printf)("Min: %d - Max: %d\n", min, max);
+	#if DEBUG
+	AP_ASSERT(min >= 0, "Invalid min");
+	AP_ASSERT(max >= 0, "Invalid max");
+	#endif
+	
+	if (min == max) return act;
+	
+	/* binary search */
+	do {
+		
+		Word index = (min + max) / 2;
+		//VG_(printf)("Index %d\n", index);
+		
+		if (tdata->stack[index].aid == aid) {
+			//VG_(printf)("return %d\n", tdata->stack[index].aid);
+			return &tdata->stack[index];
+		}
+		
+		else if (tdata->stack[index].aid > aid) 
+			max = index - 1; 
+			
+		else {
+			
+			if (tdata->stack[index + 1].aid >= aid) {
+				//VG_(printf)("return %d\n", tdata->stack[index].aid);
+				return &tdata->stack[index];
+			}
+			min = index + 1;
+			
+		}
+		
+	} while(min <= max);
+	
+	AP_ASSERT(0,"backlog search fail");
+	return NULL;
+	
+	#elif SUF2_SEARCH == LINEAR /* Linear search */
 	
 	#if DEBUG
 	AP_ASSERT(tdata->stack_depth - 2 >= 0, "Invalid depth");
@@ -129,7 +213,7 @@ Activation * get_activation_by_aid(ThreadData * tdata, UInt aid) {
 			
 		else {
 			
-			if (tdata->stack[index + 1].aid > aid) {
+			if (tdata->stack[index + 1].aid >= aid) {
 				return &tdata->stack[index];
 			}
 			min = index + 1;
