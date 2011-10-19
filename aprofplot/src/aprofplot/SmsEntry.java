@@ -17,6 +17,10 @@ public class SmsEntry implements Comparable<SmsEntry> {
     private long cost_sum;
     private double cost_sqr_sum;
     private long occ;
+    
+    public static final int MAX_COST = 0;
+    public static final int AVG_COST = 1;
+    public static final int MIN_COST = 2;
 
     private double ratio;
 
@@ -69,7 +73,7 @@ public class SmsEntry implements Comparable<SmsEntry> {
     public double getVar() {
         double variance = ( 
                     ( getSumSquareCost() / getOcc() ) -
-                    ((getSumCost() / getOcc()) * (getSumCost() / getOcc()))
+                    ((getSumCost() / (double)getOcc()) * (getSumCost() / (double)getOcc()))
                 );
         return variance;
     }
@@ -79,17 +83,44 @@ public class SmsEntry implements Comparable<SmsEntry> {
     }
 
     public double getCost() {
-        return this.getMaxCost();
+        return getCost(MAX_COST);
+    }
+    
+    public double getCost(int cost_type) {
+        switch(cost_type) {
+            case MAX_COST: return getMaxCost();
+            case AVG_COST: return getAvgCost();
+            case MIN_COST: return getMinCost();
+            default: return 0; 
+        }
     }
 
     public double getRatio() {
+        return getRatioCost(MAX_COST);
+    }
+
+    public double getRatioCost(int cost_type) {
         if (sms == 0 || (sms == 1 && (ratio_config[1] != 0 || ratio_config[2] != 0)))
-            return this.getCost();
+            switch(cost_type) {
+                case MAX_COST: return getMaxCost();
+                case AVG_COST: return getAvgCost();
+                case MIN_COST: return getMinCost();
+                default: return 0;
+            }
         double fraction =
                 Math.pow(sms, ratio_config[0]) *
                 Math.pow(Math.log(sms), ratio_config[1]) *
                 Math.pow(Math.log(Math.log(sms)), ratio_config[2]);
-        return (fraction == 0)? this.getCost() : this.getCost() / fraction;
+        switch(cost_type) {
+            case MAX_COST: 
+                return (fraction == 0) ? getMaxCost() : getMaxCost() / fraction;
+            case AVG_COST: 
+                return (fraction == 0) ? getAvgCost() : getAvgCost() / fraction;
+            case MIN_COST: 
+                return (fraction == 0) ? getMinCost() : getMinCost() / fraction;
+            default: return 0;
+        }
+        
     }
 
     public double getRatio(int type) {

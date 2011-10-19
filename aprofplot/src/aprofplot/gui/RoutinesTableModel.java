@@ -24,7 +24,8 @@ public class RoutinesTableModel extends AbstractTableModel {
                                                   "#Sms",
                                                   "Cost %",
                                                   "Avg ratio (μs)",
-                                                  "Cost plot",
+                                                  "Null",
+                                                  //"Cost plot",
                                                   "Calls",
                                                   "Calls %",
                                                   "Collapsed",
@@ -38,7 +39,8 @@ public class RoutinesTableModel extends AbstractTableModel {
                                                Integer.class,
                                                Double.class,
                                                Double.class,
-                                               RoutineInfo.class,
+                                               Integer.class,
+                                               //RoutineInfo.class,
                                                Integer.class,
                                                Double.class,
                                                Boolean.class,
@@ -97,7 +99,8 @@ public class RoutinesTableModel extends AbstractTableModel {
             case 3: return new Integer(rtn_info.getTimeEntries().size());
             case 4: return new Double((rtn_info.getTotalTime() / report.getTotalTime()) * 100);
             case 5: return new Double(rtn_info.getMeanRatio());
-            case 6: return rtn_info;  // time plot
+            case 6: return 0;
+            //case 6: return rtn_info;  // time plot
             case 7: return new Integer(rtn_info.getTotalCalls());
             case 8: return new Double(((double)rtn_info.getTotalCalls() / (double)report.getTotalCalls()) * 100);
             case 9: if (rtn_info instanceof UncontextualizedRoutineInfo && ((UncontextualizedRoutineInfo)rtn_info).getContextCount() > 0)

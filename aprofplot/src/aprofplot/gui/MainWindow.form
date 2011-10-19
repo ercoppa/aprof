@@ -357,8 +357,8 @@
             <Property name="icon" type="javax.swing.Icon" noResource="true" editor="org.netbeans.modules.form.editors2.IconEditor">
               <Image iconType="3" name="/aprofplot/gui/resources/refresh.png"/>
             </Property>
-            <Property name="toolTipText" type="java.lang.String" value="Reload this report"/>
-            <Property name="enabled" type="boolean" value="false"/>
+            <Property name="toolTipText" type="java.lang.String" value="Reload last recent report"/>
+            <Property name="enabled" type="boolean" value="false" postCode="ArrayList&lt;File&gt; r = Main.getRecentFiles();&#xa;if (r.size() &gt; 0) {&#xa;    jButton9.setEnabled(true);&#xa;}"/>
             <Property name="focusable" type="boolean" value="false"/>
             <Property name="horizontalTextPosition" type="int" value="0"/>
             <Property name="verticalTextPosition" type="int" value="3"/>
@@ -407,7 +407,7 @@
         </Component>
         <Component class="javax.swing.JToggleButton" name="jToggleButton1">
           <Properties>
-            <Property name="font" type="java.awt.Font" noResource="true" editor="org.netbeans.beaninfo.editors.FontEditor">
+            <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
               <Font name="Ubuntu" size="13" style="1"/>
             </Property>
             <Property name="selected" type="boolean" value="true"/>
@@ -498,6 +498,23 @@
           </Properties>
           <Events>
             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jToggleButton7ActionPerformed"/>
+          </Events>
+        </Component>
+        <Component class="javax.swing.JToggleButton" name="jToggleButton8">
+          <Properties>
+            <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
+              <Font name="Ubuntu" size="13" style="1"/>
+            </Property>
+            <Property name="text" type="java.lang.String" value="C"/>
+            <Property name="focusable" type="boolean" value="false"/>
+            <Property name="horizontalTextPosition" type="int" value="0"/>
+            <Property name="margin" type="java.awt.Insets" editor="org.netbeans.beaninfo.editors.InsetsEditor">
+              <Insets value="[0, 4, 0, 4]"/>
+            </Property>
+            <Property name="verticalTextPosition" type="int" value="3"/>
+          </Properties>
+          <Events>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jToggleButton8ActionPerformed"/>
           </Events>
         </Component>
         <Component class="javax.swing.JToggleButton" name="jToggleButton4">
@@ -724,7 +741,7 @@
                           </Properties>
                           <AuxValues>
                             <AuxValue name="JavaCodeGenerator_AddingCodePre" type="java.lang.String" value="jTable1.getSelectionModel().addListSelectionListener(new javax.swing.event.ListSelectionListener() {&#xa;            public void valueChanged(javax.swing.event.ListSelectionEvent evt) {&#xa;                jTable1ValueChanged(evt);&#xa;            }&#xa;        });&#xa;jTable1.getModel().addTableModelListener(new javax.swing.event.TableModelListener() {&#xa;            public void tableChanged(javax.swing.event.TableModelEvent evt) {&#xa;                jTable1TableChanged(evt);&#xa;            }&#xa;        });"/>
-                            <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new javax.swing.JTable(new RoutinesTableModel(this.report)) {&#xa;public java.awt.Component prepareRenderer(javax.swing.table.TableCellRenderer renderer, int row, int column)&#xa;&#x9;&#x9;&#x9;{&#xa;&#x9;&#x9;&#x9;&#x9;java.awt.Component c = super.prepareRenderer(renderer, row, column);&#xa;                                if (!c.getBackground().equals(getSelectionBackground())) {&#xa;                                    if (((String)getModel().getValueAt(convertRowIndexToModel(row), 10)).contains(&quot;/&quot;)) c.setBackground(new java.awt.Color(133, 244, 201)/*java.awt.Color.RED*/);&#xa;                                    else c.setBackground(java.awt.Color.WHITE);&#xa;                                }&#xa;&#x9;&#x9;&#x9;&#x9;return c;&#xa;&#x9;&#x9;&#x9;}&#xa;};"/>
+                            <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new javax.swing.JTable(new RoutinesTableModel(this.report)) {&#xa;    public java.awt.Component prepareRenderer(javax.swing.table.TableCellRenderer renderer, int row, int column)&#xa;    {&#xa;        java.awt.Component c = super.prepareRenderer(renderer, row, column);&#xa;        if (!c.getBackground().equals(getSelectionBackground())) {&#xa;            //if (((String)getModel().getValueAt(convertRowIndexToModel(row), 10)).contains(&quot;/&quot;)) c.setBackground(new java.awt.Color(133, 244, 201)/*java.awt.Color.RED*/);&#xa;            //else &#xa;                c.setBackground(java.awt.Color.WHITE);&#xa;        }&#xa;        return c;&#xa;    }&#xa;}"/>
                             <AuxValue name="JavaCodeGenerator_InitCodePost" type="java.lang.String" value="routines_table_sorter &#xa;    = new javax.swing.table.TableRowSorter&lt;javax.swing.table.TableModel&gt;(jTable1.getModel());&#xa;jTable1.setRowSorter(routines_table_sorter);&#xa;&#xa;java.util.List &lt;javax.swing.RowSorter.SortKey&gt; routine_table_sortKeys &#xa;    = new java.util.ArrayList&lt;javax.swing.RowSorter.SortKey&gt;();&#xa;routine_table_sortKeys.add(new javax.swing.RowSorter.SortKey(4, javax.swing.SortOrder.DESCENDING));&#xa;//routine_table_sortKeys.add(new javax.swing.RowSorter.SortKey(2, javax.swing.SortOrder.DESCENDING));&#xa;routines_table_sorter.setSortKeys(routine_table_sortKeys);&#xa;&#xa;routines_table_sorter.setSortable(6, false);&#xa;&#xa;jTable1.setDefaultRenderer(RoutineInfo.class, new TimePlotThumbRenderer());"/>
                           </AuxValues>
                         </Component>
@@ -938,7 +955,7 @@
                   <SubComponents>
                     <Container class="javax.swing.JPanel" name="jPanel9">
                       <AuxValues>
-                        <AuxValue name="JavaCodeGenerator_LayoutCodePost" type="java.lang.String" value="timeGraphPanel = new GraphPanel(GraphPanel.TIME_PLOT, this);&#xa;ratioGraphPanel = new GraphPanel(GraphPanel.RATIO_PLOT, this);&#xa;freqGraphPanel = new GraphPanel(GraphPanel.FREQ_PLOT, this);&#xa;MMMGraphPanel = new GraphPanel(GraphPanel.MMM_PLOT, this);&#xa;SumGraphPanel = new GraphPanel(GraphPanel.SUM_PLOT, this);&#xa;VarGraphPanel = new GraphPanel(GraphPanel.VAR_PLOT, this);&#xa;jPanel9.add(timeGraphPanel);&#xa;jPanel9.add(ratioGraphPanel);&#xa;jPanel9.add(freqGraphPanel);&#xa;jPanel9.add(MMMGraphPanel);&#xa;jPanel9.add(SumGraphPanel);&#xa;jPanel9.add(VarGraphPanel);"/>
+                        <AuxValue name="JavaCodeGenerator_LayoutCodePost" type="java.lang.String" value="timeGraphPanel = new GraphPanel(GraphPanel.TIME_PLOT, this);&#xa;ratioGraphPanel = new GraphPanel(GraphPanel.RATIO_PLOT, this);&#xa;freqGraphPanel = new GraphPanel(GraphPanel.FREQ_PLOT, this);&#xa;MMMGraphPanel = new GraphPanel(GraphPanel.MMM_PLOT, this);&#xa;SumGraphPanel = new GraphPanel(GraphPanel.SUM_PLOT, this);&#xa;VarGraphPanel = new GraphPanel(GraphPanel.VAR_PLOT, this);&#xa;RtnGraphPanel = new GraphPanel(GraphPanel.RTN_PLOT, this);&#xa;jPanel9.add(timeGraphPanel);&#xa;jPanel9.add(ratioGraphPanel);&#xa;jPanel9.add(freqGraphPanel);&#xa;jPanel9.add(MMMGraphPanel);&#xa;jPanel9.add(SumGraphPanel);&#xa;jPanel9.add(VarGraphPanel);"/>
                       </AuxValues>
 
                       <Layout class="org.netbeans.modules.form.compat2.layouts.DesignGridLayout">
