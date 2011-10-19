@@ -23,11 +23,14 @@ import java.awt.geom.Rectangle2D;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.LegendItem;
+import org.jfree.chart.LegendItemCollection;
 import org.jfree.chart.axis.LogarithmicAxis;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.plot.DefaultDrawingSupplier;
 import org.jfree.chart.plot.DrawingSupplier;
+import org.jfree.chart.plot.Plot;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYItemRenderer;
@@ -129,12 +132,15 @@ public class GraphPanel extends javax.swing.JPanel {
         }
         for (int i = 0; i < series.length; i++) data.addSeries(series[i]);
 
+        boolean legend = false;
+        if (graph_type == RTN_PLOT || graph_type == MMM_PLOT)
+            legend = true;
         chart = ChartFactory.createScatterPlot(null,
                                                   null,
                                                   null,
                                                   data,
                                                   PlotOrientation.VERTICAL,
-                                                  false,
+                                                  legend,
                                                   false,
                                                   false);
 
@@ -154,6 +160,29 @@ public class GraphPanel extends javax.swing.JPanel {
         plot.setAxisOffset(new RectangleInsets(0.0, 0.0, 0.0, 0.0));
         plot.setDomainGridlinePaint(Color.LIGHT_GRAY);
         plot.setRangeGridlinePaint(Color.LIGHT_GRAY);
+
+        if (legend) {
+            LegendItemCollection legenditemcollection = new LegendItemCollection();
+            if (graph_type == MMM_PLOT) {
+                LegendItem legenditem = new LegendItem("Maximum cost", "-", null, null, Plot.DEFAULT_LEGEND_ITEM_BOX, colors[11]);
+                LegendItem legenditem1 = new LegendItem("Average cost", "-", null, null, Plot.DEFAULT_LEGEND_ITEM_BOX, colors[5]);
+                LegendItem legenditem2 = new LegendItem("Minimum cost", "-", null, null, Plot.DEFAULT_LEGEND_ITEM_BOX, colors[0]);
+                legenditemcollection.add(legenditem);
+                legenditemcollection.add(legenditem1);
+                legenditemcollection.add(legenditem2);
+            } else if (graph_type == RTN_PLOT) {
+                LegendItem legenditem = new LegendItem("% calls", "-", null, null, Plot.DEFAULT_LEGEND_ITEM_BOX, Color.BLACK);
+                LegendItem legenditem1 = new LegendItem("% avg calls", "-", null, null, Plot.DEFAULT_LEGEND_ITEM_BOX, Color.RED);
+                LegendItem legenditem2 = new LegendItem("% routines", "-", null, null, Plot.DEFAULT_LEGEND_ITEM_BOX, Color.BLUE);
+                LegendItem legenditem3 = new LegendItem("% max calls", "-", null, null, Plot.DEFAULT_LEGEND_ITEM_BOX, Color.GREEN);
+
+                legenditemcollection.add(legenditem);
+                legenditemcollection.add(legenditem1);
+                legenditemcollection.add(legenditem3);
+                legenditemcollection.add(legenditem2);
+            }
+            plot.setFixedLegendItems(legenditemcollection);
+        }
 
         //System.out.println(renderer.getClass());
         for (int i = 0; i < series.length; i++) {
