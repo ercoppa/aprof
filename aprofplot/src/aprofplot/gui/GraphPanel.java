@@ -33,6 +33,7 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYItemRenderer;
 import org.jfree.chart.renderer.xy.XYLine3DRenderer;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+import org.jfree.chart.renderer.xy.XYSplineRenderer;
 import org.jfree.chart.title.TextTitle;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
@@ -136,14 +137,24 @@ public class GraphPanel extends javax.swing.JPanel {
                                                   false,
                                                   false,
                                                   false);
+
         chart.setAntiAlias(false);
         plot = (XYPlot) chart.getPlot();
+        /*
+        if (graph_type == RTN_PLOT) {
+            XYSplineRenderer rr = new XYSplineRenderer(100);
+            renderer = (XYSplineRenderer) rr;
+            plot.setRenderer(rr);
+        } else {
+            renderer = plot.getRenderer();
+        }
+         */
+        renderer = plot.getRenderer();
         plot.setBackgroundPaint(Color.WHITE);
         plot.setAxisOffset(new RectangleInsets(0.0, 0.0, 0.0, 0.0));
         plot.setDomainGridlinePaint(Color.LIGHT_GRAY);
         plot.setRangeGridlinePaint(Color.LIGHT_GRAY);
 
-        renderer = plot.getRenderer();
         //System.out.println(renderer.getClass());
         for (int i = 0; i < series.length; i++) {
             renderer.setSeriesOutlinePaint(i, colors[i]);
@@ -663,7 +674,9 @@ public class GraphPanel extends javax.swing.JPanel {
 
     private void updateXAxis() {
         String label = null;
-        if (this.graph_type == RTN_PLOT) label = "Number of distinct SMS";
+        if (this.graph_type == RTN_PLOT) {
+            label = "Number of distinct SMS";
+        }
         else label = "seen memory size";
 
         if (x_log_scale) {
@@ -769,14 +782,20 @@ public class GraphPanel extends javax.swing.JPanel {
         x_log_scale = logscale;
         jToggleButton1.setSelected(logscale);
         if (maximized) resetXAxis();
-        else updateXAxis();
+        else {
+            if (graph_type == RTN_PLOT) autoscale();
+            updateXAxis();
+        }
     }
 
     public void setYLogScale(boolean logscale) {
         y_log_scale = logscale;
         jToggleButton2.setSelected(logscale);
         if (maximized) resetYAxis();
-        else updateYAxis();
+        else {
+            if (graph_type == RTN_PLOT) autoscale();
+            updateYAxis();
+        }
     }
 
     public void setGroupCost(int cost_type) {
@@ -842,9 +861,30 @@ public class GraphPanel extends javax.swing.JPanel {
     }
 
     public void autoscale() {
+        
         autoscaled = true;
         maximized = false;
         magnified = false;
+        
+        if (graph_type == RTN_PLOT && report != null) {
+            
+            for (int q = 0; q < report.num_class_sms.length; q++) {
+                if (report.num_class_sms[q] > 0) 
+                    max_x = Math.pow(2, q);
+            }
+            max_x += max_x / 10;
+            
+            if (x_log_scale) min_x = 0;
+            else min_x = - (max_x / 10);
+            if (y_log_scale) min_y = 0;
+            else min_y = -10;
+            
+            max_y = 110;
+            updateXAxis();
+            updateYAxis();
+            return;
+        }
+        
         if (rtn_info != null && rtn_info.getTimeEntries().size() > 0) {
             int first, last, middle;
             int totalCalls = rtn_info.getTotalCalls();
@@ -1338,6 +1378,35 @@ public class GraphPanel extends javax.swing.JPanel {
     private void populateChart() {
         for (int i = 0; i < series.length; i++) series[i].setNotify(false);
         for (int i = 0; i < series.length; i++) series[i].clear();
+        
+        if (graph_type == RTN_PLOT) {
+            double x = 0;
+            double y = 0;
+            long[] num_class_sms = report.num_class_sms;
+            
+            for (int k = 0; k < report.num_class_sms.length; k++) {
+                
+                if (report.num_class_sms[k] == 0) continue;
+                x = Math.pow(2, k);
+                
+                y = 100 * ((double) report.tot_cost_class_sms[k] / (double) report.getTotalCalls());
+                series[0].add(x, y);
+
+                y = 100 * ((double)((double) report.tot_cost_class_sms[k] / (double) report.num_class_sms[k])
+                                        / (double)report.most_called);
+                series[1].add(x, y);
+                
+                y = 100 * ((double) report.num_class_sms[k] / (double)report.getRoutineCount());
+                series[2].add(x, y);
+               
+                y = 100 * ((double) report.max_cost_class_sms[k] / (double)report.most_called);
+                series[3].add(x, y);
+               
+            }
+            for (int i = 0; i < series.length; i++) series[i].setNotify(true);
+            return;
+        }
+        
         if (group_threshold == 1) {
             for (int i = 0; i < this.rtn_info.getTimeEntries().size(); i++) {
                 SmsEntry te = this.rtn_info.getTimeEntries().get(i);
@@ -1361,27 +1430,6 @@ public class GraphPanel extends javax.swing.JPanel {
                         series[5].add(x, y);
                         y = te.getMaxCost();
                         series[11].add(x, y);
-                    
-                    } else if (this.graph_type == GraphPanel.RTN_PLOT) {
-                    
-                        long[] num_class_sms = report.num_class_sms;
-                        for (int k = 0; k < report.num_class_sms.length; k++) {
-                            
-                            if (report.num_class_sms[k] == 0) continue;
-                            x = Math.pow(2, k);
-                            
-                            y = 100 * ((double) report.tot_cost_class_sms[k] / (double) report.getTotalCalls());
-                            series[0].add(x, y);
-
-                            y = 100 * ((double)((double) report.tot_cost_class_sms[k] / (double) report.num_class_sms[k])
-                                                    / (double)report.most_called);
-                            series[1].add(x, y);
-                            
-                            y = 100 * ((double) report.num_class_sms[k] / (double)report.getRoutineCount());
-                            series[2].add(x, y);
-                           
-                        }
-                        
                     
                     } else if (this.graph_type == GraphPanel.FREQ_PLOT) {
                         y = te.getOcc();
@@ -1464,7 +1512,8 @@ public class GraphPanel extends javax.swing.JPanel {
 
     public void setData(RoutineInfo r) {
         chart.setNotify(false);
-        if (r == null) {
+        
+        if (r == null && (graph_type != RTN_PLOT || report == null)) {
             clearData();
             return;
         }
