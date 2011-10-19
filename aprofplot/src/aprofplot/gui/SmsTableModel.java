@@ -66,7 +66,7 @@ public class SmsTableModel extends AbstractTableModel {
             case 0: return new Integer(te.getSms());
             case 1: return new Double(te.getCost()/* / 1000000*/);
             case 2: return new Double(te.getRatio());
-            case 3: return new Integer(te.getOcc());
+            case 3: return new Long(te.getOcc());
             default: return null;
         }
     }

@@ -172,8 +172,8 @@ public class AprofReport {
                 long min_cost = Long.parseLong(tokenizer.nextToken());
                 long max_cost = Long.parseLong(tokenizer.nextToken());
                 long cost_sum = Long.parseLong(tokenizer.nextToken());
-                long cost_sqr_sum = Long.parseLong(tokenizer.nextToken());
-                int occ = Integer.parseInt(tokenizer.nextToken());
+                double cost_sqr_sum = Double.parseDouble(tokenizer.nextToken());
+                long occ = Long.parseLong(tokenizer.nextToken());
                 SmsEntry te = new SmsEntry(sms,
                     min_cost, max_cost, cost_sum, cost_sqr_sum, occ);
                 routines.get(rtn_id).addSmsEntry(te);
