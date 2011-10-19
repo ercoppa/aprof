@@ -143,6 +143,7 @@ public class MainWindow extends javax.swing.JFrame {
         jMenuItem6 = new javax.swing.JMenuItem();
         jMenuItem8 = new javax.swing.JMenuItem();
         jMenuItem9 = new javax.swing.JMenuItem();
+        jMenuItem10 = new javax.swing.JMenuItem();
         jMenuItem7 = new javax.swing.JMenuItem();
         jSeparator4 = new javax.swing.JSeparator();
         jMenuItem2 = new javax.swing.JMenuItem();
@@ -329,7 +330,7 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jToolBar1.add(jToggleButton6);
 
-        jToggleButton7.setFont(new java.awt.Font("Ubuntu", 1, 13)); // NOI18N
+        jToggleButton7.setFont(new java.awt.Font("Ubuntu", 1, 13));
         jToggleButton7.setSelected(true);
         jToggleButton7.setText("S");
         jToggleButton7.setToolTipText("Show/hide total cost plot");
@@ -344,7 +345,7 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jToolBar1.add(jToggleButton7);
 
-        jToggleButton8.setFont(new java.awt.Font("Ubuntu", 1, 13)); // NOI18N
+        jToggleButton8.setFont(new java.awt.Font("Ubuntu", 1, 13));
         jToggleButton8.setText("C");
         jToggleButton8.setFocusable(false);
         jToggleButton8.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
@@ -709,6 +710,15 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jMenu1.add(jMenuItem9);
 
+        jMenuItem10.setText("Export routine stats");
+        jMenuItem10.setEnabled(false);
+        jMenuItem10.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem10ActionPerformed(evt);
+            }
+        });
+        jMenu1.add(jMenuItem10);
+
         jMenuItem7.setText("Merge...");
         jMenuItem7.setEnabled(false);
         jMenuItem7.addActionListener(new java.awt.event.ActionListener() {
@@ -834,6 +844,7 @@ public class MainWindow extends javax.swing.JFrame {
         jButton9.setEnabled(true);
         jButton9.setToolTipText("Reload this report");
         jMenuItem9.setEnabled(true);
+        jMenuItem10.setEnabled(true);
         report = new AprofReport(file);
         //routines_filter_criteria = new String[5];
         //routines_filter_criteria[4] = "5";
@@ -849,7 +860,7 @@ public class MainWindow extends javax.swing.JFrame {
         if (jToggleButton5.isSelected()) MMMGraphPanel.clearData();
         if (jToggleButton6.isSelected()) VarGraphPanel.clearData();
         if (jToggleButton7.isSelected()) SumGraphPanel.clearData();
-        if (jToggleButton8.isSelected()) RtnGraphPanel.clearData();
+        RtnGraphPanel.setData(null);
         ((RoutinesTableModel)jTable1.getModel()).setData(report);
         ((SmsTableModel)jTable2.getModel()).setData(null);
     }
@@ -1088,7 +1099,7 @@ public class MainWindow extends javax.swing.JFrame {
             if (jToggleButton5.isSelected()) MMMGraphPanel.setData(r);
             if (jToggleButton6.isSelected()) VarGraphPanel.setData(r);
             if (jToggleButton7.isSelected()) SumGraphPanel.setData(r);
-            if (jToggleButton8.isSelected()) RtnGraphPanel.setData(r);
+            //if (jToggleButton8.isSelected()) RtnGraphPanel.setData(r);
             if (r == null) jMenuItem8.setEnabled(false);
             else jMenuItem8.setEnabled(true);
             this.rtn_info = r;
@@ -1108,7 +1119,7 @@ public class MainWindow extends javax.swing.JFrame {
             if (jToggleButton5.isSelected()) MMMGraphPanel.clearData();
             if (jToggleButton6.isSelected()) VarGraphPanel.clearData();
             if (jToggleButton7.isSelected()) SumGraphPanel.clearData();
-            if (jToggleButton8.isSelected()) RtnGraphPanel.clearData();
+            //if (jToggleButton8.isSelected()) RtnGraphPanel.clearData();
             updateContextTree(null);
         }
 
@@ -1541,7 +1552,7 @@ public class MainWindow extends javax.swing.JFrame {
             graph_visible++;
             jPanel9.add(RtnGraphPanel);
             RtnGraphPanel.setVisible(true);
-            RtnGraphPanel.setData(this.rtn_info);
+            RtnGraphPanel.setData(null);
         }
         else {
             graph_visible--;
@@ -1552,6 +1563,30 @@ public class MainWindow extends javax.swing.JFrame {
         adjustLayout();
         
     }//GEN-LAST:event_jToggleButton8ActionPerformed
+
+    private void jMenuItem10ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem10ActionPerformed
+        try {
+            File tmp = new File(this.report.getName() + ".stats");
+            tmp.createNewFile();
+            PrintWriter out = new PrintWriter(new FileWriter(tmp));
+            long[] num_class_sms = report.num_class_sms;
+            int x = 0;
+            double y1, y2, y3, y4;
+            out.println("# SMS_CLASS_X PERC_TOTAL_CALLS PERC_AVG_CALLS PERC_MAX_CALLS PERC_NUMBER_OF_ROUTINE");
+            for (int k = 0; k < report.num_class_sms.length; k++) {
+
+                if (report.num_class_sms[k] == 0) continue;
+                x = (int) Math.pow(2, k);
+                y1 = (100 * ((double) report.tot_cost_class_sms[k] / (double) report.getTotalCalls()));
+                y2 = (100 * ((double) ((double) report.tot_cost_class_sms[k] / (double) report.num_class_sms[k]) / (double) report.most_called));
+                y4 = (100 * ((double) report.num_class_sms[k] / (double) report.getRoutineCount()));
+                y3 = (100 * ((double) report.max_cost_class_sms[k] / (double) report.most_called));
+
+                out.format("%d %.1f %.1f %.1f %.1f%n", x, y1, y2, y3, y4);
+            }
+            out.close();
+        } catch(java.io.IOException e) {}
+    }//GEN-LAST:event_jMenuItem10ActionPerformed
 
     private void adjustLayout() {
         
@@ -1877,6 +1912,7 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JMenu jMenu5;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JMenuItem jMenuItem1;
+    private javax.swing.JMenuItem jMenuItem10;
     private javax.swing.JMenuItem jMenuItem2;
     private javax.swing.JMenuItem jMenuItem3;
     private javax.swing.JMenuItem jMenuItem4;
