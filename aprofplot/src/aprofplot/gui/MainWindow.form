@@ -177,6 +177,15 @@
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jMenuItem10ActionPerformed"/>
               </Events>
             </MenuItem>
+            <MenuItem class="javax.swing.JMenuItem" name="jMenuItem11">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Export factor ammortization estimation"/>
+                <Property name="enabled" type="boolean" value="false"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jMenuItem11ActionPerformed"/>
+              </Events>
+            </MenuItem>
             <MenuItem class="javax.swing.JMenuItem" name="jMenuItem7">
               <Properties>
                 <Property name="text" type="java.lang.String" value="Merge..."/>
@@ -515,6 +524,7 @@
               <Font name="Ubuntu" size="13" style="1"/>
             </Property>
             <Property name="text" type="java.lang.String" value="C"/>
+            <Property name="toolTipText" type="java.lang.String" value="Show/hide routine stats plot"/>
             <Property name="focusable" type="boolean" value="false"/>
             <Property name="horizontalTextPosition" type="int" value="0"/>
             <Property name="margin" type="java.awt.Insets" editor="org.netbeans.beaninfo.editors.InsetsEditor">
@@ -524,6 +534,24 @@
           </Properties>
           <Events>
             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jToggleButton8ActionPerformed"/>
+          </Events>
+        </Component>
+        <Component class="javax.swing.JToggleButton" name="jToggleButton9">
+          <Properties>
+            <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
+              <Font name="Ubuntu" size="13" style="1"/>
+            </Property>
+            <Property name="text" type="java.lang.String" value="A"/>
+            <Property name="toolTipText" type="java.lang.String" value="Show/hide Ammortization factor estimation plot"/>
+            <Property name="focusable" type="boolean" value="false"/>
+            <Property name="horizontalTextPosition" type="int" value="0"/>
+            <Property name="margin" type="java.awt.Insets" editor="org.netbeans.beaninfo.editors.InsetsEditor">
+              <Insets value="[0, 4, 0, 4]"/>
+            </Property>
+            <Property name="verticalTextPosition" type="int" value="3"/>
+          </Properties>
+          <Events>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jToggleButton9ActionPerformed"/>
           </Events>
         </Component>
         <Component class="javax.swing.JToggleButton" name="jToggleButton4">
@@ -964,7 +992,7 @@
                   <SubComponents>
                     <Container class="javax.swing.JPanel" name="jPanel9">
                       <AuxValues>
-                        <AuxValue name="JavaCodeGenerator_LayoutCodePost" type="java.lang.String" value="timeGraphPanel = new GraphPanel(GraphPanel.TIME_PLOT, this);&#xa;ratioGraphPanel = new GraphPanel(GraphPanel.RATIO_PLOT, this);&#xa;freqGraphPanel = new GraphPanel(GraphPanel.FREQ_PLOT, this);&#xa;MMMGraphPanel = new GraphPanel(GraphPanel.MMM_PLOT, this);&#xa;SumGraphPanel = new GraphPanel(GraphPanel.SUM_PLOT, this);&#xa;VarGraphPanel = new GraphPanel(GraphPanel.VAR_PLOT, this);&#xa;RtnGraphPanel = new GraphPanel(GraphPanel.RTN_PLOT, this);&#xa;jPanel9.add(timeGraphPanel);&#xa;jPanel9.add(ratioGraphPanel);&#xa;jPanel9.add(freqGraphPanel);&#xa;jPanel9.add(MMMGraphPanel);&#xa;jPanel9.add(SumGraphPanel);&#xa;jPanel9.add(VarGraphPanel);"/>
+                        <AuxValue name="JavaCodeGenerator_LayoutCodePost" type="java.lang.String" value="timeGraphPanel = new GraphPanel(GraphPanel.TIME_PLOT, this);&#xa;ratioGraphPanel = new GraphPanel(GraphPanel.RATIO_PLOT, this);&#xa;freqGraphPanel = new GraphPanel(GraphPanel.FREQ_PLOT, this);&#xa;MMMGraphPanel = new GraphPanel(GraphPanel.MMM_PLOT, this);&#xa;SumGraphPanel = new GraphPanel(GraphPanel.SUM_PLOT, this);&#xa;VarGraphPanel = new GraphPanel(GraphPanel.VAR_PLOT, this);&#xa;RtnGraphPanel = new GraphPanel(GraphPanel.RTN_PLOT, this);&#xa;AmmGraphPanel = new GraphPanel(GraphPanel.AMM_PLOT, this);&#xa;jPanel9.add(timeGraphPanel);&#xa;jPanel9.add(ratioGraphPanel);&#xa;jPanel9.add(freqGraphPanel);&#xa;jPanel9.add(MMMGraphPanel);&#xa;jPanel9.add(SumGraphPanel);&#xa;jPanel9.add(VarGraphPanel);"/>
                       </AuxValues>
 
                       <Layout class="org.netbeans.modules.form.compat2.layouts.DesignGridLayout">
