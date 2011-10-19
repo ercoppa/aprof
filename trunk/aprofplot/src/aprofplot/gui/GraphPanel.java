@@ -55,6 +55,7 @@ public class GraphPanel extends javax.swing.JPanel {
     public static final int SUM_PLOT = 4;
     public static final int VAR_PLOT = 5;
     public static final int RTN_PLOT = 6;
+    public static final int AMM_PLOT = 7;
 
     public static final int MAX_COST = 0;
     public static final int AVG_COST = 1;
@@ -133,8 +134,12 @@ public class GraphPanel extends javax.swing.JPanel {
         for (int i = 0; i < series.length; i++) data.addSeries(series[i]);
 
         boolean legend = false;
-        if (graph_type == RTN_PLOT || graph_type == MMM_PLOT)
-            legend = true;
+        switch(graph_type) {
+            case RTN_PLOT:
+            case MMM_PLOT:
+                            legend = true;
+                            break;
+        }
         chart = ChartFactory.createScatterPlot(null,
                                                   null,
                                                   null,
@@ -173,13 +178,15 @@ public class GraphPanel extends javax.swing.JPanel {
             } else if (graph_type == RTN_PLOT) {
                 LegendItem legenditem = new LegendItem("% calls", "-", null, null, Plot.DEFAULT_LEGEND_ITEM_BOX, Color.BLACK);
                 LegendItem legenditem1 = new LegendItem("% avg calls", "-", null, null, Plot.DEFAULT_LEGEND_ITEM_BOX, Color.RED);
-                LegendItem legenditem2 = new LegendItem("% routines", "-", null, null, Plot.DEFAULT_LEGEND_ITEM_BOX, Color.BLUE);
+                LegendItem legenditem2 = new LegendItem("% routines (distinct)", "-", null, null, Plot.DEFAULT_LEGEND_ITEM_BOX, Color.BLUE);
                 LegendItem legenditem3 = new LegendItem("% max calls", "-", null, null, Plot.DEFAULT_LEGEND_ITEM_BOX, Color.GREEN);
+                LegendItem legenditem4 = new LegendItem("% routines (at least)", "-", null, null, Plot.DEFAULT_LEGEND_ITEM_BOX, Color.ORANGE);
 
                 legenditemcollection.add(legenditem);
                 legenditemcollection.add(legenditem1);
                 legenditemcollection.add(legenditem3);
                 legenditemcollection.add(legenditem2);
+                legenditemcollection.add(legenditem4);
             }
             plot.setFixedLegendItems(legenditemcollection);
         }
@@ -212,6 +219,10 @@ public class GraphPanel extends javax.swing.JPanel {
                     case 3:
                         renderer.setSeriesPaint(i, Color.GREEN);
                         r.setSeriesOutlinePaint(i, Color.GREEN);
+                        break;
+                    case 4:
+                        renderer.setSeriesPaint(i, Color.ORANGE);
+                        r.setSeriesOutlinePaint(i, Color.ORANGE);
                         break;
                     default:
                         renderer.setSeriesPaint(i, colors[i]);
@@ -250,7 +261,7 @@ public class GraphPanel extends javax.swing.JPanel {
         initComponents();
         this.add(chartPanel, BorderLayout.CENTER);
 
-        if (graph_type == RTN_PLOT)
+        if (graph_type == RTN_PLOT || graph_type == AMM_PLOT)
             this.setVisible(false);
 
         updateGraphTitle();
@@ -626,7 +637,7 @@ public class GraphPanel extends javax.swing.JPanel {
         jPanel1.add(jPanel2, java.awt.BorderLayout.WEST);
         jPanel1.add(jPanel3, java.awt.BorderLayout.CENTER);
 
-        if (graph_type == FREQ_PLOT || graph_type == MMM_PLOT || graph_type == RTN_PLOT)
+        if (graph_type == FREQ_PLOT || graph_type == MMM_PLOT || graph_type == RTN_PLOT || graph_type == AMM_PLOT)
         jLabel2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Dummy.png"))); // NOI18N
         else {
             jLabel2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Color-scale.png"))); // NOI18N
@@ -684,6 +695,7 @@ public class GraphPanel extends javax.swing.JPanel {
         String label = null;
         if (graph_type == FREQ_PLOT) label = "occurrences";
         else if (graph_type == RTN_PLOT) label = "Percentage";
+        else if (graph_type == AMM_PLOT) label = "factor estimation";
         else label = "cost"; 
         if (y_log_scale) {
             LogarithmicAxis newRangeAxis = new LogarithmicAxis(label);
@@ -697,7 +709,7 @@ public class GraphPanel extends javax.swing.JPanel {
             this.rangeAxis = newRangeAxis;
         }
         if (graph_type == GraphPanel.FREQ_PLOT)
-                this.rangeAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
+            this.rangeAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
         plot.setRangeAxis(rangeAxis);
     }
 
@@ -730,6 +742,7 @@ public class GraphPanel extends javax.swing.JPanel {
         String label = null;
         if (graph_type == FREQ_PLOT) label = "occurrences";
         else if (graph_type == RTN_PLOT) label = "Percentage";
+        else if (graph_type == AMM_PLOT) label = "factor estimation";
         else label = "cost";
 
         if (y_log_scale) {
@@ -759,6 +772,7 @@ public class GraphPanel extends javax.swing.JPanel {
             case SUM_PLOT: s = "Total cost plot"; break;
             case VAR_PLOT: s = "Variance plot"; break;
             case RTN_PLOT: s = "Routine plot"; break;
+            case AMM_PLOT: s = "Ammortization factor estimation"; break;
             case RATIO_PLOT: s = "Ratio plot - T(n) / ";
                             double[] rc = SmsEntry.getRatioConfig();
                             int n = 0;
@@ -920,6 +934,7 @@ public class GraphPanel extends javax.swing.JPanel {
             switch (this.graph_type) {
                 case TIME_PLOT:
                 case MMM_PLOT:
+                case AMM_PLOT:
                                 rtn_info.sortTimeEntriesByTime();
                                 break;
                 case SUM_PLOT:
@@ -972,6 +987,9 @@ public class GraphPanel extends javax.swing.JPanel {
                                 break;
                 case RTN_PLOT:
                                 max_y = 110;
+                                break;
+                case AMM_PLOT:
+                                max_y = rtn_info.getAmmEst(rtn_info.getTimeEntries().get(last).getSms());
                                 break;
             }
 
@@ -1093,6 +1111,7 @@ public class GraphPanel extends javax.swing.JPanel {
         else if (this.graph_type == VAR_PLOT) filename += "_var_plot.png";
         else if (this.graph_type == RATIO_PLOT) filename += "_ratio_plot.png";
         else if (this.graph_type == RTN_PLOT) filename += "_rtn_plot.png";
+        else if (this.graph_type == AMM_PLOT) filename += "_amm_plot.png";
         else filename += "_freq_plot.png";
         java.io.File f = new java.io.File(filename);
         javax.swing.JFileChooser chooser = new javax.swing.JFileChooser();
@@ -1412,11 +1431,13 @@ public class GraphPanel extends javax.swing.JPanel {
             double x = 0;
             double y = 0;
             long[] num_class_sms = report.num_class_sms;
+            double num_at_least = 0;
             
-            for (int k = 0; k < report.num_class_sms.length; k++) {
+            for (int k = report.num_class_sms.length-1; k >= 0; k--) {
                 
                 if (report.num_class_sms[k] == 0) continue;
                 x = Math.pow(2, k);
+                num_at_least += report.num_class_sms[k];
                 
                 y = 100 * ((double) report.tot_cost_class_sms[k] / (double) report.getTotalCalls());
                 series[0].add(x, y);
@@ -1430,6 +1451,9 @@ public class GraphPanel extends javax.swing.JPanel {
                
                 y = 100 * ((double) report.max_cost_class_sms[k] / (double)report.most_called);
                 series[3].add(x, y);
+                
+                y = 100 * ((double) num_at_least / (double)report.getRoutineCount());
+                series[4].add(x, y);
                
             }
             for (int i = 0; i < series.length; i++) series[i].setNotify(true);
@@ -1459,7 +1483,9 @@ public class GraphPanel extends javax.swing.JPanel {
                         series[5].add(x, y);
                         y = te.getMaxCost();
                         series[11].add(x, y);
-                    
+                    } else if (graph_type == AMM_PLOT) {
+                        y = rtn_info.getAmmEst((int)x);
+                        series[0].add(x, y);
                     } else if (this.graph_type == GraphPanel.FREQ_PLOT) {
                         y = te.getOcc();
                         series[0].add(x, y);

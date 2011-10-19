@@ -206,4 +206,15 @@ public abstract class RoutineInfo implements Comparable<RoutineInfo> {
            }
         });
     }
+    
+    public double getAmmEst(int n) {
+        int est = 0;
+        for(int i = 0; i < time_entries.size(); i++) {
+            SmsEntry s = time_entries.get(i);
+            if (s.getSms() > n) break;
+            est += s.getCost() * s.getOcc();
+        }
+            
+        return est;
+    }
 }

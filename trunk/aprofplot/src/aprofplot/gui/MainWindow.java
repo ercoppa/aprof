@@ -81,6 +81,7 @@ public class MainWindow extends javax.swing.JFrame {
         jToggleButton6 = new javax.swing.JToggleButton();
         jToggleButton7 = new javax.swing.JToggleButton();
         jToggleButton8 = new javax.swing.JToggleButton();
+        jToggleButton9 = new javax.swing.JToggleButton();
         jToggleButton4 = new javax.swing.JToggleButton();
         jSeparator3 = new javax.swing.JToolBar.Separator();
         jButton8 = new javax.swing.JButton();
@@ -144,6 +145,7 @@ public class MainWindow extends javax.swing.JFrame {
         jMenuItem8 = new javax.swing.JMenuItem();
         jMenuItem9 = new javax.swing.JMenuItem();
         jMenuItem10 = new javax.swing.JMenuItem();
+        jMenuItem11 = new javax.swing.JMenuItem();
         jMenuItem7 = new javax.swing.JMenuItem();
         jSeparator4 = new javax.swing.JSeparator();
         jMenuItem2 = new javax.swing.JMenuItem();
@@ -345,8 +347,9 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jToolBar1.add(jToggleButton7);
 
-        jToggleButton8.setFont(new java.awt.Font("Ubuntu", 1, 13));
+        jToggleButton8.setFont(new java.awt.Font("Ubuntu", 1, 13)); // NOI18N
         jToggleButton8.setText("C");
+        jToggleButton8.setToolTipText("Show/hide routine stats plot");
         jToggleButton8.setFocusable(false);
         jToggleButton8.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
         jToggleButton8.setMargin(new java.awt.Insets(0, 4, 0, 4));
@@ -357,6 +360,20 @@ public class MainWindow extends javax.swing.JFrame {
             }
         });
         jToolBar1.add(jToggleButton8);
+
+        jToggleButton9.setFont(new java.awt.Font("Ubuntu", 1, 13)); // NOI18N
+        jToggleButton9.setText("A");
+        jToggleButton9.setToolTipText("Show/hide Ammortization factor estimation plot");
+        jToggleButton9.setFocusable(false);
+        jToggleButton9.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jToggleButton9.setMargin(new java.awt.Insets(0, 4, 0, 4));
+        jToggleButton9.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jToggleButton9.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jToggleButton9ActionPerformed(evt);
+            }
+        });
+        jToolBar1.add(jToggleButton9);
 
         jToggleButton4.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Unlink-icon.png"))); // NOI18N
         jToggleButton4.setSelected(true);
@@ -582,6 +599,7 @@ public class MainWindow extends javax.swing.JFrame {
         SumGraphPanel = new GraphPanel(GraphPanel.SUM_PLOT, this);
         VarGraphPanel = new GraphPanel(GraphPanel.VAR_PLOT, this);
         RtnGraphPanel = new GraphPanel(GraphPanel.RTN_PLOT, this);
+        AmmGraphPanel = new GraphPanel(GraphPanel.AMM_PLOT, this);
         jPanel9.add(timeGraphPanel);
         jPanel9.add(ratioGraphPanel);
         jPanel9.add(freqGraphPanel);
@@ -718,6 +736,15 @@ public class MainWindow extends javax.swing.JFrame {
             }
         });
         jMenu1.add(jMenuItem10);
+
+        jMenuItem11.setText("Export factor ammortization estimation");
+        jMenuItem11.setEnabled(false);
+        jMenuItem11.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem11ActionPerformed(evt);
+            }
+        });
+        jMenu1.add(jMenuItem11);
 
         jMenuItem7.setText("Merge...");
         jMenuItem7.setEnabled(false);
@@ -860,6 +887,7 @@ public class MainWindow extends javax.swing.JFrame {
         if (jToggleButton5.isSelected()) MMMGraphPanel.clearData();
         if (jToggleButton6.isSelected()) VarGraphPanel.clearData();
         if (jToggleButton7.isSelected()) SumGraphPanel.clearData();
+        if (jToggleButton9.isSelected()) AmmGraphPanel.clearData();
         RtnGraphPanel.setData(null);
         ((RoutinesTableModel)jTable1.getModel()).setData(report);
         ((SmsTableModel)jTable2.getModel()).setData(null);
@@ -925,53 +953,57 @@ public class MainWindow extends javax.swing.JFrame {
     }
 
     protected void setXLogScaleAll(int graph_type, boolean log) {
-        if (graph_type != GraphPanel.TIME_PLOT) this.timeGraphPanel.setXLogScale(log);
-        if (graph_type != GraphPanel.RATIO_PLOT) this.ratioGraphPanel.setXLogScale(log);
-        if (graph_type != GraphPanel.FREQ_PLOT) this.freqGraphPanel.setXLogScale(log);
-        if (graph_type != GraphPanel.MMM_PLOT) this.MMMGraphPanel.setXLogScale(log);
-        if (graph_type != GraphPanel.VAR_PLOT) this.VarGraphPanel.setXLogScale(log);
-        if (graph_type != GraphPanel.SUM_PLOT) this.SumGraphPanel.setXLogScale(log);
-        if (graph_type != GraphPanel.RTN_PLOT) this.RtnGraphPanel.setXLogScale(log);
+        if (graph_type != GraphPanel.TIME_PLOT) timeGraphPanel.setXLogScale(log);
+        if (graph_type != GraphPanel.RATIO_PLOT) ratioGraphPanel.setXLogScale(log);
+        if (graph_type != GraphPanel.FREQ_PLOT) freqGraphPanel.setXLogScale(log);
+        if (graph_type != GraphPanel.MMM_PLOT) MMMGraphPanel.setXLogScale(log);
+        if (graph_type != GraphPanel.VAR_PLOT) VarGraphPanel.setXLogScale(log);
+        if (graph_type != GraphPanel.SUM_PLOT) SumGraphPanel.setXLogScale(log);
+        if (graph_type != GraphPanel.RTN_PLOT) RtnGraphPanel.setXLogScale(log);
+        if (graph_type != GraphPanel.AMM_PLOT) AmmGraphPanel.setXLogScale(log);
     }
 
     protected void setYLogScaleAll(int graph_type, boolean log) {
-        if (graph_type != GraphPanel.TIME_PLOT) this.timeGraphPanel.setYLogScale(log);
-        if (graph_type != GraphPanel.RATIO_PLOT) this.ratioGraphPanel.setYLogScale(log);
-        if (graph_type != GraphPanel.FREQ_PLOT) this.freqGraphPanel.setYLogScale(log);
-        if (graph_type != GraphPanel.MMM_PLOT) this.MMMGraphPanel.setYLogScale(log);
-        if (graph_type != GraphPanel.SUM_PLOT) this.SumGraphPanel.setYLogScale(log);
-        if (graph_type != GraphPanel.VAR_PLOT) this.VarGraphPanel.setYLogScale(log);
-        if (graph_type != GraphPanel.RTN_PLOT) this.RtnGraphPanel.setYLogScale(log);
+        if (graph_type != GraphPanel.TIME_PLOT) timeGraphPanel.setYLogScale(log);
+        if (graph_type != GraphPanel.RATIO_PLOT) ratioGraphPanel.setYLogScale(log);
+        if (graph_type != GraphPanel.FREQ_PLOT) freqGraphPanel.setYLogScale(log);
+        if (graph_type != GraphPanel.MMM_PLOT) MMMGraphPanel.setYLogScale(log);
+        if (graph_type != GraphPanel.SUM_PLOT) SumGraphPanel.setYLogScale(log);
+        if (graph_type != GraphPanel.VAR_PLOT) VarGraphPanel.setYLogScale(log);
+        if (graph_type != GraphPanel.AMM_PLOT) AmmGraphPanel.setYLogScale(log);
     }
 
     protected void maximizeAll(int graph_type) {
-        if (graph_type != GraphPanel.TIME_PLOT) this.timeGraphPanel.maximize();
-        if (graph_type != GraphPanel.RATIO_PLOT) this.ratioGraphPanel.maximize();
-        if (graph_type != GraphPanel.FREQ_PLOT) this.freqGraphPanel.maximize();
-        if (graph_type != GraphPanel.MMM_PLOT) this.MMMGraphPanel.maximize();
-        if (graph_type != GraphPanel.SUM_PLOT) this.SumGraphPanel.maximize();
-        if (graph_type != GraphPanel.VAR_PLOT) this.VarGraphPanel.maximize();
-        if (graph_type != GraphPanel.RTN_PLOT) this.RtnGraphPanel.maximize();
+        if (graph_type != GraphPanel.TIME_PLOT) timeGraphPanel.maximize();
+        if (graph_type != GraphPanel.RATIO_PLOT) ratioGraphPanel.maximize();
+        if (graph_type != GraphPanel.FREQ_PLOT) freqGraphPanel.maximize();
+        if (graph_type != GraphPanel.MMM_PLOT) MMMGraphPanel.maximize();
+        if (graph_type != GraphPanel.SUM_PLOT) SumGraphPanel.maximize();
+        if (graph_type != GraphPanel.VAR_PLOT) VarGraphPanel.maximize();
+        if (graph_type != GraphPanel.RTN_PLOT) RtnGraphPanel.maximize();
+        if (graph_type != GraphPanel.AMM_PLOT) AmmGraphPanel.maximize();
     }
 
     protected void autoscaleAll(int graph_type) {
-        if (graph_type != GraphPanel.TIME_PLOT) this.timeGraphPanel.autoscale();
-        if (graph_type != GraphPanel.RATIO_PLOT) this.ratioGraphPanel.autoscale();
-        if (graph_type != GraphPanel.FREQ_PLOT) this.freqGraphPanel.autoscale();
-        if (graph_type != GraphPanel.MMM_PLOT) this.MMMGraphPanel.autoscale();
-        if (graph_type != GraphPanel.SUM_PLOT) this.SumGraphPanel.autoscale();
-        if (graph_type != GraphPanel.VAR_PLOT) this.VarGraphPanel.autoscale();
-        if (graph_type != GraphPanel.RTN_PLOT) this.RtnGraphPanel.autoscale();
+        if (graph_type != GraphPanel.TIME_PLOT) timeGraphPanel.autoscale();
+        if (graph_type != GraphPanel.RATIO_PLOT) ratioGraphPanel.autoscale();
+        if (graph_type != GraphPanel.FREQ_PLOT) freqGraphPanel.autoscale();
+        if (graph_type != GraphPanel.MMM_PLOT) MMMGraphPanel.autoscale();
+        if (graph_type != GraphPanel.SUM_PLOT) SumGraphPanel.autoscale();
+        if (graph_type != GraphPanel.VAR_PLOT) VarGraphPanel.autoscale();
+        if (graph_type != GraphPanel.RTN_PLOT) RtnGraphPanel.autoscale();
+        if (graph_type != GraphPanel.AMM_PLOT) AmmGraphPanel.autoscale();
     }
 
     protected void setGroupThresholdAll(int graph_type, int threshold) {
-        if (graph_type != GraphPanel.TIME_PLOT) this.timeGraphPanel.setGroupThreshold(threshold);
-        if (graph_type != GraphPanel.RATIO_PLOT) this.ratioGraphPanel.setGroupThreshold(threshold);
-        if (graph_type != GraphPanel.FREQ_PLOT) this.freqGraphPanel.setGroupThreshold(threshold);
-        if (graph_type != GraphPanel.MMM_PLOT) this.MMMGraphPanel.setGroupThreshold(threshold);
-        if (graph_type != GraphPanel.SUM_PLOT) this.SumGraphPanel.setGroupThreshold(threshold);
-        if (graph_type != GraphPanel.VAR_PLOT) this.VarGraphPanel.setGroupThreshold(threshold);
-        if (graph_type != GraphPanel.RTN_PLOT) this.RtnGraphPanel.setGroupThreshold(threshold);
+        if (graph_type != GraphPanel.TIME_PLOT) timeGraphPanel.setGroupThreshold(threshold);
+        if (graph_type != GraphPanel.RATIO_PLOT) ratioGraphPanel.setGroupThreshold(threshold);
+        if (graph_type != GraphPanel.FREQ_PLOT) freqGraphPanel.setGroupThreshold(threshold);
+        if (graph_type != GraphPanel.MMM_PLOT) MMMGraphPanel.setGroupThreshold(threshold);
+        if (graph_type != GraphPanel.SUM_PLOT) SumGraphPanel.setGroupThreshold(threshold);
+        if (graph_type != GraphPanel.VAR_PLOT) VarGraphPanel.setGroupThreshold(threshold);
+        if (graph_type != GraphPanel.RTN_PLOT) RtnGraphPanel.setGroupThreshold(threshold);
+        if (graph_type != GraphPanel.AMM_PLOT) AmmGraphPanel.setGroupThreshold(threshold);
     }
 
     protected void setGroupCostAll(int graph_type, int cost_type) {
@@ -1099,9 +1131,14 @@ public class MainWindow extends javax.swing.JFrame {
             if (jToggleButton5.isSelected()) MMMGraphPanel.setData(r);
             if (jToggleButton6.isSelected()) VarGraphPanel.setData(r);
             if (jToggleButton7.isSelected()) SumGraphPanel.setData(r);
-            //if (jToggleButton8.isSelected()) RtnGraphPanel.setData(r);
-            if (r == null) jMenuItem8.setEnabled(false);
-            else jMenuItem8.setEnabled(true);
+            if (jToggleButton9.isSelected()) AmmGraphPanel.setData(r);
+            if (r == null) {
+                jMenuItem8.setEnabled(false);
+                jMenuItem11.setEnabled(false);
+            } else {
+                jMenuItem8.setEnabled(true);
+                jMenuItem11.setEnabled(true);
+            }
             this.rtn_info = r;
             ((SmsTableModel)jTable2.getModel()).setData(r);
             if (r instanceof ContextualizedRoutineInfo) ((StackTraceListModel)jList1.getModel()).setData(((ContextualizedRoutineInfo)r).getStackTrace());
@@ -1119,7 +1156,7 @@ public class MainWindow extends javax.swing.JFrame {
             if (jToggleButton5.isSelected()) MMMGraphPanel.clearData();
             if (jToggleButton6.isSelected()) VarGraphPanel.clearData();
             if (jToggleButton7.isSelected()) SumGraphPanel.clearData();
-            //if (jToggleButton8.isSelected()) RtnGraphPanel.clearData();
+            if (jToggleButton9.isSelected()) AmmGraphPanel.clearData();
             updateContextTree(null);
         }
 
@@ -1571,22 +1608,59 @@ public class MainWindow extends javax.swing.JFrame {
             PrintWriter out = new PrintWriter(new FileWriter(tmp));
             long[] num_class_sms = report.num_class_sms;
             int x = 0;
-            double y1, y2, y3, y4;
-            out.println("# SMS_CLASS_X PERC_TOTAL_CALLS PERC_AVG_CALLS PERC_MAX_CALLS PERC_NUMBER_OF_ROUTINE");
-            for (int k = 0; k < report.num_class_sms.length; k++) {
+            double y1, y2, y3, y4, y5;
+            double sum_at_least = 0;
+            out.println("# SMS_CLASS_X PERC_TOTAL_CALLS PERC_AVG_CALLS PERC_MAX_CALLS PERC_NUMBER_OF_ROUTINE_DISTINCT PERC_NUMBER_OF_ROUTINE_AT_LEAST");
+            for (int k = report.num_class_sms.length; k >= 0; k--) {
 
                 if (report.num_class_sms[k] == 0) continue;
+                sum_at_least += report.num_class_sms[k];
                 x = (int) Math.pow(2, k);
                 y1 = (100 * ((double) report.tot_cost_class_sms[k] / (double) report.getTotalCalls()));
                 y2 = (100 * ((double) ((double) report.tot_cost_class_sms[k] / (double) report.num_class_sms[k]) / (double) report.most_called));
-                y4 = (100 * ((double) report.num_class_sms[k] / (double) report.getRoutineCount()));
                 y3 = (100 * ((double) report.max_cost_class_sms[k] / (double) report.most_called));
+                y4 = (100 * ((double) report.num_class_sms[k] / (double) report.getRoutineCount()));
+                y5 = (100 * ((double) sum_at_least / (double) report.getRoutineCount()));
 
-                out.format("%d %.1f %.1f %.1f %.1f%n", x, y1, y2, y3, y4);
+                out.format("%d %.1f %.1f %.1f %.1f %.1f%n", x, y1, y2, y3, y4, y5);
             }
             out.close();
         } catch(java.io.IOException e) {}
     }//GEN-LAST:event_jMenuItem10ActionPerformed
+
+    private void jToggleButton9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton9ActionPerformed
+        if (jToggleButton9.isSelected()) {
+            graph_visible++;
+            jPanel9.add(AmmGraphPanel);
+            AmmGraphPanel.setVisible(true);
+            AmmGraphPanel.setData(rtn_info);
+        }
+        else {
+            graph_visible--;
+            AmmGraphPanel.setVisible(false);
+            jPanel9.remove(AmmGraphPanel);
+        }
+
+        adjustLayout();
+    }//GEN-LAST:event_jToggleButton9ActionPerformed
+
+    private void jMenuItem11ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem11ActionPerformed
+        if (this.rtn_info == null) return;
+        ArrayList<SmsEntry> ss = this.rtn_info.getTimeEntries();
+        try {
+            File tmp = new File(this.report.getName() + "."
+                                + this.rtn_info.getName() + ".amm");
+            tmp.createNewFile();
+            PrintWriter out = new PrintWriter(new FileWriter(tmp));
+            for (int i = 0; i < ss.size(); i++) {
+                SmsEntry s = ss.get(i);
+                out.println(s.getSms() + " " + (long) rtn_info.getAmmEst(s.getSms()));
+            }
+            out.close();
+        } catch(java.io.IOException e) {
+            System.out.println("Error file");
+        }
+    }//GEN-LAST:event_jMenuItem11ActionPerformed
 
     private void adjustLayout() {
         
@@ -1735,6 +1809,7 @@ public class MainWindow extends javax.swing.JFrame {
         if (SumGraphPanel != null) SumGraphPanel.refreshFilter();
         if (VarGraphPanel != null) VarGraphPanel.refreshFilter();
         if (RtnGraphPanel != null) RtnGraphPanel.refreshFilter();
+        if (AmmGraphPanel != null) AmmGraphPanel.refreshFilter();
     }
 
     protected void setSmsTableFilter(String[] criteria) {
@@ -1913,6 +1988,7 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JMenuItem jMenuItem10;
+    private javax.swing.JMenuItem jMenuItem11;
     private javax.swing.JMenuItem jMenuItem2;
     private javax.swing.JMenuItem jMenuItem3;
     private javax.swing.JMenuItem jMenuItem4;
@@ -1957,6 +2033,7 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JToggleButton jToggleButton6;
     private javax.swing.JToggleButton jToggleButton7;
     private javax.swing.JToggleButton jToggleButton8;
+    private javax.swing.JToggleButton jToggleButton9;
     private javax.swing.JToolBar jToolBar1;
     private javax.swing.JTree jTree1;
     private javax.swing.JMenuItem recentMenuItem1;
@@ -1969,7 +2046,7 @@ public class MainWindow extends javax.swing.JFrame {
     private GraphPanel timeGraphPanel, ratioGraphPanel, 
                         freqGraphPanel, MMMGraphPanel,
                         SumGraphPanel, VarGraphPanel,
-                        RtnGraphPanel;
+                        RtnGraphPanel, AmmGraphPanel;
     private javax.swing.table.TableRowSorter<javax.swing.table.TableModel> routines_table_sorter;
     private javax.swing.table.TableRowSorter<javax.swing.table.TableModel> sms_table_sorter;
     private String[] routines_filter_criteria;
