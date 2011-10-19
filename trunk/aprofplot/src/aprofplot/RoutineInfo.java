@@ -108,8 +108,10 @@ public abstract class RoutineInfo implements Comparable<RoutineInfo> {
     }
 
     public ArrayList<SmsEntry> getTimeEntries() {
+        // Bad but fast :(
+        return this.time_entries; 
         //return (ArrayList<SmsEntry>)time_entries.clone();
-        return new ArrayList<SmsEntry>(this.time_entries);
+        //return new ArrayList<SmsEntry>(this.time_entries);
     }
 
     @Override

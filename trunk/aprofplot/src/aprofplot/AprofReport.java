@@ -18,6 +18,14 @@ public class AprofReport {
     private File file;
     private ArrayList<String> liblist;
 
+    // Global stats about routines
+    private int max_class = 14;
+    public long[] num_class_sms = null;
+    public long[] tot_cost_class_sms = null;
+    public long[] min_cost_class_sms = null;
+    public long[] max_cost_class_sms = null;
+    public long most_called = 0;
+
     public AprofReport(File f) throws Exception {
 
         // init object
@@ -29,6 +37,12 @@ public class AprofReport {
         this.liblist = new ArrayList<String>();
         this.favorites = new HashSet<String>();
         this.file = f;
+
+        // stats
+        this.num_class_sms = new long[max_class];
+        this.tot_cost_class_sms = new long[max_class];
+        this.min_cost_class_sms = new long[max_class];
+        this.max_cost_class_sms = new long[max_class];
 
         // init locals
         HashSet<String> libset = new HashSet<String>();
@@ -42,10 +56,27 @@ public class AprofReport {
         ArrayList<String> demangled_temporary = new ArrayList<String>();
         ArrayList<String> full_demangled_temporary = new ArrayList<String>();
 
+        //RandomAccessFile rf = new RandomAccessFile(f, "r");
+
         // read report file
         String str;
         StringTokenizer tokenizer;
+        long offset = 0;
         while ((str = in.readLine()) != null) {
+
+            /*
+            System.out.println("Line read: " + str);
+            int sline = str.length() + 1;
+            long offset2 = offset + sline;
+            System.out.println("Try to read from " + offset + " -> " + offset2);
+
+            rf.seek(offset);
+            byte[] b = new byte[sline];
+            rf.readFully(b);
+            String str2 = new String(b);
+            System.out.println("Echo line read: " + str2);
+            offset = offset2;
+            */
 
             tokenizer = new StringTokenizer(str);
             String token = tokenizer.nextToken();
@@ -160,6 +191,8 @@ public class AprofReport {
                 libset.add(rtn_info.getImage());
                 liblist.add(rtn_info.getImage());
             }
+            
+            
         }
 
         // p points:
@@ -177,6 +210,7 @@ public class AprofReport {
                 SmsEntry te = new SmsEntry(sms,
                     min_cost, max_cost, cost_sum, cost_sqr_sum, occ);
                 routines.get(rtn_id).addSmsEntry(te);
+                 
             }
         else
             for (int i = 0; i < p_points_temporary.size(); i++) {
@@ -278,8 +312,22 @@ public class AprofReport {
             }
 
         for (int i=0; i<routines.size(); i++) {
+            int calls = routines.get(i).getTotalCalls();
             total_cost += routines.get(i).getTotalTime();
-            total_calls += routines.get(i).getTotalCalls();
+            total_calls += calls;
+            int ne = routines.get(i).getSizeTimeEntries();
+            int id = 0;
+            if (ne > 1) {
+                double idd = Math.log(ne) / Math.log(2);
+                id = (int)idd;
+                if (id > max_class) id = max_class;
+                id--;
+            }
+            num_class_sms[id]++;
+            tot_cost_class_sms[id] += calls;
+            if (most_called < calls) most_called = calls;
+            //if (min_cost_class_sms[id] > calls) min_cost_class_sms[id] = calls;
+            if (max_cost_class_sms[id] < calls) max_cost_class_sms[id] = calls;
         }
     }
 

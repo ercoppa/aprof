@@ -12,10 +12,13 @@
 package aprofplot.gui;
 
 import aprofplot.*;
+import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Polygon;
+import java.awt.Shape;
 import java.awt.geom.Rectangle2D;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
@@ -23,9 +26,12 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.LogarithmicAxis;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.ValueAxis;
+import org.jfree.chart.plot.DefaultDrawingSupplier;
+import org.jfree.chart.plot.DrawingSupplier;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYItemRenderer;
+import org.jfree.chart.renderer.xy.XYLine3DRenderer;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.chart.title.TextTitle;
 import org.jfree.data.xy.XYSeries;
@@ -44,9 +50,14 @@ public class GraphPanel extends javax.swing.JPanel {
     public static final int MMM_PLOT = 3;
     public static final int SUM_PLOT = 4;
     public static final int VAR_PLOT = 5;
+    public static final int RTN_PLOT = 6;
 
+    public static final int MAX_COST = 0;
+    public static final int AVG_COST = 1;
+    public static final int MIN_COST = 2;
 
     private int graph_type;
+    private int cost_type;
     private MainWindow main_window;
     private boolean x_log_scale;
     private boolean y_log_scale;
@@ -58,6 +69,7 @@ public class GraphPanel extends javax.swing.JPanel {
     private double min_x, min_y, max_x, max_y;
     private String[] filters;
     private RoutineInfo rtn_info;
+    private AprofReport report = null;
 
     private XYPlot plot;
     private JFreeChart chart;
@@ -85,14 +97,25 @@ public class GraphPanel extends javax.swing.JPanel {
         this.graph_type = graph_type;
         this.x_log_scale = false;
         this.y_log_scale = false;
-        this.maximized = true;
-        this.autoscaled = false;
+        if (graph_type == RTN_PLOT) {
+            this.maximized = false;
+            this.autoscaled = true;
+        } else {
+            this.maximized = true;
+            this.autoscaled = false;
+        }
         this.magnified = false;
         this.dragging = false;
         this.group_threshold = 1;
         this.main_window = mw;
         this.filters = main_window.getSmsTableFilter();
-        this.min_x = this.min_y = 0;
+        if (graph_type == RTN_PLOT) {
+            this.min_y = -10;
+            this.min_x = -10;
+        } else {
+            this.min_y = 0;
+            this.min_x = 0;
+        }
         this.max_x = this.max_y = 10;
 
         Dimension d = new Dimension(370, 300);
@@ -106,13 +129,13 @@ public class GraphPanel extends javax.swing.JPanel {
         for (int i = 0; i < series.length; i++) data.addSeries(series[i]);
 
         chart = ChartFactory.createScatterPlot(null,
-                                                          null,
-                                                          null,
-                                                          data,
-                                                          PlotOrientation.VERTICAL,
-                                                          false,
-                                                          false,
-                                                          false);
+                                                  null,
+                                                  null,
+                                                  data,
+                                                  PlotOrientation.VERTICAL,
+                                                  false,
+                                                  false,
+                                                  false);
         chart.setAntiAlias(false);
         plot = (XYPlot) chart.getPlot();
         plot.setBackgroundPaint(Color.WHITE);
@@ -123,12 +146,45 @@ public class GraphPanel extends javax.swing.JPanel {
         renderer = plot.getRenderer();
         //System.out.println(renderer.getClass());
         for (int i = 0; i < series.length; i++) {
-            renderer.setSeriesShape(i, new Rectangle2D.Double(-1.0, -1.0, 2.0, 2.0));
             renderer.setSeriesOutlinePaint(i, colors[i]);
-            renderer.setSeriesPaint(i, colors[i]);
+            if (graph_type == RTN_PLOT) {
 
+                renderer.setSeriesShape(i, new Rectangle2D.Double(-2.0, -2.0, 3.0, 3.0));
+                XYLineAndShapeRenderer r = (XYLineAndShapeRenderer) renderer;
+                r.setSeriesLinesVisible(i, true);
+
+                r.setSeriesStroke(i, new BasicStroke(2f, BasicStroke.JOIN_ROUND, BasicStroke.JOIN_BEVEL));
+
+                switch(i) {
+
+                    case 0:
+                        renderer.setSeriesPaint(i, Color.BLACK);
+                        r.setSeriesOutlinePaint(i, Color.BLACK);
+                        break;
+                    case 1:
+                        renderer.setSeriesPaint(i, Color.RED);
+                        r.setSeriesOutlinePaint(i, Color.RED);
+                        break;
+                    case 2:
+                        renderer.setSeriesPaint(i, Color.BLUE);
+                        r.setSeriesOutlinePaint(i, Color.BLUE);
+                        break;
+                    case 3:
+                        renderer.setSeriesPaint(i, Color.GREEN);
+                        r.setSeriesOutlinePaint(i, Color.GREEN);
+                        break;
+                    default:
+                        renderer.setSeriesPaint(i, colors[i]);
+                        r.setSeriesOutlinePaint(i, colors[i]);
+                        break;
+                }
+                r.setUseOutlinePaint(true);
+            } else {
+                renderer.setSeriesShape(i, new Rectangle2D.Double(-1.0, -1.0, 2.0, 2.0));
+                renderer.setSeriesPaint(i, colors[i]);
+                ((XYLineAndShapeRenderer)renderer).setUseOutlinePaint(true);
+            }
         }
-        ((XYLineAndShapeRenderer)renderer).setUseOutlinePaint(true);
         ((XYLineAndShapeRenderer)renderer).setDrawOutlines(true);
 
         chartPanel = new ChartPanel(chart, true);
@@ -153,10 +209,17 @@ public class GraphPanel extends javax.swing.JPanel {
 
         initComponents();
         this.add(chartPanel, BorderLayout.CENTER);
-        
+
+        if (graph_type == RTN_PLOT)
+            this.setVisible(false);
+
         updateGraphTitle();
         updateXAxis();
         updateYAxis();
+    }
+    
+    public void setReport(AprofReport r){
+        report = r;
     }
 
     /** This method is called from within the constructor to
@@ -191,6 +254,10 @@ public class GraphPanel extends javax.swing.JPanel {
         jMenuItem12 = new javax.swing.JMenuItem();
         jMenuItem13 = new javax.swing.JMenuItem();
         jMenuItem14 = new javax.swing.JMenuItem();
+        jPopupMenu3 = new javax.swing.JPopupMenu();
+        jRadioButtonMenuItem7 = new javax.swing.JRadioButtonMenuItem();
+        jRadioButtonMenuItem8 = new javax.swing.JRadioButtonMenuItem();
+        jRadioButtonMenuItem9 = new javax.swing.JRadioButtonMenuItem();
         jPanel1 = new javax.swing.JPanel();
         jPanel2 = new javax.swing.JPanel();
         jToggleButton1 = new javax.swing.JToggleButton();
@@ -199,6 +266,7 @@ public class GraphPanel extends javax.swing.JPanel {
         jToggleButton6 = new javax.swing.JToggleButton();
         jToggleButton7 = new javax.swing.JToggleButton();
         jButton1 = new javax.swing.JButton();
+        jToggleButton3 = new javax.swing.JToggleButton();
         jPanel3 = new javax.swing.JPanel();
         jPanel4 = new javax.swing.JPanel();
         jLabel2 = new javax.swing.JLabel();
@@ -390,6 +458,48 @@ public class GraphPanel extends javax.swing.JPanel {
         });
         jPopupMenu2.add(jMenuItem14);
 
+        jPopupMenu3.addPopupMenuListener(new javax.swing.event.PopupMenuListener() {
+            public void popupMenuCanceled(javax.swing.event.PopupMenuEvent evt) {
+            }
+            public void popupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent evt) {
+                jPopupMenu3PopupMenuWillBecomeInvisible(evt);
+            }
+            public void popupMenuWillBecomeVisible(javax.swing.event.PopupMenuEvent evt) {
+            }
+        });
+        groupMenuButtonGroup2 = new javax.swing.ButtonGroup();
+
+        jRadioButtonMenuItem7.setSelected(true);
+        jRadioButtonMenuItem7.setText("Maximum");
+        jRadioButtonMenuItem7.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jRadioButtonMenuItem7ActionPerformed(evt);
+            }
+        });
+        jPopupMenu3.add(jRadioButtonMenuItem7);
+
+        jRadioButtonMenuItem8.setSelected(true);
+        jRadioButtonMenuItem8.setText("Average");
+        jRadioButtonMenuItem8.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jRadioButtonMenuItem8ActionPerformed(evt);
+            }
+        });
+        jPopupMenu3.add(jRadioButtonMenuItem8);
+
+        jRadioButtonMenuItem9.setSelected(true);
+        jRadioButtonMenuItem9.setText("Minimum");
+        jRadioButtonMenuItem9.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jRadioButtonMenuItem9ActionPerformed(evt);
+            }
+        });
+        jPopupMenu3.add(jRadioButtonMenuItem9);
+
+        groupMenuButtonGroup2.add(jRadioButtonMenuItem7);
+        groupMenuButtonGroup2.add(jRadioButtonMenuItem8);
+        groupMenuButtonGroup2.add(jRadioButtonMenuItem9);
+
         setBorder(javax.swing.BorderFactory.createTitledBorder(""));
         setLayout(new java.awt.BorderLayout());
 
@@ -460,10 +570,24 @@ public class GraphPanel extends javax.swing.JPanel {
         });
         jPanel2.add(jButton1);
 
+        jToggleButton3.setFont(new java.awt.Font("Ubuntu", 1, 13));
+        jToggleButton3.setText("T");
+        jToggleButton3.setToolTipText("Select cost type");
+        jToggleButton3.setBorderPainted(false);
+        jToggleButton3.setMargin(new java.awt.Insets(0, 4, 0, 4));
+        jToggleButton3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jToggleButton3ActionPerformed(evt);
+            }
+        });
+        if (graph_type == TIME_PLOT || graph_type == RATIO_PLOT)
+        jPanel2.add(jToggleButton3);
+
         jPanel1.add(jPanel2, java.awt.BorderLayout.WEST);
         jPanel1.add(jPanel3, java.awt.BorderLayout.CENTER);
 
-        if (graph_type == FREQ_PLOT || graph_type == MMM_PLOT) jLabel2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Dummy.png"))); // NOI18N
+        if (graph_type == FREQ_PLOT || graph_type == MMM_PLOT || graph_type == RTN_PLOT)
+        jLabel2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Dummy.png"))); // NOI18N
         else {
             jLabel2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Color-scale.png"))); // NOI18N
             //jLabel2.setBorder(new javax.swing.border.LineBorder(java.awt.Color.BLACK));
@@ -497,15 +621,18 @@ public class GraphPanel extends javax.swing.JPanel {
     }
 
     private void resetXAxis() {
+        String label = null;
+        if (this.graph_type == RTN_PLOT) label = "Number of distinct SMS";
+        else label = "seen memory size";
         if (x_log_scale) {
-            LogarithmicAxis newDomainAxis = new LogarithmicAxis("seen memory size");
+            LogarithmicAxis newDomainAxis = new LogarithmicAxis(label);
             newDomainAxis.setAllowNegativesFlag(false);
             //NumberFormat nf = NumberFormat.getNumberInstance();
             newDomainAxis.setStrictValuesFlag(false);
             this.domainAxis = newDomainAxis;
         }
         else {
-            NumberAxis newDomainAxis = new NumberAxis("seen memory size");
+            NumberAxis newDomainAxis = new NumberAxis(label);
             this.domainAxis = newDomainAxis;
         }
         this.domainAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
@@ -514,7 +641,10 @@ public class GraphPanel extends javax.swing.JPanel {
 
     private void resetYAxis() {
 
-        String label = (graph_type == GraphPanel.FREQ_PLOT)? "occurrences" : "cost";
+        String label = null;
+        if (graph_type == FREQ_PLOT) label = "occurrences";
+        else if (graph_type == RTN_PLOT) label = "Percentage";
+        else label = "cost"; 
         if (y_log_scale) {
             LogarithmicAxis newRangeAxis = new LogarithmicAxis(label);
             newRangeAxis.setAllowNegativesFlag(false);
@@ -532,15 +662,19 @@ public class GraphPanel extends javax.swing.JPanel {
     }
 
     private void updateXAxis() {
+        String label = null;
+        if (this.graph_type == RTN_PLOT) label = "Number of distinct SMS";
+        else label = "seen memory size";
+
         if (x_log_scale) {
-            LogarithmicAxis newDomainAxis = new LogarithmicAxis("seen memory size");
+            LogarithmicAxis newDomainAxis = new LogarithmicAxis(label);
             newDomainAxis.setAllowNegativesFlag(false);
             //NumberFormat nf = NumberFormat.getNumberInstance();
             newDomainAxis.setStrictValuesFlag(false);
             this.domainAxis = newDomainAxis;
         }
         else {
-            NumberAxis newDomainAxis = new NumberAxis("seen memory size");
+            NumberAxis newDomainAxis = new NumberAxis(label);
             this.domainAxis = newDomainAxis;
         }
         this.domainAxis.setLowerBound(min_x);
@@ -551,7 +685,11 @@ public class GraphPanel extends javax.swing.JPanel {
 
     private void updateYAxis() {
 
-        String label = (graph_type == GraphPanel.FREQ_PLOT)? "occurrences" : "cost";
+        String label = null;
+        if (graph_type == FREQ_PLOT) label = "occurrences";
+        else if (graph_type == RTN_PLOT) label = "Percentage";
+        else label = "cost";
+
         if (y_log_scale) {
             LogarithmicAxis newRangeAxis = new LogarithmicAxis(label);
             newRangeAxis.setAllowNegativesFlag(false);
@@ -578,6 +716,7 @@ public class GraphPanel extends javax.swing.JPanel {
             case MMM_PLOT: s = "Min/Avg/Max cost plot"; break;
             case SUM_PLOT: s = "Total cost plot"; break;
             case VAR_PLOT: s = "Variance plot"; break;
+            case RTN_PLOT: s = "Routine plot"; break;
             case RATIO_PLOT: s = "Ratio plot - T(n) / ";
                             double[] rc = SmsEntry.getRatioConfig();
                             int n = 0;
@@ -640,6 +779,19 @@ public class GraphPanel extends javax.swing.JPanel {
         else updateYAxis();
     }
 
+    public void setGroupCost(int cost_type) {
+        switch(cost_type) {
+            case MAX_COST:  jRadioButtonMenuItem7.setSelected(true);
+                            break;
+            case AVG_COST:  jRadioButtonMenuItem8.setSelected(true);
+                            break;
+            case MIN_COST:  jRadioButtonMenuItem9.setSelected(true);
+                            break;
+        }
+        this.cost_type = cost_type;
+        refresh();
+    }
+
     public void setGroupThreshold(int t) {
         switch (t) {
             case 1: jRadioButtonMenuItem1.setSelected(true);
@@ -671,9 +823,15 @@ public class GraphPanel extends javax.swing.JPanel {
         magnified = false;
         resetXAxis();
         resetYAxis();
-        min_x = domainAxis.getLowerBound();
+        
         max_x = domainAxis.getUpperBound();
-        min_y = rangeAxis.getLowerBound();
+        if (graph_type == RTN_PLOT) {
+            min_x = -1;
+            min_y = -10;
+        } else {
+            min_x = domainAxis.getLowerBound();
+            min_y = rangeAxis.getLowerBound();
+        }
         max_y = rangeAxis.getUpperBound();
     }
 
@@ -743,6 +901,9 @@ public class GraphPanel extends javax.swing.JPanel {
                 case VAR_PLOT:
                                 max_y = rtn_info.getTimeEntries().get(last).getVar();
                                 break;
+                case RTN_PLOT:
+                                max_y = 110;
+                                break;
             }
 
             rtn_info.sortTimeEntriesByAccesses();
@@ -764,8 +925,21 @@ public class GraphPanel extends javax.swing.JPanel {
                     c = sumOccurrences(0, middle);
                 }
             }
-            max_x = rtn_info.getTimeEntries().get(middle).getSms();
-            min_x = min_y = 0;
+            if (graph_type == RTN_PLOT) {
+                for (int q = 0; q < report.num_class_sms.length; q++) {
+                    if (report.num_class_sms[q] > 0) 
+                        max_x = Math.pow(2, q) + 2;
+                }
+            } else
+                max_x = rtn_info.getTimeEntries().get(middle).getSms();
+            
+            if (graph_type == RTN_PLOT) {
+                min_y = -10;
+                min_x = -1;
+            } else {
+                min_y = 0;
+                min_x = 0;
+            }
             updateXAxis();
             updateYAxis();
         }
@@ -849,6 +1023,7 @@ public class GraphPanel extends javax.swing.JPanel {
         else if (this.graph_type == SUM_PLOT) filename += "_sum_plot.png";
         else if (this.graph_type == VAR_PLOT) filename += "_var_plot.png";
         else if (this.graph_type == RATIO_PLOT) filename += "_ratio_plot.png";
+        else if (this.graph_type == RTN_PLOT) filename += "_rtn_plot.png";
         else filename += "_freq_plot.png";
         java.io.File f = new java.io.File(filename);
         javax.swing.JFileChooser chooser = new javax.swing.JFileChooser();
@@ -1098,6 +1273,36 @@ public class GraphPanel extends javax.swing.JPanel {
         if (this.main_window.getLinkPlots()) main_window.maximizeAll(graph_type);
     }//GEN-LAST:event_jButton2ActionPerformed
 
+    private void jToggleButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton3ActionPerformed
+        if (jToggleButton3.isSelected()) {
+            jPopupMenu3.show(jToggleButton3, 0, jToggleButton3.getHeight());
+        } else {
+            jPopupMenu3.setVisible(false);
+        }
+    }//GEN-LAST:event_jToggleButton3ActionPerformed
+
+    private void jPopupMenu3PopupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent evt) {//GEN-FIRST:event_jPopupMenu3PopupMenuWillBecomeInvisible
+        jToggleButton3.setSelected(false);
+    }//GEN-LAST:event_jPopupMenu3PopupMenuWillBecomeInvisible
+
+    private void jRadioButtonMenuItem7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem7ActionPerformed
+        cost_type = MAX_COST;
+        if (this.main_window.getLinkPlots()) main_window.setGroupCostAll(graph_type, cost_type);
+        refresh();
+    }//GEN-LAST:event_jRadioButtonMenuItem7ActionPerformed
+
+    private void jRadioButtonMenuItem8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem8ActionPerformed
+        cost_type = AVG_COST;
+        if (this.main_window.getLinkPlots()) main_window.setGroupCostAll(graph_type, cost_type);
+        refresh();
+    }//GEN-LAST:event_jRadioButtonMenuItem8ActionPerformed
+
+    private void jRadioButtonMenuItem9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem9ActionPerformed
+        cost_type = MIN_COST;
+        if (this.main_window.getLinkPlots()) main_window.setGroupCostAll(graph_type, cost_type);
+        refresh();
+    }//GEN-LAST:event_jRadioButtonMenuItem9ActionPerformed
+
     private boolean filterTimeEntry(SmsEntry t) {
         if (filters == null) return true;
         if (filters[0] != null) {
@@ -1131,6 +1336,7 @@ public class GraphPanel extends javax.swing.JPanel {
     }
 
     private void populateChart() {
+        for (int i = 0; i < series.length; i++) series[i].setNotify(false);
         for (int i = 0; i < series.length; i++) series[i].clear();
         if (group_threshold == 1) {
             for (int i = 0; i < this.rtn_info.getTimeEntries().size(); i++) {
@@ -1138,10 +1344,10 @@ public class GraphPanel extends javax.swing.JPanel {
                 if (filterTimeEntry(te)) {
                     double x = te.getSms();
                     double y = 0;
-                    if (this.graph_type == GraphPanel.TIME_PLOT) 
-                        y = te.getCost(); 
-                    else if (this.graph_type == GraphPanel.RATIO_PLOT) 
-                        y = te.getRatio();
+                    if (this.graph_type == GraphPanel.TIME_PLOT) {
+                        y = te.getCost(cost_type); 
+                    } else if (this.graph_type == GraphPanel.RATIO_PLOT) 
+                        y = te.getRatioCost(cost_type);
                     else if (this.graph_type == GraphPanel.SUM_PLOT) 
                         y = te.getSumCost();
                     else if (this.graph_type == GraphPanel.VAR_PLOT) 
@@ -1155,6 +1361,27 @@ public class GraphPanel extends javax.swing.JPanel {
                         series[5].add(x, y);
                         y = te.getMaxCost();
                         series[11].add(x, y);
+                    
+                    } else if (this.graph_type == GraphPanel.RTN_PLOT) {
+                    
+                        long[] num_class_sms = report.num_class_sms;
+                        for (int k = 0; k < report.num_class_sms.length; k++) {
+                            
+                            if (report.num_class_sms[k] == 0) continue;
+                            x = Math.pow(2, k);
+                            
+                            y = 100 * ((double) report.tot_cost_class_sms[k] / (double) report.getTotalCalls());
+                            series[0].add(x, y);
+
+                            y = 100 * ((double)((double) report.tot_cost_class_sms[k] / (double) report.num_class_sms[k])
+                                                    / (double)report.most_called);
+                            series[1].add(x, y);
+                            
+                            y = 100 * ((double) report.num_class_sms[k] / (double)report.getRoutineCount());
+                            series[2].add(x, y);
+                           
+                        }
+                        
                     
                     } else if (this.graph_type == GraphPanel.FREQ_PLOT) {
                         y = te.getOcc();
@@ -1232,9 +1459,11 @@ public class GraphPanel extends javax.swing.JPanel {
                 }
             }
         }
+        for (int i = 0; i < series.length; i++) series[i].setNotify(true);
     }
 
     public void setData(RoutineInfo r) {
+        chart.setNotify(false);
         if (r == null) {
             clearData();
             return;
@@ -1243,17 +1472,24 @@ public class GraphPanel extends javax.swing.JPanel {
         populateChart();
         if (autoscaled) autoscale();
         else maximize();
+        chart.setNotify(true);
     }
 
     public void clearData() {
         for (int i = 0; i < series.length; i++) series[i].clear();
-        this.min_x = this.min_y = 0;
+        if (graph_type == RTN_PLOT) {
+            this.min_x = -1; 
+            this.min_y = -10;
+        } else {
+            this.min_x = this.min_y = 0;
+        }
         this.max_x = this.max_y = 10;
         updateXAxis();
         updateYAxis();
     }
 
     private void refresh() {
+        if (rtn_info == null) return;
         //if (magnify) updateGraph();
         populateChart();
         if (autoscaled) autoscale();
@@ -1288,17 +1524,23 @@ public class GraphPanel extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel4;
     private javax.swing.JPopupMenu jPopupMenu1;
     private javax.swing.JPopupMenu jPopupMenu2;
+    private javax.swing.JPopupMenu jPopupMenu3;
     private javax.swing.JRadioButtonMenuItem jRadioButtonMenuItem1;
     private javax.swing.JRadioButtonMenuItem jRadioButtonMenuItem2;
     private javax.swing.JRadioButtonMenuItem jRadioButtonMenuItem3;
     private javax.swing.JRadioButtonMenuItem jRadioButtonMenuItem4;
     private javax.swing.JRadioButtonMenuItem jRadioButtonMenuItem5;
     private javax.swing.JRadioButtonMenuItem jRadioButtonMenuItem6;
+    private javax.swing.JRadioButtonMenuItem jRadioButtonMenuItem7;
+    private javax.swing.JRadioButtonMenuItem jRadioButtonMenuItem8;
+    private javax.swing.JRadioButtonMenuItem jRadioButtonMenuItem9;
     private javax.swing.JToggleButton jToggleButton1;
     private javax.swing.JToggleButton jToggleButton2;
+    private javax.swing.JToggleButton jToggleButton3;
     private javax.swing.JToggleButton jToggleButton6;
     private javax.swing.JToggleButton jToggleButton7;
     // End of variables declaration//GEN-END:variables
     private javax.swing.ButtonGroup groupMenuButtonGroup;
+    private javax.swing.ButtonGroup groupMenuButtonGroup2;
     private javax.swing.ButtonGroup toggleButtonGroup;
 }

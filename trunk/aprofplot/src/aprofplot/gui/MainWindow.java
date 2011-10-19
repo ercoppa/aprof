@@ -32,6 +32,7 @@ public class MainWindow extends javax.swing.JFrame {
     private RoutineInfo rtn_info = null;
     private int graph_visible = 6;
     private JPanel fake = null;
+    private JPanel fake2 = null;
 
     /** Creates new form MainWindow */
     public MainWindow() {
@@ -79,6 +80,7 @@ public class MainWindow extends javax.swing.JFrame {
         jToggleButton3 = new javax.swing.JToggleButton();
         jToggleButton6 = new javax.swing.JToggleButton();
         jToggleButton7 = new javax.swing.JToggleButton();
+        jToggleButton8 = new javax.swing.JToggleButton();
         jToggleButton4 = new javax.swing.JToggleButton();
         jSeparator3 = new javax.swing.JToolBar.Separator();
         jButton8 = new javax.swing.JButton();
@@ -102,8 +104,9 @@ public class MainWindow extends javax.swing.JFrame {
             {
                 java.awt.Component c = super.prepareRenderer(renderer, row, column);
                 if (!c.getBackground().equals(getSelectionBackground())) {
-                    if (((String)getModel().getValueAt(convertRowIndexToModel(row), 10)).contains("/")) c.setBackground(new java.awt.Color(133, 244, 201)/*java.awt.Color.RED*/);
-                    else c.setBackground(java.awt.Color.WHITE);
+                    //if (((String)getModel().getValueAt(convertRowIndexToModel(row), 10)).contains("/")) c.setBackground(new java.awt.Color(133, 244, 201)/*java.awt.Color.RED*/);
+                    //else
+                    c.setBackground(java.awt.Color.WHITE);
                 }
                 return c;
             }
@@ -220,8 +223,12 @@ public class MainWindow extends javax.swing.JFrame {
         jToolBar1.add(jButton7);
 
         jButton9.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/refresh.png"))); // NOI18N
-        jButton9.setToolTipText("Reload this report");
+        jButton9.setToolTipText("Reload last recent report");
         jButton9.setEnabled(false);
+        ArrayList<File> r = Main.getRecentFiles();
+        if (r.size() > 0) {
+            jButton9.setEnabled(true);
+        }
         jButton9.setFocusable(false);
         jButton9.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
         jButton9.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
@@ -247,7 +254,7 @@ public class MainWindow extends javax.swing.JFrame {
         jToolBar1.add(jButton6);
         jToolBar1.add(jSeparator5);
 
-        jToggleButton5.setFont(new java.awt.Font("Ubuntu", 1, 13)); // NOI18N
+        jToggleButton5.setFont(new java.awt.Font("Ubuntu", 1, 13));
         jToggleButton5.setSelected(true);
         jToggleButton5.setText("M");
         jToggleButton5.setToolTipText("Show/hide min/avg/max cost plot");
@@ -262,7 +269,7 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jToolBar1.add(jToggleButton5);
 
-        jToggleButton1.setFont(new java.awt.Font("Ubuntu", 1, 13)); // NOI18N
+        jToggleButton1.setFont(new java.awt.Font("Ubuntu", 1, 13));
         jToggleButton1.setSelected(true);
         jToggleButton1.setText("T");
         jToggleButton1.setToolTipText("show/hide time plot");
@@ -292,7 +299,7 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jToolBar1.add(jToggleButton2);
 
-        jToggleButton3.setFont(new java.awt.Font("Ubuntu", 1, 13)); // NOI18N
+        jToggleButton3.setFont(new java.awt.Font("Ubuntu", 1, 13));
         jToggleButton3.setSelected(true);
         jToggleButton3.setText("F");
         jToggleButton3.setToolTipText("show/hide frequency plot");
@@ -307,7 +314,7 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jToolBar1.add(jToggleButton3);
 
-        jToggleButton6.setFont(new java.awt.Font("Ubuntu", 1, 13)); // NOI18N
+        jToggleButton6.setFont(new java.awt.Font("Ubuntu", 1, 13));
         jToggleButton6.setSelected(true);
         jToggleButton6.setText("V");
         jToggleButton6.setToolTipText("Show/hide variance plot");
@@ -336,6 +343,19 @@ public class MainWindow extends javax.swing.JFrame {
             }
         });
         jToolBar1.add(jToggleButton7);
+
+        jToggleButton8.setFont(new java.awt.Font("Ubuntu", 1, 13)); // NOI18N
+        jToggleButton8.setText("C");
+        jToggleButton8.setFocusable(false);
+        jToggleButton8.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jToggleButton8.setMargin(new java.awt.Insets(0, 4, 0, 4));
+        jToggleButton8.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jToggleButton8.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jToggleButton8ActionPerformed(evt);
+            }
+        });
+        jToolBar1.add(jToggleButton8);
 
         jToggleButton4.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Unlink-icon.png"))); // NOI18N
         jToggleButton4.setSelected(true);
@@ -560,6 +580,7 @@ public class MainWindow extends javax.swing.JFrame {
         MMMGraphPanel = new GraphPanel(GraphPanel.MMM_PLOT, this);
         SumGraphPanel = new GraphPanel(GraphPanel.SUM_PLOT, this);
         VarGraphPanel = new GraphPanel(GraphPanel.VAR_PLOT, this);
+        RtnGraphPanel = new GraphPanel(GraphPanel.RTN_PLOT, this);
         jPanel9.add(timeGraphPanel);
         jPanel9.add(ratioGraphPanel);
         jPanel9.add(freqGraphPanel);
@@ -811,6 +832,7 @@ public class MainWindow extends javax.swing.JFrame {
 
     protected void loadReport(java.io.File file) throws Exception {
         jButton9.setEnabled(true);
+        jButton9.setToolTipText("Reload this report");
         jMenuItem9.setEnabled(true);
         report = new AprofReport(file);
         //routines_filter_criteria = new String[5];
@@ -820,12 +842,14 @@ public class MainWindow extends javax.swing.JFrame {
         //sms_filter_criteria = new String[3];
         //setSmsTableFilter(sms_filter_criteria);
         updateGUI(file);
+        RtnGraphPanel.setReport(report);
         if (jToggleButton1.isSelected()) timeGraphPanel.clearData();
         if (jToggleButton2.isSelected()) ratioGraphPanel.clearData();
         if (jToggleButton3.isSelected()) freqGraphPanel.clearData();
         if (jToggleButton5.isSelected()) MMMGraphPanel.clearData();
         if (jToggleButton6.isSelected()) VarGraphPanel.clearData();
         if (jToggleButton7.isSelected()) SumGraphPanel.clearData();
+        if (jToggleButton8.isSelected()) RtnGraphPanel.clearData();
         ((RoutinesTableModel)jTable1.getModel()).setData(report);
         ((SmsTableModel)jTable2.getModel()).setData(null);
     }
@@ -896,6 +920,7 @@ public class MainWindow extends javax.swing.JFrame {
         if (graph_type != GraphPanel.MMM_PLOT) this.MMMGraphPanel.setXLogScale(log);
         if (graph_type != GraphPanel.VAR_PLOT) this.VarGraphPanel.setXLogScale(log);
         if (graph_type != GraphPanel.SUM_PLOT) this.SumGraphPanel.setXLogScale(log);
+        if (graph_type != GraphPanel.RTN_PLOT) this.RtnGraphPanel.setXLogScale(log);
     }
 
     protected void setYLogScaleAll(int graph_type, boolean log) {
@@ -905,6 +930,7 @@ public class MainWindow extends javax.swing.JFrame {
         if (graph_type != GraphPanel.MMM_PLOT) this.MMMGraphPanel.setYLogScale(log);
         if (graph_type != GraphPanel.SUM_PLOT) this.SumGraphPanel.setYLogScale(log);
         if (graph_type != GraphPanel.VAR_PLOT) this.VarGraphPanel.setYLogScale(log);
+        if (graph_type != GraphPanel.RTN_PLOT) this.RtnGraphPanel.setYLogScale(log);
     }
 
     protected void maximizeAll(int graph_type) {
@@ -914,6 +940,7 @@ public class MainWindow extends javax.swing.JFrame {
         if (graph_type != GraphPanel.MMM_PLOT) this.MMMGraphPanel.maximize();
         if (graph_type != GraphPanel.SUM_PLOT) this.SumGraphPanel.maximize();
         if (graph_type != GraphPanel.VAR_PLOT) this.VarGraphPanel.maximize();
+        if (graph_type != GraphPanel.RTN_PLOT) this.RtnGraphPanel.maximize();
     }
 
     protected void autoscaleAll(int graph_type) {
@@ -923,6 +950,7 @@ public class MainWindow extends javax.swing.JFrame {
         if (graph_type != GraphPanel.MMM_PLOT) this.MMMGraphPanel.autoscale();
         if (graph_type != GraphPanel.SUM_PLOT) this.SumGraphPanel.autoscale();
         if (graph_type != GraphPanel.VAR_PLOT) this.VarGraphPanel.autoscale();
+        if (graph_type != GraphPanel.RTN_PLOT) this.RtnGraphPanel.autoscale();
     }
 
     protected void setGroupThresholdAll(int graph_type, int threshold) {
@@ -932,6 +960,12 @@ public class MainWindow extends javax.swing.JFrame {
         if (graph_type != GraphPanel.MMM_PLOT) this.MMMGraphPanel.setGroupThreshold(threshold);
         if (graph_type != GraphPanel.SUM_PLOT) this.SumGraphPanel.setGroupThreshold(threshold);
         if (graph_type != GraphPanel.VAR_PLOT) this.VarGraphPanel.setGroupThreshold(threshold);
+        if (graph_type != GraphPanel.RTN_PLOT) this.RtnGraphPanel.setGroupThreshold(threshold);
+    }
+
+    protected void setGroupCostAll(int graph_type, int cost_type) {
+        if (graph_type != GraphPanel.TIME_PLOT) this.timeGraphPanel.setGroupCost(cost_type);
+        if (graph_type != GraphPanel.RATIO_PLOT) this.ratioGraphPanel.setGroupCost(cost_type);
     }
 
     private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
@@ -986,14 +1020,8 @@ public class MainWindow extends javax.swing.JFrame {
             jPanel9.remove(timeGraphPanel);
         }
 
-        if (graph_visible == 4) {
-            fake = new JPanel();
-            jPanel9.add(fake);
-        } else if (fake != null) jPanel9.remove(fake);
-        if (graph_visible <= 3)
-            jPanel9.setLayout(new java.awt.GridLayout(1, 3));
-        else
-            jPanel9.setLayout(new java.awt.GridLayout(2, 3));
+        adjustLayout();
+        
     }//GEN-LAST:event_jToggleButton1ActionPerformed
 
     private void jToggleButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton2ActionPerformed
@@ -1012,14 +1040,8 @@ public class MainWindow extends javax.swing.JFrame {
             jPanel9.remove(ratioGraphPanel);
         }
 
-        if (graph_visible == 4) {
-            fake = new JPanel();
-            jPanel9.add(fake);
-        } else if (fake != null) jPanel9.remove(fake);
-        if (graph_visible <= 3)
-            jPanel9.setLayout(new java.awt.GridLayout(1, 3));
-        else
-            jPanel9.setLayout(new java.awt.GridLayout(2, 3));
+        adjustLayout();
+        
     }//GEN-LAST:event_jToggleButton2ActionPerformed
 
     private void jToggleButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton3ActionPerformed
@@ -1038,14 +1060,9 @@ public class MainWindow extends javax.swing.JFrame {
             jPanel9.remove(freqGraphPanel);
         }
 
-        if (graph_visible == 4) {
-            fake = new JPanel();
-            jPanel9.add(fake);
-        } else if (fake != null) jPanel9.remove(fake);
-        if (graph_visible <= 3)
-            jPanel9.setLayout(new java.awt.GridLayout(1, 3));
-        else 
-            jPanel9.setLayout(new java.awt.GridLayout(2, 3));
+        
+        adjustLayout();
+        
     }//GEN-LAST:event_jToggleButton3ActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
@@ -1071,6 +1088,7 @@ public class MainWindow extends javax.swing.JFrame {
             if (jToggleButton5.isSelected()) MMMGraphPanel.setData(r);
             if (jToggleButton6.isSelected()) VarGraphPanel.setData(r);
             if (jToggleButton7.isSelected()) SumGraphPanel.setData(r);
+            if (jToggleButton8.isSelected()) RtnGraphPanel.setData(r);
             if (r == null) jMenuItem8.setEnabled(false);
             else jMenuItem8.setEnabled(true);
             this.rtn_info = r;
@@ -1090,6 +1108,7 @@ public class MainWindow extends javax.swing.JFrame {
             if (jToggleButton5.isSelected()) MMMGraphPanel.clearData();
             if (jToggleButton6.isSelected()) VarGraphPanel.clearData();
             if (jToggleButton7.isSelected()) SumGraphPanel.clearData();
+            if (jToggleButton8.isSelected()) RtnGraphPanel.clearData();
             updateContextTree(null);
         }
 
@@ -1446,9 +1465,15 @@ public class MainWindow extends javax.swing.JFrame {
     }//GEN-LAST:event_jMenuItem9ActionPerformed
 
     private void jButton9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton9ActionPerformed
-        if (report == null) return;
         try {
-            File file = new File(this.report.getName());
+            File file = null;
+            if (report == null) {
+                ArrayList<File> r = Main.getRecentFiles();
+                if (r.size() <= 0) return;
+                file = r.get(0);
+            } else {
+                file = new File(this.report.getName());
+            }
             loadReport(file);
             Main.addRecentFile(file);
             this.refreshRecentFiles();
@@ -1473,14 +1498,8 @@ public class MainWindow extends javax.swing.JFrame {
             jPanel9.remove(MMMGraphPanel);
         }
 
-        if (graph_visible == 4) {
-            fake = new JPanel();
-            jPanel9.add(fake);
-        } else if (fake != null) jPanel9.remove(fake);
-        if (graph_visible <= 3)
-            jPanel9.setLayout(new java.awt.GridLayout(1, 3));
-        else
-            jPanel9.setLayout(new java.awt.GridLayout(2, 3));
+        adjustLayout();
+        
     }//GEN-LAST:event_jToggleButton5ActionPerformed
 
     private void jToggleButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton6ActionPerformed
@@ -1495,14 +1514,9 @@ public class MainWindow extends javax.swing.JFrame {
             VarGraphPanel.setVisible(false);
             jPanel9.remove(VarGraphPanel);
         }
-        if (graph_visible == 4) {
-            fake = new JPanel();
-            jPanel9.add(fake);
-        } else if (fake != null) jPanel9.remove(fake);
-        if (graph_visible <= 3)
-            jPanel9.setLayout(new java.awt.GridLayout(1, 3));
-        else
-            jPanel9.setLayout(new java.awt.GridLayout(2, 3));
+        
+        adjustLayout();
+            
     }//GEN-LAST:event_jToggleButton6ActionPerformed
 
     private void jToggleButton7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton7ActionPerformed
@@ -1517,15 +1531,53 @@ public class MainWindow extends javax.swing.JFrame {
             SumGraphPanel.setVisible(false);
             jPanel9.remove(SumGraphPanel);
         }
+        
+        adjustLayout();
+            
+    }//GEN-LAST:event_jToggleButton7ActionPerformed
+
+    private void jToggleButton8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton8ActionPerformed
+        if (jToggleButton8.isSelected()) {
+            graph_visible++;
+            jPanel9.add(RtnGraphPanel);
+            RtnGraphPanel.setVisible(true);
+            RtnGraphPanel.setData(this.rtn_info);
+        }
+        else {
+            graph_visible--;
+            RtnGraphPanel.setVisible(false);
+            jPanel9.remove(RtnGraphPanel);
+        }
+        
+        adjustLayout();
+        
+    }//GEN-LAST:event_jToggleButton8ActionPerformed
+
+    private void adjustLayout() {
+        
         if (graph_visible == 4) {
-            fake = new JPanel();
+            if (fake == null) fake = new JPanel();
             jPanel9.add(fake);
-        } else if (fake != null) jPanel9.remove(fake);
+        } else if (graph_visible == 7) {
+            if (fake == null) fake = new JPanel();
+            if (fake2 == null) fake2 = new JPanel();
+            jPanel9.add(fake);
+            jPanel9.add(fake2);
+        } else {
+            if (fake != null) jPanel9.remove(fake);
+            if (fake2 != null) jPanel9.remove(fake2);
+            fake = null;
+            fake2 = null;
+        }
+        
         if (graph_visible <= 3)
             jPanel9.setLayout(new java.awt.GridLayout(1, 3));
-        else
+        else if (graph_visible <= 6)
             jPanel9.setLayout(new java.awt.GridLayout(2, 3));
-    }//GEN-LAST:event_jToggleButton7ActionPerformed
+        else if (graph_visible <= 9)
+            jPanel9.setLayout(new java.awt.GridLayout(3, 3));
+        
+    }
 
     protected void removeRoutineTableFilter() {
         this.routines_filter_criteria = new String[5];
@@ -1647,6 +1699,7 @@ public class MainWindow extends javax.swing.JFrame {
         if (MMMGraphPanel != null) MMMGraphPanel.refreshFilter();
         if (SumGraphPanel != null) SumGraphPanel.refreshFilter();
         if (VarGraphPanel != null) VarGraphPanel.refreshFilter();
+        if (RtnGraphPanel != null) RtnGraphPanel.refreshFilter();
     }
 
     protected void setSmsTableFilter(String[] criteria) {
@@ -1867,6 +1920,7 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JToggleButton jToggleButton5;
     private javax.swing.JToggleButton jToggleButton6;
     private javax.swing.JToggleButton jToggleButton7;
+    private javax.swing.JToggleButton jToggleButton8;
     private javax.swing.JToolBar jToolBar1;
     private javax.swing.JTree jTree1;
     private javax.swing.JMenuItem recentMenuItem1;
@@ -1878,7 +1932,8 @@ public class MainWindow extends javax.swing.JFrame {
     // End of variables declaration//GEN-END:variables
     private GraphPanel timeGraphPanel, ratioGraphPanel, 
                         freqGraphPanel, MMMGraphPanel,
-                        SumGraphPanel, VarGraphPanel;
+                        SumGraphPanel, VarGraphPanel,
+                        RtnGraphPanel;
     private javax.swing.table.TableRowSorter<javax.swing.table.TableModel> routines_table_sorter;
     private javax.swing.table.TableRowSorter<javax.swing.table.TableModel> sms_table_sorter;
     private String[] routines_filter_criteria;
