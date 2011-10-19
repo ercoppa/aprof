@@ -145,7 +145,6 @@ public class MainWindow extends javax.swing.JFrame {
         jMenuItem8 = new javax.swing.JMenuItem();
         jMenuItem9 = new javax.swing.JMenuItem();
         jMenuItem10 = new javax.swing.JMenuItem();
-        jMenuItem11 = new javax.swing.JMenuItem();
         jMenuItem7 = new javax.swing.JMenuItem();
         jSeparator4 = new javax.swing.JSeparator();
         jMenuItem2 = new javax.swing.JMenuItem();
@@ -347,7 +346,7 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jToolBar1.add(jToggleButton7);
 
-        jToggleButton8.setFont(new java.awt.Font("Ubuntu", 1, 13)); // NOI18N
+        jToggleButton8.setFont(new java.awt.Font("Ubuntu", 1, 13));
         jToggleButton8.setText("C");
         jToggleButton8.setToolTipText("Show/hide routine stats plot");
         jToggleButton8.setFocusable(false);
@@ -361,7 +360,7 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jToolBar1.add(jToggleButton8);
 
-        jToggleButton9.setFont(new java.awt.Font("Ubuntu", 1, 13)); // NOI18N
+        jToggleButton9.setFont(new java.awt.Font("Ubuntu", 1, 13));
         jToggleButton9.setText("A");
         jToggleButton9.setToolTipText("Show/hide Ammortization factor estimation plot");
         jToggleButton9.setFocusable(false);
@@ -736,15 +735,6 @@ public class MainWindow extends javax.swing.JFrame {
             }
         });
         jMenu1.add(jMenuItem10);
-
-        jMenuItem11.setText("Export factor ammortization estimation");
-        jMenuItem11.setEnabled(false);
-        jMenuItem11.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem11ActionPerformed(evt);
-            }
-        });
-        jMenu1.add(jMenuItem11);
 
         jMenuItem7.setText("Merge...");
         jMenuItem7.setEnabled(false);
@@ -1134,10 +1124,8 @@ public class MainWindow extends javax.swing.JFrame {
             if (jToggleButton9.isSelected()) AmmGraphPanel.setData(r);
             if (r == null) {
                 jMenuItem8.setEnabled(false);
-                jMenuItem11.setEnabled(false);
             } else {
                 jMenuItem8.setEnabled(true);
-                jMenuItem11.setEnabled(true);
             }
             this.rtn_info = r;
             ((SmsTableModel)jTable2.getModel()).setData(r);
@@ -1485,7 +1473,8 @@ public class MainWindow extends javax.swing.JFrame {
                 out.println(s.getSms() + " " + (int) s.getMinCost() + " " +
                                   (int) s.getMaxCost() + " " + (long) s.getSumCost()
                                     + " " + (long)s.getSumSquareCost()
-                                    + " " + (long)s.getOcc());
+                                    + " " + (long)s.getOcc()
+                                    + " " + (long) rtn_info.getAmmEst(s.getSms()));
             }
             out.close();
         } catch(java.io.IOException e) {
@@ -1643,24 +1632,6 @@ public class MainWindow extends javax.swing.JFrame {
 
         adjustLayout();
     }//GEN-LAST:event_jToggleButton9ActionPerformed
-
-    private void jMenuItem11ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem11ActionPerformed
-        if (this.rtn_info == null) return;
-        ArrayList<SmsEntry> ss = this.rtn_info.getTimeEntries();
-        try {
-            File tmp = new File(this.report.getName() + "."
-                                + this.rtn_info.getName() + ".amm");
-            tmp.createNewFile();
-            PrintWriter out = new PrintWriter(new FileWriter(tmp));
-            for (int i = 0; i < ss.size(); i++) {
-                SmsEntry s = ss.get(i);
-                out.println(s.getSms() + " " + (long) rtn_info.getAmmEst(s.getSms()));
-            }
-            out.close();
-        } catch(java.io.IOException e) {
-            System.out.println("Error file");
-        }
-    }//GEN-LAST:event_jMenuItem11ActionPerformed
 
     private void adjustLayout() {
         
@@ -1988,7 +1959,6 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JMenuItem jMenuItem10;
-    private javax.swing.JMenuItem jMenuItem11;
     private javax.swing.JMenuItem jMenuItem2;
     private javax.swing.JMenuItem jMenuItem3;
     private javax.swing.JMenuItem jMenuItem4;
