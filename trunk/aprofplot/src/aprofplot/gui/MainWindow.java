@@ -1595,20 +1595,26 @@ public class MainWindow extends javax.swing.JFrame {
             File tmp = new File(this.report.getName() + ".stats");
             tmp.createNewFile();
             PrintWriter out = new PrintWriter(new FileWriter(tmp));
-            long[] num_class_sms = report.num_class_sms;
+            long[] num_class_sms = report.getNumCallsClassSms();
+            long[] tot_class_sms = report.getTotCallsClassSms();
+            long[] max_class_sms = report.getMaxCallsClassSms();
+            long most_called = report.getCallsHottestRoutine();
             int x = 0;
-            double y1, y2, y3, y4, y5;
+            double y1, y2, y3, y4, y5 = 0;
             double sum_at_least = 0;
             out.println("# SMS_CLASS_X PERC_TOTAL_CALLS PERC_AVG_CALLS PERC_MAX_CALLS PERC_NUMBER_OF_ROUTINE_DISTINCT PERC_NUMBER_OF_ROUTINE_AT_LEAST");
-            for (int k = report.num_class_sms.length; k >= 0; k--) {
+            for (int k = num_class_sms.length; k >= 0; k--) {
 
-                if (report.num_class_sms[k] == 0) continue;
-                sum_at_least += report.num_class_sms[k];
+                if (num_class_sms[k] == 0) {
+                    out.format("%d 0 0 0 0 %.1f%n", x, y5);
+                    continue;
+                }
+                sum_at_least += num_class_sms[k];
                 x = (int) Math.pow(2, k);
-                y1 = (100 * ((double) report.tot_cost_class_sms[k] / (double) report.getTotalCalls()));
-                y2 = (100 * ((double) ((double) report.tot_cost_class_sms[k] / (double) report.num_class_sms[k]) / (double) report.most_called));
-                y3 = (100 * ((double) report.max_cost_class_sms[k] / (double) report.most_called));
-                y4 = (100 * ((double) report.num_class_sms[k] / (double) report.getRoutineCount()));
+                y1 = (100 * ((double) tot_class_sms[k] / (double) report.getTotalCalls()));
+                y2 = (100 * ((double) ((double) tot_class_sms[k] / (double) num_class_sms[k]) / (double) most_called));
+                y3 = (100 * ((double) max_class_sms[k] / (double) most_called));
+                y4 = (100 * ((double) num_class_sms[k] / (double) report.getRoutineCount()));
                 y5 = (100 * ((double) sum_at_least / (double) report.getRoutineCount()));
 
                 out.format("%d %.1f %.1f %.1f %.1f %.1f%n", x, y1, y2, y3, y4, y5);

@@ -19,7 +19,9 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Polygon;
 import java.awt.Shape;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
+import javax.swing.ImageIcon;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -70,6 +72,7 @@ public class GraphPanel extends javax.swing.JPanel {
     private boolean autoscaled;
     private boolean magnified;
     private boolean dragging;
+    private int group_threshold_base = 1;
     private int group_threshold;
     private double min_x, min_y, max_x, max_y;
     private String[] filters;
@@ -78,7 +81,7 @@ public class GraphPanel extends javax.swing.JPanel {
 
     private XYPlot plot;
     private JFreeChart chart;
-    private ValueAxis domainAxis, rangeAxis;
+    private NumberAxis domainAxis, rangeAxis;
     private XYItemRenderer renderer;
     private ChartPanel chartPanel;
     private XYSeriesCollection data;
@@ -196,7 +199,7 @@ public class GraphPanel extends javax.swing.JPanel {
             renderer.setSeriesOutlinePaint(i, colors[i]);
             if (graph_type == RTN_PLOT) {
 
-                renderer.setSeriesShape(i, new Rectangle2D.Double(-2.0, -2.0, 3.0, 3.0));
+                renderer.setSeriesShape(i, new Rectangle2D.Double(-2.5, -2.5, 3.0, 3.0));
                 XYLineAndShapeRenderer r = (XYLineAndShapeRenderer) renderer;
                 r.setSeriesLinesVisible(i, true);
 
@@ -231,7 +234,7 @@ public class GraphPanel extends javax.swing.JPanel {
                 }
                 r.setUseOutlinePaint(true);
             } else {
-                renderer.setSeriesShape(i, new Rectangle2D.Double(-1.0, -1.0, 2.0, 2.0));
+                renderer.setSeriesShape(i, new Rectangle2D.Double(-2.5, -2.5, 3.0, 3.0));
                 renderer.setSeriesPaint(i, colors[i]);
                 ((XYLineAndShapeRenderer)renderer).setUseOutlinePaint(true);
             }
@@ -341,7 +344,7 @@ public class GraphPanel extends javax.swing.JPanel {
         });
         jPopupMenu1.add(jRadioButtonMenuItem1);
 
-        jRadioButtonMenuItem2.setText("5");
+        jRadioButtonMenuItem2.setText("2");
         jRadioButtonMenuItem2.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jRadioButtonMenuItem2ActionPerformed(evt);
@@ -349,7 +352,7 @@ public class GraphPanel extends javax.swing.JPanel {
         });
         jPopupMenu1.add(jRadioButtonMenuItem2);
 
-        jRadioButtonMenuItem3.setText("10");
+        jRadioButtonMenuItem3.setText("3");
         jRadioButtonMenuItem3.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jRadioButtonMenuItem3ActionPerformed(evt);
@@ -357,7 +360,7 @@ public class GraphPanel extends javax.swing.JPanel {
         });
         jPopupMenu1.add(jRadioButtonMenuItem3);
 
-        jRadioButtonMenuItem4.setText("20");
+        jRadioButtonMenuItem4.setText("4");
         jRadioButtonMenuItem4.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jRadioButtonMenuItem4ActionPerformed(evt);
@@ -365,7 +368,7 @@ public class GraphPanel extends javax.swing.JPanel {
         });
         jPopupMenu1.add(jRadioButtonMenuItem4);
 
-        jRadioButtonMenuItem5.setText("50");
+        jRadioButtonMenuItem5.setText("5");
         jRadioButtonMenuItem5.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jRadioButtonMenuItem5ActionPerformed(evt);
@@ -373,7 +376,7 @@ public class GraphPanel extends javax.swing.JPanel {
         });
         jPopupMenu1.add(jRadioButtonMenuItem5);
 
-        jRadioButtonMenuItem6.setText("100");
+        jRadioButtonMenuItem6.setText("6");
         jRadioButtonMenuItem6.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jRadioButtonMenuItem6ActionPerformed(evt);
@@ -582,11 +585,13 @@ public class GraphPanel extends javax.swing.JPanel {
 
         jButton2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Maximize-icon.png"))); // NOI18N
         jButton2.setBorderPainted(false);
+        jButton2.setEnabled(false);
         jButton2.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton2ActionPerformed(evt);
             }
         });
+        jButton2.setVisible(false);
         jPanel2.add(jButton2);
 
         jToggleButton6.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Incorporate-icon.png"))); // NOI18N
@@ -597,7 +602,7 @@ public class GraphPanel extends javax.swing.JPanel {
                 jToggleButton6ActionPerformed(evt);
             }
         });
-        //if (graph_type == FREQ_PLOT) jToggleButton6.setVisible(false);
+        if (graph_type == RTN_PLOT) jToggleButton6.setVisible(false);
         jPanel2.add(jToggleButton6);
 
         jToggleButton7.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/RatioType-icon.png"))); // NOI18N
@@ -637,7 +642,7 @@ public class GraphPanel extends javax.swing.JPanel {
         jPanel1.add(jPanel2, java.awt.BorderLayout.WEST);
         jPanel1.add(jPanel3, java.awt.BorderLayout.CENTER);
 
-        if (graph_type == FREQ_PLOT || graph_type == MMM_PLOT || graph_type == RTN_PLOT || graph_type == AMM_PLOT)
+        if (graph_type == FREQ_PLOT || graph_type == MMM_PLOT || graph_type == RTN_PLOT)
         jLabel2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Dummy.png"))); // NOI18N
         else {
             jLabel2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Color-scale.png"))); // NOI18N
@@ -858,18 +863,19 @@ public class GraphPanel extends javax.swing.JPanel {
         switch (t) {
             case 1: jRadioButtonMenuItem1.setSelected(true);
                     break;
-            case 5: jRadioButtonMenuItem2.setSelected(true);
+            case 2: jRadioButtonMenuItem2.setSelected(true);
                     break;
-            case 10: jRadioButtonMenuItem3.setSelected(true);
+            case 3: jRadioButtonMenuItem3.setSelected(true);
                     break;
-            case 20: jRadioButtonMenuItem4.setSelected(true);
+            case 4: jRadioButtonMenuItem4.setSelected(true);
                     break;
-            case 50: jRadioButtonMenuItem5.setSelected(true);
+            case 5: jRadioButtonMenuItem5.setSelected(true);
                     break;
-            case 100: jRadioButtonMenuItem6.setSelected(true);
+            case 6: jRadioButtonMenuItem6.setSelected(true);
                     break;
         }
         group_threshold = t;
+        if (graph_type == RTN_PLOT) return;
         populateChart();
         if (group_threshold == 1) {
             if (autoscaled) autoscale();
@@ -880,12 +886,20 @@ public class GraphPanel extends javax.swing.JPanel {
     }
 
     public void maximize() {
+        
+        //System.out.println("Maximize " + n++);
+        jButton2.setToolTipText("autoscale graph");
+        jButton2.setIcon(new ImageIcon(getClass().getResource("/aprofplot/gui/resources/Minimize-icon.png")));
+        
         autoscaled = false;
         maximized = true;
         magnified = false;
         resetXAxis();
         resetYAxis();
         
+        domainAxis.setAutoRangeIncludesZero(false);
+        rangeAxis.setAutoRangeIncludesZero(false);
+
         max_x = domainAxis.getUpperBound();
         if (graph_type == RTN_PLOT) {
             min_x = -1;
@@ -903,16 +917,24 @@ public class GraphPanel extends javax.swing.JPanel {
         return sum;
     }
 
+    private int n = 0;
+
     public void autoscale() {
+        
+        //System.out.println("Autoscale " + n++);
+        
+        jButton2.setToolTipText("maximize graph");
+        jButton2.setIcon(new ImageIcon(getClass().getResource("/aprofplot/gui/resources/Maximize-icon.png")));
         
         autoscaled = true;
         maximized = false;
         magnified = false;
         
         if (graph_type == RTN_PLOT && report != null) {
-            
-            for (int q = 0; q < report.num_class_sms.length; q++) {
-                if (report.num_class_sms[q] > 0) 
+
+            long[] num_class_sms = report.getNumCallsClassSms();
+            for (int q = 0; q < num_class_sms.length; q++) {
+                if (num_class_sms[q] > 0) 
                     max_x = Math.pow(2, q);
             }
             max_x += max_x / 10;
@@ -1013,8 +1035,9 @@ public class GraphPanel extends javax.swing.JPanel {
                 }
             }
             if (graph_type == RTN_PLOT) {
-                for (int q = 0; q < report.num_class_sms.length; q++) {
-                    if (report.num_class_sms[q] > 0) 
+                long[] num_class_sms = report.getNumCallsClassSms();
+                for (int q = 0; q < num_class_sms.length; q++) {
+                    if (num_class_sms[q] > 0) 
                         max_x = Math.pow(2, q) + 2;
                 }
             } else
@@ -1066,39 +1089,33 @@ public class GraphPanel extends javax.swing.JPanel {
     }//GEN-LAST:event_jPopupMenu1PopupMenuWillBecomeInvisible
 
     private void jRadioButtonMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem1ActionPerformed
-        
         setGroupThreshold(1);
         if (this.main_window.getLinkPlots()) main_window.setGroupThresholdAll(graph_type, 1);
     }//GEN-LAST:event_jRadioButtonMenuItem1ActionPerformed
 
     private void jRadioButtonMenuItem2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem2ActionPerformed
-        
-        setGroupThreshold(5);
-        if (this.main_window.getLinkPlots()) main_window.setGroupThresholdAll(graph_type, 5);
+        setGroupThreshold(2);
+        if (this.main_window.getLinkPlots()) main_window.setGroupThresholdAll(graph_type, 2);
     }//GEN-LAST:event_jRadioButtonMenuItem2ActionPerformed
 
     private void jRadioButtonMenuItem3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem3ActionPerformed
-        
-        setGroupThreshold(10);
-        if (this.main_window.getLinkPlots()) main_window.setGroupThresholdAll(graph_type, 10);
+        setGroupThreshold(3);
+        if (this.main_window.getLinkPlots()) main_window.setGroupThresholdAll(graph_type, 3);
     }//GEN-LAST:event_jRadioButtonMenuItem3ActionPerformed
 
     private void jRadioButtonMenuItem4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem4ActionPerformed
-        
-        setGroupThreshold(20);
-        if (this.main_window.getLinkPlots()) main_window.setGroupThresholdAll(graph_type, 20);
+        setGroupThreshold(4);
+        if (this.main_window.getLinkPlots()) main_window.setGroupThresholdAll(graph_type, 4);
     }//GEN-LAST:event_jRadioButtonMenuItem4ActionPerformed
 
     private void jRadioButtonMenuItem5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem5ActionPerformed
-       
-        setGroupThreshold(50);
-        if (this.main_window.getLinkPlots()) main_window.setGroupThresholdAll(graph_type, 50);
+        setGroupThreshold(5);
+        if (this.main_window.getLinkPlots()) main_window.setGroupThresholdAll(graph_type, 5);
     }//GEN-LAST:event_jRadioButtonMenuItem5ActionPerformed
 
     private void jRadioButtonMenuItem6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem6ActionPerformed
-       
-        setGroupThreshold(100);
-        if (this.main_window.getLinkPlots()) main_window.setGroupThresholdAll(graph_type, 100);
+        setGroupThreshold(6);
+        if (this.main_window.getLinkPlots()) main_window.setGroupThresholdAll(graph_type, 6);
     }//GEN-LAST:event_jRadioButtonMenuItem6ActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
@@ -1342,22 +1359,8 @@ public class GraphPanel extends javax.swing.JPanel {
     }//GEN-LAST:event_jMenuItem14ActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-        
-        if (!maximized) {
-            jButton2.setToolTipText("maximize graph");
-            jButton2.setIcon(new javax.swing.
-                    ImageIcon(getClass()
-                    .getResource("/aprofplot/gui/resources/Maximize-icon.png"))); // NOI18N
-            maximize();
-        } else {
-            autoscale();
-            jButton2.setToolTipText("autoscale graph");
-            jButton2.setIcon(new javax.swing.
-                    ImageIcon(getClass()
-                    .getResource("/aprofplot/gui/resources/Minimize-icon.png"))); // NOI18N
-
-        }
-//        graphArea.removeMouseListeners();
+        if (!maximized) maximize();
+        else autoscale();
         if (this.main_window.getLinkPlots()) main_window.maximizeAll(graph_type);
     }//GEN-LAST:event_jButton2ActionPerformed
 
@@ -1430,26 +1433,29 @@ public class GraphPanel extends javax.swing.JPanel {
         if (graph_type == RTN_PLOT) {
             double x = 0;
             double y = 0;
-            long[] num_class_sms = report.num_class_sms;
+            long[] num_class_sms = report.getNumCallsClassSms();
+            long[] tot_calls_class_sms = report.getTotCallsClassSms();
+            long[] max_calls_class_sms = report.getMaxCallsClassSms();
+            long most_called = report.getCallsHottestRoutine();
             double num_at_least = 0;
             
-            for (int k = report.num_class_sms.length-1; k >= 0; k--) {
+            for (int k = num_class_sms.length-1; k >= 0; k--) {
                 
-                if (report.num_class_sms[k] == 0) continue;
+                if (num_class_sms[k] == 0) continue;
                 x = Math.pow(2, k);
-                num_at_least += report.num_class_sms[k];
+                num_at_least += num_class_sms[k];
                 
-                y = 100 * ((double) report.tot_cost_class_sms[k] / (double) report.getTotalCalls());
+                y = 100 * ((double) tot_calls_class_sms[k] / (double) report.getTotalCalls());
                 series[0].add(x, y);
 
-                y = 100 * ((double)((double) report.tot_cost_class_sms[k] / (double) report.num_class_sms[k])
-                                        / (double)report.most_called);
+                y = 100 * ((double)((double) tot_calls_class_sms[k] / (double) num_class_sms[k])
+                                        / (double) most_called);
                 series[1].add(x, y);
                 
-                y = 100 * ((double) report.num_class_sms[k] / (double)report.getRoutineCount());
+                y = 100 * ((double) num_class_sms[k] / (double)report.getRoutineCount());
                 series[2].add(x, y);
                
-                y = 100 * ((double) report.max_cost_class_sms[k] / (double)report.most_called);
+                y = 100 * ((double) max_calls_class_sms[k] / (double) most_called);
                 series[3].add(x, y);
                 
                 y = 100 * ((double) num_at_least / (double)report.getRoutineCount());
@@ -1483,6 +1489,7 @@ public class GraphPanel extends javax.swing.JPanel {
                         series[5].add(x, y);
                         y = te.getMaxCost();
                         series[11].add(x, y);
+                        
                     } else if (graph_type == AMM_PLOT) {
                         y = rtn_info.getAmmEst((int)x);
                         series[0].add(x, y);
@@ -1497,51 +1504,81 @@ public class GraphPanel extends javax.swing.JPanel {
                     }
                 }
             }
-        }
-        else {
+        } else {
+            
+            if (rtn_info == null) return;
+            rtn_info.sortTimeEntriesByAccesses();
+            
+            int n_y = 1;
+            if (graph_type == MMM_PLOT) n_y = 3;
+            
             double slot_start = 0;
             double sum_x = 0;
-            double sum_y = 0;
-            int sum_occurrences = 0;
+            double sum_y = 0, sum_y2 = 0, sum_y3 = 0;
+            long sum_occurrences = 0;
+            int t = (int) Math.pow(group_threshold_base, group_threshold-1);
             int n = 0;
             for (int i = 0; i < this.rtn_info.getTimeEntries().size(); i++) {
                 SmsEntry te = this.rtn_info.getTimeEntries().get(i);
                 if (filterTimeEntry(te)) {
                     double x = te.getSms();
-                    double y;
-                    if (graph_type == GraphPanel.TIME_PLOT) y = te.getCost();
-                    else if(graph_type == GraphPanel.MMM_PLOT) y = te.getCost();
-                    else if (graph_type == GraphPanel.RATIO_PLOT) y = te.getRatio();
-                    else y = te.getOcc();
-                    double current_slot = x - (x % group_threshold);
+                    double y = 0, y2 = 0, y3 = 0;
+                    if (graph_type == GraphPanel.TIME_PLOT)
+                        y = te.getCost(cost_type); 
+                    else if (graph_type == GraphPanel.RATIO_PLOT) 
+                        y = te.getRatioCost(cost_type);
+                    else if (graph_type == GraphPanel.SUM_PLOT) 
+                        y = te.getSumCost();
+                    else if (graph_type == VAR_PLOT) 
+                        y = te.getVar();
+                    else if (graph_type == AMM_PLOT)
+                        y = rtn_info.getAmmEst((int)x);
+                    else if (graph_type == FREQ_PLOT)
+                        y = te.getOcc();
+                    else if (graph_type == MMM_PLOT) {
+                        y = te.getMinCost();
+                        y2 = te.getAvgCost();
+                        y3 = te.getMaxCost();
+                    }
+                    
+                    double current_slot = x - (x % t);
+                    
                     if (current_slot == slot_start) {
                         sum_x += x;
                         sum_y += y;
+                        if (n_y >= 2) sum_y2 += y2;
+                        if (n_y >= 3) sum_y3 += y3;
                         sum_occurrences += te.getOcc();
                         n++;
-                    }
-                    else {
+                    } else {
                         if (n > 0) {
                             double mean_x = (n == 0) ? sum_x : sum_x / n;
                             if (graph_type == GraphPanel.FREQ_PLOT) {
                                 series[0].add(mean_x, sum_y);
                                 if (sum_y > max_y) max_y = sum_y;
-                            }
-                            else {
+                            } else if (graph_type == MMM_PLOT) {
+                                double mean_y = (n == 0) ? sum_y : sum_y / n;
+                                double mean_y2 = (n == 0) ? sum_y2 : sum_y2 / n;
+                                double mean_y3 = (n == 0) ? sum_y3 : sum_y3 / n;
+                                series[0].add(mean_x, mean_y);
+                                series[5].add(mean_x, mean_y2);
+                                series[11].add(mean_x, mean_y3);
+                            } else if (graph_type == AMM_PLOT) {
+                                double mean_y = (n == 0) ? sum_y : sum_y / n;
+                                series[0].add(mean_x, mean_y);
+                            } else {
                                 double mean_y = (n == 0) ? sum_y : sum_y / n;
                                 double index = Math.round(Math.log10(sum_occurrences) / Math.log10(2));
                                 if (index > 11) index = 11;
                                 if (index < 0) index = 0;
                                 series[(int)index].add(mean_x, mean_y);
                             }
-                            sum_x = 0;
-                            sum_y = 0;
-                            sum_occurrences = 0;
-                            n = 0;
-                            sum_x += x;
-                            sum_y += y;
-                            sum_occurrences += te.getOcc();
-                            n++;
+                            sum_x = x;
+                            sum_y = y;
+                            if (n_y >= 2) sum_y2 = y2;
+                            if (n_y >= 3) sum_y3 = y3;
+                            sum_occurrences = te.getOcc();
+                            n = 1;
                         }
                         slot_start = current_slot;
                     }
@@ -1552,8 +1589,17 @@ public class GraphPanel extends javax.swing.JPanel {
                 if (graph_type == GraphPanel.FREQ_PLOT) {
                     series[0].add(mean_x, sum_y);
                     if (sum_y > max_y) max_y = sum_y;
-                }
-                else {
+                } else if (graph_type == MMM_PLOT) {
+                    double mean_y = (n == 0) ? sum_y : sum_y / n;
+                    double mean_y2 = (n == 0) ? sum_y2 : sum_y2 / n;
+                    double mean_y3 = (n == 0) ? sum_y3 : sum_y3 / n;
+                    series[0].add(mean_x, mean_y);
+                    series[5].add(mean_x, mean_y2);
+                    series[11].add(mean_x, mean_y3);
+                } else if (graph_type == AMM_PLOT) {
+                    double mean_y = (n == 0) ? sum_y : sum_y / n;
+                    series[0].add(mean_x, mean_y);
+                } else {
                     double mean_y = (n == 0) ? sum_y : sum_y / n;
                     double index = Math.round(Math.log10(sum_occurrences) / Math.log10(2));
                     if (index > 11) index = 11;
@@ -1573,6 +1619,20 @@ public class GraphPanel extends javax.swing.JPanel {
             return;
         }
         this.rtn_info = r;
+        if (this.rtn_info != null) {
+            rtn_info.sortTimeEntriesByAccesses();
+            int max = rtn_info.getTimeEntries().get(rtn_info.getTimeEntries().size() -1).getSms();
+            //System.out.println(max);
+            group_threshold_base = (int) Math.log10(max) + 1;
+            if (group_threshold_base > 1) {
+                jRadioButtonMenuItem1.setText(Integer.toString((int)Math.pow(group_threshold_base, 0)));
+                jRadioButtonMenuItem2.setText(Integer.toString((int)Math.pow(group_threshold_base, 1)));
+                jRadioButtonMenuItem3.setText(Integer.toString((int)Math.pow(group_threshold_base, 2)));
+                jRadioButtonMenuItem4.setText(Integer.toString((int)Math.pow(group_threshold_base, 3)));
+                jRadioButtonMenuItem5.setText(Integer.toString((int)Math.pow(group_threshold_base, 4)));
+                jRadioButtonMenuItem6.setText(Integer.toString((int)Math.pow(group_threshold_base, 5)));
+            }
+        }
         populateChart();
         if (autoscaled) autoscale();
         else maximize();

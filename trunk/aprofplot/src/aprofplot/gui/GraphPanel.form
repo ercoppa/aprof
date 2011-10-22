@@ -25,7 +25,7 @@
         </MenuItem>
         <MenuItem class="javax.swing.JRadioButtonMenuItem" name="jRadioButtonMenuItem2">
           <Properties>
-            <Property name="text" type="java.lang.String" value="5"/>
+            <Property name="text" type="java.lang.String" value="2"/>
           </Properties>
           <Events>
             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jRadioButtonMenuItem2ActionPerformed"/>
@@ -33,7 +33,7 @@
         </MenuItem>
         <MenuItem class="javax.swing.JRadioButtonMenuItem" name="jRadioButtonMenuItem3">
           <Properties>
-            <Property name="text" type="java.lang.String" value="10"/>
+            <Property name="text" type="java.lang.String" value="3"/>
           </Properties>
           <Events>
             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jRadioButtonMenuItem3ActionPerformed"/>
@@ -41,7 +41,7 @@
         </MenuItem>
         <MenuItem class="javax.swing.JRadioButtonMenuItem" name="jRadioButtonMenuItem4">
           <Properties>
-            <Property name="text" type="java.lang.String" value="20"/>
+            <Property name="text" type="java.lang.String" value="4"/>
           </Properties>
           <Events>
             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jRadioButtonMenuItem4ActionPerformed"/>
@@ -49,7 +49,7 @@
         </MenuItem>
         <MenuItem class="javax.swing.JRadioButtonMenuItem" name="jRadioButtonMenuItem5">
           <Properties>
-            <Property name="text" type="java.lang.String" value="50"/>
+            <Property name="text" type="java.lang.String" value="5"/>
           </Properties>
           <Events>
             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jRadioButtonMenuItem5ActionPerformed"/>
@@ -57,7 +57,7 @@
         </MenuItem>
         <MenuItem class="javax.swing.JRadioButtonMenuItem" name="jRadioButtonMenuItem6">
           <Properties>
-            <Property name="text" type="java.lang.String" value="100"/>
+            <Property name="text" type="java.lang.String" value="6"/>
           </Properties>
           <Events>
             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jRadioButtonMenuItem6ActionPerformed"/>
@@ -320,10 +320,14 @@
                   <Image iconType="3" name="/aprofplot/gui/resources/Maximize-icon.png"/>
                 </Property>
                 <Property name="borderPainted" type="boolean" value="false"/>
+                <Property name="enabled" type="boolean" value="false"/>
               </Properties>
               <Events>
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jButton2ActionPerformed"/>
               </Events>
+              <AuxValues>
+                <AuxValue name="JavaCodeGenerator_ListenersCodePost" type="java.lang.String" value="jButton2.setVisible(false);"/>
+              </AuxValues>
             </Component>
             <Component class="javax.swing.JToggleButton" name="jToggleButton6">
               <Properties>
@@ -337,7 +341,7 @@
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jToggleButton6ActionPerformed"/>
               </Events>
               <AuxValues>
-                <AuxValue name="JavaCodeGenerator_AddingCodePre" type="java.lang.String" value="//if (graph_type == FREQ_PLOT) jToggleButton6.setVisible(false);"/>
+                <AuxValue name="JavaCodeGenerator_AddingCodePre" type="java.lang.String" value="if (graph_type == RTN_PLOT) jToggleButton6.setVisible(false);"/>
               </AuxValues>
             </Component>
             <Component class="javax.swing.JToggleButton" name="jToggleButton7">

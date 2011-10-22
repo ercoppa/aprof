@@ -19,12 +19,10 @@ public class AprofReport {
     private ArrayList<String> liblist;
 
     // Global stats about routines
-    private int max_class = 14;
-    public long[] num_class_sms = null;
-    public long[] tot_cost_class_sms = null;
-    public long[] min_cost_class_sms = null;
-    public long[] max_cost_class_sms = null;
-    public long most_called = 0;
+    private int max_class = 30;
+    private long[] num_class_sms = null;
+    private long[] tot_calls_class_sms = null;
+    private long[] max_calls_class_sms = null;
 
     public AprofReport(File f) throws Exception {
 
@@ -40,9 +38,8 @@ public class AprofReport {
 
         // stats
         this.num_class_sms = new long[max_class];
-        this.tot_cost_class_sms = new long[max_class];
-        this.min_cost_class_sms = new long[max_class];
-        this.max_cost_class_sms = new long[max_class];
+        this.tot_calls_class_sms = new long[max_class];
+        this.max_calls_class_sms = new long[max_class];
 
         // init locals
         HashSet<String> libset = new HashSet<String>();
@@ -320,14 +317,11 @@ public class AprofReport {
             if (ne > 1) {
                 double idd = Math.log(ne) / Math.log(2);
                 id = (int)idd;
-                if (id > max_class) id = max_class;
-                id--;
+                if (id > max_class - 1) id = max_class - 1;
             }
             num_class_sms[id]++;
-            tot_cost_class_sms[id] += calls;
-            if (most_called < calls) most_called = calls;
-            //if (min_cost_class_sms[id] > calls) min_cost_class_sms[id] = calls;
-            if (max_cost_class_sms[id] < calls) max_cost_class_sms[id] = calls;
+            tot_calls_class_sms[id] += calls;
+            if (max_calls_class_sms[id] < calls) max_calls_class_sms[id] = calls;
         }
     }
 
@@ -574,5 +568,26 @@ public class AprofReport {
     
     public String getName() {
         return this.file.toString();
+    }
+
+    public long[] getMaxCallsClassSms() {
+        return max_calls_class_sms.clone();
+    }
+
+    public long[] getNumCallsClassSms() {
+        return num_class_sms.clone();
+    }
+
+    public long[] getTotCallsClassSms() {
+        return tot_calls_class_sms.clone();
+    }
+
+    public long getCallsHottestRoutine() {
+        long hottest_calls = 0;
+        for (int i = 0; i < max_calls_class_sms.length; i++)
+            if (max_calls_class_sms[i] > hottest_calls)
+                hottest_calls = max_calls_class_sms[i];
+
+        return hottest_calls;
     }
 }
