@@ -1603,14 +1603,15 @@ public class MainWindow extends javax.swing.JFrame {
             double y1, y2, y3, y4, y5 = 0;
             double sum_at_least = 0;
             out.println("# SMS_CLASS_X PERC_TOTAL_CALLS PERC_AVG_CALLS PERC_MAX_CALLS PERC_NUMBER_OF_ROUTINE_DISTINCT PERC_NUMBER_OF_ROUTINE_AT_LEAST");
-            for (int k = num_class_sms.length; k >= 0; k--) {
+            for (int k = num_class_sms.length - 1; k >= 0; k--) {
 
+                x = (int) Math.pow(2, k);
                 if (num_class_sms[k] == 0) {
-                    out.format("%d 0 0 0 0 %.1f%n", x, y5);
+                    if (sum_at_least > 0)
+                        out.format("%d 0 0 0 0 %.1f%n", x, y5);
                     continue;
                 }
                 sum_at_least += num_class_sms[k];
-                x = (int) Math.pow(2, k);
                 y1 = (100 * ((double) tot_class_sms[k] / (double) report.getTotalCalls()));
                 y2 = (100 * ((double) ((double) tot_class_sms[k] / (double) num_class_sms[k]) / (double) most_called));
                 y3 = (100 * ((double) max_class_sms[k] / (double) most_called));
