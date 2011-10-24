@@ -21,6 +21,8 @@ import java.awt.Polygon;
 import java.awt.Shape;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
+import java.text.NumberFormat;
+import java.util.Locale;
 import javax.swing.ImageIcon;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
@@ -28,7 +30,11 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.LegendItem;
 import org.jfree.chart.LegendItemCollection;
 import org.jfree.chart.axis.LogarithmicAxis;
+import org.jfree.chart.axis.LogAxis;
 import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.axis.NumberTickUnit;
+import org.jfree.chart.axis.TickUnitSource;
+import org.jfree.chart.axis.TickUnits;
 import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.plot.DefaultDrawingSupplier;
 import org.jfree.chart.plot.DrawingSupplier;
@@ -40,6 +46,7 @@ import org.jfree.chart.renderer.xy.XYLine3DRenderer;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.chart.renderer.xy.XYSplineRenderer;
 import org.jfree.chart.title.TextTitle;
+import org.jfree.chart.util.LogFormat;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RectangleInsets;
@@ -81,7 +88,8 @@ public class GraphPanel extends javax.swing.JPanel {
 
     private XYPlot plot;
     private JFreeChart chart;
-    private NumberAxis domainAxis, rangeAxis;
+    private ValueAxis domainAxis;
+    private NumberAxis rangeAxis;
     private XYItemRenderer renderer;
     private ChartPanel chartPanel;
     private XYSeriesCollection data;
@@ -524,7 +532,10 @@ public class GraphPanel extends javax.swing.JPanel {
         groupMenuButtonGroup2 = new javax.swing.ButtonGroup();
 
         jRadioButtonMenuItem7.setSelected(true);
+        if (graph_type == TIME_PLOT || graph_type == RATIO_PLOT)
         jRadioButtonMenuItem7.setText("Maximum");
+        else if (graph_type == AMM_PLOT)
+        jRadioButtonMenuItem7.setText("No division");
         jRadioButtonMenuItem7.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jRadioButtonMenuItem7ActionPerformed(evt);
@@ -533,7 +544,10 @@ public class GraphPanel extends javax.swing.JPanel {
         jPopupMenu3.add(jRadioButtonMenuItem7);
 
         jRadioButtonMenuItem8.setSelected(true);
+        if (graph_type == TIME_PLOT || graph_type == RATIO_PLOT)
         jRadioButtonMenuItem8.setText("Average");
+        else if (graph_type == AMM_PLOT)
+        jRadioButtonMenuItem8.setText("division by SMS value");
         jRadioButtonMenuItem8.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jRadioButtonMenuItem8ActionPerformed(evt);
@@ -542,7 +556,10 @@ public class GraphPanel extends javax.swing.JPanel {
         jPopupMenu3.add(jRadioButtonMenuItem8);
 
         jRadioButtonMenuItem9.setSelected(true);
+        if (graph_type == TIME_PLOT || graph_type == RATIO_PLOT)
         jRadioButtonMenuItem9.setText("Minimum");
+        else if (graph_type == AMM_PLOT)
+        jRadioButtonMenuItem9.setText("Division by sum of occurrences");
         jRadioButtonMenuItem9.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jRadioButtonMenuItem9ActionPerformed(evt);
@@ -636,7 +653,7 @@ public class GraphPanel extends javax.swing.JPanel {
                 jToggleButton3ActionPerformed(evt);
             }
         });
-        if (graph_type == TIME_PLOT || graph_type == RATIO_PLOT)
+        if (graph_type == TIME_PLOT || graph_type == RATIO_PLOT || graph_type == AMM_PLOT)
         jPanel2.add(jToggleButton3);
 
         jPanel1.add(jPanel2, java.awt.BorderLayout.WEST);
@@ -676,22 +693,51 @@ public class GraphPanel extends javax.swing.JPanel {
         this.dragging = true;
     }
 
+    /*
+    public TickUnitSource createLog2TickUnits(Locale locale) {
+        TickUnits units = new TickUnits();
+        NumberFormat numberFormat = new LogFormat(2, "2", false);
+        units.add(new NumberTickUnit(0.05, numberFormat, 2));
+        System.out.println(new NumberTickUnit(0.05, numberFormat, 2));
+        units.add(new NumberTickUnit(0.1, numberFormat, 10));
+        units.add(new NumberTickUnit(0.2, numberFormat, 2));
+        units.add(new NumberTickUnit(0.5, numberFormat, 5));
+        units.add(new NumberTickUnit(1, numberFormat, 10));
+        units.add(new NumberTickUnit(2, numberFormat, 10));
+        units.add(new NumberTickUnit(3, numberFormat, 15));
+        units.add(new NumberTickUnit(4, numberFormat, 20));
+        units.add(new NumberTickUnit(5, numberFormat, 25));
+        units.add(new NumberTickUnit(6, numberFormat));
+        units.add(new NumberTickUnit(7, numberFormat));
+        units.add(new NumberTickUnit(8, numberFormat));
+        units.add(new NumberTickUnit(9, numberFormat));
+        units.add(new NumberTickUnit(10, numberFormat));
+        return units;
+    }
+    */
+
     private void resetXAxis() {
         String label = null;
         if (this.graph_type == RTN_PLOT) label = "Number of distinct SMS";
         else label = "seen memory size";
         if (x_log_scale) {
-            LogarithmicAxis newDomainAxis = new LogarithmicAxis(label);
-            newDomainAxis.setAllowNegativesFlag(false);
-            //NumberFormat nf = NumberFormat.getNumberInstance();
-            newDomainAxis.setStrictValuesFlag(false);
-            this.domainAxis = newDomainAxis;
-        }
-        else {
+            if (false && graph_type == RTN_PLOT) {
+                LogAxis newDomainAxis = new LogAxis(label);
+                newDomainAxis.setBase(2);
+                newDomainAxis.setStandardTickUnits(newDomainAxis.createLogTickUnits(Locale.ENGLISH));
+                this.domainAxis = newDomainAxis;
+            } else {
+                LogarithmicAxis newDomainAxis = new LogarithmicAxis(label);
+                newDomainAxis.setAllowNegativesFlag(false);
+                newDomainAxis.setStrictValuesFlag(false);
+                newDomainAxis.setStandardTickUnits(newDomainAxis.createIntegerTickUnits());
+                this.domainAxis = newDomainAxis;
+            }
+        } else {
             NumberAxis newDomainAxis = new NumberAxis(label);
+            newDomainAxis.setStandardTickUnits(newDomainAxis.createIntegerTickUnits());
             this.domainAxis = newDomainAxis;
         }
-        this.domainAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
         plot.setDomainAxis(domainAxis);
     }
 
@@ -726,19 +772,28 @@ public class GraphPanel extends javax.swing.JPanel {
         else label = "seen memory size";
 
         if (x_log_scale) {
-            LogarithmicAxis newDomainAxis = new LogarithmicAxis(label);
-            newDomainAxis.setAllowNegativesFlag(false);
-            //NumberFormat nf = NumberFormat.getNumberInstance();
-            newDomainAxis.setStrictValuesFlag(false);
-            this.domainAxis = newDomainAxis;
-        }
-        else {
+            if (false && graph_type == RTN_PLOT) {
+                /* this does not work :( */
+                LogAxis newDomainAxis = new LogAxis(label);
+                newDomainAxis.setBase(2);
+                newDomainAxis.setStandardTickUnits(newDomainAxis.createLogTickUnits(Locale.ENGLISH));
+                //newDomainAxis.setStandardTickUnits(createLog2TickUnits(Locale.ENGLISH));
+                //newDomainAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
+                this.domainAxis = newDomainAxis;
+            } else {
+                LogarithmicAxis newDomainAxis = new LogarithmicAxis(label);
+                newDomainAxis.setAllowNegativesFlag(false);
+                newDomainAxis.setStrictValuesFlag(false);
+                newDomainAxis.setStandardTickUnits(newDomainAxis.createIntegerTickUnits());
+                this.domainAxis = newDomainAxis;
+            }
+        } else {
             NumberAxis newDomainAxis = new NumberAxis(label);
             this.domainAxis = newDomainAxis;
+            this.domainAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
         }
         this.domainAxis.setLowerBound(min_x);
         this.domainAxis.setUpperBound(max_x);
-        this.domainAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
         plot.setDomainAxis(domainAxis);
     }
 
@@ -896,8 +951,11 @@ public class GraphPanel extends javax.swing.JPanel {
         magnified = false;
         resetXAxis();
         resetYAxis();
-        
-        domainAxis.setAutoRangeIncludesZero(false);
+
+        if (!x_log_scale) {
+            NumberAxis v = (NumberAxis) domainAxis;
+            v.setAutoRangeIncludesZero(false);
+        }
         rangeAxis.setAutoRangeIncludesZero(false);
 
         max_x = domainAxis.getUpperBound();
@@ -1011,7 +1069,7 @@ public class GraphPanel extends javax.swing.JPanel {
                                 max_y = 110;
                                 break;
                 case AMM_PLOT:
-                                max_y = rtn_info.getAmmEst(rtn_info.getTimeEntries().get(last).getSms());
+                                max_y = rtn_info.getAmmEst(rtn_info.getTimeEntries().get(last).getSms(), cost_type);
                                 break;
             }
 
@@ -1378,19 +1436,19 @@ public class GraphPanel extends javax.swing.JPanel {
 
     private void jRadioButtonMenuItem7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem7ActionPerformed
         cost_type = MAX_COST;
-        if (this.main_window.getLinkPlots()) main_window.setGroupCostAll(graph_type, cost_type);
+        if (graph_type != AMM_PLOT && main_window.getLinkPlots()) main_window.setGroupCostAll(graph_type, cost_type);
         refresh();
     }//GEN-LAST:event_jRadioButtonMenuItem7ActionPerformed
 
     private void jRadioButtonMenuItem8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem8ActionPerformed
         cost_type = AVG_COST;
-        if (this.main_window.getLinkPlots()) main_window.setGroupCostAll(graph_type, cost_type);
+        if (graph_type != AMM_PLOT && main_window.getLinkPlots()) main_window.setGroupCostAll(graph_type, cost_type);
         refresh();
     }//GEN-LAST:event_jRadioButtonMenuItem8ActionPerformed
 
     private void jRadioButtonMenuItem9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem9ActionPerformed
         cost_type = MIN_COST;
-        if (this.main_window.getLinkPlots()) main_window.setGroupCostAll(graph_type, cost_type);
+        if (graph_type != AMM_PLOT && main_window.getLinkPlots()) main_window.setGroupCostAll(graph_type, cost_type);
         refresh();
     }//GEN-LAST:event_jRadioButtonMenuItem9ActionPerformed
 
@@ -1491,7 +1549,7 @@ public class GraphPanel extends javax.swing.JPanel {
                         series[11].add(x, y);
                         
                     } else if (graph_type == AMM_PLOT) {
-                        y = rtn_info.getAmmEst((int)x);
+                        y = rtn_info.getAmmEst((int)x, cost_type);
                         series[0].add(x, y);
                     } else if (this.graph_type == GraphPanel.FREQ_PLOT) {
                         y = te.getOcc();
@@ -1532,7 +1590,7 @@ public class GraphPanel extends javax.swing.JPanel {
                     else if (graph_type == VAR_PLOT) 
                         y = te.getVar();
                     else if (graph_type == AMM_PLOT)
-                        y = rtn_info.getAmmEst((int)x);
+                        y = rtn_info.getAmmEst((int)x, cost_type);
                     else if (graph_type == FREQ_PLOT)
                         y = te.getOcc();
                     else if (graph_type == MMM_PLOT) {

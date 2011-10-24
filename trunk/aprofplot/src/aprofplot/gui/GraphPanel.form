@@ -207,7 +207,7 @@
         <MenuItem class="javax.swing.JRadioButtonMenuItem" name="jRadioButtonMenuItem7">
           <Properties>
             <Property name="selected" type="boolean" value="true"/>
-            <Property name="text" type="java.lang.String" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+            <Property name="text" type="java.lang.String" editor="org.netbeans.modules.form.RADConnectionPropertyEditor" preCode="if (graph_type == TIME_PLOT || graph_type == RATIO_PLOT)" postCode="else if (graph_type == AMM_PLOT)&#xa;jRadioButtonMenuItem7.setText(&quot;No division&quot;);">
               <Connection code="&quot;Maximum&quot;" type="code"/>
             </Property>
           </Properties>
@@ -218,7 +218,7 @@
         <MenuItem class="javax.swing.JRadioButtonMenuItem" name="jRadioButtonMenuItem8">
           <Properties>
             <Property name="selected" type="boolean" value="true"/>
-            <Property name="text" type="java.lang.String" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+            <Property name="text" type="java.lang.String" editor="org.netbeans.modules.form.RADConnectionPropertyEditor" preCode="if (graph_type == TIME_PLOT || graph_type == RATIO_PLOT)" postCode="else if (graph_type == AMM_PLOT)&#xa;jRadioButtonMenuItem8.setText(&quot;division by SMS value&quot;);">
               <Connection code="&quot;Average&quot;" type="code"/>
             </Property>
           </Properties>
@@ -229,7 +229,7 @@
         <MenuItem class="javax.swing.JRadioButtonMenuItem" name="jRadioButtonMenuItem9">
           <Properties>
             <Property name="selected" type="boolean" value="true"/>
-            <Property name="text" type="java.lang.String" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+            <Property name="text" type="java.lang.String" editor="org.netbeans.modules.form.RADConnectionPropertyEditor" preCode="if (graph_type == TIME_PLOT || graph_type == RATIO_PLOT)" postCode="else if (graph_type == AMM_PLOT)&#xa;jRadioButtonMenuItem9.setText(&quot;Division by sum of occurrences&quot;);">
               <Connection code="&quot;Minimum&quot;" type="code"/>
             </Property>
           </Properties>
@@ -387,7 +387,7 @@
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jToggleButton3ActionPerformed"/>
               </Events>
               <AuxValues>
-                <AuxValue name="JavaCodeGenerator_AddingCodePre" type="java.lang.String" value="if (graph_type == TIME_PLOT || graph_type == RATIO_PLOT)"/>
+                <AuxValue name="JavaCodeGenerator_AddingCodePre" type="java.lang.String" value="if (graph_type == TIME_PLOT || graph_type == RATIO_PLOT || graph_type == AMM_PLOT)"/>
               </AuxValues>
             </Component>
           </SubComponents>
