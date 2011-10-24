@@ -88,8 +88,7 @@ public class GraphPanel extends javax.swing.JPanel {
 
     private XYPlot plot;
     private JFreeChart chart;
-    private ValueAxis domainAxis;
-    private NumberAxis rangeAxis;
+    private NumberAxis rangeAxis, domainAxis;
     private XYItemRenderer renderer;
     private ChartPanel chartPanel;
     private XYSeriesCollection data;
@@ -721,24 +720,27 @@ public class GraphPanel extends javax.swing.JPanel {
         if (this.graph_type == RTN_PLOT) label = "Number of distinct SMS";
         else label = "seen memory size";
         if (x_log_scale) {
+            /*
             if (false && graph_type == RTN_PLOT) {
                 LogAxis newDomainAxis = new LogAxis(label);
                 newDomainAxis.setBase(2);
                 newDomainAxis.setStandardTickUnits(newDomainAxis.createLogTickUnits(Locale.ENGLISH));
                 this.domainAxis = newDomainAxis;
             } else {
+            */
                 LogarithmicAxis newDomainAxis = new LogarithmicAxis(label);
                 newDomainAxis.setAllowNegativesFlag(false);
                 newDomainAxis.setStrictValuesFlag(false);
                 newDomainAxis.setStandardTickUnits(newDomainAxis.createIntegerTickUnits());
                 this.domainAxis = newDomainAxis;
-            }
+            //}
         } else {
             NumberAxis newDomainAxis = new NumberAxis(label);
             newDomainAxis.setStandardTickUnits(newDomainAxis.createIntegerTickUnits());
             this.domainAxis = newDomainAxis;
         }
         plot.setDomainAxis(domainAxis);
+        domainAxis.setAutoRangeIncludesZero(false);
     }
 
     private void resetYAxis() {
@@ -762,6 +764,7 @@ public class GraphPanel extends javax.swing.JPanel {
         if (graph_type == GraphPanel.FREQ_PLOT)
             this.rangeAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
         plot.setRangeAxis(rangeAxis);
+        rangeAxis.setAutoRangeIncludesZero(false);
     }
 
     private void updateXAxis() {
@@ -772,8 +775,9 @@ public class GraphPanel extends javax.swing.JPanel {
         else label = "seen memory size";
 
         if (x_log_scale) {
+            /*
             if (false && graph_type == RTN_PLOT) {
-                /* this does not work :( */
+                // this does not work :(
                 LogAxis newDomainAxis = new LogAxis(label);
                 newDomainAxis.setBase(2);
                 newDomainAxis.setStandardTickUnits(newDomainAxis.createLogTickUnits(Locale.ENGLISH));
@@ -781,12 +785,13 @@ public class GraphPanel extends javax.swing.JPanel {
                 //newDomainAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
                 this.domainAxis = newDomainAxis;
             } else {
+            */
                 LogarithmicAxis newDomainAxis = new LogarithmicAxis(label);
                 newDomainAxis.setAllowNegativesFlag(false);
                 newDomainAxis.setStrictValuesFlag(false);
                 newDomainAxis.setStandardTickUnits(newDomainAxis.createIntegerTickUnits());
                 this.domainAxis = newDomainAxis;
-            }
+            //}
         } else {
             NumberAxis newDomainAxis = new NumberAxis(label);
             this.domainAxis = newDomainAxis;
@@ -795,6 +800,7 @@ public class GraphPanel extends javax.swing.JPanel {
         this.domainAxis.setLowerBound(min_x);
         this.domainAxis.setUpperBound(max_x);
         plot.setDomainAxis(domainAxis);
+        domainAxis.setAutoRangeIncludesZero(false);
     }
 
     private void updateYAxis() {
@@ -821,6 +827,7 @@ public class GraphPanel extends javax.swing.JPanel {
         if (graph_type == GraphPanel.FREQ_PLOT)
                 this.rangeAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
         plot.setRangeAxis(rangeAxis);
+        rangeAxis.setAutoRangeIncludesZero(false);
     }
     
     private void updateGraphTitle() {
@@ -951,11 +958,13 @@ public class GraphPanel extends javax.swing.JPanel {
         magnified = false;
         resetXAxis();
         resetYAxis();
-
+        /*
         if (!x_log_scale) {
             NumberAxis v = (NumberAxis) domainAxis;
             v.setAutoRangeIncludesZero(false);
         }
+        */
+        domainAxis.setAutoRangeIncludesZero(false);
         rangeAxis.setAutoRangeIncludesZero(false);
 
         max_x = domainAxis.getUpperBound();
