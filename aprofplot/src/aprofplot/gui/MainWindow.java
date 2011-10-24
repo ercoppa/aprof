@@ -1470,11 +1470,11 @@ public class MainWindow extends javax.swing.JFrame {
             PrintWriter out = new PrintWriter(new FileWriter(tmp));
             for (int i = 0; i < ss.size(); i++) {
                 SmsEntry s = ss.get(i);
-                out.println(s.getSms() + " " + (int) s.getMinCost() + " " +
+                out.print(s.getSms() + " " + (int) s.getMinCost() + " " +
                                   (int) s.getMaxCost() + " " + (long) s.getSumCost()
                                     + " " + (long)s.getSumSquareCost()
-                                    + " " + (long)s.getOcc()
-                                    + " " + (long) rtn_info.getAmmEst(s.getSms()));
+                                    + " " + (long)s.getOcc());
+                out.format(" %.2f%n", rtn_info.getAmmEst(s.getSms(), 2));
             }
             out.close();
         } catch(java.io.IOException e) {
