@@ -180,7 +180,7 @@ public class RoutinesFilterDialog extends javax.swing.JDialog {
 
         jPanel7.setLayout(new javax.swing.BoxLayout(jPanel7, javax.swing.BoxLayout.LINE_AXIS));
 
-        jCheckBox5.setText("#Sms  >=    ");
+        jCheckBox5.setText("#Rms  >=    ");
         jCheckBox5.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jCheckBox5ActionPerformed(evt);

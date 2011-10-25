@@ -66,7 +66,7 @@ public class SmsFilterDialog extends javax.swing.JDialog {
         jButton2 = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
-        setTitle("Filter sms");
+        setTitle("Filter rms");
         setIconImage((new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Filter-icon.png"))).getImage());
         setResizable(false);
 

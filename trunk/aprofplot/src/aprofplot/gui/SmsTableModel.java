@@ -16,7 +16,7 @@ import aprofplot.*;
 public class SmsTableModel extends AbstractTableModel {
 
     private ArrayList<SmsEntry> elements;
-    private String[] columnNames = new String [] {"Sms",
+    private String[] columnNames = new String [] {"Rms",
                                                   "Cost",
                                                   "Ratio",
                                                   "Occ"

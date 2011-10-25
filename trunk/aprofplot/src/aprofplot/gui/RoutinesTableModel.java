@@ -21,7 +21,7 @@ public class RoutinesTableModel extends AbstractTableModel {
                                                   "Lib",
                                                   //"Addr",
                                                   "Cost",
-                                                  "#Sms",
+                                                  "#Rms",
                                                   "Cost %",
                                                   "Avg ratio (μs)",
                                                   //"Null",
