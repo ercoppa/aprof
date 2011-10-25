@@ -571,7 +571,7 @@ public class MainWindow extends javax.swing.JFrame {
 
         //jSplitPane3.setDividerLocation(0.5);
 
-        jTabbedPane1.addTab("SMS entries / Stack trace", jSplitPane3);
+        jTabbedPane1.addTab("RMS entries / Stack trace", jSplitPane3);
 
         jPanel8.setLayout(new java.awt.BorderLayout());
 
@@ -709,7 +709,7 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jMenu1.add(jMenuItem6);
 
-        jMenuItem8.setText("Export sms about selected routine");
+        jMenuItem8.setText("Export rms about selected routine");
         jMenuItem8.setEnabled(false);
         jMenuItem8.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -1474,7 +1474,7 @@ public class MainWindow extends javax.swing.JFrame {
                                   (int) s.getMaxCost() + " " + (long) s.getSumCost()
                                     + " " + (long)s.getSumSquareCost()
                                     + " " + (long)s.getOcc());
-                out.format(" %.2f%n", rtn_info.getAmmEst(s.getSms(), 2));
+                out.format(" %.2f%n", rtn_info.getAmmEst(s.getSms()));
             }
             out.close();
         } catch(java.io.IOException e) {

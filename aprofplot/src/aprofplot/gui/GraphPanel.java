@@ -531,10 +531,7 @@ public class GraphPanel extends javax.swing.JPanel {
         groupMenuButtonGroup2 = new javax.swing.ButtonGroup();
 
         jRadioButtonMenuItem7.setSelected(true);
-        if (graph_type == TIME_PLOT || graph_type == RATIO_PLOT)
         jRadioButtonMenuItem7.setText("Maximum");
-        else if (graph_type == AMM_PLOT)
-        jRadioButtonMenuItem7.setText("No division");
         jRadioButtonMenuItem7.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jRadioButtonMenuItem7ActionPerformed(evt);
@@ -543,10 +540,7 @@ public class GraphPanel extends javax.swing.JPanel {
         jPopupMenu3.add(jRadioButtonMenuItem7);
 
         jRadioButtonMenuItem8.setSelected(true);
-        if (graph_type == TIME_PLOT || graph_type == RATIO_PLOT)
         jRadioButtonMenuItem8.setText("Average");
-        else if (graph_type == AMM_PLOT)
-        jRadioButtonMenuItem8.setText("division by SMS value");
         jRadioButtonMenuItem8.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jRadioButtonMenuItem8ActionPerformed(evt);
@@ -555,10 +549,7 @@ public class GraphPanel extends javax.swing.JPanel {
         jPopupMenu3.add(jRadioButtonMenuItem8);
 
         jRadioButtonMenuItem9.setSelected(true);
-        if (graph_type == TIME_PLOT || graph_type == RATIO_PLOT)
         jRadioButtonMenuItem9.setText("Minimum");
-        else if (graph_type == AMM_PLOT)
-        jRadioButtonMenuItem9.setText("Division by sum of occurrences");
         jRadioButtonMenuItem9.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jRadioButtonMenuItem9ActionPerformed(evt);
@@ -652,7 +643,7 @@ public class GraphPanel extends javax.swing.JPanel {
                 jToggleButton3ActionPerformed(evt);
             }
         });
-        if (graph_type == TIME_PLOT || graph_type == RATIO_PLOT || graph_type == AMM_PLOT)
+        if (graph_type == TIME_PLOT || graph_type == RATIO_PLOT)
         jPanel2.add(jToggleButton3);
 
         jPanel1.add(jPanel2, java.awt.BorderLayout.WEST);
@@ -717,8 +708,8 @@ public class GraphPanel extends javax.swing.JPanel {
 
     private void resetXAxis() {
         String label = null;
-        if (this.graph_type == RTN_PLOT) label = "Number of distinct SMS";
-        else label = "seen memory size";
+        if (this.graph_type == RTN_PLOT) label = "Number of distinct RMS";
+        else label = "read memory size";
         if (x_log_scale) {
             /*
             if (false && graph_type == RTN_PLOT) {
@@ -772,7 +763,7 @@ public class GraphPanel extends javax.swing.JPanel {
         if (this.graph_type == RTN_PLOT) {
             label = "Number of distinct SMS";
         }
-        else label = "seen memory size";
+        else label = "read memory size";
 
         if (x_log_scale) {
             /*
@@ -839,7 +830,7 @@ public class GraphPanel extends javax.swing.JPanel {
             case SUM_PLOT: s = "Total cost plot"; break;
             case VAR_PLOT: s = "Variance plot"; break;
             case RTN_PLOT: s = "Routine plot"; break;
-            case AMM_PLOT: s = "Ammortization factor estimation"; break;
+            case AMM_PLOT: s = "Amortization factor estimation"; break;
             case RATIO_PLOT: s = "Ratio plot - T(n) / ";
                             double[] rc = SmsEntry.getRatioConfig();
                             int n = 0;
@@ -1078,7 +1069,7 @@ public class GraphPanel extends javax.swing.JPanel {
                                 max_y = 110;
                                 break;
                 case AMM_PLOT:
-                                max_y = rtn_info.getAmmEst(rtn_info.getTimeEntries().get(last).getSms(), cost_type);
+                                max_y = rtn_info.getAmmEst(rtn_info.getTimeEntries().get(last).getSms());
                                 break;
             }
 
@@ -1445,19 +1436,19 @@ public class GraphPanel extends javax.swing.JPanel {
 
     private void jRadioButtonMenuItem7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem7ActionPerformed
         cost_type = MAX_COST;
-        if (graph_type != AMM_PLOT && main_window.getLinkPlots()) main_window.setGroupCostAll(graph_type, cost_type);
+        if (main_window.getLinkPlots()) main_window.setGroupCostAll(graph_type, cost_type);
         refresh();
     }//GEN-LAST:event_jRadioButtonMenuItem7ActionPerformed
 
     private void jRadioButtonMenuItem8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem8ActionPerformed
         cost_type = AVG_COST;
-        if (graph_type != AMM_PLOT && main_window.getLinkPlots()) main_window.setGroupCostAll(graph_type, cost_type);
+        if (main_window.getLinkPlots()) main_window.setGroupCostAll(graph_type, cost_type);
         refresh();
     }//GEN-LAST:event_jRadioButtonMenuItem8ActionPerformed
 
     private void jRadioButtonMenuItem9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem9ActionPerformed
         cost_type = MIN_COST;
-        if (graph_type != AMM_PLOT && main_window.getLinkPlots()) main_window.setGroupCostAll(graph_type, cost_type);
+        if (main_window.getLinkPlots()) main_window.setGroupCostAll(graph_type, cost_type);
         refresh();
     }//GEN-LAST:event_jRadioButtonMenuItem9ActionPerformed
 
@@ -1558,7 +1549,7 @@ public class GraphPanel extends javax.swing.JPanel {
                         series[11].add(x, y);
                         
                     } else if (graph_type == AMM_PLOT) {
-                        y = rtn_info.getAmmEst((int)x, cost_type);
+                        y = rtn_info.getAmmEst((int)x);
                         series[0].add(x, y);
                     } else if (this.graph_type == GraphPanel.FREQ_PLOT) {
                         y = te.getOcc();
@@ -1599,7 +1590,7 @@ public class GraphPanel extends javax.swing.JPanel {
                     else if (graph_type == VAR_PLOT) 
                         y = te.getVar();
                     else if (graph_type == AMM_PLOT)
-                        y = rtn_info.getAmmEst((int)x, cost_type);
+                        y = rtn_info.getAmmEst((int)x);
                     else if (graph_type == FREQ_PLOT)
                         y = te.getOcc();
                     else if (graph_type == MMM_PLOT) {

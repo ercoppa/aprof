@@ -21,7 +21,7 @@
         <Property name="icon" type="javax.swing.Icon" editor="org.netbeans.modules.form.editors2.IconEditor">
           <Image iconType="3" name="/aprofplot/gui/resources/Filter-icon.png"/>
         </Property>
-        <Property name="toolTipText" type="java.lang.String" value="Filter sms"/>
+        <Property name="toolTipText" type="java.lang.String" value="Filter rms"/>
       </Properties>
       <Events>
         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jButton4ActionPerformed"/>
@@ -152,7 +152,7 @@
             </MenuItem>
             <MenuItem class="javax.swing.JMenuItem" name="jMenuItem8">
               <Properties>
-                <Property name="text" type="java.lang.String" value="Export sms about selected routine"/>
+                <Property name="text" type="java.lang.String" value="Export rms about selected routine"/>
                 <Property name="enabled" type="boolean" value="false"/>
               </Properties>
               <Events>
@@ -821,8 +821,8 @@
                       </AuxValues>
                       <Constraints>
                         <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout" value="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout$JTabbedPaneConstraintsDescription">
-                          <JTabbedPaneConstraints tabName="SMS entries / Stack trace">
-                            <Property name="tabTitle" type="java.lang.String" value="SMS entries / Stack trace"/>
+                          <JTabbedPaneConstraints tabName="RMS entries / Stack trace">
+                            <Property name="tabTitle" type="java.lang.String" value="RMS entries / Stack trace"/>
                           </JTabbedPaneConstraints>
                         </Constraint>
                       </Constraints>

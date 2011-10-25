@@ -207,7 +207,7 @@ public abstract class RoutineInfo implements Comparable<RoutineInfo> {
         });
     }
     
-    public double getAmmEst(int n, int type) {
+    public double getAmmEst(int n) {
         sortTimeEntriesByAccesses();
         double est = 0;
         double sum_occ = 0;
@@ -218,8 +218,6 @@ public abstract class RoutineInfo implements Comparable<RoutineInfo> {
             sum_occ += s.getOcc();
         }
         
-        if (type == 0) return est;
-        else if (type == 1) return est / n;
-        else return est / sum_occ;
+        return est / sum_occ;
     }
 }
