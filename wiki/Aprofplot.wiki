@@ -55,6 +55,11 @@ Syntax: `m metric`, where `metric` is the metric type of performance measurement
 If missing, the default metric is `bb-count`.
 
 ----
+* k: total program cost*
+
+Syntax: `k total-program-cost`, where `total-program-cost` is the total cost required by the execution of the program, in units defined by the `m` tag. 
+
+----
 * r: routine info*
 
 Syntax: `r "routine-name" "image-name" routine-id`, where:
@@ -94,21 +99,21 @@ Example:
 ----
 * p: routine performance point*
 
-Syntax: `p routine-id sms min max sum sqr-sum occ`, where:
+Syntax: `p routine-id rms min max sum sqr-sum occ`, where:
 
   * `routine-id`: id of the routine (32 bit unsigned integer)
-  * `sms`: seen memory size of the point (32 bit unsigned integer)
-  * `min`: minimum performance measurement (64 bit unsigned integer)
-  * `max`: maximum performance measurement (64 bit unsigned integer)
-  * `sum`: sum of performance measurements (64 bit unsigned integer)
-  * `sqr-sum`: sum of squares of performance measurements (64 bit unsigned integer)
-  * `occ`: number of routine calls with the given sms (64 bit unsigned integer)
+  * `rms`: read memory size of the point (32 bit unsigned integer)
+  * `min`: minimum routine cost on the given rms (64 bit unsigned integer)
+  * `max`: maximum routine cost on the given rms (64 bit unsigned integer)
+  * `sum`: sum of routine costs on the given rms (64 bit unsigned integer)
+  * `sqr-sum`: sum of squares of routine costs on the given rms (64 bit unsigned integer)
+  * `occ`: number of routine calls on the given rms (64 bit unsigned integer)
 
 Example:
 
 `p 7 23 15 37 270 5712 10` 
 
-means that the routine with id 7 was called 10 times on sms 23, requiring a minimum of 15 cost units, a maximum of 37 cost units, a total cost of 270 units and sum of squares 5712.
+means that the routine with id 7 was called 10 times on rms 23, requiring a minimum of 15 cost units, a maximum of 37 cost units, a total cost of 270 units and sum of squares 5712.
 
 ----
 * x: distinct calling context info*
@@ -130,21 +135,21 @@ means that node 352 of the CCT is a context of routine 24 and its parent node is
 ----
 * q: calling context performance point*
 
-Syntax: `q context-id sms min max sum sqr-sum occ`, where:
+Syntax: `q context-id rms min max sum sqr-sum occ`, where:
 
   * `context-id`: id of the calling context (32 bit unsigned integer)
-  * `sms`: seen memory size of the point (32 bit unsigned integer)
-  * `min`: minimum performance measurement (64 bit unsigned integer)
-  * `max`: maximum performance measurement (64 bit unsigned integer)
-  * `sum`: sum of performance measurements (64 bit unsigned integer)
-  * `sqr-sum`: sum of squares of performance measurements (64 bit unsigned integer)
-  * `occ`: number of context activations with the given sms (64 bit unsigned integer)
+  * `rms`: read memory size of the point (32 bit unsigned integer)
+  * `min`: minimum context cost on the given rms (64 bit unsigned integer)
+  * `max`: maximum context cost on the given rms (64 bit unsigned integer)
+  * `sum`: sum of context costs on the given rms (64 bit unsigned integer)
+  * `sqr-sum`: sum of squares of context costs on the given rms (64 bit unsigned integer)
+  * `occ`: number of context activations on the given rms (64 bit unsigned integer)
 
 Example:
 
 `p 624 23 15 37 270 5712 10` 
 
-means that the calling context 624 was activated 10 times on sms 23, requiring a minimum of 15 cost units, a maximum of 37 cost units, a total cost of 270 units and sum of squares 5712.
+means that the calling context 624 was activated 10 times on rms 23, requiring a minimum of 15 cost units, a maximum of 37 cost units, a total cost of 270 units and sum of squares 5712.
 
 === Examples ===
 *INSERT SCREENSHOTS*
