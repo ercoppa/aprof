@@ -57,7 +57,7 @@ If missing, the default metric is `bb-count`.
 ----
 * k: total program cost*
 
-Syntax: `k total-program-cost`, where `total-program-cost` is the total cost required by the execution of the program, in units defined by the `m` tag. 
+Syntax: `k total-program-cost`, where `total-program-cost` is the total cost (64-bit unsigned integer) required by the execution of the program, in units defined by the `m` tag. 
 
 ----
 * r: routine info*
