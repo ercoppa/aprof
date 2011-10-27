@@ -90,7 +90,6 @@ public class AprofReport {
 
             if (token.equals("k")) { // total cost
                 this.total_cost = Double.parseDouble(tokenizer.nextToken());
-                System.out.println("K is " + total_cost);
                 continue;
             }
 
