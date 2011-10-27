@@ -271,7 +271,7 @@ public class GraphPanel extends javax.swing.JPanel {
         initComponents();
         this.add(chartPanel, BorderLayout.CENTER);
 
-        if (graph_type == RTN_PLOT || graph_type == AMM_PLOT)
+        if (graph_type == RTN_PLOT || graph_type == RATIO_PLOT)
             this.setVisible(false);
 
         updateGraphTitle();
@@ -928,7 +928,7 @@ public class GraphPanel extends javax.swing.JPanel {
                     break;
         }
         group_threshold = t;
-        if (graph_type == RTN_PLOT) return;
+        if (graph_type == RTN_PLOT || rtn_info == null) return;
         populateChart();
         if (group_threshold == 1) {
             if (autoscaled) autoscale();

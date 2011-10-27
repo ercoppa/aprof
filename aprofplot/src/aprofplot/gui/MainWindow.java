@@ -167,7 +167,7 @@ public class MainWindow extends javax.swing.JFrame {
         });
 
         jButton4.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Filter-icon.png"))); // NOI18N
-        jButton4.setToolTipText("Filter sms");
+        jButton4.setToolTipText("Filter rms");
         jScrollPane2.setCorner(javax.swing.ScrollPaneConstants.UPPER_RIGHT_CORNER, jButton4);
         jButton4.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -286,8 +286,7 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jToolBar1.add(jToggleButton1);
 
-        jToggleButton2.setFont(new java.awt.Font("Ubuntu", 1, 13));
-        jToggleButton2.setSelected(true);
+        jToggleButton2.setFont(new java.awt.Font("Ubuntu", 1, 13)); // NOI18N
         jToggleButton2.setText("R");
         jToggleButton2.setToolTipText("show/hide ratio plot");
         jToggleButton2.setFocusable(false);
@@ -360,7 +359,8 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jToolBar1.add(jToggleButton8);
 
-        jToggleButton9.setFont(new java.awt.Font("Ubuntu", 1, 13));
+        jToggleButton9.setFont(new java.awt.Font("Ubuntu", 1, 13)); // NOI18N
+        jToggleButton9.setSelected(true);
         jToggleButton9.setText("A");
         jToggleButton9.setToolTipText("Show/hide Ammortization factor estimation plot");
         jToggleButton9.setFocusable(false);
@@ -600,7 +600,7 @@ public class MainWindow extends javax.swing.JFrame {
         RtnGraphPanel = new GraphPanel(GraphPanel.RTN_PLOT, this);
         AmmGraphPanel = new GraphPanel(GraphPanel.AMM_PLOT, this);
         jPanel9.add(timeGraphPanel);
-        jPanel9.add(ratioGraphPanel);
+        jPanel9.add(AmmGraphPanel);
         jPanel9.add(freqGraphPanel);
         jPanel9.add(MMMGraphPanel);
         jPanel9.add(SumGraphPanel);

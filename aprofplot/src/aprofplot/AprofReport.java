@@ -10,7 +10,7 @@ public class AprofReport {
     private String cmdline;
     private int version;
     private String metric;
-    private long total_cost;
+    private double total_cost;
     private long total_calls;
     private long total_contexts;
     private ArrayList<RoutineInfo> routines;
@@ -201,7 +201,7 @@ public class AprofReport {
                 int sms = Integer.parseInt(tokenizer.nextToken());
                 long min_cost = Long.parseLong(tokenizer.nextToken());
                 long max_cost = Long.parseLong(tokenizer.nextToken());
-                long cost_sum = Long.parseLong(tokenizer.nextToken());
+                double cost_sum = Double.parseDouble(tokenizer.nextToken());
                 double cost_sqr_sum = Double.parseDouble(tokenizer.nextToken());
                 long occ = Long.parseLong(tokenizer.nextToken());
                 SmsEntry te = new SmsEntry(sms,
@@ -310,7 +310,8 @@ public class AprofReport {
 
         for (int i=0; i<routines.size(); i++) {
             int calls = routines.get(i).getTotalCalls();
-            total_cost += routines.get(i).getTotalTime();
+            if (routines.get(i).getTotalTime() > total_cost)
+                total_cost = routines.get(i).getTotalTime();
             total_calls += calls;
             int ne = routines.get(i).getSizeTimeEntries();
             int id = 0;
