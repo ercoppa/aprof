@@ -23,7 +23,7 @@ public class RoutinesTableModel extends AbstractTableModel {
                                                   "Cost",
                                                   "#Rms",
                                                   "Cost %",
-                                                  "Avg ratio (μs)",
+                                                  //"Avg ratio (μs)",
                                                   //"Null",
                                                   "Cost plot",
                                                   "Calls",
@@ -38,7 +38,7 @@ public class RoutinesTableModel extends AbstractTableModel {
                                                Double.class,
                                                Integer.class,
                                                Double.class,
-                                               Double.class,
+                                               //Double.class,
                                                //Integer.class,
                                                RoutineInfo.class,
                                                Integer.class,
@@ -98,18 +98,18 @@ public class RoutinesTableModel extends AbstractTableModel {
             case 2: return new Double(rtn_info.getTotalTime() / 1000000);
             case 3: return new Integer(rtn_info.getTimeEntries().size());
             case 4: return new Double((rtn_info.getTotalTime() / report.getTotalTime()) * 100);
-            case 5: return new Double(rtn_info.getMeanRatio());
+            //case 5: return new Double(rtn_info.getMeanRatio());
             //case 6: return 0;
-            case 6: return rtn_info;  // time plot
-            case 7: return new Integer(rtn_info.getTotalCalls());
-            case 8: return new Double(((double)rtn_info.getTotalCalls() / (double)report.getTotalCalls()) * 100);
-            case 9: if (rtn_info instanceof UncontextualizedRoutineInfo && ((UncontextualizedRoutineInfo)rtn_info).getContextCount() > 0)
+            case 5: return rtn_info;  // time plot
+            case 6: return new Integer(rtn_info.getTotalCalls());
+            case 7: return new Double(((double)rtn_info.getTotalCalls() / (double)report.getTotalCalls()) * 100);
+            case 8: if (rtn_info instanceof UncontextualizedRoutineInfo && ((UncontextualizedRoutineInfo)rtn_info).getContextCount() > 0)
                         return new Boolean(((UncontextualizedRoutineInfo)rtn_info).getCollapsed());
                     else return null;
-            case 10:if (rtn_info instanceof UncontextualizedRoutineInfo)
+            case 9: if (rtn_info instanceof UncontextualizedRoutineInfo)
                         return "" + ((UncontextualizedRoutineInfo)rtn_info).getContextCount();
                     else return ((ContextualizedRoutineInfo)rtn_info).getContextId() + "/" + ((ContextualizedRoutineInfo)rtn_info).getOverallRoutineInfo().getContextCount();
-            case 11:String fav = "" + rtn_info.getID();
+            case 10: String fav = "" + rtn_info.getID();
                     if (rtn_info instanceof ContextualizedRoutineInfo)
                         fav += ("_" + ((ContextualizedRoutineInfo)rtn_info).getContextId());
                     return new Boolean(report.isFavorite(fav));

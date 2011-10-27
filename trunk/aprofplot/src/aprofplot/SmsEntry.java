@@ -14,7 +14,7 @@ public class SmsEntry implements Comparable<SmsEntry> {
     private int sms;
     private long min_cost;
     private long max_cost;
-    private long cost_sum;
+    private double cost_sum;
     private double cost_sqr_sum;
     private long occ;
     
@@ -30,7 +30,7 @@ public class SmsEntry implements Comparable<SmsEntry> {
     private static double[] ratio_config = {1, 0, 0};
 
     public SmsEntry(int sms, long min_cost,
-            long max_cost, long cost_sum, double cost_sqr_sum, long occ) {
+            long max_cost, double cost_sum, double cost_sqr_sum, long occ) {
 
         this.sms = sms;
         this.min_cost = min_cost;
