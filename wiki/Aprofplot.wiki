@@ -47,7 +47,7 @@ Syntax: `a application-name`
 ----
 * m: performance metric*
 
-Syntax: `m metric`, where `metric` is the metric type of performance measurements. It can be any of the following:
+Syntax: `m metric`, where `metric` is the metric type of performance measurements (program costs). It can be any of the following:
 
   * `bb-count`: count of executed basic blocks;
   * `time-usec`: elapsed time in microseconds.
@@ -57,7 +57,7 @@ If missing, the default metric is `bb-count`.
 ----
 * k: total program cost*
 
-Syntax: `k total-program-cost`, where `total-program-cost` is the total cost (64-bit unsigned integer) required by the execution of the program, in units defined by the `m` tag. 
+Syntax: `k total-program-cost`, where `total-program-cost` is the total cost (64-bit unsigned integer) required by the execution of the program. 
 
 ----
 * r: routine info*
