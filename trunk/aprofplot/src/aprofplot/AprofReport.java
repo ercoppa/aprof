@@ -88,6 +88,12 @@ public class AprofReport {
                 continue;
             }
 
+            if (token.equals("k")) { // total cost
+                this.total_cost = Double.parseDouble(tokenizer.nextToken());
+                System.out.println("K is " + total_cost);
+                continue;
+            }
+
             if (token.equals("f")) { // command line
                 this.cmdline = str.substring(2);
                 continue;

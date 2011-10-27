@@ -242,6 +242,8 @@ typedef struct ThreadData {
 	ULong			instr;				// Counter instr executed
 	#elif TIME == BB_COUNT
 	ULong			bb_c;				// Counter BB executed
+	#elif TIME == RDTSC
+	ULong			entry_time;			// Entry time for this thread
 	#endif
 	#if SUF == 2
 	UInt			next_aid;			// Activation aid that will be assigned to the next Activation

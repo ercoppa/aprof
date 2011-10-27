@@ -286,7 +286,7 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jToolBar1.add(jToggleButton1);
 
-        jToggleButton2.setFont(new java.awt.Font("Ubuntu", 1, 13)); // NOI18N
+        jToggleButton2.setFont(new java.awt.Font("Ubuntu", 1, 13));
         jToggleButton2.setText("R");
         jToggleButton2.setToolTipText("show/hide ratio plot");
         jToggleButton2.setFocusable(false);
@@ -359,7 +359,7 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jToolBar1.add(jToggleButton8);
 
-        jToggleButton9.setFont(new java.awt.Font("Ubuntu", 1, 13)); // NOI18N
+        jToggleButton9.setFont(new java.awt.Font("Ubuntu", 1, 13));
         jToggleButton9.setSelected(true);
         jToggleButton9.setText("A");
         jToggleButton9.setToolTipText("Show/hide Ammortization factor estimation plot");
@@ -443,7 +443,7 @@ public class MainWindow extends javax.swing.JFrame {
         jLabel4.setBorder(javax.swing.BorderFactory.createEtchedBorder());
         jPanel1.add(jLabel4);
 
-        jLabel5.setText("Total time:");
+        jLabel5.setText("Total cost:");
         jLabel5.setBorder(javax.swing.BorderFactory.createEtchedBorder());
         jPanel1.add(jLabel5);
 
@@ -853,7 +853,7 @@ public class MainWindow extends javax.swing.JFrame {
         jLabel3.setText("Profile report for " + report.getAppName() + " (" + report.getCommandLine() + ")");
         jLabel1.setText("Routines: " + report.getRoutineCount());
         jLabel4.setText("Contexts: " + report.getTotalContexts());
-        jLabel5.setText("Total time: " + report.getTotalTime() / 1000000 + "s");
+        jLabel5.setText("Total cost: " + report.getTotalTime());
         jLabel6.setText("Calls: " + report.getTotalCalls());
     }
 

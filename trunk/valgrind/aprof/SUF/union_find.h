@@ -16,8 +16,10 @@
 
 #if ADDR_MULTIPLE == 4
 #define USM_SIZE 16384
-#else
+#elif SUF == 1
 #error "ADDR_MULTIPLE nor supported"
+#else 
+#define USM_SIZE 16384
 #endif
 
 typedef struct Node Node;

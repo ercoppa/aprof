@@ -30,9 +30,9 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 	Char filename_priv[2048];
 	Char * prog_name = (Char *) VG_(args_the_exename);
 	if (tid > 1)
-		VG_(sprintf)(filename_priv, "%s_%u.vg2.aprof", basename(prog_name), tid - 1);
+		VG_(sprintf)(filename_priv, "%s_%u.aprof", basename(prog_name), tid - 1);
 	else
-		VG_(sprintf)(filename_priv, "%s.vg2.aprof", basename(prog_name));
+		VG_(sprintf)(filename_priv, "%s.aprof", basename(prog_name));
 	//VG_(sprintf)(filename_priv, "%d_%u.aprof", VG_(getpid)(), tid - 1);
 	/* Add path to log filename */
 	Char * filename = VG_(expand_file_name)("aprof log", filename_priv);
@@ -56,6 +56,15 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 	// write version 
 	VG_(sprintf)(buffer, "v %d\n", REPORT_VERSION);
 	ap_fwrite(report, buffer, VG_(strlen)(buffer));
+	
+	#if REPORT_VERSION == 1
+	#if TIME == BB_COUNT
+	VG_(sprintf)(buffer, "k %llu\n", tdata->bb_c);
+	#elif TIME == RDTSC
+	VG_(sprintf)(buffer, "k %llu\n", ap_time() - tdata->entry_time);
+	#endif
+	ap_fwrite(report, buffer, VG_(strlen)(buffer));
+	#endif
 	
 	// write metric type
 	#if TIME == BB_COUNT

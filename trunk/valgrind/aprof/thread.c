@@ -81,8 +81,8 @@ static ThreadData * thread_start(ThreadId tid){
 	tdata->next_context_id = 1;
 	#endif
 	
-	#if TIME == INSTR
-	tdata->instr = 0;
+	#if TIME == RDTSC
+	tdata->entry_time = ap_time();
 	#endif
 	
 	#if SUF == 2
