@@ -761,7 +761,7 @@ public class GraphPanel extends javax.swing.JPanel {
     private void updateXAxis() {
         String label = null;
         if (this.graph_type == RTN_PLOT) {
-            label = "Number of distinct SMS";
+            label = "Number of distinct RMS";
         }
         else label = "read memory size";
 
