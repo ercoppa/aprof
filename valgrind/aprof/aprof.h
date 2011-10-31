@@ -37,7 +37,7 @@
 #define VERBOSE				0	// 0 disabled, 1 function + thread, 2 function + thread + load/store/modify
 #define EVENTCOUNT			0	// 0 disabled, 1 memory accesses, 2 functions, 3 mem+fn
 #define CCT					0	// if 1, keep a calling context tree for each thread to include context information in reports
-#define ADDR_MULTIPLE		4	// account only accessed address muliple of this number, min 1
+#define ADDR_MULTIPLE		16	// account only accessed address muliple of this number, min 1
 #define COSTANT_MEM_ACCESS	1	// if 1, memory access with size >1 are managed as size==1
 #define NO_TIME				0	// No time 
 #define INSTR				1	// Count guest intel instruction 
@@ -62,7 +62,7 @@
 #define IGNORE_DL_RUNTIME	1	// if 1, disable analysis for dl_runtime_resolve (and its children)
 #define REPORT_VERSION		1	// see documentation on  our site
 #define DISCARD_UNKNOWN		1	// discard info about PLT or unknown function (but this not implies to discard info about its children)
-#define IGNORE_REPEAT_ACC	1	// if 1, ignore repeated accesses to the same address within a BB
+#define IGNORE_REPEAT_ACC	0	// if 1, ignore repeated accesses to the same address within a BB
 
 /* Some constants */
 #define STACK_SIZE		64		// Initial stack size
