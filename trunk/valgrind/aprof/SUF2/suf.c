@@ -29,8 +29,8 @@ UInt SUF_insert(StackUF * suf, UWord addr, UInt rid)
 	
 	#if ADDR_MULTIPLE == 1
 	UWord j = (addr & 0xffff);
-	#elif ADDR_MULTIPLE == 4
-	UWord j = (addr & 0xffff) / 4;
+	#else
+	UWord j = (addr & 0xffff) / ADDR_MULTIPLE;
 	#endif
 	if (suf->table[i] == NULL) {
 		
@@ -67,8 +67,8 @@ UInt SUF_lookup(StackUF * suf, UWord addr)
 	
 	#if ADDR_MULTIPLE == 1
 	UWord j = (addr & 0xffff);
-	#elif ADDR_MULTIPLE == 4
-	UWord j = (addr & 0xffff) / 4;
+	#else
+	UWord j = (addr & 0xffff) / ADDR_MULTIPLE;
 	#endif
 	return suf->table[i]->table[j];
 }

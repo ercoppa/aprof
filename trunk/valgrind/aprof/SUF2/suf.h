@@ -9,8 +9,14 @@
 
 #if ADDR_MULTIPLE == 1
 #define SSM_SIZE 65536
+#elif ADDR_MULTIPLE == 2
+#define SSM_SIZE 32768
 #elif ADDR_MULTIPLE == 4
 #define SSM_SIZE 16384
+#elif ADDR_MULTIPLE == 8
+#define SSM_SIZE 8192
+#elif ADDR_MULTIPLE == 16
+#define SSM_SIZE 4096
 #else
 #error "ADDR_MULTIPLE nor supported"
 #endif
