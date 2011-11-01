@@ -110,7 +110,9 @@ public class extractData {
 			System.out.println("Error during handling file: " + report.getName() + ".poor_max");
 		}
 		
-		System.out.println("Rich functions are " +  count_rich);
+		System.out.println("Rich functions are " +  count_rich + " over " + rr.size());
+		double perc = 100 * ((double)count_rich / (double) rr.size());
+		System.out.format("Rich functions are %.1f%%%n", perc);
 		System.out.println("Poor functions are " +  count_poor);
 	}
 	
