@@ -40,6 +40,33 @@
 		</jar>
 	</target>
 
+	<target name="script" depends="compile">
+                <!-- Build the jar file -->
+                <jar basedir="${build}" destfile="${build}/script.jar">
+
+                        <!-- Non funziona poi a runtime... 
+                        <zipgroupfileset dir="${lib.dir}" includes="jfreechart.jar" /> 
+                        -->
+
+                        <manifest>
+                                <attribute name="Main-Class" value="aprofplot.extractData"/>
+                        </manifest>
+                        <fileset dir="src">
+                                <include name="aprofplot/gui/resources/*.png" />
+                        </fileset>
+                </jar>
+        </target>
+
+	<target name="run-script">
+                <java classname="aprofplot.extractData" fork="true">
+                        <classpath>
+                                <path refid="classpath"/>
+                                <path location="${build}/script.jar"/>
+                        </classpath>
+			<arg value="${report}"/>
+                </java>
+        </target>
+
 	<target name="run">
         	<java classname="${main-class}" fork="true">
 			<classpath>
