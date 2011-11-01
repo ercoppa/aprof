@@ -17,6 +17,7 @@ public abstract class RoutineInfo implements Comparable<RoutineInfo> {
     private String name, dem_name, full_dem_name;
     private String image;
     private double max_time;
+    private double max_avg_cost;
     //private double max_ratio;
     //private double mean_ratio;
     private double total_time;
@@ -41,6 +42,8 @@ public abstract class RoutineInfo implements Comparable<RoutineInfo> {
         }
         time_entries.add(t);
         if (t.getCost() > max_time) max_time = t.getCost();
+        if (t.getAvgCost() > max_avg_cost) max_avg_cost = t.getAvgCost();
+        
         total_time += t.getCost() * t.getOcc();
         total_calls += t.getOcc();
     }
@@ -77,6 +80,10 @@ public abstract class RoutineInfo implements Comparable<RoutineInfo> {
 
     public double getMaxTime() {
         return max_time;
+    }
+    
+    public double getMaxAvgCost() {
+        return max_avg_cost;
     }
 
 //    public double getMaxRatio() {

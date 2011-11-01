@@ -565,7 +565,9 @@ public class AprofReport {
     }
 
     public ArrayList<RoutineInfo> getRoutines() {
-        return new ArrayList<RoutineInfo>(this.routines);
+        //return new ArrayList<RoutineInfo>(this.routines);
+        // not good but faster... fixme!
+        return this.routines;
     }
 
     public ArrayList<String> getLibList() {
