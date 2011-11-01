@@ -26,6 +26,7 @@ public class extractData {
 			report = new AprofReport(file);
 		} catch (Exception e) {
 			System.out.println("Problem during opening the report: " + args[0]);
+			return;
 		}
 		
 		int count_rich = 0;
@@ -87,6 +88,7 @@ public class extractData {
 			out.close();
 		} catch (java.io.IOException eio) {
 			System.out.println("Error during handling file: " + report.getName() + ".poor_max");
+			return;
 		}
 		
 		try {
@@ -107,13 +109,27 @@ public class extractData {
 			
 			out.close();
 		} catch (java.io.IOException eio) {
-			System.out.println("Error during handling file: " + report.getName() + ".poor_max");
+			System.out.println("Error during handling file: " + report.getName() + ".poor_avg");
+			return;
 		}
 		
 		System.out.println("Rich functions are " +  count_rich + " over " + rr.size());
 		double perc = 100 * ((double)count_rich / (double) rr.size());
 		System.out.format("Rich functions are %.1f%%%n", perc);
 		System.out.println("Poor functions are " +  count_poor);
+		
+		try {
+			
+			File tmp = new File(report.getName() + ".rich");
+			tmp.createNewFile();
+			PrintWriter out = new PrintWriter(new FileWriter(tmp));
+			out.format("%.1f%n", perc);
+			out.close();
+		} catch (java.io.IOException eio) {
+			System.out.println("Error during handling file: " + report.getName() + ".rich");
+			return;
+		}
+		
 	}
 	
 }
