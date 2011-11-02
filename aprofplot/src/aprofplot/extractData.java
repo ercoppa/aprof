@@ -76,7 +76,7 @@ public class extractData {
 			
 			double acc = 0;
 			for (int i = 0; i < poor_max_cost.length; i++) {
-				out.print((int) Math.pow(2, i));
+				out.print((long) Math.pow(2, i));
 				double perc = 100 * ((double)poor_max_cost[i] / (double)count_poor);
 				//System.out.println("Perc " + perc + " count " + poor_max_cost[i]);
 				acc += perc;
@@ -99,7 +99,7 @@ public class extractData {
 			
 			double acc = 0;
 			for (int i = 0; i < poor_avg_cost.length; i++) {
-				out.print((int) Math.pow(2, i));
+				out.print((long) Math.pow(2, i));
 				double perc = 100 * ((double)poor_avg_cost[i] / (double)count_poor);
 				acc += perc;
 				out.format(" %.1f%n", acc);
