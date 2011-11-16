@@ -30,6 +30,16 @@ Syntax: `v version`, where `version` is the version number of the file report.
 If the version line is missing, the default version number is zero.
 
 ----
+* e: executable file modification date*
+
+Syntax: `t date-time`, where `date-time` is the modification date and time of the profiled executable file.
+
+----
+* t: report creation date*
+
+Syntax: `t date-time`, where `date-time` is the creation date and time of the report.
+
+----
 * c: comment line*
 
 Syntax: `c comment`, where `comment` is any text fragment.
