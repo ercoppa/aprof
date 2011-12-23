@@ -14,6 +14,9 @@ Now you need to recompile your program (or any libs of your interest):
 {{{
 gcc -Wall your_code.c gcc-instrument/instr-gcc.c -finstrument-functions -o your_prog
 }}}
-Of course if your program/lib use a makefile, you have to modify it in a similarly way.
+Of course if your program/lib uses a makefile, you have to modify it in a similarly way.
 
+
+<wiki:comment>
 *EXPLAIN HOW TO DISABLE INTERNAL FUNCTION TRACING IN APROF*
+</wiki:comment>
