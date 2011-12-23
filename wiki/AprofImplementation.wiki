@@ -12,7 +12,7 @@ Valgrind, similarly to PIN, does not provide by default function entry/exit poin
 Memory accesses are instrumentated with the `standard` approach under valgrind (see tool `lackey` or `main.c` of `callgrind` tool).
 
 === Details about function entry/exit point prediction ===
-=== Aproximations of memory accesses ===
+=== Approximations of memory accesses ===
 == Metric ==
   * Count basic blocks:
   * Count guest instructions:
