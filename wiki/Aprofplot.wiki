@@ -19,3 +19,5 @@ You can run the built jar in this way:
 cd aprofplot
 ant run
 }}}
+
+[http://aprof.googlecode.com/svn/trunk/aprofplot/graphs/aprof-plot-screenshot-rescaled.png]
