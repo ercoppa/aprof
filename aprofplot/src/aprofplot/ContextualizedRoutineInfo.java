@@ -1,75 +1,119 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package aprofplot;
 
 import java.util.*;
 
-/**
- *
- * @author bruno
- */
 public class ContextualizedRoutineInfo extends RoutineInfo {
-    
-    private int context_id;
-    private ContextualizedRoutineInfo parent;
-    private UncontextualizedRoutineInfo overall;
+ 
+	// Status flag (useful for GUI, maybe should not be placed here...)
+	private boolean collapsed;
+	
+	// All routine contexts
+	private ArrayList<RoutineContext> contexts;
+	
+	// Lazy add list (used for perfomance reason)
+	private ArrayList<Rms> lazy_list;
 
-    public ContextualizedRoutineInfo(int id, String name, String image,
-                                        ContextualizedRoutineInfo parent,
-                                        UncontextualizedRoutineInfo overall) {
-        super(id, name, image);
-        this.parent = parent;
-        this.overall = overall;
-    }
+	public ContextualizedRoutineInfo(int id) {
+		super(id, null, null);
+		this.contexts = new ArrayList<RoutineContext>();
+		this.lazy_list = new ArrayList<Rms>();
+		this.collapsed = true;
+	}
 
-    public void setContextId(int id) {
-        context_id = id;
-    }
+	public ContextualizedRoutineInfo(int id, String name, String image) {
+		super(id, name, image);
+		this.contexts = new ArrayList<RoutineContext>();
+		this.lazy_list = new ArrayList<Rms>();
+		this.collapsed = true;
+	}
 
-    public int getContextId() {
-        return context_id;
-    }
+	public int getContextCount() {
+		return contexts.size();
+	}
 
-    public ContextualizedRoutineInfo getParent() {
-        return parent;
-    }
+	public void addContext(RoutineContext c) {
+		
+		contexts.add(c);
+		c.setContextId(contexts.size());
+		lazy_list.addAll(c.getRmsList());
+	
+	}
+	
+	public void addRmsLazy(Rms r) {
+		lazy_list.add(r);
+	}
+	
+	public void mergeLazyList() {
+		
+		if (lazy_list.size() == 0) return;
+		
+		// Sort the list
+		Collections.sort(lazy_list, new Comparator<Rms> () {
+			@Override
+			public int compare(Rms t1, Rms t2) {
+				if (t1.getRms() == t2.getRms()) return 0;
+				if (t1.getRms() > t2.getRms()) return 1;
+				return -1;
+			}
+		});
+		
+		// Merge duplicates
+		Iterator i = lazy_list.iterator();
+		int current_rms = lazy_list.get(0).getRms();
+		long min_cost = Long.MAX_VALUE;
+		long max_cost = 0;
+		double total_cost = 0;
+		double sqr_total_cost = 0;
+		long occ = 0;
+		while (i.hasNext()) {
+			
+			Rms r = (Rms) i.next();
+			if (r.getRms() > current_rms) {
+				
+				Rms rr = new Rms(current_rms, min_cost, max_cost, total_cost,
+									sqr_total_cost, occ);
+				
+				addRms(rr);
+				
+				// reset
+				min_cost = Long.MAX_VALUE;
+				max_cost = 0;
+				total_cost = 0;
+				sqr_total_cost = 0;
+				occ = 0;
+				current_rms = r.getRms();
+				
+			}
+			
+			// update
+			min_cost = (long) Math.min(min_cost, r.getMinCost());
+			max_cost = (long) Math.max(max_cost, r.getMaxCost());
+			total_cost += r.getTotalCost();
+			sqr_total_cost += r.getSqrTotalCost();
+			occ += r.getOcc();
+			
+		}
+		
+		Rms rr = new Rms(current_rms, min_cost, max_cost, total_cost,
+									sqr_total_cost, occ);
+				
+		addRms(rr);
+		
+		// free lazy list
+		lazy_list.clear();
+		
+	}
 
-    public UncontextualizedRoutineInfo getOverallRoutineInfo() {
-        return overall;
-    }
+	public ArrayList<RoutineContext> getContexts() {
+		return new ArrayList<RoutineContext>(this.contexts);
+	}
 
-    public ArrayList<ContextualizedRoutineInfo> getStackTrace() {
-        ArrayList<ContextualizedRoutineInfo> res = new ArrayList<ContextualizedRoutineInfo>();
-        ContextualizedRoutineInfo current = this;
-        while (current != null) {
-            res.add(current);
-            current = current.getParent();
-        }
-        return res;
-    }
+	public boolean getCollapsed() {
+		return collapsed;
+	}
 
-    @Override
-    public boolean equals(Object o) {
-        if (o != null && getClass().equals(o.getClass())) {
-            ContextualizedRoutineInfo rtn_info = (ContextualizedRoutineInfo)o;
-            return (rtn_info.getID() == this.getID() &&
-                    rtn_info.getContextId() == this.getContextId());
-        }
-        else return false;
-    }
+	public void setCollapsed(boolean coll) {
+		this.collapsed = coll;
+	}
 
-    @Override
-    public int hashCode() {
-        int hash = 7;
-        hash = 67 * hash + this.context_id;
-        return hash;
-    }
-
-    @Override
-    public String toString() {
-        return this.getName() + " (" + this.getContextId() +  "/" + this.getOverallRoutineInfo().getContextCount() + ")";
-    }
 }

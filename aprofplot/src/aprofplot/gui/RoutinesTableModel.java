@@ -1,174 +1,264 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package aprofplot.gui;
 
 import javax.swing.table.*;
 import java.util.*;
 import aprofplot.*;
 
-/**
- *
- * @author bruno
- */
 public class RoutinesTableModel extends AbstractTableModel {
-    
-    private AprofReport report;
-    private ArrayList<RoutineInfo> elements;
-    private String[] columnNames = new String [] {"Routine",
-                                                  "Lib",
-                                                  //"Addr",
-                                                  "Cost",
-                                                  "#Rms",
-                                                  "Cost %",
-                                                  //"Avg ratio (μs)",
-                                                  //"Null",
-                                                  "Cost plot",
-                                                  "Calls",
-                                                  "Calls %",
-                                                  "Collapsed",
-                                                  "#Contexts",
-                                                  "Favourite"
-    };
-    private Class[] columnTypes = new Class[] {String.class,
-                                               String.class,
-                                               //String.class,
-                                               Double.class,
-                                               Integer.class,
-                                               Double.class,
-                                               //Double.class,
-                                               //Integer.class,
-                                               RoutineInfo.class,
-                                               Integer.class,
-                                               Double.class,
-                                               Boolean.class,
-                                               String.class,
-                                               Boolean.class
-    };
+	
+	private AprofReport report;
+	private ArrayList<Routine> elements;
+	private String[] columnNames;
+	private Class[] columnTypes;
+	
+	public RoutinesTableModel(AprofReport report) {
+		setData(report);
+	}
 
-    public RoutinesTableModel(AprofReport report) {
-        this.report = report;
-        if (report != null) elements = report.getRoutines();
-    }
+	private void updateColumns(boolean hasContext) {
+		
+		if (hasContext) {
+			columnNames = new String [] {
+											"Routine",
+											"Lib",
+											"Cost",
+											"#Rms",
+											"Cost %",
+											"Cost plot",
+											"Calls",
+											"Calls %",
+											"Collapsed",
+											"#Contexts",
+											"Favorite"
+										};
 
-    public void setData(AprofReport report) {
-        this.report = report;
-        if (report != null) elements = report.getRoutines();
-        fireTableDataChanged();
-    }
+			columnTypes = new Class[] {
+										String.class,
+										String.class,
+										Double.class,
+										Integer.class,
+										Double.class,
+										RoutineInfo.class,
+										Integer.class,
+										Double.class,
+										Boolean.class,
+										String.class,
+										Boolean.class
+									};
+		} else {
+			
+			columnNames = new String [] {
+											"Routine",
+											"Lib",
+											"Cost",
+											"#Rms",
+											"Cost %",
+											"Cost plot",
+											"Calls",
+											"Calls %",
+											"Favorite"
+										};
 
-    public Class getColumnClass(int columnIndex) {
- 	return columnTypes[columnIndex];
-    }
+			columnTypes = new Class[] {
+										String.class,
+										String.class,
+										Double.class,
+										Integer.class,
+										Double.class,
+										RoutineInfo.class,
+										Integer.class,
+										Double.class,
+										Boolean.class
+									};
+			
+		}
+	}
+	
+	public final void setData(AprofReport report) {
+		
+		this.report = report;
+		if (report != null) {
+		
+			elements = report.getRoutines();
+			updateColumns(report.hasContexts());
+		
+		} else
+			updateColumns(false);
+		
+		fireTableStructureChanged();
+		fireTableDataChanged();
+	}
 
-    public int getColumnCount() {
- 	return columnTypes.length;
-    }
+	@Override
+	public Class getColumnClass(int columnIndex) {
+		return columnTypes[columnIndex];
+	}
 
-    public String getColumnName(int columnIndex) {
- 	return columnNames[columnIndex];
-    }
+	@Override
+	public int getColumnCount() {
+		return columnTypes.length;
+	}
 
-    public int getRowCount() {
-        if (elements == null) return 0;
- 	return elements.size();
-    }
+	@Override
+	public String getColumnName(int columnIndex) {
+		return columnNames[columnIndex];
+	}
 
-    @Override
-    public boolean isCellEditable(int rowIndex, int columnIndex) {
-        if (columnIndex == 11) return true;
-        if (columnIndex == 9) {
-            RoutineInfo rtn = elements.get(rowIndex);
-            return (rtn instanceof ContextualizedRoutineInfo ||
-                    (rtn instanceof UncontextualizedRoutineInfo &&
-                    ((UncontextualizedRoutineInfo)rtn).getContextCount() > 0));
-        }
-        return false;
-    }
+	@Override
+	public int getRowCount() {
+		if (elements == null) return 0;
+		return elements.size();
+	}
 
-    public Object getValueAt(int rowIndex, int columnIndex) {
-        if (elements == null) return null;
-        RoutineInfo rtn_info = elements.get(rowIndex);
-        switch (columnIndex) {
-            case 0: return rtn_info.getName();
-            case 1: return rtn_info.getImage();
-            //case 2: return rtn_info.getAddress();
-            case 2: return new Double(rtn_info.getTotalTime() / 1000000);
-            case 3: return new Integer(rtn_info.getTimeEntries().size());
-            case 4: return new Double((rtn_info.getTotalTime() / report.getTotalTime()) * 100);
-            //case 5: return new Double(rtn_info.getMeanRatio());
-            //case 6: return 0;
-            case 5: return rtn_info;  // time plot
-            case 6: return new Integer(rtn_info.getTotalCalls());
-            case 7: return new Double(((double)rtn_info.getTotalCalls() / (double)report.getTotalCalls()) * 100);
-            case 8: if (rtn_info instanceof UncontextualizedRoutineInfo && ((UncontextualizedRoutineInfo)rtn_info).getContextCount() > 0)
-                        return new Boolean(((UncontextualizedRoutineInfo)rtn_info).getCollapsed());
-                    else return null;
-            case 9: if (rtn_info instanceof UncontextualizedRoutineInfo)
-                        return "" + ((UncontextualizedRoutineInfo)rtn_info).getContextCount();
-                    else return ((ContextualizedRoutineInfo)rtn_info).getContextId() + "/" + ((ContextualizedRoutineInfo)rtn_info).getOverallRoutineInfo().getContextCount();
-            case 10: String fav = "" + rtn_info.getID();
-                    if (rtn_info instanceof ContextualizedRoutineInfo)
-                        fav += ("_" + ((ContextualizedRoutineInfo)rtn_info).getContextId());
-                    return new Boolean(report.isFavorite(fav));
+	@Override
+	public boolean isCellEditable(int rowIndex, int columnIndex) {
+		
+		if (report == null) return false;
+		
+		// Fovourite
+		if (columnIndex == columnNames.length - 1) return true;
+		
+		// Collapse context
+		if (report.hasContexts() && columnIndex == columnNames.length - 3) {
+			Routine rtn = elements.get(rowIndex);
+			return (rtn instanceof ContextualizedRoutineInfo) || 
+						(rtn instanceof RoutineContext);
+		}
 
-            default: return null;
-        }
-    }
+		return false;
+	}
 
-    public void collapseRoutine(RoutineInfo rtn) {
-        if (rtn instanceof UncontextualizedRoutineInfo) {
-            elements.removeAll(((UncontextualizedRoutineInfo)rtn).getContexts());
-            ((UncontextualizedRoutineInfo)rtn).setCollapsed(true);
-        }
-        else {
-            elements.removeAll(((ContextualizedRoutineInfo)rtn).getOverallRoutineInfo().getContexts());
-            ((ContextualizedRoutineInfo)rtn).getOverallRoutineInfo().setCollapsed(true);
-        }
-        this.fireTableDataChanged();
-    }
+	@Override
+	public Object getValueAt(int rowIndex, int columnIndex) {
+		
+		if (elements == null) return null;
+		
+		Routine rtn_info = null;
+		try {
+			rtn_info = elements.get(rowIndex);
+		} catch(IndexOutOfBoundsException e) {
+			return null;
+		}
+		
+		switch (columnIndex) {
+			
+			case 0: // Routine name
+					return rtn_info.getName();
+			
+			case 1: // Routine lib
+					return rtn_info.getImage();
+				
+			case 2: // Routine Total cost
+					return new Double(rtn_info.getTotalCost());
+				
+			case 3: // # Rms
+					return new Integer(rtn_info.getSizeRmsList());
+			
+			case 4: // % total cost rtn wrt all rtns
+					return new Double((rtn_info.getTotalCost() / report.getTotalCost()) * 100);
+			
+			case 5: // Cost Plot: we already set the renderer for Routine class
+					return rtn_info;
+				
+			case 6: // # calls
+					return new Long(rtn_info.getTotalCalls());
+				
+			case 7: // % of rtn calls wrt all rtns
+					return new Double(((double)rtn_info.getTotalCalls() / (double)report.getTotalCalls()) * 100);
+			
+		}
+		
+		if (report.hasContexts()) {
+			
+			if (columnIndex == columnNames.length - 3) { // Collapsed?
+				
+				if (rtn_info instanceof ContextualizedRoutineInfo)
+					return ((ContextualizedRoutineInfo)rtn_info).getCollapsed();
+				else return null;
+				
+			}
+			
+			if (columnIndex == columnNames.length - 2) { // # context
+			
+				 if (rtn_info instanceof ContextualizedRoutineInfo)
+					return "" + ((ContextualizedRoutineInfo)rtn_info).getContextCount();
+				else if (rtn_info instanceof RoutineContext)
+					return ((RoutineContext)rtn_info).getContextId() + "/" + 
+							((RoutineContext)rtn_info).getOverallRoutine().getContextCount();
+				else return "0";
+				
+			}
+			
+		} 
+		
+		// Fav
+		if (columnIndex == columnNames.length -1) {
+			
+			String fav = "" + rtn_info.getID();
+			if (rtn_info instanceof RoutineContext)
+				fav += ("_" + ((RoutineContext)rtn_info).getContextId());
+			return report.isFavorite(fav);
+		
+		}
+		
+		throw new RuntimeException("Invalid Column index");
+		
+	}
 
-    public void expandRoutine(RoutineInfo rtn) {
-        if (rtn instanceof ContextualizedRoutineInfo) return;
-        UncontextualizedRoutineInfo rtn_info = (UncontextualizedRoutineInfo)rtn;
-        elements.addAll(elements.indexOf(rtn_info) + 1, rtn_info.getContexts());
-        rtn_info.setCollapsed(false);
-        this.fireTableDataChanged();
-    }
+	public void collapseRoutine(Routine rtn) {
+		if (rtn instanceof ContextualizedRoutineInfo) {
+			elements.removeAll(((ContextualizedRoutineInfo)rtn).getContexts());
+			((ContextualizedRoutineInfo)rtn).setCollapsed(true);
+		} else {
+			elements.removeAll(((RoutineContext)rtn).getOverallRoutine().getContexts());
+			((RoutineContext)rtn).getOverallRoutine().setCollapsed(true);
+		}
+		this.fireTableDataChanged();
+	}
 
-    public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
-        if (columnIndex == 9) {
-            RoutineInfo rtn = elements.get(rowIndex);
-            if (!((Boolean)aValue).booleanValue()) {
-                expandRoutine(rtn);
-            }
-            else {
-                collapseRoutine(rtn);
-            }
-        }
-        else if (columnIndex == 11) {
-            RoutineInfo rtn_info = elements.get(rowIndex);
-            String fav = ""+rtn_info.getID();
-            if (rtn_info instanceof ContextualizedRoutineInfo)
-                fav += ("_" + ((ContextualizedRoutineInfo)rtn_info).getContextId());
-            if (!report.isFavorite(fav)) report.addToFavorites(fav);
-            else report.removeFromFavorites(fav);
-            this.fireTableCellUpdated(rowIndex, columnIndex);
-        }
-    }
+	public void expandRoutine(Routine rtn) {
+		if (!(rtn instanceof ContextualizedRoutineInfo)) return;
+		ContextualizedRoutineInfo rtn_info = (ContextualizedRoutineInfo)rtn;
+		elements.addAll(elements.indexOf(rtn_info) + 1, rtn_info.getContexts());
+		rtn_info.setCollapsed(false);
+		this.fireTableDataChanged();
+	}
 
-    public RoutineInfo getRoutineInfo(int index) {
-        if (elements == null) return null;
-        return elements.get(index);
-    }
+	@Override
+	public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
+		
+		if (report.hasContexts() && columnIndex == columnNames.length - 3) {
+			
+			Routine rtn = elements.get(rowIndex);
+			if (!((Boolean)aValue).booleanValue())
+				expandRoutine(rtn);
+			else
+				collapseRoutine(rtn);
+			
+		} else if (columnIndex == columnNames.length - 1) {
+			
+			Routine rtn_info = elements.get(rowIndex);
+			String fav = ""+rtn_info.getID();
+			if (rtn_info instanceof RoutineContext)
+				fav += ("_" + ((RoutineContext)rtn_info).getContextId());
+			if (!report.isFavorite(fav)) report.addToFavorites(fav);
+			else report.removeFromFavorites(fav);
+			
+			this.fireTableCellUpdated(rowIndex, columnIndex);
+		
+		}
+	}
 
-    public int getIndex(RoutineInfo r) {
-        return this.elements.indexOf(r);
-    }
+	public Routine getRoutine(int index) {
+		if (elements == null) return null;
+		return elements.get(index);
+	}
 
-    public void refresh() {
-        fireTableDataChanged();
-    }
+	public int getIndex(Routine r) {
+		return this.elements.indexOf(r);
+	}
+
+	public void refresh() {
+		fireTableDataChanged();
+	}
 }

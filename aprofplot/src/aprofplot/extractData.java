@@ -26,6 +26,7 @@ public class extractData {
 			report = new AprofReport(file);
 		} catch (Exception e) {
 			System.out.println("Problem during opening the report: " + args[0]);
+			System.out.println(e);
 			return;
 		}
 		
@@ -38,15 +39,15 @@ public class extractData {
 		
 		System.out.println("Start collecting stats about rich/poor routines");
 		
-		ArrayList<RoutineInfo> rr = report.getRoutines();
+		ArrayList<Routine> rr = report.getRoutines();
 		for (int i = 0; i < rr.size(); i++) {
 			
-			RoutineInfo r = rr.get(i);
-			if (r.getSizeTimeEntries() >= 10) count_rich++;
+			Routine r = rr.get(i);
+			if (r.getSizeRmsList() >= 10) count_rich++;
 			else {
 				
 				count_poor++;
-				int index_max = (int) (Math.log(r.getMaxTime()) / Math.log(2));
+				int index_max = (int) (Math.log(r.getMaxCost()) / Math.log(2));
 				int index_avg = (int) (Math.log(r.getMaxAvgCost()) / Math.log(2));
 				
 				if (index_max < 0) index_max = 0;
