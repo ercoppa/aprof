@@ -1,10 +1,10 @@
 package aprofplot.gui;
 
 import aprofplot.*;
+import aprofplot.jfreechart.SamplingXYLineAndShapeRenderer;
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
 import java.util.*;
-import javax.swing.*;
 import org.jfree.chart.*;
 import org.jfree.chart.axis.*;
 import org.jfree.chart.plot.*;
@@ -33,14 +33,18 @@ public class GraphPanel extends javax.swing.JPanel {
 	
 	// Status of graph
 	public static final int MAXIMIZED = 0;
-	public static final int MAGNIFIED = 1; // zoom
+	public static final int ZOOMED = 1;
 
+	// Perfomance monitor
+	PerfomanceMonitor perf = null;
+	
 	private int graph_type;
 	private int cost_type;
 	private MainWindow main_window;
 	private boolean x_log_scale = false;
 	private boolean y_log_scale = false;
 	private int status = MAXIMIZED;
+	private boolean zoomed = false;
 	private boolean dragging = false;
 	private int group_threshold_base = 1;
 	private int group_threshold = 1;
@@ -51,6 +55,12 @@ public class GraphPanel extends javax.swing.JPanel {
 	private String[] filters;
 	private Routine rtn_info = null;
 
+	// Temp global vars
+	private int elem_slot = 0, slot_start = 0;
+	private double sum_y = 0, sum_y2 = 0, sum_y3 = 0, sum_x = 0;
+	private long sum_occ = 0;
+	
+	// Graphics
 	private XYPlot plot;
 	private JFreeChart chart;
 	private NumberAxis rangeAxis, domainAxis;
@@ -81,7 +91,6 @@ public class GraphPanel extends javax.swing.JPanel {
 
 		Dimension d = new Dimension(370, 300);
 		this.setPreferredSize(d);
-
 		// we will use 12 series of points, one for each color we have choosen 
 		data = new XYSeriesCollection();
 		series = new XYSeries[12];
@@ -108,7 +117,7 @@ public class GraphPanel extends javax.swing.JPanel {
 												false, // tooltips?
 												false // urls?
 												);
-
+		
 		chart.setAntiAlias(false);
 		plot = (XYPlot) chart.getPlot();
 		plot.setBackgroundPaint(Color.WHITE);
@@ -116,8 +125,20 @@ public class GraphPanel extends javax.swing.JPanel {
 		plot.setDomainGridlinePaint(Color.LIGHT_GRAY);
 		plot.setRangeGridlinePaint(Color.LIGHT_GRAY);
 		if (legend) plot.setFixedLegendItems(buildLegend());
-
-		renderer = plot.getRenderer();
+		
+		// For routine plot we use the standard renderer, instead for all other
+		// graph we use a custom sampling renderer
+		if (graph_type == RTN_PLOT) {
+		
+			renderer = plot.getRenderer();
+		
+		} else {
+		
+			renderer = new SamplingXYLineAndShapeRenderer(false, true);
+			plot.setRenderer(renderer);
+		
+		}
+		
 		for (int i = 0; i < series.length; i++) {
 			
 			// Associate each series with a color, shape, line, etc
@@ -199,6 +220,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		updateGraphTitle();
 		updateXAxis(false);
 		updateYAxis(false);
+		
 	}
 	
 	private LegendItemCollection buildLegend() {
@@ -285,6 +307,7 @@ public class GraphPanel extends javax.swing.JPanel {
         jButton1 = new javax.swing.JButton();
         jToggleButton3 = new javax.swing.JToggleButton();
         jToggleButton4 = new javax.swing.JToggleButton();
+        jButton3 = new javax.swing.JButton();
         jPanel3 = new javax.swing.JPanel();
         jPanel4 = new javax.swing.JPanel();
         jLabel2 = new javax.swing.JLabel();
@@ -663,7 +686,7 @@ public class GraphPanel extends javax.swing.JPanel {
         });
         jPanel2.add(jButton1);
 
-        jToggleButton3.setFont(new java.awt.Font("Ubuntu", 1, 13)); // NOI18N
+        jToggleButton3.setFont(new java.awt.Font("Ubuntu", 1, 13));
         jToggleButton3.setText("T");
         jToggleButton3.setToolTipText("Select cost type");
         jToggleButton3.setBorderPainted(false);
@@ -677,7 +700,7 @@ public class GraphPanel extends javax.swing.JPanel {
         jToggleButton3.setVisible(false);
         jPanel2.add(jToggleButton3);
 
-        jToggleButton4.setFont(new java.awt.Font("Ubuntu", 1, 13)); // NOI18N
+        jToggleButton4.setFont(new java.awt.Font("Ubuntu", 1, 13));
         jToggleButton4.setText("S");
         jToggleButton4.setToolTipText("Smooth point window");
         jToggleButton4.setBorderPainted(false);
@@ -690,6 +713,18 @@ public class GraphPanel extends javax.swing.JPanel {
         if (graph_type == RTN_PLOT)
         jToggleButton4.setVisible(false);
         jPanel2.add(jToggleButton4);
+
+        jButton3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/zoom_out_16.png"))); // NOI18N
+        jButton3.setToolTipText("Zoom out");
+        jButton3.setBorderPainted(false);
+        jButton3.setEnabled(false);
+        jButton3.setVisible(false);
+        jButton3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton3ActionPerformed(evt);
+            }
+        });
+        jPanel2.add(jButton3);
 
         jPanel1.add(jPanel2, java.awt.BorderLayout.WEST);
         jPanel1.add(jPanel3, java.awt.BorderLayout.CENTER);
@@ -709,22 +744,29 @@ public class GraphPanel extends javax.swing.JPanel {
 
 	private void chartMouseReleased() {
 		
-		if (true) return;
+		double cmin_x = domainAxis.getLowerBound();
+		double cmax_x = domainAxis.getUpperBound();
+		double cmin_y = rangeAxis.getLowerBound();
+		double cmax_y = rangeAxis.getUpperBound();
 		
-		if (this.dragging) {
-			double new_min_x = domainAxis.getLowerBound();
-			double new_max_x = domainAxis.getUpperBound();
-			double new_min_y = domainAxis.getLowerBound();
-			double new_max_y = domainAxis.getUpperBound();
-			if (min_x != new_min_x || max_x != new_max_x || min_y != new_min_y || max_y != new_max_y) {
-				//System.out.println("Chart zoomed");
-				setViewBounds(new_min_x, new_max_x, new_min_y, new_max_y);
-				if (this.main_window.arePlotsLinked()) {
-					
-				}
-			}
-			this.dragging = false;
+		// Have we zoomed?
+		boolean changed_bounds = (min_x != cmin_x) || (max_x != cmax_x)
+									|| (cmin_y != min_y) || (cmax_y != max_y);
+		if (this.dragging && changed_bounds) {
+			
+			zoomResetVisible(true);
+			this.status = ZOOMED;
+			min_x = cmin_x;
+			max_x = cmax_x;
+			min_y = cmin_y;
+			max_y = cmax_y;
+			
+			//System.out.println("X range: " + new_min_x + ":" + new_max_x);
+			//System.out.println("Y range: " + new_min_y + ":" + new_max_y);
+			
 		}
+		
+		this.dragging = false;
 	}
 
 	private void chartMouseDragged() {
@@ -811,14 +853,20 @@ public class GraphPanel extends javax.swing.JPanel {
 		
 		}
 		
-		if (!reset) {
+		if (!reset && status == ZOOMED) {
 			
-			this.domainAxis.setLowerBound(min_x);
-			this.domainAxis.setUpperBound(max_x);
+			if (graph_type == COST_PLOT)
+				System.out.println("Set range x: " + min_x + " " + max_x);
+			domainAxis.setRange(min_x, max_x);
+		
+		} else {
+			
+			domainAxis.setAutoRangeIncludesZero(false);
 		
 		}
+		
 		plot.setDomainAxis(domainAxis);
-		domainAxis.setAutoRangeIncludesZero(false);
+
 	}
 
 	private void updateYAxis(boolean reset) {
@@ -839,16 +887,21 @@ public class GraphPanel extends javax.swing.JPanel {
 		
 		}
 		
-		if (!reset) {
+		if (!reset && status == ZOOMED) {
 			
-			this.rangeAxis.setLowerBound(min_y);
-			this.rangeAxis.setUpperBound(max_y);
+			//System.out.println("Set range y: " + min_y + " " + max_y);
+			rangeAxis.setRange(min_y, max_y);
 			if (graph_type == GraphPanel.FREQ_PLOT)
 				this.rangeAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
 		
+		} else {
+			
+			rangeAxis.setAutoRangeIncludesZero(false);
+			
 		}
+
 		plot.setRangeAxis(rangeAxis);
-		rangeAxis.setAutoRangeIncludesZero(false);
+
 	}
 	
 	private void updateGraphTitle() {
@@ -857,13 +910,13 @@ public class GraphPanel extends javax.swing.JPanel {
 		switch (this.graph_type) {
 			
 			case COST_PLOT: s = "Cost plot"; break;
-			case FREQ_PLOT: s = "Frequency plot"; break;
+			case FREQ_PLOT: s = "Rms frequency plot"; break;
 			case MMM_PLOT: s = "Min/Avg/Max cost plot"; break;
 			case TOTALCOST_PLOT: s = "Total cost plot"; break;
-			case VAR_PLOT: s = "Variance plot"; break;
-			case RTN_PLOT: s = "Program statistics"; break;
+			case VAR_PLOT: s = "Cost variance plot"; break;
+			case RTN_PLOT: s = "Program statistics plot"; break;
 			case MCC_PLOT: s = "Mean cumulative cost plot"; break;
-			case RATIO_PLOT: s = "Guess ratio plot - T(n) / ";
+			case RATIO_PLOT: s = "Curve bounding plot - T(n) / ";
 							double[] rc = Rms.getRatioConfig();
 							int k = 0;
 							for (int i =  0; i < rc.length; i++) {
@@ -893,22 +946,26 @@ public class GraphPanel extends javax.swing.JPanel {
 		chart.setTitle(new TextTitle(s, new Font(Font.SERIF, Font.BOLD, 14)));
 	}
 
-	public void setViewBounds(double min_x, double max_x, double min_y, double max_y) {
+	public void zoomResetVisible(boolean visible) {
 		
-		this.status = MAGNIFIED;
-		this.min_x = min_x;
-		this.min_y = min_y;
-		this.min_y = min_y;
-		this.max_y = max_y;
-		updateXAxis(false);
-		updateYAxis(false);
+		if (visible) {
+		
+			jButton3.setEnabled(true);
+			jButton3.setVisible(true);
+		
+		} else {
+		
+			jButton3.setEnabled(false);
+			jButton3.setVisible(false);
+			
+		}
 		
 	}
-
+	
 	public void refreshFilter() {
 		
 		filters = main_window.getRmsTableFilter();
-		refresh();
+		refresh(true);
 	
 	}
 
@@ -916,7 +973,8 @@ public class GraphPanel extends javax.swing.JPanel {
 		
 		x_log_scale = logscale;
 		jToggleButton1.setSelected(logscale);
-		updateXAxis(true);
+		updateXAxis(false);
+		refresh(false);
 	
 	}
 
@@ -924,7 +982,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		
 		y_log_scale = logscale;
 		jToggleButton2.setSelected(logscale);
-		updateYAxis(true);
+		updateYAxis(false);
 	
 	}
 
@@ -940,7 +998,7 @@ public class GraphPanel extends javax.swing.JPanel {
 							break;
 		}
 		this.cost_type = cost_type;
-		refresh();
+		refresh(false);
 	
 	}
 
@@ -968,7 +1026,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		}
 		
 		smooth_threshold = t;
-		refresh();
+		refresh(false);
 	
 	}
 	
@@ -995,25 +1053,24 @@ public class GraphPanel extends javax.swing.JPanel {
 					break;
 		}
 		
-		group_threshold = t;
-		refresh();
+		group_threshold = (int) Math.pow(group_threshold_base, t-1);
+		refresh(false);
 		
 	}
-
+	
 	public void maximize() {
 		
 		this.status = MAXIMIZED;
 		
 		//System.out.println("Maximize " + n++);
-		jButton2.setToolTipText("autoscale graph");
-		jButton2.setIcon(new ImageIcon(getClass().getResource("/aprofplot/gui/resources/Minimize-icon.png")));
+		//jButton2.setToolTipText("autoscale graph");
+		//jButton2.setIcon(new ImageIcon(getClass().getResource("/aprofplot/gui/resources/Minimize-icon.png")));
 		
 		updateXAxis(true);
 		updateYAxis(true);
-		domainAxis.setAutoRangeIncludesZero(false);
-		rangeAxis.setAutoRangeIncludesZero(false);
-
+		
 		max_x = domainAxis.getUpperBound();
+		max_y = rangeAxis.getUpperBound();
 		if (graph_type == RTN_PLOT) {
 			min_x = -1;
 			min_y = -10;
@@ -1021,7 +1078,8 @@ public class GraphPanel extends javax.swing.JPanel {
 			min_x = domainAxis.getLowerBound();
 			min_y = rangeAxis.getLowerBound();
 		}
-		max_y = rangeAxis.getUpperBound();
+		
+		//System.out.println("Min_x: " + min_x + " Max_x: " + max_x);
 	}
 
 	private void jToggleButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton1ActionPerformed
@@ -1063,7 +1121,7 @@ public class GraphPanel extends javax.swing.JPanel {
 
 	private void jRadioButtonMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem1ActionPerformed
 		
-		// Grouping menu > tail entry
+		// Grouping menu > first entry
 		setGroupThreshold(1);
 		if (this.main_window.arePlotsLinked()) main_window.setGroupThresholdAll(graph_type, 1);
 		
@@ -1169,11 +1227,11 @@ public class GraphPanel extends javax.swing.JPanel {
 
 	private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
 		
-		// ratio menu > tail entry
+		// ratio menu > first entry
 		double[] rc = {1, 0, 0};
 		Rms.setRatioConfig(rc);
 		updateGraphTitle();
-		refresh();
+		refresh(true);
 		main_window.refreshTables();
 		
 	}//GEN-LAST:event_jMenuItem1ActionPerformed
@@ -1184,7 +1242,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		double[] rc = {1, 0, 1};
 		Rms.setRatioConfig(rc);
 		updateGraphTitle();
-		refresh();
+		refresh(true);
 		main_window.refreshTables();
 		
 	}//GEN-LAST:event_jMenuItem2ActionPerformed
@@ -1195,7 +1253,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		double[] rc = {1, 1, 0};
 		Rms.setRatioConfig(rc);
 		updateGraphTitle();
-		refresh();
+		refresh(true);
 		main_window.refreshTables();
 		
 	}//GEN-LAST:event_jMenuItem3ActionPerformed
@@ -1206,7 +1264,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		double[] rc = {1.5, 0, 0};
 		Rms.setRatioConfig(rc);
 		updateGraphTitle();
-		refresh();
+		refresh(true);
 		main_window.refreshTables();
 		
 	}//GEN-LAST:event_jMenuItem4ActionPerformed
@@ -1217,7 +1275,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		double[] rc = {2, 0, 0};
 		Rms.setRatioConfig(rc);
 		updateGraphTitle();
-		refresh();
+		refresh(true);
 		main_window.refreshTables();
 		
 	}//GEN-LAST:event_jMenuItem5ActionPerformed
@@ -1228,7 +1286,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		double[] rc = {2.5, 0, 0};
 		Rms.setRatioConfig(rc);
 		updateGraphTitle();
-		refresh();
+		refresh(true);
 		main_window.refreshTables();
 		
 	}//GEN-LAST:event_jMenuItem6ActionPerformed
@@ -1239,7 +1297,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		double[] rc = {3, 0, 0};
 		Rms.setRatioConfig(rc);
 		updateGraphTitle();
-		refresh();
+		refresh(true);
 		main_window.refreshTables();
 		
 	}//GEN-LAST:event_jMenuItem7ActionPerformed
@@ -1255,7 +1313,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		}
 		Rms.setRatioConfig(rc);
 		updateGraphTitle();
-		refresh();
+		refresh(true);
 		main_window.refreshTables();
 		
 	}//GEN-LAST:event_jMenuItem8ActionPerformed
@@ -1267,7 +1325,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		rc[2]++;
 		Rms.setRatioConfig(rc);
 		updateGraphTitle();
-		refresh();
+		refresh(true);
 		main_window.refreshTables();
 		
 	}//GEN-LAST:event_jMenuItem9ActionPerformed
@@ -1283,7 +1341,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		}
 		Rms.setRatioConfig(rc);
 		updateGraphTitle();
-		refresh();
+		refresh(true);
 		main_window.refreshTables();
 		
 	}//GEN-LAST:event_jMenuItem10ActionPerformed
@@ -1295,7 +1353,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		rc[1]++;
 		Rms.setRatioConfig(rc);
 		updateGraphTitle();
-		refresh();
+		refresh(true);
 		main_window.refreshTables();
 		
 	}//GEN-LAST:event_jMenuItem11ActionPerformed
@@ -1320,7 +1378,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		}
 		Rms.setRatioConfig(rc);
 		updateGraphTitle();
-		refresh();
+		refresh(true);
 		main_window.refreshTables();
 		
 	}//GEN-LAST:event_jMenuItem12ActionPerformed
@@ -1345,7 +1403,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		}
 		Rms.setRatioConfig(rc);
 		updateGraphTitle();
-		refresh();
+		refresh(true);
 		main_window.refreshTables();
 	}//GEN-LAST:event_jMenuItem13ActionPerformed
 
@@ -1369,7 +1427,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		}
 		Rms.setRatioConfig(rc);
 		updateGraphTitle();
-		refresh();
+		refresh(true);
 		main_window.refreshTables();
 		
 	}//GEN-LAST:event_jMenuItem14ActionPerformed
@@ -1402,7 +1460,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		
 		cost_type = MAX_COST;
 		if (main_window.arePlotsLinked()) main_window.setGroupCostAll(graph_type, cost_type);
-		refresh();
+		refresh(true);
 		
 	}//GEN-LAST:event_jRadioButtonMenuItem7ActionPerformed
 
@@ -1410,7 +1468,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		
 		cost_type = AVG_COST;
 		if (main_window.arePlotsLinked()) main_window.setGroupCostAll(graph_type, cost_type);
-		refresh();
+		refresh(true);
 		
 	}//GEN-LAST:event_jRadioButtonMenuItem8ActionPerformed
 
@@ -1418,7 +1476,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		
 		cost_type = MIN_COST;
 		if (main_window.arePlotsLinked()) main_window.setGroupCostAll(graph_type, cost_type);
-		refresh();
+		refresh(true);
 		
 	}//GEN-LAST:event_jRadioButtonMenuItem9ActionPerformed
 
@@ -1491,6 +1549,21 @@ public class GraphPanel extends javax.swing.JPanel {
 		
 	}//GEN-LAST:event_jRadioButtonMenuItem15ActionPerformed
 
+	private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
+		
+		// Zoom out button pressed
+		chartPanel.restoreAutoBounds();
+		min_x = domainAxis.getLowerBound();
+		max_x = domainAxis.getUpperBound();
+		min_y = rangeAxis.getLowerBound();
+		max_y = rangeAxis.getUpperBound();
+		zoomResetVisible(false);
+		this.status = MAXIMIZED;
+		
+		//chartPanel.repaint();
+		
+	}//GEN-LAST:event_jButton3ActionPerformed
+
 	private boolean filterRms(Rms t) {
 		
 		if (filters == null) return true;
@@ -1523,7 +1596,69 @@ public class GraphPanel extends javax.swing.JPanel {
 		}
 		return true;
 	}
-
+	
+	public void setRoutine(Routine r) {
+		
+		rtn_info = r;
+		zoomResetVisible(false);
+		
+		disableNotification(true);
+		for (int i = 0; i < series.length; i++) series[i].clear();
+		disableNotification(false);
+		
+		if (this.rtn_info != null && graph_type != RTN_PLOT) {
+			
+			int max = rtn_info.getMaxRms();
+			group_threshold_base = (int) Math.log10(max) + 1;
+			smooth_threshold_base = (int) Math.log10(max) + 1;
+			
+			// reset temp global vars
+			group_threshold = 1;
+			elem_slot = 0; slot_start = 0;
+			sum_y = 0; sum_y2 = 0; sum_y3 = 0; sum_x = 0;
+			sum_occ = 0;
+			
+			if (group_threshold_base > 1) {
+				jRadioButtonMenuItem1.setText(Integer.toString((int)Math.pow(group_threshold_base, 0)));
+				jRadioButtonMenuItem2.setText(Integer.toString((int)Math.pow(group_threshold_base, 1)));
+				jRadioButtonMenuItem3.setText(Integer.toString((int)Math.pow(group_threshold_base, 2)));
+				jRadioButtonMenuItem4.setText(Integer.toString((int)Math.pow(group_threshold_base, 3)));
+				jRadioButtonMenuItem5.setText(Integer.toString((int)Math.pow(group_threshold_base, 4)));
+				jRadioButtonMenuItem6.setText(Integer.toString((int)Math.pow(group_threshold_base, 5)));
+			}
+			
+			if (smooth_threshold_base > 1) {
+				
+				int val = (int)Math.pow(smooth_threshold_base, 0);
+				if (val % 2 == 0) val++; // we want an odd number...
+				jRadioButtonMenuItem10.setText(Integer.toString(val));
+				
+				val = (int)Math.pow(smooth_threshold_base, 1);
+				if (val % 2 == 0) val++;
+				jRadioButtonMenuItem11.setText(Integer.toString(val));
+				
+				val = (int)Math.pow(smooth_threshold_base, 2);
+				if (val % 2 == 0) val++;
+				jRadioButtonMenuItem12.setText(Integer.toString(val));
+				
+				val = (int)Math.pow(smooth_threshold_base, 3);
+				if (val % 2 == 0) val++;
+				jRadioButtonMenuItem13.setText(Integer.toString(val));
+				
+				val = (int)Math.pow(smooth_threshold_base, 4);
+				if (val % 2 == 0) val++;
+				jRadioButtonMenuItem14.setText(Integer.toString(val));
+				
+				val = (int)Math.pow(smooth_threshold_base, 5);
+				if (val % 2 == 0) val++;
+				jRadioButtonMenuItem15.setText(Integer.toString(val));
+			
+			}
+			
+		}
+		
+	}
+	
 	private double getY(Rms te, int slot) {
 		
 		double y = 0;
@@ -1562,6 +1697,133 @@ public class GraphPanel extends javax.swing.JPanel {
 		return y;
 	}
 	
+	public void addPoint(Rms te) {
+					
+		double x = te.getRms();
+		double y = 0;
+
+		if (group_threshold == 1 && smooth_threshold == 1) { 
+
+			if (filterRms(te)) {
+
+				if (graph_type == MMM_PLOT) {
+
+					series[0].add(x, getY(te, 0), false);
+					series[5].add(x, getY(te, 1), false);
+					series[11].add(x, getY(te, 2), false);
+
+				} else if (graph_type == FREQ_PLOT || graph_type == MCC_PLOT) {
+
+					series[0].add(x, getY(te, 0), false);
+
+				} else {
+
+					y = getY(te, 0);
+					double index = Math.round(Math.log10(te.getOcc()) / Math.log10(2));
+					if (index > 11) index = 11;
+					if (index < 0) index = 0;
+					series[(int)index].add(x, y, false);
+
+				}
+
+			}
+
+		} else if (group_threshold > 1 && smooth_threshold == 1) {
+
+			int current_slot = (int) ((int) x - (x % group_threshold));
+
+			if (current_slot != slot_start) {
+
+				// Ok, this rms is for a new slot, so we need to create
+				// a point in the graph for the old slot, and reset temp
+				// global counters and then add current value 
+
+				if (elem_slot > 0) add_group_point();
+				slot_start = current_slot;
+
+			}
+
+			// same slot, add value to current slot
+			if (filterRms(te)) {
+
+				sum_x += x;
+				sum_y += getY(te, 0);
+				sum_occ += te.getOcc(); // need for choosing color
+
+				if (graph_type == MMM_PLOT) {
+					sum_y2 += getY(te, 1);
+					sum_y3 += getY(te, 2);
+				}
+
+				elem_slot++;
+
+			}
+			
+			// Is this the last point?
+			if (x == rtn_info.getMaxRms()) add_group_point();
+
+		} else if (group_threshold == 1 && smooth_threshold > 1) {
+
+			throw new RuntimeException("Not yet implemented :(");
+			
+		} else {
+
+			throw new RuntimeException("Group and smooth threshold cannot be both greater than one");
+
+		}
+		
+	}
+	
+	private void add_group_point() {
+		
+		double mean_x = sum_x / elem_slot;
+						
+		if (graph_type == GraphPanel.FREQ_PLOT) {
+
+			series[0].add(mean_x, sum_y, false);
+
+		} else if (graph_type == MMM_PLOT) {
+
+			double mean_y = sum_y / elem_slot;
+			series[0].add(mean_x, mean_y, false);
+			mean_y = sum_y2 / elem_slot;
+			series[5].add(mean_x, mean_y, false);
+			mean_y = sum_y3 / elem_slot;
+			series[11].add(mean_x, mean_y, false);
+
+		} else if (graph_type == MCC_PLOT) {
+
+			double mean_y = sum_y / elem_slot;
+			series[0].add(mean_x, mean_y, false);
+
+		} else {
+
+			double mean_y = sum_y / elem_slot;
+			double index = Math.round(Math.log10(sum_occ) / Math.log10(2));
+			if (index > 11) index = 11;
+			if (index < 0) index = 0;
+			series[(int)index].add(mean_x, mean_y, false);
+
+		}
+
+		sum_x = 0;
+		sum_y = 0;
+		sum_occ = 0; // need for choosing color
+
+		if (graph_type == MMM_PLOT) {
+			sum_y2 = 0;
+			sum_y3 = 0;
+		}
+
+		elem_slot = 0;
+		
+	}
+	
+	/*
+	 * populate this chart based on current routine
+	 * NOTE: avoid use of this method when possible, this method will not "share"
+	 *       any work with other active graphs (e.g. iteration over rms list)
+	 */
 	private void populateChart() {
 		
 		//System.out.println("Inside populate chart");
@@ -1587,23 +1849,23 @@ public class GraphPanel extends javax.swing.JPanel {
 				num_at_least += num_class_sms[k];
 				
 				y = 100 * ((double) tot_calls_class_sms[k] / (double) report.getTotalCalls());
-				series[0].add(x, y);
+				series[0].add(x, y, false);
 
 				y = 100 * ((double)((double) tot_calls_class_sms[k] / (double) num_class_sms[k])
 										/ (double) most_called);
-				series[1].add(x, y);
+				series[1].add(x, y, false);
 				
 				y = 100 * ((double) num_class_sms[k] / (double)report.getRoutineCount());
-				series[2].add(x, y);
+				series[2].add(x, y, false);
 			   
 				y = 100 * ((double) max_calls_class_sms[k] / (double) most_called);
-				series[3].add(x, y);
+				series[3].add(x, y, false);
 				
 				y = 100 * ((double) num_at_least / (double)report.getRoutineCount());
-				series[4].add(x, y);
+				series[4].add(x, y, false);
 			   
 			}
-
+			
 			return;
 		}
 		
@@ -1616,32 +1878,8 @@ public class GraphPanel extends javax.swing.JPanel {
 			while (rms_list.hasNext()) {
 				
 				Rms te = (Rms) rms_list.next();
-				if (filterRms(te)) {
-					
-					double x = te.getRms();
-					double y = 0;
-					
-					if (graph_type == MMM_PLOT) {
-						
-						series[0].add(x, getY(te, 0));
-						series[5].add(x, getY(te, 1));
-						series[11].add(x, getY(te, 2));
-					
-					} else if (graph_type == FREQ_PLOT || graph_type == MCC_PLOT) {
-						
-						series[0].add(x, getY(te, 0));
-					
-					} else {
-						
-						y = getY(te, 0);
-						double index = Math.round(Math.log10(te.getOcc()) / Math.log10(2));
-						if (index > 11) index = 11;
-						if (index < 0) index = 0;
-						series[(int)index].add(x, y);
-					
-					}
-					
-				}
+				addPoint(te);
+				
 			}
 			
 			//System.out.println("Terminated populate");
@@ -1657,7 +1895,7 @@ public class GraphPanel extends javax.swing.JPanel {
 			double sum_x = 0;
 			double sum_y = 0, sum_y2 = 0, sum_y3 = 0;
 			long sum_occurrences = 0;
-			int t = (int) Math.pow(group_threshold_base, group_threshold-1);
+			int t = group_threshold;
 			int k = 0;
 			Iterator rms_list = this.rtn_info.getRmsListIterator();
 			while(rms_list.hasNext()) {
@@ -1730,24 +1968,24 @@ public class GraphPanel extends javax.swing.JPanel {
 			if (k > 0) {
 				double mean_x = (k == 0) ? sum_x : sum_x / k;
 				if (graph_type == GraphPanel.FREQ_PLOT) {
-					series[0].add(mean_x, sum_y);
+					series[0].add(mean_x, sum_y, false);
 					if (sum_y > max_y) max_y = sum_y;
 				} else if (graph_type == MMM_PLOT) {
 					double mean_y = (k == 0) ? sum_y : sum_y / k;
 					double mean_y2 = (k == 0) ? sum_y2 : sum_y2 / k;
 					double mean_y3 = (k == 0) ? sum_y3 : sum_y3 / k;
-					series[0].add(mean_x, mean_y);
-					series[5].add(mean_x, mean_y2);
-					series[11].add(mean_x, mean_y3);
+					series[0].add(mean_x, mean_y, false);
+					series[5].add(mean_x, mean_y2, false);
+					series[11].add(mean_x, mean_y3, false);
 				} else if (graph_type == MCC_PLOT) {
 					double mean_y = (k == 0) ? sum_y : sum_y / k;
-					series[0].add(mean_x, mean_y);
+					series[0].add(mean_x, mean_y, false);
 				} else {
 					double mean_y = (k == 0) ? sum_y : sum_y / k;
 					double index = Math.round(Math.log10(sum_occurrences) / Math.log10(2));
 					if (index > 11) index = 11;
 					if (index < 0) index = 0;
-					series[(int)index].add(mean_x, mean_y);
+					series[(int)index].add(mean_x, mean_y, false);
 				}
 			}
 		
@@ -1883,20 +2121,20 @@ public class GraphPanel extends javax.swing.JPanel {
 
 				if (graph_type == MMM_PLOT) {
 
-					series[0].add(x, sum/n);
-					series[5].add(x, sum2/n);
-					series[11].add(x, sum3/n);
+					series[0].add(x, sum/n, false);
+					series[5].add(x, sum2/n, false);
+					series[11].add(x, sum3/n, false);
 
 				} else if (graph_type == MCC_PLOT || graph_type == FREQ_PLOT) {
 
-					series[0].add(x, sum/n);
+					series[0].add(x, sum/n, false);
 
 				} else {
 
 					double index = Math.round(Math.log10(l[current % l.length].getOcc()) / Math.log10(2));
 					if (index > 11) index = 11;
 					if (index < 0) index = 0;
-					series[(int)index].add(x, sum/n);
+					series[(int)index].add(x, sum/n, false);
 
 					/*
 					if (graph_type == COST_PLOT)
@@ -1920,6 +2158,18 @@ public class GraphPanel extends javax.swing.JPanel {
 
 	}
 
+	public void setPerfomanceMonitor(PerfomanceMonitor p) {
+		
+		perf = p;
+		chart.addProgressListener(p);
+		
+	}
+	
+	
+	/*
+	 * When possibile avoid use of this method, better share elaboration
+	 * between all active graphs (e.g. iteration over rms list)
+	 */
 	public void setData(Routine r) {
 		
 		if (r == null && graph_type != RTN_PLOT) {
@@ -1927,53 +2177,8 @@ public class GraphPanel extends javax.swing.JPanel {
 			return;
 		}
 		
-		this.rtn_info = r;
-		if (this.rtn_info != null && graph_type != RTN_PLOT) {
-			
-			int max = rtn_info.getMaxRms();
-			group_threshold_base = (int) Math.log10(max) + 1;
-			smooth_threshold_base = (int) Math.log10(max) + 1;
-			
-			if (group_threshold_base > 1) {
-				jRadioButtonMenuItem1.setText(Integer.toString((int)Math.pow(group_threshold_base, 0)));
-				jRadioButtonMenuItem2.setText(Integer.toString((int)Math.pow(group_threshold_base, 1)));
-				jRadioButtonMenuItem3.setText(Integer.toString((int)Math.pow(group_threshold_base, 2)));
-				jRadioButtonMenuItem4.setText(Integer.toString((int)Math.pow(group_threshold_base, 3)));
-				jRadioButtonMenuItem5.setText(Integer.toString((int)Math.pow(group_threshold_base, 4)));
-				jRadioButtonMenuItem6.setText(Integer.toString((int)Math.pow(group_threshold_base, 5)));
-			}
-			
-			if (smooth_threshold_base > 1) {
-				
-				int val = (int)Math.pow(smooth_threshold_base, 0);
-				if (val % 2 == 0) val++; // we want an odd number...
-				jRadioButtonMenuItem10.setText(Integer.toString(val));
-				
-				val = (int)Math.pow(smooth_threshold_base, 1);
-				if (val % 2 == 0) val++;
-				jRadioButtonMenuItem11.setText(Integer.toString(val));
-				
-				val = (int)Math.pow(smooth_threshold_base, 2);
-				if (val % 2 == 0) val++;
-				jRadioButtonMenuItem12.setText(Integer.toString(val));
-				
-				val = (int)Math.pow(smooth_threshold_base, 3);
-				if (val % 2 == 0) val++;
-				jRadioButtonMenuItem13.setText(Integer.toString(val));
-				
-				val = (int)Math.pow(smooth_threshold_base, 4);
-				if (val % 2 == 0) val++;
-				jRadioButtonMenuItem14.setText(Integer.toString(val));
-				
-				val = (int)Math.pow(smooth_threshold_base, 5);
-				if (val % 2 == 0) val++;
-				jRadioButtonMenuItem15.setText(Integer.toString(val));
-			
-			}
-			
-		}
-
-		refresh();
+		setRoutine(r);
+		refresh(true);
 
 	}
 
@@ -1998,14 +2203,18 @@ public class GraphPanel extends javax.swing.JPanel {
 		
 	}
 
-	private void refresh() {
+	private void refresh(boolean resetAxis) {
+		
+		if (perf != null) perf.start(this, PerfomanceMonitor.ELABORATE);
 		
 		disableNotification(true);
 		
 		populateChart();
-		maximize();
+		if (resetAxis) maximize();
 		
 		disableNotification(false);
+		
+		if (perf != null) perf.stop(this, PerfomanceMonitor.ELABORATE);
 		
 		System.gc();
 		
@@ -2030,6 +2239,7 @@ public class GraphPanel extends javax.swing.JPanel {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
+    private javax.swing.JButton jButton3;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JMenuItem jMenuItem10;

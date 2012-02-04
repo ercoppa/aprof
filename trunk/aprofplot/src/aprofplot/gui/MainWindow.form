@@ -620,7 +620,10 @@
         </Constraint>
       </Constraints>
 
-      <Layout class="org.netbeans.modules.form.compat2.layouts.DesignBoxLayout"/>
+      <Layout class="org.netbeans.modules.form.compat2.layouts.DesignGridLayout">
+        <Property name="columns" type="int" value="0"/>
+        <Property name="rows" type="int" value="1"/>
+      </Layout>
       <SubComponents>
         <Component class="javax.swing.JLabel" name="jLabel1">
           <Properties>
@@ -659,6 +662,25 @@
               <Border info="org.netbeans.modules.form.compat2.border.EtchedBorderInfo">
                 <EtchetBorder/>
               </Border>
+            </Property>
+          </Properties>
+        </Component>
+        <Component class="javax.swing.JLabel" name="jLabel9">
+        </Component>
+        <Component class="javax.swing.JLabel" name="jLabel8">
+        </Component>
+        <Component class="javax.swing.JProgressBar" name="jProgressBar1">
+          <Properties>
+            <Property name="border" type="javax.swing.border.Border" editor="org.netbeans.modules.form.editors2.BorderEditor">
+              <Border info="org.netbeans.modules.form.compat2.border.EmptyBorderInfo">
+                <EmptyBorder bottom="1" left="10" right="1" top="1"/>
+              </Border>
+            </Property>
+            <Property name="borderPainted" type="boolean" value="false"/>
+            <Property name="enabled" type="boolean" value="false"/>
+            <Property name="indeterminate" type="boolean" value="true"/>
+            <Property name="maximumSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor" postCode="jProgressBar1.setVisible(false);">
+              <Dimension value="[150, 18]"/>
             </Property>
           </Properties>
         </Component>
@@ -751,7 +773,7 @@
                           </Properties>
                           <AuxValues>
                             <AuxValue name="JavaCodeGenerator_AddingCodePre" type="java.lang.String" value="jTable1.getSelectionModel().addListSelectionListener(new javax.swing.event.ListSelectionListener() {&#xa;            public void valueChanged(javax.swing.event.ListSelectionEvent evt) {&#xa;                jTable1ValueChanged(evt);&#xa;            }&#xa;        });&#xa;jTable1.getModel().addTableModelListener(new javax.swing.event.TableModelListener() {&#xa;            public void tableChanged(javax.swing.event.TableModelEvent evt) {&#xa;                jTable1TableChanged(evt);&#xa;            }&#xa;        });"/>
-                            <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new javax.swing.JTable(new RoutinesTableModel(this.report)) {&#xa;    public java.awt.Component prepareRenderer(javax.swing.table.TableCellRenderer renderer, int row, int column)&#xa;    {&#xa;        java.awt.Component c = super.prepareRenderer(renderer, row, column);&#xa;        if (!c.getBackground().equals(getSelectionBackground())) {&#xa;            c.setBackground(java.awt.Color.WHITE);&#xa;        }&#xa;        return c;&#xa;    }&#xa;}"/>
+                            <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new javax.swing.JTable(new RoutinesTableModel(this.report)) {&#xa;    public java.awt.Component prepareRenderer(javax.swing.table.TableCellRenderer renderer, int row, int column)&#xa;    {&#xa;&#x9;&#x9;try {&#xa;&#x9;&#x9;&#x9;java.awt.Component c = super.prepareRenderer(renderer, row, column);&#xa;&#x9;&#x9;&#x9;if (!c.getBackground().equals(getSelectionBackground())) {&#xa;&#x9;&#x9;&#x9;&#x9;c.setBackground(java.awt.Color.WHITE);&#xa;&#x9;&#x9;&#x9;}&#xa;&#x9;&#x9;&#x9;return c;&#xa;&#x9;&#x9;} catch(NullPointerException e) {&#xa;&#x9;&#x9;&#x9;return null;&#xa;&#x9;&#x9;}&#xa;    }&#xa;}"/>
                             <AuxValue name="JavaCodeGenerator_InitCodePost" type="java.lang.String" value="routines_table_sorter &#xa;    = new javax.swing.table.TableRowSorter&lt;javax.swing.table.TableModel&gt;(jTable1.getModel());&#xa;jTable1.setRowSorter(routines_table_sorter);&#xa;&#xa;java.util.List &lt;javax.swing.RowSorter.SortKey&gt; routine_table_sortKeys &#xa;    = new java.util.ArrayList&lt;javax.swing.RowSorter.SortKey&gt;();&#xa;routine_table_sortKeys.add(new javax.swing.RowSorter.SortKey(3, javax.swing.SortOrder.DESCENDING));&#xa;routines_table_sorter.setSortKeys(routine_table_sortKeys);&#xa;&#xa;routines_table_sorter.setSortable(6, false);&#xa;&#xa;jTable1.setDefaultRenderer(Routine.class, new PlotThumbRenderer());"/>
                           </AuxValues>
                         </Component>

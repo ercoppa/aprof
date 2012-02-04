@@ -38,7 +38,7 @@ public class RoutinesTableModel extends AbstractTableModel {
 										Double.class,
 										Integer.class,
 										Double.class,
-										RoutineInfo.class,
+										Routine.class,
 										Integer.class,
 										Double.class,
 										Boolean.class,
@@ -65,7 +65,7 @@ public class RoutinesTableModel extends AbstractTableModel {
 										Double.class,
 										Integer.class,
 										Double.class,
-										RoutineInfo.class,
+										Routine.class,
 										Integer.class,
 										Double.class,
 										Boolean.class
@@ -91,6 +91,7 @@ public class RoutinesTableModel extends AbstractTableModel {
 
 	@Override
 	public Class getColumnClass(int columnIndex) {
+		if (columnIndex >= columnTypes.length) return null;
 		return columnTypes[columnIndex];
 	}
 
@@ -101,6 +102,7 @@ public class RoutinesTableModel extends AbstractTableModel {
 
 	@Override
 	public String getColumnName(int columnIndex) {
+		if (columnIndex >= columnTypes.length) return null;
 		return columnNames[columnIndex];
 	}
 
@@ -201,7 +203,8 @@ public class RoutinesTableModel extends AbstractTableModel {
 		
 		}
 		
-		throw new RuntimeException("Invalid Column index");
+		//throw new RuntimeException("Invalid Column index");
+		return null;
 		
 	}
 
