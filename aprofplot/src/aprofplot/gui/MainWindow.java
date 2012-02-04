@@ -2,6 +2,8 @@ package aprofplot.gui;
 
 import aprofplot.*;
 import java.awt.Component;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.*;
 import javax.swing.table.TableModel;
 import javax.swing.tree.*;
@@ -17,6 +19,9 @@ public class MainWindow extends javax.swing.JFrame {
 	
 	// add graph at the end of the list or wrt the "priority" order
 	boolean append_graph = false;
+	
+	// Perfomance monitor
+	PerfomanceMonitor perf = new PerfomanceMonitor();
 	
 	// Used for adapt correctly layout
 	private JPanel fake = null;
@@ -86,6 +91,9 @@ public class MainWindow extends javax.swing.JFrame {
         jLabel4 = new javax.swing.JLabel();
         jLabel5 = new javax.swing.JLabel();
         jLabel6 = new javax.swing.JLabel();
+        jLabel9 = new javax.swing.JLabel();
+        jLabel8 = new javax.swing.JLabel();
+        jProgressBar1 = new javax.swing.JProgressBar();
         jPanel2 = new javax.swing.JPanel();
         jSplitPane1 = new javax.swing.JSplitPane();
         jSplitPane2 = new javax.swing.JSplitPane();
@@ -94,11 +102,15 @@ public class MainWindow extends javax.swing.JFrame {
         jTable1 = new javax.swing.JTable(new RoutinesTableModel(this.report)) {
             public java.awt.Component prepareRenderer(javax.swing.table.TableCellRenderer renderer, int row, int column)
             {
-                java.awt.Component c = super.prepareRenderer(renderer, row, column);
-                if (!c.getBackground().equals(getSelectionBackground())) {
-                    c.setBackground(java.awt.Color.WHITE);
+                try {
+                    java.awt.Component c = super.prepareRenderer(renderer, row, column);
+                    if (!c.getBackground().equals(getSelectionBackground())) {
+                        c.setBackground(java.awt.Color.WHITE);
+                    }
+                    return c;
+                } catch(NullPointerException e) {
+                    return null;
                 }
-                return c;
             }
         };
         jPanel7 = new javax.swing.JPanel();
@@ -399,7 +411,7 @@ public class MainWindow extends javax.swing.JFrame {
 
         getContentPane().add(jToolBar1, java.awt.BorderLayout.NORTH);
 
-        jPanel1.setLayout(new javax.swing.BoxLayout(jPanel1, javax.swing.BoxLayout.LINE_AXIS));
+        jPanel1.setLayout(new java.awt.GridLayout(1, 0));
 
         jLabel1.setText(" Routines: 0 ");
         jLabel1.setBorder(javax.swing.BorderFactory.createEtchedBorder());
@@ -416,6 +428,16 @@ public class MainWindow extends javax.swing.JFrame {
         jLabel6.setText(" Total calls: 0 ");
         jLabel6.setBorder(javax.swing.BorderFactory.createEtchedBorder());
         jPanel1.add(jLabel6);
+        jPanel1.add(jLabel9);
+        jPanel1.add(jLabel8);
+
+        jProgressBar1.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 10, 1, 1));
+        jProgressBar1.setBorderPainted(false);
+        jProgressBar1.setEnabled(false);
+        jProgressBar1.setIndeterminate(true);
+        jProgressBar1.setMaximumSize(new java.awt.Dimension(150, 18));
+        jProgressBar1.setVisible(false);
+        jPanel1.add(jProgressBar1);
 
         getContentPane().add(jPanel1, java.awt.BorderLayout.SOUTH);
 
@@ -869,9 +891,31 @@ public class MainWindow extends javax.swing.JFrame {
 	
 	}
 
-	protected void loadReport(java.io.File file) throws Exception {
-
-		report = new AprofReport(file);
+	protected void loadReport(final File file) throws Exception {
+		
+		jProgressBar1.setVisible(true);
+		jProgressBar1.setEnabled(true);
+		
+		SwingWorker worker = new SwingWorker<AprofReport, Void>() {
+			
+			@Override
+			public AprofReport doInBackground() {
+				try {
+					setReport(new AprofReport(file), file);
+				} catch (Exception ex) {
+					System.out.println("Fail to load");
+				}
+				return report;
+			}
+			
+		};
+		worker.execute();
+		
+	}
+		
+	private void setReport(AprofReport report, File file) throws Exception {
+		
+		this.report = report;
 		
 		// reload button
 		jButton9.setEnabled(true);
@@ -895,9 +939,11 @@ public class MainWindow extends javax.swing.JFrame {
 		if (jCheckBoxMenuItem10.isSelected()) VarGraphPanel.clearData();
 		if (jCheckBoxMenuItem6.isSelected()) TotalCostGraphPanel.clearData();
 		if (jCheckBoxMenuItem7.isSelected()) MccGraphPanel.clearData();
+		if (jCheckBoxMenuItem9.isSelected()) RtnGraphPanel.setData(null);
 		
 		// Update routine table
-		((RoutinesTableModel)jTable1.getModel()).setData(report);
+		RoutinesTableModel m = (RoutinesTableModel)jTable1.getModel();
+		m.setData(report);
 		
 		// If routine table change structure, sorting by rms does not work anymore
 		java.util.List <RowSorter.SortKey> routine_table_sortKeys 
@@ -909,6 +955,10 @@ public class MainWindow extends javax.swing.JFrame {
 		
 		// Clear routinr profile
 		((RmsTableModel)jTable2.getModel()).setData(null);
+		
+		jProgressBar1.setVisible(false);
+		jProgressBar1.setEnabled(false);
+		
 	}
 
 	private void saveForm() {
@@ -1010,6 +1060,7 @@ public class MainWindow extends javax.swing.JFrame {
 		if (graph_type != GraphPanel.TOTALCOST_PLOT) TotalCostGraphPanel.setYLogScale(log);
 		if (graph_type != GraphPanel.VAR_PLOT) VarGraphPanel.setYLogScale(log);
 		if (graph_type != GraphPanel.MCC_PLOT) MccGraphPanel.setYLogScale(log);
+		if (graph_type != GraphPanel.RTN_PLOT) RtnGraphPanel.setYLogScale(log);
 	
 	}
 
@@ -1107,6 +1158,7 @@ public class MainWindow extends javax.swing.JFrame {
 			jLabel7.setText(name);
 			
 			// Update all graph (except routine graph)
+			/*
 			if (jCheckBoxMenuItem4.isSelected()) CostGraphPanel.setData(r);
 			if (jCheckBoxMenuItem8.isSelected()) ratioGraphPanel.setData(r);
 			if (jCheckBoxMenuItem10.isSelected()) freqGraphPanel.setData(r);
@@ -1114,7 +1166,41 @@ public class MainWindow extends javax.swing.JFrame {
 			if (jCheckBoxMenuItem9.isSelected()) VarGraphPanel.setData(r);
 			if (jCheckBoxMenuItem6.isSelected()) TotalCostGraphPanel.setData(r);
 			if (jCheckBoxMenuItem7.isSelected()) MccGraphPanel.setData(r);
-
+			*/
+			
+			perf.start(this, PerfomanceMonitor.ELABORATE);
+			
+			if (jCheckBoxMenuItem4.isSelected()) CostGraphPanel.setRoutine(r);
+			if (jCheckBoxMenuItem8.isSelected()) ratioGraphPanel.setRoutine(r);
+			if (jCheckBoxMenuItem10.isSelected()) freqGraphPanel.setRoutine(r);
+			if (jCheckBoxMenuItem5.isSelected()) MMMGraphPanel.setRoutine(r);
+			if (jCheckBoxMenuItem9.isSelected()) VarGraphPanel.setRoutine(r);
+			if (jCheckBoxMenuItem6.isSelected()) TotalCostGraphPanel.setRoutine(r);
+			if (jCheckBoxMenuItem7.isSelected()) MccGraphPanel.setRoutine(r);
+			
+			Iterator i = r.getRmsListIterator();
+			while (i.hasNext()) {
+				
+				Rms te = (Rms) i.next();
+				
+				if (jCheckBoxMenuItem4.isSelected()) CostGraphPanel.addPoint(te);
+				if (jCheckBoxMenuItem8.isSelected()) ratioGraphPanel.addPoint(te);
+				if (jCheckBoxMenuItem10.isSelected()) freqGraphPanel.addPoint(te);
+				if (jCheckBoxMenuItem5.isSelected()) MMMGraphPanel.addPoint(te);
+				if (jCheckBoxMenuItem9.isSelected()) VarGraphPanel.addPoint(te);
+				if (jCheckBoxMenuItem6.isSelected()) TotalCostGraphPanel.addPoint(te);
+				if (jCheckBoxMenuItem7.isSelected()) MccGraphPanel.addPoint(te);
+				
+			}
+			
+			if (jCheckBoxMenuItem4.isSelected()) CostGraphPanel.maximize();
+			if (jCheckBoxMenuItem8.isSelected()) ratioGraphPanel.maximize();
+			if (jCheckBoxMenuItem10.isSelected()) freqGraphPanel.maximize();
+			if (jCheckBoxMenuItem5.isSelected()) MMMGraphPanel.maximize();
+			if (jCheckBoxMenuItem9.isSelected()) VarGraphPanel.maximize();
+			if (jCheckBoxMenuItem6.isSelected()) TotalCostGraphPanel.maximize();
+			if (jCheckBoxMenuItem7.isSelected()) MccGraphPanel.maximize();
+			
 			// enable/disable entries in export menu related to routine
 			if (r == null) jMenuItem11.setEnabled(false);
 			else jMenuItem11.setEnabled(true);
@@ -1137,6 +1223,8 @@ public class MainWindow extends javax.swing.JFrame {
 			
 			}
 			
+			perf.stop(this, PerfomanceMonitor.ELABORATE);
+			System.gc();
 			//updateContextTree(r);
 			
 		} else {
@@ -1959,7 +2047,17 @@ public class MainWindow extends javax.swing.JFrame {
 		TotalCostGraphPanel = new GraphPanel(GraphPanel.TOTALCOST_PLOT, this);
 		VarGraphPanel = new GraphPanel(GraphPanel.VAR_PLOT, this);
 		RtnGraphPanel = new GraphPanel(GraphPanel.RTN_PLOT, this);
-		MccGraphPanel= new GraphPanel(GraphPanel.MCC_PLOT, this);
+		MccGraphPanel = new GraphPanel(GraphPanel.MCC_PLOT, this);
+		
+		// Set perfomance monitor
+		CostGraphPanel.setPerfomanceMonitor(perf);
+		ratioGraphPanel.setPerfomanceMonitor(perf);
+		freqGraphPanel.setPerfomanceMonitor(perf);
+		MMMGraphPanel.setPerfomanceMonitor(perf);
+		TotalCostGraphPanel.setPerfomanceMonitor(perf);
+		VarGraphPanel.setPerfomanceMonitor(perf);
+		RtnGraphPanel.setPerfomanceMonitor(perf);
+		MccGraphPanel.setPerfomanceMonitor(perf);
 		
 		ArrayList<Integer> graph_order = Main.getGraphOrder();
 		// Reset graph order (addGraph will set this later)
@@ -2043,7 +2141,7 @@ public class MainWindow extends javax.swing.JFrame {
 				break;
 				
 			case GraphPanel.RATIO_PLOT:
-				jCheckBoxMenuItem6.setSelected(true);
+				jCheckBoxMenuItem8.setSelected(true);
 				jCheckBoxMenuItem16.setSelected(true);
 				break;
 				
@@ -2294,6 +2392,8 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
+    private javax.swing.JLabel jLabel8;
+    private javax.swing.JLabel jLabel9;
     private javax.swing.JList jList1;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
@@ -2322,6 +2422,7 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel8;
     private javax.swing.JPanel jPanel9;
     private javax.swing.JPopupMenu jPopupMenu1;
+    private javax.swing.JProgressBar jProgressBar1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;

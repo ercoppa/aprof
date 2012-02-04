@@ -477,6 +477,19 @@
                 <AuxValue name="JavaCodeGenerator_AddingCodePre" type="java.lang.String" value="if (graph_type == RTN_PLOT)&#xa;&#x9;jToggleButton4.setVisible(false);"/>
               </AuxValues>
             </Component>
+            <Component class="javax.swing.JButton" name="jButton3">
+              <Properties>
+                <Property name="icon" type="javax.swing.Icon" noResource="true" editor="org.netbeans.modules.form.editors2.IconEditor">
+                  <Image iconType="3" name="/aprofplot/gui/resources/zoom_out_16.png"/>
+                </Property>
+                <Property name="toolTipText" type="java.lang.String" value="Zoom out"/>
+                <Property name="borderPainted" type="boolean" value="false"/>
+                <Property name="enabled" type="boolean" value="false" postCode="jButton3.setVisible(false);"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jButton3ActionPerformed"/>
+              </Events>
+            </Component>
           </SubComponents>
         </Container>
         <Container class="javax.swing.JPanel" name="jPanel3">
