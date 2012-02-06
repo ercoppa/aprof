@@ -45,25 +45,27 @@ public class PlotThumbRenderer extends JLabel implements TableCellRenderer {
 		g2d.translate(H_MARGIN, image.getHeight() - V_MARGIN);
 
 		Routine r = (Routine)rtn_info;
-		Iterator i = r.getRmsListIterator();
-		if (i.hasNext()) {
+		if (r != null) {
+			Iterator i = r.getRmsListIterator();
+			if (i.hasNext()) {
 
-			/* maximize graph */
-			min_x = min_y = 0;
-			max_y = Math.ceil(r.getMaxCost());
-			if (max_y == 0) max_y++;
-			max_x = r.getMaxRms();
-			if (max_x == 0) max_x++;
+				/* maximize graph */
+				min_x = min_y = 0;
+				max_y = Math.ceil(r.getMaxCost());
+				if (max_y == 0) max_y++;
+				max_x = r.getMaxRms();
+				if (max_x == 0) max_x++;
 
-			/* draw points */
-			g2d.setColor(java.awt.Color.BLUE);
-			while(i.hasNext()) {
-				Rms s = (Rms) i.next();
-				double x = s.getRms();
-				double y = s.getCost();
-				int x_trans = XCoordTransform(x);
-				int y_trans = -YCoordTransform(y);
-				g2d.drawLine(x_trans, y_trans, x_trans, y_trans);
+				/* draw points */
+				g2d.setColor(java.awt.Color.BLUE);
+				while(i.hasNext()) {
+					Rms s = (Rms) i.next();
+					double x = s.getRms();
+					double y = s.getCost();
+					int x_trans = XCoordTransform(x);
+					int y_trans = -YCoordTransform(y);
+					g2d.drawLine(x_trans, y_trans, x_trans, y_trans);
+				}
 			}
 		}
 
