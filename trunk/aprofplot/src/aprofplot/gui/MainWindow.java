@@ -10,6 +10,8 @@ import javax.swing.tree.*;
 import java.util.*;
 import java.io.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
 
 public class MainWindow extends javax.swing.JFrame {
@@ -99,16 +101,17 @@ public class MainWindow extends javax.swing.JFrame {
         jSplitPane2 = new javax.swing.JSplitPane();
         jPanel6 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
-        jTable1 = new javax.swing.JTable(new RoutinesTableModel(this.report)) {
-            public java.awt.Component prepareRenderer(javax.swing.table.TableCellRenderer renderer, int row, int column)
+        jTable1 = new JTable(new RoutinesTableModel(this.report)) {
+            public Component prepareRenderer(TableCellRenderer renderer, int row, int column)
             {
                 try {
-                    java.awt.Component c = super.prepareRenderer(renderer, row, column);
-                    if (!c.getBackground().equals(getSelectionBackground())) {
+                    Component c = super.prepareRenderer(renderer, row, column);
+                    if (c != null && !c.getBackground().equals(getSelectionBackground())) {
                         c.setBackground(java.awt.Color.WHITE);
                     }
                     return c;
                 } catch(NullPointerException e) {
+                    System.out.println("row: " + row + " col: " + column);
                     return null;
                 }
             }
@@ -470,6 +473,7 @@ public class MainWindow extends javax.swing.JFrame {
         jScrollPane1.setVerticalScrollBarPolicy(javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 
         jTable1.setDoubleBuffered(true);
+        jTable1.setAutoCreateColumnsFromModel(false);
         jTable1.setRowHeight(52);
         jTable1.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         routines_table_sorter
@@ -915,6 +919,12 @@ public class MainWindow extends javax.swing.JFrame {
 		
 	private void setReport(AprofReport report, File file) throws Exception {
 		
+		/*
+		boolean oldReportHasContext = false;
+		if (this.report != null && this.report.hasContexts())
+			oldReportHasContext = true;
+		*/
+		
 		this.report = report;
 		
 		// reload button
@@ -955,6 +965,7 @@ public class MainWindow extends javax.swing.JFrame {
 		
 		// Clear routinr profile
 		((RmsTableModel)jTable2.getModel()).setData(null);
+		
 		
 		jProgressBar1.setVisible(false);
 		jProgressBar1.setEnabled(false);
