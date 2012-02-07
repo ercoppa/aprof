@@ -232,7 +232,7 @@ public class AprofReport {
 				continue;
 			}
 
-			if (token.equals("d")) { // demangled routine name
+			if (token.equals("d")) { // demangled routine name with full signature
 				
 				int index = Integer.parseInt(tokenizer.nextToken());
 				String name = "";
@@ -240,12 +240,12 @@ public class AprofReport {
 					name += (tokenizer.nextToken() + " ");
 				}
 				name.trim();
-				routines.get(index).setFullName(name);
+				routines.get(index).setFullName(name.substring(1, name.length() - 2));
 				
 				continue;
 			}
 
-			if (token.equals("u")) { // demangled routine name with full signature
+			if (token.equals("u")) { // demangled routine
 				
 				int index = Integer.parseInt(tokenizer.nextToken());
 				String name = "";

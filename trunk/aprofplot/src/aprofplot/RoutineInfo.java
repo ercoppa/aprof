@@ -24,6 +24,9 @@ public class RoutineInfo extends Routine {
 
 	@Override
 	public String getName() {
+		if (full_name != null)
+			return full_name;
+		
 		return name;
 	}
 
