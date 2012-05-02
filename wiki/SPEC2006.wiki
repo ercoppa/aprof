@@ -16,7 +16,7 @@ We summarize results in [https://docs.google.com/spreadsheet/ccc?key=0AjPEdOad79
   * 2GB DDR3
   * Ubuntu 11.04 *32bit* 
 
-Due to the high slowdown (10-100x) of `aprof/memcheck/callgrind` we can't run all the benchmarks with real workloads (`--size=ref`) provided by CPU SPEC2006. 
+Due to the high slowdown (10-100x) of `aprof/memcheck/callgrind` on this platform we can't run all the benchmarks with real workloads (`--size=ref`) provided by CPU SPEC2006. 
 
 We run the benchmarks with:
 {{{
