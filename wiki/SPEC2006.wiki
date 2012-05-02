@@ -1,3 +1,21 @@
+=== Platform 1 ===
+
+  * Cluster machine with two nodes
+  * each node equipped with eight 64-bit Intel Xeon CPU E5520 at 2.27 GHz
+  * 48 GB of RAM
+  * Linux kernel 2.6.18 with gcc 4.1.2 and Valgrind 3.7.0 – SVN rev. 12129
+
+==== Summary ====
+
+We summarize results in [https://docs.google.com/spreadsheet/ccc?key=0AjPEdOad795XdFRhZkVsY3dBUDhYT1AtT2NEclhGeEE this spreadsheet].
+
+=== Platform 2 ===
+
+  * Macbook 5,1
+  * Intel(R) Core(TM)2 Duo CPU     P7350  @ 2.00GHz
+  * 2GB DDR3
+  * Ubuntu 11.04 *32bit* 
+
 Due to the high slowdown (10-100x) of `aprof/memcheck/callgrind` we can't run all the benchmarks with real workloads (`--size=ref`) provided by CPU SPEC2006. 
 
 We run the benchmarks with:
@@ -6,13 +24,8 @@ runspec --config=ubuntu.cfg --noreportable --size=test --tune=base $name_bench
 }}}
 You can find `ubuntu.cfg` file and all PDF reports here.
 
-=== Platform ===
-  * Macbook 5,1
-  * Intel(R) Core(TM)2 Duo CPU     P7350  @ 2.00GHz
-  * 2GB DDR3
-  * Ubuntu 11.04 *32bit* 
+==== Summary ====
 
-=== Summary ===
 We summarize results in [https://docs.google.com/spreadsheet/pub?hl=en_US&hl=en_US&key=0AjPEdOad795XdDNwQUg1dl9rc2ZSSkFOT0w3dy1kcUE&single=true&gid=0&output=html this spreadsheet].
 
 <wiki:comment>
