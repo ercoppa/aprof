@@ -3,7 +3,7 @@
   * Cluster machine with two nodes
   * each node equipped with eight 64-bit Intel Xeon CPU E5520 at 2.27 GHz
   * 48 GB of RAM
-  * Linux kernel 2.6.18 with gcc 4.1.2 and Valgrind 3.7.0 – SVN rev. 12129
+  * Linux kernel 2.6.18 64bit with gcc 4.1.2 and Valgrind 3.7.0 – SVN rev. 12129
 
 ==== Summary ====
 
