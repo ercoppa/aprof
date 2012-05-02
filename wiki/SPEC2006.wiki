@@ -22,7 +22,6 @@ We run the benchmarks with:
 {{{
 runspec --config=ubuntu.cfg --noreportable --size=test --tune=base $name_bench 
 }}}
-You can find `ubuntu.cfg` file and all PDF reports here.
 
 ==== Summary ====
 
