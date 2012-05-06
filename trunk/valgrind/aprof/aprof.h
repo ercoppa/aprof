@@ -62,7 +62,8 @@
 #define IGNORE_DL_RUNTIME	1	// if 1, disable analysis for dl_runtime_resolve (and its children)
 #define REPORT_VERSION		1	// see documentation on  our site
 #define DISCARD_UNKNOWN		1	// discard info about PLT or unknown function (but this not implies to discard info about its children)
-#define IGNORE_REPEAT_ACC	0	// if 1, ignore repeated accesses to the same address within a BB
+#define IGNORE_REPEAT_ACC	1	// if 1, ignore repeated accesses to the same address within a BB
+#define REPORT_NAME			2	// if 1 report name is prog_TID.aprof, if 2 is PID_TID_ADDRMULTIPLE.aprof
 
 /* Some constants */
 #define STACK_SIZE		64		// Initial stack size
