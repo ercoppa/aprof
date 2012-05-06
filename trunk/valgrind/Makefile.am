@@ -1,5 +1,5 @@
 
-AUTOMAKE_OPTIONS = foreign 1.7 dist-bzip2
+AUTOMAKE_OPTIONS = foreign 1.10 dist-bzip2
 
 include $(top_srcdir)/Makefile.all.am 
 
@@ -10,22 +10,11 @@ TOOLS =		memcheck \
 		lackey \
 		none \
 		helgrind \
-		drd 
+		drd
 
 EXP_TOOLS = 	exp-sgcheck \
 		exp-bbv \
-		exp-dhat \
-		aprof
-
-# DDD: once all tools work on Darwin, TEST_TOOLS and TEST_EXP_TOOLS can be
-# replaced with TOOLS and EXP_TOOLS.
-TEST_TOOLS = $(TOOLS)
-if !VGCONF_OS_IS_DARWIN
-  TEST_EXP_TOOLS = $(EXP_TOOLS)
-else
-  TEST_EXP_TOOLS = exp-bbv
-endif
-
+		exp-dhat
 
 # Put docs last because building the HTML is slow and we want to get
 # everything else working before we try it.
@@ -62,7 +51,8 @@ DEFAULT_SUPP_FILES = @DEFAULT_SUPP@
 # default.supp, as it is built from the base .supp files at compile-time.
 dist_noinst_DATA = $(SUPP_FILES)
 
-pkglib_DATA = default.supp
+vglibdir = $(pkglibdir)
+vglib_DATA = default.supp
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = valgrind.pc
@@ -76,13 +66,19 @@ default.supp: $(DEFAULT_SUPP_FILES)
 	cat $(DEFAULT_SUPP_FILES) >> default.supp
 
 ## Preprend @PERL@ because tests/vg_regtest isn't executable
+## Ensure make exits with error if PERL fails or check_makefile_consistency fails.
 regtest: check
 	gdbserver_tests/make_local_links $(GDB)
-	@PERL@ tests/vg_regtest gdbserver_tests $(TEST_TOOLS) $(TEST_EXP_TOOLS)
+	if @PERL@ tests/vg_regtest gdbserver_tests $(TOOLS) $(EXP_TOOLS) ; then \
+	   tests/check_makefile_consistency gdbserver_tests $(TOOLS) $(EXP_TOOLS); \
+	else \
+	   tests/check_makefile_consistency gdbserver_tests $(TOOLS) $(EXP_TOOLS); \
+	   false; \
+	fi
 nonexp-regtest: check
-	@PERL@ tests/vg_regtest $(TEST_TOOLS)
+	@PERL@ tests/vg_regtest $(TOOLS)
 exp-regtest: check
-	@PERL@ tests/vg_regtest gdbserver_tests $(TEST_EXP_TOOLS)
+	@PERL@ tests/vg_regtest gdbserver_tests $(EXP_TOOLS)
 # Nb: gdbserver_tests are put in exp-regtest rather than nonexp-regtest
 # because they are tested with various valgrind tools, so might be using
 # an experimental tool.

@@ -1,294 +1,396 @@
+Release 3.8.0 (????)
+~~~~~~~~~~~~~~~~~~~~
 
-Release 3.7.0 (???)
-~~~~~~~~~~~~~~~~~~~
+* ================== PLATFORM CHANGES =================
 
-- It is now possible to build a working Valgrind using Clang-2.9 on
+* Support for amd64 AES instructions (AESKEYGENASSIST, AESENC, AESENCLAST,
+  AESDEC, AESDECLAST, AESIMC).
+
+* ==================== TOOL CHANGES ====================
+
+* Memcheck:
+
+  - The leak_check GDB server monitor command now can
+    control the maximum nr of loss records to output.
+
+  - reduction of memory use for applications allocating
+    many blocks and/or having many partially defined bytes.
+
+  - Addition of GDB server monitor command 'block_list' that lists
+    the addresses/sizes of the blocks of a leak search loss record.
+
+  - Addition of GDB server monitor command 'who_points_at' that lists
+    the locations pointing at a block.
+
+  - if a redzone size > 0 is given, VALGRIND_MALLOCLIKE_BLOCK now
+    will detect an invalid access of these redzones, by marking them
+    noaccess.
+
+* ==================== OTHER CHANGES ====================
+
+* The C++ demangler has been updated so as to work well with C++ 
+  compiled by up to at least g++ 4.6.
+
+* The new option --fair-sched allows to control the locking mechanism
+  used by Valgrind. The locking mechanism influences the performance
+  and scheduling of multithreaded applications (in particular
+  on multiprocessor/multicore systems).
+
+* Support to run Valgrind on Valgrind has been improved.
+
+* gdbserver now shows the float shadow registers as integer
+  rather than float values, as the shadow values are mostly
+  used as bit patterns.
+
+* ==================== FIXED BUGS ====================
+
+The following bugs have been fixed or resolved.  Note that "n-i-bz"
+stands for "not in bugzilla" -- that is, a bug that was reported to us
+but never got a bugzilla entry.  We encourage you to file bugs in
+bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather than
+mailing the developers (or mailing lists) directly -- bugs that are
+not entered into bugzilla tend to get forgotten about or ignored.
+
+To see details of a given bug, visit
+https://bugs.kde.org/show_bug.cgi?id=XXXXXX
+where XXXXXX is the bug number as listed below.
+
+197914  Building valgrind from svn now requires automake-1.10
+247386  make perf does not run all performance tests
+270006  Valgrind scheduler unfair 
+270796  s390x: Removed broken support for the TS insn
+271438  Fix configure for proper SSE4.2 detection
+273114  s390x: Support TR, TRE, TROO, TROT, TRTO, and TRTT instructions
+276993  fix mremap 'no thrash checks' 
+281482  valgrind's memcheck incorrect byte allocation count in realloc() for silly argument
+282230  group allocator for small fixed size, use it for MC_Chunk/SEc vbit
+283413  Fix wrong sanity check
+283671  Robustize alignment computation in LibVEX_Alloc
+286270  vgpreload is not friendly to 64->32 bit execs, gives ld.so warnings
+286374  Running cachegrind with --branch-sim=yes on 64-bit PowerPC program fails
+287260  Incorrect conditional jump or move depends on uninitialised value(s)
+287858  VG_(strerror): unknown error 
+289699  vgdb connection in relay mode erroneously closed due to buffer overrun 
+289939  wish: complete monitor cmd 'leak_check' with details about leaked or reachable blocks
+290655  Add support for AESKEYGENASSIST instruction 
+290974  vgdb must align pages to VKI_SHMLBA (16KB) on ARM 
+293088  Add some VEX sanity checks for ppc64 unhandled instructions
+294055  regtest none/tests/shell fails when locale is not set to C
+294190  --vgdb-error=xxx can be out of sync with errors shown to the user
+295799  Missing \n with get_vbits in gdbserver when line is % 80 and there are some unaddressable bytes 
+296983  Fix build issues on x86_64/ppc64 without 32-bit toolchains
+n-i-bz  s390x: Shadow registers can now be examined using vgdb
+297078  gdbserver signal handling problems caused by diff vki nr/gdb nr
+        and non reset of "C-ontinued" signal
+297991  Valgrind interferes with mmap()+ftell() 
+297992  Support systems missing WIFCONTINUED (e.g. pre-2.6.10 Linux) 
+297993  Fix compilation of valgrind with gcc -g3.
+298394  s390x: Don't bail out on an unknown machine model. Assume it's a new model.
+298943  massif asserts with --pages-as-heap=yes when brk is chaning by value different of page size
+
+Release 3.7.0 (5 November 2011)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+3.7.0 is a feature release with many significant improvements and the
+usual collection of bug fixes.
+
+This release supports X86/Linux, AMD64/Linux, ARM/Linux, PPC32/Linux,
+PPC64/Linux, S390X/Linux, ARM/Android, X86/Darwin and AMD64/Darwin.
+Support for recent distros and toolchain components (glibc 2.14, gcc
+4.6, MacOSX 10.7) has been added.
+
+* ================== PLATFORM CHANGES =================
+
+* Support for IBM z/Architecture (s390x) running Linux.  Valgrind can
+  analyse 64-bit programs running on z/Architecture.  Most user space
+  instructions up to and including z10 are supported.  Valgrind has
+  been tested extensively on z9, z10, and z196 machines running SLES
+  10/11, RedHat 5/6m, and Fedora. The Memcheck and Massif tools are
+  known to work well. Callgrind, Helgrind, and DRD work reasonably
+  well on z9 and later models. See README.s390 for more details.
+
+* Preliminary support for MacOSX 10.7 and XCode 4.  Both 32- and
+  64-bit processes are supported.  Some complex threaded applications
+  (Firefox) are observed to hang when run as 32 bit applications,
+  whereas 64-bit versions run OK.  The cause is unknown.  Memcheck
+  will likely report some false errors.  In general, expect some rough
+  spots.  This release also supports MacOSX 10.6, but drops support
+  for 10.5.
+
+* Preliminary support for Android (on ARM).  Valgrind can now run
+  large applications (eg, Firefox) on (eg) a Samsung Nexus S.  See
+  README.android for more details, plus instructions on how to get
+  started.
+
+* Support for the IBM Power ISA 2.06 (Power7 instructions)
+
+* General correctness and performance improvements for ARM/Linux, and,
+  by extension, ARM/Android.
+
+* Further solidification of support for SSE 4.2 in 64-bit mode.  AVX
+  instruction set support is under development but is not available in
+  this release.
+
+* Support for AIX5 has been removed.
+
+* ==================== TOOL CHANGES ====================
+
+* Memcheck: some incremental changes:
+
+  - reduction of memory use in some circumstances
+
+  - improved handling of freed memory, which in some circumstances 
+    can cause detection of use-after-free that would previously have
+    been missed
+
+  - fix of a longstanding bug that could cause false negatives (missed
+    errors) in programs doing vector saturated narrowing instructions.
+
+* Helgrind: performance improvements and major memory use reductions,
+  particularly for large, long running applications which perform many
+  synchronisation (lock, unlock, etc) events.  Plus many smaller
+  changes:
+
+  - display of locksets for both threads involved in a race
+
+  - general improvements in formatting/clarity of error messages
+
+  - addition of facilities and documentation regarding annotation
+    of thread safe reference counted C++ classes
+
+  - new flag --check-stack-refs=no|yes [yes], to disable race checking
+    on thread stacks (a performance hack)
+
+  - new flag --free-is-write=no|yes [no], to enable detection of races
+    where one thread accesses heap memory but another one frees it,
+    without any coordinating synchronisation event
+
+* DRD: enabled XML output; added support for delayed thread deletion
+  in order to detect races that occur close to the end of a thread
+  (--join-list-vol); fixed a memory leak triggered by repeated client
+  memory allocatation and deallocation; improved Darwin support.
+
+* exp-ptrcheck: this tool has been renamed to exp-sgcheck
+
+* exp-sgcheck: this tool has been reduced in scope so as to improve
+  performance and remove checking that Memcheck does better.
+  Specifically, the ability to check for overruns for stack and global
+  arrays is unchanged, but the ability to check for overruns of heap
+  blocks has been removed.  The tool has accordingly been renamed to
+  exp-sgcheck ("Stack and Global Array Checking").
+
+* ==================== OTHER CHANGES ====================
+
+* GDB server: Valgrind now has an embedded GDB server.  That means it
+  is possible to control a Valgrind run from GDB, doing all the usual
+  things that GDB can do (single stepping, breakpoints, examining
+  data, etc).  Tool-specific functionality is also available.  For
+  example, it is possible to query the definedness state of variables
+  or memory from within GDB when running Memcheck; arbitrarily large
+  memory watchpoints are supported, etc.  To use the GDB server, start
+  Valgrind with the flag --vgdb-error=0 and follow the on-screen
+  instructions.
+
+* Improved support for unfriendly self-modifying code: a new option
+  --smc-check=all-non-file is available.  This adds the relevant
+  consistency checks only to code that originates in non-file-backed
+  mappings.  In effect this confines the consistency checking only to
+  code that is or might be JIT generated, and avoids checks on code
+  that must have been compiled ahead of time.  This significantly
+  improves performance on applications that generate code at run time.
+
+* It is now possible to build a working Valgrind using Clang-2.9 on
   Linux.
 
-- preliminary support for MacOSX 10.7.  Both 32- and 64-bit processes
-  are supported.  Some complex threaded applications (Firefox) are
-  observed to hang when run as 32 bit applications, whereas 64-bit
-  versions run OK.  The cause is unknown.  Memcheck will likely report
-  some false errors.  In general, expect some rough spots.
+* new client requests VALGRIND_{DISABLE,ENABLE}_ERROR_REPORTING.
+  These enable and disable error reporting on a per-thread, and
+  nestable, basis.  This is useful for hiding errors in particularly
+  troublesome pieces of code.  The MPI wrapper library (libmpiwrap.c)
+  now uses this facility.
 
-- new client requests VALGRIND_{DISABLE,ENABLE}_ERROR_REPORTING
+* Added the --mod-funcname option to cg_diff.
 
-- Added the --mod-funcname option to cg_diff.
-- Further reduction in overheads caused by --smc-check=all, especially
-  on 64-bit targets.
-- new variant --smc-check=all-non-file
+* ==================== FIXED BUGS ====================
 
-- hg: performance improvements and memory use reductions, particularly
-  for large, long running applications which perform many synch events.
+The following bugs have been fixed or resolved.  Note that "n-i-bz"
+stands for "not in bugzilla" -- that is, a bug that was reported to us
+but never got a bugzilla entry.  We encourage you to file bugs in
+bugzilla (http://bugs.kde.org/enter_valgrind_bug.cgi) rather than
+mailing the developers (or mailing lists) directly -- bugs that are
+not entered into bugzilla tend to get forgotten about or ignored.
 
-  showing of locksets for both threads involved in a race
+To see details of a given bug, visit
+https://bugs.kde.org/show_bug.cgi?id=XXXXXX
+where XXXXXX is the bug number as listed below.
 
-  general improvement of formatting/clarity of error messages
-
-  add facilities and documentation regarding annotation of thread safe
-  reference counted C++ classes
-
-  new flag --check-stack-refs=no|yes [yes], to disable race checking
-  on thread stacks (performance hack)
-
-  new flag --free-is-write=no|yes [no], to enable detection of races
-  where one thread accesses heap memory but another one frees it,
-  without any coordinating synchronisation event
-
-* IBM z/Architecture (s390x) running Linux
-  Valgrind can analyse 64-bit programs running on z/Architecture.
-  Most user space instructions up to and including z10 are supported.
-  Valgrind has been tested extensively on z9, z10, and z196 machines
-  running SLES 10/11, RedHat 5/6m, and Fedora. The Memcheck and Massif
-  tools are known to work well. Callgrind, Helgrind, and DRD work
-  reasonably well on z9 and later models. See README.s390 for more
-  details.
-
-bugs fixed (last update 11 June 2011):
-
-* don't be spooked by libxul.so linked with gold (rXXXX)
-* don't be spooked by libraries mashed by elfhack# (rXXXX)
-* cachegrind/callgrind: handle CPUID information for Core iX Intel
-  CPUs that with non-power-of-2 sizes (also AMDs)
-
+210935  port valgrind.h (not valgrind) to win32 to support client requests
+214223  valgrind SIGSEGV on startup gcc 4.4.1 ppc32 (G4) Ubuntu 9.10
 243404  Port to zSeries
-Fixed 3.7
-
-265762  make public VEX headers compilable by G++ 3.x
-Fixed 3.7
-
-265771  assertion in jumps.c (r11523) fails with glibc-2.3
-Fixed 3.7
-
-266753  valgrind's configure script does not give the user the option
-        to not use QtCore
-fixed, apparently
-
-266931  gen_insn_test.pl is broken
-fixed
-
-266961  ld-linux.so.2 i?86-linux strlen issues
-fixed
-
-266990  setns instruction causes false positive
-fixed
-
-243935  Helgrind: implementation of ANNOTATE_HAPPENS_BEFORE() /
-        AFTER() is not correct
-fixed, r11624
-
-247223  non-x86: Suppress warning: 'regparm' attribute directive
-        ignored
-fixed
-
-
-267383  Assertion 'vgPlain_strlen(dir) + vgPlain_strlen(file) + 1 <
-        256' failed. 
-fixed
-
-267413  Assertion 'DRD_(g_threadinfo)[tid].synchr_nesting >= 1'
-        failed.
-fixed
-
-210935  port valgrind.h (not valgrind) to win32 so apps run under
-        wine can make client requests
-afaict, this was fixed in 3.6.1 but is not listed in NEWS
-
-267488  regtest: darwin support for 64-bit build
-fixed
-
-267552  SIGSEGV (misaligned_stack_error) with DRD, but not with other
-        tools
-fixed, but is the next one also fixed?
-
-267630  Add support for IBM Power ISA 2.06 -- stage 1
-fixed
-
-267819  Add client request for informing the core about reallocation
-fixed
-
-267968  drd: drd_thread.c:567 (vgDrd_thread_set_joinable): Assertion
-        '0 <= (int)tid && tid < DRD_N_THREADS && tid != DRD_INVALID_THREADID'
-        failed.
-fixed
-
-214223  valgrind SIGSEGV on startup gcc 4.4.1 ppc32 (G4) Ubuntu 9.10 ==
-259977  Valgrind segfaults doing __builtin_longjmp
-fixed
-
-268792 - valgrind seg faults on startup when compiled with Xcode 4 compilers... 
-267769 - Darwin: memcheck triggers segmentation fault
-274784 - valgrind ls -l or any other valgrind call(even without parameters) results in Segmentation Fault 
-267342 - segmentation fault on Mac OS 10.6
-271337 - Valgrind segfaults on MacOS X
-270309 - valgrind crash on startup
-269641 - valgrind segfaults immediately (segmentation fault) 
-267997 MacOSX: 64-bit valgrind segfaults on launch when built with
-       Xcode 4.0.1
-fixed
-
+243935  Helgrind: incorrect handling of ANNOTATE_HAPPENS_BEFORE()/AFTER()
+247223  non-x86: Suppress warning: 'regparm' attribute directive ignored
+250101  huge "free" memory usage due to m_mallocfree.c fragmentation
+253206  Some fixes for the faultstatus testcase
+255223  capget testcase fails when running as root
+256703  xlc_dbl_u32.c testcase broken
+256726  Helgrind tests have broken inline asm 
+259977  == 214223 (Valgrind segfaults doing __builtin_longjmp)
 264800  testcase compile failure on zseries
-fixed
+265762  make public VEX headers compilable by G++ 3.x
+265771  assertion in jumps.c (r11523) fails with glibc-2.3
+266753  configure script does not give the user the option to not use QtCore
+266931  gen_insn_test.pl is broken
+266961  ld-linux.so.2 i?86-linux strlen issues
+266990  setns instruction causes false positive
+267020  Make directory for temporary files configurable at run-time.
+267342  == 267997 (segmentation fault on Mac OS 10.6)
+267383  Assertion 'vgPlain_strlen(dir) + vgPlain_strlen(file) + 1 < 256' failed
+267413  Assertion 'DRD_(g_threadinfo)[tid].synchr_nesting >= 1' failed.
+267488  regtest: darwin support for 64-bit build
+267552  SIGSEGV (misaligned_stack_error) with DRD, but not with other tools
+267630  Add support for IBM Power ISA 2.06 -- stage 1
+267769  == 267997 (Darwin: memcheck triggers segmentation fault)
+267819  Add client request for informing the core about reallocation
+267925  laog data structure quadratic for a single sequence of lock
+267968  drd: (vgDrd_thread_set_joinable): Assertion '0 <= (int)tid ..' failed
+267997  MacOSX: 64-bit V segfaults on launch when built with Xcode 4.0.1
+268513  missed optimizations in fold_Expr
+268619  s390x: fpr - gpr transfer facility 
+268620  s390x: reconsider "long displacement" requirement 
+268621  s390x: improve IR generation for XC
+268715  s390x: FLOGR is not universally available
+268792  == 267997 (valgrind seg faults on startup when compiled with Xcode 4)
+268930  s390x: MHY is not universally available
+269078  arm->IR: unhandled instruction SUB (SP minus immediate/register) 
+269079  Support ptrace system call on ARM
+269144  missing "Bad option" error message
+269209  conditional load and store facility (z196)
+269354  Shift by zero on x86 can incorrectly clobber CC_NDEP
+269641  == 267997 (valgrind segfaults immediately (segmentation fault))
+269736  s390x: minor code generation tweaks
+269778  == 272986 (valgrind.h: swap roles of VALGRIND_DO_CLIENT_REQUEST() ..)
+269863  s390x: remove unused function parameters
+269864  s390x: tweak s390_emit_load_cc 
+269884  == 250101 (overhead for huge blocks exhausts space too soon)
+270082  s390x: Make sure to point the PSW address to the next address on SIGILL
+270115  s390x: rewrite some testcases
+270309  == 267997 (valgrind crash on startup)
+270320  add support for Linux FIOQSIZE ioctl() call
+270326  segfault while trying to sanitize the environment passed to execle
+270794  IBM POWER7 support patch causes regression in none/tests
+270851  IBM POWER7 fcfidus instruction causes memcheck to fail
+270856  IBM POWER7 xsnmaddadp instruction causes memcheck to fail on 32bit app 
+270925  hyper-optimized strspn() in /lib64/libc-2.13.so needs fix
+270959  s390x: invalid use of R0 as base register
+271042  VSX configure check fails when it should not 
+271043  Valgrind build fails with assembler error on ppc64 with binutils 2.21 
+271259  s390x: fix code confusion 
+271337  == 267997 (Valgrind segfaults on MacOS X)
+271385  s390x: Implement Ist_MBE 
+271501  s390x: misc cleanups 
+271504  s390x: promote likely and unlikely 
+271579  ppc: using wrong enum type 
+271615  unhandled instruction "popcnt" (arch=amd10h) 
+271730  Fix bug when checking ioctls: duplicate check 
+271776  s390x: provide STFLE instruction support 
+271779  s390x: provide clock instructions like STCK 
+271799  Darwin: ioctls without an arg report a memory error 
+271820  arm: fix type confusion 
+271917  pthread_cond_timedwait failure leads to not-locked false positive 
+272067  s390x: fix DISP20 macro 
+272615  A typo in debug output in mc_leakcheck.c
+272661  callgrind_annotate chokes when run from paths containing regex chars
+272893  amd64->IR: 0x66 0xF 0x38 0x2B 0xC1 0x66 0xF 0x7F == (closed as dup)
+272955  Unhandled syscall error for pwrite64 on ppc64 arch 
+272967  make documentation build-system more robust 
+272986  Fix gcc-4.6 warnings with valgrind.h
+273318  amd64->IR: 0x66 0xF 0x3A 0x61 0xC1 0x38 (missing PCMPxSTRx case)
+273318  unhandled PCMPxSTRx case: vex amd64->IR: 0x66 0xF 0x3A 0x61 0xC1 0x38 
+273431  valgrind segfaults in evalCfiExpr (debuginfo.c:2039)
+273465  Callgrind: jumps.c:164 (new_jcc): Assertion '(0 <= jmp) && ...'
+273536  Build error: multiple definition of `vgDrd_pthread_cond_initializer'
+273640  ppc64-linux: unhandled syscalls setresuid(164) and setresgid(169)
+273729  == 283000 (Illegal opcode for SSE2 "roundsd" instruction)
+273778  exp-ptrcheck: unhandled sysno == 259
+274089  exp-ptrcheck: unhandled sysno == 208
+274378  s390x: Various dispatcher tweaks
+274447  WARNING: unhandled syscall: 340
+274776  amd64->IR: 0x66 0xF 0x38 0x2B 0xC5 0x66
+274784  == 267997 (valgrind ls -l results in Segmentation Fault)
+274926  valgrind does not build against linux-3
+275148  configure FAIL with glibc-2.14
+275151  Fedora 15 / glibc-2.14 'make regtest' FAIL
+275168  Make Valgrind work for MacOSX 10.7 Lion
+275212  == 275284 (lots of false positives from __memcpy_ssse3_back et al)
+275278  valgrind does not build on Linux kernel 3.0.* due to silly
+275284  Valgrind memcpy/memmove redirection stopped working in glibc 2.14/x86_64
+275308  Fix implementation for ppc64 fres instruc
+275339  s390x: fix testcase compile warnings
+275517  s390x: Provide support for CKSM instruction
+275710  s390x: get rid of redundant address mode calculation
+275815  == 247894 (Valgrind doesn't know about Linux readahead(2) syscall)
+275852  == 250101 (valgrind uses all swap space and is killed)
+276784  Add support for IBM Power ISA 2.06 -- stage 3
+276987  gdbsrv: fix tests following recent commits
+277045  Valgrind crashes with  unhandled DW_OP_ opcode 0x2a
+277199  The test_isa_2_06_part1.c in none/tests/ppc64 should be a symlink
+277471  Unhandled syscall: 340
+277610  valgrind crashes in VG_(lseek)(core_fd, phdrs[idx].p_offset, ...)
+277653  ARM: support Thumb2 PLD instruction
+277663  ARM: NEON float VMUL by scalar incorrect
+277689  ARM: tests for VSTn with register post-index are broken
+277694  ARM: BLX LR instruction broken in ARM mode
+277780  ARM: VMOV.F32 (immediate) instruction is broken
+278057  fuse filesystem syscall deadlocks
+278078  Unimplemented syscall 280 on ppc32
+278349  F_GETPIPE_SZ and  F_SETPIPE_SZ Linux fcntl commands
+278454  VALGRIND_STACK_DEREGISTER has wrong output type
+278502  == 275284 (Valgrind confuses memcpy() and memmove())
+278892  gdbsrv: factorize gdb version handling, fix doc and typos
+279027  Support for MVCL and CLCL instruction
+279027  s390x: Provide support for CLCL and MVCL instructions
+279062  Remove a redundant check in the insn selector for ppc.
+279071  JDK creates PTEST with redundant REX.W prefix
+279212  gdbsrv: add monitor cmd v.info scheduler.
+279378  exp-ptrcheck: the 'impossible' happened on mkfifo call
+279698  memcheck discards valid-bits for packuswb
+279795  memcheck reports uninitialised values for mincore on amd64
+279994  Add support for IBM Power ISA 2.06 -- stage 3
+280083  mempolicy syscall check errors
+280290  vex amd64->IR: 0x66 0xF 0x38 0x28 0xC1 0x66 0xF 0x6F
+280710  s390x: config files for nightly builds
+280757  /tmp dir still used by valgrind even if TMPDIR is specified
+280965  Valgrind breaks fcntl locks when program does mmap
+281138  WARNING: unhandled syscall: 340
+281241  == 275168 (valgrind useless on Macos 10.7.1 Lion)
+281304  == 275168 (Darwin: dyld "cannot load inserted library")
+281305  == 275168 (unhandled syscall: unix:357 on Darwin 11.1)
+281468  s390x: handle do_clone and gcc clones in call traces
+281488  ARM: VFP register corruption
+281828  == 275284 (false memmove warning: "Source and destination overlap")
+281883  s390x: Fix system call wrapper for "clone".
+282105  generalise 'reclaimSuperBlock' to also reclaim splittable superblock
+282112  Unhandled instruction bytes: 0xDE 0xD9 0x9B 0xDF (fcompp)
+282238  SLES10: make check fails
+282979  strcasestr needs replacement with recent(>=2.12) glibc
+283000  vex amd64->IR: 0x66 0xF 0x3A 0xA 0xC0 0x9 0xF3 0xF
+283243  Regression in ppc64 memcheck tests
+283325  == 267997 (Darwin: V segfaults on startup when built with Xcode 4.0)
+283427  re-connect epoll_pwait syscall on ARM linux
+283600  gdbsrv: android: port vgdb.c
+283709  none/tests/faultstatus needs to account for page size
+284305  filter_gdb needs enhancement to work on ppc64
+284384  clang 3.1 -Wunused-value warnings in valgrind.h, memcheck.h
+284472  Thumb2 ROR.W encoding T2 not implemented
+284621  XML-escape process command line in XML output
+n-i-bz  cachegrind/callgrind: handle CPUID information for Core iX Intel CPUs
+        that have non-power-of-2 sizes (also AMDs)
+n-i-bz  don't be spooked by libraries mashed by elfhack
+n-i-bz  don't be spooked by libxul.so linked with gold
+n-i-bz  improved checking for VALGRIND_CHECK_MEM_IS_DEFINED
 
-265762 - make public VEX headers compilable by G++ 3.x
-fixed
+(3.7.0-TEST1: 27  October 2011, vex r2228, valgrind r12245)
+(3.7.0.RC1:    1 November 2011, vex r2231, valgrind r12257)
+(3.7.0:        5 November 2011, vex r2231, valgrind r12258)
 
-268513] New: missed optimizations in fold_Expr
-fixed
-
-253206 - Some fixes for the faultstatus testcase
-fixed
-
-268619 - s390x: fpr - gpr transfer facility 
-fixed
-
-268620 - s390x: reconsider "long displacement" requirement 
-fixed
-
-268621 - s390x: improve IR generation for XC
-fixed
-
-255223 - [PATCH] capget testcase fails when running as root
-fixed
-
-268715 - s390x: FLOGR is not universally available
-fixed
-
-268930 - s390x: MHY is not universally available
-fixed
-
-269078 - [PATCH] vex: arm->IR: unhandled instruction SUB (SP minus
-immediate/register) 
-fixed
-
-269079 - [PATCH] Support ptrace system call on ARM
-fixed
-
-269144 - missing "Bad option" error message
-fixed
-
-269209] New: [PATCH] conditional load and store facility (z196)
-fixed
-
-269354] New: Shift by zero on x86 can incorrectly clobber CC_NDEP
-(with patch)
-fixed
-
-256726 - Helgrind tests have broken inline asm 
-fixed
-
-269736 - s390x: minor code generation tweaks
-fixed
-
-256703 - xlc_dbl_u32.c testcase broken
-fixed
-
-272986 - gcc-4.6 warnings with valgrind.h ==
-269778] New: valgrind.h: swap roles of VALGRIND_DO_CLIENT_REQUEST()
-and VALGRIND_DO_CLIENT_REQUEST_EXPR()
-fixed
-
-269863 - s390x: remove unused function parameters
-fixed
-
-269864 - s390x: tweak s390_emit_load_cc 
-fixed
-
-270115] New: s390x: rewrite some testcases
-fixed
-
-270082 - s390x: [PATCH] Make sure to point the PSW address to the next
-address on SIGILL
-fixed
-
-270794 - New IBM POWER7 support patch causes regression in none/tests 
-fixed
-
-270851 - New IBM POWER7 fcfidus instruction causes memcheck to fail 
-fixed
-
-270856 - New IBM POWER7 xsnmaddadp instruction causes memcheck to fail
-on 32bit app 
-fixed
-
-270959 - s390x: invalid use of R0 as base register
-fixed
-
-271042 - VSX configure check fails when it should not 
-fixed
-
-271043 - Valgrind build fails with assembler error on ppc64 with
-binutils 2.21 
-fixed
-
-271259 - s390x: fix code confusion 
-fixed
-
-271385 - s390x: Implement Ist_MBE 
-fixed
-
-271501 - s390x : misc cleanups 
-fixed
-
-271504 - s390x: promote likely and unlikely 
-fixed
-
-271579 - ppc: using wrong enum type 
-fixed
-
-271730 - [PATCH] Fix bug when checking ioctls: duplicate check 
-fixed
-
-271779 - s390x: provide clock instructions like STCK 
-fixed
-
-271799 - Darwin: ioctls without an arg report a memory error 
-fixed
-
-271820 - arm: fix type confusion 
-fixed
-
-272067 - s390x: fix DISP20 macro 
-fixed
-
-272615 - A typo in debug output in mc_leakcheck.c
-fixed
-
-272661 - callgrind_annotate chokes when run from paths containing
-regex metacharacters 
-fixed
-
-272955 - Unhandled syscall error for pwrite64 on ppc64 arch 
-fixed
-
-274447] New: WARNING: unhandled syscall: 340
-fixed
-
-275148] New: configure FAIL with glibc-2.14
-fixed
-
-275151] New: Fedora 15 / glibc-2.14 'make regtest' FAIL
-fixed
-
-275339 - s390x: fix testcase compile warnings
-
-275710 - s390x: get rid of redundant address mode calculation
-
-271776 - s390x: Support STFLE instruction
-
-267020 - Make directory for temporary files configurable at run-time.
-
-279062 - Remove a redundant check in the insn selector for ppc.
-
-275517 - s390x: Provide support for CKSM instruction
-
-279027 - s390x: Provide support for CLCL and MVCL instructions
-
-281883 - s390x: Fix system call wrapper for "clone".
-
-274378 - s390x: Various dispatcher tweaks
-
-282238 - SLES10: make check fails
 
 
 Release 3.6.1 (16 February 2011)

@@ -1,6 +1,6 @@
 include $(top_srcdir)/Makefile.tool.am
 
-EXTRA_DIST = docs/drd-manual.xml
+EXTRA_DIST = docs/drd-manual.xml docs/drd-xml-output.xsd
 
 #----------------------------------------------------------------------------
 # Headers, flags
@@ -54,7 +54,6 @@ endif
 
 DRD_SOURCES_COMMON =    \
   drd_barrier.c         \
-  drd_bitmap2_node.c    \
   drd_clientobj.c       \
   drd_clientreq.c       \
   drd_cond.c            \

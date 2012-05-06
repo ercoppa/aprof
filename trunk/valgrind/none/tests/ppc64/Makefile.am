@@ -17,15 +17,23 @@ EXTRA_DIST = \
 	power6_mf_gpr.stderr.exp power6_mf_gpr.stdout.exp power6_mf_gpr.vgtest \
 	test_isa_2_06_part1.stderr.exp  test_isa_2_06_part1.stdout.exp  test_isa_2_06_part1.vgtest \
 	test_isa_2_06_part2.stderr.exp  test_isa_2_06_part2.stdout.exp  test_isa_2_06_part2.vgtest \
-	test_isa_2_06_part3.stderr.exp  test_isa_2_06_part3.stdout.exp  test_isa_2_06_part3.vgtest
+	test_isa_2_06_part3.stderr.exp  test_isa_2_06_part3.stdout.exp  test_isa_2_06_part3.vgtest \
+	test_dfp1.stderr.exp test_dfp1.stdout.exp test_dfp1.vgtest \
+	test_dfp2.stderr.exp test_dfp2.stdout.exp test_dfp2.vgtest \
+	test_dfp2.stdout.exp_Without_dcffix \
+	test_dfp3.stderr.exp test_dfp3.stdout.exp test_dfp3.vgtest \
+	test_dfp4.stderr.exp test_dfp4.stdout.exp test_dfp4.vgtest
 
 check_PROGRAMS = \
+	allexec \
 	jm-insns lsw round std_reg_imm twi_tdi tw_td power6_bcmp power6_mf_gpr test_isa_2_06_part1 \
-	test_isa_2_06_part2 test_isa_2_06_part3
+	test_isa_2_06_part2 test_isa_2_06_part3 test_dfp1 test_dfp2 test_dfp3 test_dfp4
 
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@
 AM_CCASFLAGS += @FLAG_M64@
+
+allexec_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 
 if HAS_ALTIVEC
 ALTIVEC_FLAG = -DHAS_ALTIVEC
@@ -41,6 +49,14 @@ VSX_FLAG =
 BUILD_FLAG_VSX =
 endif
 
+if HAS_DFP
+BUILD_FLAGS_DFP = -mhard-dfp -mcpu=power6
+DFP_FLAG = -DHAS_DFP
+else
+BUILD_FLAGS_DFP =
+DFP_FLAG =
+endif
+
 test_isa_2_06_part1_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(VSX_FLAG) \
 			@FLAG_M64@ $(ALTIVEC_FLAG) $(BUILD_FLAG_VSX)
 
@@ -53,3 +69,13 @@ test_isa_2_06_part3_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(
 jm_insns_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames -maltivec \
 			@FLAG_M64@ $(ALTIVEC_FLAG)
 
+test_dfp1_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(DFP_FLAG) \
+			@FLAG_M64@ $(BUILD_FLAGS_DFP)
+
+test_dfp2_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(DFP_FLAG) \
+			@FLAG_M64@ $(BUILD_FLAGS_DFP)
+test_dfp3_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(DFP_FLAG) \
+			@FLAG_M64@ $(BUILD_FLAGS_DFP)
+
+test_dfp4_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -lm -g -mregnames $(DFP_FLAG) \
+			@FLAG_M64@ $(BUILD_FLAGS_DFP)

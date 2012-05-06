@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2010 OpenWorks LLP
+   Copyright (C) 2004-2011 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -169,6 +169,10 @@ void foo ( void )
    GENOFFSET(S390X,s390x,SYSNO);
    GENOFFSET(S390X,s390x,IP_AT_SYSCALL);
    GENOFFSET(S390X,s390x,fpc);
+   GENOFFSET(S390X,s390x,CC_OP);
+   GENOFFSET(S390X,s390x,CC_DEP1);
+   GENOFFSET(S390X,s390x,CC_DEP2);
+   GENOFFSET(S390X,s390x,CC_NDEP);
 }
 
 /*--------------------------------------------------------------------*/

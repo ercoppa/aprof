@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2010 OpenWorks LLP
+   Copyright (C) 2004-2011 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -227,6 +227,9 @@ typedef
       Ity_I128,  /* 128-bit scalar */
       Ity_F32,   /* IEEE 754 float */
       Ity_F64,   /* IEEE 754 double */
+      Ity_D32,   /* 32-bit Decimal floating point */
+      Ity_D64,   /* 64-bit Decimal floating point */
+      Ity_D128,  /* 128-bit Decimal floating point */
       Ity_F128,  /* 128-bit floating point; implementation defined */
       Ity_V128   /* 128-bit SIMD */
    }
@@ -923,6 +926,7 @@ typedef
       */
       Iop_QNarrowBin16Sto8Ux8,
       Iop_QNarrowBin16Sto8Sx8, Iop_QNarrowBin32Sto16Sx4,
+      Iop_NarrowBin16to8x8,    Iop_NarrowBin32to16x4,
 
       /* INTERLEAVING */
       /* Interleave lanes from low or high halves of
@@ -981,6 +985,130 @@ typedef
       /* Vector Reciprocal Estimate and Vector Reciprocal Square Root Estimate
          See floating-point equiwalents for details. */
       Iop_Recip32x2, Iop_Rsqrte32x2,
+
+      /* ------------------ Decimal Floating Point ------------------ */
+
+      /* ARITHMETIC INSTRUCTIONS   64-bit
+	 ----------------------------------
+	 IRRoundingModeDFP(I32) X D64 X D64 -> D64
+      */
+      Iop_AddD64, Iop_SubD64, Iop_MulD64, Iop_DivD64,
+
+      /* ARITHMETIC INSTRUCTIONS  128-bit
+	 ----------------------------------
+	 IRRoundingModeDFP(I32) X D128 X D128 -> D128
+      */
+      Iop_AddD128, Iop_SubD128, Iop_MulD128, Iop_DivD128,
+
+      /* SHIFT SIGNIFICAND INSTRUCTIONS
+       *    The DFP significand is shifted by the number of digits specified
+       *    by the U8 operand.  Digits shifted out of the leftmost digit are
+       *    lost. Zeros are supplied to the vacated positions on the right.
+       *    The sign of the result is the same as the sign of the original
+       *    operand.
+       *
+       * D64 x U8  -> D64    left shift and right shift respectively */
+      Iop_ShlD64, Iop_ShrD64,
+
+      /* D128 x U8  -> D128  left shift and right shift respectively */
+      Iop_ShlD128, Iop_ShrD128,
+
+
+      /* FORMAT CONVERSION INSTRUCTIONS
+       *   D32 -> D64
+       */
+      Iop_D32toD64,
+
+      /*   D64 -> D128 */
+      Iop_D64toD128, 
+
+      /*   I64S -> D128 */
+      Iop_I64StoD128, 
+
+      /*   IRRoundingModeDFP(I32) x D64 -> D32 */
+      Iop_D64toD32,
+
+      /*   IRRoundingModeDFP(I32) x D128 -> D64 */
+      Iop_D128toD64,
+
+      /*   IRRoundingModeDFP(I32) x I64 -> D64 */
+      Iop_I64StoD64,
+
+      /*   IRRoundingModeDFP(I32) x D64 -> I64 */
+      Iop_D64toI64S,
+
+      /*   IRRoundingModeDFP(I32) x D128 -> I64 */
+      Iop_D128toI64S,
+
+      /* ROUNDING INSTRUCTIONS
+       * IRRoundingMode(I32) x D64 -> D64
+       * The D64 operand, if a finite number, is rounded to an integer value.
+       */
+      Iop_RoundD64toInt,
+
+      /* IRRoundingMode(I32) x D128 -> D128 */
+      Iop_RoundD128toInt,
+
+      /* COMPARE INSTRUCTIONS
+       * D64 x D64 -> IRCmpD64Result(I32) */
+      Iop_CmpD64,
+
+      /* D128 x D128 -> IRCmpD64Result(I32) */
+      Iop_CmpD128,
+
+      /* QUANTIZE AND ROUND INSTRUCTIONS
+       * The source operand is converted and rounded to the form with the 
+       * immediate exponent specified by the rounding and exponent parameter.
+       *
+       * The second operand is converted and rounded to the form
+       * of the first operand's exponent and the rounded based on the specified
+       * rounding mode parameter.
+       *
+       * IRRoundingModeDFP(I32) x D64 x D64-> D64 */
+      Iop_QuantizeD64,
+
+      /* IRRoundingModeDFP(I32) x D128 x D128 -> D128 */
+      Iop_QuantizeD128,
+
+      /* IRRoundingModeDFP(I32) x I8 x D64 -> D64
+       *    The Decimal Floating point operand is rounded to the requested 
+       *    significance given by the I8 operand as specified by the rounding 
+       *    mode.
+       */
+      Iop_SignificanceRoundD64,
+
+      /* IRRoundingModeDFP(I32) x I8 x D128 -> D128 */
+      Iop_SignificanceRoundD128,
+
+      /* EXTRACT AND INSERT INSTRUCTIONS
+       * D64 -> I64
+       *    The exponent of the D32 or D64 operand is extracted.  The 
+       *    extracted exponent is converted to a 64-bit signed binary integer.
+       */
+      Iop_ExtractExpD64,
+
+      /* D128 -> I64 */
+      Iop_ExtractExpD128,
+
+      /* I64 x I64  -> D64 
+       *    The exponent is specified by the first I64 operand the signed
+       *    significand is given by the second I64 value.  The result is a D64
+       *    value consisting of the specified significand and exponent whose 
+       *    sign is that of the specified significand.
+       */
+      Iop_InsertExpD64,
+
+      /* I64 x I128 -> D128 */
+      Iop_InsertExpD128,
+
+      /* Support for 128-bit DFP type */
+      Iop_D64HLtoD128, Iop_D128HItoD64, Iop_D128LOtoD64,
+
+      /* Conversion I64 -> D64 */
+      Iop_ReinterpI64asD64,
+
+      /* Conversion D64 -> I64 */
+      Iop_ReinterpD64asI64,
 
       /* ------------------ 128-bit SIMD FP. ------------------ */
 
@@ -1170,7 +1298,7 @@ typedef
       Iop_Min8Ux16, Iop_Min16Ux8, Iop_Min32Ux4,
 
       /* COMPARISON */
-      Iop_CmpEQ8x16,  Iop_CmpEQ16x8,  Iop_CmpEQ32x4,
+      Iop_CmpEQ8x16,  Iop_CmpEQ16x8,  Iop_CmpEQ32x4,  Iop_CmpEQ64x2,
       Iop_CmpGT8Sx16, Iop_CmpGT16Sx8, Iop_CmpGT32Sx4, Iop_CmpGT64Sx2,
       Iop_CmpGT8Ux16, Iop_CmpGT16Ux8, Iop_CmpGT32Ux4,
 
@@ -1299,6 +1427,27 @@ typedef
       Irrm_ZERO    = 3 
    }
    IRRoundingMode;
+
+/* DFP encoding of IEEE754 2008 specified rounding modes extends the two bit
+ * binary floating point rounding mode (IRRoundingMode) to three bits.  The 
+ * DFP rounding modes are a super set of the binary rounding modes.  The 
+ * encoding was chosen such that the mapping of the least significant two bits
+ * of the IR to POWER encodings is same.  The upper IR encoding bit is just
+ * a logical OR of the upper rounding mode bit from the POWER encoding.
+ */
+typedef
+   enum { 
+      Irrm_DFP_NEAREST              = 0,  // Round to nearest, ties to even
+      Irrm_DFP_NegINF               = 1,  // Round to negative infinity
+      Irrm_DFP_PosINF               = 2,  // Round to posative infinity
+      Irrm_DFP_ZERO                 = 3,  // Round toward zero
+      Irrm_DFP_NEAREST_TIE_AWAY_0   = 4,  // Round to nearest, ties away from 0
+      Irrm_DFP_PREPARE_SHORTER      = 5,  // Round to prepare for storter 
+                                          // precision
+      Irrm_DFP_AWAY_FROM_ZERO       = 6,  // Round to away from 0
+      Irrm_DFP_NEAREST_TIE_TOWARD_0 = 7   // Round to nearest, ties towards 0
+   }
+   IRRoundingModeDFP;
 
 /* Floating point comparison result values, as created by Iop_CmpF64.
    This is also derived from what IA32 does. */
@@ -1628,8 +1777,9 @@ extern Bool eqIRAtom ( IRExpr*, IRExpr* );
    guest to restart a syscall that has been interrupted by a signal.
 */
 typedef
-   enum { 
-      Ijk_Boring=0x16000, /* not interesting; just goto next */
+   enum {
+      Ijk_INVALID=0x16000, 
+      Ijk_Boring,         /* not interesting; just goto next */
       Ijk_Call,           /* guest is doing a call */
       Ijk_Ret,            /* guest is doing a return */
       Ijk_ClientReq,      /* do guest client req before continuing */
@@ -2110,11 +2260,15 @@ typedef
          /* Conditional exit from the middle of an IRSB.
             ppIRStmt output: if (<guard>) goto {<jk>} <dst>
                          eg. if (t69) goto {Boring} 0x4000AAA:I32
+            If <guard> is true, the guest state is also updated by
+            PUT-ing <dst> at <offsIP>.  This is done because a
+            taken exit must update the guest program counter.
          */
          struct {
             IRExpr*    guard;    /* Conditional expression */
             IRJumpKind jk;       /* Jump kind */
             IRConst*   dst;      /* Jump target (constant only) */
+            Int        offsIP;   /* Guest state offset for IP */
          } Exit;
       } Ist;
    }
@@ -2134,7 +2288,8 @@ extern IRStmt* IRStmt_LLSC    ( IREndness end, IRTemp result,
                                 IRExpr* addr, IRExpr* storedata );
 extern IRStmt* IRStmt_Dirty   ( IRDirty* details );
 extern IRStmt* IRStmt_MBE     ( IRMBusEvent event );
-extern IRStmt* IRStmt_Exit    ( IRExpr* guard, IRJumpKind jk, IRConst* dst );
+extern IRStmt* IRStmt_Exit    ( IRExpr* guard, IRJumpKind jk, IRConst* dst,
+                                Int offsIP );
 
 /* Deep-copy an IRStmt. */
 extern IRStmt* deepCopyIRStmt ( IRStmt* );
@@ -2179,6 +2334,8 @@ extern void ppIRTypeEnv ( IRTypeEnv* );
      executes all the way to the end, without a side exit
    - An indication of any special actions (JumpKind) needed
      for this final jump.
+   - Offset of the IP field in the guest state.  This will be
+     updated before the final jump is done.
    
    "IRSB" stands for "IR Super Block".
 */
@@ -2190,6 +2347,7 @@ typedef
       Int        stmts_used;
       IRExpr*    next;
       IRJumpKind jumpkind;
+      Int        offsIP;
    }
    IRSB;
 

@@ -1,9 +1,13 @@
 include $(top_srcdir)/Makefile.all.am
 
 dist_noinst_SCRIPTS = \
+	change-copyright-year \
+	dump_insn_ppc.sh \
 	gen-mdg \
 	gsl16test \
 	gsl19test \
+	nightly-build-summary \
+	update-demangler \
 	posixtestsuite-1.5.1-diff-results
 
 EXTRA_DIST = \

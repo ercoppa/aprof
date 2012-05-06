@@ -9,7 +9,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2010 Julian Seward 
+   Copyright (C) 2000-2011 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -95,8 +95,10 @@ void ML_(ppSym) ( Int idx, DiSym* sym )
    vg_assert(sym->pri_name);
    if (sec_names)
       vg_assert(sec_names);
-   VG_(printf)( "%5d:  %#8lx .. %#8lx (%d)      %s%s",
+   VG_(printf)( "%5d:  %c%c %#8lx .. %#8lx (%d)      %s%s",
                 idx,
+                sym->isText ? 'T' : '-',
+                sym->isIFunc ? 'I' : '-',
                 sym->addr, 
                 sym->addr + sym->size - 1, sym->size,
                 sym->pri_name, sec_names ? " " : "" );
@@ -1370,7 +1372,13 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
              && !!di->symtab[w].isIFunc == !!di->symtab[r].isIFunc) {
             /* merge the two into one */
             n_merged++;
-            add_DiSym_names_to_from(di, &di->symtab[w], &di->symtab[r]);
+            /* Add r names to w if r has secondary names 
+               or r and w primary names differ. */
+            if (di->symtab[r].sec_names 
+                || (0 != VG_(strcmp)(di->symtab[r].pri_name,
+                                     di->symtab[w].pri_name))) {
+               add_DiSym_names_to_from(di, &di->symtab[w], &di->symtab[r]);
+            }
             /* and use ::pri_names to indicate this slot is no longer in use */
             di->symtab[r].pri_name = NULL;
             if (di->symtab[r].sec_names) {

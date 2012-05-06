@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2010 OpenWorks LLP
+   Copyright (C) 2004-2011 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -188,7 +188,7 @@ extern void addHRegUse ( HRegUsage*, HRegMode, HReg );
    This is precisely the behaviour that the register allocator needs
    to impose its decisions on the instructions it processes.  */
 
-#define N_HREG_REMAP 5
+#define N_HREG_REMAP 6
 
 typedef
    struct {

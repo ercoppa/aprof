@@ -3,11 +3,14 @@ include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS =		    \
 	compare_error_count_with    \
+	filter_annotate_barrier_xml \
 	filter_error_count	    \
 	filter_error_summary	    \
 	filter_stderr               \
 	filter_stderr_and_thread_no \
 	filter_stderr_and_thread_no_and_offset \
+	filter_thread_no	    \
+	filter_xml_and_thread_no    \
 	run_openmp_test             \
 	supported_libpthread	    \
 	supported_sem_init
@@ -19,6 +22,8 @@ noinst_HEADERS =                                    \
 EXTRA_DIST =                                        \
 	annotate_barrier.stderr.exp		    \
 	annotate_barrier.vgtest			    \
+	annotate_barrier_xml.stderr.exp		    \
+	annotate_barrier_xml.vgtest		    \
 	annotate_hb_err.stderr.exp		    \
 	annotate_hb_err.vgtest			    \
 	annotate_hb_race.stderr.exp		    \
@@ -53,14 +58,20 @@ EXTRA_DIST =                                        \
 	annotate_ignore_write.vgtest		    \
 	annotate_ignore_write2.stderr.exp	    \
 	annotate_ignore_write2.vgtest		    \
-	annotate_trace_memory.stderr.exp	    \
+	annotate_trace_memory.stderr.exp-32bit	    \
+	annotate_trace_memory.stderr.exp-64bit	    \
 	annotate_trace_memory.vgtest		    \
+	annotate_trace_memory_xml.stderr.exp-32bit  \
+	annotate_trace_memory_xml.stderr.exp-64bit  \
+	annotate_trace_memory_xml.vgtest	    \
 	annotate_static.stderr.exp	            \
 	annotate_static.vgtest		            \
 	atomic_var.stderr.exp			    \
 	atomic_var.vgtest			    \
 	bar_bad.stderr.exp			    \
 	bar_bad.vgtest				    \
+	bar_bad_xml.stderr.exp			    \
+	bar_bad_xml.vgtest			    \
 	bar_trivial.stderr.exp			    \
 	bar_trivial.stdout.exp			    \
 	bar_trivial.vgtest			    \
@@ -78,6 +89,8 @@ EXTRA_DIST =                                        \
 	fp_race.vgtest                              \
 	fp_race2.stderr.exp                         \
 	fp_race2.vgtest                             \
+	fp_race_xml.stderr.exp                      \
+	fp_race_xml.vgtest                          \
 	free_is_write.stderr.exp		    \
 	free_is_write.vgtest			    \
 	free_is_write2.stderr.exp		    \
@@ -178,14 +191,6 @@ EXTRA_DIST =                                        \
 	pth_spinlock.vgtest                         \
 	pth_uninitialized_cond.stderr.exp           \
 	pth_uninitialized_cond.vgtest               \
-	qt4_atomic.stderr.exp                       \
-	qt4_atomic.vgtest                           \
-	qt4_mutex.stderr.exp                        \
-	qt4_mutex.vgtest                            \
-	qt4_rwlock.stderr.exp                       \
-	qt4_rwlock.vgtest                           \
-	qt4_semaphore.stderr.exp                    \
-	qt4_semaphore.vgtest                        \
 	read_and_free_race.stderr.exp		    \
 	read_and_free_race.vgtest		    \
 	recursive_mutex.stderr.exp-linux            \
@@ -216,13 +221,16 @@ EXTRA_DIST =                                        \
 	sigalrm.vgtest                              \
 	sigaltstack.stderr.exp                      \
 	sigaltstack.vgtest                          \
+	std_thread.stderr.exp		  	    \
+	std_thread.vgtest			    \
 	tc01_simple_race.stderr.exp                 \
 	tc01_simple_race.vgtest                     \
 	tc02_simple_tls.stderr.exp                  \
 	tc02_simple_tls.vgtest                      \
 	tc03_re_excl.stderr.exp                     \
 	tc03_re_excl.vgtest                         \
-	tc04_free_lock.stderr.exp                   \
+	tc04_free_lock.stderr.exp-x86               \
+	tc04_free_lock.stderr.exp-ppc               \
 	tc04_free_lock.vgtest                       \
 	tc05_simple_race.stderr.exp                 \
 	tc05_simple_race.vgtest                     \
@@ -234,7 +242,8 @@ EXTRA_DIST =                                        \
 	tc08_hbl2.stderr.exp                        \
 	tc08_hbl2.stdout.exp                        \
 	tc08_hbl2.vgtest                            \
-	tc09_bad_unlock.stderr.exp                  \
+	tc09_bad_unlock.stderr.exp-x86              \
+	tc09_bad_unlock.stderr.exp-ppc              \
 	tc09_bad_unlock.stderr.exp-glibc2.8         \
 	tc09_bad_unlock.vgtest                      \
 	tc10_rec_lock.stderr.exp                    \
@@ -271,6 +280,8 @@ EXTRA_DIST =                                        \
 	tc24_nonzero_sem.vgtest                     \
 	thread_name.stderr.exp			    \
 	thread_name.vgtest			    \
+	thread_name_xml.stderr.exp		    \
+	thread_name_xml.vgtest			    \
 	threaded-fork.stderr.exp		    \
 	threaded-fork.vgtest			    \
 	trylock.stderr.exp                          \
@@ -334,10 +345,20 @@ check_PROGRAMS +=        \
   circular_buffer
 endif
 
+if HAVE_BUILTIN_ATOMIC64
+check_PROGRAMS +=        \
+  annotate_trace_memory
+endif
+
 if HAVE_BUILTIN_ATOMIC_CXX
 check_PROGRAMS +=        \
   annotate_smart_pointer \
   tsan_unittest
+endif
+
+if HAVE_SHARED_POINTER_ANNOTATION
+check_PROGRAMS += \
+  std_thread
 endif
 
 if HAVE_OPENMP
@@ -410,3 +431,6 @@ endif
 if HAVE_PTHREAD_BARRIER
 matinv_LDADD                = $(LDADD) -lm
 endif
+
+std_thread_SOURCES          = std_thread.cpp
+std_thread_CXXFLAGS         = $(AM_CXXFLAGS) -std=c++0x

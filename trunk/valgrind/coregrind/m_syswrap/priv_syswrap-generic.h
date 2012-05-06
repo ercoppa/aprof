@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2010 Julian Seward
+   Copyright (C) 2000-2011 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -235,9 +235,9 @@ extern void   ML_(generic_PRE_sys_getsockname)  ( TId, UW, UW, UW );
 extern void   ML_(generic_POST_sys_getsockname) ( TId, SR, UW, UW, UW );
 extern void   ML_(generic_PRE_sys_getpeername)  ( TId, UW, UW, UW );
 extern void   ML_(generic_POST_sys_getpeername) ( TId, SR, UW, UW, UW );
-extern void   ML_(generic_PRE_sys_sendmsg)      ( TId, UW, UW );
-extern void   ML_(generic_PRE_sys_recvmsg)      ( TId, UW, UW );
-extern void   ML_(generic_POST_sys_recvmsg)     ( TId, UW, UW );
+extern void   ML_(generic_PRE_sys_sendmsg)      ( TId, Char *, struct vki_msghdr * );
+extern void   ML_(generic_PRE_sys_recvmsg)      ( TId, Char *, struct vki_msghdr * );
+extern void   ML_(generic_POST_sys_recvmsg)     ( TId, Char *, struct vki_msghdr *, UInt );
 
 extern void   ML_(generic_PRE_sys_semop)        ( TId, UW, UW, UW );
 extern void   ML_(generic_PRE_sys_semtimedop)   ( TId, UW, UW, UW, UW );

@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2010 Julian Seward 
+   Copyright (C) 2000-2011 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -32,7 +32,7 @@
 #ifndef __VKI_SCNUMS_X86_LINUX_H
 #define __VKI_SCNUMS_X86_LINUX_H
 
-// From linux-2.6.9/include/asm-i386/unistd.h
+// Derived from linux-2.6/arch/x86/syscalls/syscall_32.tbl
 
 #define __NR_restart_syscall      0
 #define __NR_exit		  1
@@ -381,6 +381,8 @@
 #define __NR_syncfs             344
 #define __NR_sendmmsg		345
 #define __NR_setns		346
+#define __NR_process_vm_readv   347
+#define __NR_process_vm_writev  348
 
 #endif /* __VKI_SCNUMS_X86_LINUX_H */
 

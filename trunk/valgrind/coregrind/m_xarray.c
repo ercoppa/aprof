@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2007-2010 OpenWorks LLP
+   Copyright (C) 2007-2011 OpenWorks LLP
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
@@ -309,6 +309,20 @@ void VG_(dropHeadXA) ( XArray* xao, Word n )
                 ((char*)xa->arr) + n * xa->elemSzB, 
                 (xa->usedsizeE - n) * xa->elemSzB );
    xa->usedsizeE -= n;
+}
+
+void VG_(removeIndexXA)( XArray* xao, Word n )
+{
+   struct _XArray* xa = (struct _XArray*)xao;
+   vg_assert(xa);
+   vg_assert(n >= 0);
+   vg_assert(n < xa->usedsizeE);
+   if (n+1 < xa->usedsizeE) {
+      VG_(memmove)( ((char*)xa->arr) + (n+0) * xa->elemSzB,
+                    ((char*)xa->arr) + (n+1) * xa->elemSzB,
+                    (xa->usedsizeE - n - 1) * xa->elemSzB );
+   }
+   xa->usedsizeE--;
 }
 
 void VG_(getContentsXA_UNSAFE)( XArray* xao,

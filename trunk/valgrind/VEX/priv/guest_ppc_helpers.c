@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2010 OpenWorks LLP
+   Copyright (C) 2004-2011 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -352,6 +352,11 @@ void LibVEX_GuestPPC64_put_XER ( UInt xer_native,
 void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
 {
    Int i;
+   vex_state->host_EvC_FAILADDR = 0;
+   vex_state->host_EvC_COUNTER  = 0;
+   vex_state->pad3 = 0;
+   vex_state->pad4 = 0;
+
    vex_state->guest_GPR0  = 0;
    vex_state->guest_GPR1  = 0;
    vex_state->guest_GPR2  = 0;
@@ -384,7 +389,6 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
    vex_state->guest_GPR29 = 0;
    vex_state->guest_GPR30 = 0;
    vex_state->guest_GPR31 = 0;
-
 
    /* Initialise the vector state. */
 #  define VECZERO(_vr) _vr[0]=_vr[1]=_vr[2]=_vr[3] = 0;
@@ -482,7 +486,10 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
    vex_state->guest_CR7_321 = 0;
    vex_state->guest_CR7_0   = 0;
 
-   vex_state->guest_FPROUND = (UInt)PPCrm_NEAREST;
+   vex_state->guest_FPROUND  = PPCrm_NEAREST;
+   vex_state->guest_DFPROUND = PPCrm_NEAREST;
+   vex_state->pad1 = 0;
+   vex_state->pad2 = 0;
 
    vex_state->guest_VRSAVE = 0;
 
@@ -502,6 +509,8 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
 
    vex_state->guest_IP_AT_SYSCALL = 0;
    vex_state->guest_SPRG3_RO = 0;
+
+   vex_state->padding = 0;
 }
 
 
@@ -509,6 +518,9 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
 void LibVEX_GuestPPC64_initialise ( /*OUT*/VexGuestPPC64State* vex_state )
 {
    Int i;
+   vex_state->host_EvC_FAILADDR = 0;
+   vex_state->host_EvC_COUNTER = 0;
+   vex_state->pad0 = 0;
    vex_state->guest_GPR0  = 0;
    vex_state->guest_GPR1  = 0;
    vex_state->guest_GPR2  = 0;
@@ -638,7 +650,10 @@ void LibVEX_GuestPPC64_initialise ( /*OUT*/VexGuestPPC64State* vex_state )
    vex_state->guest_CR7_321 = 0;
    vex_state->guest_CR7_0   = 0;
 
-   vex_state->guest_FPROUND = (UInt)PPCrm_NEAREST;
+   vex_state->guest_FPROUND  = PPCrm_NEAREST;
+   vex_state->guest_DFPROUND = PPCrm_NEAREST;
+   vex_state->pad1 = 0;
+   vex_state->pad2 = 0;
 
    vex_state->guest_VRSAVE = 0;
 

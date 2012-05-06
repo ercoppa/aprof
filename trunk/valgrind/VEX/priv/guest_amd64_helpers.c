@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2010 OpenWorks LLP
+   Copyright (C) 2004-2011 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -954,6 +954,14 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
          return unop(Iop_1Uto64,
                      binop(Iop_CmpLE64U, cc_dep1, cc_dep2));
       }
+      if (isU64(cc_op, AMD64G_CC_OP_SUBQ) && isU64(cond, AMD64CondNBE)) {
+         /* long long sub/cmp, then NBE (unsigned greater than)
+            --> test !(dst <=u src) */
+         return binop(Iop_Xor64,
+                      unop(Iop_1Uto64,
+                           binop(Iop_CmpLE64U, cc_dep1, cc_dep2)),
+                      mkU64(1));
+      }
 
       /*---------------- SUBL ----------------*/
 
@@ -1188,6 +1196,23 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
                       binop(Iop_Shr64, cc_dep1, mkU8(31)),
                       mkU64(1)),
                 mkU64(1));
+      }
+
+      /*---------------- LOGICW ----------------*/
+
+      if (isU64(cc_op, AMD64G_CC_OP_LOGICW) && isU64(cond, AMD64CondZ)) {
+         /* word and/or/xor, then Z --> test dst==0 */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpEQ64,
+                           binop(Iop_And64, cc_dep1, mkU64(0xFFFF)),
+                           mkU64(0)));
+      }
+      if (isU64(cc_op, AMD64G_CC_OP_LOGICW) && isU64(cond, AMD64CondNZ)) {
+         /* word and/or/xor, then NZ --> test dst!=0 */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpNE64,
+                           binop(Iop_And64, cc_dep1, mkU64(0xFFFF)),
+                           mkU64(0)));
       }
 
       /*---------------- LOGICB ----------------*/
@@ -1553,7 +1578,7 @@ VexEmWarn do_put_x87 ( Bool moveRegs,
    /* handle the control word, setting FPROUND and detecting any
       emulation warnings. */
    pair    = amd64g_check_fldcw ( (ULong)fpucw );
-   fpround = (UInt)pair;
+   fpround = (UInt)pair & 0xFFFFFFFFULL;
    ew      = (VexEmWarn)(pair >> 32);
    
    vex_state->guest_FPROUND = fpround & 3;
@@ -1929,47 +1954,7 @@ ULong amd64g_create_fpucw ( ULong fpround )
 VexEmWarn amd64g_dirtyhelper_FLDENV ( /*OUT*/VexGuestAMD64State* vex_state,
                                       /*IN*/HWord x87_state)
 {
-   Int        stno, preg;
-   UInt       tag;
-   UChar*     vexTags = (UChar*)(&vex_state->guest_FPTAG[0]);
-   Fpu_State* x87     = (Fpu_State*)x87_state;
-   UInt       ftop    = (x87->env[FP_ENV_STAT] >> 11) & 7;
-   UInt       tagw    = x87->env[FP_ENV_TAG];
-   UInt       fpucw   = x87->env[FP_ENV_CTRL];
-   ULong      c3210   = x87->env[FP_ENV_STAT] & 0x4700;
-   VexEmWarn  ew;
-   ULong      fpround;
-   ULong      pair;
-
-   /* Copy tags */
-   for (stno = 0; stno < 8; stno++) {
-      preg = (stno + ftop) & 7;
-      tag = (tagw >> (2*preg)) & 3;
-      if (tag == 3) {
-         /* register is empty */
-         vexTags[preg] = 0;
-      } else {
-         /* register is non-empty */
-         vexTags[preg] = 1;
-      }
-   }
-
-   /* stack pointer */
-   vex_state->guest_FTOP = ftop;
-
-   /* status word */
-   vex_state->guest_FC3210 = c3210;
-
-   /* handle the control word, setting FPROUND and detecting any
-      emulation warnings. */
-   pair    = amd64g_check_fldcw ( (ULong)fpucw );
-   fpround = pair & 0xFFFFFFFFULL;
-   ew      = (VexEmWarn)(pair >> 32);
-   
-   vex_state->guest_FPROUND = fpround & 3;
-
-   /* emulation warnings --> caller */
-   return ew;
+   return do_put_x87( False, (UChar*)x87_state, vex_state );
 }
 
 
@@ -2014,6 +1999,130 @@ void amd64g_dirtyhelper_FSTENV ( /*IN*/VexGuestAMD64State* vex_state,
 }
 
 
+/* This is used to implement 'fnsave'.  
+   Writes 108 bytes at x87_state[0 .. 107]. */
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER */
+void amd64g_dirtyhelper_FNSAVE ( /*IN*/VexGuestAMD64State* vex_state,
+                                 /*OUT*/HWord x87_state)
+{
+   do_get_x87( vex_state, (UChar*)x87_state );
+}
+
+
+/* This is used to implement 'fnsaves'.  
+   Writes 94 bytes at x87_state[0 .. 93]. */
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER */
+void amd64g_dirtyhelper_FNSAVES ( /*IN*/VexGuestAMD64State* vex_state,
+                                  /*OUT*/HWord x87_state)
+{
+   Int           i, stno, preg;
+   UInt          tagw;
+   ULong*        vexRegs = (ULong*)(&vex_state->guest_FPREG[0]);
+   UChar*        vexTags = (UChar*)(&vex_state->guest_FPTAG[0]);
+   Fpu_State_16* x87     = (Fpu_State_16*)x87_state;
+   UInt          ftop    = vex_state->guest_FTOP;
+   UInt          c3210   = vex_state->guest_FC3210;
+
+   for (i = 0; i < 7; i++)
+      x87->env[i] = 0;
+
+   x87->env[FPS_ENV_STAT] 
+      = toUShort(((ftop & 7) << 11) | (c3210 & 0x4700));
+   x87->env[FPS_ENV_CTRL] 
+      = toUShort(amd64g_create_fpucw( vex_state->guest_FPROUND ));
+
+   /* Dump the register stack in ST order. */
+   tagw = 0;
+   for (stno = 0; stno < 8; stno++) {
+      preg = (stno + ftop) & 7;
+      if (vexTags[preg] == 0) {
+         /* register is empty */
+         tagw |= (3 << (2*preg));
+         convert_f64le_to_f80le( (UChar*)&vexRegs[preg], 
+                                 &x87->reg[10*stno] );
+      } else {
+         /* register is full. */
+         tagw |= (0 << (2*preg));
+         convert_f64le_to_f80le( (UChar*)&vexRegs[preg], 
+                                 &x87->reg[10*stno] );
+      }
+   }
+   x87->env[FPS_ENV_TAG] = toUShort(tagw);
+}
+
+
+/* This is used to implement 'frstor'.  
+   Reads 108 bytes at x87_state[0 .. 107]. */
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER */
+VexEmWarn amd64g_dirtyhelper_FRSTOR ( /*OUT*/VexGuestAMD64State* vex_state,
+                                      /*IN*/HWord x87_state)
+{
+   return do_put_x87( True, (UChar*)x87_state, vex_state );
+}
+
+
+/* This is used to implement 'frstors'.
+   Reads 94 bytes at x87_state[0 .. 93]. */
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER */
+VexEmWarn amd64g_dirtyhelper_FRSTORS ( /*OUT*/VexGuestAMD64State* vex_state,
+                                       /*IN*/HWord x87_state)
+{
+   Int           stno, preg;
+   UInt          tag;
+   ULong*        vexRegs = (ULong*)(&vex_state->guest_FPREG[0]);
+   UChar*        vexTags = (UChar*)(&vex_state->guest_FPTAG[0]);
+   Fpu_State_16* x87     = (Fpu_State_16*)x87_state;
+   UInt          ftop    = (x87->env[FPS_ENV_STAT] >> 11) & 7;
+   UInt          tagw    = x87->env[FPS_ENV_TAG];
+   UInt          fpucw   = x87->env[FPS_ENV_CTRL];
+   UInt          c3210   = x87->env[FPS_ENV_STAT] & 0x4700;
+   VexEmWarn     ew;
+   UInt          fpround;
+   ULong         pair;
+
+   /* Copy registers and tags */
+   for (stno = 0; stno < 8; stno++) {
+      preg = (stno + ftop) & 7;
+      tag = (tagw >> (2*preg)) & 3;
+      if (tag == 3) {
+         /* register is empty */
+         /* hmm, if it's empty, does it still get written?  Probably
+            safer to say it does.  If we don't, memcheck could get out
+            of sync, in that it thinks all FP registers are defined by
+            this helper, but in reality some have not been updated. */
+         vexRegs[preg] = 0; /* IEEE754 64-bit zero */
+         vexTags[preg] = 0;
+      } else {
+         /* register is non-empty */
+         convert_f80le_to_f64le( &x87->reg[10*stno], 
+                                 (UChar*)&vexRegs[preg] );
+         vexTags[preg] = 1;
+      }
+   }
+
+   /* stack pointer */
+   vex_state->guest_FTOP = ftop;
+
+   /* status word */
+   vex_state->guest_FC3210 = c3210;
+
+   /* handle the control word, setting FPROUND and detecting any
+      emulation warnings. */
+   pair    = amd64g_check_fldcw ( (ULong)fpucw );
+   fpround = (UInt)pair & 0xFFFFFFFFULL;
+   ew      = (VexEmWarn)(pair >> 32);
+   
+   vex_state->guest_FPROUND = fpround & 3;
+
+   /* emulation warnings --> caller */
+   return ew;
+}
+
+
 /*---------------------------------------------------------------*/
 /*--- Misc integer helpers, including rotates and CPUID.      ---*/
 /*---------------------------------------------------------------*/
@@ -2041,7 +2150,11 @@ void amd64g_dirtyhelper_FSTENV ( /*IN*/VexGuestAMD64State* vex_state,
    clflush size    : 64  
    cache_alignment : 64  
    address sizes   : 40 bits physical, 48 bits virtual  
-   power management: ts fid vid ttp  
+   power management: ts fid vid ttp
+
+   2012-Feb-21: don't claim 3dnow or 3dnowext, since in fact 
+   we don't support them.  See #291568.  3dnow is 80000001.EDX.31
+   and 3dnowext is 80000001.EDX.30.
 */
 void amd64g_dirtyhelper_CPUID_baseline ( VexGuestAMD64State* st )
 {
@@ -2063,7 +2176,11 @@ void amd64g_dirtyhelper_CPUID_baseline ( VexGuestAMD64State* st )
          SET_ABCD(0x80000018, 0x68747541, 0x444d4163, 0x69746e65);
          break;
       case 0x80000001:
-         SET_ABCD(0x00000f5a, 0x00000505, 0x00000000, 0xe1d3fbff);
+         /* Don't claim to support 3dnow or 3dnowext.  0xe1d3fbff is
+            the original it-is-supported value that the h/w provides.
+            See #291568. */
+         SET_ABCD(0x00000f5a, 0x00000505, 0x00000000, /*0xe1d3fbff*/
+                                                      0x21d3fbff);
          break;
       case 0x80000002:
          SET_ABCD(0x20444d41, 0x6574704f, 0x206e6f72, 0x296d7428);
@@ -2239,7 +2356,6 @@ void amd64g_dirtyhelper_CPUID_sse3_and_cx16 ( VexGuestAMD64State* st )
                      dtes64 monitor ds_cpl vmx smx est tm2 ssse3 cx16
                      xtpr pdcm sse4_1 sse4_2 popcnt aes lahf_lm ida
                      arat tpr_shadow vnmi flexpriority ept vpid
-                     MINUS aes (see below)
    bogomips        : 6957.57
    clflush size    : 64
    cache_alignment : 64
@@ -2263,10 +2379,7 @@ void amd64g_dirtyhelper_CPUID_sse42_and_cx16 ( VexGuestAMD64State* st )
          SET_ABCD(0x0000000b, 0x756e6547, 0x6c65746e, 0x49656e69);
          break;
       case 0x00000001:
-         // & ~(1<<25): don't claim to support AES insns.  See
-         // bug 249991.
-         SET_ABCD(0x00020652, 0x00100800, 0x0298e3ff & ~(1<<25),
-                                          0xbfebfbff);
+         SET_ABCD(0x00020652, 0x00100800, 0x0298e3ff, 0xbfebfbff);
          break;
       case 0x00000002:
          SET_ABCD(0x55035a01, 0x00f0b2e3, 0x00000000, 0x09ca212c);
@@ -2761,6 +2874,22 @@ ULong amd64g_calculate_sse_pmovmskb ( ULong w64hi, ULong w64lo )
 }
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
+ULong amd64g_calculate_sse_phminposuw ( ULong sLo, ULong sHi )
+{
+   UShort t, min;
+   UInt   idx;
+   t = sel16x4_0(sLo); if (True)    { min = t; idx = 0; }
+   t = sel16x4_1(sLo); if (t < min) { min = t; idx = 1; }
+   t = sel16x4_2(sLo); if (t < min) { min = t; idx = 2; }
+   t = sel16x4_3(sLo); if (t < min) { min = t; idx = 3; }
+   t = sel16x4_0(sHi); if (t < min) { min = t; idx = 4; }
+   t = sel16x4_1(sHi); if (t < min) { min = t; idx = 5; }
+   t = sel16x4_2(sHi); if (t < min) { min = t; idx = 6; }
+   t = sel16x4_3(sHi); if (t < min) { min = t; idx = 7; }
+   return ((ULong)(idx << 16)) | ((ULong)min);
+}
+
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
 ULong amd64g_calc_crc32b ( ULong crcIn, ULong b )
 {
    UInt  i;
@@ -2798,6 +2927,59 @@ ULong amd64g_calc_crc32q ( ULong crcIn, ULong q )
 }
 
 
+/* .. helper for next fn .. */
+static inline ULong sad_8x4 ( ULong xx, ULong yy )
+{
+   UInt t = 0;
+   t += (UInt)abdU8( sel8x8_3(xx), sel8x8_3(yy) );
+   t += (UInt)abdU8( sel8x8_2(xx), sel8x8_2(yy) );
+   t += (UInt)abdU8( sel8x8_1(xx), sel8x8_1(yy) );
+   t += (UInt)abdU8( sel8x8_0(xx), sel8x8_0(yy) );
+   return (ULong)t;
+}
+
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+ULong amd64g_calc_mpsadbw ( ULong sHi, ULong sLo,
+                            ULong dHi, ULong dLo,
+                            ULong imm_and_return_control_bit )
+{
+   UInt imm8     = imm_and_return_control_bit & 7;
+   Bool calcHi   = (imm_and_return_control_bit >> 7) & 1;
+   UInt srcOffsL = imm8 & 3; /* src offs in 32-bit (L) chunks */
+   UInt dstOffsL = (imm8 >> 2) & 1; /* dst offs in ditto chunks */
+   /* For src we only need 32 bits, so get them into the
+      lower half of a 64 bit word. */
+   ULong src = ((srcOffsL & 2) ? sHi : sLo) >> (32 * (srcOffsL & 1));
+   /* For dst we need to get hold of 56 bits (7 bytes) from a total of
+      11 bytes.  If calculating the low part of the result, need bytes
+      dstOffsL * 4 + (0 .. 6); if calculating the high part,
+      dstOffsL * 4 + (4 .. 10). */
+   ULong dst;
+   /* dstOffL = 0, Lo  ->  0 .. 6
+      dstOffL = 1, Lo  ->  4 .. 10
+      dstOffL = 0, Hi  ->  4 .. 10
+      dstOffL = 1, Hi  ->  8 .. 14
+   */
+   if (calcHi && dstOffsL) {
+      /* 8 .. 14 */
+      dst = dHi & 0x00FFFFFFFFFFFFFFULL;
+   }
+   else if (!calcHi && !dstOffsL) {
+      /* 0 .. 6 */
+      dst = dLo & 0x00FFFFFFFFFFFFFFULL;
+   } 
+   else {
+      /* 4 .. 10 */
+      dst = (dLo >> 32) | ((dHi & 0x00FFFFFFULL) << 32);
+   }
+   ULong r0  = sad_8x4( dst >>  0, src );
+   ULong r1  = sad_8x4( dst >>  8, src );
+   ULong r2  = sad_8x4( dst >> 16, src );
+   ULong r3  = sad_8x4( dst >> 24, src );
+   ULong res = (r3 << 48) | (r2 << 32) | (r1 << 16) | r0;
+   return res;
+}
+
 /*---------------------------------------------------------------*/
 /*--- Helpers for SSE4.2 PCMP{E,I}STR{I,M}                    ---*/
 /*---------------------------------------------------------------*/
@@ -2807,6 +2989,15 @@ static UInt zmask_from_V128 ( V128* arg )
    UInt i, res = 0;
    for (i = 0; i < 16; i++) {
       res |=  ((arg->w8[i] == 0) ? 1 : 0) << i;
+   }
+   return res;
+}
+
+static UInt zmask_from_V128_wide ( V128* arg )
+{
+   UInt i, res = 0;
+   for (i = 0; i < 8; i++) {
+      res |=  ((arg->w16[i] == 0) ? 1 : 0) << i;
    }
    return res;
 }
@@ -2861,7 +3052,7 @@ ULong amd64g_dirtyhelper_PCMPxSTRx (
    HWord isISTRx = opc4 & 2;
    HWord isxSTRM = (opc4 & 1) ^ 1;
    vassert((opc4 & 0xFC) == 0x60); /* 0x60 .. 0x63 */
-   vassert((imm8 & 1) == 0); /* we support byte-size cases only */
+   HWord wide = (imm8 & 1);
 
    // where the args are
    V128* argL = (V128*)( ((UChar*)gst) + gstOffL );
@@ -2872,34 +3063,63 @@ ULong amd64g_dirtyhelper_PCMPxSTRx (
    // FIXME: this is only right for the 8-bit data cases.
    // At least that is asserted above.
    UInt zmaskL, zmaskR;
-   if (isISTRx) {
-      zmaskL = zmask_from_V128(argL);
-      zmaskR = zmask_from_V128(argR);
-   } else {
-      Int tmp;
-      tmp = edxIN & 0xFFFFFFFF;
-      if (tmp < -16) tmp = -16;
-      if (tmp > 16)  tmp = 16;
-      if (tmp < 0)   tmp = -tmp;
-      vassert(tmp >= 0 && tmp <= 16);
-      zmaskL = (1 << tmp) & 0xFFFF;
-      tmp = eaxIN & 0xFFFFFFFF;
-      if (tmp < -16) tmp = -16;
-      if (tmp > 16)  tmp = 16;
-      if (tmp < 0)   tmp = -tmp;
-      vassert(tmp >= 0 && tmp <= 16);
-      zmaskR = (1 << tmp) & 0xFFFF;
-   }
 
    // temp spot for the resulting flags and vector.
    V128 resV;
    UInt resOSZACP;
 
-   // do the meyaath
-   Bool ok = compute_PCMPxSTRx ( 
-                &resV, &resOSZACP, argL, argR, 
-                zmaskL, zmaskR, imm8, (Bool)isxSTRM
-             );
+   // for checking whether case was handled
+   Bool ok = False;
+
+   if (wide) {
+      if (isISTRx) {
+         zmaskL = zmask_from_V128_wide(argL);
+         zmaskR = zmask_from_V128_wide(argR);
+      } else {
+         Int tmp;
+         tmp = edxIN & 0xFFFFFFFF;
+         if (tmp < -8) tmp = -8;
+         if (tmp > 8)  tmp = 8;
+         if (tmp < 0)  tmp = -tmp;
+         vassert(tmp >= 0 && tmp <= 8);
+         zmaskL = (1 << tmp) & 0xFF;
+         tmp = eaxIN & 0xFFFFFFFF;
+         if (tmp < -8) tmp = -8;
+         if (tmp > 8)  tmp = 8;
+         if (tmp < 0)  tmp = -tmp;
+         vassert(tmp >= 0 && tmp <= 8);
+         zmaskR = (1 << tmp) & 0xFF;
+      }
+      // do the meyaath
+      ok = compute_PCMPxSTRx_wide ( 
+              &resV, &resOSZACP, argL, argR, 
+              zmaskL, zmaskR, imm8, (Bool)isxSTRM
+           );
+   } else {
+      if (isISTRx) {
+         zmaskL = zmask_from_V128(argL);
+         zmaskR = zmask_from_V128(argR);
+      } else {
+         Int tmp;
+         tmp = edxIN & 0xFFFFFFFF;
+         if (tmp < -16) tmp = -16;
+         if (tmp > 16)  tmp = 16;
+         if (tmp < 0)   tmp = -tmp;
+         vassert(tmp >= 0 && tmp <= 16);
+         zmaskL = (1 << tmp) & 0xFFFF;
+         tmp = eaxIN & 0xFFFFFFFF;
+         if (tmp < -16) tmp = -16;
+         if (tmp > 16)  tmp = 16;
+         if (tmp < 0)   tmp = -tmp;
+         vassert(tmp >= 0 && tmp <= 16);
+         zmaskR = (1 << tmp) & 0xFFFF;
+      }
+      // do the meyaath
+      ok = compute_PCMPxSTRx ( 
+              &resV, &resOSZACP, argL, argR, 
+              zmaskL, zmaskR, imm8, (Bool)isxSTRM
+           );
+   }
 
    // front end shouldn't pass us any imm8 variants we can't
    // handle.  Hence:
@@ -2921,6 +3141,324 @@ ULong amd64g_dirtyhelper_PCMPxSTRx (
    }
 }
 
+/*---------------------------------------------------------------*/
+/*--- AES primitives and helpers                              ---*/
+/*---------------------------------------------------------------*/
+/* a 16 x 16 matrix */
+static const UChar sbox[256] = {                   // row nr
+   0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, // 1
+   0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
+   0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, // 2
+   0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0,
+   0xb7, 0xfd, 0x93, 0x26, 0x36, 0x3f, 0xf7, 0xcc, // 3
+   0x34, 0xa5, 0xe5, 0xf1, 0x71, 0xd8, 0x31, 0x15,
+   0x04, 0xc7, 0x23, 0xc3, 0x18, 0x96, 0x05, 0x9a, // 4
+   0x07, 0x12, 0x80, 0xe2, 0xeb, 0x27, 0xb2, 0x75,
+   0x09, 0x83, 0x2c, 0x1a, 0x1b, 0x6e, 0x5a, 0xa0, // 5
+   0x52, 0x3b, 0xd6, 0xb3, 0x29, 0xe3, 0x2f, 0x84,
+   0x53, 0xd1, 0x00, 0xed, 0x20, 0xfc, 0xb1, 0x5b, // 6
+   0x6a, 0xcb, 0xbe, 0x39, 0x4a, 0x4c, 0x58, 0xcf,
+   0xd0, 0xef, 0xaa, 0xfb, 0x43, 0x4d, 0x33, 0x85, // 7
+   0x45, 0xf9, 0x02, 0x7f, 0x50, 0x3c, 0x9f, 0xa8,
+   0x51, 0xa3, 0x40, 0x8f, 0x92, 0x9d, 0x38, 0xf5, // 8
+   0xbc, 0xb6, 0xda, 0x21, 0x10, 0xff, 0xf3, 0xd2,
+   0xcd, 0x0c, 0x13, 0xec, 0x5f, 0x97, 0x44, 0x17, // 9
+   0xc4, 0xa7, 0x7e, 0x3d, 0x64, 0x5d, 0x19, 0x73,
+   0x60, 0x81, 0x4f, 0xdc, 0x22, 0x2a, 0x90, 0x88, //10
+   0x46, 0xee, 0xb8, 0x14, 0xde, 0x5e, 0x0b, 0xdb,
+   0xe0, 0x32, 0x3a, 0x0a, 0x49, 0x06, 0x24, 0x5c, //11
+   0xc2, 0xd3, 0xac, 0x62, 0x91, 0x95, 0xe4, 0x79,
+   0xe7, 0xc8, 0x37, 0x6d, 0x8d, 0xd5, 0x4e, 0xa9, //12
+   0x6c, 0x56, 0xf4, 0xea, 0x65, 0x7a, 0xae, 0x08,
+   0xba, 0x78, 0x25, 0x2e, 0x1c, 0xa6, 0xb4, 0xc6, //13
+   0xe8, 0xdd, 0x74, 0x1f, 0x4b, 0xbd, 0x8b, 0x8a,
+   0x70, 0x3e, 0xb5, 0x66, 0x48, 0x03, 0xf6, 0x0e, //14
+   0x61, 0x35, 0x57, 0xb9, 0x86, 0xc1, 0x1d, 0x9e,
+   0xe1, 0xf8, 0x98, 0x11, 0x69, 0xd9, 0x8e, 0x94, //15
+   0x9b, 0x1e, 0x87, 0xe9, 0xce, 0x55, 0x28, 0xdf,
+   0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, //16
+   0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16
+};
+static void SubBytes (V128* v)
+{
+   V128 r;
+   UInt i;
+   for (i = 0; i < 16; i++)
+      r.w8[i] = sbox[v->w8[i]];
+   *v = r;
+}
+
+/* a 16 x 16 matrix */
+static const UChar invsbox[256] = {                // row nr
+   0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, // 1
+   0xbf, 0x40, 0xa3, 0x9e, 0x81, 0xf3, 0xd7, 0xfb,     
+   0x7c, 0xe3, 0x39, 0x82, 0x9b, 0x2f, 0xff, 0x87, // 2
+   0x34, 0x8e, 0x43, 0x44, 0xc4, 0xde, 0xe9, 0xcb,     
+   0x54, 0x7b, 0x94, 0x32, 0xa6, 0xc2, 0x23, 0x3d, // 3
+   0xee, 0x4c, 0x95, 0x0b, 0x42, 0xfa, 0xc3, 0x4e,     
+   0x08, 0x2e, 0xa1, 0x66, 0x28, 0xd9, 0x24, 0xb2, // 4
+   0x76, 0x5b, 0xa2, 0x49, 0x6d, 0x8b, 0xd1, 0x25,     
+   0x72, 0xf8, 0xf6, 0x64, 0x86, 0x68, 0x98, 0x16, // 5
+   0xd4, 0xa4, 0x5c, 0xcc, 0x5d, 0x65, 0xb6, 0x92,     
+   0x6c, 0x70, 0x48, 0x50, 0xfd, 0xed, 0xb9, 0xda, // 6
+   0x5e, 0x15, 0x46, 0x57, 0xa7, 0x8d, 0x9d, 0x84,     
+   0x90, 0xd8, 0xab, 0x00, 0x8c, 0xbc, 0xd3, 0x0a, // 7
+   0xf7, 0xe4, 0x58, 0x05, 0xb8, 0xb3, 0x45, 0x06,     
+   0xd0, 0x2c, 0x1e, 0x8f, 0xca, 0x3f, 0x0f, 0x02, // 8
+   0xc1, 0xaf, 0xbd, 0x03, 0x01, 0x13, 0x8a, 0x6b,     
+   0x3a, 0x91, 0x11, 0x41, 0x4f, 0x67, 0xdc, 0xea, // 9
+   0x97, 0xf2, 0xcf, 0xce, 0xf0, 0xb4, 0xe6, 0x73,     
+   0x96, 0xac, 0x74, 0x22, 0xe7, 0xad, 0x35, 0x85, //10
+   0xe2, 0xf9, 0x37, 0xe8, 0x1c, 0x75, 0xdf, 0x6e,     
+   0x47, 0xf1, 0x1a, 0x71, 0x1d, 0x29, 0xc5, 0x89, //11
+   0x6f, 0xb7, 0x62, 0x0e, 0xaa, 0x18, 0xbe, 0x1b,     
+   0xfc, 0x56, 0x3e, 0x4b, 0xc6, 0xd2, 0x79, 0x20, //12
+   0x9a, 0xdb, 0xc0, 0xfe, 0x78, 0xcd, 0x5a, 0xf4,     
+   0x1f, 0xdd, 0xa8, 0x33, 0x88, 0x07, 0xc7, 0x31, //13
+   0xb1, 0x12, 0x10, 0x59, 0x27, 0x80, 0xec, 0x5f,     
+   0x60, 0x51, 0x7f, 0xa9, 0x19, 0xb5, 0x4a, 0x0d, //14
+   0x2d, 0xe5, 0x7a, 0x9f, 0x93, 0xc9, 0x9c, 0xef,     
+   0xa0, 0xe0, 0x3b, 0x4d, 0xae, 0x2a, 0xf5, 0xb0, //15
+   0xc8, 0xeb, 0xbb, 0x3c, 0x83, 0x53, 0x99, 0x61,     
+   0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, //16
+   0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d
+};
+static void InvSubBytes (V128* v)
+{
+   V128 r;
+   UInt i;
+   for (i = 0; i < 16; i++)
+      r.w8[i] = invsbox[v->w8[i]];
+   *v = r;
+}
+
+static const UChar ShiftRows_op[16] =
+   {11, 6, 1, 12, 7, 2, 13, 8, 3, 14, 9, 4, 15, 10, 5, 0};
+static void ShiftRows (V128* v)
+{
+   V128 r;
+   UInt i;
+   for (i = 0; i < 16; i++)
+      r.w8[i] = v->w8[ShiftRows_op[15-i]];
+   *v = r;
+}
+
+static const UChar InvShiftRows_op[16] = 
+   {3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13, 0};
+static void InvShiftRows (V128* v)
+{
+   V128 r;
+   UInt i;
+   for (i = 0; i < 16; i++)
+      r.w8[i] = v->w8[InvShiftRows_op[15-i]];
+   *v = r;
+}
+
+/* Multiplication of the finite fields elements of AES.
+   See "A Specification for The AES Algorithm Rijndael 
+        (by Joan Daemen & Vincent Rijmen)"
+        Dr. Brian Gladman, v3.1, 3rd March 2001. */
+/* N values so that (hex) xy = 0x03^N.
+   0x00 cannot be used. We put 0xff for this value.*/
+/* a 16 x 16 matrix */
+static const UChar Nxy[256] = {                    // row nr
+   0xff, 0x00, 0x19, 0x01, 0x32, 0x02, 0x1a, 0xc6, // 1
+   0x4b, 0xc7, 0x1b, 0x68, 0x33, 0xee, 0xdf, 0x03,     
+   0x64, 0x04, 0xe0, 0x0e, 0x34, 0x8d, 0x81, 0xef, // 2
+   0x4c, 0x71, 0x08, 0xc8, 0xf8, 0x69, 0x1c, 0xc1,     
+   0x7d, 0xc2, 0x1d, 0xb5, 0xf9, 0xb9, 0x27, 0x6a, // 3
+   0x4d, 0xe4, 0xa6, 0x72, 0x9a, 0xc9, 0x09, 0x78,     
+   0x65, 0x2f, 0x8a, 0x05, 0x21, 0x0f, 0xe1, 0x24, // 4
+   0x12, 0xf0, 0x82, 0x45, 0x35, 0x93, 0xda, 0x8e,     
+   0x96, 0x8f, 0xdb, 0xbd, 0x36, 0xd0, 0xce, 0x94, // 5
+   0x13, 0x5c, 0xd2, 0xf1, 0x40, 0x46, 0x83, 0x38,     
+   0x66, 0xdd, 0xfd, 0x30, 0xbf, 0x06, 0x8b, 0x62, // 6
+   0xb3, 0x25, 0xe2, 0x98, 0x22, 0x88, 0x91, 0x10,     
+   0x7e, 0x6e, 0x48, 0xc3, 0xa3, 0xb6, 0x1e, 0x42, // 7
+   0x3a, 0x6b, 0x28, 0x54, 0xfa, 0x85, 0x3d, 0xba,     
+   0x2b, 0x79, 0x0a, 0x15, 0x9b, 0x9f, 0x5e, 0xca, // 8
+   0x4e, 0xd4, 0xac, 0xe5, 0xf3, 0x73, 0xa7, 0x57,     
+   0xaf, 0x58, 0xa8, 0x50, 0xf4, 0xea, 0xd6, 0x74, // 9
+   0x4f, 0xae, 0xe9, 0xd5, 0xe7, 0xe6, 0xad, 0xe8,     
+   0x2c, 0xd7, 0x75, 0x7a, 0xeb, 0x16, 0x0b, 0xf5, //10
+   0x59, 0xcb, 0x5f, 0xb0, 0x9c, 0xa9, 0x51, 0xa0,     
+   0x7f, 0x0c, 0xf6, 0x6f, 0x17, 0xc4, 0x49, 0xec, //11
+   0xd8, 0x43, 0x1f, 0x2d, 0xa4, 0x76, 0x7b, 0xb7,     
+   0xcc, 0xbb, 0x3e, 0x5a, 0xfb, 0x60, 0xb1, 0x86, //12
+   0x3b, 0x52, 0xa1, 0x6c, 0xaa, 0x55, 0x29, 0x9d,     
+   0x97, 0xb2, 0x87, 0x90, 0x61, 0xbe, 0xdc, 0xfc, //13
+   0xbc, 0x95, 0xcf, 0xcd, 0x37, 0x3f, 0x5b, 0xd1,     
+   0x53, 0x39, 0x84, 0x3c, 0x41, 0xa2, 0x6d, 0x47, //14
+   0x14, 0x2a, 0x9e, 0x5d, 0x56, 0xf2, 0xd3, 0xab,     
+   0x44, 0x11, 0x92, 0xd9, 0x23, 0x20, 0x2e, 0x89, //15
+   0xb4, 0x7c, 0xb8, 0x26, 0x77, 0x99, 0xe3, 0xa5,     
+   0x67, 0x4a, 0xed, 0xde, 0xc5, 0x31, 0xfe, 0x18, //16
+   0x0d, 0x63, 0x8c, 0x80, 0xc0, 0xf7, 0x70, 0x07
+};
+
+/* E values so that E = 0x03^xy. */
+static const UChar Exy[256] = {                    // row nr
+   0x01, 0x03, 0x05, 0x0f, 0x11, 0x33, 0x55, 0xff, // 1
+   0x1a, 0x2e, 0x72, 0x96, 0xa1, 0xf8, 0x13, 0x35,     
+   0x5f, 0xe1, 0x38, 0x48, 0xd8, 0x73, 0x95, 0xa4, // 2
+   0xf7, 0x02, 0x06, 0x0a, 0x1e, 0x22, 0x66, 0xaa,     
+   0xe5, 0x34, 0x5c, 0xe4, 0x37, 0x59, 0xeb, 0x26, // 3
+   0x6a, 0xbe, 0xd9, 0x70, 0x90, 0xab, 0xe6, 0x31,     
+   0x53, 0xf5, 0x04, 0x0c, 0x14, 0x3c, 0x44, 0xcc, // 4
+   0x4f, 0xd1, 0x68, 0xb8, 0xd3, 0x6e, 0xb2, 0xcd,     
+   0x4c, 0xd4, 0x67, 0xa9, 0xe0, 0x3b, 0x4d, 0xd7, // 5
+   0x62, 0xa6, 0xf1, 0x08, 0x18, 0x28, 0x78, 0x88,     
+   0x83, 0x9e, 0xb9, 0xd0, 0x6b, 0xbd, 0xdc, 0x7f, // 6
+   0x81, 0x98, 0xb3, 0xce, 0x49, 0xdb, 0x76, 0x9a,     
+   0xb5, 0xc4, 0x57, 0xf9, 0x10, 0x30, 0x50, 0xf0, // 7
+   0x0b, 0x1d, 0x27, 0x69, 0xbb, 0xd6, 0x61, 0xa3,     
+   0xfe, 0x19, 0x2b, 0x7d, 0x87, 0x92, 0xad, 0xec, // 8
+   0x2f, 0x71, 0x93, 0xae, 0xe9, 0x20, 0x60, 0xa0,     
+   0xfb, 0x16, 0x3a, 0x4e, 0xd2, 0x6d, 0xb7, 0xc2, // 9
+   0x5d, 0xe7, 0x32, 0x56, 0xfa, 0x15, 0x3f, 0x41,     
+   0xc3, 0x5e, 0xe2, 0x3d, 0x47, 0xc9, 0x40, 0xc0, //10
+   0x5b, 0xed, 0x2c, 0x74, 0x9c, 0xbf, 0xda, 0x75,     
+   0x9f, 0xba, 0xd5, 0x64, 0xac, 0xef, 0x2a, 0x7e, //11
+   0x82, 0x9d, 0xbc, 0xdf, 0x7a, 0x8e, 0x89, 0x80,     
+   0x9b, 0xb6, 0xc1, 0x58, 0xe8, 0x23, 0x65, 0xaf, //12
+   0xea, 0x25, 0x6f, 0xb1, 0xc8, 0x43, 0xc5, 0x54,     
+   0xfc, 0x1f, 0x21, 0x63, 0xa5, 0xf4, 0x07, 0x09, //13
+   0x1b, 0x2d, 0x77, 0x99, 0xb0, 0xcb, 0x46, 0xca,     
+   0x45, 0xcf, 0x4a, 0xde, 0x79, 0x8b, 0x86, 0x91, //14
+   0xa8, 0xe3, 0x3e, 0x42, 0xc6, 0x51, 0xf3, 0x0e,     
+   0x12, 0x36, 0x5a, 0xee, 0x29, 0x7b, 0x8d, 0x8c, //15
+   0x8f, 0x8a, 0x85, 0x94, 0xa7, 0xf2, 0x0d, 0x17,     
+   0x39, 0x4b, 0xdd, 0x7c, 0x84, 0x97, 0xa2, 0xfd, //16
+   0x1c, 0x24, 0x6c, 0xb4, 0xc7, 0x52, 0xf6, 0x01};
+
+static inline UChar ff_mul(UChar u1, UChar u2)
+{
+   if ((u1 > 0) && (u2 > 0)) {
+      UInt ui = Nxy[u1] + Nxy[u2];
+      if (ui >= 255)
+         ui = ui - 255;
+      return Exy[ui];
+   } else {
+      return 0;
+   };
+}
+
+static void MixColumns (V128* v)
+{
+   V128 r;
+   Int j;
+#define P(x,row,col) (x)->w8[((row)*4+(col))]
+   for (j = 0; j < 4; j++) {
+      P(&r,j,0) = ff_mul(0x02, P(v,j,0)) ^ ff_mul(0x03, P(v,j,1)) 
+         ^ P(v,j,2) ^ P(v,j,3);
+      P(&r,j,1) = P(v,j,0) ^ ff_mul( 0x02, P(v,j,1) ) 
+         ^ ff_mul(0x03, P(v,j,2) ) ^ P(v,j,3);
+      P(&r,j,2) = P(v,j,0) ^ P(v,j,1) ^ ff_mul( 0x02, P(v,j,2) )
+         ^ ff_mul(0x03, P(v,j,3) );
+      P(&r,j,3) = ff_mul(0x03, P(v,j,0) ) ^ P(v,j,1) ^ P(v,j,2)
+         ^ ff_mul( 0x02, P(v,j,3) );
+   }
+   *v = r;
+#undef P
+}
+
+static void InvMixColumns (V128* v)
+{
+   V128 r;
+   Int j;
+#define P(x,row,col) (x)->w8[((row)*4+(col))]
+   for (j = 0; j < 4; j++) {
+      P(&r,j,0) = ff_mul(0x0e, P(v,j,0) ) ^ ff_mul(0x0b, P(v,j,1) )
+         ^ ff_mul(0x0d,P(v,j,2) ) ^ ff_mul(0x09, P(v,j,3) );
+      P(&r,j,1) = ff_mul(0x09, P(v,j,0) ) ^ ff_mul(0x0e, P(v,j,1) )
+         ^ ff_mul(0x0b,P(v,j,2) ) ^ ff_mul(0x0d, P(v,j,3) );
+      P(&r,j,2) = ff_mul(0x0d, P(v,j,0) ) ^ ff_mul(0x09, P(v,j,1) )
+         ^ ff_mul(0x0e,P(v,j,2) ) ^ ff_mul(0x0b, P(v,j,3) );
+      P(&r,j,3) = ff_mul(0x0b, P(v,j,0) ) ^ ff_mul(0x0d, P(v,j,1) )
+         ^ ff_mul(0x09,P(v,j,2) ) ^ ff_mul(0x0e, P(v,j,3) );
+   }
+   *v = r;
+#undef P
+
+}
+
+/* For description, see definition in guest_amd64_defs.h */
+void amd64g_dirtyhelper_AES ( 
+          VexGuestAMD64State* gst,
+          HWord opc4,
+          HWord gstOffL, HWord gstOffR
+       )
+{
+   // where the args are
+   V128* argL = (V128*)( ((UChar*)gst) + gstOffL );
+   V128* argR = (V128*)( ((UChar*)gst) + gstOffR );
+
+   switch (opc4) {
+      case 0xDC: /* AESENC */
+      case 0xDD: /* AESENCLAST */
+         ShiftRows (argR);
+         SubBytes  (argR);
+         if (opc4 == 0xDC)
+            MixColumns (argR);
+         argR->w64[0] = argR->w64[0] ^ argL->w64[0];
+         argR->w64[1] = argR->w64[1] ^ argL->w64[1];
+         break;
+
+      case 0xDE: /* AESDEC */
+      case 0xDF: /* AESDECLAST */
+         InvShiftRows (argR);
+         InvSubBytes (argR);
+         if (opc4 == 0xDE)
+            InvMixColumns (argR);
+         argR->w64[0] = argR->w64[0] ^ argL->w64[0];
+         argR->w64[1] = argR->w64[1] ^ argL->w64[1];
+         break;
+
+      case 0xDB: /* AESIMC */
+         *argR = *argL;
+         InvMixColumns (argR);
+         break;
+      default: vassert(0);
+   }
+}
+
+static inline UInt RotWord (UInt   w32)
+{
+   return ((w32 >> 8) | (w32 << 24));
+}
+
+static inline UInt SubWord (UInt   w32)
+{
+   UChar *w8;
+   UChar *r8;
+   UInt res;
+   w8 = (UChar*) &w32;
+   r8 = (UChar*) &res;
+   r8[0] = sbox[w8[0]];
+   r8[1] = sbox[w8[1]];
+   r8[2] = sbox[w8[2]];
+   r8[3] = sbox[w8[3]];
+   return res;
+}
+
+/* For description, see definition in guest_amd64_defs.h */
+extern void amd64g_dirtyhelper_AESKEYGENASSIST ( 
+          VexGuestAMD64State* gst,
+          HWord imm8,
+          HWord gstOffL, HWord gstOffR
+       )
+{
+   // where the args are
+   V128* argL = (V128*)( ((UChar*)gst) + gstOffL );
+   V128* argR = (V128*)( ((UChar*)gst) + gstOffR );
+
+   argR->w32[3] = RotWord (SubWord (argL->w32[3])) ^ imm8;
+   argR->w32[2] = SubWord (argL->w32[3]);
+   argR->w32[1] = RotWord (SubWord (argL->w32[1])) ^ imm8;
+   argR->w32[0] = SubWord (argL->w32[1]);
+}
+
+
 
 /*---------------------------------------------------------------*/
 /*--- Helpers for dealing with, and describing,               ---*/
@@ -2931,6 +3469,10 @@ ULong amd64g_dirtyhelper_PCMPxSTRx (
 /* VISIBLE TO LIBVEX CLIENT */
 void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state )
 {
+   vex_state->host_EvC_FAILADDR = 0;
+   vex_state->host_EvC_COUNTER = 0;
+   vex_state->pad0 = 0;
+
    vex_state->guest_RAX = 0;
    vex_state->guest_RCX = 0;
    vex_state->guest_RDX = 0;
@@ -3001,7 +3543,7 @@ void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state )
    vex_state->guest_GS_0x60  = 0;
 
    vex_state->guest_IP_AT_SYSCALL = 0;
-   /* vex_state->padding = 0; */
+   vex_state->pad1 = 0;
 }
 
 

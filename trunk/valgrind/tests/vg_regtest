@@ -40,6 +40,11 @@
 #   --keep-unfiltered: keep a copy of the unfiltered output/error output
 #     of each test by adding an extension .unfiltered.out
 #
+#   --outer-valgrind: run this valgrind under the given outer valgrind.
+#     This valgrind must be configured with --enable-inner.
+#   --outer-tool: tool to use by the outer valgrind (default memcheck).
+#   --outer-args: use this as outer tool args.
+#
 # The easiest way is to run all tests in valgrind/ with (assuming you installed
 # in $PREFIX):
 #
@@ -120,7 +125,8 @@ use strict;
 #----------------------------------------------------------------------------
 my $usage="\n"
      . "Usage:\n"
-     . "   vg_regtest [--all, --valgrind, --valgrind-lib, --keep-unfiltered]\n"
+     . "   vg_regtest [--all, --valgrind, --valgrind-lib, --keep-unfiltered\n"
+     . "                 --outer-valgrind, --outer-tool, --outer-args]\n"
      . "   Use EXTRA_REGTEST_OPTS to supply extra args for all tests\n"
      . "\n";
 
@@ -156,6 +162,11 @@ my %num_failures        = (stderr => 0, stdout => 0,
 my $valgrind = "./coregrind/valgrind";
 
 chomp(my $tests_dir = `pwd`);
+
+# Outer valgrind to use, and args to use for it.
+my $outer_valgrind;
+my $outer_tool = "memcheck";
+my $outer_args;
 
 my $valgrind_lib = "$tests_dir/.in_place";
 my $keepunfiltered = 0;
@@ -205,6 +216,12 @@ sub process_command_line()
                 $alldirs = 1;
             } elsif ($arg =~ /^--valgrind=(.*)$/) {
                 $valgrind = $1;
+            } elsif ($arg =~ /^--outer-valgrind=(.*)$/) {
+                $outer_valgrind = $1;
+            } elsif ($arg =~ /^--outer-tool=(.*)$/) {
+                $outer_tool = $1;
+            } elsif ($arg =~ /^--outer-args=(.*)$/) {
+                $outer_args = $1;
             } elsif ($arg =~ /^--valgrind-lib=(.*)$/) {
                 $valgrind_lib = $1;
             } elsif ($arg =~ /^--keep-unfiltered$/) {
@@ -217,6 +234,21 @@ sub process_command_line()
         }
     }
     $valgrind = validate_program($tests_dir, $valgrind, 1, 0);
+    
+    if (defined $outer_valgrind) {
+      $outer_valgrind = validate_program($tests_dir, $outer_valgrind, 1, 1);
+      if (not defined $outer_args) {
+          $outer_args = 
+                " --command-line-only=yes"
+              . " --run-libc-freeres=no --sim-hints=enable-outer"
+              . " --smc-check=all-non-file"
+              . " --vgdb=no --trace-children=yes --read-var-info=no"
+              . " --suppressions=" 
+              . validate_program($tests_dir,"./tests/outer_inner.supp",1,0)
+              . " --memcheck:leak-check=full --memcheck:show-reachable=no"
+              . " ";
+      }
+    }
 
     if ($alldirs) {
         @fs = ();
@@ -424,14 +456,27 @@ sub do_one_test($$)
     }
  
     # Pass the appropriate --tool option for the directory (can be overridden
-    # by an "args:" line, though).  Set both VALGRIND_LIB and
-    # VALGRIND_LIB_INNER in case this Valgrind was configured with
-    # --enable-inner.
+    # by an "args:" line, though).
     my $tool=determine_tool();
-    mysystem("VALGRIND_LIB=$valgrind_lib VALGRIND_LIB_INNER=$valgrind_lib "
-           . "$valgrind --command-line-only=yes --memcheck:leak-check=no "
-           . "--tool=$tool $extraopts $vgopts "
-           . "$prog $args > $name.stdout.out 2> $name.stderr.out");
+    if (defined $outer_valgrind ) {
+        # in an outer-inner setup, only set VALGRIND_LIB_INNER
+        mysystem(   "VALGRIND_LIB_INNER=$valgrind_lib "
+                  . "$outer_valgrind "
+                  . "--tool=" . $outer_tool . " "
+                  . "$outer_args "
+                  . "--log-file=" . "$name.outer.log "
+                  . "$valgrind --command-line-only=yes --memcheck:leak-check=no "
+                  . "--sim-hints=no-inner-prefix "
+                  . "--tool=$tool $extraopts $vgopts "
+                  . "$prog $args > $name.stdout.out 2> $name.stderr.out");
+    } else {
+        # Set both VALGRIND_LIB and VALGRIND_LIB_INNER in case this Valgrind
+        # was configured with --enable-inner.
+        mysystem(   "VALGRIND_LIB=$valgrind_lib VALGRIND_LIB_INNER=$valgrind_lib "
+                  . "$valgrind --command-line-only=yes --memcheck:leak-check=no "
+                  . "--tool=$tool $extraopts $vgopts "
+                  . "$prog $args > $name.stdout.out 2> $name.stderr.out");
+    }
 
     # Filter stdout
     if (defined $stdout_filter) {

@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2010 OpenWorks LLP
+   Copyright (C) 2004-2011 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -79,6 +79,9 @@
 #define VEX_TRC_JMP_SYS_INT130   91 /* do syscall before continuing */
 
 #define VEX_TRC_JMP_SYS_SYSENTER 79 /* do syscall before continuing */
+
+#define VEX_TRC_JMP_BORING       95 /* return to sched, but just 
+                                       keep going; no special action */
 
 #endif /* ndef __LIBVEX_TRC_VALUES_H */
 

@@ -7,8 +7,8 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2005-2010 Nicholas Nethercote <njn@valgrind.org>
-   Copyright (C) 2005-2010 Cerion Armour-Brown <cerion@open-works.co.uk>
+   Copyright (C) 2005-2011 Nicholas Nethercote <njn@valgrind.org>
+   Copyright (C) 2005-2011 Cerion Armour-Brown <cerion@open-works.co.uk>
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -363,6 +363,7 @@ static SysRes do_clone ( ThreadId ptid,
       know that this thread has come into existence.  If the clone
       fails, we'll send out a ll_exit notification for it at the out:
       label below, to clean up. */
+   vg_assert(VG_(owns_BigLock_LL)(ptid));
    VG_TRACK ( pre_thread_ll_create, ptid, ctid );
 
    if (flags & VKI_CLONE_SETTLS) {
@@ -583,7 +584,7 @@ PRE(sys_socketcall)
       * (after all it's glibc providing the arguments array)
        PRE_MEM_READ( "socketcall.sendmsg(args)", ARG2, 3*sizeof(Addr) );
      */
-     ML_(generic_PRE_sys_sendmsg)( tid, ARG2_0, ARG2_1 );
+     ML_(generic_PRE_sys_sendmsg)( tid, "msg", (struct vki_msghdr *)ARG2_1 );
      break;
    }
 
@@ -594,7 +595,7 @@ PRE(sys_socketcall)
       * (after all it's glibc providing the arguments array)
        PRE_MEM_READ("socketcall.recvmsg(args)", ARG2, 3*sizeof(Addr) );
      */
-     ML_(generic_PRE_sys_recvmsg)( tid, ARG2_0, ARG2_1 );
+     ML_(generic_PRE_sys_recvmsg)( tid, "msg", (struct vki_msghdr *)ARG2_1 );
      break;
    }
 
@@ -700,7 +701,7 @@ POST(sys_socketcall)
     break;
 
   case VKI_SYS_RECVMSG:
-    ML_(generic_POST_sys_recvmsg)( tid, ARG2_0, ARG2_1 );
+    ML_(generic_POST_sys_recvmsg)( tid, "msg", (struct vki_msghdr *)ARG2_1, RES );
     break;
 
   default:
@@ -1292,13 +1293,13 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_sched_rr_get_interval,  sys_sched_rr_get_interval), // 161
    GENXY(__NR_nanosleep,         sys_nanosleep),          // 162
    GENX_(__NR_mremap,            sys_mremap),             // 163
-// _____(__NR_setresuid,         sys_setresuid),          // 164
+   LINX_(__NR_setresuid,         sys_setresuid),          // 164
 
    LINXY(__NR_getresuid,         sys_getresuid),          // 165
 // _____(__NR_query_module,      sys_query_module),       // 166
    GENXY(__NR_poll,              sys_poll),               // 167
 // _____(__NR_nfsservctl,        sys_nfsservctl),         // 168
-// _____(__NR_setresgid,         sys_setresgid),          // 169
+   LINX_(__NR_setresgid,         sys_setresgid),          // 169
 
    LINXY(__NR_getresgid,         sys_getresgid),          // 170
 // _____(__NR_prctl,             sys_prctl),              // 171
@@ -1446,7 +1447,7 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_faccessat,         sys_faccessat),          // 298
    LINX_(__NR_set_robust_list,   sys_set_robust_list),    // 299
    LINXY(__NR_get_robust_list,   sys_get_robust_list),    // 300
-//   LINX_(__NR_move_pages,        sys_ni_syscall),        // 301
+   LINXY(__NR_move_pages,        sys_move_pages),        // 301
    LINXY(__NR_getcpu,            sys_getcpu),            // 302
    LINXY(__NR_epoll_pwait,       sys_epoll_pwait),       // 303
    LINX_(__NR_utimensat,         sys_utimensat),         // 304
@@ -1467,7 +1468,10 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_perf_event_open,   sys_perf_event_open),  // 319
    LINXY(__NR_preadv,            sys_preadv),           // 320
    LINX_(__NR_pwritev,           sys_pwritev),          // 321
-   LINXY(__NR_rt_tgsigqueueinfo, sys_rt_tgsigqueueinfo) // 322
+   LINXY(__NR_rt_tgsigqueueinfo, sys_rt_tgsigqueueinfo),// 322
+
+   LINXY(__NR_process_vm_readv,  sys_process_vm_readv), // 351
+   LINX_(__NR_process_vm_writev, sys_process_vm_writev) // 352
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry) ( UInt sysno )

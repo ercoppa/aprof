@@ -11,7 +11,7 @@
    This file is part of Helgrind, a Valgrind tool for detecting errors
    in threaded programs.
 
-   Copyright (C) 2007-2010 OpenWorks LLP
+   Copyright (C) 2007-2011 OpenWorks LLP
       info@open-works.co.uk
 
    Redistribution and use in source and binary forms, with or without
@@ -147,7 +147,7 @@ typedef
       long int _arg1;                                    \
       /* assert(sizeof(_ty1F) == sizeof(long int)); */   \
       _arg1 = (long int)(_arg1F);                        \
-      VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                 \
+      VALGRIND_DO_CLIENT_REQUEST_STMT(                   \
                                  (_creqF),               \
                                  _arg1, 0,0,0,0);        \
    } while (0)
@@ -171,7 +171,7 @@ typedef
       /* assert(sizeof(_ty2F) == sizeof(long int)); */   \
       _arg1 = (long int)(_arg1F);                        \
       _arg2 = (long int)(_arg2F);                        \
-      VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                 \
+      VALGRIND_DO_CLIENT_REQUEST_STMT(                   \
                                  (_creqF),               \
                                  _arg1,_arg2,0,0,0);     \
    } while (0)
@@ -186,7 +186,7 @@ typedef
       _arg1 = (long int)(_arg1F);                        \
       _arg2 = (long int)(_arg2F);                        \
       _arg3 = (long int)(_arg3F);                        \
-      VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                 \
+      VALGRIND_DO_CLIENT_REQUEST_STMT(                   \
                                  (_creqF),               \
                                  _arg1,_arg2,_arg3,0,0); \
    } while (0)
@@ -603,7 +603,7 @@ typedef
 /* Same as ANNOTATE_BENIGN_RACE(address, description), but applies to
    the memory range [address, address+size). */
 #define ANNOTATE_BENIGN_RACE_SIZED(address, size, description) \
-   _HG_CLIENTREQ_UNIMP("ANNOTATE_BENIGN_RACE_SIZED")
+   VALGRIND_HG_DISABLE_CHECKING(address, size)
 
 /* Request the analysis tool to ignore all reads in the current thread
    until ANNOTATE_IGNORE_READS_END is called.  Useful to ignore

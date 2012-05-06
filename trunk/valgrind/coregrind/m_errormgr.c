@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2010 Julian Seward 
+   Copyright (C) 2000-2011 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -81,6 +81,9 @@ static UInt n_errs_found = 0;
 
 /* Running count of suppressed errors detected. */
 static UInt n_errs_suppressed = 0;
+
+/* Running count of errors shown. */
+static UInt n_errs_shown = 0;
 
 /* Running count of unsuppressed error contexts. */
 static UInt n_err_contexts = 0;
@@ -169,6 +172,11 @@ void* VG_(get_error_extra)  ( Error* err )
 UInt VG_(get_n_errs_found)( void )
 {
    return n_errs_found;
+}
+
+UInt VG_(get_n_errs_shown)( void )
+{
+   return n_errs_shown;
 }
 
 /*------------------------------------------------------------*/
@@ -498,7 +506,7 @@ void do_actions_on_error(Error* err, Bool allow_db_attach)
    /* if user wants to debug from a certain error nr, then wait for gdb/vgdb */
    if (VG_(clo_vgdb) != Vg_VgdbNo
        && allow_db_attach 
-       && VG_(dyn_vgdb_error) <= n_errs_found) {
+       && VG_(dyn_vgdb_error) <= n_errs_shown) {
       VG_(umsg)("(action on error) vgdb me ... \n");
       VG_(gdbserver)( err->tid );
       VG_(umsg)("Continuing ...\n");
@@ -637,8 +645,6 @@ void construct_error ( Error* err, ThreadId tid, ErrorKind ekind, Addr a,
 }
 
 
-
-static Int  n_errs_shown = 0;
 
 /* Top-level entry point to the error management subsystem.
    All detected errors are notified here; this routine decides if/when the
@@ -796,12 +802,12 @@ void VG_(maybe_record_error) ( ThreadId tid,
    p->supp = is_suppressible_error(&err);
    errors  = p;
    if (p->supp == NULL) {
+      /* update stats */
       n_err_contexts++;
       n_errs_found++;
+      n_errs_shown++;
       /* Actually show the error; more complex than you might think. */
       pp_Error( p, /*allow_db_attach*/True, VG_(clo_xml) );
-      /* update stats */
-      n_errs_shown++;
    } else {
       n_supp_contexts++;
       n_errs_suppressed++;
@@ -848,10 +854,10 @@ Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, Char* s,
       }
 
       if (print_error) {
-         /* Actually show the error; more complex than you might think. */
-         pp_Error(&err, allow_db_attach, VG_(clo_xml));
          /* update stats */
          n_errs_shown++;
+         /* Actually show the error; more complex than you might think. */
+         pp_Error(&err, allow_db_attach, VG_(clo_xml));
       }
       return False;
 
@@ -1097,26 +1103,30 @@ Bool VG_(get_line) ( Int fd, Char** bufpp, SizeT* nBufp, Int* lineno )
 }
 
 
-/* *p_caller contains the raw name of a caller, supposedly either
+/* buf contains the raw name of a caller, supposedly either
        fun:some_function_name   or
-       obj:some_object_name.
-   Set *p_ty accordingly and advance *p_caller over the descriptor
-   (fun: or obj:) part.
+       obj:some_object_name     or
+       ...
+   Set p->ty and p->name accordingly.
+   p->name is allocated and set to the string
+   after the descriptor (fun: or obj:) part.
    Returns False if failed.
 */
-static Bool setLocationTy ( SuppLoc* p )
+static Bool setLocationTy ( SuppLoc* p, Char *buf )
 {
-   if (VG_(strncmp)(p->name, "fun:", 4) == 0) {
-      p->name += 4;
+   if (VG_(strncmp)(buf, "fun:", 4) == 0) {
+      p->name = VG_(arena_strdup)(VG_AR_CORE,
+                                  "errormgr.sLTy.1", buf+4);
       p->ty = FunName;
       return True;
    }
-   if (VG_(strncmp)(p->name, "obj:", 4) == 0) {
-      p->name += 4;
+   if (VG_(strncmp)(buf, "obj:", 4) == 0) {
+      p->name = VG_(arena_strdup)(VG_AR_CORE,
+                                  "errormgr.sLTy.2", buf+4);
       p->ty = ObjName;
       return True;
    }
-   if (VG_(strcmp)(p->name, "...") == 0) {
+   if (VG_(strcmp)(buf, "...") == 0) {
       p->name = NULL;
       p->ty = DotDotDot;
       return True;
@@ -1194,7 +1204,10 @@ static void load_one_suppressions_file ( Char* filename )
       supp->string = supp->extra = NULL;
 
       eof = VG_(get_line) ( fd, &buf, &nBuf, &lineno );
-      if (eof) break;
+      if (eof) {
+         VG_(arena_free)(VG_AR_CORE, supp);
+         break;
+      }
 
       if (!VG_STREQ(buf, "{")) BOMB("expected '{' or end-of-file");
       
@@ -1247,6 +1260,8 @@ static void load_one_suppressions_file ( Char* filename )
             if (VG_STREQ(buf, "}"))
                break;
          }
+         VG_(arena_free)(VG_AR_CORE, supp->sname);
+         VG_(arena_free)(VG_AR_CORE, supp);
          continue;
       }
 
@@ -1274,9 +1289,7 @@ static void load_one_suppressions_file ( Char* filename )
             BOMB("too many callers in stack trace");
          if (i > 0 && i >= VG_(clo_backtrace_size)) 
             break;
-         tmp_callers[i].name = VG_(arena_strdup)(VG_AR_CORE,
-                                                 "errormgr.losf.3", buf);
-         if (!setLocationTy(&(tmp_callers[i])))
+         if (!setLocationTy(&(tmp_callers[i]), buf))
             BOMB("location should be \"...\", or should start "
                  "with \"fun:\" or \"obj:\"");
          i++;

@@ -1,4 +1,3 @@
-/* -*- mode: C; c-basic-offset: 3; indent-tabs-mode: nil; -*- */
 /*
   This file is part of drd, a thread error detector.
 
@@ -35,6 +34,11 @@
 #include "pub_tool_threadstate.h" // VG_INVALID_THREADID
 
 
+/* Global variables. */
+
+Segment* DRD_(g_sg_list);
+
+
 /* Local variables. */
 
 static ULong s_segment_merge_count;
@@ -69,8 +73,10 @@ static void sg_init(Segment* const sg,
    creator_sg = (creator != DRD_INVALID_THREADID
                  ? DRD_(thread_get_segment)(creator) : 0);
 
-   sg->next = 0;
-   sg->prev = 0;
+   sg->g_next = NULL;
+   sg->g_prev = NULL;
+   sg->thr_next = NULL;
+   sg->thr_prev = NULL;
    sg->tid = created;
    sg->refcnt = 1;
 
@@ -120,6 +126,11 @@ Segment* DRD_(sg_new)(const DrdThreadId creator, const DrdThreadId created)
    sg = VG_(malloc)("drd.segment.sn.1", sizeof(*sg));
    tl_assert(sg);
    sg_init(sg, creator, created);
+   if (DRD_(g_sg_list)) {
+      DRD_(g_sg_list)->g_prev = sg;
+      sg->g_next = DRD_(g_sg_list);
+   }
+   DRD_(g_sg_list) = sg;
    return sg;
 }
 
@@ -138,6 +149,12 @@ static void DRD_(sg_delete)(Segment* const sg)
    s_segments_alive_count--;
 
    tl_assert(sg);
+   if (sg->g_next)
+      sg->g_next->g_prev = sg->g_prev;
+   if (sg->g_prev)
+      sg->g_prev->g_next = sg->g_next;
+   else
+      DRD_(g_sg_list) = sg->g_next;
    DRD_(sg_cleanup)(sg);
    VG_(free)(sg);
 }

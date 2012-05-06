@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2005-2010 Apple Inc.
+   Copyright (C) 2005-2011 Apple Inc.
       Greg Parker  gparker@apple.com
 
    This program is free software; you can redistribute it and/or
@@ -3107,7 +3107,7 @@ PRE(sendmsg)
    PRINT("sendmsg ( %ld, %#lx, %ld )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "sendmsg",
                  int, s, const struct msghdr *, msg, int, flags);
-   ML_(generic_PRE_sys_sendmsg)(tid, ARG1,ARG2);
+   ML_(generic_PRE_sys_sendmsg)(tid, "msg", (struct vki_msghdr *)ARG2);
 }
 
 
@@ -3116,12 +3116,12 @@ PRE(recvmsg)
    *flags |= SfMayBlock;
    PRINT("recvmsg ( %ld, %#lx, %ld )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "recvmsg", int, s, struct msghdr *, msg, int, flags);
-   ML_(generic_PRE_sys_recvmsg)(tid, ARG1,ARG2);
+   ML_(generic_PRE_sys_recvmsg)(tid, "msg", (struct vki_msghdr *)ARG2);
 }
 
 POST(recvmsg)
 {
-   ML_(generic_POST_sys_recvmsg)(tid, ARG1,ARG2);
+   ML_(generic_POST_sys_recvmsg)(tid, "msg", (struct vki_msghdr *)ARG2, RES);
 }
 
 
@@ -3547,10 +3547,43 @@ PRE(mmap)
 
 POST(mmap)
 {
-   if (RES != -1) {
-      ML_(notify_core_and_tool_of_mmap)(RES, ARG2, ARG3, ARG4, ARG5, ARG6);
-      // Try to load symbols from the region
-      VG_(di_notify_mmap)( (Addr)RES, False/*allow_SkFileV*/ );
+   vg_assert(SUCCESS);
+   /* JRS 2012 Mar 26: RES != -1 is surely not the right way to check
+      for success.  In any case I think syswrap-main.c won't let us
+      get here if the syscall failed, so the check is irrelevant.  See
+      VG_(post_syscall). */
+   if (RES == -1)
+      return;
+   vg_assert(VG_IS_PAGE_ALIGNED(RES));
+
+   /* begin KLUDGE */
+   Bool did_kludge = False;
+   if (ARG1 == 0 && !(ARG4 & MAP_FIXED) && RES == 0) {
+      /* An mmap-anonymous succeeded at address zero.  This is pretty
+         stupid (legit, but dangerous); so repeat the mmap call so as
+         to get a non-zero address.  Then unmap the area that the
+         original mmap created, and tidy up.  Failure to do this is
+         a causative factor in 
+         https://bugzilla.mozilla.org/show_bug.cgi?id=738034
+      */
+      SysRes more = VG_(am_do_mmap_NO_NOTIFY)(ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
+      if (!sr_isError(more)) {
+         Bool need_discard = False;
+         VG_(am_munmap_client)(&need_discard, 0, ARG2);
+         vg_assert(!need_discard);
+         SET_STATUS_from_SysRes(more);
+         did_kludge = True;
+      }
+   }
+   /* end KLUDGE */
+
+   ML_(notify_core_and_tool_of_mmap)(RES, ARG2, ARG3, ARG4, ARG5, ARG6);
+   // Try to load symbols from the region
+   VG_(di_notify_mmap)( (Addr)RES, False/*allow_SkFileV*/,
+                        -1/*don't use_fd*/ );
+   if (did_kludge) {
+      /* Be paranoid if The Kludge happens. */
+      VG_(am_do_sync_check)("(MMAP_ANON_ZERO_ZERO_KLUDGE)",__FILE__,__LINE__);
    }
 }
 
@@ -6482,6 +6515,7 @@ POST(bsdthread_create)
    // should be in pthread_hijack instead, just before the call to
    // start_thread_NORETURN(), call_on_new_stack_0_1(), but we don't have the
    // parent tid value there...
+   vg_assert(VG_(owns_BigLock_LL)(tid));
    VG_TRACK ( pre_thread_ll_create, tid, tst->tid );
 }
 

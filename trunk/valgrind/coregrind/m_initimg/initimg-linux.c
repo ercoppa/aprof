@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2010 Julian Seward
+   Copyright (C) 2000-2011 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -986,10 +986,11 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
    arch->vex.guest_EIP = iifii.initial_client_IP;
 
    /* initialise %cs, %ds and %ss to point at the operating systems
-      default code, data and stack segments */
+      default code, data and stack segments.  Also %es (see #291253). */
    asm volatile("movw %%cs, %0" : : "m" (arch->vex.guest_CS));
    asm volatile("movw %%ds, %0" : : "m" (arch->vex.guest_DS));
    asm volatile("movw %%ss, %0" : : "m" (arch->vex.guest_SS));
+   asm volatile("movw %%es, %0" : : "m" (arch->vex.guest_ES));
 
 #  elif defined(VGP_amd64_linux)
    vg_assert(0 == sizeof(VexGuestAMD64State) % 16);
@@ -1060,13 +1061,25 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
       is also done by the kernel for the fpc during execve. */
    LibVEX_GuestS390X_initialise(&arch->vex);
 
-   /* Zero out the shadow area. */
-   VG_(memset)(&arch->vex_shadow1, 0, sizeof(VexGuestS390XState));
-   VG_(memset)(&arch->vex_shadow2, 0, sizeof(VexGuestS390XState));
+   /* Mark all registers as undefined ... */
+   VG_(memset)(&arch->vex_shadow1, 0xFF, sizeof(VexGuestS390XState));
+   VG_(memset)(&arch->vex_shadow2, 0x00, sizeof(VexGuestS390XState));
+   /* ... except SP, FPC, and IA */
+   VG_(memset)((UChar *)&arch->vex_shadow1 + VG_O_STACK_PTR, 0x00, 8);
+   VG_(memset)((UChar *)&arch->vex_shadow1 + VG_O_FPC_REG,   0x00, 4);
+   VG_(memset)((UChar *)&arch->vex_shadow1 + VG_O_INSTR_PTR, 0x00, 8);
 
    /* Put essential stuff into the new state. */
    arch->vex.guest_SP = iifii.initial_client_SP;
    arch->vex.guest_IA = iifii.initial_client_IP;
+   /* See sys_execve in <linux>/arch/s390/kernel/process.c */
+   arch->vex.guest_fpc = 0;
+
+   /* Tell the tool about the registers we just wrote */
+   VG_TRACK(post_reg_write, Vg_CoreStartup, /*tid*/1, VG_O_STACK_PTR, 8);
+   VG_TRACK(post_reg_write, Vg_CoreStartup, /*tid*/1, VG_O_FPC_REG,   4);
+   VG_TRACK(post_reg_write, Vg_CoreStartup, /*tid*/1, VG_O_INSTR_PTR, 8);
+   return;
 
 #  else
 #    error Unknown platform

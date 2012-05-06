@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2010 Julian Seward 
+   Copyright (C) 2000-2011 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -307,6 +307,18 @@ struct vki_sigcontext {
 #define VKI_F_GETLK64		12	/*  using 'struct flock64' */
 #define VKI_F_SETLK64		13
 #define VKI_F_SETLKW64		14
+
+#define VKI_F_SETOWN_EX		15
+#define VKI_F_GETOWN_EX		16
+
+#define VKI_F_OWNER_TID		0
+#define VKI_F_OWNER_PID		1
+#define VKI_F_OWNER_PGRP	2
+
+struct vki_f_owner_ex {
+	int	type;
+	__vki_kernel_pid_t	pid;
+};
 
 /* for F_[GET|SET]FL */
 #define VKI_FD_CLOEXEC	1	/* actually anything with low bit set goes */

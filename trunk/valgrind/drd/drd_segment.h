@@ -1,4 +1,3 @@
-/* -*- mode: C; c-basic-offset: 3; indent-tabs-mode: nil; -*- */
 /*
   This file is part of drd, a thread error detector.
 
@@ -42,9 +41,11 @@
 
 typedef struct segment
 {
+   struct segment*    g_next;
+   struct segment*    g_prev;
    /** Pointers to next and previous segments executed by the same thread. */
-   struct segment*    next;
-   struct segment*    prev;
+   struct segment*    thr_next;
+   struct segment*    thr_prev;
    DrdThreadId        tid;
    /** Reference count: number of pointers that point to this segment. */
    int                refcnt;
@@ -59,6 +60,7 @@ typedef struct segment
    struct bitmap      bm;
 } Segment;
 
+extern Segment* DRD_(g_sg_list);
 
 Segment* DRD_(sg_new)(const DrdThreadId creator, const DrdThreadId created);
 static int DRD_(sg_get_refcnt)(const Segment* const sg);

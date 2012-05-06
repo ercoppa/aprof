@@ -109,7 +109,7 @@ typedef struct {
 
    /*  320 */  ULong guest_counter;
    /*  328 */  UInt guest_fpc;
-   /* 4-byte hole to enforce alignment requirements */
+   /*  332 */  UChar unused[4]; /* 4-byte hole to get 8-byte alignment */
    /*  336 */  ULong guest_IA;
 
 /*------------------------------------------------------------*/
@@ -144,10 +144,14 @@ typedef struct {
    /* Emulation warnings; see comments in libvex_emwarn.h */
    /*  416 */  UInt guest_EMWARN;
 
+   /* For translation chaining */
+   /*  420 */  UInt  host_EvC_COUNTER;
+   /*  424 */  ULong host_EvC_FAILADDR;
+
 /*------------------------------------------------------------*/
 /*--- Force alignment to 16 bytes                          ---*/
 /*------------------------------------------------------------*/
-   /*  420 */  UChar padding[12];
+   /* No padding needed */
 
    /*  432 */  /* This is the size of the guest state */
 } VexGuestS390XState;

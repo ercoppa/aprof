@@ -196,7 +196,7 @@ static
 void safe_mknod (char *nod)
 {
    SysRes m;
-   m = VG_(mknod) (nod, VKI_S_IFIFO|0666, 0);
+   m = VG_(mknod) (nod, VKI_S_IFIFO|0600, 0);
    if (sr_isError (m)) {
       if (sr_Err (m) == VKI_EEXIST) {
          if (VG_(clo_verbosity) > 1) {
@@ -224,10 +224,11 @@ void remote_open (char *name)
    const HChar *user, *host;
    int save_fcntl_flags, len;
    VgdbShared vgdbinit = 
-      {0, 0, 0, (Addr) VG_(invoke_gdbserver),
+      {0, 0, (Addr) VG_(invoke_gdbserver),
        (Addr) VG_(threads), sizeof(ThreadState), 
        offsetof(ThreadState, status),
-       offsetof(ThreadState, os_state) + offsetof(ThreadOSstate, lwpid)};
+       offsetof(ThreadState, os_state) + offsetof(ThreadOSstate, lwpid),
+       0};
    const int pid = VG_(getpid)();
    const int name_default = strcmp(name, VG_(vgdb_prefix_default)()) == 0;
    Addr addr_shared;
@@ -269,7 +270,7 @@ void remote_open (char *name)
                 "don't want to do, unless you know exactly what you're doing,\n"
                 "or are doing some strange experiment):\n"
                 "  %s/../../bin/vgdb --pid=%d%s%s ...command...\n",
-                VG_LIBDIR,
+                VG_(libdir),
                 pid, (name_default ? "" : " --vgdb-prefix="),
                 (name_default ? "" : name));
    }
@@ -282,7 +283,7 @@ void remote_open (char *name)
          "and then give GDB the following command\n"
          "  target remote | %s/../../bin/vgdb --pid=%d%s%s\n",
          VG_(args_the_exename),
-         VG_LIBDIR,
+         VG_(libdir),
          pid, (name_default ? "" : " --vgdb-prefix="), 
          (name_default ? "" : name)
       );
@@ -306,7 +307,7 @@ void remote_open (char *name)
 
       pid_from_to_creator = pid;
       
-      o = VG_(open) (shared_mem, VKI_O_CREAT|VKI_O_RDWR, 0666);
+      o = VG_(open) (shared_mem, VKI_O_CREAT|VKI_O_RDWR, 0600);
       if (sr_isError (o)) {
          sr_perror(o, "cannot create shared_mem file %s\n", shared_mem);
          fatal("");
@@ -1079,13 +1080,13 @@ int decode_X_packet (char *from, int packet_len, CORE_ADDR *mem_addr_ptr,
 HChar *
 VG_(vgdb_prefix_default)(void)
 {
-   const HChar *tmpdir;
-   HChar *prefix;
+   static HChar *prefix;
    
-   tmpdir = VG_(tmpdir)();
-   prefix = malloc(strlen(tmpdir) + strlen("/vgdb-pipe") + 1);
-   strcpy(prefix, tmpdir);
-   strcat(prefix, "/vgdb-pipe");
-
+   if (prefix == NULL) {
+     const HChar *tmpdir = VG_(tmpdir)();
+     prefix = malloc(strlen(tmpdir) + strlen("/vgdb-pipe") + 1);
+     strcpy(prefix, tmpdir);
+     strcat(prefix, "/vgdb-pipe");
+   }
    return prefix;
 }

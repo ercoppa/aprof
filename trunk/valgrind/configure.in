@@ -8,9 +8,9 @@
 ##------------------------------------------------------------##
 
 # Process this file with autoconf to produce a configure script.
-AC_INIT(Valgrind, 3.7.0.SVN, valgrind-users@lists.sourceforge.net)
+AC_INIT([Valgrind],[3.8.0.SVN],[valgrind-users@lists.sourceforge.net])
 AC_CONFIG_SRCDIR(coregrind/m_main.c)
-AM_CONFIG_HEADER(config.h)
+AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE([foreign])
 
 AM_MAINTAINER_MODE
@@ -98,18 +98,27 @@ rm $tmpfile
 # We don't want gcc < 3.0
 AC_MSG_CHECKING([for a supported version of gcc])
 
-# Try to get the gcc version, sed-ing out some unexpected stuff
-# that appears with the default gcc on OSX 10.6 and 10.7 respectively.
-# Without this, the version number comes out as 686, 10 or 11 :-(
+# Obtain the compiler version.
 # 
-# i686-apple-darwin10-gcc-4.2.1 (GCC) 4.2.1 (Apple Inc. build 5666) (dot 3)
-# i686-apple-darwin11-llvm-gcc-4.2 (GCC) 4.2.1 (Based on Apple Inc. build 5658) (LLVM build 2335.15.00)
+# A few examples of how the ${CC} --version output looks like:
 #
-[gcc_version=`${CC} --version \
-             | head -n 1 \
-             | $SED 's/i686-apple-darwin10//' \
-             | $SED 's/i686-apple-darwin11//' \
-             | $SED 's/^[^0-9]*\([0-9.]*\).*$/\1/'`]
+# Arch Linux: i686-pc-linux-gnu-gcc (GCC) 4.6.2
+# Debian Linux: gcc (Debian 4.3.2-1.1) 4.3.2
+# openSUSE: gcc (SUSE Linux) 4.5.1 20101208 [gcc-4_5-branch revision 167585]
+# Exherbo Linux: x86_64-pc-linux-gnu-gcc (Exherbo gcc-4.6.2) 4.6.2
+# MontaVista Linux for ARM: arm-none-linux-gnueabi-gcc (Sourcery G++ Lite 2009q1-203) 4.3.3
+# OS/X 10.6: i686-apple-darwin10-gcc-4.2.1 (GCC) 4.2.1 (Apple Inc. build 5666) (dot 3)
+# OS/X 10.7: i686-apple-darwin11-llvm-gcc-4.2 (GCC) 4.2.1 (Based on Apple Inc. build 5658) (LLVM build 2335.15.00)
+# Clang: clang version 2.9 (tags/RELEASE_29/final)
+#
+[
+  gcc_version=`${CC} -dumpversion 2>/dev/null`
+  if test "x$gcc_version" = x; then
+    gcc_version=`${CC} --version \
+               | $SED -n -e 's/[^ ]*gcc[^ ]* ([^)]*) \([0-9.]*\).*$/\1/p' \
+                         -e 's/[^ ]*clang version \([0-9.]*\).*$/\1/p'`
+  fi
+]
 
 is_clang="notclang"
 if test "x`${CC} --version | head -n 1 | $SED 's/\(clang\) version.*/\1/'`" = "xclang" ; then
@@ -325,10 +334,9 @@ case "$ARCH_MAX-$VGCONF_OS" in
         AC_MSG_CHECKING([for 32 bit build support])
         safe_CFLAGS=$CFLAGS
         CFLAGS="-m32"
-        AC_TRY_LINK(, [
+        AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[
           return 0;
-        ],
-        [
+        ]])], [
         AC_MSG_RESULT([yes])
         ], [
         vg_cv_only64bit="yes"
@@ -776,6 +784,13 @@ case "${GLIBC_VERSION}" in
 	DEFAULT_SUPP="glibc-2.34567-NPTL-helgrind.supp ${DEFAULT_SUPP}"
 	DEFAULT_SUPP="glibc-2.X-drd.supp ${DEFAULT_SUPP}"
 	;;
+     2.15)
+	AC_MSG_RESULT(2.15 family)
+	AC_DEFINE([GLIBC_2_15], 1, [Define to 1 if you're using glibc 2.15.x])
+	DEFAULT_SUPP="glibc-2.X.supp ${DEFAULT_SUPP}"
+	DEFAULT_SUPP="glibc-2.34567-NPTL-helgrind.supp ${DEFAULT_SUPP}"
+	DEFAULT_SUPP="glibc-2.X-drd.supp ${DEFAULT_SUPP}"
+	;;
      darwin)
 	AC_MSG_RESULT(Darwin)
 	AC_DEFINE([DARWIN_LIBC], 1, [Define to 1 if you're using Darwin])
@@ -789,7 +804,7 @@ case "${GLIBC_VERSION}" in
 
      *)
 	AC_MSG_RESULT([unsupported version ${GLIBC_VERSION}])
-	AC_MSG_ERROR([Valgrind requires glibc version 2.2 - 2.14])
+	AC_MSG_ERROR([Valgrind requires glibc version 2.2 - 2.15])
 	AC_MSG_ERROR([or Darwin libc])
 	;;
 esac
@@ -872,15 +887,13 @@ AM_CONDITIONAL(VGCONF_PLATVARIANT_IS_ANDROID,
 
 AC_MSG_CHECKING([for CLOCK_MONOTONIC])
 
-AC_TRY_COMPILE(
-[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <time.h>
-], [
+]], [[
   struct timespec t;
   clock_gettime(CLOCK_MONOTONIC, &t);
   return 0;
-],
-[
+]])], [
 AC_MSG_RESULT([yes])
 AC_DEFINE([HAVE_CLOCK_MONOTONIC], 1,
           [Define to 1 if you have the `CLOCK_MONOTONIC' constant.])
@@ -893,14 +906,12 @@ AC_MSG_RESULT([no])
 
 AC_MSG_CHECKING([for pthread_rwlock_t])
 
-AC_TRY_COMPILE(
-[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #define _GNU_SOURCE
 #include <pthread.h>
-], [
+]], [[
   pthread_rwlock_t rwl;
-],
-[
+]])], [
 AC_MSG_RESULT([yes])
 AC_DEFINE([HAVE_PTHREAD_RWLOCK_T], 1,
           [Define to 1 if you have the `pthread_rwlock_t' type.])
@@ -913,14 +924,12 @@ AC_MSG_RESULT([no])
 
 AC_MSG_CHECKING([for PTHREAD_MUTEX_ADAPTIVE_NP])
 
-AC_TRY_COMPILE(
-[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #define _GNU_SOURCE
 #include <pthread.h>
-], [
+]], [[
   return (PTHREAD_MUTEX_ADAPTIVE_NP);
-],
-[
+]])], [
 AC_MSG_RESULT([yes])
 AC_DEFINE([HAVE_PTHREAD_MUTEX_ADAPTIVE_NP], 1,
           [Define to 1 if you have the `PTHREAD_MUTEX_ADAPTIVE_NP' constant.])
@@ -933,14 +942,12 @@ AC_MSG_RESULT([no])
 
 AC_MSG_CHECKING([for PTHREAD_MUTEX_ERRORCHECK_NP])
 
-AC_TRY_COMPILE(
-[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #define _GNU_SOURCE
 #include <pthread.h>
-], [
+]], [[
   return (PTHREAD_MUTEX_ERRORCHECK_NP);
-],
-[
+]])], [
 AC_MSG_RESULT([yes])
 AC_DEFINE([HAVE_PTHREAD_MUTEX_ERRORCHECK_NP], 1,
           [Define to 1 if you have the `PTHREAD_MUTEX_ERRORCHECK_NP' constant.])
@@ -953,14 +960,12 @@ AC_MSG_RESULT([no])
 
 AC_MSG_CHECKING([for PTHREAD_MUTEX_RECURSIVE_NP])
 
-AC_TRY_COMPILE(
-[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #define _GNU_SOURCE
 #include <pthread.h>
-], [
+]], [[
   return (PTHREAD_MUTEX_RECURSIVE_NP);
-],
-[
+]])], [
 AC_MSG_RESULT([yes])
 AC_DEFINE([HAVE_PTHREAD_MUTEX_RECURSIVE_NP], 1,
           [Define to 1 if you have the `PTHREAD_MUTEX_RECURSIVE_NP' constant.])
@@ -973,15 +978,13 @@ AC_MSG_RESULT([no])
 
 AC_MSG_CHECKING([for PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP])
 
-AC_TRY_COMPILE(
-[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #define _GNU_SOURCE
 #include <pthread.h>
-], [
+]], [[
   pthread_mutex_t m = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
   return 0;
-],
-[
+]])], [
 AC_MSG_RESULT([yes])
 AC_DEFINE([HAVE_PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP], 1,
           [Define to 1 if you have the `PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP' constant.])
@@ -1020,13 +1023,11 @@ AC_MSG_CHECKING([for Altivec])
 safe_CFLAGS=$CFLAGS
 CFLAGS="-maltivec"
 
-AC_TRY_COMPILE(
-[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <altivec.h>
-], [
+]], [[
   vector unsigned int v;
-],
-[
+]])], [
 ac_have_altivec=yes
 AC_MSG_RESULT([yes])
 AC_DEFINE([HAS_ALTIVEC], 1,
@@ -1053,14 +1054,12 @@ AC_MSG_CHECKING([for VSX])
 safe_CFLAGS=$CFLAGS
 CFLAGS="-mvsx"
 
-AC_TRY_COMPILE(
-[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <altivec.h>
-], [
+]], [[
   vector unsigned int v;
   __asm__ __volatile__("xsmaddadp 32, 32, 33" ::: "memory","cc");
-],
-[
+]])], [
 ac_have_vsx=yes
 AC_MSG_RESULT([yes])
 ], [
@@ -1071,18 +1070,47 @@ CFLAGS=$safe_CFLAGS
 
 AM_CONDITIONAL(HAS_VSX, test x$ac_have_vsx = xyes)
 
+AC_MSG_CHECKING([that assembler knows DFP])
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+]], [[
+  __asm__ __volatile__("dadd 1, 2, 3");
+]])], [
+ac_asm_have_dfp=yes
+AC_MSG_RESULT([yes])
+], [
+ac_asm_have_dfp=no
+AC_MSG_RESULT([no])
+])
+
+AC_MSG_CHECKING([that compiler knows -mhard-dfp switch])
+safe_CFLAGS=$CFLAGS
+CFLAGS="-mhard-dfp"
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+]], [[
+  __asm__ __volatile__("dadd 1, 2, 3");
+]])], [
+ac_gcc_have_dfp=yes
+AC_MSG_RESULT([yes])
+], [
+ac_gcc_have_dfp=no
+AC_MSG_RESULT([no])
+])
+
+CFLAGS=$safe_CFLAGS
+
+AM_CONDITIONAL(HAS_DFP, test x$ac_asm_have_dfp = xyes -a x$ac_gcc_have_dfp = xyes)
 
 # Check for pthread_create@GLIBC2.0
 AC_MSG_CHECKING([for pthread_create@GLIBC2.0()])
 
 safe_CFLAGS=$CFLAGS
 CFLAGS="-lpthread"
-AC_TRY_LINK(
-[
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 extern int pthread_create_glibc_2_0(void*, const void*,
                                     void *(*)(void*), void*);
 __asm__(".symver pthread_create_glibc_2_0, pthread_create@GLIBC_2.0");
-], [
+]], [[
 #ifdef __powerpc__
 /*
  * Apparently on PowerPC linking this program succeeds and generates an
@@ -1093,8 +1121,7 @@ __asm__(".symver pthread_create_glibc_2_0, pthread_create@GLIBC_2.0");
   pthread_create_glibc_2_0(0, 0, 0, 0);
 #endif
   return 0;
-],
-[
+]])], [
 ac_have_pthread_create_glibc_2_0=yes
 AC_MSG_RESULT([yes])
 AC_DEFINE([HAVE_PTHREAD_CREATE_GLIBC_2_0], 1,
@@ -1112,18 +1139,16 @@ AM_CONDITIONAL(HAVE_PTHREAD_CREATE_GLIBC_2_0,
 # Check for eventfd_t, eventfd() and eventfd_read()
 AC_MSG_CHECKING([for eventfd()])
 
-AC_TRY_LINK(
-[
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/eventfd.h>
-], [
+]], [[
   eventfd_t ev;
   int fd;
 
   fd = eventfd(5, 0);
   eventfd_read(fd, &ev);
   return 0;
-],
-[
+]])], [
 AC_MSG_RESULT([yes])
 AC_DEFINE([HAVE_EVENTFD], 1,
           [Define to 1 if you have the `eventfd' function.])
@@ -1144,10 +1169,9 @@ AC_MSG_CHECKING([if gcc accepts -m32])
 safe_CFLAGS=$CFLAGS
 CFLAGS="-m32"
 
-AC_TRY_COMPILE(, [
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   return 0;
-],
-[
+]])], [
 FLAG_M32="-m32"
 AC_MSG_RESULT([yes])
 ], [
@@ -1165,10 +1189,9 @@ AC_MSG_CHECKING([if gcc accepts -m64])
 safe_CFLAGS=$CFLAGS
 CFLAGS="-m64"
 
-AC_TRY_COMPILE(, [
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   return 0;
-],
-[
+]])], [
 FLAG_M64="-m64"
 AC_MSG_RESULT([yes])
 ], [
@@ -1186,10 +1209,9 @@ AC_MSG_CHECKING([if gcc accepts -mmmx])
 safe_CFLAGS=$CFLAGS
 CFLAGS="-mmmx"
 
-AC_TRY_COMPILE(, [
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   return 0;
-],
-[
+]])], [
 FLAG_MMMX="-mmmx"
 AC_MSG_RESULT([yes])
 ], [
@@ -1207,10 +1229,9 @@ AC_MSG_CHECKING([if gcc accepts -msse])
 safe_CFLAGS=$CFLAGS
 CFLAGS="-msse"
 
-AC_TRY_COMPILE(, [
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   return 0;
-],
-[
+]])], [
 FLAG_MSSE="-msse"
 AC_MSG_RESULT([yes])
 ], [
@@ -1228,10 +1249,9 @@ AC_MSG_CHECKING([if gcc accepts -mpreferred-stack-boundary])
 safe_CFLAGS=$CFLAGS
 CFLAGS="-mpreferred-stack-boundary=2"
 
-AC_TRY_COMPILE(, [
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   return 0;
-],
-[
+]])], [
 PREFERRED_STACK_BOUNDARY="-mpreferred-stack-boundary=2"
 AC_MSG_RESULT([yes])
 ], [
@@ -1249,10 +1269,9 @@ AC_MSG_CHECKING([if gcc accepts -Wno-pointer-sign])
 safe_CFLAGS=$CFLAGS
 CFLAGS="-Wno-pointer-sign"
 
-AC_TRY_COMPILE(, [
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   return 0;
-],
-[
+]])], [
 no_pointer_sign=yes
 AC_MSG_RESULT([yes])
 ], [
@@ -1273,16 +1292,12 @@ AC_MSG_CHECKING([if gcc accepts -Wno-empty-body])
 safe_CFLAGS=$CFLAGS
 CFLAGS="-Wno-empty-body"
 
-AC_TRY_COMPILE(
-[ ],
-[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[
   return 0;
-],
-[
+]])], [
 AC_SUBST([FLAG_W_NO_EMPTY_BODY], [-Wno-empty-body])
 AC_MSG_RESULT([yes])
-],
-[
+], [
 AC_SUBST([FLAG_W_NO_EMPTY_BODY], [])
 AC_MSG_RESULT([no])
 ])
@@ -1296,16 +1311,12 @@ AC_MSG_CHECKING([if gcc accepts -Wno-format-zero-length])
 safe_CFLAGS=$CFLAGS
 CFLAGS="-Wno-format-zero-length"
 
-AC_TRY_COMPILE(
-[ ],
-[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[
   return 0;
-],
-[
+]])], [
 AC_SUBST([FLAG_W_NO_FORMAT_ZERO_LENGTH], [-Wno-format-zero-length])
 AC_MSG_RESULT([yes])
-],
-[
+], [
 AC_SUBST([FLAG_W_NO_FORMAT_ZERO_LENGTH], [])
 AC_MSG_RESULT([no])
 ])
@@ -1319,16 +1330,12 @@ AC_MSG_CHECKING([if gcc accepts -Wno-nonnull])
 safe_CFLAGS=$CFLAGS
 CFLAGS="-Wno-nonnull"
 
-AC_TRY_COMPILE(
-[ ],
-[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[
   return 0;
-],
-[
+]])], [
 AC_SUBST([FLAG_W_NO_NONNULL], [-Wno-nonnull])
 AC_MSG_RESULT([yes])
-],
-[
+], [
 AC_SUBST([FLAG_W_NO_NONNULL], [])
 AC_MSG_RESULT([no])
 ])
@@ -1342,16 +1349,12 @@ AC_MSG_CHECKING([if gcc accepts -Wno-overflow])
 safe_CFLAGS=$CFLAGS
 CFLAGS="-Wno-overflow"
 
-AC_TRY_COMPILE(
-[ ],
-[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[
   return 0;
-],
-[
+]])], [
 AC_SUBST([FLAG_W_NO_OVERFLOW], [-Wno-overflow])
 AC_MSG_RESULT([yes])
-],
-[
+], [
 AC_SUBST([FLAG_W_NO_OVERFLOW], [])
 AC_MSG_RESULT([no])
 ])
@@ -1365,16 +1368,12 @@ AC_MSG_CHECKING([if gcc accepts -Wno-uninitialized])
 safe_CFLAGS=$CFLAGS
 CFLAGS="-Wno-uninitialized"
 
-AC_TRY_COMPILE(
-[ ],
-[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[
   return 0;
-],
-[
+]])], [
 AC_SUBST([FLAG_W_NO_UNINITIALIZED], [-Wno-uninitialized])
 AC_MSG_RESULT([yes])
-],
-[
+], [
 AC_SUBST([FLAG_W_NO_UNINITIALIZED], [])
 AC_MSG_RESULT([no])
 ])
@@ -1388,22 +1387,16 @@ AC_MSG_CHECKING([if gcc accepts -Wextra or -W])
 safe_CFLAGS=$CFLAGS
 CFLAGS="-Wextra"
 
-AC_TRY_COMPILE(
-[ ],
-[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[
   return 0;
-],
-[
+]])], [
 AC_SUBST([FLAG_W_EXTRA], [-Wextra])
 AC_MSG_RESULT([-Wextra])
 ], [
   CFLAGS="-W"
-  AC_TRY_COMPILE(
-  [ ],
-  [
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[
     return 0;
-  ],
-  [
+  ]])], [
   AC_SUBST([FLAG_W_EXTRA], [-W])
   AC_MSG_RESULT([-W])
   ], [
@@ -1420,10 +1413,9 @@ AC_MSG_CHECKING([if gcc accepts -fno-stack-protector])
 safe_CFLAGS=$CFLAGS
 CFLAGS="-fno-stack-protector"
 
-AC_TRY_COMPILE(, [
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   return 0;
-],
-[
+]])], [
 no_stack_protector=yes
 FLAG_FNO_STACK_PROTECTOR="-fno-stack-protector"
 AC_MSG_RESULT([yes])
@@ -1448,12 +1440,9 @@ AC_MSG_CHECKING([if gcc accepts --param inline-unit-growth])
 safe_CFLAGS=$CFLAGS
 CFLAGS="--param inline-unit-growth=900"
 
-AC_TRY_COMPILE(
-[ ],
-[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[
   return 0;
-],
-[
+]])], [
 AC_SUBST([FLAG_UNLIMITED_INLINE_UNIT_GROWTH],
          ["--param inline-unit-growth=900"])
 AC_MSG_RESULT([yes])
@@ -1461,6 +1450,26 @@ AC_MSG_RESULT([yes])
 AC_SUBST([FLAG_UNLIMITED_INLINE_UNIT_GROWTH], [""])
 AC_MSG_RESULT([no])
 ])
+CFLAGS=$safe_CFLAGS
+
+
+# does this compiler support -gdwarf-4 -fdebug-types-section ?
+
+AC_MSG_CHECKING([if gcc accepts -gdwarf-4 -fdebug-types-section])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-gdwarf-4 -fdebug-types-section"
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[
+  return 0;
+]])], [
+ac_have_dwarf4=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_dwarf4=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(DWARF4, test x$ac_have_dwarf4 = xyes)
 CFLAGS=$safe_CFLAGS
 
 
@@ -1489,11 +1498,10 @@ CFLAGS=$safe_CFLAGS
 # does the ppc assembler support "mtocrf" et al?
 AC_MSG_CHECKING([if ppc32/64 as supports mtocrf/mfocrf])
 
-AC_TRY_COMPILE(, [
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
 __asm__ __volatile__("mtocrf 4,0");
 __asm__ __volatile__("mfocrf 0,4");
-],
-[
+]])], [
 ac_have_as_ppc_mftocrf=yes
 AC_MSG_RESULT([yes])
 ], [
@@ -1512,12 +1520,11 @@ CFLAGS=$safe_CFLAGS
 # automake-level symbol (BUILD_SSE3_TESTS), used in test Makefile.am's
 AC_MSG_CHECKING([if x86/amd64 assembler speaks SSE3])
 
-AC_TRY_COMPILE(, [
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   do { long long int x; 
      __asm__ __volatile__("fisttpq (%0)" : :"r"(&x) ); } 
   while (0)
-],
-[
+]])], [
 ac_have_as_sse3=yes
 AC_MSG_RESULT([yes])
 ], [
@@ -1533,19 +1540,21 @@ AM_CONDITIONAL(BUILD_SSE3_TESTS, test x$ac_have_as_sse3 = xyes)
 # automake-level symbol (BUILD_SSSE3_TESTS), used in test Makefile.am's
 AC_MSG_CHECKING([if x86/amd64 assembler speaks SSSE3])
 
-AC_TRY_COMPILE(, [
+save_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -msse"
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   do { long long int x; 
    __asm__ __volatile__(
       "pabsb (%0),%%xmm7" : : "r"(&x) : "xmm7" ); }
   while (0)
-],
-[
+]])], [
 ac_have_as_ssse3=yes
 AC_MSG_RESULT([yes])
 ], [
 ac_have_as_ssse3=no
 AC_MSG_RESULT([no])
 ])
+CFLAGS="$save_CFLAGS"
 
 AM_CONDITIONAL(BUILD_SSSE3_TESTS, test x$ac_have_as_ssse3 = xyes)
 
@@ -1554,13 +1563,12 @@ AM_CONDITIONAL(BUILD_SSSE3_TESTS, test x$ac_have_as_ssse3 = xyes)
 # Note, this doesn't generate a C-level symbol.  It generates a
 # automake-level symbol (BUILD_PCLMULQDQ_TESTS), used in test Makefile.am's
 AC_MSG_CHECKING([if x86/amd64 assembler supports 'pclmulqdq'])
-AC_TRY_COMPILE(, [
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   do {
    __asm__ __volatile__(
       "pclmulqdq \$17,%%xmm6,%%xmm7" : : : "xmm6", "xmm7" ); }
   while (0)
-],
-[
+]])], [
 ac_have_as_pclmulqdq=yes
 AC_MSG_RESULT([yes])
 ], [
@@ -1576,12 +1584,11 @@ AM_CONDITIONAL(BUILD_PCLMULQDQ_TESTS, test x$ac_have_as_pclmulqdq = xyes)
 # automake-level symbol (BUILD_LZCNT_TESTS), used in test Makefile.am's
 AC_MSG_CHECKING([if x86/amd64 assembler supports 'lzcnt'])
 
-AC_TRY_COMPILE([], [
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   do { 		 
       __asm__ __volatile__("lzcnt %rax,%rax");
   } while (0)
-],
-[
+]])], [
   ac_have_as_lzcnt=yes
   AC_MSG_RESULT([yes])
 ], [
@@ -1597,13 +1604,14 @@ AM_CONDITIONAL([BUILD_LZCNT_TESTS], [test x$ac_have_as_lzcnt = xyes])
 # automake-level symbol (BUILD_SSE42_TESTS), used in test Makefile.am's
 AC_MSG_CHECKING([if x86/amd64 assembler speaks SSE4.2])
 
-AC_TRY_COMPILE(, [
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   do { long long int x; 
    __asm__ __volatile__(
-      "crc32q %%r15,%%r15" : : : "r15" ); }
+      "crc32q %%r15,%%r15" : : : "r15" );
+   __asm__ __volatile__(
+      "pblendvb (%rcx), %xmm11"); }
   while (0)
-],
-[
+]])], [
 ac_have_as_sse42=yes
 AC_MSG_RESULT([yes])
 ], [
@@ -1618,27 +1626,22 @@ AM_CONDITIONAL(BUILD_SSE42_TESTS, test x$ac_have_as_sse42 = xyes)
 # when building the tool executables.  I think we should get rid of it.
 #
 # Check for TLS support in the compiler and linker
-if test "x${cross_compiling}" = "xno"; then
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[static __thread int foo;]],
+                                [[return foo;]])],
+                               [vg_cv_linktime_tls=yes],
+                               [vg_cv_linktime_tls=no])
 # Native compilation: check whether running a program using TLS succeeds.
 # Linking only is not sufficient -- e.g. on Red Hat 7.3 linking TLS programs
 # succeeds but running programs using TLS fails.
+# Cross-compiling: check whether linking a program using TLS succeeds.
 AC_CACHE_CHECK([for TLS support], vg_cv_tls,
 	       [AC_ARG_ENABLE(tls, [  --enable-tls            platform supports TLS],
 		[vg_cv_tls=$enableval],
                	[AC_RUN_IFELSE([AC_LANG_PROGRAM([[static __thread int foo;]],
                                                 [[return foo;]])],
                                [vg_cv_tls=yes],
-                               [vg_cv_tls=no])])])
-else
-# Cross-compiling: check whether linking a program using TLS succeeds.
-AC_CACHE_CHECK([for TLS support], vg_cv_tls,
-	       [AC_ARG_ENABLE(tls, [  --enable-tls            platform supports TLS],
-		[vg_cv_tls=$enableval],
-               	[AC_LINK_IFELSE([AC_LANG_PROGRAM([[static __thread int foo;]],
-                                                [[return foo;]])],
-                               [vg_cv_tls=yes],
-                               [vg_cv_tls=no])])])
-fi
+                               [vg_cv_tls=no],
+                               [vg_cv_tls=$vg_cv_linktime_tls])])])
 
 if test "$vg_cv_tls" = yes; then
 AC_DEFINE([HAVE_TLS], 1, [can use __thread to define thread-local variables])
@@ -1669,16 +1672,17 @@ AC_CHECK_HEADERS([       \
 # Verify whether the <linux/futex.h> header is usable.
 AC_MSG_CHECKING([if <linux/futex.h> is usable])
 
-AC_TRY_COMPILE([
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <linux/futex.h>
-], [
+]], [[
   return FUTEX_WAIT;
-],
-[
+]])], [
+ac_have_usable_linux_futex_h=yes
 AC_DEFINE([HAVE_USABLE_LINUX_FUTEX_H], 1,
           [Define to 1 if you have a usable <linux/futex.h> header file.])
 AC_MSG_RESULT([yes])
 ], [
+ac_have_usable_linux_futex_h=no
 AC_MSG_RESULT([no])
 ])
 
@@ -1696,7 +1700,6 @@ AC_HEADER_TIME
 #----------------------------------------------------------------------------
 AC_FUNC_MEMCMP
 AC_FUNC_MMAP
-AC_TYPE_SIGNAL
 
 AC_CHECK_LIB([pthread], [pthread_create])
 AC_CHECK_LIB([rt], [clock_gettime])
@@ -1730,6 +1733,8 @@ AC_CHECK_FUNCS([     \
         strstr       \
         syscall      \
         utimensat    \
+        process_vm_readv  \
+        process_vm_writev \
         ])
 
 # AC_CHECK_LIB adds any library found to the variable LIBS, and links these
@@ -1786,14 +1791,14 @@ saved_CC=$CC
 saved_CFLAGS=$CFLAGS
 CC=$MPI_CC
 CFLAGS=$mflag_primary
-AC_TRY_LINK([
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <mpi.h>
 #include <stdio.h>
-],[
+]], [[
   int r = MPI_Init(NULL,NULL);
   r |= MPI_Type_get_contents( MPI_INT, 0,0,0, NULL,NULL,NULL );
   return r; 
-], [
+]])], [
 ac_have_mpi2_pri=yes
 AC_MSG_RESULT([yes, $MPI_CC])
 ], [
@@ -1818,14 +1823,14 @@ else
   CC=$MPI_CC
 fi
 CFLAGS=$mflag_secondary
-AC_TRY_LINK([
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <mpi.h>
 #include <stdio.h>
-],[
+]], [[
   int r = MPI_Init(NULL,NULL);
   r |= MPI_Type_get_contents( MPI_INT, 0,0,0, NULL,NULL,NULL );
   return r; 
-], [
+]])], [
 ac_have_mpi2_sec=yes
 AC_MSG_RESULT([yes, $MPI_CC])
 ], [
@@ -1863,7 +1868,9 @@ AC_MSG_CHECKING([for boost])
 
 AC_LANG(C++)
 safe_CXXFLAGS=$CXXFLAGS
-CXXFLAGS="-lboost_thread-mt $mflag_primary"
+CXXFLAGS="$mflag_primary"
+safe_LIBS="$LIBS"
+LIBS="-lboost_thread-mt $LIBS"
 
 AC_LINK_IFELSE([AC_LANG_SOURCE([
 #include <boost/thread.hpp>
@@ -1878,13 +1885,14 @@ int main(int argc, char** argv)
 [
 ac_have_boost_1_35=yes
 AC_SUBST([BOOST_CFLAGS], [])
-AC_SUBST([BOOST_LIBS], ["${CXXFLAGS}"])
+AC_SUBST([BOOST_LIBS], [-lboost_thread-mt])
 AC_MSG_RESULT([yes])
 ], [
 ac_have_boost_1_35=no
 AC_MSG_RESULT([no])
 ])
 
+LIBS="$safe_LIBS"
 CXXFLAGS=$safe_CXXFLAGS
 AC_LANG(C)
 
@@ -1919,51 +1927,126 @@ CFLAGS=$safe_CFLAGS
 AM_CONDITIONAL([HAVE_OPENMP], [test x$ac_have_openmp = xyes])
 
 
-# does this compiler have built-in functions for atomic memory access ?
-AC_MSG_CHECKING([if gcc supports __sync_bool_compare_and_swap])
+# does this compiler have built-in functions for atomic memory access for the
+# primary target ?
+AC_MSG_CHECKING([if gcc supports __sync_add_and_fetch for the primary target])
 
 safe_CFLAGS=$CFLAGS
 CFLAGS="$mflag_primary"
 
-AC_TRY_LINK(,
-[
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[
   int variable = 1;
   return (__sync_bool_compare_and_swap(&variable, 1, 2)
           && __sync_add_and_fetch(&variable, 1) ? 1 : 0)
-],
-[
-  ac_have_builtin_atomic=yes
+]])], [
+  ac_have_builtin_atomic_primary=yes
   AC_MSG_RESULT([yes])
-  AC_DEFINE(HAVE_BUILTIN_ATOMIC, 1, [Define to 1 if gcc supports __sync_bool_compare_and_swap() and __sync_add_and_fetch()])
-],
-[
-  ac_have_builtin_atomic=no
+  AC_DEFINE(HAVE_BUILTIN_ATOMIC, 1, [Define to 1 if gcc supports __sync_bool_compare_and_swap() and __sync_add_and_fetch() for the primary target])
+], [
+  ac_have_builtin_atomic_primary=no
   AC_MSG_RESULT([no])
 ])
 
 CFLAGS=$safe_CFLAGS
 
-AM_CONDITIONAL([HAVE_BUILTIN_ATOMIC], [test x$ac_have_builtin_atomic = xyes])
+AM_CONDITIONAL([HAVE_BUILTIN_ATOMIC],
+               [test x$ac_have_builtin_atomic_primary = xyes])
+
+
+# does this compiler have built-in functions for atomic memory access for the
+# secondary target ?
+
+if test x$VGCONF_PLATFORM_SEC_CAPS != x; then
+
+AC_MSG_CHECKING([if gcc supports __sync_add_and_fetch for the secondary target])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="$mflag_secondary"
+
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[
+  int variable = 1;
+  return (__sync_add_and_fetch(&variable, 1) ? 1 : 0)
+]])], [
+  ac_have_builtin_atomic_secondary=yes
+  AC_MSG_RESULT([yes])
+], [
+  ac_have_builtin_atomic_secondary=no
+  AC_MSG_RESULT([no])
+])
+
+CFLAGS=$safe_CFLAGS
+
+fi
+
+AM_CONDITIONAL([HAVE_BUILTIN_ATOMIC_SECONDARY],
+               [test x$ac_have_builtin_atomic_secondary = xyes])
+
+# does this compiler have built-in functions for atomic memory access on
+# 64-bit integers for all targets ?
+
+AC_MSG_CHECKING([if gcc supports __sync_add_and_fetch on uint64_t for all targets])
+
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+  #include <stdint.h>
+]], [[
+  uint64_t variable = 1;
+  return __sync_add_and_fetch(&variable, 1)
+]])], [
+  ac_have_builtin_atomic64_primary=yes
+], [
+  ac_have_builtin_atomic64_primary=no
+])
+
+if test x$VGCONF_PLATFORM_SEC_CAPS != x; then
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="$mflag_secondary"
+
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+  #include <stdint.h>
+]], [[
+  uint64_t variable = 1;
+  return __sync_add_and_fetch(&variable, 1)
+]])], [
+  ac_have_builtin_atomic64_secondary=yes
+], [
+  ac_have_builtin_atomic64_secondary=no
+])
+
+CFLAGS=$safe_CFLAGS
+
+fi
+
+if test x$ac_have_builtin_atomic64_primary = xyes && \
+   test x$VGCONF_PLATFORM_SEC_CAPS = x \
+     -o x$ac_have_builtin_atomic64_secondary = xyes; then
+  AC_MSG_RESULT([yes])
+  ac_have_builtin_atomic64=yes
+else
+  AC_MSG_RESULT([no])
+  ac_have_builtin_atomic64=no
+fi
+
+AM_CONDITIONAL([HAVE_BUILTIN_ATOMIC64],
+               [test x$ac_have_builtin_atomic64 = xyes])
+
 
 # does g++ have built-in functions for atomic memory access ?
-AC_MSG_CHECKING([if g++ supports __sync_bool_compare_and_swap])
+AC_MSG_CHECKING([if g++ supports __sync_add_and_fetch])
 
 safe_CXXFLAGS=$CXXFLAGS
 CXXFLAGS="$mflag_primary"
 
 AC_LANG_PUSH(C++)
-AC_TRY_LINK(,
-[
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[
   int variable = 1;
   return (__sync_bool_compare_and_swap(&variable, 1, 2)
           && __sync_add_and_fetch(&variable, 1) ? 1 : 0)
-],
-[
+]])], [
   ac_have_builtin_atomic_cxx=yes
   AC_MSG_RESULT([yes])
   AC_DEFINE(HAVE_BUILTIN_ATOMIC_CXX, 1, [Define to 1 if g++ supports __sync_bool_compare_and_swap() and __sync_add_and_fetch()])
-],
-[
+], [
   ac_have_builtin_atomic_cxx=no
   AC_MSG_RESULT([no])
 ])
@@ -1972,6 +2055,70 @@ AC_LANG_POP(C++)
 CXXFLAGS=$safe_CXXFLAGS
 
 AM_CONDITIONAL([HAVE_BUILTIN_ATOMIC_CXX], [test x$ac_have_builtin_atomic_cxx = xyes])
+
+
+if test x$ac_have_usable_linux_futex_h = xyes \
+        -a x$ac_have_builtin_atomic_primary = xyes; then
+  ac_enable_linux_ticket_lock_primary=yes
+fi
+AM_CONDITIONAL([ENABLE_LINUX_TICKET_LOCK_PRIMARY],
+               [test x$ac_enable_linux_ticket_lock_primary = xyes])
+
+if test x$VGCONF_PLATFORM_SEC_CAPS != x \
+        -a x$ac_have_usable_linux_futex_h = xyes \
+        -a x$ac_have_builtin_atomic_secondary = xyes; then
+  ac_enable_linux_ticket_lock_secondary=yes
+fi
+AM_CONDITIONAL([ENABLE_LINUX_TICKET_LOCK_SECONDARY],
+               [test x$ac_enable_linux_ticket_lock_secondary = xyes])
+
+
+# does libstdc++ support annotating shared pointers ?
+AC_MSG_CHECKING([if libstdc++ supports annotating shared pointers])
+
+safe_CXXFLAGS=$CFLAGS
+CXXFLAGS="-std=c++0x"
+
+AC_LANG_PUSH(C++)
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+  #include <memory>
+]], [[
+  std::shared_ptr<int> p
+]])], [
+  ac_have_shared_ptr=yes
+], [
+  ac_have_shared_ptr=no
+])
+if test x$ac_have_shared_ptr = xyes; then
+  # If compilation of the program below fails because of a syntax error
+  # triggered by substituting one of the annotation macros then that
+  # means that libstdc++ supports these macros.
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+    #define _GLIBCXX_SYNCHRONIZATION_HAPPENS_BEFORE(a) (a)----
+    #define _GLIBCXX_SYNCHRONIZATION_HAPPENS_AFTER(a) (a)----
+    #include <memory>
+  ]], [[
+    std::shared_ptr<int> p
+  ]])], [
+    ac_have_shared_pointer_annotation=no
+    AC_MSG_RESULT([no])
+  ], [
+    ac_have_shared_pointer_annotation=yes
+    AC_MSG_RESULT([yes])
+    AC_DEFINE(HAVE_SHARED_POINTER_ANNOTATION, 1,
+              [Define to 1 if libstd++ supports annotating shared pointers])
+  ])
+else
+  ac_have_shared_pointer_annotation=no
+  AC_MSG_RESULT([no])
+fi
+AC_LANG_POP(C++)
+
+CXXFLAGS=$safe_CXXFLAGS
+
+AM_CONDITIONAL([HAVE_SHARED_POINTER_ANNOTATION],
+               [test x$ac_have_shared_pointer_annotation = xyes])
+
 
 #----------------------------------------------------------------------------
 # Ok.  We're done checking.
@@ -2004,7 +2151,6 @@ AC_CONFIG_FILES([
    memcheck/tests/x86-linux/Makefile
    memcheck/tests/ppc32/Makefile
    memcheck/tests/ppc64/Makefile
-   memcheck/perf/Makefile
    cachegrind/Makefile
    cachegrind/tests/Makefile
    cachegrind/tests/x86/Makefile
@@ -2018,7 +2164,6 @@ AC_CONFIG_FILES([
    helgrind/tests/Makefile
    massif/Makefile
    massif/tests/Makefile
-   massif/perf/Makefile
    massif/ms_print
    lackey/Makefile
    lackey/tests/Makefile
@@ -2047,8 +2192,6 @@ AC_CONFIG_FILES([
    exp-bbv/tests/arm-linux/Makefile
    exp-dhat/Makefile
    exp-dhat/tests/Makefile
-   aprof/Makefile
-   aprof/tests/Makefile
 ])
 AC_CONFIG_FILES([coregrind/link_tool_exe_linux],
                 [chmod +x coregrind/link_tool_exe_linux])

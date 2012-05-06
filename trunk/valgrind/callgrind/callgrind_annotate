@@ -193,7 +193,7 @@ my %compressed;
 my $input_file = "";
 
 # Version number
-my $version = "3.7.0.SVN";
+my $version = "3.8.0.SVN";
 
 # Usage message.
 my $usage = <<END

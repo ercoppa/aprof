@@ -9,7 +9,7 @@
    This file is part of MemCheck, a heavyweight Valgrind tool for
    detecting memory errors.
 
-   Copyright (C) 2000-2010 Julian Seward 
+   Copyright (C) 2000-2011 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -31,6 +31,7 @@
 */
 
 #include "pub_tool_basics.h"
+#include "pub_tool_poolalloc.h"
 #include "pub_tool_hashtable.h"
 #include "pub_tool_redir.h"
 #include "pub_tool_tooliface.h"
@@ -93,6 +94,7 @@
    20320 STRPBRK
    20330 STRCSPN
    20340 STRSPN
+   20350 STRCASESTR
 */
 
 
@@ -149,7 +151,7 @@ static inline void my_exit ( int x )
 // This is a macro rather than a function because we don't want to have an
 // extra function in the stack trace.
 #define RECORD_OVERLAP_ERROR(s, src, dst, len)                  \
-  VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                            \
+  VALGRIND_DO_CLIENT_REQUEST_STMT(                              \
                   _VG_USERREQ__MEMCHECK_RECORD_OVERLAP_ERROR,   \
                   s, src, dst, len, 0)
 
@@ -848,8 +850,9 @@ static inline void my_exit ( int x )
  MEMCPY(NONE, ZuintelZufastZumemcpy)
 
 #elif defined(VGO_darwin)
- //MEMCPY(VG_Z_LIBC_SONAME,  memcpy)
- //MEMCPY(VG_Z_DYLD,         memcpy)
+# if DARWIN_VERS <= DARWIN_10_6
+  MEMCPY(VG_Z_LIBC_SONAME,  memcpy)
+# endif
  MEMCPY(VG_Z_LIBC_SONAME,  memcpyZDVARIANTZDsse3x) /* memcpy$VARIANT$sse3x */
  MEMCPY(VG_Z_LIBC_SONAME,  memcpyZDVARIANTZDsse42) /* memcpy$VARIANT$sse42 */
 
@@ -980,8 +983,9 @@ static inline void my_exit ( int x )
  MEMMOVE(VG_Z_LIBC_SONAME, memmove)
 
 #elif defined(VGO_darwin)
- //MEMMOVE(VG_Z_LIBC_SONAME, memmove)
- //MEMMOVE(VG_Z_DYLD,        memmove)#
+# if DARWIN_VERS <= DARWIN_10_6
+  MEMMOVE(VG_Z_LIBC_SONAME, memmove)
+# endif
  MEMMOVE(VG_Z_LIBC_SONAME,  memmoveZDVARIANTZDsse3x) /* memmove$VARIANT$sse3x */
  MEMMOVE(VG_Z_LIBC_SONAME,  memmoveZDVARIANTZDsse42) /* memmove$VARIANT$sse42 */
 
@@ -1445,6 +1449,56 @@ static inline void my_exit ( int x )
 
 #if defined(VGO_linux)
  STRSPN(VG_Z_LIBC_SONAME,          strspn)
+
+#elif defined(VGO_darwin)
+
+#endif
+
+
+/*---------------------- strcasestr ----------------------*/
+
+#define STRCASESTR(soname, fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(20350,soname,fnname) \
+         (void* haystack, void* needle); \
+   void* VG_REPLACE_FUNCTION_EZU(20350,soname,fnname) \
+         (void* haystack, void* needle) \
+   { \
+      extern int tolower(int); \
+      UChar* h = (UChar*)haystack; \
+      UChar* n = (UChar*)needle; \
+      \
+      /* find the length of n, not including terminating zero */ \
+      UWord nlen = 0; \
+      while (n[nlen]) nlen++; \
+      \
+      /* if n is the empty string, match immediately. */ \
+      if (nlen == 0) return h; \
+      \
+      /* assert(nlen >= 1); */ \
+      UChar n0 = tolower(n[0]);                 \
+      \
+      while (1) { \
+         UChar hh = tolower(*h);    \
+         if (hh == 0) return NULL; \
+         if (hh != n0) { h++; continue; } \
+         \
+         UWord i; \
+         for (i = 0; i < nlen; i++) { \
+            if (tolower(n[i]) != tolower(h[i]))  \
+               break; \
+         } \
+         /* assert(i >= 0 && i <= nlen); */ \
+         if (i == nlen) \
+            return h; \
+         \
+         h++; \
+      } \
+   }
+
+#if defined(VGO_linux)
+# if !defined(VGPV_arm_linux_android)
+  STRCASESTR(VG_Z_LIBC_SONAME,      strcasestr)
+# endif
 
 #elif defined(VGO_darwin)
 

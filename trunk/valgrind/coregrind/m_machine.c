@@ -6,7 +6,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2010 Julian Seward 
+   Copyright (C) 2000-2011 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -186,115 +186,115 @@ VG_(set_shadow_regs_area) ( ThreadId tid,
 }
 
 
-static void apply_to_GPs_of_tid(VexGuestArchState* vex, void (*f)(Addr))
+static void apply_to_GPs_of_tid(ThreadId tid, void (*f)(ThreadId, HChar*, Addr))
 {
+   VexGuestArchState* vex = &(VG_(get_ThreadState)(tid)->arch.vex);
 #if defined(VGA_x86)
-   (*f)(vex->guest_EAX);
-   (*f)(vex->guest_ECX);
-   (*f)(vex->guest_EDX);
-   (*f)(vex->guest_EBX);
-   (*f)(vex->guest_ESI);
-   (*f)(vex->guest_EDI);
-   (*f)(vex->guest_ESP);
-   (*f)(vex->guest_EBP);
+   (*f)(tid, "EAX", vex->guest_EAX);
+   (*f)(tid, "ECX", vex->guest_ECX);
+   (*f)(tid, "EDX", vex->guest_EDX);
+   (*f)(tid, "EBX", vex->guest_EBX);
+   (*f)(tid, "ESI", vex->guest_ESI);
+   (*f)(tid, "EDI", vex->guest_EDI);
+   (*f)(tid, "ESP", vex->guest_ESP);
+   (*f)(tid, "EBP", vex->guest_EBP);
 #elif defined(VGA_amd64)
-   (*f)(vex->guest_RAX);
-   (*f)(vex->guest_RCX);
-   (*f)(vex->guest_RDX);
-   (*f)(vex->guest_RBX);
-   (*f)(vex->guest_RSI);
-   (*f)(vex->guest_RDI);
-   (*f)(vex->guest_RSP);
-   (*f)(vex->guest_RBP);
-   (*f)(vex->guest_R8);
-   (*f)(vex->guest_R9);
-   (*f)(vex->guest_R10);
-   (*f)(vex->guest_R11);
-   (*f)(vex->guest_R12);
-   (*f)(vex->guest_R13);
-   (*f)(vex->guest_R14);
-   (*f)(vex->guest_R15);
+   (*f)(tid, "RAX", vex->guest_RAX);
+   (*f)(tid, "RCX", vex->guest_RCX);
+   (*f)(tid, "RDX", vex->guest_RDX);
+   (*f)(tid, "RBX", vex->guest_RBX);
+   (*f)(tid, "RSI", vex->guest_RSI);
+   (*f)(tid, "RDI", vex->guest_RDI);
+   (*f)(tid, "RSP", vex->guest_RSP);
+   (*f)(tid, "RBP", vex->guest_RBP);
+   (*f)(tid, "R8" , vex->guest_R8 );
+   (*f)(tid, "R9" , vex->guest_R9 );
+   (*f)(tid, "R10", vex->guest_R10);
+   (*f)(tid, "R11", vex->guest_R11);
+   (*f)(tid, "R12", vex->guest_R12);
+   (*f)(tid, "R13", vex->guest_R13);
+   (*f)(tid, "R14", vex->guest_R14);
+   (*f)(tid, "R15", vex->guest_R15);
 #elif defined(VGA_ppc32) || defined(VGA_ppc64)
-   (*f)(vex->guest_GPR0);
-   (*f)(vex->guest_GPR1);
-   (*f)(vex->guest_GPR2);
-   (*f)(vex->guest_GPR3);
-   (*f)(vex->guest_GPR4);
-   (*f)(vex->guest_GPR5);
-   (*f)(vex->guest_GPR6);
-   (*f)(vex->guest_GPR7);
-   (*f)(vex->guest_GPR8);
-   (*f)(vex->guest_GPR9);
-   (*f)(vex->guest_GPR10);
-   (*f)(vex->guest_GPR11);
-   (*f)(vex->guest_GPR12);
-   (*f)(vex->guest_GPR13);
-   (*f)(vex->guest_GPR14);
-   (*f)(vex->guest_GPR15);
-   (*f)(vex->guest_GPR16);
-   (*f)(vex->guest_GPR17);
-   (*f)(vex->guest_GPR18);
-   (*f)(vex->guest_GPR19);
-   (*f)(vex->guest_GPR20);
-   (*f)(vex->guest_GPR21);
-   (*f)(vex->guest_GPR22);
-   (*f)(vex->guest_GPR23);
-   (*f)(vex->guest_GPR24);
-   (*f)(vex->guest_GPR25);
-   (*f)(vex->guest_GPR26);
-   (*f)(vex->guest_GPR27);
-   (*f)(vex->guest_GPR28);
-   (*f)(vex->guest_GPR29);
-   (*f)(vex->guest_GPR30);
-   (*f)(vex->guest_GPR31);
-   (*f)(vex->guest_CTR);
-   (*f)(vex->guest_LR);
+   (*f)(tid, "GPR0" , vex->guest_GPR0 );
+   (*f)(tid, "GPR1" , vex->guest_GPR1 );
+   (*f)(tid, "GPR2" , vex->guest_GPR2 );
+   (*f)(tid, "GPR3" , vex->guest_GPR3 );
+   (*f)(tid, "GPR4" , vex->guest_GPR4 );
+   (*f)(tid, "GPR5" , vex->guest_GPR5 );
+   (*f)(tid, "GPR6" , vex->guest_GPR6 );
+   (*f)(tid, "GPR7" , vex->guest_GPR7 );
+   (*f)(tid, "GPR8" , vex->guest_GPR8 );
+   (*f)(tid, "GPR9" , vex->guest_GPR9 );
+   (*f)(tid, "GPR10", vex->guest_GPR10);
+   (*f)(tid, "GPR11", vex->guest_GPR11);
+   (*f)(tid, "GPR12", vex->guest_GPR12);
+   (*f)(tid, "GPR13", vex->guest_GPR13);
+   (*f)(tid, "GPR14", vex->guest_GPR14);
+   (*f)(tid, "GPR15", vex->guest_GPR15);
+   (*f)(tid, "GPR16", vex->guest_GPR16);
+   (*f)(tid, "GPR17", vex->guest_GPR17);
+   (*f)(tid, "GPR18", vex->guest_GPR18);
+   (*f)(tid, "GPR19", vex->guest_GPR19);
+   (*f)(tid, "GPR20", vex->guest_GPR20);
+   (*f)(tid, "GPR21", vex->guest_GPR21);
+   (*f)(tid, "GPR22", vex->guest_GPR22);
+   (*f)(tid, "GPR23", vex->guest_GPR23);
+   (*f)(tid, "GPR24", vex->guest_GPR24);
+   (*f)(tid, "GPR25", vex->guest_GPR25);
+   (*f)(tid, "GPR26", vex->guest_GPR26);
+   (*f)(tid, "GPR27", vex->guest_GPR27);
+   (*f)(tid, "GPR28", vex->guest_GPR28);
+   (*f)(tid, "GPR29", vex->guest_GPR29);
+   (*f)(tid, "GPR30", vex->guest_GPR30);
+   (*f)(tid, "GPR31", vex->guest_GPR31);
+   (*f)(tid, "CTR"  , vex->guest_CTR  );
+   (*f)(tid, "LR"   , vex->guest_LR   );
 #elif defined(VGA_arm)
-   (*f)(vex->guest_R0);
-   (*f)(vex->guest_R1);
-   (*f)(vex->guest_R2);
-   (*f)(vex->guest_R3);
-   (*f)(vex->guest_R4);
-   (*f)(vex->guest_R5);
-   (*f)(vex->guest_R6);
-   (*f)(vex->guest_R8);
-   (*f)(vex->guest_R9);
-   (*f)(vex->guest_R10);
-   (*f)(vex->guest_R11);
-   (*f)(vex->guest_R12);
-   (*f)(vex->guest_R13);
-   (*f)(vex->guest_R14);
+   (*f)(tid, "R0" , vex->guest_R0 );
+   (*f)(tid, "R1" , vex->guest_R1 );
+   (*f)(tid, "R2" , vex->guest_R2 );
+   (*f)(tid, "R3" , vex->guest_R3 );
+   (*f)(tid, "R4" , vex->guest_R4 );
+   (*f)(tid, "R5" , vex->guest_R5 );
+   (*f)(tid, "R6" , vex->guest_R6 );
+   (*f)(tid, "R8" , vex->guest_R8 );
+   (*f)(tid, "R9" , vex->guest_R9 );
+   (*f)(tid, "R10", vex->guest_R10);
+   (*f)(tid, "R11", vex->guest_R11);
+   (*f)(tid, "R12", vex->guest_R12);
+   (*f)(tid, "R13", vex->guest_R13);
+   (*f)(tid, "R14", vex->guest_R14);
 #elif defined(VGA_s390x)
-   (*f)(vex->guest_r0);
-   (*f)(vex->guest_r1);
-   (*f)(vex->guest_r2);
-   (*f)(vex->guest_r3);
-   (*f)(vex->guest_r4);
-   (*f)(vex->guest_r5);
-   (*f)(vex->guest_r6);
-   (*f)(vex->guest_r7);
-   (*f)(vex->guest_r8);
-   (*f)(vex->guest_r9);
-   (*f)(vex->guest_r10);
-   (*f)(vex->guest_r11);
-   (*f)(vex->guest_r12);
-   (*f)(vex->guest_r13);
-   (*f)(vex->guest_r14);
-   (*f)(vex->guest_r15);
+   (*f)(tid, "r0" , vex->guest_r0 );
+   (*f)(tid, "r1" , vex->guest_r1 );
+   (*f)(tid, "r2" , vex->guest_r2 );
+   (*f)(tid, "r3" , vex->guest_r3 );
+   (*f)(tid, "r4" , vex->guest_r4 );
+   (*f)(tid, "r5" , vex->guest_r5 );
+   (*f)(tid, "r6" , vex->guest_r6 );
+   (*f)(tid, "r7" , vex->guest_r7 );
+   (*f)(tid, "r8" , vex->guest_r8 );
+   (*f)(tid, "r9" , vex->guest_r9 );
+   (*f)(tid, "r10", vex->guest_r10);
+   (*f)(tid, "r11", vex->guest_r11);
+   (*f)(tid, "r12", vex->guest_r12);
+   (*f)(tid, "r13", vex->guest_r13);
+   (*f)(tid, "r14", vex->guest_r14);
+   (*f)(tid, "r15", vex->guest_r15);
 #else
 #  error Unknown arch
 #endif
 }
 
 
-void VG_(apply_to_GP_regs)(void (*f)(UWord))
+void VG_(apply_to_GP_regs)(void (*f)(ThreadId, HChar*, UWord))
 {
    ThreadId tid;
 
    for (tid = 1; tid < VG_N_THREADS; tid++) {
       if (VG_(is_valid_tid)(tid)) {
-         ThreadState* tst = VG_(get_ThreadState)(tid);
-         apply_to_GPs_of_tid(&(tst->arch.vex), f);
+         apply_to_GPs_of_tid(tid, f);
       }
    }
 }
@@ -356,35 +356,7 @@ SizeT VG_(thread_get_altstack_size)(ThreadId tid)
    (2) from the AT_SYSINFO entries the kernel gave us (ppc32 cache
    line size).  It's a bit nasty in the sense that there's no obvious
    way to stop uses of some of this info before it's ready to go.
-
-   Current dependencies are:
-
-   x86:   initially:  call VG_(machine_get_hwcaps)
-
-          then safe to use VG_(machine_get_VexArchInfo) 
-                       and VG_(machine_x86_have_mxcsr)
-   -------------
-   amd64: initially:  call VG_(machine_get_hwcaps)
-
-          then safe to use VG_(machine_get_VexArchInfo) 
-   -------------
-   ppc32: initially:  call VG_(machine_get_hwcaps)
-                      call VG_(machine_ppc32_set_clszB)
-
-          then safe to use VG_(machine_get_VexArchInfo) 
-                       and VG_(machine_ppc32_has_FP)
-                       and VG_(machine_ppc32_has_VMX)
-   -------------
-   ppc64: initially:  call VG_(machine_get_hwcaps)
-                      call VG_(machine_ppc64_set_clszB)
-
-          then safe to use VG_(machine_get_VexArchInfo) 
-                       and VG_(machine_ppc64_has_VMX)
-
-   -------------
-   s390x: initially:  call VG_(machine_get_hwcaps)
-
-          then safe to use VG_(machine_get_VexArchInfo)
+   See pub_core_machine.h for more information about that.
 
    VG_(machine_get_hwcaps) may use signals (although it attempts to
    leave signal state unchanged) and therefore should only be
@@ -495,7 +467,8 @@ static void find_ppc_dcbz_sz(VexArchInfo *arch_info)
 
    processor 0: version = FF,  identification = 0117C9,  machine = 2064
 
-   and return the machine model or VEX_S390X_MODEL_INVALID on error. */
+   and return the machine model. If the machine model could not be determined
+   or it is an unknown model, return VEX_S390X_MODEL_UNKNOWN. */
 
 static UInt VG_(get_machine_model)(void)
 {
@@ -522,7 +495,7 @@ static UInt VG_(get_machine_model)(void)
 
    /* Slurp contents of /proc/cpuinfo into FILE_BUF */
    fd = VG_(open)( "/proc/cpuinfo", 0, VKI_S_IRUSR );
-   if ( sr_isError(fd) ) return VEX_S390X_MODEL_INVALID;
+   if ( sr_isError(fd) ) return VEX_S390X_MODEL_UNKNOWN;
 
    fh  = sr_Res(fd);
 
@@ -555,7 +528,7 @@ static UInt VG_(get_machine_model)(void)
    VG_(close)(fh);
 
    /* Parse file */
-   model = VEX_S390X_MODEL_INVALID;
+   model = VEX_S390X_MODEL_UNKNOWN;
    for (p = file_buf; *p; ++p) {
       /* Beginning of line */
      if (VG_(strncmp)( p, "processor", sizeof "processor" - 1 ) != 0) continue;
@@ -587,8 +560,9 @@ static UInt VG_(get_machine_model)(void)
    }
 
    VG_(free)( file_buf );
-   VG_(debugLog)(1, "machine", "model = %s\n", model_map[model].name);
-
+   VG_(debugLog)(1, "machine", "model = %s\n",
+                 model == VEX_S390X_MODEL_UNKNOWN ? "UNKNOWN"
+                                                  : model_map[model].name);
    return model;
 }
 
@@ -678,7 +652,7 @@ Bool VG_(machine_get_hwcaps)( void )
 
 #elif defined(VGA_amd64)
    { Bool have_sse3, have_cx8, have_cx16;
-     Bool have_lzcnt;
+     Bool have_lzcnt, have_avx /*, have_fma*/;
      UInt eax, ebx, ecx, edx, max_extended;
      UChar vstr[13];
      vstr[0] = 0;
@@ -707,9 +681,33 @@ Bool VG_(machine_get_hwcaps)( void )
 
      // we assume that SSE1 and SSE2 are available by default
      have_sse3 = (ecx & (1<<0)) != 0;  /* True => have sse3 insns */
-     // ssse3  is ecx:9
-     // sse41  is ecx:19
-     // sse42  is ecx:20
+     // ssse3   is ecx:9
+     // sse41   is ecx:19
+     // sse42   is ecx:20
+
+     // osxsave is ecx:27
+     // avx     is ecx:28
+     // fma     is ecx:12
+     have_avx = False;
+     /* have_fma = False; */
+     if ( (ecx & ((1<<27)|(1<<28))) == ((1<<27)|(1<<28)) ) {
+        /* processor supports AVX instructions and XGETBV is enabled
+           by OS */
+        ULong w;
+        __asm__ __volatile__("movq $0,%%rcx ; "
+                             ".byte 0x0F,0x01,0xD0 ; " /* xgetbv */
+                             "movq %%rax,%0"
+                             :/*OUT*/"=r"(w) :/*IN*/
+                             :/*TRASH*/"rdx","rcx");
+        if ((w & 6) == 6) {
+           /* OS has enabled both XMM and YMM state support */
+           have_avx = True;
+           /* have_fma = (ecx & (1<<12)) != 0; */
+           /* have_fma: Probably correct, but gcc complains due to
+              unusedness. &*/
+        }
+     }
+
 
      /* cmpxchg8b is a minimum requirement now; if we don't have it we
         must simply give up.  But all CPUs since Pentium-I have it, so
@@ -730,9 +728,10 @@ Bool VG_(machine_get_hwcaps)( void )
      }
 
      va         = VexArchAMD64;
-     vai.hwcaps = (have_sse3 ? VEX_HWCAPS_AMD64_SSE3 : 0)
-                  | (have_cx16 ? VEX_HWCAPS_AMD64_CX16 : 0)
-                  | (have_lzcnt ? VEX_HWCAPS_AMD64_LZCNT : 0);
+     vai.hwcaps = (have_sse3  ? VEX_HWCAPS_AMD64_SSE3  : 0)
+                | (have_cx16  ? VEX_HWCAPS_AMD64_CX16  : 0)
+                | (have_lzcnt ? VEX_HWCAPS_AMD64_LZCNT : 0)
+                | (have_avx   ? VEX_HWCAPS_AMD64_AVX   : 0);
      return True;
    }
 
@@ -748,7 +747,7 @@ Bool VG_(machine_get_hwcaps)( void )
      vki_sigaction_fromK_t saved_sigill_act, saved_sigfpe_act;
      vki_sigaction_toK_t     tmp_sigill_act,   tmp_sigfpe_act;
 
-     volatile Bool have_F, have_V, have_FX, have_GX, have_VX;
+     volatile Bool have_F, have_V, have_FX, have_GX, have_VX, have_DFP;
      Int r;
 
      /* This is a kludge.  Really we ought to back-convert saved_act
@@ -835,6 +834,13 @@ Bool VG_(machine_get_hwcaps)( void )
         __asm__ __volatile__(".long 0xf0000564"); /* xsabsdp XT,XB */
      }
 
+     /* Check for Decimal Floating Point (DFP) support. */
+     have_DFP = True;
+     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
+        have_DFP = False;
+     } else {
+        __asm__ __volatile__(".long 0xee4e8005"); /* dadd  FRT,FRA, FRB */
+     }
 
      /* determine dcbz/dcbzl sizes while we still have the signal
       * handlers registered */
@@ -846,9 +852,9 @@ Bool VG_(machine_get_hwcaps)( void )
      vg_assert(r == 0);
      r = VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
      vg_assert(r == 0);
-     VG_(debugLog)(1, "machine", "F %d V %d FX %d GX %d VX %d\n", 
+     VG_(debugLog)(1, "machine", "F %d V %d FX %d GX %d VX %d DFP %d\n",
                     (Int)have_F, (Int)have_V, (Int)have_FX,
-                    (Int)have_GX, (Int)have_VX);
+                    (Int)have_GX, (Int)have_VX, (Int)have_DFP);
      /* Make FP a prerequisite for VMX (bogusly so), and for FX and GX. */
      if (have_V && !have_F)
         have_V = False;
@@ -868,6 +874,8 @@ Bool VG_(machine_get_hwcaps)( void )
      if (have_FX) vai.hwcaps |= VEX_HWCAPS_PPC32_FX;
      if (have_GX) vai.hwcaps |= VEX_HWCAPS_PPC32_GX;
      if (have_VX) vai.hwcaps |= VEX_HWCAPS_PPC32_VX;
+     if (have_DFP) vai.hwcaps |= VEX_HWCAPS_PPC32_DFP;
+
 
      /* But we're not done yet: VG_(machine_ppc32_set_clszB) must be
         called before we're ready to go. */
@@ -881,7 +889,7 @@ Bool VG_(machine_get_hwcaps)( void )
      vki_sigaction_fromK_t saved_sigill_act, saved_sigfpe_act;
      vki_sigaction_toK_t     tmp_sigill_act,   tmp_sigfpe_act;
 
-     volatile Bool have_F, have_V, have_FX, have_GX, have_VX;
+     volatile Bool have_F, have_V, have_FX, have_GX, have_VX, have_DFP;
      Int r;
 
      /* This is a kludge.  Really we ought to back-convert saved_act
@@ -960,6 +968,14 @@ Bool VG_(machine_get_hwcaps)( void )
         __asm__ __volatile__(".long 0xf0000564"); /* xsabsdp XT,XB */
      }
 
+     /* Check for Decimal Floating Point (DFP) support. */
+     have_DFP = True;
+     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
+        have_DFP = False;
+     } else {
+        __asm__ __volatile__(".long 0xee4e8005"); /* dadd  FRT,FRA, FRB */
+     }
+
      /* determine dcbz/dcbzl sizes while we still have the signal
       * handlers registered */
      find_ppc_dcbz_sz(&vai);
@@ -967,9 +983,9 @@ Bool VG_(machine_get_hwcaps)( void )
      VG_(sigaction)(VKI_SIGILL, &saved_sigill_act, NULL);
      VG_(sigaction)(VKI_SIGFPE, &saved_sigfpe_act, NULL);
      VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
-     VG_(debugLog)(1, "machine", "F %d V %d FX %d GX %d VX %d\n", 
+     VG_(debugLog)(1, "machine", "F %d V %d FX %d GX %d VX %d DFP %d\n",
                     (Int)have_F, (Int)have_V, (Int)have_FX,
-                    (Int)have_GX, (Int)have_VX);
+                    (Int)have_GX, (Int)have_VX, (Int)have_DFP);
      /* on ppc64, if we don't even have FP, just give up. */
      if (!have_F)
         return False;
@@ -983,6 +999,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (have_FX) vai.hwcaps |= VEX_HWCAPS_PPC64_FX;
      if (have_GX) vai.hwcaps |= VEX_HWCAPS_PPC64_GX;
      if (have_VX) vai.hwcaps |= VEX_HWCAPS_PPC64_VX;
+     if (have_DFP) vai.hwcaps |= VEX_HWCAPS_PPC64_DFP;
 
      /* But we're not done yet: VG_(machine_ppc64_set_clszB) must be
         called before we're ready to go. */
@@ -997,6 +1014,7 @@ Bool VG_(machine_get_hwcaps)( void )
      vki_sigaction_toK_t     tmp_sigill_act;
 
      volatile Bool have_LDISP, have_EIMM, have_GIE, have_DFP, have_FGX;
+     volatile Bool have_STFLE, have_ETF2, have_ETF3;
      Int r, model;
 
      /* Unblock SIGILL and stash away the old action for that signal */
@@ -1064,6 +1082,27 @@ Bool VG_(machine_get_hwcaps)( void )
         __asm__ __volatile__(".long 0xb3cd0000" : : : "r0");  /* lgdr r0,f0 */
      }
 
+     /* Detect presence of the ETF2-enhancement facility using the
+        STFLE insn. Note, that STFLE and ETF2 were introduced at the same
+        time, so the absence of STLFE implies the absence of ETF2. */
+     have_STFLE = True;
+     have_ETF2 = False;
+     have_ETF3 = False;
+     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
+        have_STFLE = False;
+     } else {
+         ULong hoststfle[1];
+         register ULong reg0 asm("0") = 0; /* one double word available */
+
+         __asm__ __volatile__(" .insn s,0xb2b00000,%0\n"   /* stfle */
+                              : "=m" (hoststfle), "+d"(reg0)
+                              : : "cc", "memory");
+         if (hoststfle[0] & (1ULL << (63 - 24)))
+             have_ETF2 = True;
+         if (hoststfle[0] & (1ULL << (63 - 30)))
+             have_ETF3 = True;
+     }
+
      /* Restore signals */
      r = VG_(sigaction)(VKI_SIGILL, &saved_sigill_act, NULL);
      vg_assert(r == 0);
@@ -1073,11 +1112,13 @@ Bool VG_(machine_get_hwcaps)( void )
 
      model = VG_(get_machine_model)();
 
-     VG_(debugLog)(1, "machine", "machine %d  LDISP %d EIMM %d GIE %d DFP %d "
-                   "FGX %d\n", model, have_LDISP, have_EIMM, have_GIE,
-                   have_DFP, have_FGX);
+     /* If the model is "unknown" don't treat this as an error. Assume
+        this is a brand-new machine model for which we don't have the 
+        identification yet. Keeping fingers crossed. */
 
-     if (model == VEX_S390X_MODEL_INVALID) return False;
+     VG_(debugLog)(1, "machine", "machine %d  LDISP %d EIMM %d GIE %d DFP %d "
+                   "FGX %d STFLE %d ETF2 %d ETF3 %d\n", model, have_LDISP, have_EIMM,
+                   have_GIE, have_DFP, have_FGX, have_STFLE, have_ETF2, have_ETF3);
 
      vai.hwcaps = model;
      if (have_LDISP) {
@@ -1090,6 +1131,9 @@ Bool VG_(machine_get_hwcaps)( void )
      if (have_GIE)   vai.hwcaps |= VEX_HWCAPS_S390X_GIE;
      if (have_DFP)   vai.hwcaps |= VEX_HWCAPS_S390X_DFP;
      if (have_FGX)   vai.hwcaps |= VEX_HWCAPS_S390X_FGX;
+     if (have_ETF2)  vai.hwcaps |= VEX_HWCAPS_S390X_ETF2;
+     if (have_ETF3)  vai.hwcaps |= VEX_HWCAPS_S390X_ETF3;
+     if (have_STFLE) vai.hwcaps |= VEX_HWCAPS_S390X_STFLE;
 
      VG_(debugLog)(1, "machine", "hwcaps = 0x%x\n", vai.hwcaps);
 

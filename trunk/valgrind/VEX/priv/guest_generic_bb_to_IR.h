@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2010 OpenWorks LLP
+   Copyright (C) 2004-2011 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -76,6 +76,13 @@ typedef
       enum { Dis_StopHere, Dis_Continue, 
              Dis_ResteerU, Dis_ResteerC } whatNext;
 
+      /* For Dis_StopHere, we need to end the block and create a
+         transfer to whatever the NIA is.  That will have presumably
+         been set by the IR generated for this insn.  So we need to
+         know the jump kind to use.  Should Ijk_INVALID in other Dis_
+         cases. */
+      IRJumpKind jk_StopHere;
+
       /* For Dis_Resteer, this is the guest address we should continue
          at.  Otherwise ignored (should be zero). */
       Addr64 continueAt;
@@ -111,10 +118,6 @@ typedef
 
       /* This is the IRSB to which the resulting IR is to be appended. */
       /*OUT*/ IRSB*        irbb,
-
-      /* Do we need to generate IR to set the guest IP for this insn,
-         or not? */
-      /*IN*/  Bool         put_IP,
 
       /* Return True iff resteering to the given addr is allowed (for
          branches/calls to destinations that are known at JIT-time) */
@@ -161,6 +164,7 @@ extern
 IRSB* bb_to_IR ( 
          /*OUT*/VexGuestExtents* vge,
          /*OUT*/UInt*            n_sc_extents,
+         /*OUT*/UInt*            n_guest_instrs, /* stats only */
          /*IN*/ void*            callback_opaque,
          /*IN*/ DisOneInstrFn    dis_instr_fn,
          /*IN*/ UChar*           guest_code,
@@ -173,8 +177,10 @@ IRSB* bb_to_IR (
          /*IN*/ IRType           guest_word_type,
          /*IN*/ UInt             (*needs_self_check)(void*,VexGuestExtents*),
          /*IN*/ Bool             (*preamble_function)(void*,IRSB*),
-         /*IN*/ Int              offB_TISTART,
-         /*IN*/ Int              offB_TILEN
+         /*IN*/ Int              offB_GUEST_TISTART,
+         /*IN*/ Int              offB_GUEST_TILEN,
+         /*IN*/ Int              offB_GUEST_IP,
+         /*IN*/ Int              szB_GUEST_IP
       );
 
 

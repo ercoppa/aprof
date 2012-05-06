@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2010 OpenWorks LLP
+   Copyright (C) 2004-2011 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -47,7 +47,6 @@
    bb_to_IR.h. */
 extern
 DisResult disInstr_AMD64 ( IRSB*        irbb,
-                           Bool         put_IP,
                            Bool         (*resteerOkFn) ( void*, Addr64 ),
                            Bool         resteerCisOk,
                            void*        callback_opaque,
@@ -118,9 +117,13 @@ extern ULong amd64g_check_ldmxcsr ( ULong mxcsr );
 
 extern ULong amd64g_create_mxcsr ( ULong sseround );
 
-extern VexEmWarn amd64g_dirtyhelper_FLDENV ( VexGuestAMD64State*, HWord );
+extern VexEmWarn amd64g_dirtyhelper_FLDENV  ( VexGuestAMD64State*, HWord );
+extern VexEmWarn amd64g_dirtyhelper_FRSTOR  ( VexGuestAMD64State*, HWord );
+extern VexEmWarn amd64g_dirtyhelper_FRSTORS ( VexGuestAMD64State*, HWord );
 
-extern void amd64g_dirtyhelper_FSTENV ( VexGuestAMD64State*, HWord );
+extern void amd64g_dirtyhelper_FSTENV  ( VexGuestAMD64State*, HWord );
+extern void amd64g_dirtyhelper_FNSAVE  ( VexGuestAMD64State*, HWord );
+extern void amd64g_dirtyhelper_FNSAVES ( VexGuestAMD64State*, HWord );
 
 /* Translate a guest virtual_addr into a guest linear address by
    consulting the supplied LDT/GDT structures.  Their representation
@@ -137,10 +140,16 @@ extern ULong amd64g_calculate_mmx_psadbw   ( ULong, ULong );
 extern ULong amd64g_calculate_mmx_pmovmskb ( ULong );
 extern ULong amd64g_calculate_sse_pmovmskb ( ULong w64hi, ULong w64lo );
 
+extern ULong amd64g_calculate_sse_phminposuw ( ULong sLo, ULong sHi );
+
 extern ULong amd64g_calc_crc32b ( ULong crcIn, ULong b );
 extern ULong amd64g_calc_crc32w ( ULong crcIn, ULong w );
 extern ULong amd64g_calc_crc32l ( ULong crcIn, ULong l );
 extern ULong amd64g_calc_crc32q ( ULong crcIn, ULong q );
+
+extern ULong amd64g_calc_mpsadbw ( ULong sHi, ULong sLo,
+                                   ULong dHi, ULong dLo,
+                                   ULong imm_and_return_control_bit );
 
 /* --- DIRTY HELPERS --- */
 
@@ -211,6 +220,55 @@ extern ULong amd64g_dirtyhelper_PCMPxSTRx (
           HWord edxIN, HWord eaxIN
        );
 
+/* Implementation of intel AES instructions as described in
+   Intel  Advanced Vector Extensions
+          Programming Reference
+          MARCH 2008
+          319433-002.
+
+   CALLED FROM GENERATED CODE: DIRTY HELPER(s).  (But not really,
+   actually it could be a clean helper, but for the fact that we can't
+   pass by value 2 x V128 to a clean helper, nor have one returned.)
+   Reads guest state, writes to guest state, no
+   accesses of memory, is a pure function.
+
+   opc4 contains the 4th byte of opcode. Front-end should only
+   give opcode corresponding to AESENC/AESENCLAST/AESDEC/AESDECLAST/AESIMC.
+   (will assert otherwise).
+
+   gstOffL and gstOffR are the guest state offsets for the two XMM
+   register inputs and/or output.  We never have to deal with the memory
+   case since that is handled by pre-loading the relevant value into the fake
+   XMM16 register.
+
+*/
+extern void amd64g_dirtyhelper_AES ( 
+          VexGuestAMD64State* gst,
+          HWord opc4,
+          HWord gstOffL, HWord gstOffR
+       );
+
+/* Implementation of AESKEYGENASSIST. 
+
+   CALLED FROM GENERATED CODE: DIRTY HELPER(s).  (But not really,
+   actually it could be a clean helper, but for the fact that we can't
+   pass by value 1 x V128 to a clean helper, nor have one returned.)
+   Reads guest state, writes to guest state, no
+   accesses of memory, is a pure function.
+
+   imm8 is the Round Key constant.
+
+   gstOffL and gstOffR are the guest state offsets for the two XMM
+   register input and output.  We never have to deal with the memory case since
+   that is handled by pre-loading the relevant value into the fake
+   XMM16 register.
+
+*/
+extern void amd64g_dirtyhelper_AESKEYGENASSIST ( 
+          VexGuestAMD64State* gst,
+          HWord imm8,
+          HWord gstOffL, HWord gstOffR
+       );
 
 //extern void  amd64g_dirtyhelper_CPUID_sse0 ( VexGuestAMD64State* );
 //extern void  amd64g_dirtyhelper_CPUID_sse1 ( VexGuestAMD64State* );

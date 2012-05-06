@@ -7,9 +7,9 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2010 Nicholas Nethercote
+   Copyright (C) 2000-2011 Nicholas Nethercote
       njn@valgrind.org
-   Copyright (C) 2008-2010 Evan Geller
+   Copyright (C) 2008-2011 Evan Geller
       gaze@bea.ms
 
    This program is free software; you can redistribute it and/or
@@ -114,6 +114,7 @@ ULong do_syscall_clone_arm_linux   ( Word (*fn)(void *),
                                      void* tls );
 asm(
 ".text\n"
+".globl do_syscall_clone_arm_linux\n"
 "do_syscall_clone_arm_linux:\n"
 
 /*Setup child stack */
@@ -228,6 +229,7 @@ static SysRes do_clone ( ThreadId ptid,
       ctst->client_stack_szB  = 0;
    }
 
+   vg_assert(VG_(owns_BigLock_LL)(ptid));
    VG_TRACK ( pre_thread_ll_create, ptid, ctid );
 
    if (flags & VKI_CLONE_SETTLS) {
@@ -305,6 +307,7 @@ DECL_TEMPLATE(arm_linux, sys_setsockopt);
 DECL_TEMPLATE(arm_linux, sys_getsockopt);
 DECL_TEMPLATE(arm_linux, sys_connect);
 DECL_TEMPLATE(arm_linux, sys_accept);
+DECL_TEMPLATE(arm_linux, sys_accept4);
 DECL_TEMPLATE(arm_linux, sys_sendto);
 DECL_TEMPLATE(arm_linux, sys_recvfrom);
 //XXX: Semaphore code ripped from AMD64.
@@ -391,6 +394,13 @@ PRE(sys_socketcall)
       break;
    }
 
+   case VKI_SYS_ACCEPT4: {
+      /*int accept(int s, struct sockaddr *add, int *addrlen, int flags)*/
+      PRE_MEM_READ( "socketcall.accept4(args)", ARG2, 4*sizeof(Addr) );
+      ML_(generic_PRE_sys_accept)( tid, ARG2_0, ARG2_1, ARG2_2 );
+      break;
+   }
+
    case VKI_SYS_SENDTO:
      /* int sendto(int s, const void *msg, int len,
                     unsigned int flags,
@@ -472,7 +482,7 @@ PRE(sys_socketcall)
       * (after all it's glibc providing the arguments array)
        PRE_MEM_READ( "socketcall.sendmsg(args)", ARG2, 3*sizeof(Addr) );
      */
-     ML_(generic_PRE_sys_sendmsg)( tid, ARG2_0, ARG2_1 );
+     ML_(generic_PRE_sys_sendmsg)( tid, "msg", (struct vki_msghdr *)ARG2_1 );
      break;
    }
 
@@ -483,7 +493,7 @@ PRE(sys_socketcall)
       * (after all it's glibc providing the arguments array)
        PRE_MEM_READ("socketcall.recvmsg(args)", ARG2, 3*sizeof(Addr) );
      */
-     ML_(generic_PRE_sys_recvmsg)( tid, ARG2_0, ARG2_1 );
+     ML_(generic_PRE_sys_recvmsg)( tid, "msg", (struct vki_msghdr *)ARG2_1 );
      break;
    }
 
@@ -536,7 +546,9 @@ POST(sys_socketcall)
     break;
 
   case VKI_SYS_ACCEPT:
+  case VKI_SYS_ACCEPT4:
     /* int accept(int s, struct sockaddr *addr, int *addrlen); */
+    /* int accept4(int s, struct sockaddr *addr, int *addrlen, int flags); */
     r = ML_(generic_POST_sys_accept)( tid, VG_(mk_SysRes_Success)(RES),
                   ARG2_0, ARG2_1, ARG2_2 );
     SET_STATUS_from_SysRes(r);
@@ -587,7 +599,7 @@ POST(sys_socketcall)
     break;
 
   case VKI_SYS_RECVMSG:
-    ML_(generic_POST_sys_recvmsg)( tid, ARG2_0, ARG2_1 );
+    ML_(generic_POST_sys_recvmsg)( tid, "msg", (struct vki_msghdr *)ARG2_1, RES );
     break;
 
   default:
@@ -666,6 +678,23 @@ POST(sys_accept)
    SET_STATUS_from_SysRes(r);
 }
 
+PRE(sys_accept4)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_accept4 ( %ld, %#lx, %ld, %ld )",ARG1,ARG2,ARG3,ARG4);
+   PRE_REG_READ4(long, "accept4",
+                 int, s, struct sockaddr *, addr, int, *addrlen, int, flags);
+   ML_(generic_PRE_sys_accept)(tid, ARG1,ARG2,ARG3);
+}
+POST(sys_accept4)
+{
+   SysRes r;
+   vg_assert(SUCCESS);
+   r = ML_(generic_POST_sys_accept)(tid, VG_(mk_SysRes_Success)(RES),
+                                         ARG1,ARG2,ARG3);
+   SET_STATUS_from_SysRes(r);
+}
+
 PRE(sys_sendto)
 {
    *flags |= SfMayBlock;
@@ -699,7 +728,7 @@ PRE(sys_sendmsg)
    PRINT("sys_sendmsg ( %ld, %#lx, %ld )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "sendmsg",
                  int, s, const struct msghdr *, msg, int, flags);
-   ML_(generic_PRE_sys_sendmsg)(tid, ARG1,ARG2);
+   ML_(generic_PRE_sys_sendmsg)(tid, "msg", (struct vki_msghdr *)ARG2);
 }
 
 PRE(sys_recvmsg)
@@ -707,11 +736,11 @@ PRE(sys_recvmsg)
    *flags |= SfMayBlock;
    PRINT("sys_recvmsg ( %ld, %#lx, %ld )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "recvmsg", int, s, struct msghdr *, msg, int, flags);
-   ML_(generic_PRE_sys_recvmsg)(tid, ARG1,ARG2);
+   ML_(generic_PRE_sys_recvmsg)(tid, "msg", (struct vki_msghdr *)ARG2);
 }
 POST(sys_recvmsg)
 {
-   ML_(generic_POST_sys_recvmsg)(tid, ARG1,ARG2);
+   ML_(generic_POST_sys_recvmsg)(tid, "msg", (struct vki_msghdr *)ARG2, RES);
 }
 
 //XXX: Semaphore code ripped from AMD64.
@@ -1782,15 +1811,14 @@ static SyscallTableEntry syscall_main_table[] = {
 
 //   LINX_(__NR_tee,               sys_ni_syscall),       // 315
 //   LINX_(__NR_vmsplice,          sys_ni_syscall),       // 316
-//   LINX_(__NR_move_pages,        sys_ni_syscall),       // 317
+   LINXY(__NR_move_pages,        sys_move_pages),       // 317
 //   LINX_(__NR_getcpu,            sys_ni_syscall),       // 318
-//   LINXY(__NR_epoll_pwait,       sys_epoll_pwait),      // 319
 
    LINX_(__NR_utimensat,         sys_utimensat),        // 320
    LINXY(__NR_signalfd,          sys_signalfd),         // 321
    LINXY(__NR_timerfd_create,    sys_timerfd_create),   // 322
    LINX_(__NR_eventfd,           sys_eventfd),          // 323
-//   LINX_(__NR_fallocate,        sys_ni_syscall),        // 324
+
    LINXY(__NR_timerfd_settime,   sys_timerfd_settime),  // 325
    LINXY(__NR_timerfd_gettime,   sys_timerfd_gettime),   // 326
 
@@ -1806,11 +1834,18 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_pselect6,          sys_pselect6),         // 335
    LINXY(__NR_ppoll,             sys_ppoll),            // 336
 
+   LINXY(__NR_epoll_pwait,       sys_epoll_pwait),      // 346
+
+   LINX_(__NR_fallocate,         sys_fallocate),        // 352
+
    LINXY(__NR_signalfd4,         sys_signalfd4),        // 355
    LINX_(__NR_eventfd2,          sys_eventfd2),         // 356
+   LINXY(__NR_epoll_create1,     sys_epoll_create1),    // 357
 
    LINXY(__NR_pipe2,             sys_pipe2),            // 359
-   LINXY(__NR_inotify_init1,     sys_inotify_init1)     // 360
+   LINXY(__NR_inotify_init1,     sys_inotify_init1),    // 360
+
+   PLAXY(__NR_accept4,           sys_accept4)           // 366
 };
 
 

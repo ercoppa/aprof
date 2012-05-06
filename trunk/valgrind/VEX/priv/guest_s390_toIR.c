@@ -34,9 +34,7 @@
 
 #include "libvex_basictypes.h"
 #include "libvex_ir.h"
-#include "libvex_guest_s390x.h"      /* VexGuestS390XState */
 #include "libvex.h"                  /* needed for bb_to_IR.h */
-#include "libvex_guest_offsets.h"    /* OFFSET_s390x_SYSNO */
 #include "libvex_s390x_common.h"
 #include "main_util.h"               /* vassert */
 #include "main_globals.h"            /* vex_traceflags */
@@ -50,6 +48,8 @@
 /*--- Forward declarations                                 ---*/
 /*------------------------------------------------------------*/
 static UInt s390_decode_and_irgen(UChar *, UInt, DisResult *);
+static void s390_irgen_xonc(IROp, IRTemp, IRTemp, IRTemp);
+static void s390_irgen_CLC_EX(IRTemp, IRTemp, IRTemp);
 
 
 /*------------------------------------------------------------*/
@@ -84,6 +84,7 @@ typedef enum {
    S390_DECODE_UNKNOWN_SPECIAL_INSN,
    S390_DECODE_ERROR
 } s390_decode_t;
+
 
 /*------------------------------------------------------------*/
 /*--- Helpers for constructing IR.                         ---*/
@@ -121,11 +122,34 @@ mkexpr(IRTemp tmp)
    return IRExpr_RdTmp(tmp);
 }
 
+/* Generate an expression node for an address. */
+static __inline__ IRExpr *
+mkaddr_expr(Addr64 addr)
+{
+   return IRExpr_Const(IRConst_U64(addr));
+}
+
 /* Add a statement that assigns to a temporary */
 static __inline__ void
 assign(IRTemp dst, IRExpr *expr)
 {
    stmt(IRStmt_WrTmp(dst, expr));
+}
+
+/* Write an address into the guest_IA */
+static __inline__ void
+put_IA(IRExpr *address)
+{
+   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_IA), address));
+}
+
+/* Add a dummy put to the guest_IA to satisfy an assert in bb_to_IR
+   that wants the last statement in an IRSB to be a put to the guest_IA.
+   Mostly used for insns that use the "counter" pseudo guest reg. */
+static __inline__ void
+dummy_put_IA(void)
+{
+   put_IA(IRExpr_Get(S390X_GUEST_OFFSET(guest_IA), Ity_I64));
 }
 
 /* Create a temporary of the given type and assign the expression to it */
@@ -243,10 +267,10 @@ load(IRType type, IRExpr *addr)
 static void
 call_function(IRExpr *callee_address)
 {
-   irsb->next = callee_address;
-   irsb->jumpkind = Ijk_Call;
+   put_IA(callee_address);
 
-   dis_res->whatNext = Dis_StopHere;
+   dis_res->whatNext    = Dis_StopHere;
+   dis_res->jk_StopHere = Ijk_Call;
 }
 
 /* Function call with known target. */
@@ -257,9 +281,10 @@ call_function_and_chase(Addr64 callee_address)
       dis_res->whatNext   = Dis_ResteerU;
       dis_res->continueAt = callee_address;
    } else {
-      irsb->next = mkU64(callee_address);
-      irsb->jumpkind = Ijk_Call;
+      put_IA(mkaddr_expr(callee_address));
+
       dis_res->whatNext = Dis_StopHere;
+      dis_res->jk_StopHere = Ijk_Call;
    }
 }
 
@@ -267,10 +292,10 @@ call_function_and_chase(Addr64 callee_address)
 static void
 return_from_function(IRExpr *return_address)
 {
-   irsb->next = return_address;
-   irsb->jumpkind = Ijk_Ret;
+   put_IA(return_address);
 
-   dis_res->whatNext = Dis_StopHere;
+   dis_res->whatNext    = Dis_StopHere;
+   dis_res->jk_StopHere = Ijk_Ret;
 }
 
 /* A conditional branch whose target is not known at instrumentation time.
@@ -290,12 +315,13 @@ if_not_condition_goto_computed(IRExpr *condition, IRExpr *target)
 {
    vassert(typeOfIRExpr(irsb->tyenv, condition) == Ity_I1);
 
-   stmt(IRStmt_Exit(condition, Ijk_Boring, IRConst_U64(guest_IA_next_instr)));
+   stmt(IRStmt_Exit(condition, Ijk_Boring, IRConst_U64(guest_IA_next_instr),
+                    S390X_GUEST_OFFSET(guest_IA)));
 
-   irsb->next = target;
-   irsb->jumpkind = Ijk_Boring;
+   put_IA(target);
 
-   dis_res->whatNext = Dis_StopHere;
+   dis_res->whatNext    = Dis_StopHere;
+   dis_res->jk_StopHere = Ijk_Boring;
 }
 
 /* A conditional branch whose target is known at instrumentation time. */
@@ -304,8 +330,13 @@ if_condition_goto(IRExpr *condition, Addr64 target)
 {
    vassert(typeOfIRExpr(irsb->tyenv, condition) == Ity_I1);
 
-   stmt(IRStmt_Exit(condition, Ijk_Boring, IRConst_U64(target)));
-   dis_res->whatNext = Dis_Continue;
+   stmt(IRStmt_Exit(condition, Ijk_Boring, IRConst_U64(target),
+                    S390X_GUEST_OFFSET(guest_IA)));
+
+   put_IA(mkaddr_expr(guest_IA_next_instr));
+
+   dis_res->whatNext    = Dis_StopHere;
+   dis_res->jk_StopHere = Ijk_Boring;
 }
 
 /* An unconditional branch. Target may or may not be known at instrumentation
@@ -313,23 +344,26 @@ if_condition_goto(IRExpr *condition, Addr64 target)
 static void
 always_goto(IRExpr *target)
 {
-   irsb->next = target;
-   irsb->jumpkind = Ijk_Boring;
+   put_IA(target);
 
-   dis_res->whatNext = Dis_StopHere;
+   dis_res->whatNext    = Dis_StopHere;
+   dis_res->jk_StopHere = Ijk_Boring;
 }
+
 
 /* An unconditional branch to a known target. */
 static void
 always_goto_and_chase(Addr64 target)
 {
    if (resteer_fn(resteer_data, target)) {
+      /* Follow into the target */
       dis_res->whatNext   = Dis_ResteerU;
       dis_res->continueAt = target;
    } else {
-      irsb->next = mkU64(target);
-      irsb->jumpkind = Ijk_Boring;
-      dis_res->whatNext = Dis_StopHere;
+      put_IA(mkaddr_expr(target));
+
+      dis_res->whatNext    = Dis_StopHere;
+      dis_res->jk_StopHere = Ijk_Boring;
    }
 }
 
@@ -338,19 +372,19 @@ static void
 system_call(IRExpr *sysno)
 {
    /* Store the system call number in the pseudo register. */
-   stmt(IRStmt_Put(OFFSET_s390x_SYSNO, sysno));
+   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_SYSNO), sysno));
 
    /* Store the current IA into guest_IP_AT_SYSCALL. libvex_ir.h says so. */
-   stmt(IRStmt_Put(OFFSET_s390x_IP_AT_SYSCALL, mkU64(guest_IA_curr_instr)));
+   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_IP_AT_SYSCALL),
+                   mkU64(guest_IA_curr_instr)));
+
+   put_IA(mkaddr_expr(guest_IA_next_instr));
 
    /* It's important that all ArchRegs carry their up-to-date value
       at this point.  So we declare an end-of-block here, which
       forces any TempRegs caching ArchRegs to be flushed. */
-   irsb->next = mkU64(guest_IA_next_instr);
-
-   irsb->jumpkind = Ijk_Sys_syscall;
-
-   dis_res->whatNext = Dis_StopHere;
+   dis_res->whatNext    = Dis_StopHere;
+   dis_res->jk_StopHere = Ijk_Sys_syscall;
 }
 
 /* Encode the s390 rounding mode as it appears in the m3/m4 fields of certain
@@ -393,12 +427,6 @@ put_fpr_pair(UInt archreg, IRExpr *expr)
 }
 
 
-/* Flags thunk offsets */
-#define S390X_GUEST_OFFSET_CC_OP    S390X_GUEST_OFFSET(guest_CC_OP)
-#define S390X_GUEST_OFFSET_CC_DEP1  S390X_GUEST_OFFSET(guest_CC_DEP1)
-#define S390X_GUEST_OFFSET_CC_DEP2  S390X_GUEST_OFFSET(guest_CC_DEP2)
-#define S390X_GUEST_OFFSET_CC_NDEP  S390X_GUEST_OFFSET(guest_CC_NDEP)
-
 /*------------------------------------------------------------*/
 /*--- Build the flags thunk.                               ---*/
 /*------------------------------------------------------------*/
@@ -410,10 +438,10 @@ s390_cc_thunk_fill(IRExpr *op, IRExpr *dep1, IRExpr *dep2, IRExpr *ndep)
 {
    UInt op_off, dep1_off, dep2_off, ndep_off;
 
-   op_off   = S390X_GUEST_OFFSET_CC_OP;
-   dep1_off = S390X_GUEST_OFFSET_CC_DEP1;
-   dep2_off = S390X_GUEST_OFFSET_CC_DEP2;
-   ndep_off = S390X_GUEST_OFFSET_CC_NDEP;
+   op_off   = S390X_GUEST_OFFSET(guest_CC_OP);
+   dep1_off = S390X_GUEST_OFFSET(guest_CC_DEP1);
+   dep2_off = S390X_GUEST_OFFSET(guest_CC_DEP2);
+   ndep_off = S390X_GUEST_OFFSET(guest_CC_NDEP);
 
    stmt(IRStmt_Put(op_off,   op));
    stmt(IRStmt_Put(dep1_off, dep1));
@@ -583,10 +611,10 @@ s390_call_calculate_cc(void)
 {
    IRExpr **args, *call, *op, *dep1, *dep2, *ndep;
 
-   op   = IRExpr_Get(S390X_GUEST_OFFSET_CC_OP,   Ity_I64);
-   dep1 = IRExpr_Get(S390X_GUEST_OFFSET_CC_DEP1, Ity_I64);
-   dep2 = IRExpr_Get(S390X_GUEST_OFFSET_CC_DEP2, Ity_I64);
-   ndep = IRExpr_Get(S390X_GUEST_OFFSET_CC_NDEP, Ity_I64);
+   op   = IRExpr_Get(S390X_GUEST_OFFSET(guest_CC_OP),   Ity_I64);
+   dep1 = IRExpr_Get(S390X_GUEST_OFFSET(guest_CC_DEP1), Ity_I64);
+   dep2 = IRExpr_Get(S390X_GUEST_OFFSET(guest_CC_DEP2), Ity_I64);
+   ndep = IRExpr_Get(S390X_GUEST_OFFSET(guest_CC_NDEP), Ity_I64);
 
    args = mkIRExprVec_4(op, dep1, dep2, ndep);
    call = mkIRExprCCall(Ity_I32, 0 /*regparm*/,
@@ -629,10 +657,10 @@ s390_call_calculate_cond(UInt m)
    IRExpr **args, *call, *op, *dep1, *dep2, *ndep, *mask;
 
    mask = mkU64(m);
-   op   = IRExpr_Get(S390X_GUEST_OFFSET_CC_OP,   Ity_I64);
-   dep1 = IRExpr_Get(S390X_GUEST_OFFSET_CC_DEP1, Ity_I64);
-   dep2 = IRExpr_Get(S390X_GUEST_OFFSET_CC_DEP2, Ity_I64);
-   ndep = IRExpr_Get(S390X_GUEST_OFFSET_CC_NDEP, Ity_I64);
+   op   = IRExpr_Get(S390X_GUEST_OFFSET(guest_CC_OP),   Ity_I64);
+   dep1 = IRExpr_Get(S390X_GUEST_OFFSET(guest_CC_DEP1), Ity_I64);
+   dep2 = IRExpr_Get(S390X_GUEST_OFFSET(guest_CC_DEP2), Ity_I64);
+   ndep = IRExpr_Get(S390X_GUEST_OFFSET(guest_CC_NDEP), Ity_I64);
 
    args = mkIRExprVec_5(mask, op, dep1, dep2, ndep);
    call = mkIRExprCCall(Ity_I32, 0 /*regparm*/,
@@ -661,8 +689,6 @@ s390_call_calculate_cond(UInt m)
         s390_call_calculate_icc(op,dep1,dep2,True)
 
 
-#define OFFB_TISTART   S390X_GUEST_OFFSET(guest_TISTART)
-#define OFFB_TILEN     S390X_GUEST_OFFSET(guest_TILEN)
 
 
 /*------------------------------------------------------------*/
@@ -1585,6 +1611,16 @@ s390_format_RRE_F0(HChar *(*irgen)(UChar r1),
 }
 
 static void
+s390_format_RRF_M0RERE(HChar *(*irgen)(UChar m3, UChar r1, UChar r2),
+                       UChar m3, UChar r1, UChar r2)
+{
+   irgen(m3, r1, r2);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
+      s390_disasm(ENC3(MNM, GPR, GPR), m3, r1, r2);
+}
+
+static void
 s390_format_RRF_F0FF(HChar *(*irgen)(UChar, UChar, UChar),
                      UChar r1, UChar r3, UChar r2)
 {
@@ -1794,6 +1830,7 @@ s390_format_RSY_RDRM(HChar *(*irgen)(UChar r1, IRTemp op2addr),
           mkU64(0)));
 
    irgen(r1, op2addr);
+   dummy_put_IA();
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(XMNM, GPR, SDXB), xmnm_kind, m3, r1, dh2, dl2, 0, b2);
@@ -5839,6 +5876,7 @@ s390_irgen_LOCR(UChar m3, UChar r1, UChar r2)
    if_condition_goto(binop(Iop_CmpEQ32, s390_call_calculate_cond(m3), mkU32(0)),
                      guest_IA_next_instr);
    put_gpr_w1(r1, get_gpr_w1(r2));
+   dummy_put_IA();
 
    return "locr";
 }
@@ -5849,6 +5887,7 @@ s390_irgen_LOCGR(UChar m3, UChar r1, UChar r2)
    if_condition_goto(binop(Iop_CmpEQ32, s390_call_calculate_cond(m3), mkU32(0)),
                      guest_IA_next_instr);
    put_gpr_dw0(r1, get_gpr_dw0(r2));
+   dummy_put_IA();
 
    return "locgr";
 }
@@ -7856,18 +7895,6 @@ s390_irgen_SVC(UChar i)
 }
 
 static HChar *
-s390_irgen_TS(IRTemp op2addr)
-{
-   IRTemp value = newTemp(Ity_I8);
-
-   assign(value, load(Ity_I8, mkexpr(op2addr)));
-   s390_cc_thunk_putZ(S390_CC_OP_TEST_AND_SET, value);
-   store(mkexpr(op2addr), mkU8(255));
-
-   return "ts";
-}
-
-static HChar *
 s390_irgen_TM(UChar i2, IRTemp op1addr)
 {
    UChar mask;
@@ -8563,29 +8590,11 @@ s390_irgen_SDB(UChar r1, IRTemp op2addr)
 static HChar *
 s390_irgen_CLC(UChar length, IRTemp start1, IRTemp start2)
 {
-   IRTemp current1 = newTemp(Ity_I8);
-   IRTemp current2 = newTemp(Ity_I8);
-   IRTemp counter = newTemp(Ity_I64);
+   IRTemp len = newTemp(Ity_I64);
 
-   assign(counter, get_counter_dw0());
-   put_counter_dw0(mkU64(0));
-
-   assign(current1, load(Ity_I8, binop(Iop_Add64, mkexpr(start1),
-                                       mkexpr(counter))));
-   assign(current2, load(Ity_I8, binop(Iop_Add64, mkexpr(start2),
-                                       mkexpr(counter))));
-   s390_cc_thunk_put2(S390_CC_OP_UNSIGNED_COMPARE, current1, current2,
-                      False);
-
-   /* Both fields differ ? */
-   if_condition_goto(binop(Iop_CmpNE8, mkexpr(current1), mkexpr(current2)),
-                     guest_IA_next_instr);
-
-   /* Check for end of field */
-   put_counter_dw0(binop(Iop_Add64, mkexpr(counter), mkU64(1)));
-   if_condition_goto(binop(Iop_CmpNE64, mkexpr(counter), mkU64(length)),
-                     guest_IA_curr_instr);
-   put_counter_dw0(mkU64(0));
+   assign(len, mkU64(length));
+   s390_irgen_CLC_EX(len, start1, start2);
+   dummy_put_IA();
 
    return "clc";
 }
@@ -8758,38 +8767,25 @@ s390_irgen_CLCLE(UChar r1, UChar r3, IRTemp pad2)
    return "clcle";
 }
 
+
 static void
 s390_irgen_XC_EX(IRTemp length, IRTemp start1, IRTemp start2)
 {
-   IRTemp old1 = newTemp(Ity_I8);
-   IRTemp old2 = newTemp(Ity_I8);
-   IRTemp new1 = newTemp(Ity_I8);
-   IRTemp counter = newTemp(Ity_I32);
-   IRTemp addr1 = newTemp(Ity_I64);
+   s390_irgen_xonc(Iop_Xor8, length, start1, start2);
+}
 
-   assign(counter, get_counter_w0());
 
-   assign(addr1, binop(Iop_Add64, mkexpr(start1),
-                       unop(Iop_32Uto64, mkexpr(counter))));
+static void
+s390_irgen_NC_EX(IRTemp length, IRTemp start1, IRTemp start2)
+{
+   s390_irgen_xonc(Iop_And8, length, start1, start2);
+}
 
-   assign(old1, load(Ity_I8, mkexpr(addr1)));
-   assign(old2, load(Ity_I8, binop(Iop_Add64, mkexpr(start2),
-                                   unop(Iop_32Uto64,mkexpr(counter)))));
-   assign(new1, binop(Iop_Xor8, mkexpr(old1), mkexpr(old2)));
 
-   store(mkexpr(addr1),
-         mkite(binop(Iop_CmpEQ64, mkexpr(start1), mkexpr(start2)),
-               mkU8(0), mkexpr(new1)));
-   put_counter_w1(binop(Iop_Or32, unop(Iop_8Uto32, mkexpr(new1)),
-                        get_counter_w1()));
-
-   /* Check for end of field */
-   put_counter_w0(binop(Iop_Add32, mkexpr(counter), mkU32(1)));
-   if_condition_goto(binop(Iop_CmpNE32, mkexpr(counter), mkexpr(length)),
-                     guest_IA_curr_instr);
-   s390_cc_thunk_put1(S390_CC_OP_BITWISE, mktemp(Ity_I32, get_counter_w1()),
-                      False);
-   put_counter_dw0(mkU64(0));
+static void
+s390_irgen_OC_EX(IRTemp length, IRTemp start1, IRTemp start2)
+{
+   s390_irgen_xonc(Iop_Or8, length, start1, start2);
 }
 
 
@@ -8838,6 +8834,28 @@ s390_irgen_MVC_EX(IRTemp length, IRTemp start1, IRTemp start2)
    put_counter_dw0(mkU64(0));
 }
 
+static void
+s390_irgen_TR_EX(IRTemp length, IRTemp start1, IRTemp start2)
+{
+   IRTemp op = newTemp(Ity_I8);
+   IRTemp op1 = newTemp(Ity_I8);
+   IRTemp result = newTemp(Ity_I64);
+   IRTemp counter = newTemp(Ity_I64);
+
+   assign(counter, get_counter_dw0());
+
+   assign(op, load(Ity_I8, binop(Iop_Add64, mkexpr(start1), mkexpr(counter))));
+
+   assign(result, binop(Iop_Add64, unop(Iop_8Uto64, mkexpr(op)), mkexpr(start2)));
+
+   assign(op1, load(Ity_I8, mkexpr(result)));
+   store(binop(Iop_Add64, mkexpr(start1), mkexpr(counter)), mkexpr(op1));
+
+   put_counter_dw0(binop(Iop_Add64, mkexpr(counter), mkU64(1)));
+   if_condition_goto(binop(Iop_CmpNE64, mkexpr(counter), mkexpr(length)),
+                     guest_IA_curr_instr);
+   put_counter_dw0(mkU64(0));
+}
 
 
 static void
@@ -8876,10 +8894,11 @@ void (*irgen)(IRTemp length, IRTemp start1, IRTemp start2), int lensize)
    stmt(IRStmt_Dirty(d));
 
    /* and restart */
-   stmt(IRStmt_Put(OFFB_TISTART, mkU64(guest_IA_curr_instr)));
-   stmt(IRStmt_Put(OFFB_TILEN, mkU64(4)));
-   stmt(IRStmt_Exit(mkexpr(cond), Ijk_TInval,
-        IRConst_U64(guest_IA_curr_instr)));
+   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TISTART),
+                   mkU64(guest_IA_curr_instr)));
+   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TILEN), mkU64(4)));
+   stmt(IRStmt_Exit(mkexpr(cond), Ijk_TInval, IRConst_U64(guest_IA_curr_instr),
+                    S390X_GUEST_OFFSET(guest_IA)));
 
    ss.bytes = last_execute_target;
    assign(start1, binop(Iop_Add64, mkU64(ss.dec.d1),
@@ -8889,6 +8908,8 @@ void (*irgen)(IRTemp length, IRTemp start1, IRTemp start2), int lensize)
    assign(len, unop(lensize == 64 ? Iop_8Uto64 : Iop_8Uto32, binop(Iop_Or8,
           r != 0 ? get_gpr_b7(r): mkU8(0), mkU8(ss.dec.l))));
    irgen(len, start1, start2);
+   dummy_put_IA();
+
    last_execute_target = 0;
 }
 
@@ -8906,13 +8927,16 @@ s390_irgen_EX(UChar r1, IRTemp addr2)
                              mkIRExprVec_1(load(Ity_I64, mkexpr(addr2))));
       stmt(IRStmt_Dirty(d));
       /* and restart */
-      stmt(IRStmt_Put(OFFB_TISTART, mkU64(guest_IA_curr_instr)));
-      stmt(IRStmt_Put(OFFB_TILEN, mkU64(4)));
+      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TISTART),
+                      mkU64(guest_IA_curr_instr)));
+      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TILEN), mkU64(4)));
       stmt(IRStmt_Exit(IRExpr_Const(IRConst_U1(True)), Ijk_TInval,
-           IRConst_U64(guest_IA_curr_instr)));
+                       IRConst_U64(guest_IA_curr_instr),
+                       S390X_GUEST_OFFSET(guest_IA)));
       /* we know that this will be invalidated */
-      irsb->next = mkU64(guest_IA_next_instr);
+      put_IA(mkaddr_expr(guest_IA_next_instr));
       dis_res->whatNext = Dis_StopHere;
+      dis_res->jk_StopHere = Ijk_TInval;
       break;
    }
 
@@ -8931,6 +8955,20 @@ s390_irgen_EX(UChar r1, IRTemp addr2)
       s390_irgen_EX_SS(r1, addr2, s390_irgen_XC_EX, 32);
       return "xc via ex";
 
+   case 0xd600000000000000ULL:
+      /* special case OC */
+      s390_irgen_EX_SS(r1, addr2, s390_irgen_OC_EX, 32);
+      return "oc via ex";
+
+   case 0xd400000000000000ULL:
+      /* special case NC */
+      s390_irgen_EX_SS(r1, addr2, s390_irgen_NC_EX, 32);
+      return "nc via ex";
+
+   case 0xdc00000000000000ULL:
+      /* special case TR */
+      s390_irgen_EX_SS(r1, addr2, s390_irgen_TR_EX, 64);
+      return "tr via ex";
 
    default:
    {
@@ -8964,10 +9002,11 @@ s390_irgen_EX(UChar r1, IRTemp addr2)
       stmt(IRStmt_Dirty(d));
 
       /* and restart */
-      stmt(IRStmt_Put(OFFB_TISTART, mkU64(guest_IA_curr_instr)));
-      stmt(IRStmt_Put(OFFB_TILEN, mkU64(4)));
+      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TISTART), mkU64(guest_IA_curr_instr)));
+      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TILEN), mkU64(4)));
       stmt(IRStmt_Exit(mkexpr(cond), Ijk_TInval,
-           IRConst_U64(guest_IA_curr_instr)));
+                       IRConst_U64(guest_IA_curr_instr),
+                       S390X_GUEST_OFFSET(guest_IA)));
 
       /* Now comes the actual translation */
       bytes = (UChar *) &last_execute_target;
@@ -8977,6 +9016,7 @@ s390_irgen_EX(UChar r1, IRTemp addr2)
          vex_printf("    which was executed by\n");
       /* dont make useless translations in the next execute */
       last_execute_target = 0;
+      dummy_put_IA();
    }
    }
    return "ex";
@@ -9041,10 +9081,12 @@ s390_irgen_SRST(UChar r1, UChar r2)
    put_gpr_dw0(r1, mkexpr(next));
    put_gpr_dw0(r2, binop(Iop_Add64, mkexpr(address), mkU64(1)));
    stmt(IRStmt_Exit(binop(Iop_CmpNE64, mkexpr(counter), mkU64(255)),
-                    Ijk_Boring, IRConst_U64(guest_IA_curr_instr)));
+                    Ijk_Boring, IRConst_U64(guest_IA_curr_instr),
+                    S390X_GUEST_OFFSET(guest_IA)));
    // >= 256 bytes done CC=3
    s390_cc_set(3);
    put_counter_dw0(mkU64(0));
+   dummy_put_IA();
 
    return "srst";
 }
@@ -9107,10 +9149,12 @@ s390_irgen_CLST(UChar r1, UChar r2)
    put_gpr_dw0(r1, binop(Iop_Add64, get_gpr_dw0(r1), mkU64(1)));
    put_gpr_dw0(r2, binop(Iop_Add64, get_gpr_dw0(r2), mkU64(1)));
    stmt(IRStmt_Exit(binop(Iop_CmpNE64, mkexpr(counter), mkU64(255)),
-                    Ijk_Boring, IRConst_U64(guest_IA_curr_instr)));
+                    Ijk_Boring, IRConst_U64(guest_IA_curr_instr),
+                    S390X_GUEST_OFFSET(guest_IA)));
    // >= 256 bytes done CC=3
    s390_cc_set(3);
    put_counter_dw0(mkU64(0));
+   dummy_put_IA();
 
    return "clst";
 }
@@ -9270,7 +9314,7 @@ s390_irgen_STMG(UChar r1, UChar r3, IRTemp op2addr)
 }
 
 static void
-s390_irgen_XONC(IROp op, UChar length, IRTemp start1, IRTemp start2)
+s390_irgen_xonc(IROp op, IRTemp length, IRTemp start1, IRTemp start2)
 {
    IRTemp old1 = newTemp(Ity_I8);
    IRTemp old2 = newTemp(Ity_I8);
@@ -9300,7 +9344,7 @@ s390_irgen_XONC(IROp op, UChar length, IRTemp start1, IRTemp start2)
 
    /* Check for end of field */
    put_counter_w0(binop(Iop_Add32, mkexpr(counter), mkU32(1)));
-   if_condition_goto(binop(Iop_CmpNE32, mkexpr(counter), mkU32(length)),
+   if_condition_goto(binop(Iop_CmpNE32, mkexpr(counter), mkexpr(length)),
                      guest_IA_curr_instr);
    s390_cc_thunk_put1(S390_CC_OP_BITWISE, mktemp(Ity_I32, get_counter_w1()),
                       False);
@@ -9310,7 +9354,11 @@ s390_irgen_XONC(IROp op, UChar length, IRTemp start1, IRTemp start2)
 static HChar *
 s390_irgen_XC(UChar length, IRTemp start1, IRTemp start2)
 {
-   s390_irgen_XONC(Iop_Xor8, length, start1, start2);
+   IRTemp len = newTemp(Ity_I32);
+
+   assign(len, mkU32(length));
+   s390_irgen_xonc(Iop_Xor8, len, start1, start2);
+   dummy_put_IA();
 
    return "xc";
 }
@@ -9349,6 +9397,7 @@ s390_irgen_XC_sameloc(UChar length, UChar b, UShort d)
    }
 
    s390_cc_thunk_put1(S390_CC_OP_BITWISE, mktemp(Ity_I32, mkU32(0)), False);
+   dummy_put_IA();
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, UDLB, UDXB), "xc", d, length, b, d, 0, b);
@@ -9357,7 +9406,11 @@ s390_irgen_XC_sameloc(UChar length, UChar b, UShort d)
 static HChar *
 s390_irgen_NC(UChar length, IRTemp start1, IRTemp start2)
 {
-   s390_irgen_XONC(Iop_And8, length, start1, start2);
+   IRTemp len = newTemp(Ity_I32);
+
+   assign(len, mkU32(length));
+   s390_irgen_xonc(Iop_And8, len, start1, start2);
+   dummy_put_IA();
 
    return "nc";
 }
@@ -9365,7 +9418,11 @@ s390_irgen_NC(UChar length, IRTemp start1, IRTemp start2)
 static HChar *
 s390_irgen_OC(UChar length, IRTemp start1, IRTemp start2)
 {
-   s390_irgen_XONC(Iop_Or8, length, start1, start2);
+   IRTemp len = newTemp(Ity_I32);
+
+   assign(len, mkU32(length));
+   s390_irgen_xonc(Iop_Or8, len, start1, start2);
+   dummy_put_IA();
 
    return "oc";
 }
@@ -9374,18 +9431,11 @@ s390_irgen_OC(UChar length, IRTemp start1, IRTemp start2)
 static HChar *
 s390_irgen_MVC(UChar length, IRTemp start1, IRTemp start2)
 {
-   IRTemp counter = newTemp(Ity_I64);
+   IRTemp len = newTemp(Ity_I64);
 
-   assign(counter, get_counter_dw0());
-
-   store(binop(Iop_Add64, mkexpr(start1), mkexpr(counter)),
-         load(Ity_I8, binop(Iop_Add64, mkexpr(start2), mkexpr(counter))));
-
-   /* Check for end of field */
-   put_counter_dw0(binop(Iop_Add64, mkexpr(counter), mkU64(1)));
-   if_condition_goto(binop(Iop_CmpNE64, mkexpr(counter), mkU64(length)),
-                     guest_IA_curr_instr);
-   put_counter_dw0(mkU64(0));
+   assign(len, mkU64(length));
+   s390_irgen_MVC_EX(len, start1, start2);
+   dummy_put_IA();
 
    return "mvc";
 }
@@ -9566,6 +9616,7 @@ s390_irgen_MVST(UChar r1, UChar r2)
    s390_cc_set(1);
    put_gpr_dw0(r1, binop(Iop_Add64, mkexpr(addr1), mkexpr(counter)));
    put_counter_dw0(mkU64(0));
+   dummy_put_IA();
 
    return "mvst";
 }
@@ -9832,7 +9883,8 @@ s390_irgen_cas_32(UChar r1, UChar r3, IRTemp op2addr)
    assign(nequal, binop(Iop_CmpNE32, s390_call_calculate_cc(), mkU32(0)));
    put_gpr_w1(r1, mkite(mkexpr(nequal), mkexpr(old_mem), mkexpr(op1)));
    stmt(IRStmt_Exit(mkexpr(nequal), Ijk_Yield,
-        IRConst_U64(guest_IA_next_instr)));
+                    IRConst_U64(guest_IA_next_instr),
+                    S390X_GUEST_OFFSET(guest_IA)));
 }
 
 static HChar *
@@ -9881,7 +9933,8 @@ s390_irgen_CSG(UChar r1, UChar r3, IRTemp op2addr)
    assign(nequal, binop(Iop_CmpNE32, s390_call_calculate_cc(), mkU32(0)));
    put_gpr_dw0(r1, mkite(mkexpr(nequal), mkexpr(old_mem), mkexpr(op1)));
    stmt(IRStmt_Exit(mkexpr(nequal), Ijk_Yield,
-        IRConst_U64(guest_IA_next_instr)));
+                    IRConst_U64(guest_IA_next_instr),
+                    S390X_GUEST_OFFSET(guest_IA)));
 
    return "csg";
 }
@@ -10847,6 +10900,260 @@ s390_irgen_CKSM(UChar r1,UChar r2)
    return "cksm";
 }
 
+static HChar *
+s390_irgen_TROO(UChar m3, UChar r1, UChar r2)
+{
+   IRTemp src_addr, des_addr, tab_addr, src_len, test_byte;
+   src_addr = newTemp(Ity_I64);
+   des_addr = newTemp(Ity_I64);
+   tab_addr = newTemp(Ity_I64);
+   test_byte = newTemp(Ity_I8);
+   src_len = newTemp(Ity_I64);
+
+   assign(src_addr, get_gpr_dw0(r2));
+   assign(des_addr, get_gpr_dw0(r1));
+   assign(tab_addr, get_gpr_dw0(1));
+   assign(src_len, get_gpr_dw0(r1+1));
+   assign(test_byte, get_gpr_b7(0));
+
+   IRTemp op = newTemp(Ity_I8);
+   IRTemp op1 = newTemp(Ity_I8);
+   IRTemp result = newTemp(Ity_I64);
+
+   /* End of source string? We're done; proceed to next insn */
+   s390_cc_set(0);
+   if_condition_goto(binop(Iop_CmpEQ64, mkexpr(src_len), mkU64(0)),
+                     guest_IA_next_instr);
+
+   /* Load character from source string, index translation table and
+      store translated character in op1. */
+   assign(op, load(Ity_I8, mkexpr(src_addr)));
+
+   assign(result, binop(Iop_Add64, unop(Iop_8Uto64, mkexpr(op)),
+                        mkexpr(tab_addr)));
+   assign(op1, load(Ity_I8, mkexpr(result)));
+
+   if (! s390_host_has_etf2 || (m3 & 0x1) == 0) {
+      s390_cc_set(1);
+      if_condition_goto(binop(Iop_CmpEQ8, mkexpr(op1), mkexpr(test_byte)),
+                        guest_IA_next_instr);
+   }
+   store(get_gpr_dw0(r1), mkexpr(op1));
+
+   put_gpr_dw0(r1, binop(Iop_Add64, mkexpr(des_addr), mkU64(1)));
+   put_gpr_dw0(r2, binop(Iop_Add64, mkexpr(src_addr), mkU64(1)));
+   put_gpr_dw0(r1+1, binop(Iop_Sub64, mkexpr(src_len), mkU64(1)));
+
+   always_goto_and_chase(guest_IA_curr_instr);
+
+   return "troo";
+}
+
+static HChar *
+s390_irgen_TRTO(UChar m3, UChar r1, UChar r2)
+{
+   IRTemp src_addr, des_addr, tab_addr, src_len, test_byte;
+   src_addr = newTemp(Ity_I64);
+   des_addr = newTemp(Ity_I64);
+   tab_addr = newTemp(Ity_I64);
+   test_byte = newTemp(Ity_I8);
+   src_len = newTemp(Ity_I64);
+
+   assign(src_addr, get_gpr_dw0(r2));
+   assign(des_addr, get_gpr_dw0(r1));
+   assign(tab_addr, get_gpr_dw0(1));
+   assign(src_len, get_gpr_dw0(r1+1));
+   assign(test_byte, get_gpr_b7(0));
+
+   IRTemp op = newTemp(Ity_I16);
+   IRTemp op1 = newTemp(Ity_I8);
+   IRTemp result = newTemp(Ity_I64);
+
+   /* End of source string? We're done; proceed to next insn */
+   s390_cc_set(0);
+   if_condition_goto(binop(Iop_CmpEQ64, mkexpr(src_len), mkU64(0)),
+                     guest_IA_next_instr);
+
+   /* Load character from source string, index translation table and
+      store translated character in op1. */
+   assign(op, load(Ity_I16, mkexpr(src_addr)));
+
+   assign(result, binop(Iop_Add64, unop(Iop_16Uto64, mkexpr(op)),
+                        mkexpr(tab_addr)));
+
+   assign(op1, load(Ity_I8, mkexpr(result)));
+
+   if (! s390_host_has_etf2 || (m3 & 0x1) == 0) {
+      s390_cc_set(1);
+      if_condition_goto(binop(Iop_CmpEQ8, mkexpr(op1), mkexpr(test_byte)),
+                        guest_IA_next_instr);
+   }
+   store(get_gpr_dw0(r1), mkexpr(op1));
+
+   put_gpr_dw0(r2, binop(Iop_Add64, mkexpr(src_addr), mkU64(2)));
+   put_gpr_dw0(r1, binop(Iop_Add64, mkexpr(des_addr), mkU64(1)));
+   put_gpr_dw0(r1+1, binop(Iop_Sub64, mkexpr(src_len), mkU64(2)));
+
+   always_goto_and_chase(guest_IA_curr_instr);
+
+   return "trto";
+}
+
+static HChar *
+s390_irgen_TROT(UChar m3, UChar r1, UChar r2)
+{
+   IRTemp src_addr, des_addr, tab_addr, src_len, test_byte;
+   src_addr = newTemp(Ity_I64);
+   des_addr = newTemp(Ity_I64);
+   tab_addr = newTemp(Ity_I64);
+   test_byte = newTemp(Ity_I16);
+   src_len = newTemp(Ity_I64);
+
+   assign(src_addr, get_gpr_dw0(r2));
+   assign(des_addr, get_gpr_dw0(r1));
+   assign(tab_addr, get_gpr_dw0(1));
+   assign(src_len, get_gpr_dw0(r1+1));
+   assign(test_byte, get_gpr_hw3(0));
+
+   IRTemp op = newTemp(Ity_I8);
+   IRTemp op1 = newTemp(Ity_I16);
+   IRTemp result = newTemp(Ity_I64);
+
+   /* End of source string? We're done; proceed to next insn */
+   s390_cc_set(0);
+   if_condition_goto(binop(Iop_CmpEQ64, mkexpr(src_len), mkU64(0)),
+                     guest_IA_next_instr);
+
+   /* Load character from source string, index translation table and
+      store translated character in op1. */
+   assign(op, binop(Iop_Shl8, load(Ity_I8, mkexpr(src_addr)), mkU8(1)));
+
+   assign(result, binop(Iop_Add64, unop(Iop_8Uto64, mkexpr(op)), 
+                        mkexpr(tab_addr)));
+   assign(op1, load(Ity_I16, mkexpr(result)));
+
+   if (! s390_host_has_etf2 || (m3 & 0x1) == 0) {
+      s390_cc_set(1);
+      if_condition_goto(binop(Iop_CmpEQ16, mkexpr(op1), mkexpr(test_byte)),
+                        guest_IA_next_instr);
+   }
+   store(get_gpr_dw0(r1), mkexpr(op1));
+
+   put_gpr_dw0(r2, binop(Iop_Add64, mkexpr(src_addr), mkU64(1)));
+   put_gpr_dw0(r1, binop(Iop_Add64, mkexpr(des_addr), mkU64(2)));
+   put_gpr_dw0(r1+1, binop(Iop_Sub64, mkexpr(src_len), mkU64(1)));
+
+   always_goto_and_chase(guest_IA_curr_instr);
+
+   return "trot";
+}
+
+static HChar *
+s390_irgen_TRTT(UChar m3, UChar r1, UChar r2)
+{
+   IRTemp src_addr, des_addr, tab_addr, src_len, test_byte;
+   src_addr = newTemp(Ity_I64);
+   des_addr = newTemp(Ity_I64);
+   tab_addr = newTemp(Ity_I64);
+   test_byte = newTemp(Ity_I16);
+   src_len = newTemp(Ity_I64);
+
+   assign(src_addr, get_gpr_dw0(r2));
+   assign(des_addr, get_gpr_dw0(r1));
+   assign(tab_addr, get_gpr_dw0(1));
+   assign(src_len, get_gpr_dw0(r1+1));
+   assign(test_byte, get_gpr_hw3(0));
+
+   IRTemp op = newTemp(Ity_I16);
+   IRTemp op1 = newTemp(Ity_I16);
+   IRTemp result = newTemp(Ity_I64);
+
+   /* End of source string? We're done; proceed to next insn */
+   s390_cc_set(0);
+   if_condition_goto(binop(Iop_CmpEQ64, mkexpr(src_len), mkU64(0)),
+                     guest_IA_next_instr);
+
+   /* Load character from source string, index translation table and
+      store translated character in op1. */
+   assign(op, binop(Iop_Shl16, load(Ity_I16, mkexpr(src_addr)), mkU8(1)));
+
+   assign(result, binop(Iop_Add64, unop(Iop_16Uto64, mkexpr(op)),
+                        mkexpr(tab_addr)));
+   assign(op1, load(Ity_I16, mkexpr(result)));
+
+   if (! s390_host_has_etf2 || (m3 & 0x1) == 0) {
+      s390_cc_set(1);
+      if_condition_goto(binop(Iop_CmpEQ16, mkexpr(op1), mkexpr(test_byte)),
+                        guest_IA_next_instr);
+   }
+
+   store(get_gpr_dw0(r1), mkexpr(op1));
+
+   put_gpr_dw0(r2, binop(Iop_Add64, mkexpr(src_addr), mkU64(2)));
+   put_gpr_dw0(r1, binop(Iop_Add64, mkexpr(des_addr), mkU64(2)));
+   put_gpr_dw0(r1+1, binop(Iop_Sub64, mkexpr(src_len), mkU64(2)));
+
+   always_goto_and_chase(guest_IA_curr_instr);
+
+   return "trtt";
+}
+
+static HChar *
+s390_irgen_TR(UChar length, IRTemp start1, IRTemp start2)
+{
+   IRTemp len = newTemp(Ity_I64);
+
+   assign(len, mkU64(length));
+   s390_irgen_TR_EX(len, start1, start2);
+   dummy_put_IA();
+
+   return "tr";
+}
+
+static HChar *
+s390_irgen_TRE(UChar r1,UChar r2)
+{
+   IRTemp src_addr, tab_addr, src_len, test_byte;
+   src_addr = newTemp(Ity_I64);
+   tab_addr = newTemp(Ity_I64);
+   src_len = newTemp(Ity_I64);
+   test_byte = newTemp(Ity_I8);
+
+   assign(src_addr, get_gpr_dw0(r1));
+   assign(src_len, get_gpr_dw0(r1+1));
+   assign(tab_addr, get_gpr_dw0(r2));
+   assign(test_byte, get_gpr_b7(0));
+
+   IRTemp op = newTemp(Ity_I8);
+   IRTemp op1 = newTemp(Ity_I8);
+   IRTemp result = newTemp(Ity_I64);
+
+   /* End of source string? We're done; proceed to next insn */   
+   s390_cc_set(0);
+   if_condition_goto(binop(Iop_CmpEQ64, mkexpr(src_len), mkU64(0)),
+                     guest_IA_next_instr);
+
+   /* Load character from source string and compare with test byte */
+   assign(op, load(Ity_I8, mkexpr(src_addr)));
+   
+   s390_cc_set(1);
+   if_condition_goto(binop(Iop_CmpEQ8, mkexpr(op), mkexpr(test_byte)),
+                     guest_IA_next_instr);
+
+   assign(result, binop(Iop_Add64, unop(Iop_8Uto64, mkexpr(op)), 
+			mkexpr(tab_addr)));
+
+   assign(op1, load(Ity_I8, mkexpr(result)));
+
+   store(get_gpr_dw0(r1), mkexpr(op1));
+   put_gpr_dw0(r1, binop(Iop_Add64, mkexpr(src_addr), mkU64(1)));
+   put_gpr_dw0(r1+1, binop(Iop_Sub64, mkexpr(src_len), mkU64(1)));
+
+   always_goto(mkU64(guest_IA_curr_instr));
+
+   return "tre";
+}
+
 
 /*------------------------------------------------------------*/
 /*--- Build IR for special instructions                    ---*/
@@ -10858,12 +11165,13 @@ s390_irgen_client_request(void)
    if (0)
       vex_printf("%%R3 = client_request ( %%R2 )\n");
 
-   irsb->next = mkU64((ULong)(guest_IA_curr_instr
-                              + S390_SPECIAL_OP_PREAMBLE_SIZE
-                              + S390_SPECIAL_OP_SIZE));
-   irsb->jumpkind = Ijk_ClientReq;
+   Addr64 next = guest_IA_curr_instr + S390_SPECIAL_OP_PREAMBLE_SIZE
+                                     + S390_SPECIAL_OP_SIZE;
 
+   dis_res->jk_StopHere = Ijk_ClientReq;
    dis_res->whatNext = Dis_StopHere;
+
+   put_IA(mkaddr_expr(next));
 }
 
 static void
@@ -10878,16 +11186,17 @@ s390_irgen_guest_NRADDR(void)
 static void
 s390_irgen_call_noredir(void)
 {
+   Addr64 next = guest_IA_curr_instr + S390_SPECIAL_OP_PREAMBLE_SIZE
+                                     + S390_SPECIAL_OP_SIZE;
+
    /* Continue after special op */
-   put_gpr_dw0(14, mkU64(guest_IA_curr_instr
-                         + S390_SPECIAL_OP_PREAMBLE_SIZE
-                         + S390_SPECIAL_OP_SIZE));
+   put_gpr_dw0(14, mkaddr_expr(next));
 
    /* The address is in REG1, all parameters are in the right (guest) places */
-   irsb->next     = get_gpr_dw0(1);
-   irsb->jumpkind = Ijk_NoRedir;
+   put_IA(get_gpr_dw0(1));
 
    dis_res->whatNext = Dis_StopHere;
+   dis_res->jk_StopHere = Ijk_NoRedir;
 }
 
 /* Force proper alignment for the structures below. */
@@ -11194,11 +11503,11 @@ s390_decode_4byte_and_irgen(UChar *bytes)
    switch ((ovl.value & 0xffff0000) >> 16) {
    case 0x8000: /* SSM */ goto unimplemented;
    case 0x8200: /* LPSW */ goto unimplemented;
-   case 0x9300: s390_format_S_RD(s390_irgen_TS, ovl.fmt.S.b2, ovl.fmt.S.d2);
-                                 goto ok;
+   case 0x9300: /* TS */ goto unimplemented;
    case 0xb202: /* STIDP */ goto unimplemented;
    case 0xb204: /* SCK */ goto unimplemented;
-   case 0xb205: s390_format_S_RD(s390_irgen_STCK, ovl.fmt.S.b2, ovl.fmt.S.d2);goto ok;
+   case 0xb205: s390_format_S_RD(s390_irgen_STCK, ovl.fmt.S.b2, ovl.fmt.S.d2);
+                goto ok;
    case 0xb206: /* SCKC */ goto unimplemented;
    case 0xb207: /* STCKC */ goto unimplemented;
    case 0xb208: /* SPT */ goto unimplemented;
@@ -11286,7 +11595,7 @@ s390_decode_4byte_and_irgen(UChar *bytes)
                                  goto ok;
    case 0xb29d: s390_format_S_RD(s390_irgen_LFPC, ovl.fmt.S.b2, ovl.fmt.S.d2);
                                  goto ok;
-   case 0xb2a5: /* TRE */ goto unimplemented;
+   case 0xb2a5: s390_format_RRE_FF(s390_irgen_TRE, ovl.fmt.RRE.r1, ovl.fmt.RRE.r2);  goto ok;
    case 0xb2a6: /* CU21 */ goto unimplemented;
    case 0xb2a7: /* CU12 */ goto unimplemented;
    case 0xb2b0: s390_format_S_RD(s390_irgen_STFLE, ovl.fmt.S.b2, ovl.fmt.S.d2);
@@ -11649,10 +11958,14 @@ s390_decode_4byte_and_irgen(UChar *bytes)
    case 0xb98a: /* CSPG */ goto unimplemented;
    case 0xb98d: /* EPSW */ goto unimplemented;
    case 0xb98e: /* IDTE */ goto unimplemented;
-   case 0xb990: /* TRTT */ goto unimplemented;
-   case 0xb991: /* TRTO */ goto unimplemented;
-   case 0xb992: /* TROT */ goto unimplemented;
-   case 0xb993: /* TROO */ goto unimplemented;
+   case 0xb990: s390_format_RRF_M0RERE(s390_irgen_TRTT, ovl.fmt.RRF3.r3,
+                                   ovl.fmt.RRF3.r1, ovl.fmt.RRF3.r2);  goto ok;
+   case 0xb991: s390_format_RRF_M0RERE(s390_irgen_TRTO, ovl.fmt.RRF3.r3,
+                                   ovl.fmt.RRF3.r1, ovl.fmt.RRF3.r2);  goto ok;
+   case 0xb992: s390_format_RRF_M0RERE(s390_irgen_TROT, ovl.fmt.RRF3.r3,
+                                   ovl.fmt.RRF3.r1, ovl.fmt.RRF3.r2);  goto ok;
+   case 0xb993: s390_format_RRF_M0RERE(s390_irgen_TROO, ovl.fmt.RRF3.r3,
+                                   ovl.fmt.RRF3.r1, ovl.fmt.RRF3.r2);  goto ok;
    case 0xb994: s390_format_RRE_RR(s390_irgen_LLCR, ovl.fmt.RRE.r1,
                                    ovl.fmt.RRE.r2);  goto ok;
    case 0xb995: s390_format_RRE_RR(s390_irgen_LLHR, ovl.fmt.RRE.r1,
@@ -13073,7 +13386,9 @@ s390_decode_6byte_and_irgen(UChar *bytes)
    case 0xd9ULL: /* MVCK */ goto unimplemented;
    case 0xdaULL: /* MVCP */ goto unimplemented;
    case 0xdbULL: /* MVCS */ goto unimplemented;
-   case 0xdcULL: /* TR */ goto unimplemented;
+   case 0xdcULL: s390_format_SS_L0RDRD(s390_irgen_TR, ovl.fmt.SS.l,
+                                       ovl.fmt.SS.b1, ovl.fmt.SS.d1,
+                                       ovl.fmt.SS.b2, ovl.fmt.SS.d2);  goto ok;
    case 0xddULL: /* TRT */ goto unimplemented;
    case 0xdeULL: /* ED */ goto unimplemented;
    case 0xdfULL: /* EDMK */ goto unimplemented;
@@ -13209,10 +13524,10 @@ s390_decode_and_irgen(UChar *bytes, UInt insn_length, DisResult *dres)
       }
    }
    /* If next instruction is execute, stop here */
-   if (irsb->next == NULL && bytes[insn_length] == 0x44) {
-      irsb->next = IRExpr_Const(IRConst_U64(guest_IA_next_instr));
+   if (dis_res->whatNext == Dis_Continue && bytes[insn_length] == 0x44) {
+      put_IA(mkaddr_expr(guest_IA_next_instr));
       dis_res->whatNext = Dis_StopHere;
-      dis_res->continueAt = 0;
+      dis_res->jk_StopHere = Ijk_Boring;
    }
 
    if (status == S390_DECODE_OK) return insn_length;  /* OK */
@@ -13251,14 +13566,6 @@ s390_decode_and_irgen(UChar *bytes, UInt insn_length, DisResult *dres)
 }
 
 
-/* Generate an IRExpr for an address. */
-static __inline__ IRExpr *
-mkaddr_expr(Addr64 addr)
-{
-   return IRExpr_Const(IRConst_U64(addr));
-}
-
-
 /* Disassemble a single instruction INSN into IR. */
 static DisResult
 disInstr_S390_WRK(UChar *insn)
@@ -13286,6 +13593,7 @@ disInstr_S390_WRK(UChar *insn)
    dres.whatNext   = Dis_Continue;
    dres.len        = insn_length;
    dres.continueAt = 0;
+   dres.jk_StopHere = Ijk_INVALID;
 
    /* fixs390: consider chasing of conditional jumps */
 
@@ -13294,17 +13602,28 @@ disInstr_S390_WRK(UChar *insn)
       /* All decode failures end up here. The decoder has already issued an
          error message.
          Tell the dispatcher that this insn cannot be decoded, and so has
-         not been executed, and (is currently) the next to be executed.
-         IA should be up-to-date since it made so at the start of each
-         insn, but nevertheless be paranoid and update it again right
-         now. */
-      addStmtToIRSB(irsb, IRStmt_Put(S390X_GUEST_OFFSET(guest_IA),
-                                     mkaddr_expr(guest_IA_curr_instr)));
+         not been executed, and (is currently) the next to be executed. */
+      put_IA(mkaddr_expr(guest_IA_next_instr));
 
-      irsb->next = mkaddr_expr(guest_IA_next_instr);
-      irsb->jumpkind = Ijk_NoDecode;
-      dres.whatNext = Dis_StopHere;
-      dres.len = 0;
+      dres.whatNext    = Dis_StopHere;
+      dres.jk_StopHere = Ijk_NoDecode;
+      dres.continueAt  = 0;
+      dres.len         = 0;
+   } else {
+      /* Decode success */
+      switch (dres.whatNext) {
+      case Dis_Continue:
+         put_IA(mkaddr_expr(guest_IA_next_instr));
+         break;
+      case Dis_ResteerU:
+      case Dis_ResteerC:
+         put_IA(mkaddr_expr(dres.continueAt));
+         break;
+      case Dis_StopHere:
+         break;
+      default:
+         vassert(0);
+      }
    }
 
    return dres;
@@ -13320,7 +13639,6 @@ disInstr_S390_WRK(UChar *insn)
 
 DisResult
 disInstr_S390(IRSB        *irsb_IN,
-              Bool         put_IP,
               Bool       (*resteerOkFn)(void *, Addr64),
               Bool         resteerCisOk,
               void        *callback_opaque,
@@ -13342,11 +13660,6 @@ disInstr_S390(IRSB        *irsb_IN,
    irsb = irsb_IN;
    resteer_fn = resteerOkFn;
    resteer_data = callback_opaque;
-
-   /* We may be asked to update the guest IA before going further. */
-   if (put_IP)
-      addStmtToIRSB(irsb, IRStmt_Put(S390X_GUEST_OFFSET(guest_IA),
-                                     mkaddr_expr(guest_IA_curr_instr)));
 
    return disInstr_S390_WRK(guest_code + delta);
 }

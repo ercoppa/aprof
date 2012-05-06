@@ -1,3 +1,4 @@
+/* -*- mode: C; c-basic-offset: 3; -*- */
 
 /*---------------------------------------------------------------*/
 /*--- begin                                          ir_opt.c ---*/
@@ -7,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2010 OpenWorks LLP
+   Copyright (C) 2004-2011 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -44,6 +45,9 @@
 
 /* Set to 1 for lots of debugging output. */
 #define DEBUG_IROPT 0
+
+/* Set to 1 to gather some statistics. Currently only for sameIRExprs. */
+#define STATS_IROPT 0
 
 
 /* What iropt does, 29 Dec 04.
@@ -463,7 +467,8 @@ static void flatten_Stmt ( IRSB* bb, IRStmt* st )
       case Ist_Exit:
          e1 = flatten_Expr(bb, st->Ist.Exit.guard);
          addStmtToIRSB(bb, IRStmt_Exit(e1, st->Ist.Exit.jk,
-                                           st->Ist.Exit.dst));
+                                       st->Ist.Exit.dst,
+                                       st->Ist.Exit.offsIP));
          break;
       default:
          vex_printf("\n");
@@ -485,6 +490,7 @@ static IRSB* flatten_BB ( IRSB* in )
          flatten_Stmt( out, in->stmts[i] );
    out->next     = flatten_Expr( out, in->next );
    out->jumpkind = in->jumpkind;
+   out->offsIP   = in->offsIP;
    return out;
 }
 
@@ -811,6 +817,14 @@ static void redundant_put_removal_BB (
    UInt    key = 0; /* keep gcc -O happy */
 
    HashHW* env = newHHW();
+
+   /* Initialise the running env with the fact that the final exit
+      writes the IP (or, whatever it claims to write.  We don't
+      care.) */
+   key = mk_key_GetPut(bb->offsIP, typeOfIRExpr(bb->tyenv, bb->next));
+   addToHHW(env, (HWord)key, 0);
+
+   /* And now scan backwards through the statements. */
    for (i = bb->stmts_used-1; i >= 0; i--) {
       st = bb->stmts[i];
 
@@ -819,13 +833,32 @@ static void redundant_put_removal_BB (
 
       /* Deal with conditional exits. */
       if (st->tag == Ist_Exit) {
-         /* Since control may not get beyond this point, we must empty
-            out the set, since we can no longer claim that the next
-            event for any part of the guest state is definitely a
-            write. */
-         vassert(isIRAtom(st->Ist.Exit.guard));
+         //Bool re_add;
+         /* Need to throw out from the env, any part of it which
+            doesn't overlap with the guest state written by this exit.
+            Since the exit only writes one section, it's simplest to
+            do this: (1) check whether env contains a write that
+            completely overlaps the write done by this exit; (2) empty
+            out env; and (3) if (1) was true, add the write done by
+            this exit.
+
+            To make (1) a bit simpler, merely search for a write that
+            exactly matches the one done by this exit.  That's safe
+            because it will fail as often or more often than a full
+            overlap check, and failure to find an overlapping write in
+            env is the safe case (we just nuke env if that
+            happens). */
+         //vassert(isIRAtom(st->Ist.Exit.guard));
+         /* (1) */
+         //key = mk_key_GetPut(st->Ist.Exit.offsIP,
+         //                    typeOfIRConst(st->Ist.Exit.dst));
+         //re_add = lookupHHW(env, NULL, key);
+         /* (2) */
          for (j = 0; j < env->used; j++)
             env->inuse[j] = False;
+         /* (3) */
+         //if (0 && re_add) 
+         //   addToHHW(env, (HWord)key, 0);
          continue;
       }
 
@@ -882,40 +915,153 @@ static void redundant_put_removal_BB (
 /*--- Constant propagation and folding                        ---*/
 /*---------------------------------------------------------------*/
 
+#if STATS_IROPT
+/* How often sameIRExprs was invoked */
+static UInt invocation_count;
+/* How often sameIRExprs recursed through IRTemp assignments */
+static UInt recursion_count;
+/* How often sameIRExprs found identical IRExprs */
+static UInt success_count;
+/* How often recursing through assignments to IRTemps helped
+   establishing equality. */
+static UInt recursion_success_count;
+/* Whether or not recursing through an IRTemp assignment helped 
+   establishing IRExpr equality for a given sameIRExprs invocation. */
+static Bool recursion_helped;
+/* Whether or not a given sameIRExprs invocation recursed through an
+   IRTemp assignment */
+static Bool recursed;
+/* Maximum number of nodes ever visited when comparing two IRExprs. */
+static UInt max_nodes_visited;
+#endif /* STATS_IROPT */
+
+/* Count the number of nodes visited for a given sameIRExprs invocation. */
+static UInt num_nodes_visited;
+
+/* Do not visit more than NODE_LIMIT nodes when comparing two IRExprs.
+   This is to guard against performance degradation by visiting large
+   trees without success. */
+#define NODE_LIMIT 30
+
+
 /* The env in this section is a map from IRTemp to IRExpr*,
    that is, an array indexed by IRTemp. */
 
-/* Are both expressions simply the same IRTemp ? */
-static Bool sameIRTemps ( IRExpr* e1, IRExpr* e2 )
+/* Do both expressions compute the same value? The answer is generally
+   conservative, i.e. it will report that the expressions do not compute
+   the same value when in fact they do. The reason is that we do not
+   keep track of changes in the guest state and memory. Thusly, two
+   Get's, GetI's or Load's, even when accessing the same location, will be
+   assumed to compute different values. After all the accesses may happen
+   at different times and the guest state / memory can have changed in
+   the meantime. */
+
+/* JRS 20-Mar-2012: split sameIRExprs_aux into a fast inlineable
+   wrapper that deals with the common tags-don't-match case, and a
+   slower out of line general case.  Saves a few insns. */
+
+__attribute__((noinline))
+static Bool sameIRExprs_aux2 ( IRExpr** env, IRExpr* e1, IRExpr* e2 );
+
+inline
+static Bool sameIRExprs_aux ( IRExpr** env, IRExpr* e1, IRExpr* e2 )
 {
-   return toBool( e1->tag == Iex_RdTmp
-                  && e2->tag == Iex_RdTmp
-                  && e1->Iex.RdTmp.tmp == e2->Iex.RdTmp.tmp );
+   if (e1->tag != e2->tag) return False;
+   return sameIRExprs_aux2(env, e1, e2);
 }
 
-static Bool sameIcoU32s ( IRExpr* e1, IRExpr* e2 )
+__attribute__((noinline))
+static Bool sameIRExprs_aux2 ( IRExpr** env, IRExpr* e1, IRExpr* e2 )
 {
-   return toBool( e1->tag == Iex_Const
-                  && e2->tag == Iex_Const
-                  && e1->Iex.Const.con->tag == Ico_U32
-                  && e2->Iex.Const.con->tag == Ico_U32
-                  && e1->Iex.Const.con->Ico.U32
-                     == e2->Iex.Const.con->Ico.U32 );
-}
+   if (num_nodes_visited++ > NODE_LIMIT) return False;
 
-/* Are both expressions either the same IRTemp or IRConst-U32s ?  If
-   in doubt, say No. */
-static Bool sameIRTempsOrIcoU32s ( IRExpr* e1, IRExpr* e2 )
-{
    switch (e1->tag) {
       case Iex_RdTmp:
-         return sameIRTemps(e1, e2);
-      case Iex_Const:
-         return sameIcoU32s(e1, e2);
-      default:
+         if (e1->Iex.RdTmp.tmp == e2->Iex.RdTmp.tmp) return True;
+
+         if (env[e1->Iex.RdTmp.tmp] && env[e2->Iex.RdTmp.tmp]) {
+            Bool same = sameIRExprs_aux(env, env[e1->Iex.RdTmp.tmp],
+                                        env[e2->Iex.RdTmp.tmp]);
+#if STATS_IROPT
+            recursed = True;
+            if (same) recursion_helped = True;
+#endif
+            return same;
+         }
          return False;
+
+      case Iex_Get:
+      case Iex_GetI:
+      case Iex_Load:
+         /* Guest state / memory could have changed in the meantime. */
+         return False;
+
+      case Iex_Binop:
+         return toBool( e1->Iex.Binop.op == e2->Iex.Binop.op
+                        && sameIRExprs_aux( env, e1->Iex.Binop.arg1, e2->Iex.Binop.arg1 )
+                        && sameIRExprs_aux( env, e1->Iex.Binop.arg2, e2->Iex.Binop.arg2 ));
+
+      case Iex_Unop:
+         return toBool( e1->Iex.Unop.op == e2->Iex.Unop.op
+                        && sameIRExprs_aux( env, e1->Iex.Unop.arg, e2->Iex.Unop.arg ));
+
+      case Iex_Const: {
+         IRConst *c1 = e1->Iex.Const.con;
+         IRConst *c2 = e2->Iex.Const.con;
+         vassert(c1->tag == c2->tag);
+         switch (c1->tag) {
+            case Ico_U1:   return toBool( c1->Ico.U1  == c2->Ico.U1 );
+            case Ico_U8:   return toBool( c1->Ico.U8  == c2->Ico.U8 );
+            case Ico_U16:  return toBool( c1->Ico.U16 == c2->Ico.U16 );
+            case Ico_U32:  return toBool( c1->Ico.U32 == c2->Ico.U32 );
+            case Ico_U64:  return toBool( c1->Ico.U64 == c2->Ico.U64 );
+            default: break;
+         }
+         return False;
+      }
+
+      case Iex_Triop:
+         return toBool( e1->Iex.Triop.op == e2->Iex.Triop.op
+                        && sameIRExprs_aux( env, e1->Iex.Triop.arg1, e2->Iex.Triop.arg1 )
+                        && sameIRExprs_aux( env, e1->Iex.Triop.arg2, e2->Iex.Triop.arg2 )
+                        && sameIRExprs_aux( env, e1->Iex.Triop.arg3, e2->Iex.Triop.arg3 ));
+
+      case Iex_Mux0X:
+         return toBool(    sameIRExprs_aux( env, e1->Iex.Mux0X.cond,  e2->Iex.Mux0X.cond )
+                        && sameIRExprs_aux( env, e1->Iex.Mux0X.expr0, e2->Iex.Mux0X.expr0 )
+                        && sameIRExprs_aux( env, e1->Iex.Mux0X.exprX, e2->Iex.Mux0X.exprX ));
+
+      default:
+         /* Not very likely to be "same". */
+         break;
    }
+
+   return False;
 }
+
+inline
+static Bool sameIRExprs ( IRExpr** env, IRExpr* e1, IRExpr* e2 )
+{
+   Bool same;
+
+   num_nodes_visited = 0;
+   same = sameIRExprs_aux(env, e1, e2);
+
+#if STATS_IROPT
+   ++invocation_count;
+   if (recursed) ++recursion_count;
+   success_count += same;
+   if (same && recursion_helped)
+      ++recursion_success_count;
+   if (num_nodes_visited > max_nodes_visited)
+      max_nodes_visited = num_nodes_visited;
+   recursed = False; /* reset */
+   recursion_helped = False;  /* reset */
+#endif /* STATS_IROPT */
+
+   return same;
+}
+
 
 /* Is this literally IRExpr_Const(IRConst_U32(0)) ? */
 static Bool isZeroU32 ( IRExpr* e )
@@ -925,12 +1071,49 @@ static Bool isZeroU32 ( IRExpr* e )
                   && e->Iex.Const.con->Ico.U32 == 0);
 }
 
+/* Is this literally IRExpr_Const(IRConst_U32(1---1)) ? */
+static Bool isOnesU32 ( IRExpr* e )
+{
+   return toBool( e->tag == Iex_Const 
+                  && e->Iex.Const.con->tag == Ico_U32
+                  && e->Iex.Const.con->Ico.U32 == 0xFFFFFFFF );
+}
+
 /* Is this literally IRExpr_Const(IRConst_U64(0)) ? */
 static Bool isZeroU64 ( IRExpr* e )
 {
    return toBool( e->tag == Iex_Const 
                   && e->Iex.Const.con->tag == Ico_U64
                   && e->Iex.Const.con->Ico.U64 == 0);
+}
+
+/* Is this an integer constant with value 0 ? */
+static Bool isZeroU ( IRExpr* e )
+{
+   if (e->tag != Iex_Const) return False;
+   switch (e->Iex.Const.con->tag) {
+      case Ico_U1:    return toBool( e->Iex.Const.con->Ico.U1  == 0);
+      case Ico_U8:    return toBool( e->Iex.Const.con->Ico.U8  == 0);
+      case Ico_U16:   return toBool( e->Iex.Const.con->Ico.U16 == 0);
+      case Ico_U32:   return toBool( e->Iex.Const.con->Ico.U32 == 0);
+      case Ico_U64:   return toBool( e->Iex.Const.con->Ico.U64 == 0);
+      default: vpanic("isZeroU");
+   }
+}
+
+/* Is this an integer constant with value 1---1b ? */
+static Bool isOnesU ( IRExpr* e )
+{
+   if (e->tag != Iex_Const) return False;
+   switch (e->Iex.Const.con->tag) {
+      case Ico_U8:    return toBool( e->Iex.Const.con->Ico.U8  == 0xFF);
+      case Ico_U16:   return toBool( e->Iex.Const.con->Ico.U16 == 0xFFFF);
+      case Ico_U32:   return toBool( e->Iex.Const.con->Ico.U32
+                                     == 0xFFFFFFFF);
+      case Ico_U64:   return toBool( e->Iex.Const.con->Ico.U64
+                                     == 0xFFFFFFFFFFFFFFFFULL);
+      default: ppIRExpr(e); vpanic("isOnesU");
+   }
 }
 
 static Bool notBool ( Bool b )
@@ -963,11 +1146,19 @@ static IRExpr* mkOnesOfPrimopResultType ( IROp op )
    switch (op) {
       case Iop_CmpEQ64:
          return IRExpr_Const(IRConst_U1(toBool(1)));
+      case Iop_Or8:
+         return IRExpr_Const(IRConst_U8(0xFF));
+      case Iop_Or16:
+         return IRExpr_Const(IRConst_U16(0xFFFF));
+      case Iop_Or32:
+         return IRExpr_Const(IRConst_U32(0xFFFFFFFF));
       case Iop_CmpEQ8x8:
+      case Iop_Or64:
          return IRExpr_Const(IRConst_U64(0xFFFFFFFFFFFFFFFFULL));
       case Iop_CmpEQ8x16:
          return IRExpr_Const(IRConst_V128(0xFFFF));
       default:
+         ppIROp(op);
          vpanic("mkOnesOfPrimopResultType: bad primop");
    }
 }
@@ -998,15 +1189,16 @@ static UInt fold_Clz32 ( UInt value )
 }
 
 
-static IRExpr* fold_Expr ( IRExpr* e )
+static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
 {
    Int     shift;
    IRExpr* e2 = e; /* e2 is the result of folding e, if possible */
 
-   /* UNARY ops */
-   if (e->tag == Iex_Unop
-       && e->Iex.Unop.arg->tag == Iex_Const) {
-      switch (e->Iex.Unop.op) {
+   switch (e->tag) {
+   case Iex_Unop:
+      /* UNARY ops */
+      if (e->Iex.Unop.arg->tag == Iex_Const) {
+         switch (e->Iex.Unop.op) {
          case Iop_1Uto8:
             e2 = IRExpr_Const(IRConst_U8(toUChar(
                     e->Iex.Unop.arg->Iex.Const.con->Ico.U1
@@ -1251,10 +1443,11 @@ static IRExpr* fold_Expr ( IRExpr* e )
          default: 
             goto unhandled;
       }
-   }
+      }
+      break;
 
-   /* BINARY ops */
-   if (e->tag == Iex_Binop) {
+   case Iex_Binop:
+      /* BINARY ops */
       if (e->Iex.Binop.arg1->tag == Iex_Const
           && e->Iex.Binop.arg2->tag == Iex_Const) {
          /* cases where both args are consts */
@@ -1581,170 +1774,186 @@ static IRExpr* fold_Expr ( IRExpr* e )
       } else {
 
          /* other cases (identities, etc) */
-
-         /* Shl64/Shr64(x,0) ==> x */
-         if ((e->Iex.Binop.op == Iop_Shl64 || e->Iex.Binop.op == Iop_Shr64)
-             && e->Iex.Binop.arg2->tag == Iex_Const
-             && e->Iex.Binop.arg2->Iex.Const.con->Ico.U8 == 0) {
-            e2 = e->Iex.Binop.arg1;
-         } else
-
-         /* Shl32/Shr32(x,0) ==> x */
-         if ((e->Iex.Binop.op == Iop_Shl32 || e->Iex.Binop.op == Iop_Shr32)
-             && e->Iex.Binop.arg2->tag == Iex_Const
-             && e->Iex.Binop.arg2->Iex.Const.con->Ico.U8 == 0) {
-            e2 = e->Iex.Binop.arg1;
-         } else
-
-         /* Or8(x,0) ==> x */
-         if ((e->Iex.Binop.op == Iop_Or8)
-             && e->Iex.Binop.arg2->tag == Iex_Const
-             && e->Iex.Binop.arg2->Iex.Const.con->Ico.U8 == 0) {
-            e2 = e->Iex.Binop.arg1;
-         } else
-
-         /* Or16(x,0) ==> x */
-         if ((e->Iex.Binop.op == Iop_Or16)
-             && e->Iex.Binop.arg2->tag == Iex_Const
-             && e->Iex.Binop.arg2->Iex.Const.con->Ico.U16 == 0) {
-            e2 = e->Iex.Binop.arg1;
-         } else
-
-         /* Or32/Add32/Max32U(x,0) ==> x
-            Or32/Add32/Max32U(0,x) ==> x */
-         if (e->Iex.Binop.op == Iop_Add32
-             || e->Iex.Binop.op == Iop_Or32 || e->Iex.Binop.op == Iop_Max32U) {
-            if (isZeroU32(e->Iex.Binop.arg2))
-               e2 = e->Iex.Binop.arg1;
-            else if (isZeroU32(e->Iex.Binop.arg1))
-               e2 = e->Iex.Binop.arg2;
-         } else
-
-         /* Sub64(x,0) ==> x */
-         if (e->Iex.Binop.op == Iop_Sub64 && isZeroU64(e->Iex.Binop.arg2)) {
-            e2 = e->Iex.Binop.arg1;
-         } else
-
-         /* Add32(t,t) ==> t << 1.  Memcheck doesn't understand that
-            x+x produces a defined least significant bit, and it seems
-            simplest just to get rid of the problem by rewriting it
-            out, since the opportunity to do so exists. */
-         if (e->Iex.Binop.op == Iop_Add32
-             && e->Iex.Binop.arg1->tag == Iex_RdTmp
-             && e->Iex.Binop.arg2->tag == Iex_RdTmp
-             && e->Iex.Binop.arg1->Iex.RdTmp.tmp 
-                == e->Iex.Binop.arg2->Iex.RdTmp.tmp) {
-            e2 = IRExpr_Binop(Iop_Shl32,
-                              e->Iex.Binop.arg1,
-                              IRExpr_Const(IRConst_U8(1)));
-         } else
-
-         /* Add64(t,t) ==> t << 1;  rationale as for Add32(t,t) above. */
-         if (e->Iex.Binop.op == Iop_Add64
-             && e->Iex.Binop.arg1->tag == Iex_RdTmp
-             && e->Iex.Binop.arg2->tag == Iex_RdTmp
-             && e->Iex.Binop.arg1->Iex.RdTmp.tmp 
-                == e->Iex.Binop.arg2->Iex.RdTmp.tmp) {
-            e2 = IRExpr_Binop(Iop_Shl64,
-                              e->Iex.Binop.arg1,
-                              IRExpr_Const(IRConst_U8(1)));
-         } else
-
-         /* Add8(t,t) ==> t << 1;  rationale as for Add32(t,t) above. */
-         if (e->Iex.Binop.op == Iop_Add8
-             && e->Iex.Binop.arg1->tag == Iex_RdTmp
-             && e->Iex.Binop.arg2->tag == Iex_RdTmp
-             && e->Iex.Binop.arg1->Iex.RdTmp.tmp 
-                == e->Iex.Binop.arg2->Iex.RdTmp.tmp) {
-            e2 = IRExpr_Binop(Iop_Shl8,
-                              e->Iex.Binop.arg1,
-                              IRExpr_Const(IRConst_U8(1)));
-         } else
-         /* NB no Add16(t,t) case yet as no known test case exists */
-
-         /* Or64/Add64(x,0) ==> x
-            Or64/Add64(0,x) ==> x */
-         if (e->Iex.Binop.op == Iop_Add64 || e->Iex.Binop.op == Iop_Or64) {
-            if (isZeroU64(e->Iex.Binop.arg2))
-               e2 = e->Iex.Binop.arg1;
-            else if (isZeroU64(e->Iex.Binop.arg1))
-               e2 = e->Iex.Binop.arg2;
-         } else
-
-         /* And32(x,0xFFFFFFFF) ==> x */
-         if (e->Iex.Binop.op == Iop_And32
-             && e->Iex.Binop.arg2->tag == Iex_Const
-             && e->Iex.Binop.arg2->Iex.Const.con->Ico.U32 == 0xFFFFFFFF) {
-            e2 = e->Iex.Binop.arg1;
-         } else
-
-         /* And32(x,0) ==> 0 */
-         if (e->Iex.Binop.op == Iop_And32
-             && e->Iex.Binop.arg2->tag == Iex_Const
-             && e->Iex.Binop.arg2->Iex.Const.con->Ico.U32 == 0) {
-            e2 = IRExpr_Const(IRConst_U32(0));
-         } else
-
-         /* And32/Shl32(0,x) ==> 0 */
-         if ((e->Iex.Binop.op == Iop_And32 || e->Iex.Binop.op == Iop_Shl32)
-             && e->Iex.Binop.arg1->tag == Iex_Const
-             && e->Iex.Binop.arg1->Iex.Const.con->Ico.U32 == 0) {
-            e2 = IRExpr_Const(IRConst_U32(0));
-         } else
-
-         /* Or8(0,x) ==> x */
-         if (e->Iex.Binop.op == Iop_Or8
-             && e->Iex.Binop.arg1->tag == Iex_Const
-             && e->Iex.Binop.arg1->Iex.Const.con->Ico.U8 == 0) {
-            e2 = e->Iex.Binop.arg2;
-         } else
-
-         /* Or8/16/32/64/V128(t,t) ==> t, for some IRTemp t */
-         /* And8/16/32/64(t,t) ==> t, for some IRTemp t */
-         /* Max32U(t,t) ==> t, for some IRTemp t */
          switch (e->Iex.Binop.op) {
-            case Iop_And64: case Iop_And32:
-            case Iop_And16: case Iop_And8:
-            case Iop_Or64: case Iop_Or32:
-            case Iop_Or16: case Iop_Or8: case Iop_OrV128:
-            case Iop_Max32U:
-               if (sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2))
+
+            case Iop_Shl32:
+            case Iop_Shl64:
+            case Iop_Shr64:
+               /* Shl32/Shl64/Shr64(x,0) ==> x */
+               if (isZeroU(e->Iex.Binop.arg2)) {
                   e2 = e->Iex.Binop.arg1;
+                  break;
+               }
+               /* Shl32/Shl64/Shr64(0,x) ==> 0 */
+               if (isZeroU(e->Iex.Binop.arg1)) {
+                  e2 = e->Iex.Binop.arg1;
+                  break;
+               }
                break;
-            default:
-               break;
-         }
 
-         /* Xor8/16/32/64/V128(t,t) ==> 0, for some IRTemp t */
-         /* Sub32/64(t,t) ==> 0, for some IRTemp t */
-         switch (e->Iex.Binop.op) {
-            case Iop_Xor64: case Iop_Xor32:
-            case Iop_Xor16: case Iop_Xor8:
-            case Iop_XorV128:
-            case Iop_Sub64: case Iop_Sub32:
-               if (sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2))
+            case Iop_Shr32:
+               /* Shr32(x,0) ==> x */
+               if (isZeroU(e->Iex.Binop.arg2)) {
+                  e2 = e->Iex.Binop.arg1;
+                  break;
+               }
+               break;
+
+            case Iop_Or8:
+            case Iop_Or16:
+            case Iop_Or32:
+            case Iop_Or64:
+            case Iop_Max32U:
+               /* Or8/Or16/Or32/Or64/Max32U(x,0) ==> x */
+               if (isZeroU(e->Iex.Binop.arg2)) {
+                  e2 = e->Iex.Binop.arg1;
+                  break;
+               }
+               /* Or8/Or16/Or32/Or64/Max32U(0,x) ==> x */
+               if (isZeroU(e->Iex.Binop.arg1)) {
+                  e2 = e->Iex.Binop.arg2;
+                  break;
+               }
+               /* Or8/Or16/Or32/Or64/Max32U(x,1---1b) ==> 1---1b */
+               /* Or8/Or16/Or32/Or64/Max32U(1---1b,x) ==> 1---1b */
+               if (isOnesU(e->Iex.Binop.arg1) || isOnesU(e->Iex.Binop.arg2)) {
+                  e2 = mkOnesOfPrimopResultType(e->Iex.Binop.op);
+                  break;
+               }
+               /* Or8/Or16/Or32/Or64/Max32U(t,t) ==> t, for some IRTemp t */
+               if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+                  e2 = e->Iex.Binop.arg1;
+                  break;
+               }
+               break;
+
+            case Iop_Add8:
+               /* Add8(t,t) ==> t << 1.
+                  Memcheck doesn't understand that
+                  x+x produces a defined least significant bit, and it seems
+                  simplest just to get rid of the problem by rewriting it
+                  out, since the opportunity to do so exists. */
+               if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+                  e2 = IRExpr_Binop(Iop_Shl8, e->Iex.Binop.arg1,
+                                    IRExpr_Const(IRConst_U8(1)));
+                  break;
+               }
+               break;
+
+               /* NB no Add16(t,t) case yet as no known test case exists */
+
+            case Iop_Add32:
+            case Iop_Add64:
+               /* Add32/Add64(x,0) ==> x */
+               if (isZeroU(e->Iex.Binop.arg2)) {
+                  e2 = e->Iex.Binop.arg1;
+                  break;
+               }
+               /* Add32/Add64(0,x) ==> x */
+               if (isZeroU(e->Iex.Binop.arg1)) {
+                  e2 = e->Iex.Binop.arg2;
+                  break;
+               }
+               /* Add32/Add64(t,t) ==> t << 1. Same rationale as for Add8. */
+               if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+                  e2 = IRExpr_Binop(e->Iex.Binop.op == Iop_Add32 ? Iop_Shl32 : Iop_Shl64,
+                                    e->Iex.Binop.arg1, IRExpr_Const(IRConst_U8(1)));
+                  break;
+               }
+               break;
+
+            case Iop_Sub64:
+               /* Sub64(x,0) ==> x */
+               if (isZeroU64(e->Iex.Binop.arg2)) {
+                  e2 = e->Iex.Binop.arg1;
+                  break;
+               }
+               /* Sub64(t,t) ==> 0, for some IRTemp t */
+               if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = mkZeroOfPrimopResultType(e->Iex.Binop.op);
+                  break;
+               }
                break;
-            default:
-               break;
-         }
 
-         switch (e->Iex.Binop.op) {
+            case Iop_And32:
+               /* And32(x,0xFFFFFFFF) ==> x */
+               if (isOnesU32(e->Iex.Binop.arg2)) {
+                  e2 = e->Iex.Binop.arg1;
+                  break;
+               }
+               /* And32(x,0) ==> 0 */
+               if (isZeroU32(e->Iex.Binop.arg2)) {
+                  e2 = e->Iex.Binop.arg2;
+                  break;
+               }
+               /* And32(0,x) ==> 0 */
+               if (isZeroU32(e->Iex.Binop.arg1)) {
+                  e2 = e->Iex.Binop.arg1;
+                  break;
+               }
+               /* And32(t,t) ==> t, for some IRTemp t */
+               if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+                  e2 = e->Iex.Binop.arg1;
+                  break;
+               }
+               break;
+
+            case Iop_And8:
+            case Iop_And16:
+            case Iop_And64:
+               /* And8/And16/And64(t,t) ==> t, for some IRTemp t */
+               if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+                  e2 = e->Iex.Binop.arg1;
+                  break;
+               }
+               break;
+
+            case Iop_OrV128:
+               /* V128(t,t) ==> t, for some IRTemp t */
+               if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+                  e2 = e->Iex.Binop.arg1;
+                  break;
+               }
+               break;
+
+            case Iop_Xor8:
+            case Iop_Xor16:
+            case Iop_Xor32:
+            case Iop_Xor64:
+            case Iop_XorV128:
+               /* Xor8/16/32/64/V128(t,t) ==> 0, for some IRTemp t */
+               if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+                  e2 = mkZeroOfPrimopResultType(e->Iex.Binop.op);
+                  break;
+               }
+               break;
+
+            case Iop_Sub32:
+               /* Sub32(t,t) ==> 0, for some IRTemp t */
+               if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+                  e2 = mkZeroOfPrimopResultType(e->Iex.Binop.op);
+                  break;
+               }
+               break;
+
             case Iop_CmpEQ64:
             case Iop_CmpEQ8x8:
             case Iop_CmpEQ8x16:
-               if (sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2))
+               if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = mkOnesOfPrimopResultType(e->Iex.Binop.op);
+                  break;
+               }
                break;
+
             default:
                break;
          }
-
       }
-   }
+      break;
 
-   /* Mux0X */
-   if (e->tag == Iex_Mux0X) {
+   case Iex_Mux0X:
+      /* Mux0X */
+
       /* is the discriminant is a constant? */
       if (e->Iex.Mux0X.cond->tag == Iex_Const) {
          Bool zero;
@@ -1756,15 +1965,20 @@ static IRExpr* fold_Expr ( IRExpr* e )
       }
       else
       /* are the arms identical? (pretty weedy test) */
-      if (sameIRTempsOrIcoU32s(e->Iex.Mux0X.expr0,
-                               e->Iex.Mux0X.exprX)) {
+      if (sameIRExprs(env, e->Iex.Mux0X.expr0,
+                      e->Iex.Mux0X.exprX)) {
          e2 = e->Iex.Mux0X.expr0;
       }
+      break;
+
+   default:
+      /* not considered */
+      break;
    }
 
    /* Show cases where we've found but not folded 'op(t,t)'. */
    if (0 && e == e2 && e->tag == Iex_Binop 
-       && sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+       && sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
       vex_printf("IDENT: ");
       ppIRExpr(e); vex_printf("\n");
    }
@@ -1802,11 +2016,15 @@ static IRExpr* subst_Expr ( IRExpr** env, IRExpr* ex )
    switch (ex->tag) {
       case Iex_RdTmp:
          if (env[(Int)ex->Iex.RdTmp.tmp] != NULL) {
-            return env[(Int)ex->Iex.RdTmp.tmp];
-         } else {
-            /* not bound in env */
-            return ex;
+            IRExpr *rhs = env[(Int)ex->Iex.RdTmp.tmp];
+            if (rhs->tag == Iex_RdTmp)
+               return rhs;
+            if (rhs->tag == Iex_Const
+                && rhs->Iex.Const.con->tag != Ico_F64i)
+               return rhs;
          }
+         /* not bound in env */
+         return ex;
 
       case Iex_Const:
       case Iex_Get:
@@ -1917,15 +2135,15 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
          vassert(isIRAtom(st->Ist.AbiHint.base));
          vassert(isIRAtom(st->Ist.AbiHint.nia));
          return IRStmt_AbiHint(
-                   fold_Expr(subst_Expr(env, st->Ist.AbiHint.base)),
+                   fold_Expr(env, subst_Expr(env, st->Ist.AbiHint.base)),
                    st->Ist.AbiHint.len,
-                   fold_Expr(subst_Expr(env, st->Ist.AbiHint.nia))
+                   fold_Expr(env, subst_Expr(env, st->Ist.AbiHint.nia))
                 );
       case Ist_Put:
          vassert(isIRAtom(st->Ist.Put.data));
          return IRStmt_Put(
                    st->Ist.Put.offset, 
-                   fold_Expr(subst_Expr(env, st->Ist.Put.data)) 
+                   fold_Expr(env, subst_Expr(env, st->Ist.Put.data)) 
                 );
 
       case Ist_PutI:
@@ -1933,9 +2151,9 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
          vassert(isIRAtom(st->Ist.PutI.data));
          return IRStmt_PutI(
                    st->Ist.PutI.descr,
-                   fold_Expr(subst_Expr(env, st->Ist.PutI.ix)),
+                   fold_Expr(env, subst_Expr(env, st->Ist.PutI.ix)),
                    st->Ist.PutI.bias,
-                   fold_Expr(subst_Expr(env, st->Ist.PutI.data))
+                   fold_Expr(env, subst_Expr(env, st->Ist.PutI.data))
                 );
 
       case Ist_WrTmp:
@@ -1943,7 +2161,7 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
             allowed to be more than just a constant or a tmp. */
          return IRStmt_WrTmp(
                    st->Ist.WrTmp.tmp,
-                   fold_Expr(subst_Expr(env, st->Ist.WrTmp.data))
+                   fold_Expr(env, subst_Expr(env, st->Ist.WrTmp.data))
                 );
 
       case Ist_Store:
@@ -1951,8 +2169,8 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
          vassert(isIRAtom(st->Ist.Store.data));
          return IRStmt_Store(
                    st->Ist.Store.end,
-                   fold_Expr(subst_Expr(env, st->Ist.Store.addr)),
-                   fold_Expr(subst_Expr(env, st->Ist.Store.data))
+                   fold_Expr(env, subst_Expr(env, st->Ist.Store.addr)),
+                   fold_Expr(env, subst_Expr(env, st->Ist.Store.data))
                 );
 
       case Ist_CAS: {
@@ -1965,11 +2183,11 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
          vassert(isIRAtom(cas->dataLo));
          cas2 = mkIRCAS(
                    cas->oldHi, cas->oldLo, cas->end, 
-                   fold_Expr(subst_Expr(env, cas->addr)),
-                   cas->expdHi ? fold_Expr(subst_Expr(env, cas->expdHi)) : NULL,
-                   fold_Expr(subst_Expr(env, cas->expdLo)),
-                   cas->dataHi ? fold_Expr(subst_Expr(env, cas->dataHi)) : NULL,
-                   fold_Expr(subst_Expr(env, cas->dataLo))
+                   fold_Expr(env, subst_Expr(env, cas->addr)),
+                   cas->expdHi ? fold_Expr(env, subst_Expr(env, cas->expdHi)) : NULL,
+                   fold_Expr(env, subst_Expr(env, cas->expdLo)),
+                   cas->dataHi ? fold_Expr(env, subst_Expr(env, cas->dataHi)) : NULL,
+                   fold_Expr(env, subst_Expr(env, cas->dataLo))
                 );
          return IRStmt_CAS(cas2);
       }
@@ -1981,9 +2199,9 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
          return IRStmt_LLSC(
                    st->Ist.LLSC.end,
                    st->Ist.LLSC.result,
-                   fold_Expr(subst_Expr(env, st->Ist.LLSC.addr)),
+                   fold_Expr(env, subst_Expr(env, st->Ist.LLSC.addr)),
                    st->Ist.LLSC.storedata
-                      ? fold_Expr(subst_Expr(env, st->Ist.LLSC.storedata))
+                      ? fold_Expr(env, subst_Expr(env, st->Ist.LLSC.storedata))
                       : NULL
                 );
 
@@ -1996,13 +2214,13 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
          d2->args = shallowCopyIRExprVec(d2->args);
          if (d2->mFx != Ifx_None) {
             vassert(isIRAtom(d2->mAddr));
-            d2->mAddr = fold_Expr(subst_Expr(env, d2->mAddr));
+            d2->mAddr = fold_Expr(env, subst_Expr(env, d2->mAddr));
          }
          vassert(isIRAtom(d2->guard));
-         d2->guard = fold_Expr(subst_Expr(env, d2->guard));
+         d2->guard = fold_Expr(env, subst_Expr(env, d2->guard));
          for (i = 0; d2->args[i]; i++) {
             vassert(isIRAtom(d2->args[i]));
-            d2->args[i] = fold_Expr(subst_Expr(env, d2->args[i]));
+            d2->args[i] = fold_Expr(env, subst_Expr(env, d2->args[i]));
          }
          return IRStmt_Dirty(d2);
       }
@@ -2021,7 +2239,7 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
       case Ist_Exit: {
          IRExpr* fcond;
          vassert(isIRAtom(st->Ist.Exit.guard));
-         fcond = fold_Expr(subst_Expr(env, st->Ist.Exit.guard));
+         fcond = fold_Expr(env, subst_Expr(env, st->Ist.Exit.guard));
          if (fcond->tag == Iex_Const) {
             /* Interesting.  The condition on this exit has folded down to
                a constant. */
@@ -2043,7 +2261,8 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
                   vex_printf("vex iropt: IRStmt_Exit became unconditional\n");
             }
          }
-         return IRStmt_Exit(fcond, st->Ist.Exit.jk, st->Ist.Exit.dst);
+         return IRStmt_Exit(fcond, st->Ist.Exit.jk,
+                                   st->Ist.Exit.dst, st->Ist.Exit.offsIP);
       }
 
    default:
@@ -2065,10 +2284,9 @@ IRSB* cprop_BB ( IRSB* in )
    out->tyenv = deepCopyIRTypeEnv( in->tyenv );
 
    /* Set up the env with which travels forward.  This holds a
-      substitution, mapping IRTemps to atoms, that is, IRExprs which
-      are either IRTemps or IRConsts.  Thus, copy and constant
-      propagation is done.  The environment is to be applied as we
-      move along.  Keys are IRTemps.  Values are IRExpr*s.
+      substitution, mapping IRTemps to IRExprs. The environment 
+      is to be applied as we move along.  Keys are IRTemps.
+      Values are IRExpr*s.
    */
    for (i = 0; i < n_tmps; i++)
       env[i] = NULL;
@@ -2091,34 +2309,37 @@ IRSB* cprop_BB ( IRSB* in )
       /* If the statement has been folded into a no-op, forget it. */
       if (st2->tag == Ist_NoOp) continue;
 
-      /* Now consider what the stmt looks like.  If it's of the form
-         't = const' or 't1 = t2', add it to the running environment
-         and not to the output BB.  Otherwise, add it to the output
-         BB.  Note, we choose not to propagate const when const is an
-         F64i, so that F64i literals can be CSE'd later.  This helps
-         x86 floating point code generation. */
+      /* If the statement assigns to an IRTemp add it to the running
+         environment. This is for the benefit of copy propagation
+         and to allow sameIRExpr look through IRTemps. */
+      if (st2->tag == Ist_WrTmp) {
+         vassert(env[(Int)(st2->Ist.WrTmp.tmp)] == NULL);
+         env[(Int)(st2->Ist.WrTmp.tmp)] = st2->Ist.WrTmp.data;
 
-      if (st2->tag == Ist_WrTmp 
-          && st2->Ist.WrTmp.data->tag == Iex_Const
-          && st2->Ist.WrTmp.data->Iex.Const.con->tag != Ico_F64i) {
-         /* 't = const' -- add to env.  
-             The pair (IRTemp, IRExpr*) is added. */
-         env[(Int)(st2->Ist.WrTmp.tmp)] = st2->Ist.WrTmp.data;
+         /* 't1 = t2' -- don't add to BB; will be optimized out */
+         if (st2->Ist.WrTmp.data->tag == Iex_RdTmp) continue;
+
+         /* 't = const' && 'const != F64i' -- don't add to BB
+            Note, we choose not to propagate const when const is an
+            F64i, so that F64i literals can be CSE'd later.  This helps
+            x86 floating point code generation. */
+         if (st2->Ist.WrTmp.data->tag == Iex_Const
+             && st2->Ist.WrTmp.data->Iex.Const.con->tag != Ico_F64i) continue;
       }
-      else
-      if (st2->tag == Ist_WrTmp && st2->Ist.WrTmp.data->tag == Iex_RdTmp) {
-         /* 't1 = t2' -- add to env.  
-             The pair (IRTemp, IRExpr*) is added. */
-         env[(Int)(st2->Ist.WrTmp.tmp)] = st2->Ist.WrTmp.data;
-      }
-      else {
-         /* Not interesting, copy st2 into the output block. */
-         addStmtToIRSB( out, st2 );
-      }
+
+      /* Not interesting, copy st2 into the output block. */
+      addStmtToIRSB( out, st2 );
    }
+
+#if STATS_IROPT
+   vex_printf("sameIRExpr: invoked = %u/%u  equal = %u/%u max_nodes = %u\n",
+              invocation_count, recursion_count, success_count,
+              recursion_success_count, max_nodes_visited);
+#endif
 
    out->next     = subst_Expr( env, in->next );
    out->jumpkind = in->jumpkind;
+   out->offsIP   = in->offsIP;
    return out;
 }
 
@@ -2344,6 +2565,8 @@ static Bool isOneU1 ( IRExpr* e )
          = IRExpr_Const( bb->stmts[i_unconditional_exit]->Ist.Exit.dst );
       bb->jumpkind
          = bb->stmts[i_unconditional_exit]->Ist.Exit.jk;
+      bb->offsIP
+         = bb->stmts[i_unconditional_exit]->Ist.Exit.offsIP;
       for (i = i_unconditional_exit; i < bb->stmts_used; i++)
          bb->stmts[i] = IRStmt_NoOp();
    }
@@ -2526,7 +2749,72 @@ GSAliasing getAliasingRelation_II (
 
 typedef
    struct {
-      enum { Ut, Btt, Btc, Bct, Cf64i, Mttt, GetIt } tag;
+      enum { TCc, TCt } tag;
+      union { IRTemp tmp; IRConst* con; } u;
+   }
+   TmpOrConst;
+
+static Bool eqTmpOrConst ( TmpOrConst* tc1, TmpOrConst* tc2 )
+{
+   if (tc1->tag != tc2->tag)
+      return False;
+   switch (tc1->tag) {
+      case TCc:
+         return eqIRConst(tc1->u.con, tc2->u.con);
+      case TCt:
+         return tc1->u.tmp == tc2->u.tmp;
+      default:
+         vpanic("eqTmpOrConst");
+   }
+}
+
+static Bool eqIRCallee ( IRCallee* cee1, IRCallee* cee2 )
+{
+   Bool eq = cee1->addr == cee2->addr;
+   if (eq) {
+      vassert(cee1->regparms == cee2->regparms);
+      vassert(cee1->mcx_mask == cee2->mcx_mask);
+      /* Names should be the same too, but we don't bother to
+         check. */
+   }
+   return eq;
+}
+
+/* Convert a NULL terminated IRExpr* vector to an array of
+   TmpOrConsts, and a length. */
+static void irExprVec_to_TmpOrConsts ( /*OUT*/TmpOrConst** outs,
+                                       /*OUT*/Int* nOuts,
+                                       IRExpr** ins )
+{
+   Int i, n;
+   /* We have to make two passes, one to count, one to copy. */
+   for (n = 0; ins[n]; n++)
+      ;
+   *outs  = LibVEX_Alloc(n * sizeof(TmpOrConst));
+   *nOuts = n;
+   /* and now copy .. */
+   for (i = 0; i < n; i++) {
+      IRExpr*       arg = ins[i];
+      TmpOrConst* dst = &(*outs)[i];
+      if (arg->tag == Iex_RdTmp) {
+         dst->tag   = TCt;
+         dst->u.tmp = arg->Iex.RdTmp.tmp;
+      }
+      else if (arg->tag == Iex_Const) {
+         dst->tag   = TCc;
+         dst->u.con = arg->Iex.Const.con;
+      }
+      else {
+         /* Failure of this is serious; it means that the presented arg
+            isn't an IR atom, as it should be. */
+         vpanic("irExprVec_to_TmpOrConsts");
+      }
+   }
+}
+
+typedef
+   struct {
+      enum { Ut, Btt, Btc, Bct, Cf64i, Mttt, GetIt, CCall } tag;
       union {
          /* unop(tmp) */
          struct {
@@ -2567,13 +2855,20 @@ typedef
             IRTemp      ix;
             Int         bias;
          } GetIt;
+         /* Clean helper call */
+         struct {
+            IRCallee*   cee;
+            TmpOrConst* args;
+            Int         nArgs;
+            IRType      retty;
+         } CCall;
       } u;
    }
    AvailExpr;
 
 static Bool eq_AvailExpr ( AvailExpr* a1, AvailExpr* a2 )
 {
-   if (a1->tag != a2->tag)
+   if (LIKELY(a1->tag != a2->tag))
       return False;
    switch (a1->tag) {
       case Ut: 
@@ -2605,6 +2900,23 @@ static Bool eq_AvailExpr ( AvailExpr* a1, AvailExpr* a2 )
          return toBool(eqIRRegArray(a1->u.GetIt.descr, a2->u.GetIt.descr) 
                        && a1->u.GetIt.ix == a2->u.GetIt.ix
                        && a1->u.GetIt.bias == a2->u.GetIt.bias);
+      case CCall: {
+         Int  i, n;
+         Bool eq = a1->u.CCall.nArgs == a2->u.CCall.nArgs
+                   && eqIRCallee(a1->u.CCall.cee, a2->u.CCall.cee);
+         if (eq) {
+            n = a1->u.CCall.nArgs;
+            for (i = 0; i < n; i++) {
+               if (!eqTmpOrConst( &a1->u.CCall.args[i],
+                                  &a2->u.CCall.args[i] )) {
+                  eq = False;
+                  break;
+               }
+            }
+         }
+         if (eq) vassert(a1->u.CCall.retty == a2->u.CCall.retty);
+         return eq;  
+      }
       default: vpanic("eq_AvailExpr");
    }
 }
@@ -2641,6 +2953,25 @@ static IRExpr* availExpr_to_IRExpr ( AvailExpr* ae )
          return IRExpr_GetI(ae->u.GetIt.descr,
                             IRExpr_RdTmp(ae->u.GetIt.ix),
                             ae->u.GetIt.bias);
+      case CCall: {
+         Int i, n = ae->u.CCall.nArgs;
+         vassert(n >= 0);
+         IRExpr** vec = LibVEX_Alloc((n+1) * sizeof(IRExpr*));
+         vec[n] = NULL;
+         for (i = 0; i < n; i++) {
+            TmpOrConst* tc = &ae->u.CCall.args[i];
+            if (tc->tag == TCc) {
+               vec[i] = IRExpr_Const(tc->u.con);
+            }
+            else if (tc->tag == TCt) {
+               vec[i] = IRExpr_RdTmp(tc->u.tmp);
+            }
+            else vpanic("availExpr_to_IRExpr:CCall-arg");
+         }
+         return IRExpr_CCall(ae->u.CCall.cee,
+                             ae->u.CCall.retty,
+                             vec);
+      }
       default:
          vpanic("availExpr_to_IRExpr");
    }
@@ -2684,6 +3015,16 @@ static void subst_AvailExpr ( HashHW* env, AvailExpr* ae )
       case GetIt:
          ae->u.GetIt.ix = subst_AvailExpr_Temp( env, ae->u.GetIt.ix );
          break;
+      case CCall: {
+         Int i, n = ae->u.CCall.nArgs;;
+         for (i = 0; i < n; i++) {
+            TmpOrConst* tc = &ae->u.CCall.args[i];
+            if (tc->tag == TCt) {
+               tc->u.tmp = subst_AvailExpr_Temp( env, tc->u.tmp );
+            }
+         }
+         break;
+      }
       default: 
          vpanic("subst_AvailExpr");
    }
@@ -2762,6 +3103,22 @@ static AvailExpr* irExpr_to_AvailExpr ( IRExpr* e )
       ae->u.GetIt.descr = e->Iex.GetI.descr;
       ae->u.GetIt.ix    = e->Iex.GetI.ix->Iex.RdTmp.tmp;
       ae->u.GetIt.bias  = e->Iex.GetI.bias;
+      return ae;
+   }
+
+   if (e->tag == Iex_CCall) {
+      ae = LibVEX_Alloc(sizeof(AvailExpr));
+      ae->tag = CCall;
+      /* Ok to share only the cee, since it is immutable. */
+      ae->u.CCall.cee   = e->Iex.CCall.cee;
+      ae->u.CCall.retty = e->Iex.CCall.retty;
+      /* irExprVec_to_TmpOrConsts will assert if the args are
+         neither tmps nor constants, but that's ok .. that's all they
+         should be. */
+      irExprVec_to_TmpOrConsts(
+         &ae->u.CCall.args, &ae->u.CCall.nArgs,
+         e->Iex.CCall.args
+      );
       return ae;
    }
 
@@ -4157,6 +4514,33 @@ static IRExpr* fold_IRExpr_Unop ( IROp op, IRExpr* aa )
       /* 32Uto64( 16Uto32( x )) --> 16Uto64(x) */
       if (is_Unop(aa, Iop_16Uto32))
          return IRExpr_Unop(Iop_16Uto64, aa->Iex.Unop.arg);
+      /* 32Uto64(64to32( Shr64( 32Uto64(64to32(x)), sh ))
+                     --> Shr64( 32Uto64(64to32(x)), sh )) */
+      if (is_Unop(aa, Iop_64to32)
+          && is_Binop(aa->Iex.Unop.arg, Iop_Shr64)
+          && is_Unop(aa->Iex.Unop.arg->Iex.Binop.arg1, Iop_32Uto64)
+          && is_Unop(aa->Iex.Unop.arg->Iex.Binop.arg1->Iex.Unop.arg,
+                     Iop_64to32)) {
+         return aa->Iex.Unop.arg;
+      }
+      /*     32Uto64(64to32( Shl64( 32Uto64(64to32(x)), sh ))
+         --> 32Uto64(64to32( Shl64(                x,   sh )) */
+      if (is_Unop(aa, Iop_64to32)
+          && is_Binop(aa->Iex.Unop.arg, Iop_Shl64)
+          && is_Unop(aa->Iex.Unop.arg->Iex.Binop.arg1, Iop_32Uto64)
+          && is_Unop(aa->Iex.Unop.arg->Iex.Binop.arg1->Iex.Unop.arg,
+                     Iop_64to32)) {
+         return
+            IRExpr_Unop(
+               Iop_32Uto64,
+               IRExpr_Unop(
+                  Iop_64to32,
+                  IRExpr_Binop(
+                     Iop_Shl64, 
+                     aa->Iex.Unop.arg->Iex.Binop.arg1->Iex.Unop.arg->Iex.Unop.arg,
+                     aa->Iex.Unop.arg->Iex.Binop.arg2
+            )));
+      }
       break;
 
    case Iop_1Sto32:
@@ -4171,7 +4555,6 @@ static IRExpr* fold_IRExpr_Unop ( IROp op, IRExpr* aa )
                                ->Iex.Unop.arg->Iex.Unop.arg);
       }
       break;
-
 
    default:
       break;
@@ -4295,7 +4678,8 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
          return IRStmt_Exit(
                    atbSubst_Expr(env, st->Ist.Exit.guard),
                    st->Ist.Exit.jk,
-                   st->Ist.Exit.dst
+                   st->Ist.Exit.dst,
+                   st->Ist.Exit.offsIP
                 );
       case Ist_IMark:
          return IRStmt_IMark(st->Ist.IMark.addr,
@@ -4340,7 +4724,7 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
    }
 }
 
-/* notstatic */ void ado_treebuild_BB ( IRSB* bb )
+/* notstatic */ Addr64 ado_treebuild_BB ( IRSB* bb )
 {
    Int      i, j, k, m;
    Bool     stmtPuts, stmtStores, invalidateMe;
@@ -4348,19 +4732,37 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
    IRStmt*  st2;
    ATmpInfo env[A_NENV];
 
+   Bool   max_ga_known = False;
+   Addr64 max_ga       = 0;
+
    Int       n_tmps = bb->tyenv->types_used;
    UShort*   uses   = LibVEX_Alloc(n_tmps * sizeof(UShort));
 
    /* Phase 1.  Scan forwards in bb, counting use occurrences of each
-      temp.  Also count occurrences in the bb->next field. */
+      temp.  Also count occurrences in the bb->next field.  Take the
+      opportunity to also find the maximum guest address in the block,
+      since that will be needed later for deciding when we can safely
+      elide event checks. */
 
    for (i = 0; i < n_tmps; i++)
       uses[i] = 0;
 
    for (i = 0; i < bb->stmts_used; i++) {
       st = bb->stmts[i];
-      if (st->tag == Ist_NoOp)
-         continue;
+      switch (st->tag) {
+         case Ist_NoOp:
+            continue;
+         case Ist_IMark: {
+            Int    len = st->Ist.IMark.len;
+            Addr64 mga = st->Ist.IMark.addr + (len < 1 ? 1 : len) - 1;
+            max_ga_known = True;
+            if (mga > max_ga)
+               max_ga = mga;
+            break;
+         }
+         default:
+            break;
+      }
       aoccCount_Stmt( uses, st );
    }
    aoccCount_Expr(uses, bb->next );
@@ -4471,7 +4873,8 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
       stmtStores
          = toBool( st->tag == Ist_Store
                    || st->tag == Ist_Dirty
-                   || st->tag == Ist_LLSC );
+                   || st->tag == Ist_LLSC
+                   || st->tag == Ist_CAS );
 
       for (k = A_NENV-1; k >= 0; k--) {
          if (env[k].bindee == NULL)
@@ -4532,6 +4935,8 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
       by definition dead? */
    bb->next = atbSubst_Expr(env, bb->next);
    bb->stmts_used = j;
+
+   return max_ga_known ? max_ga : ~(Addr64)0;
 }
 
 
@@ -4641,6 +5046,9 @@ static void considerExpensives ( /*OUT*/Bool* hasGetIorPutI,
                case Ity_I32: case Ity_I64: case Ity_I128: 
                   break;
                case Ity_F32: case Ity_F64: case Ity_F128: case Ity_V128:
+                  *hasVorFtemps = True;
+                  break;
+               case Ity_D32: case Ity_D64: case Ity_D128:
                   *hasVorFtemps = True;
                   break;
                default: 

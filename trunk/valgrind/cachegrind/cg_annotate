@@ -138,7 +138,7 @@ my @include_dirs = ("");
 my $input_file = undef;
 
 # Version number
-my $version = "3.7.0.SVN";
+my $version = "3.8.0.SVN";
 
 # Usage message.
 my $usage = <<END
