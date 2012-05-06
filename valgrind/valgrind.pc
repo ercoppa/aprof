@@ -1,16 +1,16 @@
-prefix=/home/ercoppa/Desktop/aprof/valgrind/inst
+prefix=/home/ercoppa/Desktop/code/aprof/valgrind/inst
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include/valgrind
-arch=x86
+arch=amd64
 os=linux
-platform=x86-linux
+platform=amd64-linux
 valt_load_address=@VALT_LOAD_ADDRESS@
 
 Name: Valgrind
 Description: A dynamic binary instrumentation framework
 Version: 3.8.0.SVN
 Requires:
-Libs: -L${libdir}/valgrind -lcoregrind-x86-linux -lvex-x86-linux -lgcc
+Libs: -L${libdir}/valgrind -lcoregrind-amd64-linux -lvex-amd64-linux -lgcc
 Cflags: -I${includedir}
 

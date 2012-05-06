@@ -35,13 +35,13 @@
 /* #undef GLIBC_2_12 */
 
 /* Define to 1 if you're using glibc 2.13.x */
-/* #undef GLIBC_2_13 */
+#define GLIBC_2_13 1
 
 /* Define to 1 if you're using glibc 2.14.x */
 /* #undef GLIBC_2_14 */
 
 /* Define to 1 if you're using glibc 2.15.x */
-#define GLIBC_2_15 1
+/* #undef GLIBC_2_15 */
 
 /* Define to 1 if you're using glibc 2.2.x */
 /* #undef GLIBC_2_2 */
@@ -148,10 +148,10 @@
 #define HAVE_PPOLL 1
 
 /* Define to 1 if you have the `process_vm_readv' function. */
-#define HAVE_PROCESS_VM_READV 1
+/* #undef HAVE_PROCESS_VM_READV */
 
 /* Define to 1 if you have the `process_vm_writev' function. */
-#define HAVE_PROCESS_VM_WRITEV 1
+/* #undef HAVE_PROCESS_VM_WRITEV */
 
 /* Define to 1 if you have the `pthread_barrier_init' function. */
 #define HAVE_PTHREAD_BARRIER_INIT 1
@@ -206,7 +206,7 @@
 #define HAVE_SEMTIMEDOP 1
 
 /* Define to 1 if libstd++ supports annotating shared pointers */
-#define HAVE_SHARED_POINTER_ANNOTATION 1
+/* #undef HAVE_SHARED_POINTER_ANNOTATION */
 
 /* Define to 1 if you have the `signalfd' function. */
 #define HAVE_SIGNALFD 1
