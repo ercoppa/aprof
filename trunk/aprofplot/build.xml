@@ -73,6 +73,9 @@
                 		<path refid="classpath"/> 
                			<path location="${build}/aprof-plot.jar"/>
             		</classpath>
+			<jvmarg value="-XX:+UseConcMarkSweepGC" />
+			<jvmarg value="-Xms128m" />
+			<jvmarg value="-Xmx1024m" />
 		</java>
     	</target>
 	

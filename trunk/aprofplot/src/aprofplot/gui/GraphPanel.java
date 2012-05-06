@@ -4,6 +4,9 @@ import aprofplot.*;
 import aprofplot.jfreechart.SamplingXYLineAndShapeRenderer;
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.PrintWriter;
 import java.util.*;
 import org.jfree.chart.*;
 import org.jfree.chart.axis.*;
@@ -861,7 +864,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		
 		} else {
 			
-			domainAxis.setAutoRangeIncludesZero(false);
+			domainAxis.setAutoRangeIncludesZero(true);
 		
 		}
 		
@@ -896,7 +899,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		
 		} else {
 			
-			rangeAxis.setAutoRangeIncludesZero(false);
+			rangeAxis.setAutoRangeIncludesZero(true);
 			
 		}
 
@@ -1614,46 +1617,46 @@ public class GraphPanel extends javax.swing.JPanel {
 			
 			// reset temp global vars
 			group_threshold = 1;
+			jRadioButtonMenuItem1.setSelected(true);
+			smooth_threshold = 1;
+			jRadioButtonMenuItem10.setSelected(true);
+			
 			elem_slot = 0; slot_start = 0;
 			sum_y = 0; sum_y2 = 0; sum_y3 = 0; sum_x = 0;
 			sum_occ = 0;
 			
-			if (group_threshold_base > 1) {
-				jRadioButtonMenuItem1.setText(Integer.toString((int)Math.pow(group_threshold_base, 0)));
-				jRadioButtonMenuItem2.setText(Integer.toString((int)Math.pow(group_threshold_base, 1)));
-				jRadioButtonMenuItem3.setText(Integer.toString((int)Math.pow(group_threshold_base, 2)));
-				jRadioButtonMenuItem4.setText(Integer.toString((int)Math.pow(group_threshold_base, 3)));
-				jRadioButtonMenuItem5.setText(Integer.toString((int)Math.pow(group_threshold_base, 4)));
-				jRadioButtonMenuItem6.setText(Integer.toString((int)Math.pow(group_threshold_base, 5)));
-			}
 			
-			if (smooth_threshold_base > 1) {
-				
-				int val = (int)Math.pow(smooth_threshold_base, 0);
-				if (val % 2 == 0) val++; // we want an odd number...
-				jRadioButtonMenuItem10.setText(Integer.toString(val));
-				
-				val = (int)Math.pow(smooth_threshold_base, 1);
-				if (val % 2 == 0) val++;
-				jRadioButtonMenuItem11.setText(Integer.toString(val));
-				
-				val = (int)Math.pow(smooth_threshold_base, 2);
-				if (val % 2 == 0) val++;
-				jRadioButtonMenuItem12.setText(Integer.toString(val));
-				
-				val = (int)Math.pow(smooth_threshold_base, 3);
-				if (val % 2 == 0) val++;
-				jRadioButtonMenuItem13.setText(Integer.toString(val));
-				
-				val = (int)Math.pow(smooth_threshold_base, 4);
-				if (val % 2 == 0) val++;
-				jRadioButtonMenuItem14.setText(Integer.toString(val));
-				
-				val = (int)Math.pow(smooth_threshold_base, 5);
-				if (val % 2 == 0) val++;
-				jRadioButtonMenuItem15.setText(Integer.toString(val));
+			jRadioButtonMenuItem1.setText(Integer.toString((int)Math.pow(group_threshold_base, 0)));
+			jRadioButtonMenuItem2.setText(Integer.toString((int)Math.pow(group_threshold_base, 1)));
+			jRadioButtonMenuItem3.setText(Integer.toString((int)Math.pow(group_threshold_base, 2)));
+			jRadioButtonMenuItem4.setText(Integer.toString((int)Math.pow(group_threshold_base, 3)));
+			jRadioButtonMenuItem5.setText(Integer.toString((int)Math.pow(group_threshold_base, 4)));
+			jRadioButtonMenuItem6.setText(Integer.toString((int)Math.pow(group_threshold_base, 5)));
 			
-			}
+				
+			int val = (int)Math.pow(smooth_threshold_base, 0);
+			if (val % 2 == 0) val++; // we want an odd number...
+			jRadioButtonMenuItem10.setText(Integer.toString(val));
+
+			val = (int)Math.pow(smooth_threshold_base, 1);
+			if (val % 2 == 0) val++;
+			jRadioButtonMenuItem11.setText(Integer.toString(val));
+
+			val = (int)Math.pow(smooth_threshold_base, 2);
+			if (val % 2 == 0) val++;
+			jRadioButtonMenuItem12.setText(Integer.toString(val));
+
+			val = (int)Math.pow(smooth_threshold_base, 3);
+			if (val % 2 == 0) val++;
+			jRadioButtonMenuItem13.setText(Integer.toString(val));
+
+			val = (int)Math.pow(smooth_threshold_base, 4);
+			if (val % 2 == 0) val++;
+			jRadioButtonMenuItem14.setText(Integer.toString(val));
+
+			val = (int)Math.pow(smooth_threshold_base, 5);
+			if (val % 2 == 0) val++;
+			jRadioButtonMenuItem15.setText(Integer.toString(val));
 			
 		}
 		
@@ -1763,8 +1766,11 @@ public class GraphPanel extends javax.swing.JPanel {
 			if (x == rtn_info.getMaxRms()) add_group_point();
 
 		} else if (group_threshold == 1 && smooth_threshold > 1) {
-
-			throw new RuntimeException("Not yet implemented :(");
+			
+			if (x == rtn_info.getMaxRms()) 
+				this.setData(rtn_info);
+			
+			//throw new RuntimeException("Not yet implemented :(");
 			
 		} else {
 
@@ -1888,6 +1894,20 @@ public class GraphPanel extends javax.swing.JPanel {
 			
 			//rtn_info.sortRmsListByAccesses();
 			
+			
+			/*
+			try {
+			
+			File tmp = null;
+			PrintWriter out = null;
+			if (graph_type == COST_PLOT) {
+				AprofReport report = main_window.getCurrentReport();
+				tmp = new File(report.getName() + "-" + this.rtn_info.getName() + ".rprof_" + group_threshold);
+				tmp.createNewFile();
+				out = new PrintWriter(new FileWriter(tmp));
+			}
+			 */
+			
 			int n_y = 1;
 			if (graph_type == MMM_PLOT) n_y = 3;
 			
@@ -1953,6 +1973,10 @@ public class GraphPanel extends javax.swing.JPanel {
 								if (index > 11) index = 11;
 								if (index < 0) index = 0;
 								series[(int)index].add(mean_x, mean_y);
+								/*
+								if (graph_type == COST_PLOT)
+									out.println(mean_x + " " + mean_y);
+								 */
 							}
 							sum_x = x;
 							sum_y = y;
@@ -1986,8 +2010,21 @@ public class GraphPanel extends javax.swing.JPanel {
 					if (index > 11) index = 11;
 					if (index < 0) index = 0;
 					series[(int)index].add(mean_x, mean_y, false);
+					
+					/*
+					if (graph_type == COST_PLOT)
+						out.println(mean_x + " " + mean_y);
+					 */
 				}
 			}
+			/*
+			out.close();
+			
+			} catch(java.io.IOException e) {
+			}
+			*/	
+			
+			
 		
 		} else if (smooth_threshold > 1 && group_threshold == 1) {
 			

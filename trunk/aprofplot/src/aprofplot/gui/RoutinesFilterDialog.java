@@ -86,7 +86,6 @@ public class RoutinesFilterDialog extends javax.swing.JDialog {
         jPanel4.setLayout(new javax.swing.BoxLayout(jPanel4, javax.swing.BoxLayout.LINE_AXIS));
 
         jCheckBox2.setText("Library: ");
-        jCheckBox2.setEnabled(false);
         jCheckBox2.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jCheckBox2ActionPerformed(evt);

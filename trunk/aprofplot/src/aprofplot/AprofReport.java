@@ -210,7 +210,7 @@ public class AprofReport {
 				long min_cost = Long.parseLong(tokenizer.nextToken());
 				long max_cost = Long.parseLong(tokenizer.nextToken());
 				long tot_cost = Long.parseLong(tokenizer.nextToken());
-				long sqr_total_cost = Long.parseLong(tokenizer.nextToken());
+				Double sqr_total_cost = Double.parseDouble(tokenizer.nextToken());
 				int occ = Integer.parseInt(tokenizer.nextToken());
 				
 				Rms te = new Rms(sms, min_cost, max_cost, tot_cost, 
@@ -274,6 +274,8 @@ public class AprofReport {
 		}
 		in.close();
 		
+		//System.out.println("Readed whole input file");
+		
 		if (hasContexts()) {
 			
 			Iterator it = routines.iterator();
@@ -286,11 +288,15 @@ public class AprofReport {
 			
 		}
 		
+		total_contexts = contexts.size(); 
+		
 		for (int i=0; i<routines.size(); i++) {
+			
 			long calls = routines.get(i).getTotalCalls();
 			if (routines.get(i).getTotalCost() > total_cost)
 				total_cost = routines.get(i).getTotalCost();
 			total_calls += calls;
+			
 			int ne = routines.get(i).getSizeRmsList();
 			int id = 0;
 			if (ne > 1) {
