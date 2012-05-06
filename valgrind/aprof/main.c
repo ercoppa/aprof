@@ -499,8 +499,8 @@ static void fini(Int exitcode) {
 
 }
 
-void signal(ThreadId tid, Int sigNo, Bool alt_stack);
-void signal(ThreadId tid, Int sigNo, Bool alt_stack) {
+void do_signal(ThreadId tid, Int sigNo, Bool alt_stack);
+void do_signal(ThreadId tid, Int sigNo, Bool alt_stack) {
 	AP_ASSERT(0, "There is a signal");
 }
 
@@ -522,7 +522,7 @@ static void pre_clo_init(void) {
 	
 	VG_(track_start_client_code)	(switch_thread);
 	VG_(track_pre_thread_ll_exit)	(thread_exit);
-	VG_(track_pre_deliver_signal)	(signal);
+	VG_(track_pre_deliver_signal)	(do_signal);
 	
 	VG_(clo_vex_control).iropt_unroll_thresh = 0;
 	VG_(clo_vex_control).guest_chase_thresh  = 0;
