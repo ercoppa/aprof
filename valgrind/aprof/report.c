@@ -7,6 +7,7 @@
 
 #include "aprof.h"
 
+/*
 static char * basename (char * path) {
 	
 	char * ptr = NULL;
@@ -23,6 +24,33 @@ static char * basename (char * path) {
 	return path;
 	
 }
+*/
+
+static char * basename(char *p) {
+
+	char *last_component;
+	int was_slash;
+
+	last_component = p;
+	was_slash = (*p++ == '/');
+
+	while (*p) {
+		
+		if (*p == '/') {
+			*p = '\0';
+			was_slash = 1;
+		} else {
+			if (was_slash) {
+			last_component = p;
+			was_slash = 0;
+			}
+		}
+		p++;
+	}
+
+	return last_component;
+}
+
 
 void generate_report(ThreadData * tdata, ThreadId tid) {
 	
