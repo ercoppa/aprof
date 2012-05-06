@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2010 Julian Seward 
+   Copyright (C) 2000-2011 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -55,7 +55,8 @@
    the OS handles threading and signalling are abstracted away and
    implemented elsewhere.  [Some of the functions have worked their
    way back for the moment, until we do an OS port in earnest...]
- */
+*/
+
 
 #include "pub_core_basics.h"
 #include "pub_core_debuglog.h"
@@ -89,7 +90,7 @@
 #include "pub_core_translate.h"     // For VG_(translate)()
 #include "pub_core_transtab.h"
 #include "pub_core_debuginfo.h"     // VG_(di_notify_pdb_debuginfo)
-#include "priv_sema.h"
+#include "priv_sched-lock.h"
 #include "pub_core_scheduler.h"     // self
 #include "pub_core_redir.h"
 
@@ -107,9 +108,6 @@
 
 /* If False, a fault is Valgrind-internal (ie, a bug) */
 Bool VG_(in_generated_code) = False;
-
-/* Counts downwards in VG_(run_innerloop). */
-UInt VG_(dispatch_ctr);
 
 /* 64-bit counter for the number of basic blocks done. */
 static ULong bbs_done = 0;
@@ -130,6 +128,17 @@ static void mostly_clear_thread_record ( ThreadId tid );
 static ULong n_scheduling_events_MINOR = 0;
 static ULong n_scheduling_events_MAJOR = 0;
 
+/* Stats: number of XIndirs, and number that missed in the fast
+   cache. */
+static ULong stats__n_xindirs = 0;
+static ULong stats__n_xindir_misses = 0;
+
+/* And 32-bit temp bins for the above, so that 32-bit platforms don't
+   have to do 64 bit incs on the hot path through
+   VG_(cp_disp_xindir). */
+/*global*/ UInt VG_(stats__n_xindirs_32) = 0;
+/*global*/ UInt VG_(stats__n_xindir_misses_32) = 0;
+
 /* Sanity checking counts. */
 static UInt sanity_fast_count = 0;
 static UInt sanity_slow_count = 0;
@@ -137,7 +146,12 @@ static UInt sanity_slow_count = 0;
 void VG_(print_scheduler_stats)(void)
 {
    VG_(message)(Vg_DebugMsg,
-      "scheduler: %'llu jumps (bb entries).\n", bbs_done );
+      "scheduler: %'llu event checks.\n", bbs_done );
+   VG_(message)(Vg_DebugMsg,
+                "scheduler: %'llu indir transfers, %'llu misses (1 in %llu)\n",
+                stats__n_xindirs, stats__n_xindir_misses,
+                stats__n_xindirs / (stats__n_xindir_misses 
+                                    ? stats__n_xindir_misses : 1));
    VG_(message)(Vg_DebugMsg,
       "scheduler: %'llu/%'llu major/minor sched events.\n",
       n_scheduling_events_MAJOR, n_scheduling_events_MINOR);
@@ -146,8 +160,10 @@ void VG_(print_scheduler_stats)(void)
                 sanity_fast_count, sanity_slow_count );
 }
 
-/* CPU semaphore, so that threads can run exclusively */
-static vg_sema_t the_BigLock;
+/*
+ * Mutual exclusion object used to serialize threads.
+ */
+static struct sched_lock *the_BigLock;
 
 
 /* ---------------------------------------------------------------------
@@ -241,7 +257,7 @@ void VG_(acquire_BigLock)(ThreadId tid, HChar* who)
    /* First, acquire the_BigLock.  We can't do anything else safely
       prior to this point.  Even doing debug printing prior to this
       point is, technically, wrong. */
-   ML_(sema_down)(&the_BigLock, False/*not LL*/);
+   VG_(acquire_BigLock_LL)(NULL);
 
    tst = VG_(get_ThreadState)(tid);
 
@@ -297,19 +313,37 @@ void VG_(release_BigLock)(ThreadId tid, ThreadStatus sleepstate, HChar* who)
 
    /* Release the_BigLock; this will reschedule any runnable
       thread. */
-   ML_(sema_up)(&the_BigLock, False/*not LL*/);
+   VG_(release_BigLock_LL)(NULL);
+}
+
+static void init_BigLock(void)
+{
+   vg_assert(!the_BigLock);
+   the_BigLock = ML_(create_sched_lock)();
+}
+
+static void deinit_BigLock(void)
+{
+   ML_(destroy_sched_lock)(the_BigLock);
+   the_BigLock = NULL;
 }
 
 /* See pub_core_scheduler.h for description */
 void VG_(acquire_BigLock_LL) ( HChar* who )
 {
-  ML_(sema_down)(&the_BigLock, True/*LL*/);
+   ML_(acquire_sched_lock)(the_BigLock);
 }
 
 /* See pub_core_scheduler.h for description */
 void VG_(release_BigLock_LL) ( HChar* who )
 {
-   ML_(sema_up)(&the_BigLock, True/*LL*/);
+   ML_(release_sched_lock)(the_BigLock);
+}
+
+Bool VG_(owns_BigLock_LL) ( ThreadId tid )
+{
+   return (ML_(get_sched_lock_owner)(the_BigLock)
+           == VG_(threads)[tid].os_state.lwpid);
 }
 
 
@@ -331,7 +365,7 @@ void VG_(exit_thread)(ThreadId tid)
    if (VG_(clo_trace_sched))
       print_sched_event(tid, "release lock in VG_(exit_thread)");
 
-   ML_(sema_up)(&the_BigLock, False/*not LL*/);
+   VG_(release_BigLock_LL)(NULL);
 }
 
 /* If 'tid' is blocked in a syscall, send it SIGVGKILL so as to get it
@@ -518,9 +552,9 @@ static void sched_fork_cleanup(ThreadId me)
    }
 
    /* re-init and take the sema */
-   ML_(sema_deinit)(&the_BigLock);
-   ML_(sema_init)(&the_BigLock);
-   ML_(sema_down)(&the_BigLock, False/*not LL*/);
+   deinit_BigLock();
+   init_BigLock();
+   VG_(acquire_BigLock_LL)(NULL);
 }
 
 
@@ -535,7 +569,21 @@ ThreadId VG_(scheduler_init_phase1) ( void )
 
    VG_(debugLog)(1,"sched","sched_init_phase1\n");
 
-   ML_(sema_init)(&the_BigLock);
+   if (VG_(clo_fair_sched) != disable_fair_sched
+       && !ML_(set_sched_lock_impl)(sched_lock_ticket)
+       && VG_(clo_fair_sched) == enable_fair_sched)
+   {
+      VG_(printf)("Error: fair scheduling is not supported on this system.\n");
+      VG_(exit)(1);
+   }
+
+   if (VG_(clo_verbosity) > 1) {
+      VG_(message)(Vg_DebugMsg,
+                   "Scheduler: using %s scheduler lock implementation.\n",
+                   ML_(get_sched_lock_name)());
+   }
+
+   init_BigLock();
 
    for (i = 0 /* NB; not 1 */; i < VG_N_THREADS; i++) {
       /* Paranoia .. completely zero it out. */
@@ -666,14 +714,34 @@ static void do_pre_run_checks ( ThreadState* tst )
    vg_assert(sz_spill == LibVEX_N_SPILL_BYTES);
    vg_assert(a_vex + 3 * sz_vex == a_spill);
 
+#  if defined(VGA_x86)
+   /* x86 XMM regs must form an array, ie, have no holes in
+      between. */
+   vg_assert(
+      (offsetof(VexGuestX86State,guest_XMM7)
+       - offsetof(VexGuestX86State,guest_XMM0))
+      == (8/*#regs*/-1) * 16/*bytes per reg*/
+   );
+   vg_assert(VG_IS_16_ALIGNED(offsetof(VexGuestX86State,guest_XMM0)));
+   vg_assert(VG_IS_8_ALIGNED(offsetof(VexGuestX86State,guest_FPREG)));
+   vg_assert(8 == offsetof(VexGuestX86State,guest_EAX));
+   vg_assert(VG_IS_4_ALIGNED(offsetof(VexGuestX86State,guest_EAX)));
+   vg_assert(VG_IS_4_ALIGNED(offsetof(VexGuestX86State,guest_EIP)));
+#  endif
+
 #  if defined(VGA_amd64)
-   /* x86/amd64 XMM regs must form an array, ie, have no
-      holes in between. */
+   /* amd64 XMM regs must form an array, ie, have no holes in
+      between. */
    vg_assert(
       (offsetof(VexGuestAMD64State,guest_XMM16)
        - offsetof(VexGuestAMD64State,guest_XMM0))
       == (17/*#regs*/-1) * 16/*bytes per reg*/
    );
+   vg_assert(VG_IS_16_ALIGNED(offsetof(VexGuestAMD64State,guest_XMM0)));
+   vg_assert(VG_IS_8_ALIGNED(offsetof(VexGuestAMD64State,guest_FPREG)));
+   vg_assert(16 == offsetof(VexGuestAMD64State,guest_RAX));
+   vg_assert(VG_IS_8_ALIGNED(offsetof(VexGuestAMD64State,guest_RAX)));
+   vg_assert(VG_IS_8_ALIGNED(offsetof(VexGuestAMD64State,guest_RIP)));
 #  endif
 
 #  if defined(VGA_ppc32) || defined(VGA_ppc64)
@@ -690,10 +758,10 @@ static void do_pre_run_checks ( ThreadState* tst )
 
 #  if defined(VGA_arm)
    /* arm guest_state VFP regs must be 8 byte aligned for
-      loads/stores. */
-   vg_assert(VG_IS_8_ALIGNED(& tst->arch.vex.guest_D0));
-   vg_assert(VG_IS_8_ALIGNED(& tst->arch.vex_shadow1.guest_D0));
-   vg_assert(VG_IS_8_ALIGNED(& tst->arch.vex_shadow2.guest_D0));
+      loads/stores.  Let's use 16 just to be on the safe side. */
+   vg_assert(VG_IS_16_ALIGNED(& tst->arch.vex.guest_D0));
+   vg_assert(VG_IS_16_ALIGNED(& tst->arch.vex_shadow1.guest_D0));
+   vg_assert(VG_IS_16_ALIGNED(& tst->arch.vex_shadow2.guest_D0));
    /* be extra paranoid .. */
    vg_assert(VG_IS_8_ALIGNED(& tst->arch.vex.guest_D1));
    vg_assert(VG_IS_8_ALIGNED(& tst->arch.vex_shadow1.guest_D1));
@@ -721,29 +789,88 @@ void VG_(force_vgdb_poll) ( void )
 }
 
 /* Run the thread tid for a while, and return a VG_TRC_* value
-   indicating why VG_(run_innerloop) stopped. */
-static UInt run_thread_for_a_while ( ThreadId tid )
+   indicating why VG_(disp_run_translations) stopped, and possibly an
+   auxiliary word.  Also, only allow the thread to run for at most
+   *dispatchCtrP events.  If (as is the normal case) use_alt_host_addr
+   is False, we are running ordinary redir'd translations, and we
+   should therefore start by looking up the guest next IP in TT.  If
+   it is True then we ignore the guest next IP and just run from
+   alt_host_addr, which presumably points at host code for a no-redir
+   translation.
+
+   Return results are placed in two_words.  two_words[0] is set to the
+   TRC.  In the case where that is VG_TRC_CHAIN_ME_TO_{SLOW,FAST}_EP,
+   the address to patch is placed in two_words[1].
+*/
+static
+void run_thread_for_a_while ( /*OUT*/HWord* two_words,
+                              /*MOD*/Int*   dispatchCtrP,
+                              ThreadId      tid,
+                              HWord         alt_host_addr,
+                              Bool          use_alt_host_addr )
 {
-   volatile UWord        jumped;
-   volatile ThreadState* tst = NULL; /* stop gcc complaining */
-   volatile UInt         trc;
-   volatile Int          dispatch_ctr_SAVED;
-   volatile Int          done_this_time;
+   volatile HWord        jumped         = 0;
+   volatile ThreadState* tst            = NULL; /* stop gcc complaining */
+   volatile Int          done_this_time = 0;
+   volatile HWord        host_code_addr = 0;
 
    /* Paranoia */
    vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(VG_(is_running_thread)(tid));
    vg_assert(!VG_(is_exiting)(tid));
+   vg_assert(*dispatchCtrP > 0);
 
    tst = VG_(get_ThreadState)(tid);
    do_pre_run_checks( (ThreadState*)tst );
    /* end Paranoia */
 
-   trc = 0;
-   dispatch_ctr_SAVED = VG_(dispatch_ctr);
+   /* Futz with the XIndir stats counters. */
+   vg_assert(VG_(stats__n_xindirs_32) == 0);
+   vg_assert(VG_(stats__n_xindir_misses_32) == 0);
+
+   /* Clear return area. */
+   two_words[0] = two_words[1] = 0;
+
+   /* Figure out where we're starting from. */
+   if (use_alt_host_addr) {
+      /* unusual case -- no-redir translation */
+      host_code_addr = alt_host_addr;
+   } else {
+      /* normal case -- redir translation */
+      UInt cno = (UInt)VG_TT_FAST_HASH((Addr)tst->arch.vex.VG_INSTR_PTR);
+      if (LIKELY(VG_(tt_fast)[cno].guest == (Addr)tst->arch.vex.VG_INSTR_PTR))
+         host_code_addr = VG_(tt_fast)[cno].host;
+      else {
+         AddrH res   = 0;
+         /* not found in VG_(tt_fast). Searching here the transtab
+            improves the performance compared to returning directly
+            to the scheduler. */
+         Bool  found = VG_(search_transtab)(&res, NULL, NULL,
+                                            (Addr)tst->arch.vex.VG_INSTR_PTR,
+                                            True/*upd cache*/
+                                            );
+         if (LIKELY(found)) {
+            host_code_addr = res;
+         } else {
+            /* At this point, we know that we intended to start at a
+               normal redir translation, but it was not found.  In
+               which case we can return now claiming it's not
+               findable. */
+            two_words[0] = VG_TRC_INNER_FASTMISS; /* hmm, is that right? */
+            return;
+         }
+      }
+   }
+   /* We have either a no-redir or a redir translation. */
+   vg_assert(host_code_addr != 0); /* implausible */
 
    /* there should be no undealt-with signals */
    //vg_assert(VG_(threads)[tid].siginfo.si_signo == 0);
+
+   /* Set up event counter stuff for the run. */
+   tst->arch.vex.host_EvC_COUNTER = *dispatchCtrP;
+   tst->arch.vex.host_EvC_FAILADDR
+      = (HWord)VG_(fnptr_to_fnentry)( &VG_(disp_cp_evcheck_fail) );
 
    if (0) {
       vki_sigset_t m;
@@ -756,6 +883,8 @@ static UInt run_thread_for_a_while ( ThreadId tid )
       VG_(printf)("\n");
    }
 
+   /* Set up return-value area. */
+
    // Tell the tool this thread is about to run client code
    VG_TRACK( start_client_code, tid, bbs_done );
 
@@ -765,25 +894,45 @@ static UInt run_thread_for_a_while ( ThreadId tid )
    SCHEDSETJMP(
       tid, 
       jumped, 
-      trc = (UInt)VG_(run_innerloop)( (void*)&tst->arch.vex,
-                                      VG_(clo_profile_flags) > 0 ? 1 : 0 )
+      VG_(disp_run_translations)( 
+         two_words,
+         (void*)&tst->arch.vex,
+         host_code_addr
+      )
    );
 
    vg_assert(VG_(in_generated_code) == True);
    VG_(in_generated_code) = False;
 
-   if (jumped != (UWord)0) {
+   if (jumped != (HWord)0) {
       /* We get here if the client took a fault that caused our signal
          handler to longjmp. */
-      vg_assert(trc == 0);
-      trc = VG_TRC_FAULT_SIGNAL;
+      vg_assert(two_words[0] == 0 && two_words[1] == 0); // correct?
+      two_words[0] = VG_TRC_FAULT_SIGNAL;
+      two_words[1] = 0;
       block_signals();
    } 
 
-   done_this_time = (Int)dispatch_ctr_SAVED - (Int)VG_(dispatch_ctr) - 0;
+   /* Merge the 32-bit XIndir/miss counters into the 64 bit versions,
+      and zero out the 32-bit ones in preparation for the next run of
+      generated code. */
+   stats__n_xindirs += (ULong)VG_(stats__n_xindirs_32);
+   VG_(stats__n_xindirs_32) = 0;
+   stats__n_xindir_misses += (ULong)VG_(stats__n_xindir_misses_32);
+   VG_(stats__n_xindir_misses_32) = 0;
+
+   /* Inspect the event counter. */
+   vg_assert((Int)tst->arch.vex.host_EvC_COUNTER >= -1);
+   vg_assert(tst->arch.vex.host_EvC_FAILADDR
+             == (HWord)VG_(fnptr_to_fnentry)( &VG_(disp_cp_evcheck_fail)) );
+
+   done_this_time = *dispatchCtrP - ((Int)tst->arch.vex.host_EvC_COUNTER + 1);
 
    vg_assert(done_this_time >= 0);
    bbs_done += (ULong)done_this_time;
+
+   *dispatchCtrP -= done_this_time;
+   vg_assert(*dispatchCtrP >= 0);
 
    // Tell the tool this thread has stopped running client code
    VG_TRACK( stop_client_code, tid, bbs_done );
@@ -798,89 +947,16 @@ static UInt run_thread_for_a_while ( ThreadId tid )
          VG_(gdbserver) (tid);
    }
 
-   return trc;
-}
-
-
-/* Run a no-redir translation just once, and return the resulting
-   VG_TRC_* value. */
-static UInt run_noredir_translation ( Addr hcode, ThreadId tid )
-{
-   volatile UWord        jumped;
-   volatile ThreadState* tst; 
-   volatile UWord        argblock[4];
-   volatile UInt         retval;
-
-   /* Paranoia */
-   vg_assert(VG_(is_valid_tid)(tid));
-   vg_assert(VG_(is_running_thread)(tid));
-   vg_assert(!VG_(is_exiting)(tid));
-
-   tst = VG_(get_ThreadState)(tid);
-   do_pre_run_checks( (ThreadState*)tst );
-   /* end Paranoia */
-
-#  if defined(VGA_ppc32) || defined(VGA_ppc64)
-   /* I don't think we need to clear this thread's guest_RESVN here,
-      because we can only get here if run_thread_for_a_while() has
-      been used immediately before, on this same thread. */
-#  endif
-
-   /* There can be 3 outcomes from VG_(run_a_noredir_translation):
-
-      - a signal occurred and the sighandler longjmp'd.  Then both [2]
-        and [3] are unchanged - hence zero.
-
-      - translation ran normally, set [2] (next guest IP) and set [3]
-        to whatever [1] was beforehand, indicating a normal (boring)
-        jump to the next block.
-
-      - translation ran normally, set [2] (next guest IP) and set [3]
-        to something different from [1] beforehand, which indicates a
-        TRC_ value.
-   */
-   argblock[0] = (UWord)hcode;
-   argblock[1] = (UWord)&VG_(threads)[tid].arch.vex;
-   argblock[2] = 0; /* next guest IP is written here */
-   argblock[3] = 0; /* guest state ptr afterwards is written here */
-
-   // Tell the tool this thread is about to run client code
-   VG_TRACK( start_client_code, tid, bbs_done );
-
-   vg_assert(VG_(in_generated_code) == False);
-   VG_(in_generated_code) = True;
-
-   SCHEDSETJMP(
-      tid, 
-      jumped, 
-      VG_(run_a_noredir_translation)( &argblock[0] )
-   );
-
-   VG_(in_generated_code) = False;
-
-   if (jumped != (UWord)0) {
-      /* We get here if the client took a fault that caused our signal
-         handler to longjmp. */
-      vg_assert(argblock[2] == 0); /* next guest IP was not written */
-      vg_assert(argblock[3] == 0); /* trc was not written */
-      block_signals();
-      retval = VG_TRC_FAULT_SIGNAL;
+   /* TRC value and possible auxiliary patch-address word are already
+      in two_words[0] and [1] respectively, as a result of the call to
+      VG_(run_innerloop). */
+   /* Stay sane .. */
+   if (two_words[0] == VG_TRC_CHAIN_ME_TO_SLOW_EP
+       || two_words[0] == VG_TRC_CHAIN_ME_TO_FAST_EP) {
+      vg_assert(two_words[1] != 0); /* we have a legit patch addr */
    } else {
-      /* store away the guest program counter */
-      VG_(set_IP)( tid, argblock[2] );
-      if (argblock[3] == argblock[1])
-         /* the guest state pointer afterwards was unchanged */
-         retval = VG_TRC_BORING;
-      else
-         retval = (UInt)argblock[3];
+      vg_assert(two_words[1] == 0); /* nobody messed with it */
    }
-
-   bbs_done++;
-
-   // Tell the tool this thread has stopped running client code
-   VG_TRACK( stop_client_code, tid, bbs_done );
-
-   return retval;
 }
 
 
@@ -895,13 +971,15 @@ static void handle_tt_miss ( ThreadId tid )
 
    /* Trivial event.  Miss in the fast-cache.  Do a full
       lookup for it. */
-   found = VG_(search_transtab)( NULL, ip, True/*upd_fast_cache*/ );
+   found = VG_(search_transtab)( NULL, NULL, NULL,
+                                 ip, True/*upd_fast_cache*/ );
    if (UNLIKELY(!found)) {
       /* Not found; we need to request a translation. */
       if (VG_(translate)( tid, ip, /*debug*/False, 0/*not verbose*/, 
                           bbs_done, True/*allow redirection*/ )) {
-	 found = VG_(search_transtab)( NULL, ip, True ); 
-         vg_assert2(found, "VG_TRC_INNER_FASTMISS: missing tt_fast entry");
+         found = VG_(search_transtab)( NULL, NULL, NULL,
+                                       ip, True ); 
+         vg_assert2(found, "handle_tt_miss: missing tt_fast entry");
       
       } else {
 	 // If VG_(translate)() fails, it's because it had to throw a
@@ -911,6 +989,43 @@ static void handle_tt_miss ( ThreadId tid )
 	 // way, we just need to go back into the scheduler loop.
       }
    }
+}
+
+static
+void handle_chain_me ( ThreadId tid, void* place_to_chain, Bool toFastEP )
+{
+   Bool found          = False;
+   Addr ip             = VG_(get_IP)(tid);
+   UInt to_sNo         = (UInt)-1;
+   UInt to_tteNo       = (UInt)-1;
+
+   found = VG_(search_transtab)( NULL, &to_sNo, &to_tteNo,
+                                 ip, False/*dont_upd_fast_cache*/ );
+   if (!found) {
+      /* Not found; we need to request a translation. */
+      if (VG_(translate)( tid, ip, /*debug*/False, 0/*not verbose*/, 
+                          bbs_done, True/*allow redirection*/ )) {
+         found = VG_(search_transtab)( NULL, &to_sNo, &to_tteNo,
+                                       ip, False ); 
+         vg_assert2(found, "handle_chain_me: missing tt_fast entry");
+      } else {
+	 // If VG_(translate)() fails, it's because it had to throw a
+	 // signal because the client jumped to a bad address.  That
+	 // means that either a signal has been set up for delivery,
+	 // or the thread has been marked for termination.  Either
+	 // way, we just need to go back into the scheduler loop.
+        return;
+      }
+   }
+   vg_assert(found);
+   vg_assert(to_sNo != -1);
+   vg_assert(to_tteNo != -1);
+
+   /* So, finally we know where to patch through to.  Do the patching
+      and update the various admin tables that allow it to be undone
+      in the case that the destination block gets deleted. */
+   VG_(tt_tc_do_chaining)( place_to_chain,
+                           to_sNo, to_tteNo, toFastEP );
 }
 
 static void handle_syscall(ThreadId tid, UInt trc)
@@ -944,9 +1059,15 @@ static void handle_syscall(ThreadId tid, UInt trc)
 
 /* tid just requested a jump to the noredir version of its current
    program counter.  So make up that translation if needed, run it,
-   and return the resulting thread return code. */
-static UInt/*trc*/ handle_noredir_jump ( ThreadId tid )
+   and return the resulting thread return code in two_words[]. */
+static
+void handle_noredir_jump ( /*OUT*/HWord* two_words,
+                           /*MOD*/Int*   dispatchCtrP,
+                           ThreadId tid )
 {
+   /* Clear return area. */
+   two_words[0] = two_words[1] = 0;
+
    AddrH hcode = 0;
    Addr  ip    = VG_(get_IP)(tid);
 
@@ -958,14 +1079,14 @@ static UInt/*trc*/ handle_noredir_jump ( ThreadId tid )
 
          found = VG_(search_unredir_transtab)( &hcode, ip );
          vg_assert2(found, "unredir translation missing after creation?!");
-      
       } else {
 	 // If VG_(translate)() fails, it's because it had to throw a
 	 // signal because the client jumped to a bad address.  That
 	 // means that either a signal has been set up for delivery,
 	 // or the thread has been marked for termination.  Either
 	 // way, we just need to go back into the scheduler loop.
-         return VG_TRC_BORING;
+         two_words[0] = VG_TRC_BORING;
+         return;
       }
 
    }
@@ -973,8 +1094,10 @@ static UInt/*trc*/ handle_noredir_jump ( ThreadId tid )
    vg_assert(found);
    vg_assert(hcode != 0);
 
-   /* Otherwise run it and return the resulting VG_TRC_* value. */ 
-   return run_noredir_translation( hcode, tid );
+   /* Otherwise run it and return the resulting VG_TRC_* value. */
+   vg_assert(*dispatchCtrP > 0); /* so as to guarantee progress */
+   run_thread_for_a_while( two_words, dispatchCtrP, tid,
+                           hcode, True/*use hcode*/ );
 }
 
 
@@ -986,7 +1109,9 @@ static UInt/*trc*/ handle_noredir_jump ( ThreadId tid )
  */
 VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 {
-   UInt     trc;
+   /* Holds the remaining size of this thread's "timeslice". */
+   Int dispatch_ctr = 0;
+
    ThreadState *tst = VG_(get_ThreadState)(tid);
    static Bool vgdb_startup_action_done = False;
 
@@ -1045,11 +1170,12 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
    
    vg_assert(VG_(is_running_thread)(tid));
 
-   VG_(dispatch_ctr) = SCHEDULING_QUANTUM + 1;
+   dispatch_ctr = SCHEDULING_QUANTUM;
 
    while (!VG_(is_exiting)(tid)) {
 
-      if (VG_(dispatch_ctr) == 1) {
+      vg_assert(dispatch_ctr >= 0);
+      if (dispatch_ctr == 0) {
 
 	 /* Our slice is done, so yield the CPU to another thread.  On
             Linux, this doesn't sleep between sleeping and running,
@@ -1096,7 +1222,8 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 	    exceed zero before entering the innerloop.  Also also, the
 	    decrement is done before the bb is actually run, so you
 	    always get at least one decrement even if nothing happens. */
-         VG_(dispatch_ctr) = SCHEDULING_QUANTUM + 1;
+         // FIXME is this right?
+         dispatch_ctr = SCHEDULING_QUANTUM;
 
 	 /* paranoia ... */
 	 vg_assert(tst->tid == tid);
@@ -1108,17 +1235,20 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 
       if (0)
          VG_(message)(Vg_DebugMsg, "thread %d: running for %d bbs\n", 
-                                   tid, VG_(dispatch_ctr) - 1 );
+                                   tid, dispatch_ctr - 1 );
 
-      trc = run_thread_for_a_while ( tid );
+      HWord trc[2]; /* "two_words" */
+      run_thread_for_a_while( &trc[0],
+                              &dispatch_ctr,
+                              tid, 0/*ignored*/, False );
 
       if (VG_(clo_trace_sched) && VG_(clo_verbosity) > 2) {
-	 Char buf[50];
-	 VG_(sprintf)(buf, "TRC: %s", name_of_sched_event(trc));
+	 HChar buf[50];
+	 VG_(sprintf)(buf, "TRC: %s", name_of_sched_event(trc[0]));
 	 print_sched_event(tid, buf);
       }
 
-      if (trc == VEX_TRC_JMP_NOREDIR) {
+      if (trc[0] == VEX_TRC_JMP_NOREDIR) {
          /* If we got a request to run a no-redir version of
             something, do so now -- handle_noredir_jump just (creates
             and) runs that one translation.  The flip side is that the
@@ -1126,20 +1256,61 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
             request -- that would be nonsensical.  It can, however,
             return VG_TRC_BORING, which just means keep going as
             normal. */
-         trc = handle_noredir_jump(tid);
-         vg_assert(trc != VEX_TRC_JMP_NOREDIR);
+         /* Note that the fact that we need to continue with a
+            no-redir jump is not recorded anywhere else in this
+            thread's state.  So we *must* execute the block right now
+            -- we can't fail to execute it and later resume with it,
+            because by then we'll have forgotten the fact that it
+            should be run as no-redir, but will get run as a normal
+            potentially-redir'd, hence screwing up.  This really ought
+            to be cleaned up, by noting in the guest state that the
+            next block to be executed should be no-redir.  Then we can
+            suspend and resume at any point, which isn't the case at
+            the moment. */
+         handle_noredir_jump( &trc[0], 
+                              &dispatch_ctr,
+                              tid );
+         vg_assert(trc[0] != VEX_TRC_JMP_NOREDIR);
+
+         /* This can't be allowed to happen, since it means the block
+            didn't execute, and we have no way to resume-as-noredir
+            after we get more timeslice.  But I don't think it ever
+            can, since handle_noredir_jump will assert if the counter
+            is zero on entry. */
+         vg_assert(trc[0] != VG_TRC_INNER_COUNTERZERO);
+
+         /* A no-redir translation can't return with a chain-me
+            request, since chaining in the no-redir cache is too
+            complex. */
+         vg_assert(trc[0] != VG_TRC_CHAIN_ME_TO_SLOW_EP
+                   && trc[0] != VG_TRC_CHAIN_ME_TO_FAST_EP);
       }
 
-      switch (trc) {
+      switch (trc[0]) {
+      case VEX_TRC_JMP_BORING:
+         /* assisted dispatch, no event.  Used by no-redir
+            translations to force return to the scheduler. */
       case VG_TRC_BORING:
          /* no special event, just keep going. */
          break;
 
       case VG_TRC_INNER_FASTMISS:
-	 vg_assert(VG_(dispatch_ctr) > 1);
+	 vg_assert(dispatch_ctr > 0);
 	 handle_tt_miss(tid);
 	 break;
-	    
+
+      case VG_TRC_CHAIN_ME_TO_SLOW_EP: {
+         if (0) VG_(printf)("sched: CHAIN_TO_SLOW_EP: %p\n", (void*)trc[1] );
+         handle_chain_me(tid, (void*)trc[1], False);
+         break;
+      }
+
+      case VG_TRC_CHAIN_ME_TO_FAST_EP: {
+         if (0) VG_(printf)("sched: CHAIN_TO_FAST_EP: %p\n", (void*)trc[1] );
+         handle_chain_me(tid, (void*)trc[1], True);
+         break;
+      }
+
       case VEX_TRC_JMP_CLIENTREQ:
 	 do_client_request(tid);
 	 break;
@@ -1148,7 +1319,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
       case VEX_TRC_JMP_SYS_INT129:  /* x86-darwin */
       case VEX_TRC_JMP_SYS_INT130:  /* x86-darwin */
       case VEX_TRC_JMP_SYS_SYSCALL: /* amd64-linux, ppc32-linux, amd64-darwin */
-	 handle_syscall(tid, trc);
+	 handle_syscall(tid, trc[0]);
 	 if (VG_(clo_sanity_level) > 2)
 	    VG_(sanity_check_general)(True); /* sanity-check every syscall */
 	 break;
@@ -1161,13 +1332,13 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
             before swapping to another.  That means that short term
             spins waiting for hardware to poke memory won't cause a
             thread swap. */
-	 if (VG_(dispatch_ctr) > 2000) 
-            VG_(dispatch_ctr) = 2000;
+	 if (dispatch_ctr > 2000) 
+            dispatch_ctr = 2000;
 	 break;
 
       case VG_TRC_INNER_COUNTERZERO:
 	 /* Timeslice is out.  Let a new thread be scheduled. */
-	 vg_assert(VG_(dispatch_ctr) == 1);
+	 vg_assert(dispatch_ctr == 0);
 	 break;
 
       case VG_TRC_FAULT_SIGNAL:
@@ -1303,7 +1474,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
          /* return address in client edx */
          VG_(threads)[tid].arch.vex.guest_EIP
             = VG_(threads)[tid].arch.vex.guest_EDX;
-         handle_syscall(tid, trc);
+         handle_syscall(tid, trc[0]);
 #        else
          vg_assert2(0, "VG_(scheduler), phase 3: "
                        "sysenter_x86 on non-x86 platform?!?!");
@@ -1312,7 +1483,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 
       default: 
 	 vg_assert2(0, "VG_(scheduler), phase 3: "
-                       "unexpected thread return code (%u)", trc);
+                       "unexpected thread return code (%u)", trc[0]);
 	 /* NOTREACHED */
 	 break;
 
@@ -1758,15 +1929,12 @@ void scheduler_sanity ( ThreadId tid )
       bad = True;
    }
 
-#if !defined(VGO_darwin)
-   // GrP fixme
-   if (lwpid != the_BigLock.owner_lwpid) {
+   if (lwpid != ML_(get_sched_lock_owner)(the_BigLock)) {
       VG_(message)(Vg_DebugMsg,
                    "Thread (LWPID) %d doesn't own the_BigLock\n",
                    tid);
       bad = True;
    }
-#endif
 
    /* Periodically show the state of all threads, for debugging
       purposes. */

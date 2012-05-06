@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2010 Julian Seward 
+   Copyright (C) 2000-2011 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -863,6 +863,9 @@ static void init(void);
 #if defined(VGO_linux)
  MALLOC_USABLE_SIZE(VG_Z_LIBC_SONAME, malloc_usable_size);
  MALLOC_USABLE_SIZE(VG_Z_LIBC_SONAME, malloc_size);
+# if defined(VGPV_arm_linux_android)
+  MALLOC_USABLE_SIZE(VG_Z_LIBC_SONAME, dlmalloc_usable_size);
+# endif
 
 #elif defined(VGO_darwin)
  //MALLOC_USABLE_SIZE(VG_Z_LIBC_SONAME, malloc_usable_size);
@@ -950,10 +953,23 @@ static void panic(const char *str)
 
 #if defined(VGO_darwin)
 
+static size_t my_malloc_size ( void* zone, void* ptr )
+{
+   /* Implement "malloc_size" by handing the request through to the
+      tool's .tl_usable_size method. */
+   if (!init_done) init();
+   size_t res = (size_t)VALGRIND_NON_SIMD_CALL1(
+                           info.tl_malloc_usable_size, ptr);
+   return res;
+}
+
+/* Note that the (void*) casts below are a kludge which stops
+   compilers complaining about the fact that the the replacement
+   functions aren't really of the right type. */
 static vki_malloc_zone_t vg_default_zone = {
     NULL, // reserved1
     NULL, // reserved2
-    NULL, // GrP fixme: malloc_size
+    (void*)my_malloc_size, // JRS fixme: is this right?
     (void*)VG_REPLACE_FUNCTION_EZU(10020,VG_Z_LIBC_SONAME,malloc_zone_malloc), 
     (void*)VG_REPLACE_FUNCTION_EZU(10060,VG_Z_LIBC_SONAME,malloc_zone_calloc), 
     (void*)VG_REPLACE_FUNCTION_EZU(10130,VG_Z_LIBC_SONAME,malloc_zone_valloc), 
@@ -1035,7 +1051,7 @@ static void init(void)
 
    init_done = 1;
 
-   VALGRIND_DO_CLIENT_REQUEST_EXPR(-1, VG_USERREQ__GET_MALLOCFUNCS, &info,
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__GET_MALLOCFUNCS, &info,
                                    0, 0, 0, 0);
 }
 

@@ -1,4 +1,3 @@
-/* -*- mode: C; c-basic-offset: 3; indent-tabs-mode: nil; -*- */
 /*
   This file is part of drd, a thread error detector.
 
@@ -172,22 +171,16 @@ static void DRD_(rwlock_combine_other_vc)(struct rwlock_info* const p,
    struct rwlock_thread_info* q;
    VectorClock old_vc;
 
-   DRD_(vc_copy)(&old_vc, &DRD_(g_threadinfo)[tid].last->vc);
+   DRD_(vc_copy)(&old_vc, DRD_(thread_get_vc)(tid));
    VG_(OSetGen_ResetIter)(p->thread_info);
-   for ( ; (q = VG_(OSetGen_Next)(p->thread_info)) != 0; )
-   {
-      if (q->tid != tid)
-      {
+   for ( ; (q = VG_(OSetGen_Next)(p->thread_info)) != 0; ) {
+      if (q->tid != tid) {
          if (q->latest_wrlocked_segment)
-         {
-            DRD_(vc_combine)(&DRD_(g_threadinfo)[tid].last->vc,
+            DRD_(vc_combine)(DRD_(thread_get_vc)(tid),
                              &q->latest_wrlocked_segment->vc);
-         }
          if (readers_too && q->latest_rdlocked_segment)
-         {
-            DRD_(vc_combine)(&DRD_(g_threadinfo)[tid].last->vc,
+            DRD_(vc_combine)(DRD_(thread_get_vc)(tid),
                              &q->latest_rdlocked_segment->vc);
-         }
       }
    }
    DRD_(thread_update_conflict_set)(tid, &old_vc);
@@ -251,7 +244,7 @@ static void rwlock_cleanup(struct rwlock_info* p)
    tl_assert(p);
 
    if (DRD_(s_trace_rwlock))
-      DRD_(trace_msg)("[%d] rwlock_destroy     0x%lx\n",
+      DRD_(trace_msg)("[%d] rwlock_destroy     0x%lx",
                       DRD_(thread_get_running_tid)(), p->a1);
 
    if (DRD_(rwlock_is_locked)(p))
@@ -320,7 +313,7 @@ struct rwlock_info* DRD_(rwlock_pre_init)(const Addr rwlock,
    struct rwlock_info* p;
 
    if (DRD_(s_trace_rwlock))
-      DRD_(trace_msg)("[%d] rwlock_init        0x%lx\n",
+      DRD_(trace_msg)("[%d] rwlock_init        0x%lx",
                       DRD_(thread_get_running_tid)(), rwlock);
 
    p = DRD_(rwlock_get)(rwlock);
@@ -381,7 +374,7 @@ void DRD_(rwlock_pre_rdlock)(const Addr rwlock, const RwLockT rwlock_type)
    struct rwlock_info* p;
 
    if (DRD_(s_trace_rwlock))
-      DRD_(trace_msg)("[%d] pre_rwlock_rdlock  0x%lx\n",
+      DRD_(trace_msg)("[%d] pre_rwlock_rdlock  0x%lx",
                       DRD_(thread_get_running_tid)(), rwlock);
 
    p = DRD_(rwlock_get_or_allocate)(rwlock, rwlock_type);
@@ -410,7 +403,7 @@ void DRD_(rwlock_post_rdlock)(const Addr rwlock, const RwLockT rwlock_type,
    struct rwlock_thread_info* q;
 
    if (DRD_(s_trace_rwlock))
-      DRD_(trace_msg)("[%d] post_rwlock_rdlock 0x%lx\n", drd_tid, rwlock);
+      DRD_(trace_msg)("[%d] post_rwlock_rdlock 0x%lx", drd_tid, rwlock);
 
    p = DRD_(rwlock_get)(rwlock);
 
@@ -444,7 +437,7 @@ void DRD_(rwlock_pre_wrlock)(const Addr rwlock, const RwLockT rwlock_type)
    p = DRD_(rwlock_get)(rwlock);
 
    if (DRD_(s_trace_rwlock))
-      DRD_(trace_msg)("[%d] pre_rwlock_wrlock  0x%lx\n",
+      DRD_(trace_msg)("[%d] pre_rwlock_wrlock  0x%lx",
                       DRD_(thread_get_running_tid)(), rwlock);
 
    if (p == 0)
@@ -478,7 +471,7 @@ void DRD_(rwlock_post_wrlock)(const Addr rwlock, const RwLockT rwlock_type,
    p = DRD_(rwlock_get)(rwlock);
 
    if (DRD_(s_trace_rwlock))
-      DRD_(trace_msg)("[%d] post_rwlock_wrlock 0x%lx\n", drd_tid, rwlock);
+      DRD_(trace_msg)("[%d] post_rwlock_wrlock 0x%lx", drd_tid, rwlock);
 
    if (! p || ! took_lock)
       return;
@@ -513,7 +506,7 @@ void DRD_(rwlock_pre_unlock)(const Addr rwlock, const RwLockT rwlock_type)
    struct rwlock_thread_info* q;
 
    if (DRD_(s_trace_rwlock))
-      DRD_(trace_msg)("[%d] rwlock_unlock      0x%lx\n", drd_tid, rwlock);
+      DRD_(trace_msg)("[%d] rwlock_unlock      0x%lx", drd_tid, rwlock);
 
    p = DRD_(rwlock_get)(rwlock);
    if (p == 0)

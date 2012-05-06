@@ -23,7 +23,8 @@ endif
 
 EXTRA_DIST = \
 	m_debuginfo/UNUSED_STABS.txt \
-	m_debuginfo/README.txt
+	m_debuginfo/README.txt \
+	m_gdbserver/README_DEVELOPERS
 
 #----------------------------------------------------------------------------
 # The launcher.  Built for the primary target only.
@@ -51,6 +52,12 @@ valgrind_LDFLAGS   = $(AM_CFLAGS_PRI)
 if VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
 valgrind_LDFLAGS   += -Wl,-read_only_relocs -Wl,suppress
 endif
+# On Android we must ask for non-executable stack, not sure why.
+if VGCONF_PLATFORMS_INCLUDE_ARM_LINUX
+if VGCONF_PLATVARIANT_IS_ANDROID
+valgrind_LDFLAGS   += -Wl,-z,noexecstack
+endif
+endif
 
 vgdb_SOURCES = vgdb.c
 vgdb_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
@@ -58,7 +65,7 @@ vgdb_CFLAGS    = $(AM_CFLAGS_PRI)
 vgdb_CCASFLAGS = $(AM_CCASFLAGS_PRI)
 vgdb_LDFLAGS   = $(AM_CFLAGS_PRI)
 if !VGCONF_PLATVARIANT_IS_ANDROID
-vgdb_LDFLAGS   += -lpthread
+vgdb_LDADD     = -lpthread
 endif
 if VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
 vgdb_LDFLAGS   += -Wl,-read_only_relocs -Wl,suppress
@@ -207,6 +214,8 @@ noinst_HEADERS = \
 	m_initimg/priv_initimg_pathscan.h \
 	m_initimg/simple_huffman.c \
 	m_scheduler/priv_sema.h \
+	m_scheduler/priv_sched-lock.h \
+	m_scheduler/priv_sched-lock-impl.h \
 	m_syswrap/priv_types_n_macros.h \
 	m_syswrap/priv_syswrap-generic.h \
 	m_syswrap/priv_syswrap-linux.h \
@@ -235,6 +244,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_debuglog.c \
 	m_errormgr.c \
 	m_execontext.c \
+	m_poolalloc.c \
 	m_hashtable.c \
 	m_libcbase.c \
 	m_libcassert.c \
@@ -320,6 +330,8 @@ COREGRIND_SOURCES_COMMON = \
 	m_replacemalloc/replacemalloc_core.c \
 	m_scheduler/scheduler.c \
 	m_scheduler/sema.c \
+	m_scheduler/sched-lock.c \
+	m_scheduler/sched-lock-generic.c \
 	m_sigframe/sigframe-x86-linux.c \
 	m_sigframe/sigframe-amd64-linux.c \
 	m_sigframe/sigframe-ppc32-linux.c \
@@ -364,6 +376,13 @@ libcoregrind_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CFLAGS = \
     $(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
 libcoregrind_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CCASFLAGS = \
     $(AM_CCASFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+if ENABLE_LINUX_TICKET_LOCK_PRIMARY
+libcoregrind_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_SOURCES += \
+    m_scheduler/ticket-lock-linux.c
+libcoregrind_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CFLAGS += \
+    -DENABLE_LINUX_TICKET_LOCK
+endif
+
 if VGCONF_HAVE_PLATFORM_SEC
 libcoregrind_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_SOURCES = \
     $(COREGRIND_SOURCES_COMMON)
@@ -375,6 +394,12 @@ libcoregrind_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CFLAGS = \
     $(AM_CFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
 libcoregrind_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CCASFLAGS = \
     $(AM_CCASFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
+if ENABLE_LINUX_TICKET_LOCK_SECONDARY
+libcoregrind_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_SOURCES += \
+    m_scheduler/ticket-lock-linux.c
+libcoregrind_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CFLAGS += \
+    -DENABLE_LINUX_TICKET_LOCK
+endif
 endif
 
 #----------------------------------------------------------------------------
@@ -485,10 +510,25 @@ GDBSERVER_XML_FILES = \
 	m_gdbserver/powerpc-altivec32l-valgrind.xml \
 	m_gdbserver/powerpc-altivec32l.xml \
 	m_gdbserver/powerpc-altivec64l-valgrind.xml \
-	m_gdbserver/powerpc-altivec64l.xml
+	m_gdbserver/powerpc-altivec64l.xml \
+	m_gdbserver/s390-acr-valgrind-s1.xml \
+	m_gdbserver/s390-acr-valgrind-s2.xml \
+	m_gdbserver/s390-acr.xml \
+	m_gdbserver/s390-fpr-valgrind-s1.xml \
+	m_gdbserver/s390-fpr-valgrind-s2.xml \
+	m_gdbserver/s390-fpr.xml \
+	m_gdbserver/s390x-core64-valgrind-s1.xml \
+	m_gdbserver/s390x-core64-valgrind-s2.xml \
+	m_gdbserver/s390x-core64.xml \
+	m_gdbserver/s390x-generic-valgrind.xml \
+	m_gdbserver/s390x-generic.xml \
+	m_gdbserver/s390x-linux64-valgrind-s1.xml \
+	m_gdbserver/s390x-linux64-valgrind-s2.xml \
+	m_gdbserver/s390x-linux64.xml
 
 # so as to make sure these get copied into the install tree
-pkglib_DATA  = $(GDBSERVER_XML_FILES)
+vglibdir = $(pkglibdir)
+vglib_DATA  = $(GDBSERVER_XML_FILES)
 
 # so as to make sure these get copied into the tarball
 EXTRA_DIST  += $(GDBSERVER_XML_FILES)
@@ -499,7 +539,7 @@ EXTRA_DIST  += $(GDBSERVER_XML_FILES)
 
 all-local: inplace-noinst_PROGRAMS inplace-noinst_DSYMS
 	mkdir -p $(inplacedir); \
-	for f in $(pkglib_DATA); do \
+	for f in $(vglib_DATA); do \
 	  rm -f $(inplacedir)/$$f; \
 	  ln -f -s ../$(subdir)/$$f $(inplacedir); \
 	done

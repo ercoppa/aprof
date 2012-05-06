@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2010 OpenWorks LLP
+   Copyright (C) 2004-2011 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -643,6 +643,12 @@ IRExpr* guest_arm_spechelper ( HChar*   function_name,
          return unop(Iop_1Uto32,
                      binop(Iop_CmpLE32U, cc_dep1, cc_dep2));
       }
+      if (isU32(cond_n_op, (ARMCondHI << 4) | ARMG_CC_OP_SUB)) {
+         /* HI after SUB --> test argL >u argR
+                         --> test argR <u argL */
+         return unop(Iop_1Uto32,
+                     binop(Iop_CmpLT32U, cc_dep2, cc_dep1));
+      }
 
       /*---------------- SBB ----------------*/
 
@@ -689,6 +695,18 @@ IRExpr* guest_arm_spechelper ( HChar*   function_name,
                      binop(Iop_CmpEQ32,
                            binop(Iop_Shr32, cc_dep1, mkU8(31)),
                            mkU32(1)));
+      }
+
+      /*---------------- COPY ----------------*/
+
+      if (isU32(cond_n_op, (ARMCondNE << 4) | ARMG_CC_OP_COPY)) {
+         /* NE after COPY --> ((cc_dep1 >> ARMG_CC_SHIFT_Z) ^ 1) & 1 */
+         return binop(Iop_And32,
+                      binop(Iop_Xor32,
+                            binop(Iop_Shr32, cc_dep1,
+                                             mkU8(ARMG_CC_SHIFT_Z)),
+                            mkU32(1)),
+                      mkU32(1));
       }
 
       /*----------------- AL -----------------*/
@@ -931,6 +949,9 @@ UInt LibVEX_GuestARM_get_cpsr ( /*IN*/VexGuestARMState* vex_state )
 /* VISIBLE TO LIBVEX CLIENT */
 void LibVEX_GuestARM_initialise ( /*OUT*/VexGuestARMState* vex_state )
 {
+   vex_state->host_EvC_FAILADDR = 0;
+   vex_state->host_EvC_COUNTER = 0;
+
    vex_state->guest_R0  = 0;
    vex_state->guest_R1  = 0;
    vex_state->guest_R2  = 0;
@@ -1008,8 +1029,6 @@ void LibVEX_GuestARM_initialise ( /*OUT*/VexGuestARMState* vex_state )
    vex_state->guest_ITSTATE = 0;
 
    vex_state->padding1 = 0;
-   vex_state->padding2 = 0;
-   vex_state->padding3 = 0;
 }
 
 

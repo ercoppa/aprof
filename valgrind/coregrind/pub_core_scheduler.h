@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2010 Julian Seward
+   Copyright (C) 2000-2011 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -77,6 +77,9 @@ extern void VG_(release_BigLock) ( ThreadId tid,
 
 /* Matching function to acquire_BigLock_LL. */
 extern void VG_(release_BigLock_LL) ( HChar* who );
+
+/* Whether the specified thread owns the big lock. */
+extern Bool VG_(owns_BigLock_LL) ( ThreadId tid );
 
 /* Yield the CPU for a while.  Drops/acquires the lock using the
    normal (non _LL) functions. */

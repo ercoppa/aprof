@@ -33,7 +33,6 @@
 #include "libvex_basictypes.h"
 #include "libvex.h"
 #include "libvex_trc_values.h"
-#include "libvex_guest_offsets.h"
 #include "libvex_s390x_common.h"
 
 #include "main_util.h"
@@ -41,6 +40,7 @@
 #include "host_generic_regs.h"
 #include "host_s390_defs.h"
 #include "host_s390_disasm.h"
+#include "guest_s390_defs.h"    /* S390X_GUEST_OFFSET */
 #include <stdarg.h>
 
 /* KLUDGE: We need to know the hwcaps of the host when generating
@@ -49,7 +49,7 @@
    Until then, we use a global variable. This variable is set as a side
    effect of iselSB_S390. This is safe because instructions are selected
    before they are emitted. */
-const VexArchInfo *s390_archinfo_host;
+UInt s390_host_hwcaps;
 
 
 /*------------------------------------------------------------*/
@@ -59,6 +59,7 @@ const VexArchInfo *s390_archinfo_host;
 static Bool s390_insn_is_reg_reg_move(const s390_insn *, HReg *src, HReg *dst);
 static void s390_insn_map_regs(HRegRemap *, s390_insn *);
 static void s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *);
+static UInt s390_tchain_load64_len(void);
 
 
 /*------------------------------------------------------------*/
@@ -118,7 +119,7 @@ s390_hreg_get_allocable(Int *nregs, HReg **arr)
    /* Total number of allocable registers (all classes) */
    *nregs =  16 /* GPRs */
       -  1 /* r0 */
-      -  1 /* r12 register holding VG_(dispatch_ctr) */
+      -  1 /* r12 scratch register for translation chaining support */
       -  1 /* r13 guest state pointer */
       -  1 /* r14 link register */
       -  1 /* r15 stack pointer */
@@ -144,7 +145,8 @@ s390_hreg_get_allocable(Int *nregs, HReg **arr)
       Otherwise, they are available to the allocator */
    (*arr)[i++] = mkHReg(10, HRcInt64, False);
    (*arr)[i++] = mkHReg(11, HRcInt64, False);
-   /* GPR12 is not available because it caches VG_(dispatch_ctr) */
+   /* GPR12 is not available because it us used as a scratch register
+      in translation chaining. */
    /* GPR13 is not available because it is used as guest state pointer */
    /* GPR14 is not available because it is used as link register */
    /* GPR15 is not available because it is used as stack pointer */
@@ -177,6 +179,7 @@ s390_hreg_guest_state_pointer(void)
 {
    return mkHReg(S390_REGNO_GUEST_STATE_POINTER, HRcInt64, False);
 }
+
 
 /* Is VALUE within the domain of a 20-bit signed integer. */
 static __inline__ Bool
@@ -612,14 +615,6 @@ s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *insn)
       s390_opnd_RMI_get_reg_usage(u, insn->variant.compare.src2);
       break;
 
-   case S390_INSN_BRANCH:
-      s390_opnd_RMI_get_reg_usage(u, insn->variant.branch.dst);
-      /* The destination address is loaded into S390_REGNO_RETURN_VALUE.
-         See s390_insn_branch_emit. */
-      addHRegUse(u, HRmWrite,
-                 mkHReg(S390_REGNO_RETURN_VALUE, HRcInt64, False));
-      break;
-
    case S390_INSN_HELPER_CALL: {
       UInt i;
 
@@ -709,6 +704,31 @@ s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *insn)
       break;
 
    case S390_INSN_MFENCE:
+   case S390_INSN_GZERO:
+   case S390_INSN_GADD:
+      break;
+
+   case S390_INSN_EVCHECK:
+      s390_amode_get_reg_usage(u, insn->variant.evcheck.counter);
+      s390_amode_get_reg_usage(u, insn->variant.evcheck.fail_addr);
+      break;
+
+   case S390_INSN_PROFINC:
+      /* Does not use any register visible to the register allocator */
+      break;
+
+   case S390_INSN_XDIRECT:
+      s390_amode_get_reg_usage(u, insn->variant.xdirect.guest_IA);
+      break;
+
+   case S390_INSN_XINDIR:
+      addHRegUse(u, HRmRead, insn->variant.xindir.dst);
+      s390_amode_get_reg_usage(u, insn->variant.xindir.guest_IA);
+      break;
+
+   case S390_INSN_XASSISTED:
+      addHRegUse(u, HRmRead, insn->variant.xassisted.dst);
+      s390_amode_get_reg_usage(u, insn->variant.xassisted.guest_IA);
       break;
 
    default:
@@ -822,11 +842,6 @@ s390_insn_map_regs(HRegRemap *m, s390_insn *insn)
       s390_opnd_RMI_map_regs(m, &insn->variant.compare.src2);
       break;
 
-   case S390_INSN_BRANCH:
-      s390_opnd_RMI_map_regs(m, &insn->variant.branch.dst);
-      /* No need to map S390_REGNO_RETURN_VALUE. It's not virtual */
-      break;
-
    case S390_INSN_HELPER_CALL:
       /* s390_insn_helper_call_emit also reads / writes the link register
          and stack pointer. But those registers are not visible to the
@@ -912,6 +927,33 @@ s390_insn_map_regs(HRegRemap *m, s390_insn *insn)
       break;
 
    case S390_INSN_MFENCE:
+   case S390_INSN_GZERO:
+   case S390_INSN_GADD:
+      break;
+
+   case S390_INSN_EVCHECK:
+      s390_amode_map_regs(m, insn->variant.evcheck.counter);
+      s390_amode_map_regs(m, insn->variant.evcheck.fail_addr);
+      break;
+
+   case S390_INSN_PROFINC:
+      /* Does not use any register visible to the register allocator */
+      break;
+
+   case S390_INSN_XDIRECT:
+      s390_amode_map_regs(m, insn->variant.xdirect.guest_IA);
+      break;
+
+   case S390_INSN_XINDIR:
+      s390_amode_map_regs(m, insn->variant.xindir.guest_IA);
+      insn->variant.xindir.dst =
+         lookupHRegRemap(m, insn->variant.xindir.dst);
+      break;
+
+   case S390_INSN_XASSISTED:
+      s390_amode_map_regs(m, insn->variant.xassisted.guest_IA);
+      insn->variant.xassisted.dst =
+         lookupHRegRemap(m, insn->variant.xassisted.dst);
       break;
 
    default:
@@ -1110,6 +1152,35 @@ emit_S(UChar *p, UInt op, UChar b2, UShort d2)
 }
 
 
+static UChar *
+emit_SIY(UChar *p, ULong op, UChar i2, UChar b1, UShort dl1, UChar dh1)
+{
+   ULong the_insn = op;
+
+   the_insn |= ((ULong)i2) << 32;
+   the_insn |= ((ULong)b1) << 28;
+   the_insn |= ((ULong)dl1) << 16;
+   the_insn |= ((ULong)dh1) << 8;
+
+   return emit_6bytes(p, the_insn);
+}
+
+
+static UChar *
+emit_SSa(UChar *p, ULong op, UChar l, UChar b1, UShort d1, UChar b2, UShort d2)
+{
+   ULong the_insn = op;
+
+   the_insn |= ((ULong)l)  << 32;
+   the_insn |= ((ULong)b1) << 28;
+   the_insn |= ((ULong)d1) << 16;
+   the_insn |= ((ULong)b2) << 12;
+   the_insn |= ((ULong)d2) << 0;
+
+   return emit_6bytes(p, the_insn);
+}
+
+
 /*------------------------------------------------------------*/
 /*--- Functions to emit particular instructions            ---*/
 /*------------------------------------------------------------*/
@@ -1235,6 +1306,30 @@ s390_emit_AGHI(UChar *p, UChar r1, UShort i2)
 
 
 static UChar *
+s390_emit_AGSI(UChar *p, UChar i2, UChar b1, UShort dl1, UChar dh1)
+{
+   vassert(s390_host_has_gie);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC3(MNM, INT, SDXB), "agsi", (Int)(Char)i2, dh1, dl1, 0, b1);
+
+   return emit_SIY(p, 0xeb000000007aULL, i2, b1, dl1, dh1);
+}
+
+
+static UChar *
+s390_emit_ASI(UChar *p, UChar i2, UChar b1, UShort dl1, UChar dh1)
+{
+   vassert(s390_host_has_gie);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC3(MNM, INT, SDXB), "asi", (Int)(Char)i2, dh1, dl1, 0, b1);
+
+   return emit_SIY(p, 0xeb000000006aULL, i2, b1, dl1, dh1);
+}
+
+
+static UChar *
 s390_emit_NR(UChar *p, UChar r1, UChar r2)
 {
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
@@ -1349,6 +1444,16 @@ s390_emit_BRC(UChar *p, UChar r1, UShort i2)
       s390_disasm(ENC2(XMNM, PCREL), S390_XMNM_BRC, r1, (Int)(Short)i2);
 
    return emit_RI(p, 0xa7040000, r1, i2);
+}
+
+
+static UChar *
+s390_emit_BRCL(UChar *p, UChar r1, ULong i2)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC2(XMNM, PCREL), S390_XMNM_BRCL, r1, i2);
+
+   return emit_RIL(p, 0xc00400000000ULL, r1, i2);
 }
 
 
@@ -1679,6 +1784,16 @@ s390_emit_XILF(UChar *p, UChar r1, UInt i2)
       s390_disasm(ENC3(MNM, GPR, UINT), "xilf", r1, i2);
 
    return emit_RIL(p, 0xc00700000000ULL, r1, i2);
+}
+
+
+static UChar *
+s390_emit_XC(UChar *p, UInt l, UChar b1, UShort d1, UChar b2, UShort d2)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC3(MNM, UDLB, UDXB), "xc", d1, l, b1, d2, 0, b2);
+
+   return emit_SSa(p, 0xd70000000000ULL, l, b1, d1, b2, d2);
 }
 
 
@@ -4192,21 +4307,6 @@ s390_insn_compare(UChar size, HReg src1, s390_opnd_RMI src2,
 
 
 s390_insn *
-s390_insn_branch(IRJumpKind kind, s390_cc_t cond, s390_opnd_RMI dst)
-{
-   s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
-
-   insn->tag  = S390_INSN_BRANCH;
-   insn->size = 0;  /* does not matter */
-   insn->variant.branch.kind = kind;
-   insn->variant.branch.dst  = dst;
-   insn->variant.branch.cond = cond;
-
-   return insn;
-}
-
-
-s390_insn *
 s390_insn_helper_call(s390_cc_t cond, Addr64 target, UInt num_args,
                       HChar *name)
 {
@@ -4401,6 +4501,116 @@ s390_insn_mfence(void)
 }
 
 
+s390_insn *
+s390_insn_gzero(UChar size, UInt offset)
+{
+   s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
+
+   insn->tag  = S390_INSN_GZERO;
+   insn->size = size;
+   insn->variant.gzero.offset = offset;
+
+   return insn;
+}
+
+
+s390_insn *
+s390_insn_gadd(UChar size, UInt offset, UChar delta, ULong value)
+{
+   s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
+
+   insn->tag  = S390_INSN_GADD;
+   insn->size = size;
+   insn->variant.gadd.offset = offset;
+   insn->variant.gadd.delta = delta;
+   insn->variant.gadd.value = value;
+
+   return insn;
+}
+
+
+s390_insn *
+s390_insn_xdirect(s390_cc_t cond, Addr64 dst, s390_amode *guest_IA,
+                  Bool to_fast_entry)
+{
+   s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
+
+   insn->tag  = S390_INSN_XDIRECT;
+   insn->size = 0;   /* does not matter */
+
+   insn->variant.xdirect.cond = cond;
+   insn->variant.xdirect.dst = dst;
+   insn->variant.xdirect.guest_IA = guest_IA;
+   insn->variant.xdirect.to_fast_entry = to_fast_entry;
+
+   return insn;
+}
+
+
+s390_insn *
+s390_insn_xindir(s390_cc_t cond, HReg dst, s390_amode *guest_IA)
+{
+   s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
+
+   insn->tag  = S390_INSN_XINDIR;
+   insn->size = 0;   /* does not matter */
+
+   insn->variant.xindir.cond = cond;
+   insn->variant.xindir.dst = dst;
+   insn->variant.xindir.guest_IA = guest_IA;
+
+   return insn;
+}
+
+
+s390_insn *
+s390_insn_xassisted(s390_cc_t cond, HReg dst, s390_amode *guest_IA,
+                    IRJumpKind kind)
+{
+   s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
+
+   insn->tag  = S390_INSN_XASSISTED;
+   insn->size = 0;   /* does not matter */
+
+   insn->variant.xassisted.cond = cond;
+   insn->variant.xassisted.dst = dst;
+   insn->variant.xassisted.guest_IA = guest_IA;
+   insn->variant.xassisted.kind = kind;
+
+   return insn;
+}
+
+
+s390_insn *
+s390_insn_evcheck(s390_amode *counter, s390_amode *fail_addr)
+{
+   s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
+
+   vassert(counter->tag   == S390_AMODE_B12);
+   vassert(fail_addr->tag == S390_AMODE_B12);
+
+   insn->tag  = S390_INSN_EVCHECK;
+   insn->size = 0;   /* does not matter */
+
+   insn->variant.evcheck.counter = counter;
+   insn->variant.evcheck.fail_addr = fail_addr;
+
+   return insn;
+}
+
+
+s390_insn *
+s390_insn_profinc(void)
+{
+   s390_insn *insn = LibVEX_Alloc(sizeof(s390_insn));
+
+   insn->tag  = S390_INSN_PROFINC;
+   insn->size = 0;   /* does not matter */
+
+   return insn;
+}
+
+
 /*---------------------------------------------------------------*/
 /*--- Debug print                                             ---*/
 /*---------------------------------------------------------------*/
@@ -4427,6 +4637,31 @@ s390_cc_as_string(s390_cc_t cc)
    case S390_CC_ALWAYS: return "always";
    default:
       vpanic("s390_cc_as_string");
+   }
+}
+
+
+static const HChar *
+s390_jump_kind_as_string(IRJumpKind kind)
+{
+   switch (kind) {
+   case Ijk_Boring:      return "Boring";
+   case Ijk_Call:        return "Call";
+   case Ijk_Ret:         return "Return";
+   case Ijk_ClientReq:   return "ClientReq";
+   case Ijk_Yield:       return "Yield";
+   case Ijk_EmWarn:      return "EmWarn";
+   case Ijk_EmFail:      return "EmFail";
+   case Ijk_NoDecode:    return "NoDecode";
+   case Ijk_MapFail:     return "MapFail";
+   case Ijk_TInval:      return "Invalidate";
+   case Ijk_NoRedir:     return "NoRedir";
+   case Ijk_SigTRAP:     return "SigTRAP";
+   case Ijk_SigSEGV:     return "SigSEGV";
+   case Ijk_SigBUS:      return "SigBUS";
+   case Ijk_Sys_syscall: return "Sys_syscall";
+   default:
+      vpanic("s390_jump_kind_as_string");
    }
 }
 
@@ -4472,8 +4707,17 @@ s390_sprintf(HChar *buf, HChar *fmt, ...)
                           s390_amode_as_string(va_arg(args, s390_amode *)));
          continue;
 
+      case 'G':     /* %G = guest state @ offset */
+         p += vex_sprintf(p, "guest[%d]", va_arg(args, UInt));
+         continue;
+
       case 'C':     /* %C = condition code */
          p += vex_sprintf(p, "%s", s390_cc_as_string(va_arg(args, s390_cc_t)));
+         continue;
+
+      case 'J':     /* &J = jump kind */
+         p += vex_sprintf(p, "%s",
+                          s390_jump_kind_as_string(va_arg(args, IRJumpKind)));
          continue;
 
       case 'L': {   /* %L = argument list in helper call*/
@@ -4670,43 +4914,13 @@ s390_insn_as_string(const s390_insn *insn)
                    &insn->variant.compare.src2);
       break;
 
-   case S390_INSN_BRANCH:
-      switch (insn->variant.branch.kind) {
-      case Ijk_ClientReq:   op = "clientreq"; break;
-      case Ijk_Sys_syscall: op = "syscall";   break;
-      case Ijk_Yield:       op = "yield";     break;
-      case Ijk_EmWarn:      op = "emwarn";    break;
-      case Ijk_EmFail:      op = "emfail";    break;
-      case Ijk_MapFail:     op = "mapfail";   break;
-      case Ijk_NoDecode:    op = "nodecode";  break;
-      case Ijk_TInval:      op = "tinval";    break;
-      case Ijk_NoRedir:     op = "noredir";   break;
-      case Ijk_SigTRAP:     op = "sigtrap";   break;
-      case Ijk_Boring:      op = "goto";      break;
-      case Ijk_Call:        op = "call";      break;
-      case Ijk_Ret:         op = "return";    break;
-      default:
-         goto fail;
-      }
-      s390_sprintf(buf, "if (%C) %s %O", insn->variant.branch.cond, op,
-                   &insn->variant.branch.dst);
-      break;
-
    case S390_INSN_HELPER_CALL: {
-
-      if (insn->variant.helper_call.cond != S390_CC_ALWAYS) {
-         s390_sprintf(buf, "%M if (%C) %s{%I}(%L)", "v-call",
-                      insn->variant.helper_call.cond,
-                      insn->variant.helper_call.name,
-                      insn->variant.helper_call.target,
-                      insn->variant.helper_call.num_args);
-      } else {
-         s390_sprintf(buf, "%M %s{%I}(%L)", "v-call",
-                      insn->variant.helper_call.name,
-                      insn->variant.helper_call.target,
-                      insn->variant.helper_call.num_args);
-      }
-      break;
+      s390_sprintf(buf, "%M if (%C) %s{%I}(%L)", "v-call",
+                   insn->variant.helper_call.cond,
+                   insn->variant.helper_call.name,
+                   insn->variant.helper_call.target,
+                   insn->variant.helper_call.num_args);
+      return buf;   /* avoid printing "size = ..." which is meaningless */
    }
 
    case S390_INSN_BFP_TRIOP:
@@ -4814,6 +5028,50 @@ s390_insn_as_string(const s390_insn *insn)
 
    case S390_INSN_MFENCE:
       s390_sprintf(buf, "%M", "v-mfence");
+      return buf;   /* avoid printing "size = ..." which is meaningless */
+
+   case S390_INSN_GZERO:
+      s390_sprintf(buf, "%M %G", "v-gzero", insn->variant.gzero.offset);
+      break;
+
+   case S390_INSN_GADD:
+      s390_sprintf(buf, "%M %G += %I  (= %I)", "v-gadd",
+                   insn->variant.gadd.offset,
+                   (Long)(Char)insn->variant.gadd.delta,
+                   insn->variant.gadd.value);
+      break;
+
+   case S390_INSN_EVCHECK:
+      s390_sprintf(buf, "%M counter = %A, fail-addr = %A", "v-evcheck",
+                   insn->variant.evcheck.counter,
+                   insn->variant.evcheck.fail_addr);
+      return buf;   /* avoid printing "size = ..." which is meaningless */
+
+   case S390_INSN_PROFINC:
+      s390_sprintf(buf, "%M", "v-profinc");
+      return buf;   /* avoid printing "size = ..." which is meaningless */
+
+   case S390_INSN_XDIRECT:
+      s390_sprintf(buf, "%M if (%C) %A = %I  %s", "v-xdirect",
+                   insn->variant.xdirect.cond,
+                   insn->variant.xdirect.guest_IA,
+                   insn->variant.xdirect.dst,
+                   insn->variant.xdirect.to_fast_entry ? "fast" : "slow");
+      return buf;   /* avoid printing "size = ..." which is meaningless */
+
+   case S390_INSN_XINDIR:
+      s390_sprintf(buf, "%M if (%C) %A = %R", "v-xindir",
+                   insn->variant.xindir.cond,
+                   insn->variant.xindir.guest_IA,
+                   insn->variant.xindir.dst);
+      return buf;   /* avoid printing "size = ..." which is meaningless */
+
+   case S390_INSN_XASSISTED:
+      s390_sprintf(buf, "%M if (%C) %J %A = %R", "v-xassisted",
+                   insn->variant.xassisted.cond,
+                   insn->variant.xassisted.kind,
+                   insn->variant.xassisted.guest_IA,
+                   insn->variant.xassisted.dst);
       return buf;   /* avoid printing "size = ..." which is meaningless */
 
    default: goto fail;
@@ -5120,10 +5378,22 @@ s390_insn_move_emit(UChar *buf, const s390_insn *insn)
       if (dst_class == HRcFlt64)
          return s390_emit_LDR(buf, dst, src);
    } else {
-      if (dst_class == HRcFlt64 && src_class == HRcInt64)
-         return s390_emit_LDGRw(buf, dst, src);
-      if (dst_class == HRcInt64 && src_class == HRcFlt64)
-         return s390_emit_LGDRw(buf, dst, src);
+      if (dst_class == HRcFlt64 && src_class == HRcInt64) {
+         if (insn->size == 4) {
+            buf = s390_emit_SLLG(buf, R0, src, 0, DISP20(32)); /* r0 = src << 32 */
+            return s390_emit_LDGRw(buf, dst, R0);
+         } else {
+            return s390_emit_LDGRw(buf, dst, src);
+         }
+      }
+      if (dst_class == HRcInt64 && src_class == HRcFlt64) {
+         if (insn->size == 4) {
+            buf = s390_emit_LGDRw(buf, dst, src);
+            return s390_emit_SRLG(buf, dst, dst, 0, DISP20(32)); /* dst >>= 32 */
+         } else {
+            return s390_emit_LGDRw(buf, dst, src);
+         }
+      }
       /* A move between floating point registers and general purpose
          registers of different size should never occur and indicates
          an error elsewhere. */
@@ -6392,104 +6662,6 @@ s390_insn_clz_emit(UChar *buf, const s390_insn *insn)
 
 
 static UChar *
-s390_insn_branch_emit(UChar *buf, const s390_insn *insn)
-{
-   s390_opnd_RMI dst;
-   s390_cc_t cond;
-   UInt       trc;
-   UChar *p, *ptmp = 0;  /* avoid compiler warnings */
-
-   cond = insn->variant.branch.cond;
-   dst  = insn->variant.branch.dst;
-
-   p = buf;
-   trc = 0;
-
-   if (cond != S390_CC_ALWAYS) {
-      /* So we have something like this
-         if (cond) goto X;
-         Y: ...
-         We convert this into
-         if (! cond) goto Y;        // BRC insn; 4 bytes
-         return_reg = X;
-         return to dispatcher
-         Y:
-      */
-      ptmp = p; /* 4 bytes (a BRC insn) to be filled in here */
-      p += 4;
-   }
-
-   /* If a non-boring, set guest-state-pointer appropriately. */
-
-   switch (insn->variant.branch.kind) {
-   case Ijk_ClientReq:   trc = VEX_TRC_JMP_CLIENTREQ;   break;
-   case Ijk_Sys_syscall: trc = VEX_TRC_JMP_SYS_SYSCALL; break;
-   case Ijk_Yield:       trc = VEX_TRC_JMP_YIELD;       break;
-   case Ijk_EmWarn:      trc = VEX_TRC_JMP_EMWARN;      break;
-   case Ijk_EmFail:      trc = VEX_TRC_JMP_EMFAIL;      break;
-   case Ijk_MapFail:     trc = VEX_TRC_JMP_MAPFAIL;     break;
-   case Ijk_NoDecode:    trc = VEX_TRC_JMP_NODECODE;    break;
-   case Ijk_TInval:      trc = VEX_TRC_JMP_TINVAL;      break;
-   case Ijk_NoRedir:     trc = VEX_TRC_JMP_NOREDIR;     break;
-   case Ijk_SigTRAP:     trc = VEX_TRC_JMP_SIGTRAP;     break;
-   case Ijk_Ret:         trc = 0; break;
-   case Ijk_Call:        trc = 0; break;
-   case Ijk_Boring:      trc = 0; break;
-      break;
-
-   default:
-      vpanic("s390_insn_branch_emit: unknown jump kind");
-   }
-
-   /* Get the destination address into the return register */
-   switch (dst.tag) {
-   case S390_OPND_REG:
-      p = s390_emit_LGR(p, S390_REGNO_RETURN_VALUE, hregNumber(dst.variant.reg));
-      break;
-
-   case S390_OPND_AMODE: {
-      const s390_amode *am = dst.variant.am;
-      UChar b = hregNumber(am->b);
-      UChar x = hregNumber(am->x);
-      Int   d = am->d;
-
-      p = s390_emit_LG(p, S390_REGNO_RETURN_VALUE, x, b, DISP20(d));
-      break;
-   }
-
-   case S390_OPND_IMMEDIATE:
-      p = s390_emit_load_64imm(p, S390_REGNO_RETURN_VALUE, dst.variant.imm);
-      break;
-
-   default:
-      goto fail;
-   }
-
-   if (trc != 0) {
-      /* Something special. Set guest-state pointer appropriately */
-      p = s390_emit_LGHI(p, S390_REGNO_GUEST_STATE_POINTER, trc);
-   } else {
-      /* Nothing special needs to be done for calls and returns. */
-   }
-
-   p = s390_emit_BCR(p, S390_CC_ALWAYS, S390_REGNO_LINK_REGISTER);
-
-   if (cond != S390_CC_ALWAYS) {
-      Int delta = p - ptmp;
-
-      delta >>= 1;  /* immediate constant is #half-words */
-      vassert(delta > 0 && delta < (1 << 16));
-      s390_emit_BRC(ptmp, s390_cc_invert(cond), delta);
-   }
-
-   return p;
-
- fail:
-   vpanic("s390_insn_branch_emit");
-}
-
-
-static UChar *
 s390_insn_helper_call_emit(UChar *buf, const s390_insn *insn)
 {
    s390_cc_t cond;
@@ -6641,7 +6813,7 @@ s390_set_fpc_rounding_mode(UChar *buf, s390_round_t rounding_mode)
 
    /* Copy FPC from guest state to R0 and OR in the new rounding mode */
    buf = s390_emit_L(buf, R0, 0, S390_REGNO_GUEST_STATE_POINTER,
-                     OFFSET_s390x_fpc);   // r0 = guest_fpc
+                     S390X_GUEST_OFFSET(guest_fpc));   // r0 = guest_fpc
 
    buf = s390_emit_NILL(buf, R0, 0xFFFC); /* Clear out right-most 2 bits */
    buf = s390_emit_OILL(buf, R0, bits);   /* OR in the new rounding mode */
@@ -6686,7 +6858,7 @@ s390_insn_bfp_triop_emit(UChar *buf, const s390_insn *insn)
    if (rounding_mode != S390_ROUND_NEAREST_EVEN) {
       /* Restore FPC register from guest state */
       buf = s390_emit_LFPC(buf, S390_REGNO_GUEST_STATE_POINTER,
-                           OFFSET_s390x_fpc);   // fpc = guest_fpc
+                           S390X_GUEST_OFFSET(guest_fpc));   // fpc = guest_fpc
    }
    return buf;
 
@@ -6733,7 +6905,7 @@ s390_insn_bfp_binop_emit(UChar *buf, const s390_insn *insn)
    if (rounding_mode != S390_ROUND_NEAREST_EVEN) {
       /* Restore FPC register from guest state */
       buf = s390_emit_LFPC(buf, S390_REGNO_GUEST_STATE_POINTER,
-                           OFFSET_s390x_fpc);
+                           S390X_GUEST_OFFSET(guest_fpc));
    }
    return buf;
 
@@ -6822,7 +6994,7 @@ s390_insn_bfp_unop_emit(UChar *buf, const s390_insn *insn)
    if (rounding_mode != S390_ROUND_NEAREST_EVEN) {
       /* Restore FPC register from guest state */
       buf = s390_emit_LFPC(buf, S390_REGNO_GUEST_STATE_POINTER,
-                           OFFSET_s390x_fpc);   // fpc = guest_fpc
+                           S390X_GUEST_OFFSET(guest_fpc));   // fpc = guest_fpc
    }
    return buf;
 
@@ -6888,7 +7060,7 @@ s390_insn_bfp128_binop_emit(UChar *buf, const s390_insn *insn)
    if (rounding_mode != S390_ROUND_NEAREST_EVEN) {
       /* Restore FPC register from guest state */
       buf = s390_emit_LFPC(buf, S390_REGNO_GUEST_STATE_POINTER,
-                           OFFSET_s390x_fpc);   // fpc = guest_fpc
+                           S390X_GUEST_OFFSET(guest_fpc));   // fpc = guest_fpc
    }
    return buf;
 
@@ -6953,7 +7125,7 @@ s390_insn_bfp128_unop_emit(UChar *buf, const s390_insn *insn)
    if (rounding_mode != S390_ROUND_NEAREST_EVEN) {
       /* Restore FPC register from guest state */
       buf = s390_emit_LFPC(buf, S390_REGNO_GUEST_STATE_POINTER,
-                           OFFSET_s390x_fpc);   // fpc = guest_fpc
+                           S390X_GUEST_OFFSET(guest_fpc));   // fpc = guest_fpc
    }
    return buf;
 
@@ -7025,9 +7197,460 @@ s390_insn_mfence_emit(UChar *buf, const s390_insn *insn)
 }
 
 
+static UChar *
+s390_insn_gzero_emit(UChar *buf, const s390_insn *insn)
+{
+   return s390_emit_XC(buf, insn->size - 1,
+                       S390_REGNO_GUEST_STATE_POINTER, insn->variant.gzero.offset,
+                       S390_REGNO_GUEST_STATE_POINTER, insn->variant.gzero.offset);
+}
+
+
+static UChar *
+s390_insn_gadd_emit(UChar *buf, const s390_insn *insn)
+{
+   return s390_emit_AGSI(buf, insn->variant.gadd.delta,
+                         S390_REGNO_GUEST_STATE_POINTER,
+                         DISP20(insn->variant.gadd.offset));
+}
+
+
+/* Define convenience functions needed for translation chaining.
+   Any changes need to be applied to the functions in concert. */
+
+static __inline__ Bool
+s390_insn_is_BRCL(const UChar *p, UChar condition)
+{
+   return p[0] == 0xc0 && p[1] == ((condition << 4) | 0x04);
+}
+
+static __inline__ Bool
+s390_insn_is_BR(const UChar *p, UChar reg)
+{
+   return p[0] == 0x07 && p[1] == (0xF0 | reg);  /* BCR 15,reg */
+}
+
+
+/* The length of the BASR insn */
+#define S390_BASR_LEN  2
+
+
+/* Load the 64-bit VALUE into REG. Note that this function must NOT
+   optimise the generated code by looking at the value. I.e. using
+   LGHI if value == 0 would be very wrong.
+   fixs390: Do it in a way that works everywhere for now. */
+static UChar *
+s390_tchain_load64(UChar *buf, UChar regno, ULong value)
+{
+   UChar *begin = buf;
+
+   if (s390_host_has_eimm) {
+      /* Do it in two steps: upper half [0:31] and lower half [32:63] */
+      buf = s390_emit_IIHF(buf, regno, value >> 32);
+      buf = s390_emit_IILF(buf, regno, value & 0xFFFFFFFF);
+   } else {
+      buf = s390_emit_IILL(buf, regno, value & 0xFFFF);
+      value >>= 16;
+      buf = s390_emit_IILH(buf, regno, value & 0xFFFF);
+      value >>= 16;
+      buf = s390_emit_IIHL(buf, regno, value & 0xFFFF);
+      value >>= 16;
+      buf = s390_emit_IIHH(buf, regno, value & 0xFFFF);
+   }
+
+   vassert(buf - begin == s390_tchain_load64_len());
+
+   return buf;
+}
+
+/* Return number of bytes generated by s390_tchain_load64 */
+static UInt
+s390_tchain_load64_len(void)
+{
+   if (s390_host_has_eimm) {
+      return 6 + 6;      /* IIHF + IILF */
+   }
+   return 4 + 4 + 4 + 4; /* IIHH + IIHL + IILH + IILL */
+}
+
+/* Verify that CODE is the code sequence generated by s390_tchain_load64
+   to load VALUE into REGNO. Return pointer to the byte following the
+   insn sequence. */
+static const UChar *
+s390_tchain_verify_load64(const UChar *code, UChar regno, ULong value)
+{
+   UInt regmask = regno << 4;
+   UInt hw;
+
+   if (s390_host_has_eimm) {
+      /* Check for IIHF */
+      vassert(code[0]  ==  0xC0);
+      vassert(code[1]  == (0x08 | regmask));
+      vassert(*(const UInt *)&code[2] == (value >> 32));
+      /* Check for IILF */
+      vassert(code[6]  ==  0xC0);
+      vassert(code[7]  == (0x09 | regmask));
+      vassert(*(const UInt *)&code[8] == (value & 0xFFFFFFFF));
+   } else {
+      /* Check for IILL */
+      hw = value & 0xFFFF;
+      vassert(code[0]  ==  0xA5);
+      vassert(code[1]  == (0x03 | regmask));
+      vassert(code[2]  == (hw >> 8));
+      vassert(code[3]  == (hw & 0xFF));
+
+      /* Check for IILH */
+      hw = (value >> 16) & 0xFFFF;
+      vassert(code[4]  ==  0xA5);
+      vassert(code[5]  == (0x02 | regmask));
+      vassert(code[6]  == (hw >> 8));
+      vassert(code[7]  == (hw & 0xFF));
+
+      /* Check for IIHL */
+      hw = (value >> 32) & 0xFFFF;
+      vassert(code[8]  ==  0xA5);
+      vassert(code[9]  == (0x01 | regmask));
+      vassert(code[10] == (hw >> 8));
+      vassert(code[11] == (hw & 0xFF));
+
+      /* Check for IIHH */
+      hw = (value >> 48) & 0xFFFF;
+      vassert(code[12] ==  0xA5);
+      vassert(code[13] == (0x00 | regmask));
+      vassert(code[14] == (hw >> 8));
+      vassert(code[15] == (hw & 0xFF));
+   }
+
+   return code + s390_tchain_load64_len();
+}
+
+/* CODE points to the code sequence as generated by s390_tchain_load64.
+   Change the loaded value to VALUE. Return pointer to the byte following
+   the patched code sequence. */
+static UChar *
+s390_tchain_patch_load64(UChar *code, ULong imm64)
+{
+   if (s390_host_has_eimm) {
+      /* Patch IIHF */
+      *(UInt *)&code[2] = imm64 >> 32;
+      /* Patch IILF */
+      *(UInt *)&code[8] = imm64 & 0xFFFFFFFF;
+   } else {
+      code[3]  = imm64 & 0xFF; imm64 >>= 8;
+      code[2]  = imm64 & 0xFF; imm64 >>= 8;
+      code[7]  = imm64 & 0xFF; imm64 >>= 8;
+      code[6]  = imm64 & 0xFF; imm64 >>= 8;
+      code[11] = imm64 & 0xFF; imm64 >>= 8;
+      code[10] = imm64 & 0xFF; imm64 >>= 8;
+      code[15] = imm64 & 0xFF; imm64 >>= 8;
+      code[14] = imm64 & 0xFF; imm64 >>= 8;
+   }
+
+   return code + s390_tchain_load64_len();
+}
+
+
+/* NB: what goes on here has to be very closely coordinated with the
+   chainXDirect_S390 and unchainXDirect_S390 below. */
+static UChar *
+s390_insn_xdirect_emit(UChar *buf, const s390_insn *insn,
+                       void *disp_cp_chain_me_to_slowEP,
+                       void *disp_cp_chain_me_to_fastEP)
+{
+   /* We're generating chain-me requests here, so we need to be
+      sure this is actually allowed -- no-redir translations can't
+      use chain-me's.  Hence: */
+   vassert(disp_cp_chain_me_to_slowEP != NULL);
+   vassert(disp_cp_chain_me_to_fastEP != NULL);
+
+   /* Use ptmp for backpatching conditional jumps. */
+   UChar *ptmp = buf;
+
+   /* First off, if this is conditional, create a conditional
+      jump over the rest of it. */
+   s390_cc_t cond = insn->variant.xdirect.cond;
+
+   if (cond != S390_CC_ALWAYS) {
+      /* So we have something like this
+         if (cond) do_xdirect;
+         Y: ...
+         We convert this into
+         if (! cond) goto Y;        // BRC opcode; 4 bytes
+         do_xdirect;
+         Y:
+      */
+      /* 4 bytes (a BRC insn) to be filled in here */
+      buf += 4;
+   }
+
+   /* Update the guest IA. */
+   buf = s390_emit_load_64imm(buf, R0, insn->variant.xdirect.dst);
+
+   const s390_amode *amode = insn->variant.xdirect.guest_IA;
+   vassert(amode->tag == S390_AMODE_B12);
+   UInt b = hregNumber(amode->b);
+   UInt d = amode->d;
+
+   buf = s390_emit_STG(buf, R0, 0, b, DISP20(d));
+
+   /* Load the chosen entry point into the scratch reg */
+   void *disp_cp_chain_me;
+
+   disp_cp_chain_me =
+      insn->variant.xdirect.to_fast_entry ? disp_cp_chain_me_to_fastEP 
+                                          : disp_cp_chain_me_to_slowEP;
+   /* Get the address of the beginning of the load64 code sequence into %r1.
+      Do not change the register! This is part of the protocol with the
+      dispatcher. */
+   buf = s390_emit_BASR(buf, 1, R0);
+
+   /* --- FIRST PATCHABLE BYTE follows (must not modify %r1) --- */
+   ULong addr = Ptr_to_ULong(disp_cp_chain_me);
+   buf = s390_tchain_load64(buf, S390_REGNO_TCHAIN_SCRATCH, addr);
+
+   /* goto *tchain_scratch */
+   buf = s390_emit_BCR(buf, S390_CC_ALWAYS, S390_REGNO_TCHAIN_SCRATCH);
+
+   /* --- END of PATCHABLE BYTES --- */
+
+   /* Fix up the conditional jump, if there was one. */
+   if (cond != S390_CC_ALWAYS) {
+      Int delta = buf - ptmp;
+
+      delta >>= 1;  /* immediate constant is #half-words */
+      vassert(delta > 0 && delta < (1 << 16));
+      s390_emit_BRC(ptmp, s390_cc_invert(cond), delta);
+   }
+
+   return buf;
+}
+
+/* Return the number of patchable bytes from an xdirect insn. */
+static UInt
+s390_xdirect_patchable_len(void)
+{
+   return s390_tchain_load64_len() + S390_BASR_LEN;
+}
+
+
+static UChar *
+s390_insn_xindir_emit(UChar *buf, const s390_insn *insn, void *disp_cp_xindir)
+{
+   /* We're generating transfers that could lead indirectly to a
+      chain-me, so we need to be sure this is actually allowed --
+      no-redir translations are not allowed to reach normal
+      translations without going through the scheduler.  That means
+      no XDirects or XIndirs out from no-redir translations.
+      Hence: */
+   vassert(disp_cp_xindir != NULL);
+
+   /* Use ptmp for backpatching conditional jumps. */
+   UChar *ptmp = buf;
+
+   /* First off, if this is conditional, create a conditional
+      jump over the rest of it. */
+   s390_cc_t cond = insn->variant.xdirect.cond;
+
+   if (cond != S390_CC_ALWAYS) {
+      /* So we have something like this
+         if (cond) do_xdirect;
+         Y: ...
+         We convert this into
+         if (! cond) goto Y;        // BRC opcode; 4 bytes
+         do_xdirect;
+         Y:
+      */
+      /* 4 bytes (a BRC insn) to be filled in here */
+      buf += 4;
+   }
+
+   /* Update the guest IA with the address in xdirect.dst. */
+   const s390_amode *amode = insn->variant.xindir.guest_IA;
+
+   vassert(amode->tag == S390_AMODE_B12);
+   UInt b = hregNumber(amode->b);
+   UInt d = amode->d;
+   UInt regno = hregNumber(insn->variant.xindir.dst);
+
+   buf = s390_emit_STG(buf, regno, 0, b, DISP20(d));
+
+   /* load tchain_scratch, #disp_indir */
+   buf = s390_tchain_load64(buf, S390_REGNO_TCHAIN_SCRATCH,
+                            Ptr_to_ULong(disp_cp_xindir));
+   /* goto *tchain_direct */
+   buf = s390_emit_BCR(buf, S390_CC_ALWAYS, S390_REGNO_TCHAIN_SCRATCH);
+
+   /* Fix up the conditional jump, if there was one. */
+   if (cond != S390_CC_ALWAYS) {
+      Int delta = buf - ptmp;
+
+      delta >>= 1;  /* immediate constant is #half-words */
+      vassert(delta > 0 && delta < (1 << 16));
+      s390_emit_BRC(ptmp, s390_cc_invert(cond), delta);
+   }
+
+   return buf;
+}
+
+static UChar *
+s390_insn_xassisted_emit(UChar *buf, const s390_insn *insn,
+                         void *disp_cp_xassisted)
+{
+   /* Use ptmp for backpatching conditional jumps. */
+   UChar *ptmp = buf;
+
+   /* First off, if this is conditional, create a conditional
+      jump over the rest of it. */
+   s390_cc_t cond = insn->variant.xdirect.cond;
+
+   if (cond != S390_CC_ALWAYS) {
+      /* So we have something like this
+         if (cond) do_xdirect;
+         Y: ...
+         We convert this into
+         if (! cond) goto Y;        // BRC opcode; 4 bytes
+         do_xdirect;
+         Y:
+      */
+      /* 4 bytes (a BRC insn) to be filled in here */
+      buf += 4;
+   }
+
+   /* Update the guest IA with the address in xassisted.dst. */
+   const s390_amode *amode = insn->variant.xassisted.guest_IA;
+
+   vassert(amode->tag == S390_AMODE_B12);
+   UInt b = hregNumber(amode->b);
+   UInt d = amode->d;
+   UInt regno = hregNumber(insn->variant.xassisted.dst);
+
+   buf = s390_emit_STG(buf, regno, 0, b, DISP20(d));
+
+   UInt trcval = 0;
+
+   switch (insn->variant.xassisted.kind) {
+   case Ijk_ClientReq:   trcval = VEX_TRC_JMP_CLIENTREQ;   break;
+   case Ijk_Sys_syscall: trcval = VEX_TRC_JMP_SYS_SYSCALL; break;
+   case Ijk_Yield:       trcval = VEX_TRC_JMP_YIELD;       break;
+   case Ijk_EmWarn:      trcval = VEX_TRC_JMP_EMWARN;      break;
+   case Ijk_MapFail:     trcval = VEX_TRC_JMP_MAPFAIL;     break;
+   case Ijk_NoDecode:    trcval = VEX_TRC_JMP_NODECODE;    break;
+   case Ijk_TInval:      trcval = VEX_TRC_JMP_TINVAL;      break;
+   case Ijk_NoRedir:     trcval = VEX_TRC_JMP_NOREDIR;     break;
+   case Ijk_SigTRAP:     trcval = VEX_TRC_JMP_SIGTRAP;     break;
+   case Ijk_SigSEGV:     trcval = VEX_TRC_JMP_SIGSEGV;     break;
+   case Ijk_Boring:      trcval = VEX_TRC_JMP_BORING;      break;
+      /* We don't expect to see the following being assisted. */
+   case Ijk_Ret:
+   case Ijk_Call:
+      /* fallthrough */
+   default: 
+      ppIRJumpKind(insn->variant.xassisted.kind);
+      vpanic("s390_insn_xassisted_emit: unexpected jump kind");
+   }
+
+   vassert(trcval != 0);
+
+   /* guest_state_pointer = trcval */
+   buf = s390_emit_LGHI(buf, S390_REGNO_GUEST_STATE_POINTER, trcval);
+
+   /* load tchain_scratch, #disp_assisted */
+   buf = s390_tchain_load64(buf, S390_REGNO_TCHAIN_SCRATCH,
+                            Ptr_to_ULong(disp_cp_xassisted));
+
+   /* goto *tchain_direct */
+   buf = s390_emit_BCR(buf, S390_CC_ALWAYS, S390_REGNO_TCHAIN_SCRATCH);
+
+   /* Fix up the conditional jump, if there was one. */
+   if (cond != S390_CC_ALWAYS) {
+      Int delta = buf - ptmp;
+
+      delta >>= 1;  /* immediate constant is #half-words */
+      vassert(delta > 0 && delta < (1 << 16));
+      s390_emit_BRC(ptmp, s390_cc_invert(cond), delta);
+   }
+
+   return buf;
+}
+
+
+/* Pseudo code:
+
+   guest_state[host_EvC_COUNTER] -= 1;
+   if (guest_state[host_EvC_COUNTER] >= 0) goto nofail;
+   goto guest_state[host_EvC_FAILADDR];
+   nofail: ;
+
+   The dispatch counter is a 32-bit value. */
+static UChar *
+s390_insn_evcheck_emit(UChar *buf, const s390_insn *insn)
+{
+   s390_amode *amode;
+   UInt b, d;
+   UChar *code_begin, *code_end;
+
+   code_begin = buf;
+
+   amode = insn->variant.evcheck.counter;
+   vassert(amode->tag == S390_AMODE_B12);
+   b = hregNumber(amode->b);
+   d = amode->d;
+
+   /* Decrement the dispatch counter in the guest state */
+   if (s390_host_has_gie) {
+      buf = s390_emit_ASI(buf, -1, b, DISP20(d));   /* 6 bytes */
+   } else {
+      buf = s390_emit_LHI(buf, R0, -1);             /* 4 bytes */
+      buf = s390_emit_A(buf, R0, 0, b, d);          /* 4 bytes */
+      buf = s390_emit_ST(buf, R0, 0, b, d);         /* 4 bytes */
+   }
+
+   /* Jump over the next insn if >= 0 */
+   buf = s390_emit_BRC(buf, S390_CC_HE, (4 + 6 + 2) / 2);  /* 4 bytes */
+
+   /* Computed goto to fail_address */
+   amode = insn->variant.evcheck.fail_addr;
+   b = hregNumber(amode->b);
+   d = amode->d;
+   buf = s390_emit_LG(buf, S390_REGNO_TCHAIN_SCRATCH, 0, b, DISP20(d));  /* 6 bytes */
+   buf = s390_emit_BCR(buf, S390_CC_ALWAYS, S390_REGNO_TCHAIN_SCRATCH);  /* 2 bytes */
+
+   code_end = buf;
+   
+   /* Make sure the size of the generated code is identical to the size
+      returned by evCheckSzB_S390 */
+   vassert(evCheckSzB_S390() == code_end - code_begin);
+
+   return buf;
+}
+
+
+static UChar *
+s390_insn_profinc_emit(UChar *buf,
+                       const s390_insn *insn __attribute__((unused)))
+{
+   /* Generate a code template to increment a memory location whose
+      address will be known later as an immediate value. This code
+      template will be patched once the memory location is known.
+      For now we do this with address == 0. */
+   buf = s390_tchain_load64(buf, S390_REGNO_TCHAIN_SCRATCH, 0);
+   if (s390_host_has_gie) {
+      buf = s390_emit_AGSI(buf, 1, S390_REGNO_TCHAIN_SCRATCH, DISP20(0));
+   } else {
+      buf = s390_emit_LGHI(buf, R0, 1);
+      buf = s390_emit_AG( buf, R0, 0, S390_REGNO_TCHAIN_SCRATCH, DISP20(0));
+      buf = s390_emit_STG(buf, R0, 0, S390_REGNO_TCHAIN_SCRATCH, DISP20(0));
+   }
+
+   return buf;
+}
+
+
 Int
-emit_S390Instr(UChar *buf, Int nbuf, s390_insn *insn, Bool mode64,
-               void *dispatch_unassisted, void *dispatch_assisted)
+emit_S390Instr(Bool *is_profinc, UChar *buf, Int nbuf, s390_insn *insn,
+               Bool mode64, void *disp_cp_chain_me_to_slowEP,
+               void *disp_cp_chain_me_to_fastEP, void *disp_cp_xindir,
+               void *disp_cp_xassisted)
 {
    UChar *end;
 
@@ -7092,12 +7715,6 @@ emit_S390Instr(UChar *buf, Int nbuf, s390_insn *insn, Bool mode64,
       end = s390_insn_compare_emit(buf, insn);
       break;
 
-   case S390_INSN_BRANCH:
-      vassert(dispatch_unassisted == NULL);
-      vassert(dispatch_assisted == NULL);
-      end = s390_insn_branch_emit(buf, insn);
-      break;
-
    case S390_INSN_HELPER_CALL:
       end = s390_insn_helper_call_emit(buf, insn);
       break;
@@ -7142,8 +7759,40 @@ emit_S390Instr(UChar *buf, Int nbuf, s390_insn *insn, Bool mode64,
       end = s390_insn_mfence_emit(buf, insn);
       break;
 
+   case S390_INSN_GZERO:
+      end = s390_insn_gzero_emit(buf, insn);
+      break;
+
+   case S390_INSN_GADD:
+      end = s390_insn_gadd_emit(buf, insn);
+      break;
+
+   case S390_INSN_PROFINC:
+      end = s390_insn_profinc_emit(buf, insn);
+      /* Tell the caller .. */
+      vassert(*is_profinc == False);
+      *is_profinc = True;
+      break;
+
+   case S390_INSN_EVCHECK:
+      end = s390_insn_evcheck_emit(buf, insn);
+      break;
+
+   case S390_INSN_XDIRECT:
+      end = s390_insn_xdirect_emit(buf, insn, disp_cp_chain_me_to_slowEP,
+                                   disp_cp_chain_me_to_fastEP);
+      break;
+
+   case S390_INSN_XINDIR:
+      end = s390_insn_xindir_emit(buf, insn, disp_cp_xindir);
+      break;
+
+   case S390_INSN_XASSISTED:
+      end = s390_insn_xassisted_emit(buf, insn, disp_cp_xassisted);
+      break;
+
    default:
-      vpanic("s390_insn_emit");
+      vpanic("emit_S390Instr");
    }
 
    vassert(end - buf <= nbuf);
@@ -7151,6 +7800,184 @@ emit_S390Instr(UChar *buf, Int nbuf, s390_insn *insn, Bool mode64,
    return end - buf;
 }
 
+
+/* Return the number of bytes emitted for an S390_INSN_EVCHECK.
+   See s390_insn_evcheck_emit */
+Int
+evCheckSzB_S390(void)
+{
+   return s390_host_has_gie ? 18 : 24;
+}
+
+
+/* Patch the counter address into CODE_TO_PATCH as previously
+   generated by s390_insn_profinc_emit. */
+VexInvalRange
+patchProfInc_S390(void *code_to_patch, ULong *location_of_counter)
+{
+   vassert(sizeof(ULong *) == 8);
+
+   s390_tchain_verify_load64(code_to_patch, S390_REGNO_TCHAIN_SCRATCH, 0);
+
+   s390_tchain_patch_load64(code_to_patch, Ptr_to_ULong(location_of_counter));
+
+   VexInvalRange vir = {0, 0};
+   return vir;
+}
+
+
+/* NB: what goes on here has to be very closely coordinated with the
+   s390_insn_xdirect_emit code above. */
+VexInvalRange
+chainXDirect_S390(void *place_to_chain,
+                  void *disp_cp_chain_me_EXPECTED,
+                  void *place_to_jump_to)
+{
+   /* What we're expecting to see @ PLACE_TO_CHAIN is:
+
+        load  tchain_scratch, #disp_cp_chain_me_EXPECTED
+        goto *tchain_scratch
+   */
+   const UChar *next;
+   next = s390_tchain_verify_load64(place_to_chain, S390_REGNO_TCHAIN_SCRATCH,
+                                    Ptr_to_ULong(disp_cp_chain_me_EXPECTED));
+   vassert(s390_insn_is_BR(next, S390_REGNO_TCHAIN_SCRATCH));
+
+   /* And what we want to change it to is either:
+        (general case):
+
+          load  tchain_scratch, #place_to_jump_to
+          goto *tchain_scratch
+
+      ---OR---
+
+        in the case where the displacement is small enough
+
+          BRCL delta       where delta is in half-words
+          invalid opcodes
+
+      In both cases the replacement has the same length as the original.
+      To remain sane & verifiable,
+      (1) limit the displacement for the short form to 
+          (say) +/- one billion, so as to avoid wraparound
+          off-by-ones
+      (2) even if the short form is applicable, once every (say)
+          1024 times use the long form anyway, so as to maintain
+          verifiability
+   */
+
+   /* This is the delta we need to put into a BRCL insn. Note, that the
+      offset in BRCL is in half-words. Hence division by 2. */
+   Long delta = (Long)((UChar *)place_to_jump_to - (UChar *)place_to_chain) / 2;
+   Bool shortOK = delta >= -1000*1000*1000 && delta < 1000*1000*1000;
+
+   static UInt shortCTR = 0; /* DO NOT MAKE NON-STATIC */
+   if (shortOK) {
+      shortCTR++; // thread safety bleh
+      if (0 == (shortCTR & 0x3FF)) {
+         shortOK = False;
+         if (0)
+            vex_printf("QQQ chainXDirect_S390: shortCTR = %u, "
+                       "using long jmp\n", shortCTR);
+      }
+   }
+
+   /* And make the modifications. */
+   UChar *p = (UChar *)place_to_chain;
+   if (shortOK) {
+      p = s390_emit_BRCL(p, S390_CC_ALWAYS, delta);  /* 6 bytes */
+
+      /* Make sure that BRCL fits into the patchable part of an xdirect
+         code sequence */
+      vassert(6 <= s390_xdirect_patchable_len());
+
+      /* Fill remaining bytes with 0x00 (invalid opcode) */
+      Int i;
+      for (i = 0; i < s390_xdirect_patchable_len() - 6; ++i)
+         p[i] = 0x00;
+   } else {
+      /*
+          load  tchain_scratch, #place_to_jump_to
+          goto *tchain_scratch
+      */
+      ULong addr = Ptr_to_ULong(place_to_jump_to);
+      p = s390_tchain_load64(p, S390_REGNO_TCHAIN_SCRATCH, addr);
+      /* There is not need to emit a BCR here, as it is already there. */
+   }
+
+   VexInvalRange vir = {0, 0};
+   return vir;
+}
+
+
+/* NB: what goes on here has to be very closely coordinated with the
+   s390_insn_xdirect_emit code above. */
+VexInvalRange
+unchainXDirect_S390(void *place_to_unchain,
+                    void *place_to_jump_to_EXPECTED,
+                    void *disp_cp_chain_me)
+{
+   /* What we're expecting to see @ PLACE_TO_UNCHAIN:
+
+          load  tchain_scratch, #place_to_jump_to_EXPECTED
+          goto *tchain_scratch
+
+      ---OR---
+        in the case where the displacement falls within 32 bits
+
+          BRCL delta
+          invalid opcodes
+   */
+   UChar *p = place_to_unchain;
+
+   Bool uses_short_form = False;
+
+   if (s390_insn_is_BRCL(p, S390_CC_ALWAYS)) {
+      /* Looks like the short form */
+      Int num_hw = *(Int *)&p[2];
+      Int delta = 2 *num_hw;
+
+      vassert(p + delta == place_to_jump_to_EXPECTED);
+
+      Int i;
+      for (i = 0; i < s390_xdirect_patchable_len() - 6; ++i)
+         vassert(p[6+i] == 0x00);
+      uses_short_form = True;
+   } else {
+      /* Should be the long form */
+      const UChar *next;
+
+      next = s390_tchain_verify_load64(p, S390_REGNO_TCHAIN_SCRATCH,
+                                       Ptr_to_ULong(place_to_jump_to_EXPECTED));
+      /* Check for BR *tchain_scratch */
+      vassert(s390_insn_is_BR(next, S390_REGNO_TCHAIN_SCRATCH));
+   }
+
+   /* And what we want to change it to is:
+
+        load  tchain_scratch, #disp_cp_chain_me
+        goto *tchain_scratch
+   */
+
+   /* Get the address of the beginning of the load64 code sequence into %r1.
+      Do not change the register! This is part of the protocol with the
+      dispatcher.
+      Note: the incoming argument PLACE_TO_CHAIN points to the beginning of the
+      load64 insn sequence. That sequence is prefixed with a BASR to get its
+      address (see s390_insn_xdirect_emit).  */
+   p = s390_emit_BASR(p - S390_BASR_LEN, 1, R0);
+
+   ULong addr = Ptr_to_ULong(disp_cp_chain_me);
+   p = s390_tchain_load64(p, S390_REGNO_TCHAIN_SCRATCH, addr);
+
+   /* Emit the BCR in case the short form was used. In case of the long
+      form, the BCR is already there. */
+   if (uses_short_form)
+      s390_emit_BCR(p, S390_CC_ALWAYS, S390_REGNO_TCHAIN_SCRATCH);
+
+   VexInvalRange vir = {0, 0};
+   return vir;
+}
 
 /*---------------------------------------------------------------*/
 /*--- end                                    host_s390_defs.c ---*/

@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2010 OpenWorks LLP
+   Copyright (C) 2004-2011 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -48,6 +48,12 @@
 
 typedef
    struct {
+      /* Event check fail addr and counter. */
+      /*   0 */ UInt host_EvC_FAILADDR;
+      /*   4 */ UInt host_EvC_COUNTER;
+      /*   8 */ UInt pad3;
+      /*  12 */ UInt pad4; 
+      /* Add 16 to all the numbers below.  Sigh. */
       /* General Purpose Registers */
       /*   0 */ UInt guest_GPR0;
       /*   4 */ UInt guest_GPR1;
@@ -189,8 +195,11 @@ typedef
       /* 1182 */ UChar guest_CR7_321; /* in [3:1] */
       /* 1183 */ UChar guest_CR7_0;   /* in lsb */
 
-      /* FP Status & Control Register fields */
-      /* 1184 */ UInt guest_FPROUND; // FP Rounding Mode
+      /* FP Status & Control Register fields. Only rounding mode fields are supported. */
+      /* 1184 */ UChar guest_FPROUND; // Binary Floating Point Rounding Mode
+      /* 1185 */ UChar guest_DFPROUND; // Decimal Floating Point Rounding Mode
+      /* 1186 */ UChar pad1;
+      /* 1187 */ UChar pad2;
 
       /* Vector Save/Restore Register */
       /* 1188 */ UInt guest_VRSAVE;

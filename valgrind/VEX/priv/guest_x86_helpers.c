@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2010 OpenWorks LLP
+   Copyright (C) 2004-2011 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -1787,7 +1787,20 @@ VexEmWarn x86g_dirtyhelper_FXRSTOR ( VexGuestX86State* gst, HWord addr )
 
    /* Copy the x87 registers out of the image, into a temporary
       Fpu_State struct. */
-   for (i = 0; i < 14; i++) tmp.env[i] = 0;
+
+   /* LLVM on Darwin turns the following loop into a movaps plus a
+      handful of scalar stores.  This would work fine except for the
+      fact that VEX doesn't keep the stack correctly (16-) aligned for
+      the call, so it segfaults.  Hence, split the loop into two
+      pieces (and pray LLVM doesn't merely glue them back together) so
+      it's composed only of scalar stores and so is alignment
+      insensitive.  Of course this is a kludge of the lamest kind --
+      VEX should be fixed properly. */
+   /* Code that seems to trigger the problem:
+      for (i = 0; i < 14; i++) tmp.env[i] = 0; */
+   for (i = 0; i < 7; i++) tmp.env[i+0] = 0;
+   for (i = 0; i < 7; i++) tmp.env[i+7] = 0;
+   
    for (i = 0; i < 80; i++) tmp.reg[i] = 0;
    /* fill in tmp.reg[0..7] */
    for (stno = 0; stno < 8; stno++) {
@@ -2657,6 +2670,9 @@ ULong x86g_use_seg_selector ( HWord ldt, HWord gdt,
 /* VISIBLE TO LIBVEX CLIENT */
 void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state )
 {
+   vex_state->host_EvC_FAILADDR = 0;
+   vex_state->host_EvC_COUNTER = 0;
+
    vex_state->guest_EAX = 0;
    vex_state->guest_ECX = 0;
    vex_state->guest_EDX = 0;
@@ -2714,8 +2730,6 @@ void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state )
    vex_state->guest_IP_AT_SYSCALL = 0;
 
    vex_state->padding1 = 0;
-   vex_state->padding2 = 0;
-   vex_state->padding3 = 0;
 }
 
 

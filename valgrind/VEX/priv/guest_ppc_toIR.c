@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2010 OpenWorks LLP
+   Copyright (C) 2004-2011 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -222,6 +222,7 @@ static void* fnptr_to_fnentry( VexAbiInfo* vbi, void* f )
 #define OFFB_XER_CA      offsetofPPCGuestState(guest_XER_CA)
 #define OFFB_XER_BC      offsetofPPCGuestState(guest_XER_BC)
 #define OFFB_FPROUND     offsetofPPCGuestState(guest_FPROUND)
+#define OFFB_DFPROUND    offsetofPPCGuestState(guest_DFPROUND)
 #define OFFB_VRSAVE      offsetofPPCGuestState(guest_VRSAVE)
 #define OFFB_VSCR        offsetofPPCGuestState(guest_VSCR)
 #define OFFB_EMWARN      offsetofPPCGuestState(guest_EMWARN)
@@ -251,6 +252,11 @@ static UInt ifieldOPClo10 ( UInt instr) {
 /* Extract 9-bit secondary opcode, instr[9:1] */
 static UInt ifieldOPClo9 ( UInt instr) {
    return IFIELD( instr, 1, 9 );
+}
+
+/* Extract 8-bit secondary opcode, instr[8:1] */
+static UInt ifieldOPClo8 ( UInt instr) {
+   return IFIELD( instr, 1, 8 );
 }
 
 /* Extract 5-bit secondary opcode, instr[5:1] */
@@ -373,8 +379,8 @@ typedef enum {
     PPC_GST_MAX
 } PPC_GST;
 
-#define MASK_FPSCR_RN   0x3
-#define MASK_FPSCR_FPRF 0x1F000
+#define MASK_FPSCR_RN   0x3ULL  // Binary floating point rounding mode
+#define MASK_FPSCR_DRN  0x700000000ULL // Decimal floating point rounding mode
 #define MASK_VSCR_VALID 0x00010001
 
 
@@ -415,7 +421,6 @@ static UInt MASK32( UInt begin, UInt end )
    return mask;
 }
 
-/* ditto for 64bit mask */
 static ULong MASK64( UInt begin, UInt end )
 {
    ULong m1, m2, mask;
@@ -1114,6 +1119,45 @@ static void putFReg ( UInt archreg, IRExpr* e )
    stmt( IRStmt_Put(floatGuestRegOffset(archreg), e) );
 }
 
+/* get Decimal float value.  Note, they share floating point register file. */
+static IRExpr* getDReg(UInt archreg) {
+   IRExpr *e;
+   vassert( archreg < 32 );
+   e = IRExpr_Get( floatGuestRegOffset( archreg ), Ity_D64 );
+   return e;
+}
+
+/* Read a floating point register pair and combine their contents into a
+ 128-bit value */
+static IRExpr *getDReg_pair(UInt archreg) {
+   IRExpr *high = getDReg( archreg );
+   IRExpr *low = getDReg( archreg + 1 );
+
+   return binop( Iop_D64HLtoD128, high, low );
+}
+
+/* Ditto, but write to a reg instead. */
+static void putDReg(UInt archreg, IRExpr* e) {
+   vassert( archreg < 32 );
+   vassert( typeOfIRExpr(irsb->tyenv, e) == Ity_D64 );
+   stmt( IRStmt_Put( floatGuestRegOffset( archreg ), e ) );
+}
+
+/* Write a 128-bit floating point value into a register pair. */
+static void putDReg_pair(UInt archreg, IRExpr *e) {
+   IRTemp low = newTemp( Ity_D64 );
+   IRTemp high = newTemp( Ity_D64 );
+
+   vassert( archreg < 32 );
+   vassert( typeOfIRExpr(irsb->tyenv, e) == Ity_D128 );
+
+   assign( low, unop( Iop_D128LOtoD64, e ) );
+   assign( high, unop( Iop_D128HItoD64, e ) );
+
+   stmt( IRStmt_Put( floatGuestRegOffset( archreg ), mkexpr( high ) ) );
+   stmt( IRStmt_Put( floatGuestRegOffset( archreg + 1 ), mkexpr( low ) ) );
+}
+
 static Int vsxGuestRegOffset ( UInt archreg )
 {
    vassert(archreg < 64);
@@ -1466,7 +1510,7 @@ static void gen_SIGBUS_if_misaligned ( IRTemp addr, UChar align )
                   binop(Iop_And64, mkexpr(addr), mkU64(align-1)),
                   mkU64(0)),
             Ijk_SigBUS,
-            IRConst_U64( guest_CIA_curr_instr )
+            IRConst_U64( guest_CIA_curr_instr ), OFFB_CIA
          )
       );
    } else {
@@ -1477,7 +1521,7 @@ static void gen_SIGBUS_if_misaligned ( IRTemp addr, UChar align )
                   binop(Iop_And32, mkexpr(addr), mkU32(align-1)),
                   mkU32(0)),
             Ijk_SigBUS,
-            IRConst_U32( guest_CIA_curr_instr )
+            IRConst_U32( guest_CIA_curr_instr ), OFFB_CIA
          )
       );
    }
@@ -2464,10 +2508,12 @@ static IRExpr* /* ::Ity_I32 */ getGST_masked ( PPC_GST reg, UInt mask )
          all exceptions masked, round-to-nearest.
          This corresponds to a FPSCR value of 0x0. */
 
-      /* We're only keeping track of the rounding mode,
-         so if the mask isn't asking for this, just return 0x0 */
-      if (mask & (MASK_FPSCR_RN|MASK_FPSCR_FPRF)) {
-         assign( val, IRExpr_Get( OFFB_FPROUND, Ity_I32 ) );
+      /* In the lower 32 bits of FPSCR, we're only keeping track of
+       * the binary floating point rounding mode, so if the mask isn't
+       * asking for this, just return 0x0.
+       */
+      if (mask & MASK_FPSCR_RN) {
+         assign( val, unop( Iop_8Uto32, IRExpr_Get( OFFB_FPROUND, Ity_I8 ) ) );
       } else {
          assign( val, mkU32(0x0) );
       }
@@ -2485,6 +2531,36 @@ static IRExpr* /* ::Ity_I32 */ getGST_masked ( PPC_GST reg, UInt mask )
       return mkexpr(val);
    }
 }
+
+/* Get a masked word from the given reg */
+static IRExpr* /* ::Ity_I32 */getGST_masked_upper(PPC_GST reg, ULong mask) {
+   IRExpr * val;
+   vassert( reg < PPC_GST_MAX );
+
+   switch (reg) {
+
+   case PPC_GST_FPSCR: {
+      /* In the upper 32 bits of FPSCR, we're only keeping track
+       * of the decimal floating point rounding mode, so if the mask
+       * isn't asking for this, just return 0x0.
+       */
+      if (mask & MASK_FPSCR_DRN) {
+         val = binop( Iop_And32,
+                      unop( Iop_8Uto32, IRExpr_Get( OFFB_DFPROUND, Ity_I8 ) ),
+                      unop( Iop_64HIto32, mkU64( mask ) ) );
+      } else {
+         val = mkU32( 0x0ULL );
+      }
+      break;
+   }
+
+   default:
+      vex_printf( "getGST_masked_upper(ppc): reg = %u", reg );
+      vpanic( "getGST_masked_upper(ppc)" );
+   }
+   return val;
+}
+
 
 /* Fetch the specified REG[FLD] nibble (as per IBM/hardware notation)
    and return it at the bottom of an I32; the top 27 bits are
@@ -2581,32 +2657,30 @@ static void putGST ( PPC_GST reg, IRExpr* src )
 }
 
 /* Write masked src to the given reg */
-static void putGST_masked ( PPC_GST reg, IRExpr* src, UInt mask )
+static void putGST_masked ( PPC_GST reg, IRExpr* src, ULong mask )
 {
    IRType ty = mode64 ? Ity_I64 : Ity_I32;
    vassert( reg < PPC_GST_MAX );
-   vassert( typeOfIRExpr(irsb->tyenv,src ) == Ity_I32 );
-   
+   vassert( typeOfIRExpr( irsb->tyenv,src ) == Ity_I64 );
+
    switch (reg) {
    case PPC_GST_FPSCR: {
-      /* Allow writes to Rounding Mode */
-      if (mask & (MASK_FPSCR_RN|MASK_FPSCR_FPRF)) {
-         /* construct new fpround from new and old values as per mask:
-            new fpround = (src & (3 & mask)) | (fpround & (3 & ~mask)) */
-         stmt( 
-            IRStmt_Put( 
-               OFFB_FPROUND,
-               binop(
-                  Iop_Or32, 
-                  binop(Iop_And32, src, mkU32((MASK_FPSCR_RN|MASK_FPSCR_FPRF) & mask)),
-                  binop(
-                     Iop_And32, 
-                     IRExpr_Get(OFFB_FPROUND,Ity_I32),
-                     mkU32((MASK_FPSCR_RN|MASK_FPSCR_FPRF) & ~mask)
-                  )
-               )
-            )
-         );
+      /* Allow writes to either binary or decimal floating point
+       * Rounding Mode
+       */
+      if (mask & MASK_FPSCR_RN) {
+         stmt( IRStmt_Put( OFFB_FPROUND,
+                           unop( Iop_32to8,
+                                 binop( Iop_And32,
+                                        unop( Iop_64to32, src ),
+                                        mkU32( MASK_FPSCR_RN & mask ) ) ) ) );
+      } else if (mask & MASK_FPSCR_DRN) {
+         stmt( IRStmt_Put( OFFB_DFPROUND,
+                           unop( Iop_32to8,
+                                 binop( Iop_And32,
+                                        unop( Iop_64HIto32, src ),
+                                        mkU32( ( MASK_FPSCR_DRN & mask )
+                                                 >> 32 ) ) ) ) );
       }
 
       /* Give EmWarn for attempted writes to:
@@ -2624,7 +2698,7 @@ static void putGST_masked ( PPC_GST reg, IRExpr* src, UInt mask )
             IRStmt_Exit(
                binop(Iop_CmpNE32, mkU32(ew), mkU32(EmWarn_NONE)),
                Ijk_EmWarn,
-               mkSzConst( ty, nextInsnAddr()) ));
+               mkSzConst( ty, nextInsnAddr()), OFFB_CIA ));
       }
 
       /* Ignore all other writes */
@@ -2641,13 +2715,17 @@ static void putGST_masked ( PPC_GST reg, IRExpr* src, UInt mask )
    REG[FLD] (as per IBM/hardware notation). */
 static void putGST_field ( PPC_GST reg, IRExpr* src, UInt fld )
 {
-   UInt shft, mask;
+   UInt shft;
+   ULong mask;
 
    vassert( typeOfIRExpr(irsb->tyenv,src ) == Ity_I32 );
-   vassert( fld < 8 );
+   vassert( fld < 16 );
    vassert( reg < PPC_GST_MAX );
    
-   shft = 4*(7-fld);
+   if (fld < 8)
+      shft = 4*(7-fld);
+   else
+      shft = 4*(15-fld);
    mask = 0xF<<shft;
 
    switch (reg) {
@@ -2657,12 +2735,16 @@ static void putGST_field ( PPC_GST reg, IRExpr* src, UInt fld )
       break;
 
    default:
-      if (shft == 0) {
-         putGST_masked( reg, src, mask );
-      } else {
-         putGST_masked( reg,
-                        binop(Iop_Shl32, src, mkU8(toUChar(shft))),
-                        mask );
+      {
+         IRExpr * src64 = unop( Iop_32Uto64, src );
+
+         if (shft == 0) {
+            putGST_masked( reg, src64, mask );
+         } else {
+            putGST_masked( reg,
+                           binop( Iop_Shl64, src64, mkU8( toUChar( shft ) ) ),
+                           mask );
+         }
       }
    }
 }
@@ -4900,7 +4982,7 @@ void generate_lsw_sequence ( IRTemp tNBytes,   // # bytes, :: Ity_I32
       /* if (nBytes < (i+1)) goto NIA; */
       stmt( IRStmt_Exit( binop(Iop_CmpLT32U, e_nbytes, mkU32(i+1)),
                          Ijk_Boring, 
-                         mkSzConst( ty, nextInsnAddr()) ));
+                         mkSzConst( ty, nextInsnAddr()), OFFB_CIA ));
       /* when crossing into a new dest register, set it to zero. */
       if ((i % 4) == 0) {
          rD++; if (rD == 32) rD = 0;
@@ -4951,7 +5033,7 @@ void generate_stsw_sequence ( IRTemp tNBytes,   // # bytes, :: Ity_I32
       /* if (nBytes < (i+1)) goto NIA; */
       stmt( IRStmt_Exit( binop(Iop_CmpLT32U, e_nbytes, mkU32(i+1)),
                          Ijk_Boring, 
-                         mkSzConst( ty, nextInsnAddr() ) ));
+                         mkSzConst( ty, nextInsnAddr() ), OFFB_CIA ));
       /* check for crossing into a new src register. */
       if ((i % 4) == 0) {
          rS++; if (rS == 32) rS = 0;
@@ -5173,6 +5255,7 @@ static Bool dis_branch ( UInt theInstr,
 
    /* The default what-next.  Individual cases can override it. */    
    dres->whatNext = Dis_StopHere;
+   vassert(dres->jk_StopHere == Ijk_INVALID);
 
    switch (opc1) {
    case 0x12: // b     (Branch, PPC32 p360)
@@ -5205,8 +5288,8 @@ static Bool dis_branch ( UInt theInstr,
          dres->whatNext   = Dis_ResteerU;
          dres->continueAt = tgt;
       } else {
-         irsb->jumpkind = flag_LK ? Ijk_Call : Ijk_Boring;
-         irsb->next     = mkSzImm(ty, tgt);
+         dres->jk_StopHere = flag_LK ? Ijk_Call : Ijk_Boring; ;
+         putGST( PPC_GST_CIA, mkSzImm(ty, tgt) );
       }
       break;
       
@@ -5242,10 +5325,10 @@ static Bool dis_branch ( UInt theInstr,
       stmt( IRStmt_Exit(
                binop(Iop_CmpNE32, mkexpr(do_branch), mkU32(0)),
                flag_LK ? Ijk_Call : Ijk_Boring,
-               mkSzConst(ty, tgt) ) );
-      
-      irsb->jumpkind = Ijk_Boring;
-      irsb->next     = e_nia;
+               mkSzConst(ty, tgt), OFFB_CIA ) );
+
+      dres->jk_StopHere = Ijk_Boring;
+      putGST( PPC_GST_CIA, e_nia );
       break;
       
    case 0x13:
@@ -5277,15 +5360,15 @@ static Bool dis_branch ( UInt theInstr,
          stmt( IRStmt_Exit(
                   binop(Iop_CmpEQ32, mkexpr(cond_ok), mkU32(0)),
                   Ijk_Boring,
-                  c_nia ));
+                  c_nia, OFFB_CIA ));
 
          if (flag_LK && vbi->guest_ppc_zap_RZ_at_bl) {
             make_redzone_AbiHint( vbi, lr_old,
                                   "b-ctr-l (indirect call)" );
 	 }
 
-         irsb->jumpkind = flag_LK ? Ijk_Call : Ijk_Boring;
-         irsb->next     = mkexpr(lr_old);
+         dres->jk_StopHere = flag_LK ? Ijk_Call : Ijk_Boring;;
+         putGST( PPC_GST_CIA, mkexpr(lr_old) );
          break;
          
       case 0x010: { // bclr (Branch Cond. to Link Register, PPC32 p365) 
@@ -5317,7 +5400,7 @@ static Bool dis_branch ( UInt theInstr,
          stmt( IRStmt_Exit(
                   binop(Iop_CmpEQ32, mkexpr(do_branch), mkU32(0)),
                   Ijk_Boring,
-                  c_nia ));
+                  c_nia, OFFB_CIA ));
 
          if (vanilla_return && vbi->guest_ppc_zap_RZ_at_blr) {
             make_redzone_AbiHint( vbi, lr_old,
@@ -5327,8 +5410,8 @@ static Bool dis_branch ( UInt theInstr,
          /* blrl is pretty strange; it's like a return that sets the
             return address of its caller to the insn following this
             one.  Mark it as a return. */
-         irsb->jumpkind = Ijk_Ret;  /* was flag_LK ? Ijk_Call : Ijk_Ret; */
-         irsb->next     = mkexpr(lr_old);
+         dres->jk_StopHere = Ijk_Ret;  /* was flag_LK ? Ijk_Call : Ijk_Ret; */
+         putGST( PPC_GST_CIA, mkexpr(lr_old) );
          break;
       }
       default:
@@ -5484,7 +5567,8 @@ static Bool do_trap ( UChar TO,
       stmt( IRStmt_Exit( 
                binop(opCMPEQ, const0, const0), 
                Ijk_SigTRAP,
-               mode64 ? IRConst_U64(cia) : IRConst_U32((UInt)cia) 
+               mode64 ? IRConst_U64(cia) : IRConst_U32((UInt)cia),
+               OFFB_CIA
       ));
       return True; /* unconditional trap */
    }
@@ -5527,7 +5611,8 @@ static Bool do_trap ( UChar TO,
    stmt( IRStmt_Exit( 
             binop(opCMPNE, cond, const0), 
             Ijk_SigTRAP,
-            mode64 ? IRConst_U64(cia) : IRConst_U32((UInt)cia) 
+            mode64 ? IRConst_U64(cia) : IRConst_U32((UInt)cia),
+            OFFB_CIA
    ));
    return False; /* not an unconditional trap */
 }
@@ -5575,9 +5660,9 @@ static Bool dis_trapi ( UInt theInstr,
    if (uncond) {
       /* If the trap shows signs of being unconditional, don't
          continue decoding past it. */
-      irsb->next     = mkSzImm( ty, nextInsnAddr() );
-      irsb->jumpkind = Ijk_Boring;
-      dres->whatNext = Dis_StopHere;
+      putGST( PPC_GST_CIA, mkSzImm( ty, nextInsnAddr() ));
+      dres->jk_StopHere = Ijk_Boring;
+      dres->whatNext    = Dis_StopHere;
    }
 
    return True;
@@ -5629,9 +5714,9 @@ static Bool dis_trap ( UInt theInstr,
    if (uncond) {
       /* If the trap shows signs of being unconditional, don't
          continue decoding past it. */
-      irsb->next     = mkSzImm( ty, nextInsnAddr() );
-      irsb->jumpkind = Ijk_Boring;
-      dres->whatNext = Dis_StopHere;
+      putGST( PPC_GST_CIA, mkSzImm( ty, nextInsnAddr() ));
+      dres->jk_StopHere = Ijk_Boring;
+      dres->whatNext    = Dis_StopHere;
    }
 
    return True;
@@ -5662,12 +5747,12 @@ static Bool dis_syslink ( UInt theInstr,
    /* It's important that all ArchRegs carry their up-to-date value
       at this point.  So we declare an end-of-block here, which
       forces any TempRegs caching ArchRegs to be flushed. */
-   irsb->next     = abiinfo->guest_ppc_sc_continues_at_LR
-                       ? getGST( PPC_GST_LR )
-                       : mkSzImm( ty, nextInsnAddr() );
-   irsb->jumpkind = Ijk_Sys_syscall;
+   putGST( PPC_GST_CIA, abiinfo->guest_ppc_sc_continues_at_LR
+                        ? getGST( PPC_GST_LR )
+                        : mkSzImm( ty, nextInsnAddr() ));
 
-   dres->whatNext = Dis_StopHere;
+   dres->whatNext    = Dis_StopHere;
+   dres->jk_StopHere = Ijk_Sys_syscall;
    return True;
 }
 
@@ -6645,9 +6730,9 @@ static Bool dis_cache_manage ( UInt         theInstr,
       /* be paranoid ... */
       stmt( IRStmt_MBE(Imbe_Fence) );
 
-      irsb->jumpkind = Ijk_TInval;
-      irsb->next     = mkSzImm(ty, nextInsnAddr());
-      dres->whatNext = Dis_StopHere;
+      putGST( PPC_GST_CIA, mkSzImm(ty, nextInsnAddr()));
+      dres->jk_StopHere = Ijk_TInval;
+      dres->whatNext    = Dis_StopHere;
       break;
    }
 
@@ -6689,6 +6774,33 @@ static IRExpr* /* :: Ity_I32 */ get_IR_roundingmode ( void )
                         mkU32(2) ));
 }
 
+/* The DFP IR rounding modes were chosen such that the existing PPC to IR
+ * mapping would still work with the extended three bit DFP rounding 
+ * mode designator.
+
+ *  rounding mode                     | PPC  |  IR
+ *  -----------------------------------------------
+ *  to nearest, ties to even          | 000  | 000
+ *  to zero                           | 001  | 011
+ *  to +infinity                      | 010  | 010
+ *  to -infinity                      | 011  | 001
+ *  to nearest, ties away from 0      | 100  | 100
+ *  to nearest, ties toward 0         | 101  | 111
+ *  to away from 0                    | 110  | 110
+ *  to prepare for shorter precision  | 111  | 101
+ */
+static IRExpr* /* :: Ity_I32 */ get_IR_roundingmode_DFP( void )
+{
+   IRTemp rm_PPC32 = newTemp( Ity_I32 );
+   assign( rm_PPC32, getGST_masked_upper( PPC_GST_FPSCR, MASK_FPSCR_DRN ) );
+
+   // rm_IR = XOR( rm_PPC32, (rm_PPC32 << 1) & 2)
+   return binop( Iop_Xor32,
+                 mkexpr( rm_PPC32 ),
+                 binop( Iop_And32,
+                        binop( Iop_Shl32, mkexpr( rm_PPC32 ), mkU8( 1 ) ),
+                        mkU32( 2 ) ) );
+}
 
 /*------------------------------------------------------------*/
 /*--- Floating Point Instruction Translation               ---*/
@@ -8224,7 +8336,7 @@ static Bool dis_fp_move ( UInt theInstr )
 /*
   Floating Point Status/Control Register Instructions
 */
-static Bool dis_fp_scr ( UInt theInstr )
+static Bool dis_fp_scr ( UInt theInstr, Bool GX_level )
 {
    /* Many forms - see each switch case */
    UChar opc1    = ifieldOPC(theInstr);
@@ -8247,7 +8359,8 @@ static Bool dis_fp_scr ( UInt theInstr )
          return False;
       }
       DIP("mtfsb1%s crb%d \n", flag_rC ? ".":"", crbD);
-      putGST_masked( PPC_GST_FPSCR, mkU32(1<<(31-crbD)), 1<<(31-crbD) );
+      putGST_masked( PPC_GST_FPSCR, mkU64( 1 <<( 31 - crbD ) ),
+		     1ULL << ( 31 - crbD ) );
       break;
    }
 
@@ -8283,29 +8396,41 @@ static Bool dis_fp_scr ( UInt theInstr )
          return False;
       }      
       DIP("mtfsb0%s crb%d\n", flag_rC ? ".":"", crbD);
-      putGST_masked( PPC_GST_FPSCR, mkU32(0), 1<<(31-crbD) );
+      putGST_masked( PPC_GST_FPSCR, mkU64( 0 ), 1ULL << ( 31 - crbD ) );
       break;
    }
 
    case 0x086: { // mtfsfi (Move to FPSCR Field Immediate, PPC32 p481)
-      UChar crfD    = toUChar( IFIELD( theInstr, 23, 3 ) );
+      UInt crfD     = IFIELD( theInstr, 23, 3 );
       UChar b16to22 = toUChar( IFIELD( theInstr, 16, 7 ) );
       UChar IMM     = toUChar( IFIELD( theInstr, 12, 4 ) );
       UChar b11     = toUChar( IFIELD( theInstr, 11, 1 ) );
+      UChar Wbit;
 
       if (b16to22 != 0 || b11 != 0) {
          vex_printf("dis_fp_scr(ppc)(instr,mtfsfi)\n");
          return False;
       }      
       DIP("mtfsfi%s crf%d,%d\n", flag_rC ? ".":"", crfD, IMM);
-      putGST_field( PPC_GST_FPSCR, mkU32(IMM), crfD );
+      if (GX_level) {
+         /* This implies that Decimal Floating Point is supported, and the
+          * FPSCR must be managed as a 64-bit register.
+          */
+         Wbit = toUChar( IFIELD(theInstr, 16, 1) );
+      } else {
+         Wbit = 0;
+      }
+      crfD = crfD + (8 * (1 - Wbit) );
+      putGST_field( PPC_GST_FPSCR, mkU32( IMM ), crfD );
       break;
    }
 
    case 0x247: { // mffs (Move from FPSCR, PPC32 p468)
       UChar   frD_addr  = ifieldRegDS(theInstr);
       UInt    b11to20   = IFIELD(theInstr, 11, 10);
-      IRExpr* fpscr_all = getGST_masked( PPC_GST_FPSCR, MASK_FPSCR_RN );
+      IRExpr* fpscr_lower = getGST_masked( PPC_GST_FPSCR, MASK_FPSCR_RN );
+      IRExpr* fpscr_upper = getGST_masked_upper( PPC_GST_FPSCR,
+                                                 MASK_FPSCR_DRN );
 
       if (b11to20 != 0) {
          vex_printf("dis_fp_scr(ppc)(instr,mffs)\n");
@@ -8314,7 +8439,7 @@ static Bool dis_fp_scr ( UInt theInstr )
       DIP("mffs%s fr%u\n", flag_rC ? ".":"", frD_addr);
       putFReg( frD_addr,
           unop( Iop_ReinterpI64asF64,
-                unop( Iop_32Uto64, fpscr_all )));
+                binop( Iop_32HLto64, fpscr_upper, fpscr_lower ) ) );
       break;
    }
 
@@ -8323,8 +8448,21 @@ static Bool dis_fp_scr ( UInt theInstr )
       UChar FM       = toUChar( IFIELD(theInstr, 17, 8) );
       UChar frB_addr = ifieldRegB(theInstr);
       IRTemp frB   = newTemp(Ity_F64);
-      IRTemp rB_32 = newTemp(Ity_I32);
-      Int i, mask;
+      IRTemp rB_64 = newTemp( Ity_I64 );
+      Int i;
+      ULong mask;
+      UChar Wbit;
+#define BFP_MASK_SEED 0x3000000000000000ULL
+#define DFP_MASK_SEED 0x7000000000000000ULL
+
+      if (GX_level) {
+         /* This implies that Decimal Floating Point is supported, and the
+          * FPSCR must be managed as a 64-bit register.
+          */
+         Wbit = toUChar( IFIELD(theInstr, 16, 1) );
+      } else {
+         Wbit = 0;
+      }
 
       if (b25 == 1) {
          /* new 64 bit move variant for power 6.  If L field (bit 25) is
@@ -8342,14 +8480,24 @@ static Bool dis_fp_scr ( UInt theInstr )
          mask = 0;
          for (i=0; i<8; i++) {
             if ((FM & (1<<(7-i))) == 1) {
-               mask |= 0xF << (7-i);
+               /* FPSCR field k is set to the contents of the corresponding
+                * field of register FRB, where k = i+8x(1-W).  In the Power
+                * ISA, register field numbering is from left to right, so field
+                * 15 is the least significant field in a 64-bit register.  To
+                * generate the mask, we set all the appropriate rounding mode
+                * bits in the highest order nibble (field 0) and shift right 
+                * 'k x nibble length'.
+                */
+               if (Wbit)
+                  mask |= DFP_MASK_SEED >> ( 4 * ( i + 8 * ( 1 - Wbit ) ) );
+               else
+                  mask |= BFP_MASK_SEED >> ( 4 * ( i + 8 * ( 1 - Wbit ) ) );
             }
          }
       }
       assign( frB, getFReg(frB_addr));
-      assign( rB_32, unop( Iop_64to32,
-                           unop( Iop_ReinterpF64asI64, mkexpr(frB) )));
-      putGST_masked( PPC_GST_FPSCR, mkexpr(rB_32), mask );
+      assign( rB_64, unop( Iop_ReinterpF64asI64, mkexpr( frB ) ) );
+      putGST_masked( PPC_GST_FPSCR, mkexpr( rB_64 ), mask );
       break;
    }
 
@@ -8360,6 +8508,1488 @@ static Bool dis_fp_scr ( UInt theInstr )
    return True;
 }
 
+/*------------------------------------------------------------*/
+/*--- Decimal Floating Point (DFP)  Helper functions       ---*/
+/*------------------------------------------------------------*/
+#define DFP_LONG  1
+#define DFP_EXTND 2
+#define DFP_LONG_ENCODED_FIELD_MASK  0x1F00
+#define DFP_EXTND_ENCODED_FIELD_MASK 0x1F000
+#define DFP_LONG_EXP_MSK   0XFF
+#define DFP_EXTND_EXP_MSK  0XFFF
+
+#define DFP_G_FIELD_LONG_MASK     0x7FFC0000  // upper 32-bits only
+#define DFP_LONG_GFIELD_RT_SHIFT  (63 - 13 - 32) // adj for upper 32-bits 
+#define DFP_G_FIELD_EXTND_MASK    0x7FFFC000  // upper 32-bits only
+#define DFP_EXTND_GFIELD_RT_SHIFT (63 - 17 - 32) //adj for upper 32 bits
+
+#define DFP_T_FIELD_LONG_MASK     0x3FFFF  // mask for upper 32-bits
+#define DFP_T_FIELD_EXTND_MASK    0x03FFFF // mask for upper 32-bits
+
+#define DFP_LONG_EXP_MAX          369      // biased max
+#define DFP_LONG_EXP_MIN          0        // biased min
+#define DFP_EXTND_EXP_MAX         6111     // biased max
+#define DFP_EXTND_EXP_MIN         0        // biased min
+
+#define  AND(x, y) binop( Iop_And32, x, y )
+#define   OR(x, y) binop( Iop_Or32,  x, y )
+#define AND4(w, x, y, z) AND( AND( w, x ), AND( y, z ) )
+#define  OR3(x, y, z)    OR( x, OR( y, z ) )
+#define  OR4(w, x, y, z) OR( OR( w, x ), OR( y, z ) )
+#define  SHL(value, by) binop( Iop_Shl32, value, mkU8( by ) )
+#define BITS5(_b4,_b3,_b2,_b1,_b0) \
+   (((_b4) << 4) | ((_b3) << 3) | ((_b2) << 2) | \
+    ((_b1) << 1) | ((_b0) << 0))
+
+static void Get_lmd(IRTemp * lmd, IRExpr * gfield_0_4 )
+{
+
+   /* Extract the exponent and the left most digit of the mantissa
+    * from the G field bits [0:4].
+    */
+   IRTemp lmd_07_mask   = newTemp( Ity_I32 );
+   IRTemp lmd_8_00_mask = newTemp( Ity_I32 );
+   IRTemp lmd_8_01_mask = newTemp( Ity_I32 );
+   IRTemp lmd_8_10_mask = newTemp( Ity_I32 );
+   IRTemp lmd_9_00_mask = newTemp( Ity_I32 );
+   IRTemp lmd_9_01_mask = newTemp( Ity_I32 );
+   IRTemp lmd_9_10_mask = newTemp( Ity_I32 );
+
+   IRTemp lmd_07_val = newTemp( Ity_I32 );
+   IRTemp lmd_8_val  = newTemp( Ity_I32 );
+   IRTemp lmd_9_val  = newTemp( Ity_I32 );
+
+   /* The left most digit (LMD) encoding is as follows:
+    *    lmd
+    *   0 - 7    (lmexp << 3) | lmd
+    *     8      0b11000 (24 decimal) if lme=0b00;
+    *            0b11010 (26 decimal) if lme=0b01;
+    *            0b11100 (28 decimal) if lme=0b10
+    *     9      0b11001 (25 decimal) if lme=0b00;
+    *            0b11011 (27 decimal) if lme=0b01;
+    *            0b11101 (29 decimal) if lme=0b10;
+    */
+
+   /* Generate the masks for each condition of LMD and exponent bits */
+   assign( lmd_07_mask,
+           unop( Iop_1Sto32, binop( Iop_CmpLE32U,
+                                    gfield_0_4,
+                                    mkU32( BITS5(1,0,1,1,1) ) ) ) );
+   assign( lmd_8_00_mask,
+           unop( Iop_1Sto32, binop( Iop_CmpEQ32,
+                                    gfield_0_4,
+                                    mkU32( BITS5(1,1,0,0,0) ) ) ) );
+   assign( lmd_8_01_mask,
+           unop( Iop_1Sto32, binop( Iop_CmpEQ32,
+                                    gfield_0_4,
+                                    mkU32( BITS5(1,1,0,1,0) ) ) ) );
+   assign( lmd_8_10_mask,
+           unop( Iop_1Sto32, binop( Iop_CmpEQ32,
+                                    gfield_0_4,
+                                    mkU32( BITS5(1,1,1,0,0) ) ) ) );
+   assign( lmd_9_00_mask,
+           unop( Iop_1Sto32, binop( Iop_CmpEQ32,
+                                    gfield_0_4,
+                                    mkU32( BITS5(1,1,0,0,1) ) ) ) );
+   assign( lmd_9_01_mask,
+           unop( Iop_1Sto32, binop( Iop_CmpEQ32,
+                                    gfield_0_4,
+                                    mkU32( BITS5(1,1,0,1,1) ) ) ) );
+   assign( lmd_9_10_mask,
+           unop( Iop_1Sto32, binop( Iop_CmpEQ32,
+                                    gfield_0_4,
+                                    mkU32( BITS5(1,1,1,0,1) ) ) ) );
+
+   /* Generate the values for each LMD condition, assuming the condition
+    * is TRUE.
+    */
+   assign( lmd_07_val, binop( Iop_And32, gfield_0_4, mkU32( 0x7 ) ) );
+   assign( lmd_8_val, mkU32( 0x8 ) );
+   assign( lmd_9_val, mkU32( 0x9 ) );
+
+   assign( *lmd,
+           OR( OR3 ( AND( mkexpr( lmd_07_mask ), mkexpr( lmd_07_val ) ),
+                     AND( mkexpr( lmd_8_00_mask ), mkexpr( lmd_8_val ) ),
+                     AND( mkexpr( lmd_8_01_mask ), mkexpr( lmd_8_val ) )),
+                     OR4( AND( mkexpr( lmd_8_10_mask ), mkexpr( lmd_8_val ) ),
+                          AND( mkexpr( lmd_9_00_mask ), mkexpr( lmd_9_val ) ),
+                          AND( mkexpr( lmd_9_01_mask ), mkexpr( lmd_9_val ) ),
+                          AND( mkexpr( lmd_9_10_mask ), mkexpr( lmd_9_val ) )
+                     ) ) );
+}
+
+#undef AND
+#undef OR
+#undef AND4
+#undef OR3
+#undef OR4
+#undef SHL
+#undef BITS5
+
+/*------------------------------------------------------------*/
+/*--- Decimal Floating Point (DFP) instruction translation ---*/
+/*------------------------------------------------------------*/
+
+/* DFP Arithmetic instructions */
+static Bool dis_dfp_arith(UInt theInstr)
+{
+   UInt opc2 = ifieldOPClo10( theInstr );
+   UChar frS_addr = ifieldRegDS( theInstr );
+   UChar frA_addr = ifieldRegA( theInstr );
+   UChar frB_addr = ifieldRegB( theInstr );
+   UChar flag_rC = ifieldBIT0( theInstr );
+
+   IRTemp frA = newTemp( Ity_D64 );
+   IRTemp frB = newTemp( Ity_D64 );
+   IRTemp frS = newTemp( Ity_D64 );
+   IRExpr* round = get_IR_roundingmode_DFP();
+
+   /* By default, if flag_RC is set, we will clear cr1 after the
+    * operation.  In reality we should set cr1 to indicate the
+    * exception status of the operation, but since we're not
+    * simulating exceptions, the exception status will appear to be
+    * zero.  Hence cr1 should be cleared if this is a . form insn.
+    */
+   Bool clear_CR1 = True;
+
+   assign( frA, getDReg( frA_addr ) );
+   assign( frB, getDReg( frB_addr ) );
+
+   switch (opc2) {
+   case 0x2: // dadd
+      DIP( "dadd%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      assign( frS, triop( Iop_AddD64, round, mkexpr( frA ), mkexpr( frB ) ) );
+      break;
+   case 0x202: // dsub
+      DIP( "dsub%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      assign( frS, triop( Iop_SubD64, round, mkexpr( frA ), mkexpr( frB ) ) );
+      break;
+   case 0x22: // dmul
+      DIP( "dmul%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      assign( frS, triop( Iop_MulD64, round, mkexpr( frA ), mkexpr( frB ) ) );
+      break;
+   case 0x222: // ddiv
+      DIP( "ddiv%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      assign( frS, triop( Iop_DivD64, round, mkexpr( frA ), mkexpr( frB ) ) );
+      break;
+   }
+
+   putDReg( frS_addr, mkexpr( frS ) );
+
+   if (flag_rC && clear_CR1) {
+      putCR321( 1, mkU8( 0 ) );
+      putCR0( 1, mkU8( 0 ) );
+   }
+
+   return True;
+}
+
+/* Quad DFP Arithmetic instructions */
+static Bool dis_dfp_arithq(UInt theInstr)
+{
+   UInt opc2 = ifieldOPClo10( theInstr );
+   UChar frS_addr = ifieldRegDS( theInstr );
+   UChar frA_addr = ifieldRegA( theInstr );
+   UChar frB_addr = ifieldRegB( theInstr );
+   UChar flag_rC = ifieldBIT0( theInstr );
+
+   IRTemp frA = newTemp( Ity_D128 );
+   IRTemp frB = newTemp( Ity_D128 );
+   IRTemp frS = newTemp( Ity_D128 );
+   IRExpr* round = get_IR_roundingmode_DFP();
+
+   /* By default, if flag_RC is set, we will clear cr1 after the
+    * operation.  In reality we should set cr1 to indicate the
+    * exception status of the operation, but since we're not
+    * simulating exceptions, the exception status will appear to be
+    * zero.  Hence cr1 should be cleared if this is a . form insn.
+    */
+   Bool clear_CR1 = True;
+
+   assign( frA, getDReg_pair( frA_addr ) );
+   assign( frB, getDReg_pair( frB_addr ) );
+
+   switch (opc2) {
+   case 0x2: // daddq
+      DIP( "daddq%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      assign( frS, triop( Iop_AddD128, round, mkexpr( frA ), mkexpr( frB ) ) );
+      break;
+   case 0x202: // dsubq
+      DIP( "dsubq%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      assign( frS, triop( Iop_SubD128, round, mkexpr( frA ), mkexpr( frB ) ) );
+      break;
+   case 0x22: // dmulq
+      DIP( "dmulq%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      assign( frS, triop( Iop_MulD128, round, mkexpr( frA ), mkexpr( frB ) ) );
+      break;
+   case 0x222: // ddivq
+      DIP( "ddivq%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      assign( frS, triop( Iop_DivD128, round, mkexpr( frA ), mkexpr( frB ) ) );
+      break;
+   }
+
+   putDReg_pair( frS_addr, mkexpr( frS ) );
+
+   if (flag_rC && clear_CR1) {
+      putCR321( 1, mkU8( 0 ) );
+      putCR0( 1, mkU8( 0 ) );
+   }
+
+   return True;
+}
+
+/* DFP 64-bit logical shift instructions  */
+static Bool dis_dfp_shift(UInt theInstr) {
+   UInt opc2       = ifieldOPClo9( theInstr );
+   UChar frS_addr  = ifieldRegDS( theInstr );
+   UChar frA_addr  = ifieldRegA( theInstr );
+   UChar shift_val = IFIELD(theInstr, 10, 6);
+   UChar flag_rC   = ifieldBIT0( theInstr );
+
+   IRTemp frA = newTemp( Ity_D64 );
+   IRTemp frS = newTemp( Ity_D64 );
+   Bool clear_CR1 = True;
+
+   assign( frA, getDReg( frA_addr ) );
+
+   switch (opc2) {
+   case 0x42: // dscli
+      DIP( "dscli%s fr%u,fr%u,%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, shift_val );
+      assign( frS, binop( Iop_ShlD64, mkexpr( frA ), mkU8( shift_val ) ) );
+      break;
+   case 0x62: // dscri
+      DIP( "dscri%s fr%u,fr%u,%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, shift_val );
+      assign( frS, binop( Iop_ShrD64, mkexpr( frA ), mkU8( shift_val ) ) );
+      break;
+   }
+
+   putDReg( frS_addr, mkexpr( frS ) );
+
+   if (flag_rC && clear_CR1) {
+      putCR321( 1, mkU8( 0 ) );
+      putCR0( 1, mkU8( 0 ) );
+   }
+
+   return True;
+}
+
+/* Quad DFP  logical shift instructions  */
+static Bool dis_dfp_shiftq(UInt theInstr) {
+   UInt opc2       = ifieldOPClo9( theInstr );
+   UChar frS_addr  = ifieldRegDS( theInstr );
+   UChar frA_addr  = ifieldRegA( theInstr );
+   UChar shift_val = IFIELD(theInstr, 10, 6);
+   UChar flag_rC   = ifieldBIT0( theInstr );
+
+   IRTemp frA = newTemp( Ity_D128 );
+   IRTemp frS = newTemp( Ity_D128 );
+   Bool clear_CR1 = True;
+
+   assign( frA, getDReg_pair( frA_addr ) );
+
+   switch (opc2) {
+   case 0x42: // dscliq
+      DIP( "dscliq%s fr%u,fr%u,%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, shift_val );
+      assign( frS, binop( Iop_ShlD128, mkexpr( frA ), mkU8( shift_val ) ) );
+      break;
+   case 0x62: // dscriq
+      DIP( "dscriq%s fr%u,fr%u,%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, shift_val );
+      assign( frS, binop( Iop_ShrD128, mkexpr( frA ), mkU8( shift_val ) ) );
+      break;
+   }
+
+   putDReg_pair( frS_addr, mkexpr( frS ) );
+
+   if (flag_rC && clear_CR1) {
+      putCR321( 1, mkU8( 0 ) );
+      putCR0( 1, mkU8( 0 ) );
+   }
+
+   return True;
+}
+
+/* DFP 64-bit format conversion instructions */
+static Bool dis_dfp_fmt_conv(UInt theInstr) {
+   UInt opc2      = ifieldOPClo10( theInstr );
+   UChar frS_addr = ifieldRegDS( theInstr );
+   UChar frB_addr = ifieldRegB( theInstr );
+   IRExpr* round  = get_IR_roundingmode_DFP();
+   UChar flag_rC  = ifieldBIT0( theInstr );
+   IRTemp frB;
+   IRTemp frS;
+   Bool clear_CR1 = True;
+
+   switch (opc2) {
+   case 0x102: //dctdp
+      DIP( "dctdp%s fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frB_addr );
+
+      frB = newTemp( Ity_D64 );
+      frS = newTemp( Ity_D64 );
+      assign( frB, getDReg( frB_addr ) );
+      assign( frS, unop( Iop_D32toD64, mkexpr( frB ) ) );
+      putDReg( frS_addr, mkexpr( frS ) );
+      break;
+   case 0x302: // drsp
+      DIP( "drsp%s fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frB_addr );
+      frB = newTemp( Ity_D64 );
+      frS = newTemp( Ity_D64 );
+      assign( frB, getDReg( frB_addr ) );
+      assign( frS, binop( Iop_D64toD32, round, mkexpr( frB ) ) );
+      putDReg( frS_addr, mkexpr( frS ) );
+      break;
+   case 0x122: // dctfix
+      DIP( "dctfix%s fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frB_addr );
+      frB = newTemp( Ity_D64 );
+      frS = newTemp( Ity_D64 );
+      assign( frB, getDReg( frB_addr ) );
+      assign( frS, binop( Iop_D64toI64S, round, mkexpr( frB ) ) );
+      putDReg( frS_addr, mkexpr( frS ) );
+      break;
+   case 0x322: // dcffix
+      DIP( "dcffix%s fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frB_addr );
+      frB = newTemp( Ity_D64 );
+      frS = newTemp( Ity_D64 );
+      assign( frB, getDReg( frB_addr ) );
+      assign( frS, binop( Iop_I64StoD64, round, mkexpr( frB ) ) );
+      putDReg( frS_addr, mkexpr( frS ) );
+      break;
+   }
+
+   if (flag_rC && clear_CR1) {
+      putCR321( 1, mkU8( 0 ) );
+      putCR0( 1, mkU8( 0 ) );
+   }
+
+   return True;
+}
+
+/* Quad DFP format conversion instructions */
+static Bool dis_dfp_fmt_convq(UInt theInstr) {
+   UInt opc2      = ifieldOPClo10( theInstr );
+   UChar frS_addr = ifieldRegDS( theInstr );
+   UChar frB_addr = ifieldRegB( theInstr );
+   IRExpr* round  = get_IR_roundingmode_DFP();
+   IRTemp frB64   = newTemp( Ity_D64 );
+   IRTemp frB128  = newTemp( Ity_D128 );
+   IRTemp frS64   = newTemp( Ity_D64 );
+   IRTemp frS128  = newTemp( Ity_D128 );
+   UChar flag_rC  = ifieldBIT0( theInstr );
+   Bool clear_CR1 = True;
+
+   switch (opc2) {
+   case 0x102: // dctqpq
+      DIP( "dctqpq%s fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frB_addr );
+      assign( frB64, getDReg( frB_addr ) );
+      assign( frS128, unop( Iop_D64toD128, mkexpr( frB64 ) ) );
+      putDReg_pair( frS_addr, mkexpr( frS128 ) );
+      break;
+   case 0x122: // dctfixq
+      DIP( "dctfixq%s fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frB_addr );
+      assign( frB128, getDReg_pair( frB_addr ) );
+      assign( frS64, binop( Iop_D128toI64S, round, mkexpr( frB128 ) ) );
+      putDReg( frS_addr, mkexpr( frS64 ) );
+      break;
+   case 0x302: //drdpq
+      DIP( "drdpq%s fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frB_addr );
+      assign( frB128, getDReg_pair( frB_addr ) );
+      assign( frS64, binop( Iop_D128toD64, round, mkexpr( frB128 ) ) );
+      putDReg( frS_addr, mkexpr( frS64 ) );
+      break;
+   case 0x322: // dcffixq
+      /* Have to introduce an IOP for this instruction so it will work
+       * on POWER 6 because emulating the instruction requires a POWER 7
+       * DFP instruction in the emulation code.
+       */
+      DIP( "dcffixq%s fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frB_addr );
+      assign( frB64, getDReg( frB_addr ) );
+      assign( frS128, unop( Iop_I64StoD128, mkexpr( frB64 ) ) );
+      putDReg_pair( frS_addr, mkexpr( frS128 ) );
+      break;
+   }
+
+   if (flag_rC && clear_CR1) {
+      putCR321( 1, mkU8( 0 ) );
+      putCR0( 1, mkU8( 0 ) );
+   }
+
+   return True;
+}
+
+static Bool dis_dfp_round( UInt theInstr ) {
+   UChar frS_addr = ifieldRegDS(theInstr);
+   UChar R        = IFIELD(theInstr, 16, 1);
+   UChar RMC      = IFIELD(theInstr, 9, 2);
+   UChar frB_addr = ifieldRegB( theInstr );
+   UChar flag_rC  = ifieldBIT0( theInstr );
+   IRTemp frB     = newTemp( Ity_D64 );
+   IRTemp frS     = newTemp( Ity_D64 );
+   UInt opc2      = ifieldOPClo8( theInstr );
+   Bool clear_CR1 = True;
+
+   switch (opc2) {
+   /* drintn, is the same as drintx.  The only difference is this
+    * instruction does not generate an exception for an inexact operation.
+    * Currently not supporting inexact exceptions.
+    */
+   case 0x63: // drintx
+   case 0xE3: // drintn
+      DIP( "drintx/drintn%s fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frB_addr );
+
+      /* pass the value of R and RMC in the same field */
+      assign( frB, getDReg( frB_addr ) );
+      assign( frS, binop( Iop_RoundD64toInt,
+                          mkU32( ( R << 3 ) | RMC ),
+                          mkexpr( frB ) ) );
+      putDReg( frS_addr, mkexpr( frS ) );
+      break;
+   default:
+      vex_printf("dis_dfp_round(ppc)(opc2)\n");
+      return False;
+   }
+
+   if (flag_rC && clear_CR1) {
+      putCR321( 1, mkU8( 0 ) );
+      putCR0( 1, mkU8( 0 ) );
+   }
+
+   return True;
+}
+
+static Bool dis_dfp_roundq(UInt theInstr) {
+   UChar frS_addr = ifieldRegDS( theInstr );
+   UChar frB_addr = ifieldRegB( theInstr );
+   UChar R = IFIELD(theInstr, 16, 1);
+   UChar RMC = IFIELD(theInstr, 9, 2);
+   UChar flag_rC = ifieldBIT0( theInstr );
+   IRTemp frB = newTemp( Ity_D128 );
+   IRTemp frS = newTemp( Ity_D128 );
+   Bool clear_CR1 = True;
+   UInt opc2 = ifieldOPClo8( theInstr );
+
+   switch (opc2) {
+   /* drintnq, is the same as drintxq.  The only difference is this
+    * instruction does not generate an exception for an inexact operation.
+    * Currently not supporting inexact exceptions.
+    */
+   case 0x63: // drintxq
+   case 0xE3: // drintnq
+      DIP( "drintxq/drintnq%s fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frB_addr );
+
+      /* pass the value of R and RMC in the same field */
+      assign( frB, getDReg_pair( frB_addr ) );
+      assign( frS, binop( Iop_RoundD128toInt,
+                          mkU32( ( R << 3 ) | RMC ),
+                          mkexpr( frB ) ) );
+      putDReg_pair( frS_addr, mkexpr( frS ) );
+      break;
+   default:
+      vex_printf("dis_dfp_roundq(ppc)(opc2)\n");
+      return False;
+   }
+
+   if (flag_rC && clear_CR1) {
+      putCR321( 1, mkU8( 0 ) );
+      putCR0( 1, mkU8( 0 ) );
+   }
+
+   return True;
+}
+
+static Bool dis_dfp_quantize_sig_rrnd(UInt theInstr) {
+   UInt opc2 = ifieldOPClo8( theInstr );
+   UChar frS_addr = ifieldRegDS( theInstr );
+   UChar frA_addr = ifieldRegA( theInstr );
+   UChar frB_addr = ifieldRegB( theInstr );
+   UChar flag_rC = ifieldBIT0( theInstr );
+   UInt TE_value = IFIELD(theInstr, 16, 4);
+   UInt TE_sign  = IFIELD(theInstr, 20, 1);
+   UInt RMC = IFIELD(theInstr, 9, 2);
+   IRTemp frA = newTemp( Ity_D64 );
+   IRTemp frB = newTemp( Ity_D64 );
+   IRTemp frS = newTemp( Ity_D64 );
+   Bool clear_CR1 = True;
+
+   assign( frB, getDReg( frB_addr ) );
+
+   switch (opc2) {
+   case 0x43: // dquai
+      DIP( "dquai%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      IRTemp TE_D64 = newTemp( Ity_D64 );
+
+      /* Generate a reference DFP value frA with the desired exponent
+       * given by TE using significand from frB.  Need to add the bias
+       * 398 to TE.  TE is stored as a 2's complement number.
+       */
+      if (TE_sign == 1) {
+         /* Take 2's complement of the 5-bit value and subtract from bias. 
+          *  Bias is adjusted for the +1 required when taking 2's complement.
+          */
+         assign( TE_D64,
+                 unop( Iop_ReinterpI64asD64,
+                       binop( Iop_Sub64, mkU64( 397 ),
+                              binop( Iop_And64, mkU64( 0xF ),
+                                     unop( Iop_Not64, mkU64( TE_value ) )
+                                           ) ) ) );
+
+      } else {
+         assign( TE_D64,
+                 unop( Iop_ReinterpI64asD64,
+                       binop( Iop_Add64, mkU64( 398 ), mkU64( TE_value ) ) ) );
+      }
+
+      assign( frA, binop( Iop_InsertExpD64, mkexpr( TE_D64 ), 
+                          unop( Iop_ReinterpI64asD64, mkU64( 1 ) ) ) );
+
+      assign( frS, triop( Iop_QuantizeD64,
+                          mkU32( RMC ),
+                          mkexpr( frA ),
+                          mkexpr( frB ) ) );
+      break;
+
+   case 0x3: // dqua
+      DIP( "dqua%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      assign( frA, getDReg( frA_addr ) );
+      assign( frS, triop( Iop_QuantizeD64,
+                          mkU32( RMC ),
+                          mkexpr( frA ),
+                          mkexpr( frB ) ) );
+      break;
+   case 0x23: // drrnd
+      DIP( "drrnd%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      assign( frA, getDReg( frA_addr ) );
+      assign( frS, triop( Iop_SignificanceRoundD64,
+                          mkU32( RMC ),
+                          mkexpr( frA ),
+                          mkexpr( frB ) ) );
+      break;
+   default:
+      vex_printf("dis_dfp_quantize_sig_rrnd(ppc)(opc2)\n");
+      return False;
+   }
+   putDReg( frS_addr, mkexpr( frS ) );
+
+   if (flag_rC && clear_CR1) {
+      putCR321( 1, mkU8( 0 ) );
+      putCR0( 1, mkU8( 0 ) );
+   }
+
+   return True;
+}
+
+static Bool dis_dfp_quantize_sig_rrndq(UInt theInstr) {
+   UInt opc2 = ifieldOPClo8( theInstr );
+   UChar frS_addr = ifieldRegDS( theInstr );
+   UChar frA_addr = ifieldRegA( theInstr );
+   UChar frB_addr = ifieldRegB( theInstr );
+   UChar flag_rC = ifieldBIT0( theInstr );
+   UInt TE_value = IFIELD(theInstr, 16, 4);
+   UInt TE_sign  = IFIELD(theInstr, 20, 1);
+   UInt RMC = IFIELD(theInstr, 9, 2);
+   IRTemp frA = newTemp( Ity_D128 );
+   IRTemp frB = newTemp( Ity_D128 );
+   IRTemp frS = newTemp( Ity_D128 );
+   Bool clear_CR1 = True;
+
+   assign( frB, getDReg_pair( frB_addr ) );
+
+   switch (opc2) {
+   case 0x43: // dquaiq
+      DIP( "dquaiq%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      IRTemp TE_D64 = newTemp( Ity_D64 );
+
+      /* Generate a reference DFP value frA with the desired exponent
+       * given by TE using significand of 1.  Need to add the bias
+       * 6176 to TE.
+       */
+      if (TE_sign == 1) {
+         /* Take 2's complement of the 5-bit value and subtract from bias. 
+          *  Bias adjusted for the +1 required when taking 2's complement.
+          */
+         assign( TE_D64,
+                 unop( Iop_ReinterpI64asD64,
+                       binop( Iop_Sub64, mkU64( 6175 ),
+                              binop( Iop_And64, mkU64( 0xF ),
+                                     unop( Iop_Not64, mkU64( TE_value ) )
+                                           ) ) ) );
+
+      } else {
+         assign( TE_D64,
+                 unop( Iop_ReinterpI64asD64,
+                       binop( Iop_Add64, mkU64( 6176 ), mkU64( TE_value ) )
+                            ) );
+      }
+
+      assign( frA,
+              binop( Iop_InsertExpD128, mkexpr( TE_D64 ),
+                     unop( Iop_D64toD128, 
+                           unop( Iop_ReinterpI64asD64, mkU64( 1 ) ) ) ) );
+      assign( frS, triop( Iop_QuantizeD128,
+                          mkU32( RMC ),
+                          mkexpr( frA ),
+                          mkexpr( frB ) ) );
+      break;
+   case 0x3: // dquaq
+      DIP( "dquaiq%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      assign( frA, getDReg_pair( frA_addr ) );
+      assign( frS, triop( Iop_QuantizeD128,
+                          mkU32( RMC ),
+                          mkexpr( frA ),
+                          mkexpr( frB ) ) );
+      break;
+   case 0x23: // drrndq
+      DIP( "drrndq%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      assign( frA, getDReg_pair( frA_addr ) );
+      assign( frS, triop( Iop_SignificanceRoundD128,
+                          mkU32( RMC ),
+                          mkexpr( frA ),
+                          mkexpr( frB ) ) );
+      break;
+   default:
+      vex_printf("dis_dfp_quantize_sig_rrndq(ppc)(opc2)\n");
+      return False;
+   }
+   putDReg_pair( frS_addr, mkexpr( frS ) );
+
+   if (flag_rC && clear_CR1) {
+      putCR321( 1, mkU8( 0 ) );
+      putCR0( 1, mkU8( 0 ) );
+   }
+
+   return True;
+}
+
+static Bool dis_dfp_extract_insert(UInt theInstr) {
+   UInt opc2 = ifieldOPClo10( theInstr );
+   UChar frS_addr = ifieldRegDS( theInstr );
+   UChar frA_addr = ifieldRegA( theInstr );
+   UChar frB_addr = ifieldRegB( theInstr );
+   UChar flag_rC = ifieldBIT0( theInstr );
+   Bool clear_CR1 = True;
+
+   IRTemp frA = newTemp( Ity_D64 );
+   IRTemp frB = newTemp( Ity_D64 );
+   IRTemp frS = newTemp( Ity_D64 );
+
+   assign( frA, getDReg( frA_addr ) );
+   assign( frB, getDReg( frB_addr ) );
+
+   switch (opc2) {
+   case 0x162: // dxex
+      DIP( "dxex%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      assign( frS, unop( Iop_ExtractExpD64, mkexpr( frB ) ) );
+      break;
+   case 0x362: // diex
+      DIP( "diex%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      assign( frS, binop( Iop_InsertExpD64, mkexpr( frA ), mkexpr( frB ) ) );
+      break;
+   default:
+      vex_printf("dis_dfp_extract_insert(ppc)(opc2)\n");
+      return False;
+   }
+
+   putDReg( frS_addr, mkexpr( frS ) );
+
+   if (flag_rC && clear_CR1) {
+      putCR321( 1, mkU8( 0 ) );
+      putCR0( 1, mkU8( 0 ) );
+   }
+
+   return True;
+}
+
+static Bool dis_dfp_extract_insertq(UInt theInstr) {
+   UInt opc2 = ifieldOPClo10( theInstr );
+   UChar frS_addr = ifieldRegDS( theInstr );
+   UChar frA_addr = ifieldRegA( theInstr );
+   UChar frB_addr = ifieldRegB( theInstr );
+   UChar flag_rC = ifieldBIT0( theInstr );
+
+   IRTemp frA   = newTemp( Ity_D64 );
+   IRTemp frB   = newTemp( Ity_D128 );
+   IRTemp frS64 = newTemp( Ity_D64 );
+   IRTemp frS   = newTemp( Ity_D128 );
+   Bool clear_CR1 = True;
+
+   assign( frB, getDReg_pair( frB_addr ) );
+
+   switch (opc2) {
+   case 0x162:  // dxexq
+      DIP( "dxexq%s fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr,  frB_addr );
+      /* Instruction actually returns a 64-bit result.  So as to be
+       * consistent and not have to add a new struct, the emulation returns
+       * the 64-bit result in the upper and lower register.
+       */
+      assign( frS64, unop( Iop_ExtractExpD128, mkexpr( frB ) ) );
+      putDReg( frS_addr, mkexpr( frS64 ) );
+      break;
+   case 0x362:  // diexq
+      DIP( "diexq%s fr%u,fr%u,fr%u\n",
+           flag_rC ? ".":"", frS_addr, frA_addr, frB_addr );
+      assign( frA, getDReg( frA_addr ) );
+      assign( frS, binop( Iop_InsertExpD128, mkexpr( frA ), mkexpr( frB ) ) );
+      putDReg_pair( frS_addr, mkexpr( frS ) );
+      break;
+   default:
+      vex_printf("dis_dfp_extract_insertq(ppc)(opc2)\n");
+      return False;
+   }
+
+   if (flag_rC && clear_CR1) {
+      putCR321( 1, mkU8( 0 ) );
+      putCR0( 1, mkU8( 0 ) );
+   }
+
+   return True;
+}
+
+/* DFP 64-bit comparison instructions */
+static Bool dis_dfp_compare(UInt theInstr) {
+   /* X-Form */
+   UChar crfD = toUChar( IFIELD( theInstr, 23, 3 ) ); // AKA BF
+   UChar frA_addr = ifieldRegA( theInstr );
+   UChar frB_addr = ifieldRegB( theInstr );
+   UInt opc1 = ifieldOPC( theInstr );
+   IRTemp frA;
+   IRTemp frB;
+
+   IRTemp ccIR = newTemp( Ity_I32 );
+   IRTemp ccPPC32 = newTemp( Ity_I32 );
+
+
+   /* Note: Differences between dcmpu and dcmpo are only in exception
+    flag settings, which aren't supported anyway. */
+   switch (opc1) {
+   case 0x3B: /* dcmpo and dcmpu, DFP 64-bit */
+      DIP( "dcmpo %u,fr%u,fr%u\n", crfD, frA_addr, frB_addr );
+      frA = newTemp( Ity_D64 );
+      frB = newTemp( Ity_D64 );
+
+      assign( frA, getDReg( frA_addr ) );
+      assign( frB, getDReg( frB_addr ) );
+
+      assign( ccIR, binop( Iop_CmpD64, mkexpr( frA ), mkexpr( frB ) ) );
+      break;
+   case 0x3F: /* dcmpoq and dcmpuq,DFP 128-bit */
+      DIP( "dcmpoq %u,fr%u,fr%u\n", crfD, frA_addr, frB_addr );
+      frA = newTemp( Ity_D128 );
+      frB = newTemp( Ity_D128 );
+
+      assign( frA, getDReg_pair( frA_addr ) );
+      assign( frB, getDReg_pair( frB_addr ) );
+      assign( ccIR, binop( Iop_CmpD128, mkexpr( frA ), mkexpr( frB ) ) );
+      break;
+   default:
+      vex_printf("dis_dfp_compare(ppc)(opc2)\n");
+      return False;
+   }
+
+   /* Map compare result from IR to PPC32 */
+   /*
+    FP cmp result | PPC | IR
+    --------------------------
+    UN            | 0x1 | 0x45
+    EQ            | 0x2 | 0x40
+    GT            | 0x4 | 0x00
+    LT            | 0x8 | 0x01
+    */
+
+   assign( ccPPC32,
+           binop( Iop_Shl32,
+                  mkU32( 1 ),
+                  unop( Iop_32to8,
+                        binop( Iop_Or32,
+                               binop( Iop_And32,
+                                      unop( Iop_Not32,
+                                            binop( Iop_Shr32,
+                                                   mkexpr( ccIR ),
+                                                   mkU8( 5 ) ) ),
+                                      mkU32( 2 ) ),
+                               binop( Iop_And32,
+                                      binop( Iop_Xor32,
+                                             mkexpr( ccIR ),
+                                             binop( Iop_Shr32,
+                                                    mkexpr( ccIR ),
+                                                    mkU8( 6 ) ) ),
+                                      mkU32( 1 ) ) ) ) ) );
+
+   putGST_field( PPC_GST_CR, mkexpr( ccPPC32 ), crfD );
+   return True;
+}
+
+/* Test class/group/exponent/significance instructions. */
+static Bool dis_dfp_exponent_test ( UInt theInstr )
+{
+   UChar frA_addr   = ifieldRegA( theInstr );
+   UChar frB_addr   = ifieldRegB( theInstr );
+   UChar crfD       = toUChar( IFIELD( theInstr, 23, 3 ) );
+   IRTemp frA       = newTemp( Ity_D64 );
+   IRTemp frB       = newTemp( Ity_D64 );
+   IRTemp frA128    = newTemp( Ity_D128 );
+   IRTemp frB128    = newTemp( Ity_D128 );
+   UInt opc1        = ifieldOPC( theInstr );
+   IRTemp gfield_A  = newTemp( Ity_I32 );
+   IRTemp gfield_B  = newTemp( Ity_I32 );
+   IRTemp gfield_mask   = newTemp( Ity_I32 );
+   IRTemp exponent_A    = newTemp( Ity_I32 );
+   IRTemp exponent_B    = newTemp( Ity_I32 );
+   IRTemp A_NaN_true    = newTemp( Ity_I32 );
+   IRTemp B_NaN_true    = newTemp( Ity_I32 );
+   IRTemp A_inf_true    = newTemp( Ity_I32 );
+   IRTemp B_inf_true    = newTemp( Ity_I32 );
+   IRTemp A_equals_B    = newTemp( Ity_I32 );
+   IRTemp finite_number = newTemp( Ity_I32 );
+   IRTemp cc0 = newTemp( Ity_I32 );
+   IRTemp cc1 = newTemp( Ity_I32 );
+   IRTemp cc2 = newTemp( Ity_I32 );
+   IRTemp cc3 = newTemp( Ity_I32 );
+
+   /* The dtstex and dtstexg instructions only differ in the size of the
+    * exponent field.  The following switch statement takes care of the size
+    * specific setup.  Once the value of the exponents, the G-field shift
+    * and mask is setup the remaining code is identical.
+    */
+   switch (opc1) {
+   case 0x3b: // dtstex       Extended instruction setup
+      DIP("dtstex %u,r%u,r%d\n", crfD, frA_addr, frB_addr);
+      assign( frA, getDReg( frA_addr ) );
+      assign( frB, getDReg( frB_addr ) );
+      assign( gfield_mask, mkU32( DFP_G_FIELD_LONG_MASK ) );
+      assign(exponent_A, unop( Iop_64to32, 
+                               unop( Iop_ReinterpD64asI64,
+                                     unop( Iop_ExtractExpD64,
+                                           mkexpr( frA ) ) ) ) );
+      assign(exponent_B, unop( Iop_64to32, 
+                               unop( Iop_ReinterpD64asI64,
+                                     unop( Iop_ExtractExpD64,
+                                           mkexpr( frB ) ) ) ) );
+      break;
+
+   case 0x3F: //  dtstexq      Quad instruction setup
+      DIP("dtstexq %u,r%u,r%d\n", crfD, frA_addr, frB_addr);
+      assign( frA128, getDReg_pair( frA_addr ) );
+      assign( frB128, getDReg_pair( frB_addr ) );
+      assign( frA, unop( Iop_D128HItoD64, mkexpr( frA128 ) ) );
+      assign( frB, unop( Iop_D128HItoD64, mkexpr( frB128 ) ) );
+      assign( gfield_mask, mkU32( DFP_G_FIELD_EXTND_MASK ) );
+      assign( exponent_A, unop( Iop_64to32, 
+                                unop( Iop_ReinterpD64asI64,
+                                      unop( Iop_ExtractExpD128,
+                                            mkexpr( frA128 ) ) ) ) );
+      assign( exponent_B, unop( Iop_64to32, 
+                                unop( Iop_ReinterpD64asI64,
+                                      unop( Iop_ExtractExpD128,
+                                            mkexpr( frB128 ) ) ) ) );
+      break;
+   default:
+      vex_printf("dis_dfp_exponent_test(ppc)(opc2)\n");
+      return False;
+   }
+
+   /* Extract the Gfield */
+   assign( gfield_A, binop( Iop_And32,
+                            mkexpr( gfield_mask ),
+                            unop( Iop_64HIto32,
+                                  unop( Iop_ReinterpD64asI64,
+                                        mkexpr(frA) ) ) ) );
+
+   assign( gfield_B, binop( Iop_And32,
+                            mkexpr( gfield_mask ),
+                            unop( Iop_64HIto32,
+                                  unop( Iop_ReinterpD64asI64,
+                                        mkexpr(frB) ) ) ) );
+
+   /* check for NAN */
+   assign( A_NaN_true, binop(Iop_Or32,
+                             unop( Iop_1Sto32,
+                                   binop( Iop_CmpEQ32,
+                                          mkexpr( gfield_A ),
+                                          mkU32( 0x7C000000 ) ) ),
+                             unop( Iop_1Sto32,
+                                   binop( Iop_CmpEQ32,
+                                          mkexpr( gfield_A ),
+                                          mkU32( 0x7E000000 ) )
+                                   ) ) );
+   assign( B_NaN_true, binop(Iop_Or32,
+                             unop( Iop_1Sto32,
+                                   binop( Iop_CmpEQ32,
+                                          mkexpr( gfield_B ),
+                                          mkU32( 0x7C000000 ) ) ),
+                             unop( Iop_1Sto32,
+                                   binop( Iop_CmpEQ32,
+                                          mkexpr( gfield_B ),
+                                          mkU32( 0x7E000000 ) )
+                             ) ) );
+
+   /* check for infinity */ 
+   assign( A_inf_true,
+           unop( Iop_1Sto32,
+                 binop( Iop_CmpEQ32,
+                        mkexpr( gfield_A ),
+                        mkU32( 0x78000000 ) ) ) );
+
+   assign( B_inf_true,
+           unop( Iop_1Sto32,
+                 binop( Iop_CmpEQ32,
+                        mkexpr( gfield_B ),
+                        mkU32( 0x78000000 ) ) ) );
+
+   assign( finite_number,
+           unop( Iop_Not32,
+                 binop( Iop_Or32,
+                        binop( Iop_Or32,
+                               mkexpr( A_NaN_true ),
+                               mkexpr( B_NaN_true ) ),
+                        binop( Iop_Or32,
+                               mkexpr( A_inf_true ),
+                               mkexpr( B_inf_true ) ) ) ) );
+
+   /* Calculate the condition code bits
+    * If QNaN,SNaN, +infinity, -infinity then cc0, cc1 and cc2 are zero
+    * regardless of the value of the comparisons and cc3 is 1.  Otherwise,
+    * cc0, cc1 and cc0 reflect the results of the comparisons.
+    */
+   assign( A_equals_B,
+           binop( Iop_Or32,
+                  unop( Iop_1Uto32,
+                  binop( Iop_CmpEQ32,
+                         mkexpr( exponent_A ),
+                         mkexpr( exponent_B ) ) ),
+                  binop( Iop_Or32,
+                         binop( Iop_And32,
+                                mkexpr( A_inf_true ),
+                                mkexpr( B_inf_true ) ),
+                         binop( Iop_And32,
+                                mkexpr( A_NaN_true ),
+                                mkexpr( B_NaN_true ) ) ) ) );
+
+   assign( cc0, binop( Iop_And32,
+                       mkexpr( finite_number ),
+                       binop( Iop_Shl32,
+                              unop( Iop_1Uto32,
+                                    binop( Iop_CmpLT32U,
+                                           mkexpr( exponent_A ),
+                                           mkexpr( exponent_B ) ) ),
+                                           mkU8( 3 ) ) ) );
+
+   assign( cc1, binop( Iop_And32,
+                       mkexpr( finite_number ),
+                       binop( Iop_Shl32,
+                              unop( Iop_1Uto32,
+                                    binop( Iop_CmpLT32U,
+                                           mkexpr( exponent_B ),
+                                           mkexpr( exponent_A ) ) ),
+                                           mkU8( 2 ) ) ) );
+
+   assign( cc2, binop( Iop_Shl32, 
+                       binop( Iop_And32,
+                              mkexpr( A_equals_B ),
+                              mkU32( 1 ) ),
+                              mkU8( 1 ) ) );
+
+   assign( cc3, binop( Iop_And32,
+                       unop( Iop_Not32, mkexpr( A_equals_B ) ),
+                       binop( Iop_And32,
+                              mkU32( 0x1 ),
+                              binop( Iop_Or32,
+                                     binop( Iop_Or32,
+                                            mkexpr ( A_inf_true ),
+                                            mkexpr ( B_inf_true ) ),
+                                            binop( Iop_Or32,
+                                                   mkexpr ( A_NaN_true ),
+                                                   mkexpr ( B_NaN_true ) ) )
+                              ) ) );
+
+   /* store the condition code */
+   putGST_field( PPC_GST_CR,
+                 binop( Iop_Or32,
+                        mkexpr( cc0 ),
+                        binop( Iop_Or32,
+                               mkexpr( cc1 ),
+                               binop( Iop_Or32,
+                                      mkexpr( cc2 ),
+                                      mkexpr( cc3 ) ) ) ),
+                 crfD );
+   return True;
+}
+
+/* Test class/group/exponent/significance instructions. */
+static Bool dis_dfp_class_test ( UInt theInstr )
+{
+   UChar frA_addr   = ifieldRegA( theInstr );
+   IRTemp frA       = newTemp( Ity_D64 );
+   IRTemp abs_frA   = newTemp( Ity_D64 );
+   IRTemp frAI64_hi = newTemp( Ity_I64 );
+   IRTemp frAI64_lo = newTemp( Ity_I64 );
+   UInt opc1        = ifieldOPC( theInstr );
+   UInt opc2        = ifieldOPClo9( theInstr );
+   UChar crfD       = toUChar( IFIELD( theInstr, 23, 3 ) );  // AKA BF
+   UInt DCM         = IFIELD( theInstr, 10, 6 );
+   IRTemp DCM_calc  = newTemp( Ity_I32 );
+   UInt max_exp     = 0;
+   UInt min_exp     = 0;
+   IRTemp min_subnormalD64  = newTemp( Ity_D64 );
+   IRTemp min_subnormalD128 = newTemp( Ity_D128 );
+   IRTemp significand64  = newTemp( Ity_D64 );
+   IRTemp significand128 = newTemp( Ity_D128 );
+   IRTemp exp_min_normal = newTemp( Ity_D64 );
+   IRTemp exponent       = newTemp( Ity_I32 );
+
+   IRTemp infinity_true  = newTemp( Ity_I32 );
+   IRTemp SNaN_true      = newTemp( Ity_I32 );
+   IRTemp QNaN_true      = newTemp( Ity_I32 );
+   IRTemp subnormal_true = newTemp( Ity_I32 );
+   IRTemp normal_true    = newTemp( Ity_I32 );
+   IRTemp extreme_true   = newTemp( Ity_I32 );
+   IRTemp lmd            = newTemp( Ity_I32 );
+   IRTemp lmd_zero_true  = newTemp( Ity_I32 );
+   IRTemp zero_true      = newTemp( Ity_I32 );
+   IRTemp sign           = newTemp( Ity_I32 );
+   IRTemp field          = newTemp( Ity_I32 );
+   IRTemp ccIR_zero      = newTemp( Ity_I32 );
+   IRTemp ccIR_subnormal = newTemp( Ity_I32 );
+
+   /* UInt size     = DFP_LONG;  JRS:unused */
+   IRTemp gfield = newTemp( Ity_I32 );
+   IRTemp gfield_0_4_shift  = newTemp( Ity_I8 );
+   IRTemp gfield_mask       = newTemp( Ity_I32 );
+   IRTemp dcm0 = newTemp( Ity_I32 );
+   IRTemp dcm1 = newTemp( Ity_I32 );
+   IRTemp dcm2 = newTemp( Ity_I32 );
+   IRTemp dcm3 = newTemp( Ity_I32 );
+   IRTemp dcm4 = newTemp( Ity_I32 );
+   IRTemp dcm5 = newTemp( Ity_I32 );
+
+   /* The only difference between the dtstdc and dtstdcq instructions is
+    * size of the T and G fields.  The calculation of the 4 bit field
+    * is the same.  Setup the parameters and values that are DFP size
+    * specific.  The rest of the code is independent of the DFP size.
+    *
+    * The Io_CmpD64 is used below.  The instruction sets the ccIR values.
+    * The interpretation of the ccIR values is as follows:
+    *
+    *    DFP cmp result | IR
+    * --------------------------
+    *	 UN             | 0x45
+    *	 EQ             | 0x40
+    *	 GT             | 0x00
+    *	 LT             | 0x01
+    */
+
+   assign( frA, getDReg( frA_addr ) );
+   assign( frAI64_hi, unop( Iop_ReinterpD64asI64, mkexpr( frA ) ) );
+
+   assign( abs_frA, unop( Iop_ReinterpI64asD64,
+                          binop( Iop_And64,
+                                 unop( Iop_ReinterpD64asI64,
+                                       mkexpr( frA ) ),
+                                 mkU64( 0x7FFFFFFFFFFFFFFFULL ) ) ) );
+   assign( gfield_0_4_shift, mkU8( 31 - 5 ) );  // G-field[0:4]
+   switch (opc1) {
+   case 0x3b: // dtstdc, dtstdg
+      DIP("dtstd%s %u,r%u,%d\n", opc2 == 0xc2 ? "c" : "g",
+               crfD, frA_addr, DCM);
+      /* setup the parameters for the long format of the two instructions */
+      assign( frAI64_lo, mkU64( 0 ) );
+      assign( gfield_mask, mkU32( DFP_G_FIELD_LONG_MASK ) );
+      max_exp = DFP_LONG_EXP_MAX;
+      min_exp = DFP_LONG_EXP_MIN;
+
+      assign( exponent, unop( Iop_64to32, 
+                              unop( Iop_ReinterpD64asI64,
+                                    unop( Iop_ExtractExpD64,
+                                          mkexpr( frA ) ) ) ) );
+      assign( significand64,
+              unop( Iop_ReinterpI64asD64,
+                    mkU64( 0x2234000000000001ULL ) ) );  // dfp 1.0
+      assign( exp_min_normal,
+              unop( Iop_ReinterpI64asD64, mkU64( 398 - 383 ) ) );
+      assign( min_subnormalD64,
+              binop( Iop_InsertExpD64,
+                     mkexpr( exp_min_normal ),
+                     mkexpr( significand64 ) ) );
+
+      assign( ccIR_subnormal,
+              binop( Iop_CmpD64,
+                     mkexpr( abs_frA ),
+                     mkexpr( min_subnormalD64 ) ) );
+
+      /* compare absolute value of frA with zero */
+      assign( ccIR_zero,
+              binop( Iop_CmpD64,
+                     mkexpr( abs_frA ),
+                     unop( Iop_ReinterpI64asD64,
+                           mkU64( 0x2238000000000000ULL ) ) ) );
+
+      /* size = DFP_LONG; JRS: unused */
+      break;
+
+   case 0x3F:   // dtstdcq, dtstdgq
+      DIP("dtstd%sq %u,r%u,%d\n", opc2 == 0xc2 ? "c" : "g",
+               crfD, frA_addr, DCM);
+      /* setup the parameters for the extended format of the
+       * two instructions
+       */
+      assign( frAI64_lo, unop( Iop_ReinterpD64asI64,
+                               getDReg( frA_addr+1 ) ) );
+
+      assign( gfield_mask, mkU32( DFP_G_FIELD_EXTND_MASK ) );
+      max_exp = DFP_EXTND_EXP_MAX;
+      min_exp = DFP_EXTND_EXP_MIN;
+      assign( exponent, unop( Iop_64to32, 
+                              unop( Iop_ReinterpD64asI64,
+                                    unop( Iop_ExtractExpD128,
+                                          getDReg_pair( frA_addr) ) ) ) );
+
+      /* create quand exponent for minimum normal number */
+      assign( exp_min_normal,
+              unop( Iop_ReinterpI64asD64, mkU64( 6176 - 6143 ) ) );
+      assign( significand128,
+              unop( Iop_D64toD128,
+                    unop( Iop_ReinterpI64asD64,
+                          mkU64( 0x2234000000000001ULL ) ) ) );  // dfp 1.0
+
+      assign( min_subnormalD128,
+              binop( Iop_InsertExpD128,
+                     mkexpr( exp_min_normal ),
+                     mkexpr( significand128 ) ) );
+
+      assign( ccIR_subnormal, 
+              binop( Iop_CmpD128,
+                     binop( Iop_D64HLtoD128,
+                            unop( Iop_ReinterpI64asD64,
+                                  binop( Iop_And64,
+                                         unop( Iop_ReinterpD64asI64,
+                                               mkexpr( frA ) ),
+                                         mkU64( 0x7FFFFFFFFFFFFFFFULL ) ) ),
+                            getDReg( frA_addr+1 ) ),
+                     mkexpr( min_subnormalD128 ) ) );
+      assign( ccIR_zero,
+              binop( Iop_CmpD128,
+                     binop( Iop_D64HLtoD128,
+                            mkexpr( abs_frA ),
+                            getDReg( frA_addr+1 ) ),
+                     unop( Iop_D64toD128,
+                           unop( Iop_ReinterpI64asD64,
+                                 mkU64( 0x0ULL ) ) ) ) );
+
+      /* size = DFP_EXTND; JRS:unused */
+      break;
+   default:
+      vex_printf("dis_dfp_class_test(ppc)(opc2)\n");
+      return False;
+   }
+
+   /* The G-field is in the upper 32-bits.  The I64 logical operations
+    * do not seem to be supported in 32-bit mode so keep things as 32-bit
+    * operations.
+    */
+   assign( gfield, binop( Iop_And32,
+                          mkexpr( gfield_mask ),
+                          unop( Iop_64HIto32,
+                                mkexpr(frAI64_hi) ) ) );
+
+   /* There is a lot of code that is the same to do the class and group
+    * instructions.  Later there is an if statement to handle the specific
+    * instruction.
+    *
+    * Will be using I32 values, compares, shifts and logical operations for
+    * this code as the 64-bit compare, shifts, logical operations are not 
+    * supported in 32-bit mode.
+    */
+
+   /* Check the bits for Infinity, QNaN or Signaling NaN */
+   assign( infinity_true,
+           unop( Iop_1Sto32,
+                 binop( Iop_CmpEQ32,
+                        binop( Iop_And32,
+                               mkU32( 0x7C000000 ),
+                               mkexpr( gfield ) ),
+                        mkU32( 0x78000000 ) ) ) );
+
+   assign( SNaN_true,
+           unop( Iop_1Sto32,
+                 binop( Iop_CmpEQ32,
+                        binop( Iop_And32,
+                               mkU32( 0x7E000000 ),
+                               mkexpr( gfield ) ),
+                        mkU32( 0x7E000000 ) ) ) );
+
+   assign( QNaN_true,
+           binop( Iop_And32,
+                  unop( Iop_1Sto32,
+                       binop( Iop_CmpEQ32,
+                              binop( Iop_And32,
+                                     mkU32( 0x7E000000 ),
+                                     mkexpr( gfield ) ),
+                              mkU32( 0x7C000000 ) ) ),
+                  unop( Iop_Not32,
+                        mkexpr( SNaN_true ) ) ) );
+
+   assign( zero_true,
+           binop( Iop_And32,
+                  unop(Iop_1Sto32,
+                       binop( Iop_CmpEQ32,
+                              mkexpr( ccIR_zero ),
+                              mkU32( 0x40 ) ) ),  // ccIR code for Equal
+                  unop( Iop_Not32,
+                        binop( Iop_Or32,
+                               mkexpr( infinity_true ),
+                               binop( Iop_Or32,
+                                      mkexpr( QNaN_true ),
+                                      mkexpr( SNaN_true ) ) ) ) ) );
+
+   /* Do compare of frA the minimum normal value.  Comparison is size
+    * depenent and was done above to get the ccIR value.
+    */
+   assign( subnormal_true, 
+           binop( Iop_And32,
+                  binop( Iop_Or32,
+                         unop( Iop_1Sto32,
+                               binop( Iop_CmpEQ32,
+                                      mkexpr( ccIR_subnormal ),
+                                      mkU32( 0x40 ) ) ), // ccIR code for Equal
+                         unop( Iop_1Sto32,
+                               binop( Iop_CmpEQ32,
+                                      mkexpr( ccIR_subnormal ),
+                                      mkU32( 0x1 ) ) ) ), // ccIR code for LT
+           unop( Iop_Not32,
+                 binop( Iop_Or32,
+                        binop( Iop_Or32,
+                               mkexpr( infinity_true ),
+                               mkexpr( zero_true) ),
+                        binop( Iop_Or32,
+                               mkexpr( QNaN_true ),
+                               mkexpr( SNaN_true ) ) ) ) ) );
+
+   /* Normal number is not subnormal, infinity, NaN or Zero */
+   assign( normal_true,
+           unop( Iop_Not32,
+                 binop( Iop_Or32,
+                        binop( Iop_Or32,
+                               mkexpr( infinity_true ),
+                               mkexpr( zero_true ) ),
+                        binop( Iop_Or32,
+                               mkexpr( subnormal_true ),
+                               binop( Iop_Or32,
+                                      mkexpr( QNaN_true ),
+                                      mkexpr( SNaN_true ) ) ) ) ) );
+
+   /* Calculate the DCM bit field based on the tests for the specific
+    * instruction
+    */
+   if (opc2 == 0xC2) {    // dtstdc, dtstdcq
+      /* DCM[0:5] Bit   Data Class definition
+       *   0   Zero
+       *   1   Subnormal
+       *   2   Normal
+       *   3   Infinity
+       *   4   Quiet NaN
+       *   5   Signaling NaN
+       */
+
+      assign( dcm0, binop( Iop_Shl32,
+                           mkexpr( zero_true ),
+                           mkU8( 5 ) ) );
+      assign( dcm1, binop( Iop_Shl32,
+                           binop( Iop_And32,
+                                  mkexpr( subnormal_true ),
+                                  mkU32( 1 ) ),
+                           mkU8( 4 ) ) );
+      assign( dcm2, binop( Iop_Shl32,
+                           binop( Iop_And32,
+                                  mkexpr( normal_true ),
+                                  mkU32( 1 ) ),
+                           mkU8( 3 ) ) );
+      assign( dcm3, binop( Iop_Shl32,
+                           binop( Iop_And32,
+                                  mkexpr( infinity_true),
+                                  mkU32( 1 ) ),
+                           mkU8( 2 ) ) );
+      assign( dcm4, binop( Iop_Shl32,
+                           binop( Iop_And32,
+                                  mkexpr( QNaN_true ),
+                                  mkU32( 1 ) ),
+                           mkU8( 1 ) ) );
+      assign( dcm5, binop( Iop_And32, mkexpr( SNaN_true), mkU32( 1 ) ) );
+
+   } else if (opc2 == 0xE2) {   // dtstdg, dtstdgq
+      /* check if the exponent is extreme */
+      assign( extreme_true, binop( Iop_Or32,
+                                   unop( Iop_1Sto32,
+                                         binop( Iop_CmpEQ32,
+                                                mkexpr( exponent ),
+                                                mkU32( max_exp ) ) ),
+                                   unop( Iop_1Sto32,
+                                         binop( Iop_CmpEQ32,
+                                                mkexpr( exponent ),
+                                                mkU32( min_exp ) ) ) ) );
+
+      /* Check if LMD is zero */
+      Get_lmd( &lmd, binop( Iop_Shr32,
+                            mkexpr( gfield ), mkU8( 31 - 5 ) ) );
+
+      assign( lmd_zero_true, unop( Iop_1Sto32,
+                                   binop( Iop_CmpEQ32,
+                                          mkexpr( lmd ),
+                                          mkU32( 0 ) ) ) );
+
+      /* DCM[0:5] Bit   Data Class definition
+       *  0   Zero with non-extreme exponent
+       *  1   Zero with extreme exponent
+       *  2   Subnormal or (Normal with extreme exponent)
+       *  3   Normal with non-extreme exponent and
+       *      leftmost zero digit in significand
+       *  4   Normal with non-extreme exponent and
+       *      leftmost nonzero digit in significand
+       *  5   Special symbol (Infinity, QNaN, or SNaN)
+       */
+      assign( dcm0, binop( Iop_Shl32,
+                           binop( Iop_And32,
+                                  binop( Iop_And32,
+                                         unop( Iop_Not32,
+                                               mkexpr( extreme_true ) ),
+                                         mkexpr( zero_true ) ),
+                                  mkU32( 0x1 ) ),
+                           mkU8( 5 ) ) );
+
+      assign( dcm1, binop( Iop_Shl32,
+                           binop( Iop_And32,
+                                  binop( Iop_And32,
+                                         mkexpr( extreme_true ),
+                                         mkexpr( zero_true ) ),
+                                  mkU32( 0x1 ) ),
+                           mkU8( 4 ) ) );
+
+      assign( dcm2, binop( Iop_Shl32,
+                           binop( Iop_And32,
+                                  binop( Iop_Or32,
+                                         binop( Iop_And32,
+                                                mkexpr( extreme_true ),
+                                                mkexpr( normal_true ) ),
+                                         mkexpr( subnormal_true ) ),
+                                  mkU32( 0x1 ) ),
+                           mkU8( 3 ) ) );
+
+      assign( dcm3, binop( Iop_Shl32,
+                           binop( Iop_And32,
+                                  binop( Iop_And32,
+                                         binop( Iop_And32,
+                                                unop( Iop_Not32,
+                                                      mkexpr( extreme_true ) ),
+                                                      mkexpr( normal_true ) ),
+                                         unop( Iop_1Sto32,
+                                               binop( Iop_CmpEQ32,
+                                                      mkexpr( lmd ),
+                                                      mkU32( 0 ) ) ) ),
+                                  mkU32( 0x1 ) ),
+                           mkU8( 2 ) ) );
+
+      assign( dcm4, binop( Iop_Shl32,
+                           binop( Iop_And32,
+                                  binop( Iop_And32,
+                                         binop( Iop_And32,
+                                                unop( Iop_Not32,
+                                                      mkexpr( extreme_true ) ),
+                                                mkexpr( normal_true ) ),
+                                          unop( Iop_1Sto32,
+                                                binop( Iop_CmpNE32,
+                                                       mkexpr( lmd ),
+						       mkU32( 0 ) ) ) ),
+                                  mkU32( 0x1 ) ),
+                           mkU8( 1 ) ) );
+
+      assign( dcm5, binop( Iop_And32,
+                           binop( Iop_Or32,
+                                  mkexpr( SNaN_true),
+                                  binop( Iop_Or32,
+                                         mkexpr( QNaN_true),
+                                         mkexpr( infinity_true) ) ),
+                           mkU32( 0x1 ) ) );
+   }
+
+   /* create DCM field */
+   assign( DCM_calc,
+           binop( Iop_Or32,
+                  mkexpr( dcm0 ),
+                  binop( Iop_Or32,
+                         mkexpr( dcm1 ),
+                         binop( Iop_Or32,
+                                mkexpr( dcm2 ),
+                                binop( Iop_Or32,
+                                       mkexpr( dcm3 ),
+                                       binop( Iop_Or32,
+                                              mkexpr( dcm4 ),
+                                              mkexpr( dcm5 ) ) ) ) ) ) );
+
+   /* Get the sign of the DFP number, ignore sign for QNaN */
+   assign( sign,
+           unop( Iop_1Uto32,
+                 binop( Iop_CmpEQ32,
+                        binop( Iop_Shr32,
+                               unop( Iop_64HIto32, mkexpr( frAI64_hi ) ),
+                               mkU8( 63 - 32 ) ),
+                        mkU32( 1 ) ) ) );
+
+   /* This instruction generates a four bit field to be stored in the
+    * condition code register.  The condition code register consists of 7
+    * fields.  The field to be written to is specified by the BF (AKA crfD)
+    * field.
+    *
+    * The field layout is as follows:
+    *
+    *      Field          Meaning
+    *      0000           Operand positive with no match
+    *      0100           Operand positive with at least one match
+    *      0001           Operand negative with no match
+    *      0101           Operand negative with at least one match
+    */
+   assign( field, binop( Iop_Or32,
+                         binop( Iop_Shl32,
+                                mkexpr( sign ),
+                                mkU8( 3 ) ),
+                                binop( Iop_Shl32,
+                                       unop( Iop_1Uto32,
+                                             binop( Iop_CmpNE32,
+                                                    binop( Iop_And32,
+                                                           mkU32( DCM ),
+                                                           mkexpr( DCM_calc ) ),
+                                                     mkU32( 0 ) ) ),
+                                       mkU8( 1 ) ) ) );
+
+   putGST_field( PPC_GST_CR, mkexpr( field ), crfD );
+   return True;
+}
 
 
 /*------------------------------------------------------------*/
@@ -13315,7 +14945,6 @@ static UInt get_VSX60_opc2(UInt opc2_full)
 
 static   
 DisResult disInstr_PPC_WRK ( 
-             Bool         put_IP,
              Bool         (*resteerOkFn) ( /*opaque*/void*, Addr64 ),
              Bool         resteerCisOk,
              void*        callback_opaque,
@@ -13334,6 +14963,7 @@ DisResult disInstr_PPC_WRK (
    Bool      allow_FX = False;
    Bool      allow_GX = False;
    Bool      allow_VX = False;  // Equates to "supports Power ISA 2.06
+   Bool      allow_DFP = False;
    UInt      hwcaps = archinfo->hwcaps;
    Long      delta;
 
@@ -13344,21 +14974,24 @@ DisResult disInstr_PPC_WRK (
       allow_FX = (0 != (hwcaps & VEX_HWCAPS_PPC64_FX));
       allow_GX = (0 != (hwcaps & VEX_HWCAPS_PPC64_GX));
       allow_VX = (0 != (hwcaps & VEX_HWCAPS_PPC64_VX));
+      allow_DFP = (0 != (hwcaps & VEX_HWCAPS_PPC64_DFP));
    } else {
       allow_F  = (0 != (hwcaps & VEX_HWCAPS_PPC32_F));
       allow_V  = (0 != (hwcaps & VEX_HWCAPS_PPC32_V));
       allow_FX = (0 != (hwcaps & VEX_HWCAPS_PPC32_FX));
       allow_GX = (0 != (hwcaps & VEX_HWCAPS_PPC32_GX));
       allow_VX = (0 != (hwcaps & VEX_HWCAPS_PPC32_VX));
+      allow_DFP = (0 != (hwcaps & VEX_HWCAPS_PPC32_DFP));
    }
 
    /* The running delta */
    delta = (Long)mkSzAddr(ty, (ULong)delta64);
 
    /* Set result defaults. */
-   dres.whatNext   = Dis_Continue;
-   dres.len        = 0;
-   dres.continueAt = 0;
+   dres.whatNext    = Dis_Continue;
+   dres.len         = 0;
+   dres.continueAt  = 0;
+   dres.jk_StopHere = Ijk_INVALID;
 
    /* At least this is simple on PPC32: insns are all 4 bytes long, and
       4-aligned.  So just fish the whole thing out of memory right now
@@ -13368,10 +15001,6 @@ DisResult disInstr_PPC_WRK (
    if (0) vex_printf("insn: 0x%x\n", theInstr);
 
    DIP("\t0x%llx:  ", (ULong)guest_CIA_curr_instr);
-
-   /* We may be asked to update the guest CIA before going further. */
-   if (put_IP)
-      putGST( PPC_GST_CIA, mkSzImm(ty, guest_CIA_curr_instr) );
 
    /* Spot "Special" instructions (see comment at top of file). */
    {
@@ -13401,9 +15030,9 @@ DisResult disInstr_PPC_WRK (
             /* %R3 = client_request ( %R4 ) */
             DIP("r3 = client_request ( %%r4 )\n");
             delta += 20;
-            irsb->next     = mkSzImm( ty, guest_CIA_bbstart + delta );
-            irsb->jumpkind = Ijk_ClientReq;
-            dres.whatNext  = Dis_StopHere;
+            putGST( PPC_GST_CIA, mkSzImm( ty, guest_CIA_bbstart + delta ));
+            dres.jk_StopHere = Ijk_ClientReq;
+            dres.whatNext    = Dis_StopHere;
             goto decode_success;
          }
          else
@@ -13421,9 +15050,9 @@ DisResult disInstr_PPC_WRK (
             DIP("branch-and-link-to-noredir r11\n");
             delta += 20;
             putGST( PPC_GST_LR, mkSzImm(ty, guest_CIA_bbstart + (Long)delta) );
-            irsb->next     = getIReg(11);
-            irsb->jumpkind = Ijk_NoRedir;
-            dres.whatNext  = Dis_StopHere;
+            putGST( PPC_GST_CIA, getIReg(11));
+            dres.jk_StopHere = Ijk_NoRedir;
+            dres.whatNext    = Dis_StopHere;
             goto decode_success;
          }
          else
@@ -13542,7 +15171,43 @@ DisResult disInstr_PPC_WRK (
    case 0x3B:
       if (!allow_F) goto decode_noF;
       opc2 = ifieldOPClo10(theInstr);
+
       switch (opc2) {
+         case 0x2:    // dadd - DFP Add
+         case 0x202:  // dsub - DFP Subtract
+         case 0x22:   // dmul - DFP Mult
+         case 0x222:  // ddiv - DFP Divide
+            if (!allow_DFP) goto decode_noDFP;
+            if (dis_dfp_arith( theInstr ))
+               goto decode_success;
+         case 0x82:   // dcmpo, DFP comparison ordered instruction
+         case 0x282:  // dcmpu, DFP comparison unordered instruction
+            if (!allow_DFP)
+               goto decode_failure;
+            if (dis_dfp_compare( theInstr ) )
+               goto decode_success;
+            goto decode_failure;
+         case 0x102: // dctdp  - DFP convert to DFP long
+         case 0x302: // drsp   - DFP round to dfp short
+         case 0x122: // dctfix - DFP convert to fixed
+            if (!allow_DFP)
+               goto decode_failure;
+            if (dis_dfp_fmt_conv( theInstr ))
+               goto decode_success;
+            goto decode_failure;
+         case 0x322: // POWER 7 inst, dcffix - DFP convert from fixed
+            if (!allow_VX)
+               goto decode_failure;
+            if (dis_dfp_fmt_conv( theInstr ))
+               goto decode_success;
+            goto decode_failure;
+         case 0x162:  // dxex - Extract exponent 
+         case 0x362:  // diex - Insert exponent
+            if (!allow_DFP)
+               goto decode_failure;
+            if (dis_dfp_extract_insert( theInstr ) )
+               goto decode_success;
+            goto decode_failure;
          case 0x3CE: // fcfidus (implemented as native insn)
             if (!allow_VX)
                goto decode_noVX;
@@ -13553,6 +15218,52 @@ DisResult disInstr_PPC_WRK (
             if (dis_fp_round( theInstr ))
                goto decode_success;
             goto decode_failure;
+      }
+
+      opc2 = ifieldOPClo9( theInstr );
+      switch (opc2) {
+      case 0x42: // dscli, DFP shift left
+      case 0x62: // dscri, DFP shift right
+         if (!allow_DFP)
+            goto decode_failure;
+         if (dis_dfp_shift( theInstr ))
+            goto decode_success;
+         goto decode_failure;
+      case 0xc2:  // dtstdc, DFP test data class
+      case 0xe2:  // dtstdg, DFP test data group
+         if (!allow_DFP)
+            goto decode_failure;
+         if (dis_dfp_class_test( theInstr ))
+            goto decode_success;
+         goto decode_failure;
+      }
+
+      opc2 = ifieldOPClo8( theInstr );
+      switch (opc2) {
+      case 0x3:   // dqua  - DFP Quantize
+      case 0x23:  // drrnd - DFP Reround
+      case 0x43:  // dquai - DFP Quantize immediate
+         if (!allow_DFP)
+            goto decode_failure;
+         if (dis_dfp_quantize_sig_rrnd( theInstr ) )
+            goto decode_success;
+         goto decode_failure;
+      case 0xA2: // dtstex - DFP Test exponent
+         if (!allow_DFP)
+            goto decode_failure;
+         if (dis_dfp_exponent_test( theInstr ) )
+            goto decode_success;
+         goto decode_failure;
+      case 0x63: // drintx - Round to an integer value
+      case 0xE3: // drintn - Round to an integer value
+         if (!allow_DFP)
+            goto decode_failure;
+         if (dis_dfp_round( theInstr ) ) {
+            goto decode_success;
+         }
+         goto decode_failure;
+      default:
+         break;  /* fall through to next opc2 check */
       }
 
       opc2 = IFIELD(theInstr, 1, 5);
@@ -13589,6 +15300,10 @@ DisResult disInstr_PPC_WRK (
 
    case 0x3C: // VSX instructions (except load/store)
    {
+      // All of these VSX instructions use some VMX facilities, so
+      // if allow_V is not set, we'll skip trying to decode.
+      if (!allow_V) goto decode_noVX;
+
       UInt vsxOpc2 = get_VSX60_opc2(opc2);
       /* The vsxOpc2 returned is the "normalized" value, representing the
        * instructions secondary opcode as taken from the standard secondary
@@ -13654,10 +15369,21 @@ DisResult disInstr_PPC_WRK (
             if (dis_vxv_sp_arith(theInstr, vsxOpc2)) goto decode_success;
             goto decode_failure;
 
-         case 0x2B0: case 0x2F0: case 0x2D0: // xscvdpsxds, xscvsxddp, xscvuxddp
+         case 0x2D0: case 0x3d0: // xscvuxddp, xvcvuxddp
+         case 0x350: case 0x1d0: // xvcvuxdsp, xvcvuxwdp
+         case 0x090: // xscvdpuxws
+            // The above VSX conversion instructions employ some ISA 2.06
+            // floating point conversion instructions under the covers,
+            // so if allow_VX (which means "supports ISA 2.06") is not set,
+            // we'll skip the decode.
+            if (!allow_VX) goto decode_noVX;
+            if (dis_vx_conv(theInstr, vsxOpc2)) goto decode_success;
+            goto decode_failure;
+
+         case 0x2B0: case 0x2F0: // xscvdpsxds, xscvsxddp
          case 0x1b0: case 0x130: // xvcvdpsxws, xvcvspsxws
          case 0x0b0: case 0x290: // xscvdpsxws, xscvdpuxds
-         case 0x212: case 0x090: // xscvdpsp, xscvdpuxws
+         case 0x212: // xscvdpsp
          case 0x292: case 0x312: // xscvspdp, xvcvdpsp
          case 0x390: case 0x190: // xvcvdpuxds, xvcvdpuxws
          case 0x3B0: case 0x310: // xvcvdpsxds, xvcvspuxds
@@ -13665,8 +15391,6 @@ DisResult disInstr_PPC_WRK (
          case 0x110: case 0x3f0: // xvcvspuxws, xvcvsxddp
          case 0x370: case 0x1f0: // xvcvsxdsp, xvcvsxwdp
          case 0x170: case 0x150: // xvcvsxwsp, xvcvuxwsp
-         case 0x3d0: case 0x350: // xvcvuxddp, xvcvuxdsp
-         case 0x1d0: // xvcvuxwdp
             if (dis_vx_conv(theInstr, vsxOpc2)) goto decode_success;
             goto decode_failure;
 
@@ -13746,6 +15470,41 @@ DisResult disInstr_PPC_WRK (
 
       opc2 = IFIELD(theInstr, 1, 10);
       switch (opc2) {
+      /* 128-bit DFP instructions */
+      case 0x2:    // daddq - DFP Add
+      case 0x202:  // dsubq - DFP Subtract
+      case 0x22:   // dmulq - DFP Mult
+      case 0x222:  // ddivq - DFP Divide
+         if (!allow_DFP) goto decode_noDFP;
+         if (dis_dfp_arithq( theInstr ))
+            goto decode_success;
+         goto decode_failure;
+      case 0x162:  // dxexq - DFP Extract exponent
+      case 0x362:  // diexq - DFP Insert exponent
+         if (!allow_DFP)
+            goto decode_failure;
+         if (dis_dfp_extract_insertq( theInstr ))
+            goto decode_success;
+         goto decode_failure;
+
+      case 0x82:   // dcmpoq, DFP comparison ordered instruction
+      case 0x282:  // dcmpuq, DFP comparison unordered instruction
+         if (!allow_DFP)
+            goto decode_failure;
+         if (dis_dfp_compare( theInstr ) )
+            goto decode_success;
+         goto decode_failure;
+
+      case 0x102: // dctqpq  - DFP convert to DFP extended
+      case 0x302: // drdpq   - DFP round to dfp Long
+      case 0x122: // dctfixq - DFP convert to fixed quad
+      case 0x322: // dcffixq - DFP convert from fixed quad
+         if (!allow_DFP)
+            goto decode_failure;
+         if (dis_dfp_fmt_convq( theInstr ))
+            goto decode_success;
+         goto decode_failure;
+
       /* Floating Point Compare Instructions */         
       case 0x000: // fcmpu
       case 0x020: // fcmpo
@@ -13799,14 +15558,62 @@ DisResult disInstr_PPC_WRK (
       case 0x086: // mtfsfi
       case 0x247: // mffs
       case 0x2C7: // mtfsf
-         if (dis_fp_scr( theInstr )) goto decode_success;
+         // Some of the above instructions need to know more about the
+         // ISA level supported by the host.
+         if (dis_fp_scr( theInstr, allow_GX )) goto decode_success;
+         goto decode_failure;
+
+      default:
+         break; // Fall through...
+      }
+
+      opc2 = ifieldOPClo9( theInstr );
+      switch (opc2) {
+      case 0x42: // dscli, DFP shift left
+      case 0x62: // dscri, DFP shift right
+         if (!allow_DFP)
+            goto decode_failure;
+         if (dis_dfp_shiftq( theInstr ))
+            goto decode_success;
+         goto decode_failure;
+      case 0xc2:  // dtstdc, DFP test data class
+      case 0xe2:  // dtstdg, DFP test data group
+         if (!allow_DFP)
+            goto decode_failure;
+         if (dis_dfp_class_test( theInstr ))
+            goto decode_success;
+         goto decode_failure;
+      default:
+         break;
+      }
+
+      opc2 = ifieldOPClo8( theInstr );
+      switch (opc2) {
+      case 0x3:   // dquaq  - DFP Quantize Quad
+      case 0x23:  // drrndq - DFP Reround Quad
+      case 0x43:  // dquaiq - DFP Quantize immediate Quad
+         if (!allow_DFP)
+            goto decode_failure;
+         if (dis_dfp_quantize_sig_rrndq( theInstr ))
+            goto decode_success;
+         goto decode_failure;
+      case 0xA2: // dtstexq - DFP Test exponent Quad
+         if (dis_dfp_exponent_test( theInstr ) )
+            goto decode_success;
+         goto decode_failure;
+      case 0x63:  // drintxq - DFP Round to an integer value
+      case 0xE3:  // drintnq - DFP Round to an integer value
+         if (!allow_DFP)
+            goto decode_failure;
+         if (dis_dfp_roundq( theInstr ))
+            goto decode_success;
          goto decode_failure;
 
       default:
          goto decode_failure;
       }
       break;
-      
+
    case 0x13:
       switch (opc2) {
 
@@ -13962,9 +15769,9 @@ DisResult disInstr_PPC_WRK (
          Bool ok = dis_int_ldst_str( theInstr, &stopHere );
          if (!ok) goto decode_failure;
          if (stopHere) {
-            irsb->next     = mkSzImm(ty, nextInsnAddr());
-            irsb->jumpkind = Ijk_Boring;
-            dres.whatNext  = Dis_StopHere;
+            putGST( PPC_GST_CIA, mkSzImm(ty, nextInsnAddr()) );
+            dres.jk_StopHere = Ijk_Boring;
+            dres.whatNext    = Dis_StopHere;
          }
          goto decode_success;
       }
@@ -14069,6 +15876,10 @@ DisResult disInstr_PPC_WRK (
       case 0x34C: // lxvd2x
       case 0x14C: // lxvdsx
       case 0x30C: // lxvw4x
+        // All of these VSX load instructions use some VMX facilities, so
+        // if allow_V is not set, we'll skip trying to decode.
+        if (!allow_V) goto decode_noV;
+
     	  if (dis_vx_load( theInstr )) goto decode_success;
           goto decode_failure;
 
@@ -14076,6 +15887,10 @@ DisResult disInstr_PPC_WRK (
       case 0x2CC: // stxsdx
       case 0x3CC: // stxvd2x
       case 0x38C: // stxvw4x
+        // All of these VSX store instructions use some VMX facilities, so
+        // if allow_V is not set, we'll skip trying to decode.
+        if (!allow_V) goto decode_noV;
+
     	  if (dis_vx_store( theInstr )) goto decode_success;
     	  goto decode_failure;
 
@@ -14288,6 +16103,12 @@ DisResult disInstr_PPC_WRK (
       vex_printf("disInstr(ppc): "
                  "declined to decode a Graphics-Optional insn.\n");
       goto decode_failure;
+   decode_noDFP:
+      vassert(!allow_DFP);
+      vex_printf("disInstr(ppc): "
+               "declined to decode a Decimal Floating Point insn.\n");
+      goto decode_failure;
+
 
    decode_failure:
    /* All decode failures end up here. */
@@ -14303,16 +16124,28 @@ DisResult disInstr_PPC_WRK (
       insn, but nevertheless be paranoid and update it again right
       now. */
    putGST( PPC_GST_CIA, mkSzImm(ty, guest_CIA_curr_instr) );
-   irsb->next     = mkSzImm(ty, guest_CIA_curr_instr);
-   irsb->jumpkind = Ijk_NoDecode;
-   dres.whatNext  = Dis_StopHere;
-   dres.len       = 0;
+   dres.whatNext    = Dis_StopHere;
+   dres.jk_StopHere = Ijk_NoDecode;
+   dres.len         = 0;
    return dres;
 
    } /* switch (opc) for the main (primary) opcode switch. */
 
   decode_success:
    /* All decode successes end up here. */
+   switch (dres.whatNext) {
+      case Dis_Continue:
+         putGST( PPC_GST_CIA, mkSzImm(ty, guest_CIA_curr_instr + 4));
+         break;
+      case Dis_ResteerU:
+      case Dis_ResteerC:
+         putGST( PPC_GST_CIA, mkSzImm(ty, dres.continueAt));
+         break;
+      case Dis_StopHere:
+         break;
+      default:
+         vassert(0);
+   }
    DIP("\n");
 
    if (dres.len == 0) {
@@ -14335,7 +16168,6 @@ DisResult disInstr_PPC_WRK (
    is located in host memory at &guest_code[delta]. */
 
 DisResult disInstr_PPC ( IRSB*        irsb_IN,
-                         Bool         put_IP,
                          Bool         (*resteerOkFn) ( void*, Addr64 ),
                          Bool         resteerCisOk,
                          void*        callback_opaque,
@@ -14360,10 +16192,11 @@ DisResult disInstr_PPC ( IRSB*        irsb_IN,
 
    /* do some sanity checks */
    mask32 = VEX_HWCAPS_PPC32_F | VEX_HWCAPS_PPC32_V
-            | VEX_HWCAPS_PPC32_FX | VEX_HWCAPS_PPC32_GX | VEX_HWCAPS_PPC32_VX;
+            | VEX_HWCAPS_PPC32_FX | VEX_HWCAPS_PPC32_GX | VEX_HWCAPS_PPC32_VX
+            | VEX_HWCAPS_PPC32_DFP;
 
    mask64 = VEX_HWCAPS_PPC64_V | VEX_HWCAPS_PPC64_FX
-		   | VEX_HWCAPS_PPC64_GX | VEX_HWCAPS_PPC64_VX;
+		   | VEX_HWCAPS_PPC64_GX | VEX_HWCAPS_PPC64_VX | VEX_HWCAPS_PPC64_DFP;
 
    if (mode64) {
       vassert((hwcaps_guest & mask32) == 0);
@@ -14379,8 +16212,7 @@ DisResult disInstr_PPC ( IRSB*        irsb_IN,
    guest_CIA_curr_instr = mkSzAddr(ty, guest_IP);
    guest_CIA_bbstart    = mkSzAddr(ty, guest_IP - delta);
 
-   dres = disInstr_PPC_WRK ( put_IP, 
-                             resteerOkFn, resteerCisOk, callback_opaque,
+   dres = disInstr_PPC_WRK ( resteerOkFn, resteerCisOk, callback_opaque,
                              delta, archinfo, abiinfo );
 
    return dres;

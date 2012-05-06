@@ -51,6 +51,8 @@ dist_noinst_SCRIPTS = \
 noinst_HEADERS = fdleak.h
 
 EXTRA_DIST = \
+	allexec32.stdout.exp allexec32.stderr.exp allexec32.vgtest\
+	allexec64.stdout.exp allexec64.stderr.exp allexec64.vgtest\
 	ansi.stderr.exp ansi.vgtest \
 	args.stderr.exp args.stdout.exp args.vgtest \
 	async-sigs.stderr.exp async-sigs.vgtest \
@@ -70,10 +72,11 @@ EXTRA_DIST = \
 	coolo_strlen.stderr.exp coolo_strlen.vgtest \
 	discard.stderr.exp discard.stdout.exp \
 	discard.vgtest \
+	empty-exe.vgtest empty-exe.stderr.exp \
 	exec-sigmask.vgtest exec-sigmask.stdout.exp \
 	exec-sigmask.stdout.exp2 exec-sigmask.stdout.exp3 exec-sigmask.stderr.exp \
 	execve.vgtest execve.stdout.exp execve.stderr.exp \
-	faultstatus.vgtest faultstatus.stderr.exp \
+	faultstatus.vgtest faultstatus.stderr.exp faultstatus.stderr.exp-s390x \
 	fcntl_setown.vgtest fcntl_setown.stdout.exp fcntl_setown.stderr.exp \
 	fdleak_cmsg.stderr.exp fdleak_cmsg.vgtest \
 	fdleak_creat.stderr.exp fdleak_creat.vgtest \
@@ -91,9 +94,12 @@ EXTRA_DIST = \
 	manythreads.stdout.exp manythreads.stderr.exp manythreads.vgtest \
 	map_unaligned.stderr.exp map_unaligned.vgtest \
 	map_unmap.stderr.exp map_unmap.stdout.exp map_unmap.vgtest \
+	mmap_fcntl_bug.vgtest mmap_fcntl_bug.stdout.exp \
+		mmap_fcntl_bug.stderr.exp \
 	mq.stderr.exp mq.vgtest \
 	munmap_exe.stderr.exp munmap_exe.vgtest \
 	nestedfns.stderr.exp nestedfns.stdout.exp nestedfns.vgtest \
+	nodir.stderr.exp nodir.vgtest \
 	pending.stdout.exp pending.stderr.exp pending.vgtest \
 	procfs-linux.stderr.exp-with-readlinkat \
 	procfs-linux.stderr.exp-without-readlinkat \
@@ -124,6 +130,7 @@ EXTRA_DIST = \
 	res_search.stderr.exp res_search.stdout.exp res_search.vgtest \
 	resolv.stderr.exp resolv.stdout.exp resolv.vgtest \
 	rlimit_nofile.stderr.exp rlimit_nofile.stdout.exp rlimit_nofile.vgtest \
+	rlimit64_nofile.stderr.exp rlimit64_nofile.stdout.exp rlimit64_nofile.vgtest \
 	selfrun.stderr.exp selfrun.stdout.exp selfrun.vgtest \
 	sem.stderr.exp sem.stdout.exp sem.vgtest \
 	semlimit.stderr.exp semlimit.stdout.exp semlimit.vgtest \
@@ -154,7 +161,8 @@ EXTRA_DIST = \
 	threadederrno.vgtest \
 	timestamp.stderr.exp timestamp.vgtest \
 	tls.vgtest tls.stderr.exp tls.stdout.exp  \
-	vgprintf.stderr.exp vgprintf.vgtest
+	vgprintf.stderr.exp vgprintf.vgtest \
+	process_vm_readv_writev.stderr.exp process_vm_readv_writev.vgtest
 
 check_PROGRAMS = \
 	ansi args \
@@ -167,6 +175,7 @@ check_PROGRAMS = \
 	fdleak_fcntl fdleak_ipv4 fdleak_open fdleak_pipe \
 	fdleak_socketpair \
 	floored fork fucomip \
+	mmap_fcntl_bug \
 	munmap_exe map_unaligned map_unmap mq \
 	nestedfns \
 	pending \
@@ -191,7 +200,8 @@ check_PROGRAMS = \
 	valgrind_cpp_test \
 	vgprintf \
 	coolo_sigaction \
-	gxx304
+	gxx304 \
+	process_vm_readv_writev
 
 # DDD:
 # - manythreads and thread-exits have lots of this:
@@ -207,6 +217,10 @@ if ! VGCONF_PLATFORMS_INCLUDE_AMD64_DARWIN
    check_PROGRAMS += \
 	manythreads \
 	thread-exits
+endif
+# This doesn't appear to be compilable on Darwin.
+if ! VGCONF_OS_IS_DARWIN
+   check_PROGRAMS += rlimit64_nofile 
 endif
 
 

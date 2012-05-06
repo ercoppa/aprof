@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2010 Julian Seward 
+   Copyright (C) 2000-2011 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -130,6 +130,14 @@ template <bool b> struct vki_static_assert { int m_bitfield:(2*b-1); };
 # define __user
 
 //----------------------------------------------------------------------
+// From linux/include/linux/compiler-gcc.h
+//----------------------------------------------------------------------
+
+#ifdef __GNUC__
+#define __vki_packed			__attribute__((packed))
+#endif
+
+//----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/posix_types.h
 //----------------------------------------------------------------------
 
@@ -217,6 +225,8 @@ typedef		__vki_s64	vki_int64_t;
 typedef		__vki_u8	vki_uint8_t;
 typedef		__vki_u16	vki_uint16_t;
 typedef		__vki_u32	vki_uint32_t;
+
+typedef		__vki_u16	__vki_le16;
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/limits.h
@@ -603,6 +613,11 @@ struct vki_msghdr {
 	void 	*	msg_control;	/* Per protocol magic (eg BSD file descriptor passing) */
 	__vki_kernel_size_t	msg_controllen;	/* Length of cmsg list */
 	unsigned	msg_flags;
+};
+
+struct vki_mmsghdr {
+	struct vki_msghdr   msg_hdr;
+	unsigned        msg_len;
 };
 
 struct vki_cmsghdr {
@@ -1158,21 +1173,42 @@ struct  vki_seminfo {
 #define	VKI_ENOENT		 2	/* No such file or directory */
 #define	VKI_ESRCH		 3	/* No such process */
 #define	VKI_EINTR		 4	/* Interrupted system call */
-#define VKI_ENOEXEC              8      /* Exec format error */
+#define	VKI_EIO			 5	/* I/O error */
+#define	VKI_ENXIO		 6	/* No such device or address */
+#define	VKI_E2BIG		 7	/* Argument list too long */
+#define	VKI_ENOEXEC		 8	/* Exec format error */
 #define	VKI_EBADF		 9	/* Bad file number */
-#define VKI_ECHILD              10      /* No child processes */
-#define VKI_EAGAIN		11	/* Try again */
-#define VKI_EWOULDBLOCK		VKI_EAGAIN
+#define	VKI_ECHILD		10	/* No child processes */
+#define	VKI_EAGAIN		11	/* Try again */
 #define	VKI_ENOMEM		12	/* Out of memory */
 #define	VKI_EACCES		13	/* Permission denied */
 #define	VKI_EFAULT		14	/* Bad address */
+#define	VKI_ENOTBLK		15	/* Block device required */
+#define	VKI_EBUSY		16	/* Device or resource busy */
 #define	VKI_EEXIST		17	/* File exists */
+#define	VKI_EXDEV		18	/* Cross-device link */
+#define	VKI_ENODEV		19	/* No such device */
+#define	VKI_ENOTDIR		20	/* Not a directory */
+#define	VKI_EISDIR		21	/* Is a directory */
 #define	VKI_EINVAL		22	/* Invalid argument */
+#define	VKI_ENFILE		23	/* File table overflow */
 #define	VKI_EMFILE		24	/* Too many open files */
+#define	VKI_ENOTTY		25	/* Not a typewriter */
+#define	VKI_ETXTBSY		26	/* Text file busy */
+#define	VKI_EFBIG		27	/* File too large */
+#define	VKI_ENOSPC		28	/* No space left on device */
+#define	VKI_ESPIPE		29	/* Illegal seek */
+#define	VKI_EROFS		30	/* Read-only file system */
+#define	VKI_EMLINK		31	/* Too many links */
+#define	VKI_EPIPE		32	/* Broken pipe */
+#define	VKI_EDOM		33	/* Math argument out of domain of func */
+#define	VKI_ERANGE		34	/* Math result not representable */
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/asm-generic/errno.h
 //----------------------------------------------------------------------
+
+#define VKI_EWOULDBLOCK		VKI_EAGAIN
 
 #define	VKI_ENOSYS		38	/* Function not implemented */
 #define	VKI_EOVERFLOW		75	/* Value too large for defined data type */
@@ -1728,6 +1764,20 @@ typedef struct vki_sg_scsi_id { /* used by SG_GET_SCSI_ID ioctl() */
 
 //#define SG_GET_COMMAND_Q 0x2270   /* Yields 0 (queuing off) or 1 (on) */
 #define VKI_SG_SET_COMMAND_Q 0x2271   /* Change queuing state with 0 or 1 */
+
+//----------------------------------------------------------------------
+// From linux-2.6.34/include/scsi/scsi.h and scsi/scsi_ioctl.h
+//----------------------------------------------------------------------
+
+#define VKI_SCSI_IOCTL_DOORLOCK		0x5380 /* Lock the eject mechanism.  */
+#define VKI_SCSI_IOCTL_DOORUNLOCK	0x5381 /* Unlock the mechanism.  */
+#define VKI_SCSI_IOCTL_GET_IDLUN	0x5382
+#define VKI_SCSI_IOCTL_GET_BUS_NUMBER	0x5386
+
+struct vki_scsi_idlun {
+	__vki_u32 dev_id;
+	__vki_u32 host_unique_id;
+};
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/cdrom.h
@@ -2428,7 +2478,27 @@ struct vki_usbdevfs_setuppacket {
 					/* is already taken!			*/
 #define VKI_I2C_TENBIT		0x0704	/* 0 for 7 bit addrs, != 0 for 10 bit	*/
 #define VKI_I2C_FUNCS		0x0705	/* Get the adapter functionality */
+#define VKI_I2C_RDWR		0x0707	/* Combined R/W transfer (one STOP only) */
 #define VKI_I2C_PEC		0x0708	/* != 0 for SMBus PEC                   */
+
+struct vki_i2c_msg {
+	__vki_u16 addr;		/* slave address			*/
+	__vki_u16 flags;
+#define VKI_I2C_M_TEN		0x0010	/* this is a ten bit chip address */
+#define VKI_I2C_M_RD		0x0001	/* read data, from slave to master */
+#define VKI_I2C_M_NOSTART	0x4000	/* if I2C_FUNC_PROTOCOL_MANGLING */
+#define VKI_I2C_M_REV_DIR_ADDR	0x2000	/* if I2C_FUNC_PROTOCOL_MANGLING */
+#define VKI_I2C_M_IGNORE_NAK	0x1000	/* if I2C_FUNC_PROTOCOL_MANGLING */
+#define VKI_I2C_M_NO_RD_ACK	0x0800	/* if I2C_FUNC_PROTOCOL_MANGLING */
+#define VKI_I2C_M_RECV_LEN	0x0400	/* length will be first received byte */
+	__vki_u16 len;		/* msg length				*/
+	__vki_u8 *buf;		/* pointer to msg data			*/
+};
+
+struct vki_i2c_rdwr_ioctl_data {
+	struct vki_i2c_msg *msgs;	/* pointers to i2c_msgs */
+	__vki_u32 nmsgs;		/* number of i2c_msgs */
+};
 
 //----------------------------------------------------------------------
 // From linux-2.6.20.1/include/linux/keyctl.h
@@ -2820,6 +2890,61 @@ struct vki_binder_version {
 #define VKI_BINDER_VERSION _VKI_IOWR('b', 9, struct vki_binder_version)
 
 #endif /* defined(VGPV_arm_linux_android) */
+
+//----------------------------------------------------------------------
+// From linux-3.0.4/include/net/bluetooth/bluetooth.h
+//----------------------------------------------------------------------
+
+typedef struct {
+   __vki_u8 b[6];
+} __vki_packed vki_bdaddr_t;
+
+//----------------------------------------------------------------------
+// From linux-3.0.4/include/net/bluetooth/hci.h
+//----------------------------------------------------------------------
+
+#define VKI_HCIDEVUP        _VKI_IOW('H', 201, int)
+#define VKI_HCIDEVDOWN      _VKI_IOW('H', 202, int)
+#define VKI_HCIDEVRESET     _VKI_IOW('H', 203, int)
+#define VKI_HCIDEVRESTAT    _VKI_IOW('H', 204, int)
+
+#define VKI_HCIGETDEVLIST   _VKI_IOR('H', 210, int)
+#define VKI_HCIGETDEVINFO   _VKI_IOR('H', 211, int)
+#define VKI_HCIGETCONNLIST  _VKI_IOR('H', 212, int)
+#define VKI_HCIGETCONNINFO  _VKI_IOR('H', 213, int)
+#define VKI_HCIGETAUTHINFO  _VKI_IOR('H', 215, int)
+
+#define VKI_HCISETRAW       _VKI_IOW('H', 220, int)
+#define VKI_HCISETSCAN      _VKI_IOW('H', 221, int)
+#define VKI_HCISETAUTH      _VKI_IOW('H', 222, int)
+#define VKI_HCISETENCRYPT   _VKI_IOW('H', 223, int)
+#define VKI_HCISETPTYPE     _VKI_IOW('H', 224, int)
+#define VKI_HCISETLINKPOL   _VKI_IOW('H', 225, int)
+#define VKI_HCISETLINKMODE  _VKI_IOW('H', 226, int)
+#define VKI_HCISETACLMTU    _VKI_IOW('H', 227, int)
+#define VKI_HCISETSCOMTU    _VKI_IOW('H', 228, int)
+
+#define VKI_HCIBLOCKADDR    _VKI_IOW('H', 230, int)
+#define VKI_HCIUNBLOCKADDR  _VKI_IOW('H', 231, int)
+
+#define VKI_HCIINQUIRY      _VKI_IOR('H', 240, int)
+
+struct vki_inquiry_info {
+   vki_bdaddr_t bdaddr;
+   __vki_u8     pscan_rep_mode;
+   __vki_u8     pscan_period_mode;
+   __vki_u8     pscan_mode;
+   __vki_u8     dev_class[3];
+   __vki_le16   clock_offset;
+} __vki_packed;
+
+struct vki_hci_inquiry_req {
+   __vki_u16 dev_id;
+   __vki_u16 flags;
+   __vki_u8  lap[3];
+   __vki_u8  length;
+   __vki_u8  num_rsp;
+};
 
 #endif // __VKI_LINUX_H
 

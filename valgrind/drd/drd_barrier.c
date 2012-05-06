@@ -1,4 +1,3 @@
-/* -*- mode: C; c-basic-offset: 3; indent-tabs-mode: nil; -*- */
 /*
   This file is part of drd, a thread error detector.
 
@@ -260,11 +259,11 @@ void DRD_(barrier_init)(const Addr barrier,
 
    if (s_trace_barrier) {
       if (reinitialization)
-         DRD_(trace_msg)("[%d] barrier_reinit    %s 0x%lx count %ld -> %ld\n",
+         DRD_(trace_msg)("[%d] barrier_reinit    %s 0x%lx count %ld -> %ld",
                          DRD_(thread_get_running_tid)(),
                          barrier_get_typename(p), barrier, p->count, count);
       else
-         DRD_(trace_msg)("[%d] barrier_init      %s 0x%lx\n",
+         DRD_(trace_msg)("[%d] barrier_init      %s 0x%lx",
                          DRD_(thread_get_running_tid)(),
                          barrier_get_typename(p),
                          barrier);
@@ -294,7 +293,7 @@ void DRD_(barrier_destroy)(const Addr barrier, const BarrierT barrier_type)
    p = DRD_(barrier_get)(barrier);
 
    if (s_trace_barrier)
-      DRD_(trace_msg)("[%d] barrier_destroy   %s 0x%lx\n",
+      DRD_(trace_msg)("[%d] barrier_destroy   %s 0x%lx",
                       DRD_(thread_get_running_tid)(),
                       barrier_get_typename(p), barrier);
 
@@ -353,7 +352,7 @@ void DRD_(barrier_pre_wait)(const DrdThreadId tid, const Addr barrier,
    tl_assert(p);
 
    if (s_trace_barrier)
-      DRD_(trace_msg)("[%d] barrier_pre_wait  %s 0x%lx iteration %ld\n",
+      DRD_(trace_msg)("[%d] barrier_pre_wait  %s 0x%lx iteration %ld",
                       DRD_(thread_get_running_tid)(),
                       barrier_get_typename(p), barrier, p->pre_iteration);
 
@@ -414,7 +413,7 @@ void DRD_(barrier_post_wait)(const DrdThreadId tid, const Addr barrier,
    p = DRD_(barrier_get)(barrier);
 
    if (s_trace_barrier)
-      DRD_(trace_msg)("[%d] barrier_post_wait %s 0x%lx iteration %ld%s\n",
+      DRD_(trace_msg)("[%d] barrier_post_wait %s 0x%lx iteration %ld%s",
                       tid, p ? barrier_get_typename(p) : "(?)",
                       barrier, p ? p->post_iteration : -1,
                       serializing ? " (serializing)" : "");
@@ -473,15 +472,14 @@ void DRD_(barrier_post_wait)(const DrdThreadId tid, const Addr barrier,
    {
       VectorClock old_vc;
 
-      DRD_(vc_copy)(&old_vc, &DRD_(g_threadinfo)[tid].last->vc);
+      DRD_(vc_copy)(&old_vc, DRD_(thread_get_vc)(tid));
       VG_(OSetGen_ResetIter)(oset);
       for ( ; (r = VG_(OSetGen_Next)(oset)) != 0; )
       {
          if (r != q)
          {
             tl_assert(r->sg);
-            DRD_(vc_combine)(&DRD_(g_threadinfo)[tid].last->vc,
-                             &r->sg->vc);
+            DRD_(vc_combine)(DRD_(thread_get_vc)(tid), &r->sg->vc);
          }
       }
       DRD_(thread_update_conflict_set)(tid, &old_vc);

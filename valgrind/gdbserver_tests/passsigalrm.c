@@ -1,12 +1,20 @@
 #include <stdio.h>
 #include <signal.h>
 #include <unistd.h>
-static int sigalrm_received = 0;
+#include <stdlib.h>
 
+static int sigalrm_received = 0;
 static void sigalrm_handler(int signr)
 {
    sigalrm_received++;
 }
+static int sigrtmin_received = 0;
+static void sigrtmin_handler(int signr)
+{
+   sigrtmin_received++;
+}
+
+static int breakme = 0;
 
 int main (int argc, char *argv[])
 {
@@ -36,5 +44,21 @@ int main (int argc, char *argv[])
       fprintf (stderr, "wrong 2nd: unexpected value %d sigalrm_received\n",
                sigalrm_received);
 
+   system("../tests/true");
+   breakme++;
+
+   sa.sa_handler = sigrtmin_handler;
+   sigemptyset(&sa.sa_mask);
+   sa.sa_flags = 0;
+
+   if (sigaction (SIGRTMIN, &sa, NULL) != 0)
+      perror("sigaction");
+   if (kill(getpid(), SIGRTMIN) != 0)
+      perror("kill sigrtmin");
+   if (sigrtmin_received == 1)
+      fprintf (stderr, "ok: SIGRTMIN received\n");
+   else
+      fprintf (stderr, "wrong sigrtmin: unexpected value %d sigrtmin_received\n",
+               sigrtmin_received);
    return 0;
 }

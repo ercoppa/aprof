@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2008-2010 Evan Geller
+   Copyright (C) 2008-2011 Evan Geller
       gaze@bea.ms
 
    This program is free software; you can redistribute it and/or
@@ -32,7 +32,7 @@
 #ifndef __VKI_SCNUMS_ARM_LINUX_H
 #define __VKI_SCNUMS_ARM_LINUX_H
 
-// From linux-2.6.26.2/include/asm-arm/unistd.h
+// From linux-2.6/arch/arm/include/asm/unistd.h
 
 #define __NR_restart_syscall		  0
 #define __NR_exit			  1
@@ -382,7 +382,7 @@
 #define __NR_vmsplice			343
 #define __NR_move_pages			344
 #define __NR_getcpu			345
-					/* 346 for epoll_pwait */
+#define __NR_epoll_pwait		346
 #define __NR_kexec_load			347
 #define __NR_utimensat			348
 #define __NR_signalfd			349
@@ -412,6 +412,8 @@
 #define __NR_syncfs			373
 #define __NR_sendmmsg			374
 #define __NR_setns			375
+#define __NR_process_vm_readv		376
+#define __NR_process_vm_writev		377
 
 
 

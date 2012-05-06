@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2007-2010 OpenWorks LLP
+   Copyright (C) 2007-2011 OpenWorks LLP
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
@@ -116,6 +116,12 @@ extern void VG_(dropTailXA) ( XArray*, Word );
    than n elements in the array.  This is an O(N) operation, where N
    is the number of elements remaining in the XArray. */
 extern void VG_(dropHeadXA) ( XArray*, Word );
+
+/* Remove the specified element of an XArray, and slide all elements
+   beyond it back one place.  This is an O(N) operation, where N is
+   the number of elements after the specified element, in the
+   array. */
+extern void VG_(removeIndexXA)( XArray*, Word );
 
 /* Make a new, completely independent copy of the given XArray, using
    the existing allocation function to allocate the new space.

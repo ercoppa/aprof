@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2010 Julian Seward
+   Copyright (C) 2000-2011 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -1166,6 +1166,7 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
 void ML_(read_debuginfo_dwarf3)
         ( struct _DebugInfo* di,
           UChar* debug_info_img, Word debug_info_sz, /* .debug_info */
+          UChar* debug_types_img, Word debug_types_sz, /* .debug_types */
           UChar* debug_abbv_img, Word debug_abbv_sz, /* .debug_abbrev */
           UChar* debug_line_img, Word debug_line_sz, /* .debug_line */
           UChar* debug_str_img,  Word debug_str_sz ) /* .debug_str */
@@ -1846,9 +1847,14 @@ void ML_(read_debuginfo_dwarf1) (
 #  error "Unknown platform"
 #endif
 
-/* the number of regs we are prepared to unwind */
+/* The number of regs we are prepared to unwind.  The number for
+   arm-linux (320) seems ludicrously high, but the ARM IHI 0040A page
+   7 (DWARF for the ARM Architecture) specifies that values up to 320
+   might exist, for Neon/VFP-v3. */
 #if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
 # define N_CFI_REGS 72
+#elif defined(VGP_arm_linux)
+# define N_CFI_REGS 320
 #else
 # define N_CFI_REGS 20
 #endif

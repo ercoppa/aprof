@@ -8,7 +8,7 @@
    This file is part of Helgrind, a Valgrind tool for detecting errors
    in threaded programs.
 
-   Copyright (C) 2007-2010 OpenWorks LLP
+   Copyright (C) 2007-2011 OpenWorks LLP
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
@@ -89,7 +89,7 @@
       Word _arg1;                                        \
       assert(sizeof(_ty1F) == sizeof(Word));             \
       _arg1 = (Word)(_arg1F);                            \
-      VALGRIND_DO_CLIENT_REQUEST_EXPR(0, (_creqF),       \
+      VALGRIND_DO_CLIENT_REQUEST_STMT((_creqF),          \
                                  _arg1, 0,0,0,0);        \
    } while (0)
 
@@ -100,7 +100,7 @@
       assert(sizeof(_ty2F) == sizeof(Word));             \
       _arg1 = (Word)(_arg1F);                            \
       _arg2 = (Word)(_arg2F);                            \
-      VALGRIND_DO_CLIENT_REQUEST_EXPR(0, (_creqF),       \
+      VALGRIND_DO_CLIENT_REQUEST_STMT((_creqF),          \
                                  _arg1,_arg2,0,0,0);     \
    } while (0)
 
@@ -128,7 +128,7 @@
       _arg1 = (Word)(_arg1F);                            \
       _arg2 = (Word)(_arg2F);                            \
       _arg3 = (Word)(_arg3F);                            \
-      VALGRIND_DO_CLIENT_REQUEST_EXPR(0, (_creqF),       \
+      VALGRIND_DO_CLIENT_REQUEST_STMT((_creqF),          \
                                  _arg1,_arg2,_arg3,0,0); \
    } while (0)
 
@@ -733,6 +733,7 @@ static int pthread_cond_timedwait_WRK(pthread_cond_t* cond,
    int ret;
    OrigFn fn;
    unsigned long mutex_is_valid;
+   Bool abstime_is_valid;
    VALGRIND_GET_ORIG_FN(fn);
 
    if (TRACE_PTH_FNS) {
@@ -749,16 +750,24 @@ static int pthread_cond_timedwait_WRK(pthread_cond_t* cond,
                 pthread_cond_t*,cond, pthread_mutex_t*,mutex);
    assert(mutex_is_valid == 1 || mutex_is_valid == 0);
 
+   abstime_is_valid = abstime->tv_nsec >= 0 && abstime->tv_nsec < 1000000000;
+
    /* Tell the tool we're about to drop the mutex.  This reflects the
       fact that in a cond_wait, we show up holding the mutex, and the
       call atomically drops the mutex and waits for the cv to be
       signalled. */
-   if (mutex_is_valid) {
+   if (mutex_is_valid && abstime_is_valid) {
       DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_MUTEX_UNLOCK_PRE,
                   pthread_mutex_t*,mutex);
    }
 
    CALL_FN_W_WWW(ret, fn, cond,mutex,abstime);
+
+   if (!abstime_is_valid && ret != EINVAL) {
+      DO_PthAPIerror("Bug in libpthread: pthread_cond_timedwait "
+                     "invalid abstime did not cause"
+                     " EINVAL", ret);
+   }
 
    if ((ret == 0 || ret == ETIMEDOUT) && mutex_is_valid) {
       /* and now we have the mutex again */
@@ -2441,8 +2450,14 @@ QT4_FUNC(void*, _ZN6QMutexD2Ev, void* mutex)
     http://bugs.kde.org/show_bug.cgi?id=139776
  */
  MEMCPY(NONE, _intel_fast_memcpy)
+
 #elif defined(VGO_darwin)
- MEMCPY(VG_Z_LIBC_SONAME,    memcpy)
+# if DARWIN_VERS <= DARWIN_10_6
+  MEMCPY(VG_Z_LIBC_SONAME,  memcpy)
+# endif
+ MEMCPY(VG_Z_LIBC_SONAME,  memcpyZDVARIANTZDsse3x) /* memcpy$VARIANT$sse3x */
+ MEMCPY(VG_Z_LIBC_SONAME,  memcpyZDVARIANTZDsse42) /* memcpy$VARIANT$sse42 */
+
 #endif
 
 

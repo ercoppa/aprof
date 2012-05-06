@@ -9,7 +9,7 @@
    This file is part of MemCheck, a heavyweight Valgrind tool for
    detecting memory errors.
 
-   Copyright (C) 2008-2010 OpenWorks Ltd
+   Copyright (C) 2008-2011 OpenWorks Ltd
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
@@ -36,6 +36,7 @@
 */
 
 #include "pub_tool_basics.h"
+#include "pub_tool_poolalloc.h"     // For mc_include.h
 #include "pub_tool_hashtable.h"     // For mc_include.h
 #include "pub_tool_libcassert.h"
 #include "pub_tool_libcprint.h"
@@ -192,7 +193,8 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
 
    if (o == GOF(CIA)       && sz == 8) return -1;
    if (o == GOF(IP_AT_SYSCALL) && sz == 8) return -1; /* slot unused */
-   if (o == GOF(FPROUND)   && sz == 4) return -1;
+   if (o == GOF(FPROUND)   && sz == 1) return -1;
+   if (o == GOF(DFPROUND)  && sz == 1) return -1;
    if (o == GOF(EMWARN)    && sz == 4) return -1;
    if (o == GOF(TISTART)   && sz == 8) return -1;
    if (o == GOF(TILEN)     && sz == 8) return -1;
@@ -391,7 +393,8 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
 
    if (o == GOF(CIA)       && sz == 4) return -1;
    if (o == GOF(IP_AT_SYSCALL) && sz == 4) return -1; /* slot unused */
-   if (o == GOF(FPROUND)   && sz == 4) return -1;
+   if (o == GOF(FPROUND)   && sz == 1) return -1;
+   if (o == GOF(DFPROUND)  && sz == 1) return -1;
    if (o == GOF(VRSAVE)    && sz == 4) return -1;
    if (o == GOF(EMWARN)    && sz == 4) return -1;
    if (o == GOF(TISTART)   && sz == 4) return -1;
@@ -810,6 +813,7 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(IP_AT_SYSCALL)) return -1;
    if (o == GOF(fpc)) return -1;
    if (o == GOF(IA)) return -1;
+   if (o == GOF(IA) + 4) return -1;
    if (o == GOF(SYSNO)) return -1;
    VG_(printf)("MC_(get_otrack_shadow_offset)(s390x)(off=%d,sz=%d)\n",
                offset,szB);

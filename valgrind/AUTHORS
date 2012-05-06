@@ -1,7 +1,7 @@
 
 Julian Seward was the original founder, designer and author of
 Valgrind, created the dynamic translation frameworks, wrote Memcheck,
-the 3.X versions of Helgrind, Ptrcheck, DHAT, and did lots of other
+the 3.X versions of Helgrind, SGCheck, DHAT, and did lots of other
 things.
 
 Nicholas Nethercote did the core/tool generalisation, wrote
@@ -56,6 +56,17 @@ use in Valgrind.
 
 David Woodhouse has helped out with test and build machines over the course
 of many releases.
+
+Florian Krohm and Christian Borntraeger wrote and maintain the
+S390X/Linux port.  Florian improved and ruggedised the regression test
+system during 2011.
+
+Philippe Waroquiers wrote and maintains the embedded GDB server.  He
+also made a bunch of performance and memory-reduction fixes across
+diverse parts of the system.
+
+Maynard Johnson contributed IBM Power6 and Power7 support, and generally
+deals with ppc64-linux issues.
 
 Many, many people sent bug reports, patches, and helpful feedback.
 

@@ -6,7 +6,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2010 OpenWorks LLP
+   Copyright (C) 2004-2011 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -41,7 +41,6 @@
    bb_to_IR.h. */
 extern
 DisResult disInstr_ARM ( IRSB*        irbb,
-                         Bool         put_IP,
                          Bool         (*resteerOkFn) ( void*, Addr64 ),
                          Bool         resteerCisOk,
                          void*        callback_opaque,
@@ -157,7 +156,7 @@ UInt armg_calculate_flag_qc ( UInt resL1, UInt resL2,
    OP                DEP1              DEP2              DEP3
    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   OP_COPY           current NZCV      unused            unused
+   OP_COPY           curr_NZCV:28x0    unused            unused
    OP_ADD            argL              argR              unused
    OP_SUB            argL              argR              unused
    OP_ADC            argL              argR              31x0:old_C

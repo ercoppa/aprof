@@ -12,7 +12,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2010 Julian Seward.  All rights reserved.
+   Copyright (C) 2000-2011 Julian Seward.  All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
@@ -156,17 +156,27 @@
  * VALGRIND_DO_CLIENT_REQUEST(): a statement that invokes a Valgrind client
  * request. Accepts both pointers and integers as arguments.
  *
+ * VALGRIND_DO_CLIENT_REQUEST_STMT(): a statement that invokes a Valgrind
+ * client request that does not return a value.
+
  * VALGRIND_DO_CLIENT_REQUEST_EXPR(): a C expression that invokes a Valgrind
- * client request and whose value equals the client request result. Accepts
- * both pointers and integers as arguments.
+ * client request and whose value equals the client request result.  Accepts
+ * both pointers and integers as arguments.  Note that such calls are not
+ * necessarily pure functions -- they may have side effects.
  */
 
 #define VALGRIND_DO_CLIENT_REQUEST(_zzq_rlval, _zzq_default,            \
                                    _zzq_request, _zzq_arg1, _zzq_arg2,  \
                                    _zzq_arg3, _zzq_arg4, _zzq_arg5)     \
-  { (_zzq_rlval) = VALGRIND_DO_CLIENT_REQUEST_EXPR((_zzq_default),      \
+  do { (_zzq_rlval) = VALGRIND_DO_CLIENT_REQUEST_EXPR((_zzq_default),   \
                         (_zzq_request), (_zzq_arg1), (_zzq_arg2),       \
-                        (_zzq_arg3), (_zzq_arg4), (_zzq_arg5)); }
+                        (_zzq_arg3), (_zzq_arg4), (_zzq_arg5)); } while (0)
+
+#define VALGRIND_DO_CLIENT_REQUEST_STMT(_zzq_request, _zzq_arg1,        \
+                           _zzq_arg2,  _zzq_arg3, _zzq_arg4, _zzq_arg5) \
+  do { (void) VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                        \
+                    (_zzq_request), (_zzq_arg1), (_zzq_arg2),           \
+                    (_zzq_arg3), (_zzq_arg4), (_zzq_arg5)); } while (0)
 
 #if defined(NVALGRIND)
 
@@ -3681,10 +3691,9 @@ typedef
    _qzz_len - 1].  Useful if you are debugging a JITter or some such,
    since it provides a way to make sure valgrind will retranslate the
    invalidated area.  Returns no value. */
-#define VALGRIND_DISCARD_TRANSLATIONS(_qzz_addr,_qzz_len)         \
-    (unsigned)VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                  \
-                               VG_USERREQ__DISCARD_TRANSLATIONS,  \
-                               _qzz_addr, _qzz_len, 0, 0, 0)
+#define VALGRIND_DISCARD_TRANSLATIONS(_qzz_addr,_qzz_len)              \
+    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__DISCARD_TRANSLATIONS,  \
+                                    _qzz_addr, _qzz_len, 0, 0, 0)
 
 
 /* These requests are for getting Valgrind itself to print something.
@@ -3692,7 +3701,7 @@ typedef
    is the number of characters printed, excluding the "**<pid>** " part at the
    start and the backtrace (if present). */
 
-#if defined(__GNUC__) || defined(__INTEL_COMPILER)
+#if defined(__GNUC__) || defined(__INTEL_COMPILER) && !defined(_MSC_VER)
 /* Modern GCC will optimize the static routine out if unused,
    and unused attribute will shut down warnings about it.  */
 static int VALGRIND_PRINTF(const char *format, ...)
@@ -3732,7 +3741,7 @@ VALGRIND_PRINTF(const char *format, ...)
 #endif /* NVALGRIND */
 }
 
-#if defined(__GNUC__) || defined(__INTEL_COMPILER)
+#if defined(__GNUC__) || defined(__INTEL_COMPILER) && !defined(_MSC_VER)
 static int VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
    __attribute__((format(__printf__, 1, 2), __unused__));
 #endif
@@ -3930,68 +3939,58 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
 
    Ignored if addr == 0.
 */
-#define VALGRIND_MALLOCLIKE_BLOCK(addr, sizeB, rzB, is_zeroed)    \
-    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                            \
-                               VG_USERREQ__MALLOCLIKE_BLOCK,      \
-                               addr, sizeB, rzB, is_zeroed, 0)
+#define VALGRIND_MALLOCLIKE_BLOCK(addr, sizeB, rzB, is_zeroed)          \
+    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__MALLOCLIKE_BLOCK,       \
+                                    addr, sizeB, rzB, is_zeroed, 0)
 
 /* See the comment for VALGRIND_MALLOCLIKE_BLOCK for details.
    Ignored if addr == 0.
 */
-#define VALGRIND_RESIZEINPLACE_BLOCK(addr, oldSizeB, newSizeB, rzB) \
-    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                            \
-                               VG_USERREQ__RESIZEINPLACE_BLOCK,   \
-                               addr, oldSizeB, newSizeB, rzB, 0)
+#define VALGRIND_RESIZEINPLACE_BLOCK(addr, oldSizeB, newSizeB, rzB)     \
+    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__RESIZEINPLACE_BLOCK,    \
+                                    addr, oldSizeB, newSizeB, rzB, 0)
 
 /* See the comment for VALGRIND_MALLOCLIKE_BLOCK for details.
    Ignored if addr == 0.
 */
-#define VALGRIND_FREELIKE_BLOCK(addr, rzB)                        \
-    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                            \
-                               VG_USERREQ__FREELIKE_BLOCK,        \
-                               addr, rzB, 0, 0, 0)
+#define VALGRIND_FREELIKE_BLOCK(addr, rzB)                              \
+    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__FREELIKE_BLOCK,         \
+                                    addr, rzB, 0, 0, 0)
 
 /* Create a memory pool. */
 #define VALGRIND_CREATE_MEMPOOL(pool, rzB, is_zeroed)             \
-    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                            \
-                               VG_USERREQ__CREATE_MEMPOOL,        \
-                               pool, rzB, is_zeroed, 0, 0)
+    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__CREATE_MEMPOOL,   \
+                                    pool, rzB, is_zeroed, 0, 0)
 
 /* Destroy a memory pool. */
 #define VALGRIND_DESTROY_MEMPOOL(pool)                            \
-    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                            \
-                               VG_USERREQ__DESTROY_MEMPOOL,       \
-                               pool, 0, 0, 0, 0)
+    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__DESTROY_MEMPOOL,  \
+                                    pool, 0, 0, 0, 0)
 
 /* Associate a piece of memory with a memory pool. */
 #define VALGRIND_MEMPOOL_ALLOC(pool, addr, size)                  \
-    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                            \
-                               VG_USERREQ__MEMPOOL_ALLOC,         \
-                               pool, addr, size, 0, 0)
+    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__MEMPOOL_ALLOC,    \
+                                    pool, addr, size, 0, 0)
 
 /* Disassociate a piece of memory from a memory pool. */
 #define VALGRIND_MEMPOOL_FREE(pool, addr)                         \
-    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                            \
-                               VG_USERREQ__MEMPOOL_FREE,          \
-                               pool, addr, 0, 0, 0)
+    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__MEMPOOL_FREE,     \
+                                    pool, addr, 0, 0, 0)
 
 /* Disassociate any pieces outside a particular range. */
 #define VALGRIND_MEMPOOL_TRIM(pool, addr, size)                   \
-    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                            \
-                               VG_USERREQ__MEMPOOL_TRIM,          \
-                               pool, addr, size, 0, 0)
+    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__MEMPOOL_TRIM,     \
+                                    pool, addr, size, 0, 0)
 
 /* Resize and/or move a piece associated with a memory pool. */
 #define VALGRIND_MOVE_MEMPOOL(poolA, poolB)                       \
-    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                            \
-                               VG_USERREQ__MOVE_MEMPOOL,          \
-                               poolA, poolB, 0, 0, 0)
+    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__MOVE_MEMPOOL,     \
+                                    poolA, poolB, 0, 0, 0)
 
 /* Resize and/or move a piece associated with a memory pool. */
 #define VALGRIND_MEMPOOL_CHANGE(pool, addrA, addrB, size)         \
-    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                            \
-                               VG_USERREQ__MEMPOOL_CHANGE,        \
-                               pool, addrA, addrB, size, 0)
+    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__MEMPOOL_CHANGE,   \
+                                    pool, addrA, addrB, size, 0)
 
 /* Return 1 if a mempool exists, else 0. */
 #define VALGRIND_MEMPOOL_EXISTS(pool)                             \
@@ -4008,21 +4007,18 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
 /* Unmark the piece of memory associated with a stack id as being a
    stack. */
 #define VALGRIND_STACK_DEREGISTER(id)                             \
-   VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                             \
-                               VG_USERREQ__STACK_DEREGISTER,      \
-                               id, 0, 0, 0, 0)
+    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__STACK_DEREGISTER, \
+                                    id, 0, 0, 0, 0)
 
 /* Change the start and end address of the stack id. */
 #define VALGRIND_STACK_CHANGE(id, start, end)                     \
-    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                            \
-                               VG_USERREQ__STACK_CHANGE,          \
-                               id, start, end, 0, 0)
+    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__STACK_CHANGE,     \
+                                    id, start, end, 0, 0)
 
 /* Load PDB debug info for Wine PE image_map. */
-#define VALGRIND_LOAD_PDB_DEBUGINFO(fd, ptr, total_size, delta)   \
-    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                            \
-                               VG_USERREQ__LOAD_PDB_DEBUGINFO,    \
-                               fd, ptr, total_size, delta, 0)
+#define VALGRIND_LOAD_PDB_DEBUGINFO(fd, ptr, total_size, delta)     \
+    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__LOAD_PDB_DEBUGINFO, \
+                                    fd, ptr, total_size, delta, 0)
 
 /* Map a code address to a source file name and line number.  buf64
    must point to a 64-byte buffer in the caller's address space.  The
@@ -4042,20 +4038,14 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
    reporting.  Child threads do not inherit this setting from their
    parents -- they are always created with reporting enabled. */
 #define VALGRIND_DISABLE_ERROR_REPORTING                                \
-  do {                                                                  \
-    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                                  \
-                                    VG_USERREQ__CHANGE_ERR_DISABLEMENT, \
-                                    1, 0, 0, 0, 0);                     \
-  } while (0)
+    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__CHANGE_ERR_DISABLEMENT, \
+                                    1, 0, 0, 0, 0)
 
 /* Re-enable error reporting, as per comments on
    VALGRIND_DISABLE_ERROR_REPORTING. */
 #define VALGRIND_ENABLE_ERROR_REPORTING                                 \
-  do {                                                                  \
-    VALGRIND_DO_CLIENT_REQUEST_EXPR(0,                                  \
-                                    VG_USERREQ__CHANGE_ERR_DISABLEMENT, \
-                                    -1, 0, 0, 0, 0);                    \
-  } while (0)
+    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__CHANGE_ERR_DISABLEMENT, \
+                                    -1, 0, 0, 0, 0)
 
 #undef PLAT_x86_darwin
 #undef PLAT_amd64_darwin

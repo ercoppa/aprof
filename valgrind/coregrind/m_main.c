@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2010 Julian Seward 
+   Copyright (C) 2000-2011 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -180,6 +180,7 @@ static void usage_NORETURN ( Bool debug_help )
 "    --run-libc-freeres=no|yes free up glibc memory at exit on Linux? [yes]\n"
 "    --sim-hints=hint1,hint2,...  known hints:\n"
 "                                 lax-ioctls, enable-outer, fuse-compatible [none]\n"
+"    --fair-sched=no|yes|try   schedule threads fairly on multicore systems [no]\n"
 "    --kernel-variant=variant1,variant2,...  known variants: bproc [none]\n"
 "                              handle non-standard kernel variants\n"
 "    --show-emwarns=no|yes     show warnings about emulation limits? [no]\n"
@@ -244,8 +245,8 @@ static void usage_NORETURN ( Bool debug_help )
 "  Extra options read from ~/.valgrindrc, $VALGRIND_OPTS, ./.valgrindrc\n"
 "\n"
 "  %s is %s\n"
-"  Valgrind is Copyright (C) 2000-2010, and GNU GPL'd, by Julian Seward et al.\n"
-"  LibVEX is Copyright (C) 2004-2010, and GNU GPL'd, by OpenWorks LLP et al.\n"
+"  Valgrind is Copyright (C) 2000-2011, and GNU GPL'd, by Julian Seward et al.\n"
+"  LibVEX is Copyright (C) 2004-2011, and GNU GPL'd, by OpenWorks LLP et al.\n"
 "\n"
 "  Bug reports, feedback, admiration, abuse, etc, to: %s.\n"
 "\n";
@@ -293,6 +294,7 @@ static void usage_NORETURN ( Bool debug_help )
    - get the toolname (--tool=)
    - set VG_(clo_max_stackframe) (--max-stackframe=)
    - set VG_(clo_main_stacksize) (--main-stacksize=)
+   - set VG_(clo_sim_hints) (--sim-hints=)
 
    That's all it does.  The main command line processing is done below
    by main_process_cmd_line_options.  Note that
@@ -333,6 +335,11 @@ static void early_process_cmd_line_options ( /*OUT*/Int* need_help,
       // before main_process_cmd_line_options().
       else if VG_INT_CLO(str, "--max-stackframe", VG_(clo_max_stackframe)) {}
       else if VG_INT_CLO(str, "--main-stacksize", VG_(clo_main_stacksize)) {}
+
+      // Set up VG_(clo_sim_hints). This is needed a.o. for an inner
+      // running in an outer, to have "no-inner-prefix" enabled
+      // as early as possible.
+      else if VG_STR_CLO (str, "--sim-hints",     VG_(clo_sim_hints)) {}
    }
 }
 
@@ -450,6 +457,7 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       else if VG_STREQ(     arg, "-d")                   {}
       else if VG_STREQN(16, arg, "--max-stackframe")     {}
       else if VG_STREQN(16, arg, "--main-stacksize")     {}
+      else if VG_STREQN(11, arg,  "--sim-hints")         {}
       else if VG_STREQN(14, arg, "--profile-heap")       {}
 
       // These options are new.
@@ -462,7 +470,9 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
          VG_(clo_verbosity)--;
 
       else if VG_BOOL_CLO(arg, "--stats",          VG_(clo_stats)) {}
-      else if VG_BOOL_CLO(arg, "--xml",            VG_(clo_xml)) {}
+      else if VG_BOOL_CLO(arg, "--xml",            VG_(clo_xml))
+         VG_(debugLog_setXml)(VG_(clo_xml));
+
       else if VG_XACT_CLO(arg, "--vgdb=no",        VG_(clo_vgdb), Vg_VgdbNo) {}
       else if VG_XACT_CLO(arg, "--vgdb=yes",       VG_(clo_vgdb), Vg_VgdbYes) {}
       else if VG_XACT_CLO(arg, "--vgdb=full",      VG_(clo_vgdb), Vg_VgdbFull) {}
@@ -484,6 +494,17 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       else if VG_BOOL_CLO(arg, "--trace-children",   VG_(clo_trace_children)) {}
       else if VG_BOOL_CLO(arg, "--child-silent-after-fork",
                             VG_(clo_child_silent_after_fork)) {}
+      else if VG_STR_CLO(arg, "--fair-sched",        tmp_str) {
+         if (VG_(strcmp)(tmp_str, "yes") == 0)
+            VG_(clo_fair_sched) = enable_fair_sched;
+         else if (VG_(strcmp)(tmp_str, "try") == 0)
+            VG_(clo_fair_sched) = try_fair_sched;
+         else if (VG_(strcmp)(tmp_str, "no") == 0)
+            VG_(clo_fair_sched) = disable_fair_sched;
+         else
+            VG_(fmsg_bad_option)(arg, "");
+
+      }
       else if VG_BOOL_CLO(arg, "--trace-sched",      VG_(clo_trace_sched)) {}
       else if VG_BOOL_CLO(arg, "--trace-signals",    VG_(clo_trace_signals)) {}
       else if VG_BOOL_CLO(arg, "--trace-symtab",     VG_(clo_trace_symtab)) {}
@@ -500,7 +521,6 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       else if VG_BOOL_CLO(arg, "--trace-syscalls",   VG_(clo_trace_syscalls)) {}
       else if VG_BOOL_CLO(arg, "--wait-for-gdb",     VG_(clo_wait_for_gdb)) {}
       else if VG_STR_CLO (arg, "--db-command",       VG_(clo_db_command)) {}
-      else if VG_STR_CLO (arg, "--sim-hints",        VG_(clo_sim_hints)) {}
       else if VG_BOOL_CLO(arg, "--sym-offsets",      VG_(clo_sym_offsets)) {}
       else if VG_BOOL_CLO(arg, "--read-var-info",    VG_(clo_read_var_info)) {}
 
@@ -1024,19 +1044,24 @@ static void print_file_vars(Char* format)
 /*=== Printing the preamble                                        ===*/
 /*====================================================================*/
 
-// Print the command, escaping any chars that require it.
-static void umsg_or_xml_arg(const Char* arg,
-                            UInt (*umsg_or_xml)( const HChar*, ... ) )
+// Print the argument, escaping any chars that require it.
+static void umsg_arg(const Char* arg)
 {
    SizeT len = VG_(strlen)(arg);
    Char* special = " \\<>";
    Int i;
    for (i = 0; i < len; i++) {
       if (VG_(strchr)(special, arg[i])) {
-         umsg_or_xml("\\");   // escape with a backslash if necessary
+         VG_(umsg)("\\");   // escape with a backslash if necessary
       }
-      umsg_or_xml("%c", arg[i]);
+      VG_(umsg)("%c", arg[i]);
    }
+}
+
+// Send output to the XML-stream and escape any XML meta-characters.
+static void xml_arg(const Char* arg)
+{
+   VG_(printf_xml)("%pS", arg);
 }
 
 /* Ok, the logging sink is running now.  Print a suitable preamble.
@@ -1052,6 +1077,9 @@ static void print_preamble ( Bool logging_to_fd,
    HChar* xpost = VG_(clo_xml) ? "</line>" : "";
    UInt (*umsg_or_xml)( const HChar*, ... )
       = VG_(clo_xml) ? VG_(printf_xml) : VG_(umsg);
+
+   void (*umsg_or_xml_arg)( const Char* )
+      = VG_(clo_xml) ? xml_arg : umsg_arg;
 
    vg_assert( VG_(args_for_client) );
    vg_assert( VG_(args_for_valgrind) );
@@ -1104,11 +1132,12 @@ static void print_preamble ( Bool logging_to_fd,
       // favour utility and simplicity over aesthetics.
       umsg_or_xml("%sCommand: ", xpre);
       if (VG_(args_the_exename))
-         umsg_or_xml_arg(VG_(args_the_exename), umsg_or_xml);
+         umsg_or_xml_arg(VG_(args_the_exename));
+          
       for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
          HChar* s = *(HChar**)VG_(indexXA)( VG_(args_for_client), i );
          umsg_or_xml(" ");
-         umsg_or_xml_arg(s, umsg_or_xml);
+         umsg_or_xml_arg(s);
       }
       umsg_or_xml("%s\n", xpost);
 
@@ -1852,13 +1881,13 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
       VG_(printf)("pid=%d, entering delay loop\n", VG_(getpid)());
 
 #     if defined(VGP_x86_linux)
-      iters = 5;
+      iters = 10;
 #     elif defined(VGP_amd64_linux) || defined(VGP_ppc64_linux)
       iters = 10;
 #     elif defined(VGP_ppc32_linux)
       iters = 5;
 #     elif defined(VGP_arm_linux)
-      iters = 1;
+      iters = 5;
 #     elif defined(VGP_s390x_linux)
       iters = 10;
 #     elif defined(VGO_darwin)
@@ -1918,7 +1947,8 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
         be True here so that we read info from the valgrind executable
         itself. */
      for (i = 0; i < n_seg_starts; i++) {
-        anu.ull = VG_(di_notify_mmap)( seg_starts[i], True/*allow_SkFileV*/ );
+        anu.ull = VG_(di_notify_mmap)( seg_starts[i], True/*allow_SkFileV*/,
+                                       -1/*Don't use_fd*/);
         /* anu.ull holds the debuginfo handle returned by di_notify_mmap,
            if any. */
         if (anu.ull > 0) {
@@ -1938,8 +1968,10 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
      /* show them all to the debug info reader.  
         Don't read from V segments (unlike Linux) */
      // GrP fixme really?
-     for (i = 0; i < n_seg_starts; i++)
-        VG_(di_notify_mmap)( seg_starts[i], False/*don't allow_SkFileV*/ );
+     for (i = 0; i < n_seg_starts; i++) {
+        VG_(di_notify_mmap)( seg_starts[i], False/*don't allow_SkFileV*/,
+                             -1/*don't use_fd*/);
+     }
 
      VG_(free)( seg_starts );
    }
@@ -1965,6 +1997,19 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
         = VG_(am_change_ownership_v_to_c)( co_start, co_endPlus - co_start );
      vg_assert(change_ownership_v_c_OK);
    }
+
+   if (VG_(clo_xml)) {
+      HChar buf[50];
+      VG_(elapsed_wallclock_time)(buf);
+      VG_(printf_xml)( "<status>\n"
+                       "  <state>RUNNING</state>\n"
+                       "  <time>%pS</time>\n"
+                       "</status>\n",
+                       buf );
+      VG_(printf_xml)( "\n" );
+   }
+
+   VG_(init_Threads)();
 
    //--------------------------------------------------------------
    // Initialise the scheduler (phase 1) [generates tid_main]
@@ -2167,17 +2212,6 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    //--------------------------------------------------------------
    // Run!
    //--------------------------------------------------------------
-   if (VG_(clo_xml)) {
-      HChar buf[50];
-      VG_(elapsed_wallclock_time)(buf);
-      VG_(printf_xml)( "<status>\n"
-                              "  <state>RUNNING</state>\n"
-                              "  <time>%pS</time>\n"
-                              "</status>\n",
-                              buf );
-      VG_(printf_xml)( "\n" );
-   }
-
    VG_(debugLog)(1, "main", "Running thread 1\n");
 
    /* As a result of the following call, the last thread standing
@@ -2735,8 +2769,12 @@ asm("\n"
 /* --- !!! --- EXTERNAL HEADERS end --- !!! --- */
 
 /* Avoid compiler warnings: this fn _is_ used, but labelling it
-   'static' causes gcc to complain it isn't. */
+   'static' causes gcc to complain it isn't.
+   attribute 'used' also ensures the code is not eliminated at link
+   time */
+__attribute__ ((used))
 void _start_in_C_linux ( UWord* pArgc );
+__attribute__ ((used))
 void _start_in_C_linux ( UWord* pArgc )
 {
    Int     r;
@@ -2816,6 +2854,7 @@ asm("\n"
     "\tandl  $~15, %eax\n"
     /* install it, and collect the original one */
     "\txchgl %eax, %esp\n"
+    "\tsubl  $12, %esp\n"  // keep stack 16 aligned; see #295428
     /* call _start_in_C_darwin, passing it the startup %esp */
     "\tpushl %eax\n"
     "\tcall  __start_in_C_darwin\n"

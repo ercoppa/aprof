@@ -8,10 +8,10 @@
    This file is part of Callgrind, a Valgrind tool for call graph
    profiling programs.
 
-   Copyright (C) 2002-2010, Josef Weidendorfer (Josef.Weidendorfer@gmx.de)
+   Copyright (C) 2002-2011, Josef Weidendorfer (Josef.Weidendorfer@gmx.de)
 
    This tool is derived from and contains code from Cachegrind
-   Copyright (C) 2002-2010 Nicholas Nethercote (njn@valgrind.org)
+   Copyright (C) 2002-2011 Nicholas Nethercote (njn@valgrind.org)
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -905,10 +905,9 @@ IRSB* CLG_(instrument)( VgCallbackClosure* closure,
 			VexGuestExtents* vge,
 			IRType gWordTy, IRType hWordTy )
 {
-   Int      i, isize;
+   Int      i;
    IRStmt*  st;
    Addr     origAddr;
-   Addr64   cia; /* address of current insn */
    InstrInfo* curr_inode = NULL;
    ClgState clgs;
    UInt     cJumps = 0;
@@ -944,10 +943,9 @@ IRSB* CLG_(instrument)( VgCallbackClosure* closure,
    st = sbIn->stmts[i];
    CLG_ASSERT(Ist_IMark == st->tag);
 
-   origAddr = (Addr)st->Ist.IMark.addr;
-   cia   = st->Ist.IMark.addr;
-   isize = st->Ist.IMark.len;
-   CLG_ASSERT(origAddr == st->Ist.IMark.addr);  // XXX: check no overflow
+   origAddr = (Addr)st->Ist.IMark.addr + (Addr)st->Ist.IMark.delta;
+   CLG_ASSERT(origAddr == st->Ist.IMark.addr 
+                          + st->Ist.IMark.delta);  // XXX: check no overflow
 
    /* Get BB struct (creating if necessary).
     * JS: The hash table is keyed with orig_addr_noredir -- important!
@@ -977,8 +975,8 @@ IRSB* CLG_(instrument)( VgCallbackClosure* closure,
 	    break;
 
 	 case Ist_IMark: {
-            cia   = st->Ist.IMark.addr;
-            isize = st->Ist.IMark.len;
+            Addr64 cia   = st->Ist.IMark.addr + st->Ist.IMark.delta;
+            Int    isize = st->Ist.IMark.len;
             CLG_ASSERT(clgs.instr_offset == (Addr)cia - origAddr);
 	    // If Vex fails to decode an instruction, the size will be zero.
 	    // Pretend otherwise.
@@ -1148,8 +1146,20 @@ IRSB* CLG_(instrument)( VgCallbackClosure* closure,
 
 	    CLG_ASSERT(clgs.ii_index>0);
 	    if (!clgs.seen_before) {
-		clgs.bb->jmp[cJumps].instr = clgs.ii_index-1;
-		clgs.bb->jmp[cJumps].skip = False;
+	      ClgJumpKind jk;
+
+	      if      (st->Ist.Exit.jk == Ijk_Call) jk = jk_Call;
+	      else if (st->Ist.Exit.jk == Ijk_Ret)  jk = jk_Return;
+	      else {
+		if (IRConst2Addr(st->Ist.Exit.dst) ==
+		    origAddr + curr_inode->instr_offset + curr_inode->instr_size)
+		  jk = jk_None;
+		else
+		  jk = jk_Jump;
+	      }
+
+	      clgs.bb->jmp[cJumps].instr = clgs.ii_index-1;
+	      clgs.bb->jmp[cJumps].jmpkind = jk;
 	    }
 
 	    /* Update global variable jmps_passed before the jump
@@ -1214,18 +1224,45 @@ IRSB* CLG_(instrument)( VgCallbackClosure* closure,
    CLG_ASSERT(clgs.bb->cjmp_count == cJumps);
    CLG_ASSERT(clgs.bb->instr_count = clgs.ii_index);
 
-   /* This stores the instr of the call/ret at BB end */
-   clgs.bb->jmp[cJumps].instr = clgs.ii_index-1;
+   /* Info for final exit from BB */
+   {
+     ClgJumpKind jk;
+
+     if      (sbIn->jumpkind == Ijk_Call) jk = jk_Call;
+     else if (sbIn->jumpkind == Ijk_Ret)  jk = jk_Return;
+     else {
+       jk = jk_Jump;
+       if ((sbIn->next->tag == Iex_Const) &&
+	   (IRConst2Addr(sbIn->next->Iex.Const.con) ==
+	    origAddr + clgs.instr_offset))
+	 jk = jk_None;
+     }
+     clgs.bb->jmp[cJumps].jmpkind = jk;
+     /* Instruction index of the call/ret at BB end
+      * (it is wrong for fall-through, but does not matter) */
+     clgs.bb->jmp[cJumps].instr = clgs.ii_index-1;
+   }
+
+   /* swap information of last exit with final exit if inverted */
+   if (clgs.bb->cjmp_inverted) {
+     ClgJumpKind jk;
+     UInt instr;
+
+     jk = clgs.bb->jmp[cJumps].jmpkind;
+     clgs.bb->jmp[cJumps].jmpkind = clgs.bb->jmp[cJumps-1].jmpkind;
+     clgs.bb->jmp[cJumps-1].jmpkind = jk;
+     instr = clgs.bb->jmp[cJumps].instr;
+     clgs.bb->jmp[cJumps].instr = clgs.bb->jmp[cJumps-1].instr;
+     clgs.bb->jmp[cJumps-1].instr = instr;
+   }
 
    if (clgs.seen_before) {
        CLG_ASSERT(clgs.bb->cost_count == update_cost_offsets(&clgs));
        CLG_ASSERT(clgs.bb->instr_len = clgs.instr_offset);
-       CLG_ASSERT(clgs.bb->jmpkind == sbIn->jumpkind);
    }
    else {
        clgs.bb->cost_count = update_cost_offsets(&clgs);
        clgs.bb->instr_len = clgs.instr_offset;
-       clgs.bb->jmpkind = sbIn->jumpkind;
    }
 
    CLG_DEBUG(3, "- instrument(BB %#lx): byteLen %u, CJumps %u, CostLen %u\n",
@@ -1708,8 +1745,6 @@ void finish(void)
 
   CLG_(dump_profile)(0, False);
 
-  CLG_(finish_command)();
-
   if (VG_(clo_verbosity) == 0) return;
   
   /* Hash table stats */
@@ -1861,7 +1896,6 @@ void CLG_(post_clo_init)(void)
    }
 
    CLG_(init_dumps)();
-   CLG_(init_command)();
 
    (*CLG_(cachesim).post_clo_init)();
 
@@ -1891,7 +1925,7 @@ void CLG_(pre_clo_init)(void)
     VG_(details_name)            ("Callgrind");
     VG_(details_version)         (NULL);
     VG_(details_description)     ("a call-graph generating cache profiler");
-    VG_(details_copyright_author)("Copyright (C) 2002-2010, and GNU GPL'd, "
+    VG_(details_copyright_author)("Copyright (C) 2002-2011, and GNU GPL'd, "
 				  "by Josef Weidendorfer et al.");
     VG_(details_bug_reports_to)  (VG_BUGS_TO);
     VG_(details_avg_translation_sizeB) ( 500 );

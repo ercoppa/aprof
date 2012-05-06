@@ -8,7 +8,7 @@
    This file is part of MemCheck, a heavyweight Valgrind tool for
    detecting memory errors.
 
-   Copyright (C) 2000-2010 Julian Seward 
+   Copyright (C) 2000-2011 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -96,7 +96,13 @@ void MC_(move_mempool)    ( Addr poolA, Addr poolB );
 void MC_(mempool_change)  ( Addr pool, Addr addrA, Addr addrB, SizeT size );
 Bool MC_(mempool_exists)  ( Addr pool );
 
-MC_Chunk* MC_(get_freed_list_head)( void );
+/* Searches for a recently freed block which might bracket Addr a.
+   Return the MC_Chunk* for this block or NULL if no bracketting block
+   is found. */
+MC_Chunk* MC_(get_freed_block_bracketting)( Addr a );
+
+/* For efficient pooled alloc/free of the MC_Chunk. */
+extern PoolAlloc* MC_(chunk_poolalloc);
 
 /* For tracking malloc'd blocks.  Nb: it's quite important that it's a
    VgHashTable, because VgHashTable allows duplicate keys without complaint.
@@ -115,6 +121,8 @@ void MC_(make_mem_defined)         ( Addr a, SizeT len );
 void MC_(copy_address_range_state) ( Addr src, Addr dst, SizeT len );
 
 void MC_(print_malloc_stats) ( void );
+/* nr of free operations done */
+SizeT MC_(get_cmalloc_n_frees) ( void );
 
 void* MC_(malloc)               ( ThreadId tid, SizeT n );
 void* MC_(__builtin_new)        ( ThreadId tid, SizeT n );
@@ -248,6 +256,7 @@ typedef
   }
   Reachedness;
 
+
 /* For VALGRIND_COUNT_LEAKS client request */
 extern SizeT MC_(bytes_leaked);
 extern SizeT MC_(bytes_indirect);
@@ -308,14 +317,24 @@ typedef
       Bool show_reachable;
       Bool show_possibly_lost;
       LeakCheckDeltaMode deltamode;
+      UInt max_loss_records_output;       // limit on the nr of loss records output.
       Bool requested_by_monitor_command; // True when requested by gdb/vgdb.
    }
    LeakCheckParams;
 
-void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckParams lcp);
+void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckParams * lcp);
 
 // maintains the lcp.deltamode given in the last call to detect_memory_leaks
 extern LeakCheckDeltaMode MC_(detect_memory_leaks_last_delta_mode);
+
+// prints the list of blocks corresponding to the given loss_record_nr.
+// Returns True if loss_record_nr identifies a correct loss record from last leak search.
+// Returns False otherwise.
+Bool MC_(print_block_list) ( UInt loss_record_nr);
+
+// Prints the addresses/registers/... at which a pointer to
+// the given range [address, address+szB[ is found.
+void MC_(who_points_at) ( Addr address, SizeT szB);
 
 // if delta_mode == LCD_Any, prints in buf an empty string
 // otherwise prints a delta in the layout  " (+%'lu)" or " (-%'lu)" 
@@ -327,8 +346,9 @@ extern char * MC_(snprintf_delta) (char * buf, Int size,
 Bool MC_(is_valid_aligned_word)     ( Addr a );
 Bool MC_(is_within_valid_secondary) ( Addr a );
 
-void MC_(pp_LeakError)(UInt n_this_record, UInt n_total_records,
-                       LossRecord* l);
+// Prints as user msg a description of the given loss record.
+void MC_(pp_LossRecord)(UInt n_this_record, UInt n_total_records,
+                        LossRecord* l);
                           
 
 /*------------------------------------------------------------*/
@@ -423,6 +443,10 @@ extern Bool MC_(clo_partial_loads_ok);
 
 /* Max volume of the freed blocks queue. */
 extern Long MC_(clo_freelist_vol);
+
+/* Blocks with a size >= MC_(clo_freelist_big_blocks) will be put
+   in the "big block" freed blocks queue. */
+extern Long MC_(clo_freelist_big_blocks);
 
 /* Do leak check at exit?  default: NO */
 extern LeakCheckMode MC_(clo_leak_check);

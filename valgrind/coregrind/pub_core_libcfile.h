@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2010 Julian Seward
+   Copyright (C) 2000-2011 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -89,9 +89,6 @@ extern SysRes VG_(pread) ( Int fd, void* buf, Int count, OffT offset );
    non-NULL, the file's name is written into it.  The number of bytes
    written is guaranteed not to exceed 64+strlen(part_of_name). */
 extern Int VG_(mkstemp) ( HChar* part_of_name, /*OUT*/HChar* fullname );
-
-/* Return the name of a directory for temporary files. */
-extern const HChar* VG_(tmpdir)(void);
 
 /* Record the process' working directory at startup.  Is intended to
    be called exactly once, at startup, before the working directory

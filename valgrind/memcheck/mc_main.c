@@ -9,7 +9,7 @@
    This file is part of MemCheck, a heavyweight Valgrind tool for
    detecting memory errors.
 
-   Copyright (C) 2000-2010 Julian Seward 
+   Copyright (C) 2000-2011 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -33,6 +33,7 @@
 #include "pub_tool_basics.h"
 #include "pub_tool_aspacemgr.h"
 #include "pub_tool_gdbserver.h"
+#include "pub_tool_poolalloc.h"
 #include "pub_tool_hashtable.h"     // For mc_include.h
 #include "pub_tool_libcbase.h"
 #include "pub_tool_libcassert.h"
@@ -836,15 +837,9 @@ Bool get_vbits8 ( Addr a, UChar* vbits8 )
 //
 // To avoid the stale nodes building up too much, we periodically (once the
 // table reaches a certain size) garbage collect (GC) the table by
-// traversing it and evicting any "sufficiently stale" nodes, ie. nodes that
-// are stale and haven't been touched for a certain number of collections.
+// traversing it and evicting any nodes not having PDB.
 // If more than a certain proportion of nodes survived, we increase the
 // table size so that GCs occur less often.  
-//
-// (So this a bit different to a traditional GC, where you definitely want
-// to remove any dead nodes.  It's more like we have a resizable cache and
-// we're trying to find the right balance how many elements to evict and how
-// big to make the cache.)
 //
 // This policy is designed to avoid bad table bloat in the worst case where
 // a program creates huge numbers of stale PDBs -- we would get this bloat
@@ -855,6 +850,27 @@ Bool get_vbits8 ( Addr a, UChar* vbits8 )
 // lot of them in later again.  The "sufficiently stale" approach avoids
 // this.  (If a program has many live PDBs, performance will just suck,
 // there's no way around that.)
+//
+// Further comments, JRS 14 Feb 2012.  It turns out that the policy of
+// holding on to stale entries for 2 GCs before discarding them can lead
+// to massive space leaks.  So we're changing to an arrangement where
+// lines are evicted as soon as they are observed to be stale during a
+// GC.  This also has a side benefit of allowing the sufficiently_stale
+// field to be removed from the SecVBitNode struct, reducing its size by
+// 8 bytes, which is a substantial space saving considering that the
+// struct was previously 32 or so bytes, on a 64 bit target.
+//
+// In order to try and mitigate the problem that the "sufficiently stale"
+// heuristic was designed to avoid, the table size is allowed to drift
+// up ("DRIFTUP") slowly to 80000, even if the residency is low.  This
+// means that nodes will exist in the table longer on average, and hopefully
+// will be deleted and re-added less frequently.
+//
+// The previous scaling up mechanism (now called STEPUP) is retained:
+// if residency exceeds 50%, the table is scaled up, although by a 
+// factor sqrt(2) rather than 2 as before.  This effectively doubles the
+// frequency of GCs when there are many PDBs at reduces the tendency of
+// stale PDBs to reside for long periods in the table.
 
 static OSet* secVBitTable;
 
@@ -871,19 +887,29 @@ static ULong sec_vbits_updates   = 0;
 // row), but often not.  So we choose something intermediate.
 #define BYTES_PER_SEC_VBIT_NODE     16
 
-// We make the table bigger if more than this many nodes survive a GC.
-#define MAX_SURVIVOR_PROPORTION  0.5
+// We make the table bigger by a factor of STEPUP_GROWTH_FACTOR if
+// more than this many nodes survive a GC.
+#define STEPUP_SURVIVOR_PROPORTION  0.5
+#define STEPUP_GROWTH_FACTOR        1.414213562
 
-// Each time we make the table bigger, we increase it by this much.
-#define TABLE_GROWTH_FACTOR      2
+// If the above heuristic doesn't apply, then we may make the table
+// slightly bigger, by a factor of DRIFTUP_GROWTH_FACTOR, if more than
+// this many nodes survive a GC, _and_ the total table size does
+// not exceed a fixed limit.  The numbers are somewhat arbitrary, but
+// work tolerably well on long Firefox runs.  The scaleup ratio of 1.5%
+// effectively although gradually reduces residency and increases time
+// between GCs for programs with small numbers of PDBs.  The 80000 limit
+// effectively limits the table size to around 2MB for programs with
+// small numbers of PDBs, whilst giving a reasonably long lifetime to
+// entries, to try and reduce the costs resulting from deleting and
+// re-adding of entries.
+#define DRIFTUP_SURVIVOR_PROPORTION 0.15
+#define DRIFTUP_GROWTH_FACTOR       1.015
+#define DRIFTUP_MAX_SIZE            80000
 
-// This defines "sufficiently stale" -- any node that hasn't been touched in
-// this many GCs will be removed.
-#define MAX_STALE_AGE            2
-      
 // We GC the table when it gets this many nodes in it, ie. it's effectively
 // the table size.  It can change.
-static Int  secVBitLimit = 1024;
+static Int  secVBitLimit = 1000;
 
 // The number of GCs done, used to age sec-V-bit nodes for eviction.
 // Because it's unsigned, wrapping doesn't matter -- the right answer will
@@ -894,16 +920,20 @@ typedef
    struct {
       Addr  a;
       UChar vbits8[BYTES_PER_SEC_VBIT_NODE];
-      UInt  last_touched;
    } 
    SecVBitNode;
 
 static OSet* createSecVBitTable(void)
 {
-   return VG_(OSetGen_Create)( offsetof(SecVBitNode, a), 
-                               NULL, // use fast comparisons
-                               VG_(malloc), "mc.cSVT.1 (sec VBit table)", 
-                               VG_(free) );
+   OSet* newSecVBitTable;
+   newSecVBitTable = VG_(OSetGen_Create_With_Pool)
+      ( offsetof(SecVBitNode, a), 
+        NULL, // use fast comparisons
+        VG_(malloc), "mc.cSVT.1 (sec VBit table)", 
+        VG_(free),
+        1000,
+        sizeof(SecVBitNode));
+   return newSecVBitTable;
 }
 
 static void gcSecVBitTable(void)
@@ -920,29 +950,19 @@ static void gcSecVBitTable(void)
    // Traverse the table, moving fresh nodes into the new table.
    VG_(OSetGen_ResetIter)(secVBitTable);
    while ( (n = VG_(OSetGen_Next)(secVBitTable)) ) {
-      Bool keep = False;
-      if ( (GCs_done - n->last_touched) <= MAX_STALE_AGE ) {
-         // Keep node if it's been touched recently enough (regardless of
-         // freshness/staleness).
-         keep = True;
-      } else {
-         // Keep node if any of its bytes are non-stale.  Using
-         // get_vabits2() for the lookup is not very efficient, but I don't
-         // think it matters.
-         for (i = 0; i < BYTES_PER_SEC_VBIT_NODE; i++) {
-            if (VA_BITS2_PARTDEFINED == get_vabits2(n->a + i)) {
-               keep = True;      // Found a non-stale byte, so keep
-               break;
-            }
+      // Keep node if any of its bytes are non-stale.  Using
+      // get_vabits2() for the lookup is not very efficient, but I don't
+      // think it matters.
+      for (i = 0; i < BYTES_PER_SEC_VBIT_NODE; i++) {
+         if (VA_BITS2_PARTDEFINED == get_vabits2(n->a + i)) {
+            // Found a non-stale byte, so keep =>
+            // Insert a copy of the node into the new table.
+            SecVBitNode* n2 = 
+               VG_(OSetGen_AllocNode)(secVBitTable2, sizeof(SecVBitNode));
+            *n2 = *n;
+            VG_(OSetGen_Insert)(secVBitTable2, n2);
+            break;
          }
-      }
-
-      if ( keep ) {
-         // Insert a copy of the node into the new table.
-         SecVBitNode* n2 = 
-            VG_(OSetGen_AllocNode)(secVBitTable2, sizeof(SecVBitNode));
-         *n2 = *n;
-         VG_(OSetGen_Insert)(secVBitTable2, n2);
       }
    }
 
@@ -955,17 +975,29 @@ static void gcSecVBitTable(void)
    secVBitTable = secVBitTable2;
 
    if (VG_(clo_verbosity) > 1) {
-      Char percbuf[6];
+      Char percbuf[7];
       VG_(percentify)(n_survivors, n_nodes, 1, 6, percbuf);
       VG_(message)(Vg_DebugMsg, "memcheck GC: %d nodes, %d survivors (%s)\n",
                    n_nodes, n_survivors, percbuf);
    }
 
    // Increase table size if necessary.
-   if (n_survivors > (secVBitLimit * MAX_SURVIVOR_PROPORTION)) {
-      secVBitLimit *= TABLE_GROWTH_FACTOR;
+   if ((Double)n_survivors 
+       > ((Double)secVBitLimit * STEPUP_SURVIVOR_PROPORTION)) {
+      secVBitLimit = (Int)((Double)secVBitLimit * (Double)STEPUP_GROWTH_FACTOR);
       if (VG_(clo_verbosity) > 1)
-         VG_(message)(Vg_DebugMsg, "memcheck GC: increase table size to %d\n",
+         VG_(message)(Vg_DebugMsg,
+                      "memcheck GC: %d new table size (stepup)\n",
+                      secVBitLimit);
+   }
+   else
+   if (secVBitLimit < DRIFTUP_MAX_SIZE
+       && (Double)n_survivors 
+          > ((Double)secVBitLimit * DRIFTUP_SURVIVOR_PROPORTION)) {
+      secVBitLimit = (Int)((Double)secVBitLimit * (Double)DRIFTUP_GROWTH_FACTOR);
+      if (VG_(clo_verbosity) > 1)
+         VG_(message)(Vg_DebugMsg,
+                      "memcheck GC: %d new table size (driftup)\n",
                       secVBitLimit);
    }
 }
@@ -994,9 +1026,14 @@ static void set_sec_vbits8(Addr a, UWord vbits8)
    tl_assert(V_BITS8_DEFINED != vbits8 && V_BITS8_UNDEFINED != vbits8);
    if (n) {
       n->vbits8[amod] = vbits8;     // update
-      n->last_touched = GCs_done;
       sec_vbits_updates++;
    } else {
+      // Do a table GC if necessary.  Nb: do this before creating and
+      // inserting the new node, to avoid erroneously GC'ing the new node.
+      if (secVBitLimit == VG_(OSetGen_Size)(secVBitTable)) {
+         gcSecVBitTable();
+      }
+
       // New node:  assign the specific byte, make the rest invalid (they
       // should never be read as-is, but be cautious).
       n = VG_(OSetGen_AllocNode)(secVBitTable, sizeof(SecVBitNode));
@@ -1005,13 +1042,6 @@ static void set_sec_vbits8(Addr a, UWord vbits8)
          n->vbits8[i] = V_BITS8_UNDEFINED;
       }
       n->vbits8[amod] = vbits8;
-      n->last_touched = GCs_done;
-
-      // Do a table GC if necessary.  Nb: do this before inserting the new
-      // node, to avoid erroneously GC'ing the new node.
-      if (secVBitLimit == VG_(OSetGen_Size)(secVBitTable)) {
-         gcSecVBitTable();
-      }
 
       // Insert the new node.
       VG_(OSetGen_Insert)(secVBitTable, n);
@@ -1111,19 +1141,6 @@ static
 __attribute__((noinline))
 ULong mc_LOADVn_slow ( Addr a, SizeT nBits, Bool bigendian )
 {
-   /* Make up a 64-bit result V word, which contains the loaded data for
-      valid addresses and Defined for invalid addresses.  Iterate over
-      the bytes in the word, from the most significant down to the
-      least. */
-   ULong vbits64     = V_BITS64_UNDEFINED;
-   SizeT szB         = nBits / 8;
-   SSizeT i;                        // Must be signed.
-   SizeT n_addrs_bad = 0;
-   Addr  ai;
-   Bool  partial_load_exemption_applies;
-   UChar vbits8;
-   Bool  ok;
-
    PROF_EVENT(30, "mc_LOADVn_slow");
 
    /* ------------ BEGIN semi-fast cases ------------ */
@@ -1158,37 +1175,92 @@ ULong mc_LOADVn_slow ( Addr a, SizeT nBits, Bool bigendian )
    }
    /* ------------ END semi-fast cases ------------ */
 
+   ULong  vbits64     = V_BITS64_UNDEFINED; /* result */
+   ULong  pessim64    = V_BITS64_DEFINED;   /* only used when p-l-ok=yes */
+   SSizeT szB         = nBits / 8;
+   SSizeT i;          /* Must be signed. */
+   SizeT  n_addrs_bad = 0;
+   Addr   ai;
+   UChar  vbits8;
+   Bool   ok;
+
    tl_assert(nBits == 64 || nBits == 32 || nBits == 16 || nBits == 8);
 
+   /* Make up a 64-bit result V word, which contains the loaded data
+      for valid addresses and Defined for invalid addresses.  Iterate
+      over the bytes in the word, from the most significant down to
+      the least.  The vbits to return are calculated into vbits64.
+      Also compute the pessimising value to be used when
+      --partial-loads-ok=yes.  n_addrs_bad is redundant (the relevant
+      info can be gleaned from pessim64) but is used as a
+      cross-check. */
    for (i = szB-1; i >= 0; i--) {
       PROF_EVENT(31, "mc_LOADVn_slow(loop)");
       ai = a + byte_offset_w(szB, bigendian, i);
       ok = get_vbits8(ai, &vbits8);
-      if (!ok) n_addrs_bad++;
       vbits64 <<= 8; 
       vbits64 |= vbits8;
+      if (!ok) n_addrs_bad++;
+      pessim64 <<= 8;
+      pessim64 |= (ok ? V_BITS8_DEFINED : V_BITS8_UNDEFINED);
    }
 
-   /* This is a hack which avoids producing errors for code which
-      insists in stepping along byte strings in aligned word-sized
-      chunks, and there is a partially defined word at the end.  (eg,
-      optimised strlen).  Such code is basically broken at least WRT
-      semantics of ANSI C, but sometimes users don't have the option
-      to fix it, and so this option is provided.  Note it is now
-      defaulted to not-engaged.
+   /* In the common case, all the addresses involved are valid, so we
+      just return the computed V bits and have done. */
+   if (LIKELY(n_addrs_bad == 0))
+      return vbits64;
 
-      A load from a partially-addressible place is allowed if:
-      - the command-line flag is set
+   /* If there's no possibility of getting a partial-loads-ok
+      exemption, report the error and quit. */
+   if (!MC_(clo_partial_loads_ok)) {
+      MC_(record_address_error)( VG_(get_running_tid)(), a, szB, False );
+      return vbits64;
+   }
+
+   /* The partial-loads-ok excemption might apply.  Find out if it
+      does.  If so, don't report an addressing error, but do return
+      Undefined for the bytes that are out of range, so as to avoid
+      false negatives.  If it doesn't apply, just report an addressing
+      error in the usual way. */
+
+   /* Some code steps along byte strings in aligned word-sized chunks
+      even when there is only a partially defined word at the end (eg,
+      optimised strlen).  This is allowed by the memory model of
+      modern machines, since an aligned load cannot span two pages and
+      thus cannot "partially fault".  Despite such behaviour being
+      declared undefined by ANSI C/C++.
+
+      Therefore, a load from a partially-addressible place is allowed
+      if all of the following hold:
+      - the command-line flag is set [by default, it isn't]
       - it's a word-sized, word-aligned load
       - at least one of the addresses in the word *is* valid
-   */
-   partial_load_exemption_applies
-      = MC_(clo_partial_loads_ok) && szB == VG_WORDSIZE 
-                                   && VG_IS_WORD_ALIGNED(a) 
-                                   && n_addrs_bad < VG_WORDSIZE;
 
-   if (n_addrs_bad > 0 && !partial_load_exemption_applies)
-      MC_(record_address_error)( VG_(get_running_tid)(), a, szB, False );
+      Since this suppresses the addressing error, we avoid false
+      negatives by marking bytes undefined when they come from an
+      invalid address.
+   */
+
+   /* "at least one of the addresses is invalid" */
+   tl_assert(pessim64 != V_BITS64_DEFINED);
+
+   if (szB == VG_WORDSIZE && VG_IS_WORD_ALIGNED(a)
+       && n_addrs_bad < VG_WORDSIZE) {
+      /* Exemption applies.  Use the previously computed pessimising
+         value for vbits64 and return the combined result, but don't
+         flag an addressing error.  The pessimising value is Defined
+         for valid addresses and Undefined for invalid addresses. */
+      /* for assumption that doing bitwise or implements UifU */
+      tl_assert(V_BIT_UNDEFINED == 1 && V_BIT_DEFINED == 0);
+      /* (really need "UifU" here...)
+         vbits64 UifU= pessim64  (is pessimised by it, iow) */
+      vbits64 |= pessim64;
+      return vbits64;
+   }
+
+   /* Exemption doesn't apply.  Flag an addressing error in the normal
+      way. */
+   MC_(record_address_error)( VG_(get_running_tid)(), a, szB, False );
 
    return vbits64;
 }
@@ -2144,7 +2216,7 @@ static void init_ocacheL2 ( void )
    ocacheL2 
       = VG_(OSetGen_Create)( offsetof(OCacheLine,tag), 
                              NULL, /* fast cmp */
-                             ocacheL2_malloc, "mc.ioL2", ocacheL2_free );
+                             ocacheL2_malloc, "mc.ioL2", ocacheL2_free);
    tl_assert(ocacheL2);
    stats__ocacheL2_n_nodes = 0;
 }
@@ -3553,6 +3625,65 @@ static MC_ReadResult is_mem_defined ( Addr a, SizeT len,
 }
 
 
+/* Like is_mem_defined but doesn't give up at the first uninitialised
+   byte -- the entire range is always checked.  This is important for
+   detecting errors in the case where a checked range strays into
+   invalid memory, but that fact is not detected by the ordinary
+   is_mem_defined(), because of an undefined section that precedes the
+   out of range section, possibly as a result of an alignment hole in
+   the checked data.  This version always checks the entire range and
+   can report both a definedness and an accessbility error, if
+   necessary. */
+static void is_mem_defined_comprehensive (
+               Addr a, SizeT len,
+               /*OUT*/Bool* errorV,    /* is there a definedness err? */
+               /*OUT*/Addr* bad_addrV, /* if so where? */
+               /*OUT*/UInt* otagV,     /* and what's its otag? */
+               /*OUT*/Bool* errorA,    /* is there an addressability err? */
+               /*OUT*/Addr* bad_addrA  /* if so where? */
+            )
+{
+   SizeT i;
+   UWord vabits2;
+   Bool  already_saw_errV = False;
+
+   PROF_EVENT(64, "is_mem_defined"); // fixme
+   DEBUG("is_mem_defined_comprehensive\n");
+
+   tl_assert(!(*errorV || *errorA));
+
+   for (i = 0; i < len; i++) {
+      PROF_EVENT(65, "is_mem_defined(loop)"); // fixme
+      vabits2 = get_vabits2(a);
+      switch (vabits2) {
+         case VA_BITS2_DEFINED: 
+            a++; 
+            break;
+         case VA_BITS2_UNDEFINED:
+         case VA_BITS2_PARTDEFINED:
+            if (!already_saw_errV) {
+               *errorV    = True;
+               *bad_addrV = a;
+               if (MC_(clo_mc_level) == 3) {
+                  *otagV = MC_(helperc_b_load1)( a );
+               } else {
+                  *otagV = 0;
+               }
+               already_saw_errV = True;
+            }
+            a++; /* keep going */
+            break;
+         case VA_BITS2_NOACCESS:
+            *errorA    = True;
+            *bad_addrA = a;
+            return; /* give up now. */
+         default:
+            tl_assert(0);
+      }
+   }
+}
+
+
 /* Check a zero-terminated ascii string.  Tricky -- don't want to
    examine the actual bytes, to find the end, until we're sure it is
    safe to do so. */
@@ -3795,19 +3926,19 @@ static UInt mb_get_origin_for_guest_offset ( ThreadId tid,
                                              Int offset, SizeT size )
 {
    Int   sh2off;
-   UChar area[6];
+   UInt  area[3];
    UInt  otag;
    sh2off = MC_(get_otrack_shadow_offset)( offset, size );
    if (sh2off == -1)
       return 0;  /* This piece of guest state is not tracked */
    tl_assert(sh2off >= 0);
    tl_assert(0 == (sh2off % 4));
-   area[0] = 0x31;
-   area[5] = 0x27;
-   VG_(get_shadow_regs_area)( tid, &area[1], 2/*shadowno*/,sh2off,4 );
-   tl_assert(area[0] == 0x31);
-   tl_assert(area[5] == 0x27);
-   otag = *(UInt*)&area[1];
+   area[0] = 0x31313131;
+   area[2] = 0x27272727;
+   VG_(get_shadow_regs_area)( tid, (UChar *)&area[1], 2/*shadowno*/,sh2off,4 );
+   tl_assert(area[0] == 0x31313131);
+   tl_assert(area[2] == 0x27272727);
+   otag = area[1];
    return otag;
 }
 
@@ -3820,7 +3951,7 @@ static UInt mb_get_origin_for_guest_offset ( ThreadId tid,
 static void mc_post_reg_write ( CorePart part, ThreadId tid, 
                                 PtrdiffT offset, SizeT size)
 {
-#  define MAX_REG_WRITE_SIZE 1664
+#  define MAX_REG_WRITE_SIZE 1680
    UChar area[MAX_REG_WRITE_SIZE];
    tl_assert(size <= MAX_REG_WRITE_SIZE);
    VG_(memset)(area, V_BITS8_DEFINED, size);
@@ -4701,6 +4832,7 @@ static Bool mc_expensive_sanity_check ( void )
 
 Bool          MC_(clo_partial_loads_ok)       = False;
 Long          MC_(clo_freelist_vol)           = 20*1000*1000LL;
+Long          MC_(clo_freelist_big_blocks)    =  1*1000*1000LL;
 LeakCheckMode MC_(clo_leak_check)             = LC_Summary;
 VgRes         MC_(clo_leak_resolution)        = Vg_HighRes;
 Bool          MC_(clo_show_reachable)         = False;
@@ -4761,7 +4893,11 @@ static Bool mc_process_cmd_line_options(Char* arg)
 
    else if VG_BINT_CLO(arg, "--freelist-vol",  MC_(clo_freelist_vol), 
                                                0, 10*1000*1000*1000LL) {}
-   
+
+   else if VG_BINT_CLO(arg, "--freelist-big-blocks",
+                       MC_(clo_freelist_big_blocks),
+                       0, 10*1000*1000*1000LL) {}
+
    else if VG_XACT_CLO(arg, "--leak-check=no",
                             MC_(clo_leak_check), LC_Off) {}
    else if VG_XACT_CLO(arg, "--leak-check=summary",
@@ -4831,7 +4967,8 @@ static void mc_print_usage(void)
 "    --undef-value-errors=no|yes      check for undefined value errors [yes]\n"
 "    --track-origins=no|yes           show origins of undefined values? [no]\n"
 "    --partial-loads-ok=no|yes        too hard to explain here; see manual [no]\n"
-"    --freelist-vol=<number>          volume of freed blocks queue [20000000]\n"
+"    --freelist-vol=<number>          volume of freed blocks queue      [20000000]\n"
+"    --freelist-big-blocks=<number>   releases first blocks with size >= [1000000]\n"
 "    --workaround-gcc296-bugs=no|yes  self explanatory [no]\n"
 "    --ignore-ranges=0xPP-0xQQ[,0xRR-0xSS]   assume given addresses are OK\n"
 "    --malloc-fill=<hexnumber>        fill malloc'd areas with given value\n"
@@ -4951,9 +5088,17 @@ static void print_monitor_help ( void )
 "            and outputs a description of <addr>\n"
 "  leak_check [full*|summary] [reachable|possibleleak*|definiteleak]\n"
 "                [increased*|changed|any]\n"
+"                [unlimited*|limited <max_loss_records_output>]\n"
 "            * = defaults\n"
 "        Examples: leak_check\n"
 "                  leak_check summary any\n"
+"                  leak_check full reachable any limited 100\n"
+"  block_list <loss_record_nr>\n"
+"        after a leak search, shows the list of blocks of <loss_record_nr>\n"
+"  who_points_at <addr> [<len>]\n"
+"        shows places pointing inside <len> (default 1) bytes at <addr>\n"
+"        (with len 1, only shows \"start pointers\" pointing exactly to <addr>,\n"
+"         with len > 1, will also show \"interior pointers\")\n"
 "\n");
 }
 
@@ -4971,7 +5116,8 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
       starts with the same first letter(s) as an already existing
       command. This ensures a shorter abbreviation for the user. */
    switch (VG_(keyword_id) 
-           ("help get_vbits leak_check make_memory check_memory", 
+           ("help get_vbits leak_check make_memory check_memory "
+            "block_list who_points_at", 
             wcmd, kwd_report_duplicated_matches)) {
    case -2: /* multiple matches */
       return True;
@@ -4993,8 +5139,10 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
                (address+i, (Addr) &vbits, 1, 
                 False, /* get them */
                 False  /* is client request */ ); 
+            /* we are before the first character on next line, print a \n. */
             if ((i % 32) == 0 && i != 0)
                VG_(gdb_printf) ("\n");
+            /* we are before the next block of 4 starts, print a space. */
             else if ((i % 4) == 0 && i != 0)
                VG_(gdb_printf) (" ");
             if (res == 1) {
@@ -5005,8 +5153,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
                VG_(gdb_printf) ("__");
             }
          }
-         if ((i % 80) != 0)
-            VG_(gdb_printf) ("\n");
+         VG_(gdb_printf) ("\n");
          if (unaddressable) {
             VG_(gdb_printf)
                ("Address %p len %ld has %d bytes unaddressable\n",
@@ -5024,6 +5171,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
       lcp.show_reachable     = False;
       lcp.show_possibly_lost = True;
       lcp.deltamode          = LCD_Increased;
+      lcp.max_loss_records_output = 999999999;
       lcp.requested_by_monitor_command = True;
       
       for (kw = VG_(strtok_r) (NULL, " ", &ssaveptr); 
@@ -5032,7 +5180,8 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
          switch (VG_(keyword_id) 
                  ("full summary "
                   "reachable possibleleak definiteleak "
-                  "increased changed any",
+                  "increased changed any "
+                  "unlimited limited ",
                   kw, kwd_report_all)) {
          case -2: err++; break;
          case -1: err++; break;
@@ -5055,12 +5204,34 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
             lcp.deltamode = LCD_Changed; break;
          case  7: /* any */
             lcp.deltamode = LCD_Any; break;
+         case  8: /* unlimited */
+            lcp.max_loss_records_output = 999999999; break;
+         case  9: { /* limited */
+            int int_value;
+            char* endptr;
+
+            wcmd = VG_(strtok_r) (NULL, " ", &ssaveptr);
+            if (wcmd == NULL) {
+               int_value = 0;
+               endptr = "empty"; /* to report an error below */
+            } else {
+               int_value = VG_(strtoll10) (wcmd, (Char **)&endptr);
+            }
+            if (*endptr != '\0')
+               VG_(gdb_printf) ("missing or malformed integer value\n");
+            else if (int_value > 0)
+               lcp.max_loss_records_output = (UInt) int_value;
+            else
+               VG_(gdb_printf) ("max_loss_records_output must be >= 1, got %d\n",
+                                int_value);
+            break;
+         }
          default:
             tl_assert (0);
          }
       }
       if (!err)
-         MC_(detect_memory_leaks)(tid, lcp);
+         MC_(detect_memory_leaks)(tid, &lcp);
       return True;
    }
       
@@ -5152,6 +5323,35 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
       return True;
    }
 
+   case  5: { /* block_list */
+      Char* wl;
+      Char *endptr;
+      UInt lr_nr = 0;
+      wl = VG_(strtok_r) (NULL, " ", &ssaveptr);
+      lr_nr = VG_(strtoull10) (wl, &endptr);
+      if (wl != NULL && *endptr != '\0') {
+         VG_(gdb_printf) ("malformed integer\n");
+      } else {
+         // lr_nr-1 as what is shown to the user is 1 more than the index in lr_array.
+         if (lr_nr == 0 || ! MC_(print_block_list) (lr_nr-1))
+            VG_(gdb_printf) ("invalid loss record nr\n");
+      }
+      return True;
+   }
+
+   case  6: { /* who_points_at */
+      Addr address;
+      SizeT szB = 1;
+
+      VG_(strtok_get_address_and_size) (&address, &szB, &ssaveptr);
+      if (address == (Addr) 0) {
+         VG_(gdb_printf) ("Cannot search who points at 0x0\n");
+         return True;
+      }
+      MC_(who_points_at) (address, szB);
+      return True;
+   }
+
    default: 
       tl_assert(0);
       return False;
@@ -5192,14 +5392,34 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
          break;
 
       case VG_USERREQ__CHECK_MEM_IS_DEFINED: {
-         MC_ReadResult res;
-         UInt otag = 0;
-         res = is_mem_defined ( arg[1], arg[2], &bad_addr, &otag );
-         if (MC_AddrErr == res)
-            MC_(record_user_error) ( tid, bad_addr, /*isAddrErr*/True, 0 );
-         else if (MC_ValueErr == res)
-            MC_(record_user_error) ( tid, bad_addr, /*isAddrErr*/False, otag );
-         *ret = ( res==MC_Ok ? (UWord)NULL : bad_addr );
+         Bool errorV    = False;
+         Addr bad_addrV = 0;
+         UInt otagV     = 0;
+         Bool errorA    = False;
+         Addr bad_addrA = 0;
+         is_mem_defined_comprehensive( 
+            arg[1], arg[2],
+            &errorV, &bad_addrV, &otagV, &errorA, &bad_addrA
+         );
+         if (errorV) {
+            MC_(record_user_error) ( tid, bad_addrV,
+                                     /*isAddrErr*/False, otagV );
+         }
+         if (errorA) {
+            MC_(record_user_error) ( tid, bad_addrA,
+                                     /*isAddrErr*/True, 0 );
+         }
+         /* Return the lower of the two erring addresses, if any. */
+         *ret = 0;
+         if (errorV && !errorA) {
+            *ret = bad_addrV;
+         }
+         if (!errorV && errorA) {
+            *ret = bad_addrA;
+         }
+         if (errorV && errorA) {
+            *ret = bad_addrV < bad_addrA ? bad_addrV : bad_addrA;
+         }
          break;
       }
 
@@ -5231,9 +5451,10 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
                 "Warning: unknown memcheck leak search deltamode\n");
             lcp.deltamode = LCD_Any;
          }
+         lcp.max_loss_records_output = 999999999;
          lcp.requested_by_monitor_command = False;
          
-         MC_(detect_memory_leaks)(tid, lcp);
+         MC_(detect_memory_leaks)(tid, &lcp);
          *ret = 0; /* return value is meaningless */
          break;
       }
@@ -5333,11 +5554,15 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
       case VG_USERREQ__MALLOCLIKE_BLOCK: {
          Addr p         = (Addr)arg[1];
          SizeT sizeB    =       arg[2];
-         //UInt rzB       =       arg[3];    XXX: unused!
+         UInt rzB       =       arg[3];
          Bool is_zeroed = (Bool)arg[4];
 
          MC_(new_block) ( tid, p, sizeB, /*ignored*/0, is_zeroed, 
                           MC_AllocCustom, MC_(malloc_list) );
+         if (rzB > 0) {
+            MC_(make_mem_noaccess) ( p - rzB, rzB);
+            MC_(make_mem_noaccess) ( p + sizeB, rzB);
+         }
          return True;
       }
       case VG_USERREQ__RESIZEINPLACE_BLOCK: {
@@ -5839,6 +6064,13 @@ static void mc_post_clo_init ( void )
       MC_(clo_leak_check) = LC_Full;
    }
 
+   if (MC_(clo_freelist_big_blocks) >= MC_(clo_freelist_vol))
+      VG_(message)(Vg_UserMsg,
+                   "Warning: --freelist-big-blocks value %lld has no effect\n"
+                   "as it is >= to --freelist-vol value %lld\n",
+                   MC_(clo_freelist_big_blocks),
+                   MC_(clo_freelist_vol));
+
    tl_assert( MC_(clo_mc_level) >= 1 && MC_(clo_mc_level) <= 3 );
 
    if (MC_(clo_mc_level) == 3) {
@@ -5903,8 +6135,9 @@ static void mc_fini ( Int exitcode )
       lcp.show_reachable = MC_(clo_show_reachable);
       lcp.show_possibly_lost = MC_(clo_show_possibly_lost);
       lcp.deltamode = LCD_Any;
+      lcp.max_loss_records_output = 999999999;
       lcp.requested_by_monitor_command = False;
-      MC_(detect_memory_leaks)(1/*bogus ThreadId*/, lcp);
+      MC_(detect_memory_leaks)(1/*bogus ThreadId*/, &lcp);
    } else {
       if (VG_(clo_verbosity) == 1 && !VG_(clo_xml)) {
          VG_(umsg)(
@@ -5960,10 +6193,13 @@ static void mc_fini ( Int exitcode )
       // Three DSMs, plus the non-DSM ones
       max_SMs_szB = (3 + max_non_DSM_SMs) * sizeof(SecMap);
       // The 3*sizeof(Word) bytes is the AVL node metadata size.
-      // The 4*sizeof(Word) bytes is the malloc metadata size.
-      // Hardwiring these sizes in sucks, but I don't see how else to do it.
+      // The VG_ROUNDUP is because the OSet pool allocator will/must align
+      // the elements on pointer size.
+      // Note that the pool allocator has some additional small overhead
+      // which is not counted in the below.
+      // Hardwiring this logic sucks, but I don't see how else to do it.
       max_secVBit_szB = max_secVBit_nodes * 
-            (sizeof(SecVBitNode) + 3*sizeof(Word) + 4*sizeof(Word));
+            (3*sizeof(Word) + VG_ROUNDUP(sizeof(SecVBitNode), sizeof(void*)));
       max_shmem_szB   = sizeof(primary_map) + max_SMs_szB + max_secVBit_szB;
 
       VG_(message)(Vg_DebugMsg,
@@ -6044,7 +6280,7 @@ static void mc_pre_clo_init(void)
    VG_(details_version)         (NULL);
    VG_(details_description)     ("a memory error detector");
    VG_(details_copyright_author)(
-      "Copyright (C) 2002-2010, and GNU GPL'd, by Julian Seward et al.");
+      "Copyright (C) 2002-2011, and GNU GPL'd, by Julian Seward et al.");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
    VG_(details_avg_translation_sizeB) ( 640 );
 
@@ -6186,6 +6422,11 @@ static void mc_pre_clo_init(void)
    VG_(needs_watchpoint)          ( mc_mark_unaddressable_for_watchpoint );
 
    init_shadow_memory();
+   MC_(chunk_poolalloc) = VG_(newPA) (sizeof(MC_Chunk),
+                                      1000,
+                                      VG_(malloc),
+                                      "mc.cMC.1 (MC_Chunk pools)",
+                                      VG_(free));
    MC_(malloc_list)  = VG_(HT_construct)( "MC_(malloc_list)" );
    MC_(mempool_list) = VG_(HT_construct)( "MC_(mempool_list)" );
    init_prof_mem();

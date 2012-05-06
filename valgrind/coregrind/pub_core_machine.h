@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2010 Julian Seward
+   Copyright (C) 2000-2011 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -103,6 +103,7 @@
 #  define VG_INSTR_PTR        guest_IA
 #  define VG_STACK_PTR        guest_SP
 #  define VG_FRAME_PTR        guest_FP
+#  define VG_FPC_REG          guest_fpc
 #else
 #  error Unknown arch
 #endif
@@ -111,6 +112,7 @@
 // Offsets for the Vex state
 #define VG_O_STACK_PTR        (offsetof(VexGuestArchState, VG_STACK_PTR))
 #define VG_O_INSTR_PTR        (offsetof(VexGuestArchState, VG_INSTR_PTR))
+#define VG_O_FPC_REG          (offsetof(VexGuestArchState, VG_FPC_REG))
 
 
 //-------------------------------------------------------------
@@ -167,6 +169,10 @@ void VG_(get_UnwindStartRegs) ( /*OUT*/UnwindStartRegs* regs,
                       call VG_(machine_arm_set_has_NEON)
 
           then safe to use VG_(machine_get_VexArchInfo) 
+   -------------
+   s390x: initially:  call VG_(machine_get_hwcaps)
+
+          then safe to use VG_(machine_get_VexArchInfo)
 
    VG_(machine_get_hwcaps) may use signals (although it attempts to
    leave signal state unchanged) and therefore should only be

@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2008-2010 OpenWorks LLP
+   Copyright (C) 2008-2011 OpenWorks LLP
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
@@ -53,8 +53,8 @@ HChar* ML_(pp_DW_children) ( DW_children hashch )
    switch (hashch) {
       case DW_children_no:  return "no children";
       case DW_children_yes: return "has children";
-      default:              return "DW_children_???";
    }
+   return "DW_children_???";
 }
 
 HChar* ML_(pp_DW_TAG) ( DW_TAG tag )
@@ -148,8 +148,8 @@ HChar* ML_(pp_DW_TAG) ( DW_TAG tag )
       case DW_TAG_PGI_kanji_type:     return "DW_TAG_PGI_kanji_type";
       case DW_TAG_PGI_interface_block:
          return "DW_TAG_PGI_interface_block";
-      default:                        return "DW_TAG_???";
    }
+   return "DW_TAG_???";
 }
 
 HChar* ML_(pp_DW_FORM) ( DW_FORM form )
@@ -180,8 +180,8 @@ HChar* ML_(pp_DW_FORM) ( DW_FORM form )
       case DW_FORM_exprloc:   return "DW_FORM_exprloc";
       case DW_FORM_flag_present:return "DW_FORM_flag_present";
       case DW_FORM_ref_sig8:  return "DW_FORM_ref_sig8";
-      default:                return "DW_FORM_???";
    }
+   return "DW_FORM_???";
 }
 
 HChar* ML_(pp_DW_AT) ( DW_AT attr )
@@ -328,8 +328,8 @@ HChar* ML_(pp_DW_AT) ( DW_AT attr )
       case DW_AT_PGI_lbase: return "DW_AT_PGI_lbase";
       case DW_AT_PGI_soffset: return "DW_AT_PGI_soffset";
       case DW_AT_PGI_lstride: return "DW_AT_PGI_lstride";
-      default: return "DW_AT_???";
    }
+   return "DW_AT_???";
 }
 
 
@@ -853,7 +853,7 @@ GXResult ML_(evaluate_Dwarf3_Expr) ( UChar* expr, UWord exprszB,
                     "DW_OP_call_frame_cfa but no reg info");
 #if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
             /* Valgrind on ppc32/ppc64 currently doesn't use unwind info. */
-            uw1 = ML_(read_Addr)(regs->sp);
+            uw1 = ML_(read_Addr)((UChar*)regs->sp);
 #else
             uw1 = ML_(get_CFA)(regs->ip, regs->sp, regs->fp, 0, ~(UWord) 0);
 #endif

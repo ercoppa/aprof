@@ -151,6 +151,7 @@ ULong do_syscall_clone_s390x_linux ( void  *stack,
 asm(
    "   .text\n"
    "   .align  4\n"
+   ".globl do_syscall_clone_s390x_linux\n"
    "do_syscall_clone_s390x_linux:\n"
    "   lg    %r1, 160(%r15)\n"   // save fn from parent stack into r1
    "   lg    %r0, 168(%r15)\n"   // save arg from parent stack into r0
@@ -287,6 +288,7 @@ static SysRes do_clone ( ThreadId ptid,
       know that this thread has come into existence.  If the clone
       fails, we'll send out a ll_exit notification for it at the out:
       label below, to clean up. */
+   vg_assert(VG_(owns_BigLock_LL)(ptid));
    VG_TRACK ( pre_thread_ll_create, ptid, ctid );
 
    if (flags & VKI_CLONE_SETTLS) {
@@ -625,7 +627,7 @@ PRE(sys_socketcall)
          SET_STATUS_Failure( VKI_EFAULT );
          break;
      }
-     ML_(generic_PRE_sys_sendmsg)( tid, ARG2_0, ARG2_1 );
+     ML_(generic_PRE_sys_sendmsg)( tid, "msg", (struct vki_msghdr *)ARG2_1 );
      break;
    }
 
@@ -636,7 +638,7 @@ PRE(sys_socketcall)
          SET_STATUS_Failure( VKI_EFAULT );
          break;
      }
-     ML_(generic_PRE_sys_recvmsg)( tid, ARG2_0, ARG2_1 );
+     ML_(generic_PRE_sys_recvmsg)( tid, "msg2", (struct vki_msghdr *)ARG2_1 );
      break;
    }
 
@@ -740,7 +742,7 @@ POST(sys_socketcall)
     break;
 
   case VKI_SYS_RECVMSG:
-    ML_(generic_POST_sys_recvmsg)( tid, ARG2_0, ARG2_1 );
+    ML_(generic_POST_sys_recvmsg)( tid, "msg", (struct vki_msghdr *)ARG2_1, RES );
     break;
 
   default:
@@ -1503,6 +1505,16 @@ static SyscallTableEntry syscall_table[] = {
 
 // ?????(__NR_rt_tgsigqueueinfo, ),
    LINXY(__NR_perf_event_open, sys_perf_event_open),                  // 331
+// ?????(__NR_fanotify_init, ),                                       // 332
+// ?????(__NR_fanotify_mark, ),                                       // 333
+   LINXY(__NR_prlimit64, sys_prlimit64),                              // 334
+// ?????(__NR_name_to_handle_at, ),                                   // 335
+// ?????(__NR_open_by_handle_at, ),                                   // 336
+// ?????(__NR_clock_adjtime, ),                                       // 337
+// ?????(__NR_syncfs, ),                                              // 338
+// ?????(__NR_setns, ),                                               // 339
+   LINXY(__NR_process_vm_readv, sys_process_vm_readv),                // 340
+   LINX_(__NR_process_vm_writev, sys_process_vm_writev),              // 341
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry) ( UInt sysno )

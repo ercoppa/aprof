@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2010 Julian Seward 
+   Copyright (C) 2000-2011 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -384,7 +384,7 @@ Bool get_elf_symbol_info (
    */
    if (sym->st_size == 0) {
 #     if defined(VGPV_arm_linux_android)
-      *sym_size_out = 1024;
+      *sym_size_out = 2048;
 #     else
       TRACE_SYMTAB("    ignore -- size=0: %s\n", sym_name);
       return False;
@@ -1090,8 +1090,8 @@ Bool find_ad_hoc_debug_image( struct _DebugInfo* di,
 #  else /* android specific hacks; look away now. */
 
    /* The deal is: if we're looking for for a debuginfo file for some
-      object /system/blah (where blah can be any path), see if we can
-      find the file /sdcard/symbols/system/blah.  So for example it
+      object /path/to/object (which can be any path), see if we can
+      find the file /sdcard/symbols/path/to/object.  So for example it
       produces the following mappings, both of which are important for
       Memcheck:
 
@@ -1109,7 +1109,7 @@ Bool find_ad_hoc_debug_image( struct _DebugInfo* di,
       But beware: there is no checking that the debuginfo file, if
       found, matches the main file in any way.
    */
-   if (0 != VG_(strncmp)(filename, "/system/", 8))
+   if (!filename || *filename != '/')
       return False;
 
    HChar* nm = ML_(dinfo_zalloc)("di.fahdi.1", 
@@ -1605,7 +1605,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       find a soname, add a fake one. */
    if (di->soname == NULL) {
       TRACE_SYMTAB("No soname found; using (fake) \"NONE\"\n");
-      di->soname = "NONE";
+      di->soname = ML_(dinfo_strdup)("di.redi.2", "NONE");
    }
 
    vg_assert(n_rx >= 0 && n_rx <= N_RX_RW_AREAS);
@@ -2072,6 +2072,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       UChar*     stabstr_img      = NULL; /* .stabstr      (stabs)  */
       UChar*     debug_line_img   = NULL; /* .debug_line   (dwarf2) */
       UChar*     debug_info_img   = NULL; /* .debug_info   (dwarf2) */
+      UChar*     debug_types_img  = NULL; /* .debug_types  (dwarf4) */
       UChar*     debug_abbv_img   = NULL; /* .debug_abbrev (dwarf2) */
       UChar*     debug_str_img    = NULL; /* .debug_str    (dwarf2) */
       UChar*     debug_ranges_img = NULL; /* .debug_ranges (dwarf2) */
@@ -2093,6 +2094,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       SizeT      stabstr_sz      = 0;
       SizeT      debug_line_sz   = 0;
       SizeT      debug_info_sz   = 0;
+      SizeT      debug_types_sz   = 0;
       SizeT      debug_abbv_sz   = 0;
       SizeT      debug_str_sz    = 0;
       SizeT      debug_ranges_sz = 0;
@@ -2168,6 +2170,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
          FIND(".debug_line",    debug_line_sz,   debug_line_img)
          FIND(".debug_info",    debug_info_sz,   debug_info_img)
+         FIND(".debug_types",   debug_types_sz,  debug_types_img)
          FIND(".debug_abbrev",  debug_abbv_sz,   debug_abbv_img)
          FIND(".debug_str",     debug_str_sz,    debug_str_img)
          FIND(".debug_ranges",  debug_ranges_sz, debug_ranges_img)
@@ -2425,6 +2428,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             FIND(need_stabs,  ".stabstr",      stabstr_sz,    stabstr_img)
             FIND(need_dwarf2, ".debug_line",   debug_line_sz, debug_line_img)
             FIND(need_dwarf2, ".debug_info",   debug_info_sz, debug_info_img)
+            FIND(need_dwarf2, ".debug_types",  debug_types_sz,
+		                                            debug_types_img)
             FIND(need_dwarf2, ".debug_abbrev", debug_abbv_sz, debug_abbv_img)
             FIND(need_dwarf2, ".debug_str",    debug_str_sz,  debug_str_img)
             FIND(need_dwarf2, ".debug_ranges", debug_ranges_sz, 
@@ -2516,6 +2521,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          /* The old reader: line numbers and unwind info only */
          ML_(read_debuginfo_dwarf3) ( di,
                                       debug_info_img, debug_info_sz,
+                                      debug_types_img, debug_types_sz,
                                       debug_abbv_img, debug_abbv_sz,
                                       debug_line_img, debug_line_sz,
                                       debug_str_img,  debug_str_sz );
@@ -2528,6 +2534,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
              || VG_(clo_read_var_info) /* the user asked for it */) {
             ML_(new_dwarf3_reader)(
                di, debug_info_img,   debug_info_sz,
+                   debug_types_img,   debug_types_sz,
                    debug_abbv_img,   debug_abbv_sz,
                    debug_line_img,   debug_line_sz,
                    debug_str_img,    debug_str_sz,

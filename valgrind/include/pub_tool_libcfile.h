@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2010 Julian Seward
+   Copyright (C) 2000-2011 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -93,6 +93,9 @@ extern Int    VG_(getdents)( Int fd, struct vki_dirent *dirp, UInt count );
 
 extern Char*  VG_(basename)( const Char* path );
 extern Char*  VG_(dirname) ( const Char* path );
+
+/* Return the name of a directory for temporary files. */
+extern const HChar* VG_(tmpdir)(void);
 
 /* Copy the working directory at startup into buf[0 .. size-1], or return
    False if buf is too small. */

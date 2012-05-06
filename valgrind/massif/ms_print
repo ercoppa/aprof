@@ -55,7 +55,7 @@ my $input_file = undef;
 my $tmp_file = "ms_print.tmp.$$";
 
 # Version number.
-my $version = "3.7.0.SVN";
+my $version = "3.8.0.SVN";
 
 # Args passed, for printing.
 my $ms_print_args;

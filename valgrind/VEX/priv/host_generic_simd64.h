@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2010 OpenWorks LLP
+   Copyright (C) 2004-2011 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -90,6 +90,8 @@ extern ULong h_generic_calc_CmpNEZ8x8  ( ULong );
 extern ULong h_generic_calc_QNarrowBin32Sto16Sx4 ( ULong, ULong );
 extern ULong h_generic_calc_QNarrowBin16Sto8Sx8  ( ULong, ULong );
 extern ULong h_generic_calc_QNarrowBin16Sto8Ux8  ( ULong, ULong );
+extern ULong h_generic_calc_NarrowBin32to16x4    ( ULong, ULong );
+extern ULong h_generic_calc_NarrowBin16to8x8     ( ULong, ULong );
 
 extern ULong h_generic_calc_InterleaveHI8x8 ( ULong, ULong );
 extern ULong h_generic_calc_InterleaveLO8x8 ( ULong, ULong );

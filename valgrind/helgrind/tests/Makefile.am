@@ -1,7 +1,9 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-dist_noinst_SCRIPTS = filter_stderr
+dist_noinst_SCRIPTS = filter_stderr   \
+		      filter_helgrind \
+		      filter_xml
 
 EXTRA_DIST = \
 	annotate_hbefore.vgtest annotate_hbefore.stdout.exp \
@@ -10,6 +12,8 @@ EXTRA_DIST = \
 		annotate_rwlock.stderr.exp \
 	annotate_smart_pointer.vgtest annotate_smart_pointer.stdout.exp \
 		annotate_smart_pointer.stderr.exp \
+	cond_timedwait_invalid.vgtest cond_timedwait_invalid.stdout.exp \
+		cond_timedwait_invalid.stderr.exp \
 	bar_bad.vgtest bar_bad.stdout.exp bar_bad.stderr.exp \
 	bar_trivial.vgtest bar_trivial.stdout.exp bar_trivial.stderr.exp \
 	free_is_write.vgtest free_is_write.stdout.exp \
@@ -39,6 +43,7 @@ EXTRA_DIST = \
 	pth_spinlock.vgtest pth_spinlock.stdout.exp pth_spinlock.stderr.exp \
 	rwlock_race.vgtest rwlock_race.stdout.exp rwlock_race.stderr.exp \
 	rwlock_test.vgtest rwlock_test.stdout.exp rwlock_test.stderr.exp \
+	t2t_laog.vgtest t2t_laog.stdout.exp t2t_laog.stderr.exp \
 	tc01_simple_race.vgtest tc01_simple_race.stdout.exp \
 		tc01_simple_race.stderr.exp \
 	tc02_simple_tls.vgtest tc02_simple_tls.stdout.exp \
@@ -56,7 +61,7 @@ EXTRA_DIST = \
 	tc07_hbl1.vgtest tc07_hbl1.stdout.exp tc07_hbl1.stderr.exp \
 	tc08_hbl2.vgtest tc08_hbl2.stdout.exp tc08_hbl2.stderr.exp \
 	tc09_bad_unlock.vgtest tc09_bad_unlock.stdout.exp \
-		tc09_bad_unlock.stderr.exp-glibc25-amd64 \
+		tc09_bad_unlock.stderr.exp \
 	tc10_rec_lock.vgtest tc10_rec_lock.stdout.exp tc10_rec_lock.stderr.exp \
 	tc11_XCHG.vgtest tc11_XCHG.stdout.exp tc11_XCHG.stderr.exp \
 	tc12_rwl_trivial.vgtest tc12_rwl_trivial.stdout.exp \
@@ -72,14 +77,15 @@ EXTRA_DIST = \
 	tc17_sembar.vgtest tc17_sembar.stdout.exp \
 		tc17_sembar.stderr.exp \
 	tc18_semabuse.vgtest tc18_semabuse.stdout.exp \
-		tc18_semabuse.stderr.exp-glibc28-amd64 \
+		tc18_semabuse.stderr.exp \
 	tc19_shadowmem.vgtest tc19_shadowmem.stdout.exp \
 		tc19_shadowmem.stderr.exp \
 	tc20_verifywrap.vgtest tc20_verifywrap.stdout.exp \
-		tc20_verifywrap.stderr.exp-glibc27-amd64 \
+		tc20_verifywrap.stderr.exp \
 	tc21_pthonce.vgtest tc21_pthonce.stdout.exp tc21_pthonce.stderr.exp \
 	tc22_exit_w_lock.vgtest tc22_exit_w_lock.stdout.exp \
 		tc22_exit_w_lock.stderr.exp \
+		tc22_exit_w_lock.stderr.exp-kfail-x86 \
 	tc23_bogus_condwait.vgtest tc23_bogus_condwait.stdout.exp \
 		tc23_bogus_condwait.stderr.exp \
 	tc24_nonzero_sem.vgtest tc24_nonzero_sem.stdout.exp \
@@ -89,6 +95,7 @@ EXTRA_DIST = \
 # should be conditionally compiled like tc20_verifywrap is.
 check_PROGRAMS = \
 	annotate_hbefore \
+	cond_timedwait_invalid \
 	free_is_write \
 	hg01_all_ok \
 	hg02_deadlock \
@@ -99,6 +106,7 @@ check_PROGRAMS = \
 	locked_vs_unlocked1 \
 	locked_vs_unlocked2 \
 	locked_vs_unlocked3 \
+	t2t \
 	tc01_simple_race \
 	tc02_simple_tls \
 	tc03_re_excl \
@@ -177,5 +185,3 @@ annotate_hbefore_CFLAGS = $(AM_CFLAGS) -mdynamic-no-pic
 else
 annotate_hbefore_CFLAGS = $(AM_CFLAGS)
 endif
-
-

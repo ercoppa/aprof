@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2010 Julian Seward
+   Copyright (C) 2000-2011 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -372,6 +372,9 @@ extern ThreadId VG_(running_tid);
 /*------------------------------------------------------------*/
 /*--- Basic operations on the thread table.                ---*/
 /*------------------------------------------------------------*/
+
+/* Initialize the m_threadstate module. */
+void VG_(init_Threads)(void);
 
 // Convert a ThreadStatus to a string.
 const HChar* VG_(name_of_ThreadStatus) ( ThreadStatus status );

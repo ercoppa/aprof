@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2010 OpenWorks LLP
+   Copyright (C) 2004-2011 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -80,6 +80,7 @@ typedef
 #define VEX_HWCAPS_AMD64_SSE3  (1<<5)  /* SSE3 support */
 #define VEX_HWCAPS_AMD64_CX16  (1<<6)  /* cmpxchg16b support */
 #define VEX_HWCAPS_AMD64_LZCNT (1<<7)  /* SSE4a LZCNT insn */
+#define VEX_HWCAPS_AMD64_AVX   (1<<8)  /* AVX instructions */
 
 /* ppc32: baseline capability is integer only */
 #define VEX_HWCAPS_PPC32_F     (1<<8)  /* basic (non-optional) FP */
@@ -95,6 +96,9 @@ typedef
 #define VEX_HWCAPS_PPC64_GX    (1<<15) /* Graphics extns
                                           (fres,frsqrte,fsel,stfiwx) */
 #define VEX_HWCAPS_PPC64_VX    (1<<16) /* Vector-scalar floating-point (VSX); implies ISA 2.06 or higher  */
+
+#define VEX_HWCAPS_PPC32_DFP   (1<<17) /* Decimal Floating Point (DFP) -- e.g., dadd */
+#define VEX_HWCAPS_PPC64_DFP   (1<<18) /* Decimal Floating Point (DFP) -- e.g., dadd */
 
 /* s390x: Hardware capability encoding
 
@@ -120,7 +124,7 @@ typedef
 #define VEX_S390X_MODEL_Z10_BC   7
 #define VEX_S390X_MODEL_Z196     8
 #define VEX_S390X_MODEL_Z114     9
-#define VEX_S390X_MODEL_INVALID  10
+#define VEX_S390X_MODEL_UNKNOWN  10     /* always last in list */
 #define VEX_S390X_MODEL_MASK     0x3F
 
 #define VEX_HWCAPS_S390X_LDISP (1<<6)   /* Long-displacement facility */
@@ -128,13 +132,19 @@ typedef
 #define VEX_HWCAPS_S390X_GIE   (1<<8)   /* General-instruction-extension facility */
 #define VEX_HWCAPS_S390X_DFP   (1<<9)   /* Decimal floating point facility */
 #define VEX_HWCAPS_S390X_FGX   (1<<10)  /* FPR-GR transfer facility */
+#define VEX_HWCAPS_S390X_ETF2  (1<<11)  /* ETF2-enhancement facility */
+#define VEX_HWCAPS_S390X_STFLE (1<<12)  /* STFLE facility */
+#define VEX_HWCAPS_S390X_ETF3  (1<<13)  /* ETF3-enhancement facility */
 
 /* Special value representing all available s390x hwcaps */
 #define VEX_HWCAPS_S390X_ALL   (VEX_HWCAPS_S390X_LDISP | \
                                 VEX_HWCAPS_S390X_EIMM  | \
                                 VEX_HWCAPS_S390X_GIE   | \
                                 VEX_HWCAPS_S390X_DFP   | \
-                                VEX_HWCAPS_S390X_FGX)
+                                VEX_HWCAPS_S390X_FGX   | \
+                                VEX_HWCAPS_S390X_STFLE | \
+                                VEX_HWCAPS_S390X_ETF3  | \
+                                VEX_HWCAPS_S390X_ETF2)
 
 #define VEX_HWCAPS_S390X(x)  ((x) & ~VEX_S390X_MODEL_MASK)
 #define VEX_S390X_MODEL(x)   ((x) &  VEX_S390X_MODEL_MASK)
@@ -343,6 +353,24 @@ extern void   private_LibVEX_alloc_OOM(void) __attribute__((noreturn));
 
 static inline void* LibVEX_Alloc ( Int nbytes )
 {
+   struct align {
+      char c;
+      union {
+         char c;
+         short s;
+         int i;
+         long l;
+         long long ll;
+         float f;
+         double d;
+         /* long double is currently not used and would increase alignment
+            unnecessarily. */
+         /* long double ld; */
+         void *pto;
+         void (*ptf)(void);
+      } x;
+   };
+
 #if 0
   /* Nasty debugging hack, do not use. */
   return malloc(nbytes);
@@ -350,7 +378,7 @@ static inline void* LibVEX_Alloc ( Int nbytes )
    HChar* curr;
    HChar* next;
    Int    ALIGN;
-   ALIGN  = sizeof(void*)-1;
+   ALIGN  = offsetof(struct align,x) - 1;
    nbytes = (nbytes + ALIGN) & ~ALIGN;
    curr   = private_LibVEX_alloc_curr;
    next   = curr + nbytes;
@@ -463,6 +491,12 @@ typedef
              VexTransAccessFail, VexTransOutputFull } status;
       /* The number of extents that have a self-check (0 to 3) */
       UInt n_sc_extents;
+      /* Offset in generated code of the profile inc, or -1 if
+         none.  Needed for later patching. */
+      Int offs_profInc;
+      /* Stats only: the number of guest insns included in the
+         translation.  It may be zero (!). */
+      UInt n_guest_instrs;
    }
    VexTranslateResult;
 
@@ -560,6 +594,10 @@ typedef
       /* IN: debug: trace vex activity at various points */
       Int     traceflags;
 
+      /* IN: profiling: add a 64 bit profiler counter increment to the
+         translation? */
+      Bool    addProfInc;
+
       /* IN: address of the dispatcher entry points.  Describes the
          places where generated code should jump to at the end of each
          bb.
@@ -592,9 +630,13 @@ typedef
          The aim is to get back and forth between translations and the
          dispatcher without creating memory traffic to store return
          addresses.
+
+         FIXME: update this comment
       */
-      void* dispatch_unassisted;
-      void* dispatch_assisted;
+      void* disp_cp_chain_me_to_slowEP;
+      void* disp_cp_chain_me_to_fastEP;
+      void* disp_cp_xindir;
+      void* disp_cp_xassisted;
    }
    VexTranslateArgs;
 
@@ -612,7 +654,60 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* );
    would not be the result.  Therefore chase_into_ok should disallow
    following into #2.  That will force the caller to eventually
    request a new translation starting at #2, at which point Vex will
-   correctly observe the make-a-self-check flag.  */
+   correctly observe the make-a-self-check flag.
+
+   FIXME: is this still up to date? */
+
+
+/*-------------------------------------------------------*/
+/*--- Patch existing translations                     ---*/
+/*-------------------------------------------------------*/
+
+/* Indicates a host address range for which callers to the functions
+   below must request I-D cache syncing after the call.  ::len == 0 is
+   ambiguous -- it could mean either zero bytes or the entire address
+   space, so we mean the former. */
+typedef
+   struct {
+      HWord start;
+      HWord len;
+   }
+   VexInvalRange;
+
+/* Chain an XDirect jump located at place_to_chain so it jumps to
+   place_to_jump_to.  It is expected (and checked) that this site
+   currently contains a call to the dispatcher specified by
+   disp_cp_chain_me_EXPECTED. */
+extern
+VexInvalRange LibVEX_Chain ( VexArch arch_host,
+                             void*   place_to_chain,
+                             void*   disp_cp_chain_me_EXPECTED,
+                             void*   place_to_jump_to );
+
+/* Undo an XDirect jump located at place_to_unchain, so it is
+   converted back into a call to disp_cp_chain_me.  It is expected
+   (and checked) that this site currently contains a jump directly to
+   the address specified by place_to_jump_to_EXPECTED. */
+extern
+VexInvalRange LibVEX_UnChain ( VexArch arch_host,
+                               void*   place_to_unchain,
+                               void*   place_to_jump_to_EXPECTED,
+                               void*   disp_cp_chain_me );
+
+/* Returns a constant -- the size of the event check that is put at
+   the start of every translation.  This makes it possible to
+   calculate the fast entry point address if the slow entry point
+   address is known (the usual case), or vice versa. */
+extern
+Int LibVEX_evCheckSzB ( VexArch arch_host );
+
+
+/* Patch the counter location into an existing ProfInc point.  The
+   specified point is checked to make sure it is plausible. */
+extern
+VexInvalRange LibVEX_PatchProfInc ( VexArch arch_host,
+                                    void*   place_to_patch,
+                                    ULong*  location_of_counter );
 
 
 /*-------------------------------------------------------*/

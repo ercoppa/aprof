@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2010 Julian Seward 
+   Copyright (C) 2000-2011 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -240,8 +240,6 @@ static void async_signalhandler ( Int sigNo, vki_siginfo_t *info,
 static void sigvgkill_handler	( Int sigNo, vki_siginfo_t *info,
                                              struct vki_ucontext * );
 
-static const Char *signame(Int sigNo);
-
 /* Maximum usable signal. */
 Int VG_(max_signal) = _VKI_NSIG;
 
@@ -449,19 +447,57 @@ typedef struct SigQueue {
 #elif defined(VGP_amd64_darwin)
 
    static inline Addr VG_UCONTEXT_INSTR_PTR( void* ucV ) {
-      I_die_here;
+      ucontext_t* uc = (ucontext_t*)ucV;
+      struct __darwin_mcontext64* mc = uc->uc_mcontext;
+      struct __darwin_x86_thread_state64* ss = &mc->__ss;
+      return ss->__rip;
    }
    static inline Addr VG_UCONTEXT_STACK_PTR( void* ucV ) {
-      I_die_here;
+      ucontext_t* uc = (ucontext_t*)ucV;
+      struct __darwin_mcontext64* mc = uc->uc_mcontext;
+      struct __darwin_x86_thread_state64* ss = &mc->__ss;
+      return ss->__rsp;
    }
    static inline SysRes VG_UCONTEXT_SYSCALL_SYSRES( void* ucV,
                                                     UWord scclass ) {
-      I_die_here;
+      /* This is copied from the x86-darwin case.  I'm not sure if it
+	 is correct. */
+      ucontext_t* uc = (ucontext_t*)ucV;
+      struct __darwin_mcontext64* mc = uc->uc_mcontext;
+      struct __darwin_x86_thread_state64* ss = &mc->__ss;
+      /* duplicates logic in m_syswrap.getSyscallStatusFromGuestState */
+      ULong carry = 1 & ss->__rflags;
+      ULong err = 0;
+      ULong wLO = 0;
+      ULong wHI = 0;
+      switch (scclass) {
+         case VG_DARWIN_SYSCALL_CLASS_UNIX:
+            err = carry;
+            wLO = ss->__rax;
+            wHI = ss->__rdx;
+            break;
+         case VG_DARWIN_SYSCALL_CLASS_MACH:
+            wLO = ss->__rax;
+            break;
+         case VG_DARWIN_SYSCALL_CLASS_MDEP:
+            wLO = ss->__rax;
+            break;
+         default: 
+            vg_assert(0);
+            break;
+      }
+      return VG_(mk_SysRes_amd64_darwin)( scclass, err ? True : False, 
+					  wHI, wLO );
    }
    static inline
    void VG_UCONTEXT_TO_UnwindStartRegs( UnwindStartRegs* srP,
                                         void* ucV ) {
-      I_die_here;
+      ucontext_t* uc = (ucontext_t*)ucV;
+      struct __darwin_mcontext64* mc = uc->uc_mcontext;
+      struct __darwin_x86_thread_state64* ss = &mc->__ss;
+      srP->r_pc = (ULong)(ss->__rip);
+      srP->r_sp = (ULong)(ss->__rsp);
+      srP->misc.AMD64.r_rbp = (ULong)(ss->__rbp);
    }
 
 #elif defined(VGP_s390x_linux)
@@ -741,6 +777,7 @@ extern void my_sigreturn(void);
 #if defined(VGP_x86_linux)
 #  define _MY_SIGRETURN(name) \
    ".text\n" \
+   ".globl my_sigreturn\n" \
    "my_sigreturn:\n" \
    "	movl	$" #name ", %eax\n" \
    "	int	$0x80\n" \
@@ -749,6 +786,7 @@ extern void my_sigreturn(void);
 #elif defined(VGP_amd64_linux)
 #  define _MY_SIGRETURN(name) \
    ".text\n" \
+   ".globl my_sigreturn\n" \
    "my_sigreturn:\n" \
    "	movq	$" #name ", %rax\n" \
    "	syscall\n" \
@@ -757,6 +795,7 @@ extern void my_sigreturn(void);
 #elif defined(VGP_ppc32_linux)
 #  define _MY_SIGRETURN(name) \
    ".text\n" \
+   ".globl my_sigreturn\n" \
    "my_sigreturn:\n" \
    "	li	0, " #name "\n" \
    "	sc\n" \
@@ -780,6 +819,7 @@ extern void my_sigreturn(void);
 #elif defined(VGP_arm_linux)
 #  define _MY_SIGRETURN(name) \
    ".text\n" \
+   ".globl my_sigreturn\n" \
    "my_sigreturn:\n\t" \
    "    mov  r7, #" #name "\n\t" \
    "    svc  0x00000000\n" \
@@ -788,6 +828,7 @@ extern void my_sigreturn(void);
 #elif defined(VGP_x86_darwin)
 #  define _MY_SIGRETURN(name) \
    ".text\n" \
+   ".globl my_sigreturn\n" \
    "my_sigreturn:\n" \
    "movl $" VG_STRINGIFY(__NR_DARWIN_FAKE_SIGRETURN) ",%eax\n" \
    "int $0x80"
@@ -796,12 +837,14 @@ extern void my_sigreturn(void);
    // DDD: todo
 #  define _MY_SIGRETURN(name) \
    ".text\n" \
+   ".globl my_sigreturn\n" \
    "my_sigreturn:\n" \
    "ud2\n"
 
 #elif defined(VGP_s390x_linux)
 #  define _MY_SIGRETURN(name) \
    ".text\n" \
+   ".globl my_sigreturn\n" \
    "my_sigreturn:\n" \
    " svc " #name "\n" \
    ".previous\n"
@@ -1042,18 +1085,18 @@ SysRes VG_(do_sys_sigaction) ( Int signo,
   bad_signo_reserved:
    if (VG_(showing_core_errors)() && !VG_(clo_xml)) {
       VG_(umsg)("Warning: ignored attempt to set %s handler in sigaction();\n",
-                signame(signo));
+                VG_(signame)(signo));
       VG_(umsg)("         the %s signal is used internally by Valgrind\n", 
-                signame(signo));
+                VG_(signame)(signo));
    }
    return VG_(mk_SysRes_Error)( VKI_EINVAL );
 
   bad_sigkill_or_sigstop:
    if (VG_(showing_core_errors)() && !VG_(clo_xml)) {
       VG_(umsg)("Warning: ignored attempt to set %s handler in sigaction();\n",
-                signame(signo));
+                VG_(signame)(signo));
       VG_(umsg)("         the %s signal is uncatchable\n", 
-                signame(signo));
+                VG_(signame)(signo));
    }
    return VG_(mk_SysRes_Error)( VKI_EINVAL );
 }
@@ -1234,7 +1277,7 @@ void push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo,
       if (VG_(clo_trace_signals))
          VG_(dmsg)("delivering signal %d (%s) to thread %d: "
                    "on ALT STACK (%p-%p; %ld bytes)\n",
-                   sigNo, signame(sigNo), tid, tst->altstack.ss_sp,
+                   sigNo, VG_(signame)(sigNo), tid, tst->altstack.ss_sp,
                    (UChar *)tst->altstack.ss_sp + tst->altstack.ss_size,
                    (Word)tst->altstack.ss_size );
 
@@ -1262,7 +1305,7 @@ void push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo,
 }
 
 
-static const Char *signame(Int sigNo)
+const Char *VG_(signame)(Int sigNo)
 {
    static Char buf[20];
 
@@ -1486,7 +1529,7 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
       VG_(umsg)(
          "\n"
          "Process terminating with default action of signal %d (%s)%s\n",
-         sigNo, signame(sigNo), core ? ": dumping core" : "");
+         sigNo, VG_(signame)(sigNo), core ? ": dumping core" : "");
 
       /* Be helpful - decode some more details about this fault */
       if (is_signal_from_kernel(tid, sigNo, info->si_code)) {
@@ -1631,7 +1674,7 @@ static void deliver_signal ( ThreadId tid, const vki_siginfo_t *info,
 
    if (VG_(clo_trace_signals))
       VG_(dmsg)("delivering signal %d (%s):%d to thread %d\n", 
-                sigNo, signame(sigNo), info->si_code, tid );
+                sigNo, VG_(signame)(sigNo), info->si_code, tid );
 
    if (sigNo == VG_SIGVGKILL) {
       /* If this is a SIGVGKILL, we're expecting it to interrupt any
@@ -2148,7 +2191,7 @@ void sync_signalhandler_from_user ( ThreadId tid,
             signal and what we should do about it, we really can't
             continue unless we get it. */
          VG_(umsg)("Signal %d (%s) appears to have lost its siginfo; "
-                   "I can't go on.\n", sigNo, signame(sigNo));
+                   "I can't go on.\n", sigNo, VG_(signame)(sigNo));
          VG_(printf)(
 "  This may be because one of your programs has consumed your ration of\n"
 "  siginfo structures.  For more information, see:\n"
@@ -2300,7 +2343,7 @@ void sync_signalhandler_from_kernel ( ThreadId tid,
        */
       VG_(dmsg)("VALGRIND INTERNAL ERROR: Valgrind received "
                 "a signal %d (%s) - exiting\n",
-                sigNo, signame(sigNo));
+                sigNo, VG_(signame)(sigNo));
 
       VG_(dmsg)("si_code=%x;  Faulting address: %p;  sp: %#lx\n",
                 info->si_code, info->VKI_SIGINFO_si_addr,

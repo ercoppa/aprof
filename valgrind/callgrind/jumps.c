@@ -6,7 +6,7 @@
 /*
    This file is part of Callgrind, a Valgrind tool for call tracing.
 
-   Copyright (C) 2002-2010, Josef Weidendorfer (Josef.Weidendorfer@gmx.de)
+   Copyright (C) 2002-2011, Josef Weidendorfer (Josef.Weidendorfer@gmx.de)
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -152,7 +152,7 @@ static jCC* new_jcc(BBCC* from, UInt jmp, BBCC* to)
    jcc->from      = from;
    jcc->jmp       = jmp;
    jcc->to        = to;
-   jcc->jmpkind   = Ijk_Call;
+   jcc->jmpkind   = jk_Call;
    jcc->call_counter = 0;
    jcc->cost = 0;
 

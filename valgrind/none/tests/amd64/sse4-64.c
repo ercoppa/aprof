@@ -1268,7 +1268,7 @@ void test_MPSADBW ( void )
 {
    V128 src, dst;
    Int i;
-   for (i = 0; i < 10; i++) {
+   for (i = 0; i < 50; i++) {
       randV128(&src);
       randV128(&dst);
       DO_imm_mandr_r("mpsadbw", 0, src, dst);
@@ -1745,11 +1745,14 @@ void test_PHMINPOSUW ( void )
 {
    V128 src, dst;
    Int i;
-   for (i = 0; i < 10; i++) {
+   for (i = 0; i < 20; i++) {
       randV128(&src);
       randV128(&dst);
       DO_mandr_r("phminposuw", src, dst);
    }
+   memset(src, 0x55, sizeof(src));
+   memset(dst, 0xAA, sizeof(dst));
+   DO_mandr_r("phminposuw", src, dst);
 }
 
 void test_PMAXSB ( void )
@@ -3790,8 +3793,7 @@ int main ( int argc, char** argv )
    test_EXTRACTPS();
    test_INSERTPS();       // done Apr.01.2010
    // MOVNTDQA  ***
-   //test_MPSADBW();
-   //test_PCMPEQQ();
+   test_PCMPEQQ();
    test_PEXTRB();         // done Apr.15.2010
    test_PEXTRD();         // done Apr.14.2010
    test_PEXTRQ();         // done Apr.14.2010
@@ -3800,7 +3802,6 @@ int main ( int argc, char** argv )
    test_PINSRD();         // todo
    test_PINSRW(); /* Umm, this is SSE2, not SSE4.  Right? */
    test_PINSRB();         // todo
-   //test_PHMINPOSUW();
    test_PMAXSB();
    test_PMAXSD();         // done Apr.09.2010
    test_PMAXUD();         // done Apr.16.2010
@@ -3824,7 +3825,7 @@ int main ( int argc, char** argv )
    test_POPCNTW();
    test_POPCNTL();
    test_POPCNTQ();
-   //test_PMULDQ();
+   test_PMULDQ();
    test_PMULLD();
    test_PTEST();
    test_ROUNDSD_w_immediate_rounding();
@@ -3839,14 +3840,10 @@ int main ( int argc, char** argv )
    test_PCMPGTQ();
    // CRC32B,Q
    test_PACKUSDW();
-
-#else
-#if 0
-   test_MPSADBW();
-   test_PCMPEQQ();
    test_PHMINPOSUW();
-   test_PMULDQ();
-#endif
+   test_MPSADBW();
+#else
+   test_MPSADBW();
 #endif
 
    return 0;

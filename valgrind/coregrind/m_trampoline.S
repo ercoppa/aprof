@@ -7,9 +7,9 @@
   This file is part of Valgrind, a dynamic binary instrumentation
   framework.
 
-  Copyright (C) 2000-2010 Julian Seward 
+  Copyright (C) 2000-2011 Julian Seward 
      jseward@acm.org
-  Copyright (C) 2006-2010 OpenWorks LLP
+  Copyright (C) 2006-2011 OpenWorks LLP
      info@open-works.co.uk
 	
   This program is free software; you can redistribute it and/or
@@ -189,6 +189,16 @@ VG_(amd64_linux_REDIR_FOR_vtime):
 .LfnE3:
 .size VG_(amd64_linux_REDIR_FOR_vtime), .-.LfnB3
 
+.global VG_(amd64_linux_REDIR_FOR_vgetcpu)
+.type   VG_(amd64_linux_REDIR_FOR_vgetcpu), @function
+VG_(amd64_linux_REDIR_FOR_vgetcpu):
+.LfnB4:
+        movq    $__NR_getcpu, %rax
+        syscall
+        ret
+.LfnE4:
+.size VG_(amd64_linux_REDIR_FOR_vgetcpu), .-.LfnB4
+
 /* There's no particular reason that this needs to be handwritten
    assembly, but since that's what this file contains, here's a
    simple strlen implementation (written in C and compiled by gcc.)
@@ -196,7 +206,7 @@ VG_(amd64_linux_REDIR_FOR_vtime):
 .global VG_(amd64_linux_REDIR_FOR_strlen)
 .type   VG_(amd64_linux_REDIR_FOR_strlen), @function
 VG_(amd64_linux_REDIR_FOR_strlen):
-.LfnB4:
+.LfnB5:
 	xorl	%eax, %eax
 	cmpb	$0, (%rdi)
 	movq	%rdi, %rdx
@@ -207,11 +217,11 @@ VG_(amd64_linux_REDIR_FOR_strlen):
 	movq	%rdx, %rax
 	subq	%rdi, %rax
 .L41:	ret
-.LfnE4:
+.LfnE5:
 .size VG_(amd64_linux_REDIR_FOR_strlen), .-VG_(amd64_linux_REDIR_FOR_strlen)
 
 
-/* A CIE for the above three functions, followed by their FDEs */
+/* A CIE for the above four functions, followed by their FDEs */
 	.section .eh_frame,"a",@progbits
 .Lframe1:
         .long   .LEcie1-.LScie1
@@ -258,6 +268,15 @@ VG_(amd64_linux_REDIR_FOR_strlen):
         .uleb128 0x0
         .align 8
 .LEfde4:
+.LSfde5:
+        .long   .LEfde5-.LASfde5
+.LASfde5:
+        .long   .LASfde5-.Lframe1
+        .long   .LfnB5
+        .long   .LfnE5-.LfnB5
+        .uleb128 0x0
+        .align 8
+.LEfde5:
 	.previous
 
 .global VG_(trampoline_stuff_end)
@@ -517,6 +536,22 @@ VG_(trampoline_stuff_end):
 .global VG_(trampoline_stuff_start)
 VG_(trampoline_stuff_start):
 
+.global VG_(arm_linux_SUBST_FOR_sigreturn)
+.type   VG_(arm_linux_SUBST_FOR_sigreturn),#function
+VG_(arm_linux_SUBST_FOR_sigreturn):
+	mov r7, # __NR_sigreturn
+        svc #0
+        .long 0xFFFFFFFF /*illegal insn*/
+.size VG_(arm_linux_SUBST_FOR_sigreturn), .-VG_(arm_linux_SUBST_FOR_sigreturn)
+
+.global VG_(arm_linux_SUBST_FOR_rt_sigreturn)
+.type   VG_(arm_linux_SUBST_FOR_rt_sigreturn),#function
+VG_(arm_linux_SUBST_FOR_rt_sigreturn):
+	mov r7, # __NR_rt_sigreturn
+        svc #0
+        .long 0xFFFFFFFF /*illegal insn*/
+.size VG_(arm_linux_SUBST_FOR_rt_sigreturn), .-VG_(arm_linux_SUBST_FOR_rt_sigreturn)
+	
 .global VG_(arm_linux_REDIR_FOR_strlen)
 VG_(arm_linux_REDIR_FOR_strlen):
 	mov	r2, r0

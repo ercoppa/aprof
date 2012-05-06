@@ -35,10 +35,13 @@
 /* #undef GLIBC_2_12 */
 
 /* Define to 1 if you're using glibc 2.13.x */
-#define GLIBC_2_13 1
+/* #undef GLIBC_2_13 */
 
 /* Define to 1 if you're using glibc 2.14.x */
 /* #undef GLIBC_2_14 */
+
+/* Define to 1 if you're using glibc 2.15.x */
+#define GLIBC_2_15 1
 
 /* Define to 1 if you're using glibc 2.2.x */
 /* #undef GLIBC_2_2 */
@@ -74,7 +77,7 @@
 /* #undef HAVE_AS_PPC_MFTOCRF */
 
 /* Define to 1 if gcc supports __sync_bool_compare_and_swap() and
-   __sync_add_and_fetch() */
+   __sync_add_and_fetch() for the primary target */
 #define HAVE_BUILTIN_ATOMIC 1
 
 /* Define to 1 if g++ supports __sync_bool_compare_and_swap() and
@@ -144,6 +147,12 @@
 /* Define to 1 if you have the `ppoll' function. */
 #define HAVE_PPOLL 1
 
+/* Define to 1 if you have the `process_vm_readv' function. */
+#define HAVE_PROCESS_VM_READV 1
+
+/* Define to 1 if you have the `process_vm_writev' function. */
+#define HAVE_PROCESS_VM_WRITEV 1
+
 /* Define to 1 if you have the `pthread_barrier_init' function. */
 #define HAVE_PTHREAD_BARRIER_INIT 1
 
@@ -195,6 +204,9 @@
 
 /* Define to 1 if you have the `semtimedop' function. */
 #define HAVE_SEMTIMEDOP 1
+
+/* Define to 1 if libstd++ supports annotating shared pointers */
+#define HAVE_SHARED_POINTER_ANNOTATION 1
 
 /* Define to 1 if you have the `signalfd' function. */
 #define HAVE_SIGNALFD 1
@@ -299,7 +311,7 @@
 #define PACKAGE_NAME "Valgrind"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "Valgrind 3.7.0.SVN"
+#define PACKAGE_STRING "Valgrind 3.8.0.SVN"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "valgrind"
@@ -308,10 +320,7 @@
 #define PACKAGE_URL ""
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "3.7.0.SVN"
-
-/* Define as the return type of signal handlers (`int' or `void'). */
-#define RETSIGTYPE void
+#define PACKAGE_VERSION "3.8.0.SVN"
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
@@ -320,7 +329,7 @@
 #define TIME_WITH_SYS_TIME 1
 
 /* Version number of package */
-#define VERSION "3.7.0.SVN"
+#define VERSION "3.8.0.SVN"
 
 /* Temporary files directory */
 #define VG_TMPDIR "/tmp"

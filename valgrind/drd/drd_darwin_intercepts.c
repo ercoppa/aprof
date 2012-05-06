@@ -1,4 +1,3 @@
-/* -*- mode: C; c-basic-offset: 3; indent-tabs-mode: nil; -*- */
 /*
   This file is part of drd, a thread error detector.
 
@@ -44,7 +43,7 @@ void* VG_WRAP_FUNCTION_ZZ(dyld, ZuZZN4dyld18fastBindLazySymbolEPP11ImageLoaderm)
 {
    void* res;
    OrigFn fn;
-  
+
    VALGRIND_GET_ORIG_FN(fn);
 
    ANNOTATE_IGNORE_READS_AND_WRITES_BEGIN();
