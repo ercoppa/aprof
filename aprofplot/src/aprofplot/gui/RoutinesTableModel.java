@@ -3,6 +3,7 @@ package aprofplot.gui;
 import javax.swing.table.*;
 import java.util.*;
 import aprofplot.*;
+import javax.swing.SwingUtilities;
 
 public class RoutinesTableModel extends AbstractTableModel {
 	
@@ -10,9 +11,11 @@ public class RoutinesTableModel extends AbstractTableModel {
 	private ArrayList<Routine> elements;
 	private String[] columnNames;
 	private Class[] columnTypes;
+	private MainWindow main = null;
 	
-	public RoutinesTableModel(AprofReport report) {
+	public RoutinesTableModel(AprofReport report, MainWindow main) {
 		setData(report);
+		this.main = main; 
 	}
 
 	private void updateColumns(boolean hasContext) {
@@ -81,6 +84,7 @@ public class RoutinesTableModel extends AbstractTableModel {
 		
 			elements = report.getRoutines();
 			updateColumns(report.hasContexts());
+			//System.out.println("Report has context? " + report.hasContexts());
 		
 		} else
 			updateColumns(false);
@@ -170,12 +174,14 @@ public class RoutinesTableModel extends AbstractTableModel {
 			
 		}
 		
+		//System.out.println("Index requested: " + columnIndex + " over " + columnNames.length);
+		
 		if (report.hasContexts()) {
 			
 			if (columnIndex == columnNames.length - 3) { // Collapsed?
 				
 				if (rtn_info instanceof ContextualizedRoutineInfo)
-					return ((ContextualizedRoutineInfo)rtn_info).getCollapsed();
+					return new Boolean(((ContextualizedRoutineInfo)rtn_info).getCollapsed());
 				else return null;
 				
 			}
@@ -199,8 +205,8 @@ public class RoutinesTableModel extends AbstractTableModel {
 			String fav = "" + rtn_info.getID();
 			if (rtn_info instanceof RoutineContext)
 				fav += ("_" + ((RoutineContext)rtn_info).getContextId());
-			return report.isFavorite(fav);
-		
+			return new Boolean(report.isFavorite(fav));
+
 		}
 		
 		//throw new RuntimeException("Invalid Column index");
@@ -228,15 +234,28 @@ public class RoutinesTableModel extends AbstractTableModel {
 	}
 
 	@Override
-	public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
+	public void setValueAt(final Object aValue, final int rowIndex, int columnIndex) {
 		
 		if (report.hasContexts() && columnIndex == columnNames.length - 3) {
 			
-			Routine rtn = elements.get(rowIndex);
-			if (!((Boolean)aValue).booleanValue())
-				expandRoutine(rtn);
-			else
-				collapseRoutine(rtn);
+			main.inhibit_selection(true);
+			
+			SwingUtilities.invokeLater(new Runnable() {
+			
+				@Override
+				public void run() { 
+
+					Routine rtn = elements.get(rowIndex);
+					if (!((Boolean)aValue).booleanValue())
+						expandRoutine(rtn);
+					else
+						collapseRoutine(rtn);
+					
+					main.inhibit_selection(false);
+					
+				}
+		
+			});
 			
 		} else if (columnIndex == columnNames.length - 1) {
 			

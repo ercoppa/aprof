@@ -53,12 +53,12 @@ public class PerfomanceMonitor implements ChartProgressListener {
 		
 		if (op == DRAW) {
 			
-			System.out.println("Draw of graph required: " + (f-t) + "ms");
+			//System.out.println("Draw of graph required: " + (f-t) + "ms");
 			times_draw.remove(j);
 			
 		} else if (op == ELABORATE) {
 		
-			System.out.println("Elaboration of graph required: " + (f-t) + "ms");
+			//System.out.println("Elaboration of graph required: " + (f-t) + "ms");
 			times_elab.remove(j);
 		
 		}

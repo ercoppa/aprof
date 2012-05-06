@@ -292,6 +292,13 @@ public class SamplingXYLineAndShapeRenderer extends XYLineAndShapeRenderer
          */
         boolean seriesDrawn = false;
 
+		
+		/**
+         * Added by ercoppa -- bad way to fix a bug
+         */
+		Rectangle2D priv_dataArea = null;
+		XYPlot priv_plot = null;
+		
         /**
          * Creates a new state instance.
          *
@@ -302,11 +309,16 @@ public class SamplingXYLineAndShapeRenderer extends XYLineAndShapeRenderer
          * @param dataArea  the data area.
          */
         public State(PlotRenderingInfo info, boolean sampleDataset, XYPlot plot, XYDataset dataset, Rectangle2D dataArea, int shapeSize, int lineWidth) {
-            super(info);
+			
+			super(info);
             visiblePoints = new BitSet[dataset.getSeriesCount()];
             this.sampleDataset = sampleDataset;
             this.shapeSize = shapeSize;
             this.lineWidth = lineWidth;
+			
+			/* added by ercoppa to fix log bug */
+			priv_dataArea = dataArea;
+			priv_plot = plot;
 
             renderedPixels = new BitSet();
             series2Sample = new BitSet();
@@ -368,6 +380,10 @@ public class SamplingXYLineAndShapeRenderer extends XYLineAndShapeRenderer
          * @return the BitSet.
          */
         void findVisiblePointsInDataset(XYPlot plot, XYDataset dataset) {
+			
+			/* added by ercoppa to fix log bug */
+			priv_plot = plot;
+			
             if (!sampleDataset) {
                 return;
             }
@@ -403,6 +419,13 @@ public class SamplingXYLineAndShapeRenderer extends XYLineAndShapeRenderer
          * @return the BitSet.
          */
         private BitSet findVisiblePointsInSeries(XYDataset dataset, int series, BitSet pixels) {
+			
+			/* added by ercoppa to fix log bug */
+			RectangleEdge priv_xAxisLocation = priv_plot.getDomainAxisEdge();
+			RectangleEdge priv_yAxisLocation = priv_plot.getRangeAxisEdge();
+			ValueAxis priv_domainAxis = priv_plot.getDomainAxis();
+			ValueAxis priv_rangeAxis = priv_plot.getRangeAxis();
+			
             int itemCount = dataset.getItemCount(series);
             BitSet markedPoints = new BitSet(dataset.getItemCount(series));
             for (int itemIndex = itemBounds[1][series]; itemIndex >= itemBounds[0][series]; itemIndex--) {
@@ -410,9 +433,15 @@ public class SamplingXYLineAndShapeRenderer extends XYLineAndShapeRenderer
                 if (!Double.isNaN(x) && x >= lowDataX && x <= highDataX) { //already checked whether value is in range with RendererUtilities.findLiveItems
                     double y = dataset.getYValue(series, itemIndex);
                     if ((y >= lowDataY) && (y <= highDataY)) { //Double.NaN won�t come beyond this point
-                        int transX = (int) (Math.rint((x - lowDataX) / rangeX * java2DWidth / shapeSize));
-                        int transY = (int) (Math.rint((y - lowDataY) / rangeY * java2DHeight / shapeSize));
-                        int itemPosition = transY * xPixels + transX;
+						
+						/* added by ercoppa to fix log bug */
+						int transX = (int) (Math.rint(priv_domainAxis.valueToJava2D(x, priv_dataArea, priv_xAxisLocation) / shapeSize));
+                        int transY = (int) (Math.rint(priv_rangeAxis.valueToJava2D(y, priv_dataArea, priv_yAxisLocation) / shapeSize));
+						
+                        //int transX = (int) (Math.rint((x - lowDataX) / rangeX * java2DWidth / shapeSize));
+                        //int transY = (int) (Math.rint((y - lowDataY) / rangeY * java2DHeight / shapeSize));
+                        
+						int itemPosition = transY * xPixels + transX;
                         if (!pixels.get(itemPosition)) {
                             pixels.set(itemPosition);
                             markedPoints.set(itemIndex);
@@ -433,6 +462,11 @@ public class SamplingXYLineAndShapeRenderer extends XYLineAndShapeRenderer
          * @param dataArea  the data area.
          */
         private void initializeBounds(XYPlot plot, XYDataset dataset, Rectangle2D dataArea) {
+			
+			/* added by ercoppa to fix log bug */
+			priv_dataArea = dataArea;
+			priv_plot = plot;
+			
             int index = -1;
             for (int i = 0; i < plot.getDatasetCount(); i++) {
                 if (plot.getDataset(i) == dataset) {
@@ -481,7 +515,7 @@ public class SamplingXYLineAndShapeRenderer extends XYLineAndShapeRenderer
     public XYItemRendererState initialise(Graphics2D g2,
             Rectangle2D dataArea, XYPlot plot, XYDataset dataset,
             PlotRenderingInfo info) {
-
+		
         State state = new State(info, sampleDataset, plot, dataset, dataArea, shapeSize, lineWidth);
         state.series2Sample = new BitSet(dataset.getSeriesCount());
         for (int series = 0; series < dataset.getSeriesCount(); series++) {

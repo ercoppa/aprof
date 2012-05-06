@@ -28,6 +28,9 @@ public class MainWindow extends javax.swing.JFrame {
 	// Used for adapt correctly layout
 	private JPanel fake = null;
 	private JPanel fake2 = null;
+	
+	// Are we loading a new report?
+	boolean loading = false;
 
 	/** Creates new form MainWindow */
 	public MainWindow() {
@@ -64,12 +67,12 @@ public class MainWindow extends javax.swing.JFrame {
         jButton4 = new javax.swing.JButton();
         jPopupMenu1 = new javax.swing.JPopupMenu();
         jCheckBoxMenuItem4 = new javax.swing.JCheckBoxMenuItem();
+        jCheckBoxMenuItem7 = new javax.swing.JCheckBoxMenuItem();
+        jCheckBoxMenuItem10 = new javax.swing.JCheckBoxMenuItem();
         jCheckBoxMenuItem5 = new javax.swing.JCheckBoxMenuItem();
         jCheckBoxMenuItem6 = new javax.swing.JCheckBoxMenuItem();
-        jCheckBoxMenuItem7 = new javax.swing.JCheckBoxMenuItem();
-        jCheckBoxMenuItem8 = new javax.swing.JCheckBoxMenuItem();
         jCheckBoxMenuItem9 = new javax.swing.JCheckBoxMenuItem();
-        jCheckBoxMenuItem10 = new javax.swing.JCheckBoxMenuItem();
+        jCheckBoxMenuItem8 = new javax.swing.JCheckBoxMenuItem();
         jCheckBoxMenuItem11 = new javax.swing.JCheckBoxMenuItem();
         jToolBar1 = new javax.swing.JToolBar();
         jButton3 = new javax.swing.JButton();
@@ -101,10 +104,14 @@ public class MainWindow extends javax.swing.JFrame {
         jSplitPane2 = new javax.swing.JSplitPane();
         jPanel6 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
-        jTable1 = new JTable(new RoutinesTableModel(this.report)) {
+        jTable1 = new JTable(new RoutinesTableModel(this.report, this)) {
             public Component prepareRenderer(TableCellRenderer renderer, int row, int column)
             {
                 try {
+                    if (renderer == null) {
+                        System.out.println("Renderer is null");
+                        return null;
+                    }
                     Component c = super.prepareRenderer(renderer, row, column);
                     if (c != null && !c.getBackground().equals(getSelectionBackground())) {
                         c.setBackground(java.awt.Color.WHITE);
@@ -203,6 +210,22 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jPopupMenu1.add(jCheckBoxMenuItem4);
 
+        jCheckBoxMenuItem7.setText("Mean cumulative cost plot");
+        jCheckBoxMenuItem7.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCheckBoxMenuItem7ActionPerformed(evt);
+            }
+        });
+        jPopupMenu1.add(jCheckBoxMenuItem7);
+
+        jCheckBoxMenuItem10.setText("Rms frequency plot");
+        jCheckBoxMenuItem10.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCheckBoxMenuItem10ActionPerformed(evt);
+            }
+        });
+        jPopupMenu1.add(jCheckBoxMenuItem10);
+
         jCheckBoxMenuItem5.setText("Min/Avg/Max cost plot");
         jCheckBoxMenuItem5.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -219,22 +242,6 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jPopupMenu1.add(jCheckBoxMenuItem6);
 
-        jCheckBoxMenuItem7.setText("Mean cumulative cost plot");
-        jCheckBoxMenuItem7.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxMenuItem7ActionPerformed(evt);
-            }
-        });
-        jPopupMenu1.add(jCheckBoxMenuItem7);
-
-        jCheckBoxMenuItem8.setText("Curve bounding plot");
-        jCheckBoxMenuItem8.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxMenuItem8ActionPerformed(evt);
-            }
-        });
-        jPopupMenu1.add(jCheckBoxMenuItem8);
-
         jCheckBoxMenuItem9.setText("Cost variance plot");
         jCheckBoxMenuItem9.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -243,13 +250,13 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jPopupMenu1.add(jCheckBoxMenuItem9);
 
-        jCheckBoxMenuItem10.setText("Rms frequency plot");
-        jCheckBoxMenuItem10.addActionListener(new java.awt.event.ActionListener() {
+        jCheckBoxMenuItem8.setText("Curve bounding plot");
+        jCheckBoxMenuItem8.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxMenuItem10ActionPerformed(evt);
+                jCheckBoxMenuItem8ActionPerformed(evt);
             }
         });
-        jPopupMenu1.add(jCheckBoxMenuItem10);
+        jPopupMenu1.add(jCheckBoxMenuItem8);
 
         jCheckBoxMenuItem11.setText("Program statistics plot");
         jCheckBoxMenuItem11.addActionListener(new java.awt.event.ActionListener() {
@@ -473,7 +480,7 @@ public class MainWindow extends javax.swing.JFrame {
         jScrollPane1.setVerticalScrollBarPolicy(javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 
         jTable1.setDoubleBuffered(true);
-        jTable1.setAutoCreateColumnsFromModel(false);
+        //jTable1.setAutoCreateColumnsFromModel(false);
         jTable1.setRowHeight(52);
         jTable1.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         routines_table_sorter
@@ -485,7 +492,7 @@ public class MainWindow extends javax.swing.JFrame {
         routine_table_sortKeys.add(new javax.swing.RowSorter.SortKey(3, javax.swing.SortOrder.DESCENDING));
         routines_table_sorter.setSortKeys(routine_table_sortKeys);
 
-        routines_table_sorter.setSortable(6, false);
+        routines_table_sorter.setSortable(5, false);
 
         jTable1.setDefaultRenderer(Routine.class, new PlotThumbRenderer());
         jTable1.getSelectionModel().addListSelectionListener(new javax.swing.event.ListSelectionListener() {
@@ -897,6 +904,9 @@ public class MainWindow extends javax.swing.JFrame {
 
 	protected void loadReport(final File file) throws Exception {
 		
+		//System.out.println("Loading[1]: " + file);
+		
+		loading = true;
 		jProgressBar1.setVisible(true);
 		jProgressBar1.setEnabled(true);
 		
@@ -908,6 +918,7 @@ public class MainWindow extends javax.swing.JFrame {
 					setReport(new AprofReport(file), file);
 				} catch (Exception ex) {
 					System.out.println("Fail to load");
+					System.out.println(ex);
 				}
 				return report;
 			}
@@ -924,6 +935,8 @@ public class MainWindow extends javax.swing.JFrame {
 		if (this.report != null && this.report.hasContexts())
 			oldReportHasContext = true;
 		*/
+		
+		//System.out.println("Loading[2]: " + file);
 		
 		this.report = report;
 		
@@ -944,31 +957,96 @@ public class MainWindow extends javax.swing.JFrame {
 		// Clear all graphs
 		if (jCheckBoxMenuItem4.isSelected()) CostGraphPanel.clearData();
 		if (jCheckBoxMenuItem8.isSelected()) ratioGraphPanel.clearData();
-		if (jCheckBoxMenuItem11.isSelected()) freqGraphPanel.clearData();
+		if (jCheckBoxMenuItem10.isSelected()) freqGraphPanel.clearData();
 		if (jCheckBoxMenuItem5.isSelected()) MMMGraphPanel.clearData();
-		if (jCheckBoxMenuItem10.isSelected()) VarGraphPanel.clearData();
+		if (jCheckBoxMenuItem9.isSelected()) VarGraphPanel.clearData();
 		if (jCheckBoxMenuItem6.isSelected()) TotalCostGraphPanel.clearData();
 		if (jCheckBoxMenuItem7.isSelected()) MccGraphPanel.clearData();
 		if (jCheckBoxMenuItem9.isSelected()) RtnGraphPanel.setData(null);
 		
-		// Update routine table
-		RoutinesTableModel m = (RoutinesTableModel)jTable1.getModel();
-		m.setData(report);
-		
-		// If routine table change structure, sorting by rms does not work anymore
-		java.util.List <RowSorter.SortKey> routine_table_sortKeys 
-			= new ArrayList<RowSorter.SortKey>();
-		routine_table_sortKeys.add(new RowSorter.SortKey(3, SortOrder.DESCENDING));
-		routines_table_sorter.setSortKeys(routine_table_sortKeys);
+		// Update routine table: we change data in table, this must be done by swing thread
+		final AprofReport final_report = report;
+		SwingUtilities.invokeLater(new Runnable() {
+			
+			@Override
+			public void run() { 
+		 
+				RoutinesTableModel m = (RoutinesTableModel)jTable1.getModel();
+				m.setData(final_report);
 
-		routines_table_sorter.setSortable(6, false);
+				// If routine table change structure, sorting by rms does not work anymore
+				java.util.List <RowSorter.SortKey> routine_table_sortKeys 
+					= new ArrayList<RowSorter.SortKey>();
+				routine_table_sortKeys.add(new RowSorter.SortKey(3, SortOrder.DESCENDING));
+				routines_table_sorter.setSortKeys(routine_table_sortKeys);
+
+				routines_table_sorter.setSortable(5, false);
+				if (final_report.hasContexts()) {
+				
+					 final Comparator<String> contextOrder = new Comparator<String>() {
+
+						@Override
+						public int compare(String t, String t1) {
+							
+							if (t == null && t1 == null) return 0;
+							if (t == null) return 1;
+							if (t1 == null) return -1;
+							
+							int i1 = t.indexOf("/");
+							int i2 = t1.indexOf("/");
+							
+							int c1 = 0; int c1_n = 0;
+							int c2 = 0; int c2_n = 0;
+							
+							if (i1 < 0) {
+								
+								if (t.equals("")) c1 = 0;
+								else c1 = Integer.parseInt(t);
+							
+							} else {
+							
+								c1_n = Integer.parseInt(t.substring(0, i1));
+								c1 = Integer.parseInt(t.substring(i1 + 1));
+							
+							}
+							
+							if (i2 < 0) {
+								
+								if (t1.equals("")) c2 = 0;
+								else c2 = Integer.parseInt(t1);
+							
+							} else {
+							
+								//System.out.println(t1 + " " + t1.substring(0, i2) + " / " + t1.substring(i2 + 1));
+								c2_n = Integer.parseInt(t1.substring(0, i2));
+								c2 = Integer.parseInt(t1.substring(i2 + 1));
+							
+							}
+							
+							if (c1 != c2) return c1 - c2;
+							
+							return c1_n - c2_n;
+	
+						}
+					
+					 };
+					 routines_table_sorter.setComparator(9, contextOrder);
+					 
+					 
+				}
+				
+				// Clear routinr profile
+				((RmsTableModel)jTable2.getModel()).setData(null);
+
+				jProgressBar1.setVisible(false);
+				jProgressBar1.setEnabled(false);
+				loading = false;
+				
+			}
 		
-		// Clear routinr profile
-		((RmsTableModel)jTable2.getModel()).setData(null);
+		});
 		
 		
-		jProgressBar1.setVisible(false);
-		jProgressBar1.setEnabled(false);
 		
 	}
 
@@ -1151,7 +1229,15 @@ public class MainWindow extends javax.swing.JFrame {
 		
 	}//GEN-LAST:event_jButton1ActionPerformed
 
+	public void inhibit_selection(boolean inhibit) {
+	
+		loading = inhibit;
+	
+	}
+	
 	private void jTable1ValueChanged(javax.swing.event.ListSelectionEvent evt) {
+		
+		if (loading) return;
 		
 		int viewIndex = jTable1.getSelectedRow();
 		if (viewIndex >= 0) {
@@ -1243,15 +1329,15 @@ public class MainWindow extends javax.swing.JFrame {
 			((RmsTableModel)jTable2.getModel()).setData(null);
 			((StackTraceListModel)jList1.getModel()).setData(null);
 			jLabel7.setText("");
-			//jPanel3.setBorder(javax.swing.BorderFactory.createTitledBorder(null, "-", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Dialog", 0, 12))); // NOI18N
+			
 			if (jCheckBoxMenuItem4.isSelected()) CostGraphPanel.clearData();
 			if (jCheckBoxMenuItem8.isSelected()) ratioGraphPanel.clearData();
-			if (jCheckBoxMenuItem11.isSelected()) freqGraphPanel.clearData();
+			if (jCheckBoxMenuItem10.isSelected()) freqGraphPanel.clearData();
 			if (jCheckBoxMenuItem5.isSelected()) MMMGraphPanel.clearData();
-			if (jCheckBoxMenuItem10.isSelected()) VarGraphPanel.clearData();
+			if (jCheckBoxMenuItem9.isSelected()) VarGraphPanel.clearData();
 			if (jCheckBoxMenuItem6.isSelected()) TotalCostGraphPanel.clearData();
 			if (jCheckBoxMenuItem7.isSelected()) MccGraphPanel.clearData();
-			
+
 			//updateContextTree(null);
 			
 			// Initially hide stack trace panel
@@ -1468,7 +1554,7 @@ public class MainWindow extends javax.swing.JFrame {
 					modelIndex = ((RoutinesTableModel)jTable1.getModel()).getIndex(previousSelectedRtn);
 					int viewIndex = jTable1.convertRowIndexToView(modelIndex);
 					jTable1.setRowSelectionInterval(viewIndex, viewIndex);
-					JOptionPane.showMessageDialog(this, "The selected routine is blacklisted\nand cannot be displayed");
+					JOptionPane.showMessageDialog(this, "The selected routine is filtererd or blacklisted\nand cannot be displayed");
 					return;
 				}
 			}
