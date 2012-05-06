@@ -151,7 +151,7 @@
 #define HAVE_PTHREAD_CONDATTR_SETCLOCK 1
 
 /* Define to 1 if you have the `pthread_create@glibc2.0' function. */
-#define HAVE_PTHREAD_CREATE_GLIBC_2_0 1
+/* #undef HAVE_PTHREAD_CREATE_GLIBC_2_0 */
 
 /* Define to 1 if you have the `PTHREAD_MUTEX_ADAPTIVE_NP' constant. */
 #define HAVE_PTHREAD_MUTEX_ADAPTIVE_NP 1

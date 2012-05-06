@@ -508,10 +508,10 @@ void signal(ThreadId tid, Int sigNo, Bool alt_stack) {
 /* Valgrind init */
 static void pre_clo_init(void) {
 
-	VG_(details_name)				("Aprof");
-	VG_(details_version)			("?");
-	VG_(details_description)		("Input-sensitive Profiler");
-	VG_(details_copyright_author)	("By Camil Demetrescu, Irene Finocchi, Bruno Aleandri, Emilio Coppa");
+	VG_(details_name)				("aprof");
+	VG_(details_version)			("0.1");
+	VG_(details_description)		("Input-sensitive Profiler - http://code.google.com/p/aprof/");
+	VG_(details_copyright_author)	("By Emilio Coppa, Camil Demetrescu, Irene Finocchi");
 	VG_(details_bug_reports_to)		("ercoppa@gmail.com");
 
 	VG_(basic_tool_funcs) 			(post_clo_init, instrument, fini);

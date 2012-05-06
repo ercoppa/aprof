@@ -7,8 +7,6 @@
 
 #include "aprof.h"
 
-/* FixMe: capire come ricavare la commandline completa */
-
 static char * basename (char * path) {
 	
 	char * ptr = NULL;
@@ -18,6 +16,7 @@ static char * basename (char * path) {
 		if (ptr == NULL) break;
 		
 		path = ptr + 1;
+		if (*path == '\0') break;
 		
 	}
 	
@@ -29,13 +28,15 @@ void generate_report(ThreadData * tdata, ThreadId tid) {
 	
 	Char filename_priv[2048];
 	Char * prog_name = (Char *) VG_(args_the_exename);
-	/*
+	
+	#if REPORT_NAME == 1
 	if (tid > 1)
 		VG_(sprintf)(filename_priv, "%s_%u.aprof", basename(prog_name), tid - 1);
 	else
 		VG_(sprintf)(filename_priv, "%s.aprof", basename(prog_name));
-	*/
+	#elif REPORT_NAME == 2
 	VG_(sprintf)(filename_priv, "%d_%u_%d.aprof", VG_(getpid)(), tid - 1, ADDR_MULTIPLE);
+	#endif
 	/* Add path to log filename */
 	Char * filename = VG_(expand_file_name)("aprof log", filename_priv);
 
