@@ -629,7 +629,7 @@ configure: failed program was:
 configure:6976: result: no
 configure:6994: checking for pthread_create@GLIBC2.0()
 configure:7025: gcc -o conftest -lpthread   conftest.c  >&5
-/tmp/ccvfO1AT.o: In function `main':
+/tmp/ccwm7V3u.o: In function `main':
 conftest.c:(.text+0x19): undefined reference to `pthread_create@GLIBC_2.0'
 collect2: ld returned 1 exit status
 configure:7025: $? = 1
@@ -1527,7 +1527,7 @@ configure:8787: $? = 0
 configure:8787: result: yes
 configure:8787: checking for process_vm_readv
 configure:8787: gcc -o conftest -Wno-long-long  -Wno-pointer-sign -fno-stack-protector   conftest.c -lrt -lpthread  >&5
-/tmp/ccXzCaMJ.o: In function `main':
+/tmp/cc7YIHQb.o: In function `main':
 conftest.c:(.text+0xa): undefined reference to `process_vm_readv'
 collect2: ld returned 1 exit status
 configure:8787: $? = 1
@@ -1657,7 +1657,7 @@ configure: failed program was:
 configure:8787: result: no
 configure:8787: checking for process_vm_writev
 configure:8787: gcc -o conftest -Wno-long-long  -Wno-pointer-sign -fno-stack-protector   conftest.c -lrt -lpthread  >&5
-/tmp/ccdLyYhP.o: In function `main':
+/tmp/ccg3rIah.o: In function `main':
 conftest.c:(.text+0xa): undefined reference to `process_vm_writev'
 collect2: ld returned 1 exit status
 configure:8787: $? = 1
