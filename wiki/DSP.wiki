@@ -40,11 +40,12 @@ time ./inst/bin/valgrind --tool=aprof path/to/benchmark/dsp/bin/dsp < path/to/be
 == Perfomance reference ==
 {{{
 P1 - DSP(native): space 15696 kB ~ time real 0.36 sec
-P1 - DSP(callgrind): space 73308 kB ~  time real 16.08 sec
-P1 - DSP(callgrind --cache-sim=yes): space 73308 ~ time real 0m55.567s
-P1 - DSP(memcheck): space 145236 kB ~ time real 9.85 sec
-P1 - DSP(TOOL:none): space 59372 kB ~ time real 0m2.010s
-P3 - DSP(native): space 16310 kB ~ time real 3.737s  
+P1 - DSP(callgrind-3.6.0): space 73308 kB ~  time real 16.08 sec
+P1 - DSP(callgrind-3.6.0 --cache-sim=yes): space 73308 ~ time real 0m55.567s
+P1 - DSP(memcheck-3.6.0): space 145236 kB ~ time real 9.85 sec
+P1 - DSP(TOOL:none-3.6.0): space 59372 kB ~ time real 0m2.010s
+P3 - DSP(native): space 16310 kB ~ time real 3.737s 
+P2 - DSP(native): space 32040 kB ~ time real 0.424s
 }}}
 Valgrind tools are those shipped with Valgrind 3.6.1
 
@@ -117,5 +118,6 @@ P1 - DSP(aprof): space 70664 kB ~ time real 0m19.168s ~ CCT=0, SUF=2, TIME=BB_CO
 
 Revision 317:
 {{{
+P2 - DSP(aprof): space 132036 kB ~ time real 0m17.548s ~ CCT=0, SUF=2, TIME=BB_COUNT, ADDR_MULTIPLE=4, COSTANT_MEM_ACCESS=1, IGNORE_DL_RUNTIME=1, DISCARD_UNKNOWN=1
 P3 - DSP(aprof): space 54208 kB ~ time real 0m37.513s ~ CCT=0, SUF=2, TIME=BB_COUNT, ADDR_MULTIPLE=4, COSTANT_MEM_ACCESS=1, IGNORE_DL_RUNTIME=1, DISCARD_UNKNOWN=1
 }}}
