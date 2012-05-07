@@ -444,12 +444,11 @@
                 <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
                   <Font name="Ubuntu" size="13" style="1"/>
                 </Property>
-                <Property name="text" type="java.lang.String" value="T"/>
+                <Property name="icon" type="javax.swing.Icon" noResource="true" editor="org.netbeans.modules.form.editors2.IconEditor">
+                  <Image iconType="3" name="/aprofplot/gui/resources/type.png"/>
+                </Property>
                 <Property name="toolTipText" type="java.lang.String" value="Select cost type"/>
                 <Property name="borderPainted" type="boolean" value="false"/>
-                <Property name="margin" type="java.awt.Insets" editor="org.netbeans.beaninfo.editors.InsetsEditor">
-                  <Insets value="[0, 4, 0, 4]"/>
-                </Property>
               </Properties>
               <Events>
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jToggleButton3ActionPerformed"/>
@@ -463,12 +462,11 @@
                 <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
                   <Font name="Ubuntu" size="13" style="1"/>
                 </Property>
-                <Property name="text" type="java.lang.String" value="S"/>
+                <Property name="icon" type="javax.swing.Icon" noResource="true" editor="org.netbeans.modules.form.editors2.IconEditor">
+                  <Image iconType="3" name="/aprofplot/gui/resources/tool_curve.png"/>
+                </Property>
                 <Property name="toolTipText" type="java.lang.String" value="Smooth point window"/>
                 <Property name="borderPainted" type="boolean" value="false"/>
-                <Property name="margin" type="java.awt.Insets" editor="org.netbeans.beaninfo.editors.InsetsEditor">
-                  <Insets value="[0, 4, 0, 4]"/>
-                </Property>
               </Properties>
               <Events>
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jToggleButton4ActionPerformed"/>

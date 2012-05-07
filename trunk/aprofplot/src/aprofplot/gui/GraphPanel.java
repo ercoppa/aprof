@@ -690,10 +690,9 @@ public class GraphPanel extends javax.swing.JPanel {
         jPanel2.add(jButton1);
 
         jToggleButton3.setFont(new java.awt.Font("Ubuntu", 1, 13)); // NOI18N
-        jToggleButton3.setText("T");
+        jToggleButton3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/type.png"))); // NOI18N
         jToggleButton3.setToolTipText("Select cost type");
         jToggleButton3.setBorderPainted(false);
-        jToggleButton3.setMargin(new java.awt.Insets(0, 4, 0, 4));
         jToggleButton3.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jToggleButton3ActionPerformed(evt);
@@ -704,10 +703,9 @@ public class GraphPanel extends javax.swing.JPanel {
         jPanel2.add(jToggleButton3);
 
         jToggleButton4.setFont(new java.awt.Font("Ubuntu", 1, 13)); // NOI18N
-        jToggleButton4.setText("S");
+        jToggleButton4.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/tool_curve.png"))); // NOI18N
         jToggleButton4.setToolTipText("Smooth point window");
         jToggleButton4.setBorderPainted(false);
-        jToggleButton4.setMargin(new java.awt.Insets(0, 4, 0, 4));
         jToggleButton4.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jToggleButton4ActionPerformed(evt);
