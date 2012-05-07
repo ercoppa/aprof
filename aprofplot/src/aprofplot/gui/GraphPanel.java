@@ -689,7 +689,7 @@ public class GraphPanel extends javax.swing.JPanel {
         });
         jPanel2.add(jButton1);
 
-        jToggleButton3.setFont(new java.awt.Font("Ubuntu", 1, 13));
+        jToggleButton3.setFont(new java.awt.Font("Ubuntu", 1, 13)); // NOI18N
         jToggleButton3.setText("T");
         jToggleButton3.setToolTipText("Select cost type");
         jToggleButton3.setBorderPainted(false);
@@ -703,7 +703,7 @@ public class GraphPanel extends javax.swing.JPanel {
         jToggleButton3.setVisible(false);
         jPanel2.add(jToggleButton3);
 
-        jToggleButton4.setFont(new java.awt.Font("Ubuntu", 1, 13));
+        jToggleButton4.setFont(new java.awt.Font("Ubuntu", 1, 13)); // NOI18N
         jToggleButton4.setText("S");
         jToggleButton4.setToolTipText("Smooth point window");
         jToggleButton4.setBorderPainted(false);
