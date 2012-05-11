@@ -1,9 +1,11 @@
 package aprofplot.gui;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.event.*;
 import javax.swing.*;
 import aprofplot.*;
+import javax.swing.GroupLayout.Alignment;
 import javax.swing.event.*;
 
 public class SettingsDialog extends javax.swing.JDialog {
@@ -23,6 +25,7 @@ public class SettingsDialog extends javax.swing.JDialog {
 		else jRadioButton2.setSelected(true);
 		jButton2.setEnabled(false);
 		this.setResizable(false);
+		jTextField1.setText(Main.getCtagsPath());
 	}
 
 	/** This method is called from within the constructor to
@@ -46,6 +49,10 @@ public class SettingsDialog extends javax.swing.JDialog {
         jLabel1 = new JLabel();
         jLabel2 = new JLabel();
         jCheckBox1 = new JCheckBox();
+        jPanel5 = new JPanel();
+        jPanel6 = new JPanel();
+        jLabel3 = new JLabel();
+        jTextField1 = new JTextField();
         jPanel2 = new JPanel();
         jButton1 = new JButton();
         jButton2 = new JButton();
@@ -123,6 +130,46 @@ public class SettingsDialog extends javax.swing.JDialog {
 
         jTabbedPane1.addTab("Routine blacklist", jPanel1);
 
+        jPanel6.setLayout(new BoxLayout(jPanel6, BoxLayout.LINE_AXIS));
+
+        jLabel3.setText("      ctags binary:   ");
+        jPanel6.add(jLabel3);
+
+        jTextField1.setMaximumSize(new Dimension(2147483647, 26));
+        jTextField1.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                jTextField1ActionPerformed(evt);
+            }
+        });
+        jTextField1.addInputMethodListener(new InputMethodListener() {
+            public void caretPositionChanged(InputMethodEvent evt) {
+            }
+            public void inputMethodTextChanged(InputMethodEvent evt) {
+                jTextField1InputMethodTextChanged(evt);
+            }
+        });
+        jTextField1.addKeyListener(new KeyAdapter() {
+            public void keyPressed(KeyEvent evt) {
+                jTextField1KeyPressed(evt);
+            }
+        });
+        jPanel6.add(jTextField1);
+
+        GroupLayout jPanel5Layout = new GroupLayout(jPanel5);
+        jPanel5.setLayout(jPanel5Layout);
+        jPanel5Layout.setHorizontalGroup(
+            jPanel5Layout.createParallelGroup(Alignment.LEADING)
+            .addComponent(jPanel6, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 400, Short.MAX_VALUE)
+        );
+        jPanel5Layout.setVerticalGroup(
+            jPanel5Layout.createParallelGroup(Alignment.LEADING)
+            .addGroup(jPanel5Layout.createSequentialGroup()
+                .addComponent(jPanel6, GroupLayout.PREFERRED_SIZE, 100, GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(200, Short.MAX_VALUE))
+        );
+
+        jTabbedPane1.addTab("Tools", jPanel5);
+
         getContentPane().add(jTabbedPane1, BorderLayout.CENTER);
 
         jPanel2.setBorder(BorderFactory.createEmptyBorder(2, 2, 4, 4));
@@ -171,6 +218,12 @@ public class SettingsDialog extends javax.swing.JDialog {
 		else Main.storeRtnDisplayMode(Main.DEMANGLED_FULL);
 		Main.storeBlacklist(blacklist, jCheckBox1.isSelected());
 		((MainWindow)getParent()).refreshRoutinesTableFilter();
+		
+		if (!jTextField1.getText().equals("")) {
+			Main.storeCtagsPath(jTextField1.getText());
+			((MainWindow)getParent()).checkEditor();
+		}
+		
 	}
 	
 	private void jCheckBox1ActionPerformed(ActionEvent evt) {//GEN-FIRST:event_jCheckBox1ActionPerformed
@@ -206,6 +259,18 @@ public class SettingsDialog extends javax.swing.JDialog {
 		jButton2.setEnabled(true);
 	}//GEN-LAST:event_jRadioButton2ActionPerformed
 
+	private void jTextField1ActionPerformed(ActionEvent evt) {//GEN-FIRST:event_jTextField1ActionPerformed
+		jButton2.setEnabled(true);
+	}//GEN-LAST:event_jTextField1ActionPerformed
+
+	private void jTextField1InputMethodTextChanged(InputMethodEvent evt) {//GEN-FIRST:event_jTextField1InputMethodTextChanged
+		jButton2.setEnabled(true);
+	}//GEN-LAST:event_jTextField1InputMethodTextChanged
+
+	private void jTextField1KeyPressed(KeyEvent evt) {//GEN-FIRST:event_jTextField1KeyPressed
+		jButton2.setEnabled(true);
+	}//GEN-LAST:event_jTextField1KeyPressed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private ButtonGroup buttonGroup1;
@@ -215,15 +280,19 @@ public class SettingsDialog extends javax.swing.JDialog {
     private JCheckBox jCheckBox1;
     private JLabel jLabel1;
     private JLabel jLabel2;
+    private JLabel jLabel3;
     private JPanel jPanel1;
     private JPanel jPanel2;
     private JPanel jPanel3;
     private JPanel jPanel4;
+    private JPanel jPanel5;
+    private JPanel jPanel6;
     private JRadioButton jRadioButton1;
     private JRadioButton jRadioButton2;
     private JScrollPane jScrollPane1;
     private JTabbedPane jTabbedPane1;
     private JTextArea jTextArea1;
+    private JTextField jTextField1;
     // End of variables declaration//GEN-END:variables
 
 }

@@ -18,7 +18,10 @@ public class Main {
 	private static ArrayList<Integer> graph_order = null;
 	private static boolean blacklist_enabled = false;
 	private static String lastReportPath = "";
+	private static String lastSourceDir = "";
+	private static boolean editor = false;
 	private static int rtn_display_mode = DEMANGLED;
+	private static String ctags = "ctags-exuberant";
 	
 	public synchronized static void newWindow() {
 		EventQueue.invokeLater(new Runnable() {
@@ -39,9 +42,36 @@ public class Main {
 	public synchronized static String getLastReportPath() {
 		return lastReportPath;
 	}
+	
+	public synchronized static boolean getEditorVisible() {
+		return editor;
+	}
+	
+	public synchronized static void storeEditorVisible(boolean editor_visible) {
+		editor = editor_visible;
+		saveSettings();
+	}
+	
+	public synchronized static String getCtagsPath() {
+		return ctags;
+	}
+	
+	public synchronized static void storeCtagsPath(String ctags_path) {
+		ctags = ctags_path;
+		saveSettings();
+	}
+	
+	public synchronized static String getLastSourceDir() {
+		return lastSourceDir;
+	}
 
 	public synchronized static void storeLastReportPath(String path) {
 		lastReportPath = path;
+		saveSettings();
+	}
+	
+	public synchronized static void storeLastSourceDir(String path) {
+		lastSourceDir = path;
 		saveSettings();
 	}
 
@@ -119,7 +149,15 @@ public class Main {
 				out.print(graph_order.get(i) + " ");
 			out.println("");
 
+			if (!lastSourceDir.equals(""))
+				out.println("src " + lastSourceDir);
 			
+			if (!ctags.equals(""))
+				out.println("ctags " + ctags);
+			
+			if (editor)
+				out.println("editor");
+				
 			out.print("rtn_display ");
 			if (rtn_display_mode == DEMANGLED) out.println("0");
 			else out.println("1");
@@ -179,6 +217,19 @@ public class Main {
 						System.out.println("Recent file not valid. Ignored.");
 					}
 					
+				} else if (tag.equals("src")) { // last source dir
+			
+					if (tokenizer.hasMoreTokens())
+						lastSourceDir = tokenizer.nextToken();
+				
+				} else if(tag.equals("editor")) { // editor visible
+				
+					editor = true;
+				
+				} else if (tag.equals("ctags")) { 
+			
+					ctags = tokenizer.nextToken();
+			
 				} else { // last path
 					
 					lastReportPath = line;
@@ -227,6 +278,11 @@ public class Main {
 	 * @param args the command line arguments
 	 */
 	public static void main(String[] args) {
+		
+		// Mac OS X integration
+		System.setProperty("apple.laf.useScreenMenuBar", "true");
+		System.setProperty("com.apple.mrj.application.apple.menu.about.name", "aprof-plot");
+		
 		loadSettings();
 		newWindow();
 	}
