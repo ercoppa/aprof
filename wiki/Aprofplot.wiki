@@ -18,7 +18,7 @@ JCommon, JFreeChart and RSyntaxTextArea are required by aprofplot; they are incl
 
 In order to use the source code browsing function, you need to have installed on your system a recent version of [http://ctags.sourceforge.net/ ctags]. 
 
-=== ctags on Mac OS X ===
+==== ctags on Mac OS X ====
 For example, on Mac OS X, you can download a recent binary (dmg) of ctags [http://code.google.com/p/rudix/downloads/detail?name=ctags-5.8-1.dmg&can=2&q=label%3ARudix-2011 here]. Then you need to set in aprof-plot `exuberant-ctags` as ctags binary (see below).
 
 === Set ctags binary path ===
