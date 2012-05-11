@@ -1,18 +1,26 @@
 package aprofplot.gui;
 
 import aprofplot.*;
+import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.*;
 import javax.swing.table.TableModel;
+import javax.swing.text.BadLocationException;
 import javax.swing.tree.*;
 import java.util.*;
 import java.io.*;
+import java.net.URL;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
+import org.fife.ui.rtextarea.Gutter;
+import org.fife.ui.rtextarea.RTextScrollPane;
 
 public class MainWindow extends javax.swing.JFrame {
 
@@ -30,19 +38,38 @@ public class MainWindow extends javax.swing.JFrame {
 	private JPanel fake2 = null;
 	
 	// Are we loading a new report?
-	boolean loading = false;
+	private boolean loading = false;
+	
+	// Is the editor visible ?
+	private boolean editor_visible = false;
+	
+	// source code directory
+	private String source_dir = null; 
+	
+	// Symbol table
+	private HashMap<String, Symbol> sym = null;
 
+	// source directory files
+	private ArrayList<String> files = null;
+	
+	// index search function source code
+	private int source_index = 0;
+	
+	// load function code of the selected entry in routine table in the editor?
+	private boolean linked_editor = true;
+	
 	/** Creates new form MainWindow */
 	public MainWindow() {
 		
 		try {
 			
-			setExtendedState(MAXIMIZED_BOTH);
 			javax.swing.UIManager.setLookAndFeel(javax.swing.UIManager.getSystemLookAndFeelClassName());
 			initComponents();
+			setExtendedState(MAXIMIZED_BOTH);
 			initGraph();
 			refreshRecentFiles();
 			resetRoutineTableFilter();
+			checkEditor();
 		
 		} catch (Exception e) {
 		
@@ -78,11 +105,13 @@ public class MainWindow extends javax.swing.JFrame {
         jButton3 = new javax.swing.JButton();
         jButton1 = new javax.swing.JButton();
         jButton7 = new javax.swing.JButton();
+        jButton10 = new javax.swing.JButton();
         jButton9 = new javax.swing.JButton();
         jSeparator2 = new javax.swing.JToolBar.Separator();
         jButton6 = new javax.swing.JButton();
         jSeparator5 = new javax.swing.JToolBar.Separator();
         jToggleButton10 = new javax.swing.JToggleButton();
+        jToggleButton1 = new javax.swing.JToggleButton();
         jToggleButton4 = new javax.swing.JToggleButton();
         jSeparator3 = new javax.swing.JToolBar.Separator();
         jButton8 = new javax.swing.JButton();
@@ -101,6 +130,20 @@ public class MainWindow extends javax.swing.JFrame {
         jProgressBar1 = new javax.swing.JProgressBar();
         jPanel2 = new javax.swing.JPanel();
         jSplitPane1 = new javax.swing.JSplitPane();
+        jPanel3 = new javax.swing.JPanel();
+        jSplitPane4 = new javax.swing.JSplitPane();
+        jScrollPane5 = new javax.swing.JScrollPane();
+        jPanel9 = new javax.swing.JPanel();
+        jPanel11 = new javax.swing.JPanel();
+        jPanel10 = new javax.swing.JPanel();
+        jSeparator9 = new javax.swing.JSeparator();
+        jToggleButton2 = new javax.swing.JToggleButton();
+        jSeparator11 = new javax.swing.JSeparator();
+        jTextField2 = new javax.swing.JTextField();
+        jButton11 = new javax.swing.JButton();
+        jSeparator8 = new javax.swing.JSeparator();
+        jComboBox1 = new javax.swing.JComboBox();
+        jSeparator10 = new javax.swing.JSeparator();
         jSplitPane2 = new javax.swing.JSplitPane();
         jPanel6 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
@@ -137,14 +180,12 @@ public class MainWindow extends javax.swing.JFrame {
         jPanel8 = new javax.swing.JPanel();
         jScrollPane4 = new javax.swing.JScrollPane();
         jTree1 = new javax.swing.JTree();
-        jPanel3 = new javax.swing.JPanel();
-        jScrollPane5 = new javax.swing.JScrollPane();
-        jPanel9 = new javax.swing.JPanel();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         jMenuItem1 = new javax.swing.JMenuItem();
         jSeparator1 = new javax.swing.JSeparator();
         jMenuItem5 = new javax.swing.JMenuItem();
+        jMenuItem8 = new javax.swing.JMenuItem();
         jMenu5 = new javax.swing.JMenu();
         recentMenuItem1 = new javax.swing.JMenuItem();
         recentMenuItem2 = new javax.swing.JMenuItem();
@@ -171,6 +212,7 @@ public class MainWindow extends javax.swing.JFrame {
         jCheckBoxMenuItem17 = new javax.swing.JCheckBoxMenuItem();
         jCheckBoxMenuItem18 = new javax.swing.JCheckBoxMenuItem();
         jCheckBoxMenuItem19 = new javax.swing.JCheckBoxMenuItem();
+        jCheckBoxMenuItem1 = new javax.swing.JCheckBoxMenuItem();
         jMenu4 = new javax.swing.JMenu();
         jMenuItem3 = new javax.swing.JMenuItem();
 
@@ -269,7 +311,6 @@ public class MainWindow extends javax.swing.JFrame {
         setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
         setTitle("aprof-plot");
         setIconImage((new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/App-icon.png"))).getImage());
-        setMinimumSize(new java.awt.Dimension(640, 480));
         addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowClosing(java.awt.event.WindowEvent evt) {
                 formWindowClosing(evt);
@@ -318,6 +359,19 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jToolBar1.add(jButton7);
 
+        jButton10.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/fs-directory.png"))); // NOI18N
+        jButton10.setToolTipText("Set source code directory");
+        jButton10.setEnabled(false);
+        jButton10.setFocusable(false);
+        jButton10.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButton10.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jButton10.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton10ActionPerformed(evt);
+            }
+        });
+        jToolBar1.add(jButton10);
+
         jButton9.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/refresh.png"))); // NOI18N
         jButton9.setToolTipText("Reload last recent report");
         jButton9.setEnabled(false);
@@ -361,6 +415,19 @@ public class MainWindow extends javax.swing.JFrame {
             }
         });
         jToolBar1.add(jToggleButton10);
+
+        jToggleButton1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/editor.png"))); // NOI18N
+        jToggleButton1.setToolTipText("Show source code editor");
+        jToggleButton1.setEnabled(false);
+        jToggleButton1.setFocusable(false);
+        jToggleButton1.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jToggleButton1.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jToggleButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jToggleButton1ActionPerformed(evt);
+            }
+        });
+        jToolBar1.add(jToggleButton1);
 
         jToggleButton4.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Unlink-icon.png"))); // NOI18N
         jToggleButton4.setSelected(true);
@@ -454,7 +521,7 @@ public class MainWindow extends javax.swing.JFrame {
         jPanel2.setLayout(new java.awt.BorderLayout());
 
         jSplitPane1.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
-        jSplitPane1.setDividerLocation(0.5);
+        jSplitPane1.setDividerLocation(0.8);
         jSplitPane1.addHierarchyBoundsListener(new java.awt.event.HierarchyBoundsListener() {
             public void ancestorMoved(java.awt.event.HierarchyEvent evt) {
             }
@@ -463,7 +530,109 @@ public class MainWindow extends javax.swing.JFrame {
             }
         });
 
+        jPanel3.setLayout(new java.awt.BorderLayout());
+
+        jSplitPane4.setDividerLocation(0.75);
+        jSplitPane4.setDividerSize(0);
+
+        jScrollPane5.setMinimumSize(new java.awt.Dimension(400, 300));
+
+        jPanel9.setLayout(new java.awt.GridLayout(6, 1));
+        jScrollPane5.setViewportView(jPanel9);
+
+        jSplitPane4.setLeftComponent(jScrollPane5);
+
+        jPanel11.setBackground(new java.awt.Color(38, 26, 14));
+        jPanel11.setLayout(new javax.swing.BoxLayout(jPanel11, javax.swing.BoxLayout.Y_AXIS));
+
+        jPanel10.setMaximumSize(new java.awt.Dimension(32767, 30));
+        jPanel10.setMinimumSize(new java.awt.Dimension(200, 30));
+        jPanel10.setPreferredSize(new java.awt.Dimension(200, 30));
+        jPanel10.setLayout(new javax.swing.BoxLayout(jPanel10, javax.swing.BoxLayout.X_AXIS));
+
+        jSeparator9.setOrientation(javax.swing.SwingConstants.VERTICAL);
+        jSeparator9.setMaximumSize(new java.awt.Dimension(2, 2));
+        jPanel10.add(jSeparator9);
+
+        jToggleButton2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/chain_pencil.png"))); // NOI18N
+        jToggleButton2.setSelected(true);
+        jToggleButton2.setToolTipText("Load the source of the function selected in the routine table");
+        jToggleButton2.setBorderPainted(false);
+        jToggleButton2.setEnabled(false);
+        jToggleButton2.setMaximumSize(new java.awt.Dimension(26, 26));
+        jToggleButton2.setMinimumSize(new java.awt.Dimension(26, 26));
+        jToggleButton2.setPreferredSize(new java.awt.Dimension(26, 26));
+        jToggleButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jToggleButton2ActionPerformed(evt);
+            }
+        });
+        jPanel10.add(jToggleButton2);
+
+        jSeparator11.setOrientation(javax.swing.SwingConstants.VERTICAL);
+        jSeparator11.setMaximumSize(new java.awt.Dimension(2, 2));
+        jPanel10.add(jSeparator11);
+
+        jTextField2.setEnabled(false);
+        jTextField2.setMaximumSize(new java.awt.Dimension(150, 26));
+        jTextField2.setMinimumSize(new java.awt.Dimension(150, 26));
+        jTextField2.setPreferredSize(new java.awt.Dimension(150, 26));
+        jTextField2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTextField2ActionPerformed(evt);
+            }
+        });
+        jPanel10.add(jTextField2);
+
+        jButton11.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Search-icon.png"))); // NOI18N
+        jButton11.setBorderPainted(false);
+        jButton11.setEnabled(false);
+        jButton11.setMargin(new java.awt.Insets(0, 2, 0, 2));
+        jButton11.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton11ActionPerformed(evt);
+            }
+        });
+        jPanel10.add(jButton11);
+
+        jSeparator8.setForeground(new java.awt.Color(242, 241, 240));
+        jSeparator8.setOrientation(javax.swing.SwingConstants.VERTICAL);
+        jSeparator8.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 10, 1, 100));
+        jSeparator8.setEnabled(false);
+        jSeparator8.setMaximumSize(new java.awt.Dimension(20, 26));
+        jSeparator8.setMinimumSize(new java.awt.Dimension(20, 26));
+        jSeparator8.setPreferredSize(new java.awt.Dimension(20, 26));
+        jPanel10.add(jSeparator8);
+
+        jComboBox1.setMaximumRowCount(10);
+        jComboBox1.setEnabled(false);
+        jComboBox1.setMaximumSize(new java.awt.Dimension(32767, 26));
+        jComboBox1.setMinimumSize(new java.awt.Dimension(200, 26));
+        jComboBox1.setPreferredSize(new java.awt.Dimension(200, 26));
+        jComboBox1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jComboBox1ActionPerformed(evt);
+            }
+        });
+        jPanel10.add(jComboBox1);
+
+        jSeparator10.setOrientation(javax.swing.SwingConstants.VERTICAL);
+        jSeparator10.setMaximumSize(new java.awt.Dimension(2, 2));
+        jPanel10.add(jSeparator10);
+
+        jPanel11.add(jPanel10);
+
+        /*
+        jSplitPane4.setRightComponent(jPanel11);
+        */
+        jSplitPane4.setRightComponent(null);
+
+        jPanel3.add(jSplitPane4, java.awt.BorderLayout.CENTER);
+
+        jSplitPane1.setLeftComponent(jPanel3);
+
         jSplitPane2.setResizeWeight(0.9);
+        jSplitPane2.setPreferredSize(new java.awt.Dimension(300, 300));
         jSplitPane2.setDividerLocation(0.65);
         jSplitPane2.addHierarchyBoundsListener(new java.awt.event.HierarchyBoundsListener() {
             public void ancestorMoved(java.awt.event.HierarchyEvent evt) {
@@ -473,8 +642,6 @@ public class MainWindow extends javax.swing.JFrame {
             }
         });
 
-        jPanel6.setMinimumSize(new java.awt.Dimension(200, 120));
-        jPanel6.setPreferredSize(new java.awt.Dimension(750, 400));
         jPanel6.setLayout(new java.awt.BorderLayout());
 
         jScrollPane1.setVerticalScrollBarPolicy(javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
@@ -519,9 +686,6 @@ public class MainWindow extends javax.swing.JFrame {
         jPanel6.add(jPanel7, java.awt.BorderLayout.PAGE_START);
 
         jSplitPane2.setLeftComponent(jPanel6);
-
-        jTabbedPane1.setMinimumSize(new java.awt.Dimension(150, 207));
-        jTabbedPane1.setPreferredSize(new java.awt.Dimension(650, 590));
 
         jSplitPane3.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
         jSplitPane3.setDividerSize(0);
@@ -592,15 +756,6 @@ public class MainWindow extends javax.swing.JFrame {
 
         jSplitPane1.setBottomComponent(jSplitPane2);
 
-        jPanel3.setLayout(new java.awt.BorderLayout());
-
-        jPanel9.setLayout(new java.awt.GridLayout(2, 3));
-        jScrollPane5.setViewportView(jPanel9);
-
-        jPanel3.add(jScrollPane5, java.awt.BorderLayout.CENTER);
-
-        jSplitPane1.setLeftComponent(jPanel3);
-
         jPanel2.add(jSplitPane1, java.awt.BorderLayout.CENTER);
 
         getContentPane().add(jPanel2, java.awt.BorderLayout.CENTER);
@@ -628,6 +783,15 @@ public class MainWindow extends javax.swing.JFrame {
             }
         });
         jMenu1.add(jMenuItem5);
+
+        jMenuItem8.setText("Set source directory");
+        jMenuItem8.setEnabled(false);
+        jMenuItem8.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem8ActionPerformed(evt);
+            }
+        });
+        jMenu1.add(jMenuItem8);
 
         jMenu5.setMnemonic('r');
         jMenu5.setText("Open recent file");
@@ -832,6 +996,15 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jMenu3.add(jCheckBoxMenuItem19);
 
+        jCheckBoxMenuItem1.setText("Source code editor");
+        jCheckBoxMenuItem1.setEnabled(false);
+        jCheckBoxMenuItem1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCheckBoxMenuItem1ActionPerformed(evt);
+            }
+        });
+        jMenu3.add(jCheckBoxMenuItem1);
+
         jMenuBar1.add(jMenu3);
 
         jMenu4.setMnemonic('h');
@@ -853,6 +1026,31 @@ public class MainWindow extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+	public void checkEditor() {
+
+		if(isCtagsInstalled()) {
+			
+			jMenuItem8.setEnabled(true);
+			jButton10.setEnabled(true);
+			jCheckBoxMenuItem1.setEnabled(true);
+			jToggleButton1.setEnabled(true);
+			createTextEditor();
+			if (Main.getEditorVisible())
+				showTextEditor(true);
+		
+		} else {
+			
+			jMenuItem8.setEnabled(false);
+			jButton10.setEnabled(false);
+			jCheckBoxMenuItem1.setEnabled(false);
+			jToggleButton1.setEnabled(false);
+			if (Main.getEditorVisible())
+				showTextEditor(false);
+		
+		}
+	
+	}
+	
 	public AprofReport getCurrentReport(){
 		return report;
 	}
@@ -899,6 +1097,7 @@ public class MainWindow extends javax.swing.JFrame {
 		jLabel4.setText(" Contexts: " + report.getTotalContexts() + " ");
 		jLabel5.setText(" Total cost: " + report.getTotalCost() + " ");
 		jLabel6.setText(" Calls: " + report.getTotalCalls() + " ");
+		jLabel7.setText("");
 	
 	}
 
@@ -1253,6 +1452,10 @@ public class MainWindow extends javax.swing.JFrame {
 				name += (" (" +((RoutineContext)r).getContextId() + "/" + ((RoutineContext)r).getOverallRoutine().getContextCount() + ")");
 			}
 			jLabel7.setText(name);
+			
+			// Load function source code in the editor
+			if (linked_editor)
+				loadFunctionInTextEditor(name);
 			
 			// Update all graph (except routine graph)
 			/*
@@ -1910,6 +2113,158 @@ public class MainWindow extends javax.swing.JFrame {
 		
 	}//GEN-LAST:event_jCheckBoxMenuItem19ActionPerformed
 
+	private void chooseSourceDirectory() {
+	
+		JFileChooser chooser = new JFileChooser();
+		chooser.setDialogTitle("Set source code directory");
+		chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+		chooser.setAcceptAllFileFilterUsed(false);
+		
+		String lastSourceDir = Main.getLastSourceDir();
+		if (!lastSourceDir.equals("")) 
+			chooser.setCurrentDirectory((new java.io.File(lastSourceDir)));
+		
+		if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+			
+			jProgressBar1.setVisible(true);
+			jProgressBar1.setEnabled(true);
+			loading = true;
+			
+			source_dir = chooser.getSelectedFile().getPath();
+			Main.storeLastSourceDir(chooser.getSelectedFile().getPath());
+			//System.out.println("Selected directory: " + source_dir);
+			final ctagsParser c = new ctagsParser(chooser.getSelectedFile());
+			
+			SwingWorker worker = new SwingWorker<Boolean, Void>() {
+			
+				@Override
+				public Boolean doInBackground() {
+					
+					sym = c.getSymbols();
+					files = c.getFiles();
+					jTextField2.setEnabled(true);
+					jButton11.setEnabled(true);
+					jProgressBar1.setVisible(false);
+					jProgressBar1.setEnabled(false);
+					jToggleButton2.setEnabled(true);
+					loading = false;
+					
+					SwingUtilities.invokeLater(new Runnable() {
+			
+						@Override
+						public void run() { 
+							
+							jComboBox1.setModel(new ListFilesEditorModel(files));
+							jComboBox1.setEnabled(true);
+
+							if (!jLabel7.getText().equals("")) {
+								//System.out.println("Function selected " + jLabel7.getText());
+								loadFunctionInTextEditor(jLabel7.getText());
+							} else {
+								
+								try {
+									textArea.read(new StringReader(""),null);
+								} catch (IOException ex) {
+									//
+								}
+							
+							}
+
+						}
+					});
+					
+					return true;
+					
+				}
+
+			};
+			worker.execute();
+			
+			//System.out.println("Collected " + l.size() + " symbols");
+			
+		}
+		
+	}
+	
+	private void jMenuItem8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem8ActionPerformed
+
+		chooseSourceDirectory();
+		
+	}//GEN-LAST:event_jMenuItem8ActionPerformed
+
+	private void jButton10ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton10ActionPerformed
+	
+		chooseSourceDirectory();
+		
+	}//GEN-LAST:event_jButton10ActionPerformed
+
+	private void jCheckBoxMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem1ActionPerformed
+		
+		if (jCheckBoxMenuItem1.isSelected()) showTextEditor(true);
+		else showTextEditor(false);
+		
+	}//GEN-LAST:event_jCheckBoxMenuItem1ActionPerformed
+
+	private void jToggleButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton1ActionPerformed
+
+		
+		if (jToggleButton4.isSelected()) {
+			if (!editor_visible)
+				showTextEditor(true);
+			else
+				showTextEditor(false);
+		}
+		
+	}//GEN-LAST:event_jToggleButton1ActionPerformed
+
+	private void jComboBox1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBox1ActionPerformed
+		
+		if (loading) return;
+		String file = (String) jComboBox1.getSelectedItem();
+		//System.out.println(file);
+		
+		File f = new File(file);
+		try {
+			
+			BufferedReader r = new BufferedReader(new FileReader(f));
+			textArea.read(r, null);
+			r.close();
+		
+		} catch (Exception ex) {
+			//
+		}
+		
+		if (highlight_line != null) textArea.removeLineHighlight(highlight_line);
+		textArea.setCaretPosition(0);
+		
+	}//GEN-LAST:event_jComboBox1ActionPerformed
+
+	private void jButton11ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton11ActionPerformed
+		
+		// Search routine in source code
+		findRoutineByNameInSource();
+				
+	}//GEN-LAST:event_jButton11ActionPerformed
+
+	private void jTextField2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField2ActionPerformed
+		
+		// Search routine in source code
+		findRoutineByNameInSource();
+		
+	}//GEN-LAST:event_jTextField2ActionPerformed
+
+	private void jToggleButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton2ActionPerformed
+		
+		// Load function code selected in the routine table
+		if (jToggleButton2.isSelected()) {
+			linked_editor = true;
+			if (!jLabel7.getText().equals(""))
+				loadFunctionInTextEditor(jLabel7.getText());
+		}
+		else linked_editor = false;
+		
+	}//GEN-LAST:event_jToggleButton2ActionPerformed
+
 	private void resetRoutineTableFilter() {
 		
 		// reset filter over routine table
@@ -2132,6 +2487,51 @@ public class MainWindow extends javax.swing.JFrame {
 				}
 			}
 		}
+	}
+	
+	private void findRoutineByNameInSource() {
+		
+		if (sym == null) return;
+		String query = jTextField2.getText();
+		
+		if (query.equals("")) return;
+		
+		Set s = sym.keySet();
+		Object[] a = s.toArray();
+		int index = source_index;
+		
+		//System.out.println(source_index);
+		
+		while(index < a.length) {
+		
+			String name = (String) a[index++];
+			if (name.contains(query)) {
+				source_index = index;
+				loadFunctionInTextEditor(name);
+				return;
+			}
+		
+		}
+		
+		if (source_index > 0) {
+			
+			index = 0;
+			while(index < a.length && index < source_index) {
+		
+				String name = (String) a[index++];
+				if (name.contains(query)) {
+					source_index = index;
+					loadFunctionInTextEditor(name);
+					return;
+				}
+
+			}
+			source_index = 0;
+				
+		}
+		
+		javax.swing.JOptionPane.showMessageDialog(this, "text not found");
+	
 	}
 	
 	private void initGraph() {
@@ -2370,6 +2770,14 @@ public class MainWindow extends javax.swing.JFrame {
 	
 	private void adjustGraphLayout() {
 		
+		if (editor_visible) {
+			
+			jPanel9.setLayout(new BoxLayout(jPanel9, BoxLayout.Y_AXIS));
+			jPanel9.revalidate();
+			return;
+			
+		}
+		
 		if (graph_visible == 4) {
 			if (fake == null) fake = new JPanel();
 			jPanel9.add(fake);
@@ -2395,7 +2803,247 @@ public class MainWindow extends javax.swing.JFrame {
 		jPanel9.revalidate();
 		
 	}
+	
+	
+	private boolean isCtagsInstalled() {
+	
+		ProcessBuilder pb = new ProcessBuilder(Main.getCtagsPath(), "--version");
+		try {
+			
+			Process p = pb.start();
+			p.waitFor();
+			int exit = p.exitValue();
+			if (exit == 0) return true;
+			
+		} catch (IOException ex) {
+			//System.out.println("Fail to start a process [ctags installed test][1]");
+		} catch (IllegalThreadStateException i) {
+			//System.out.println("Fail to start a process [ctags installed test][2]");
+		} catch (InterruptedException ex) {
+			//System.out.println("Fail to start a process [ctags installed test][3]");
+		}
+		
+		return false;
+	
+	}
+	
+	private void showTextEditor(boolean show) {
+		
+		if(show) {
+			
+			if (!editor_visible) {
+				
+				//System.out.println("Show editor");
+				Main.storeEditorVisible(true);
+				jCheckBoxMenuItem1.setSelected(true);
+				jToggleButton1.setSelected(true);
+				jSplitPane4.setRightComponent(jPanel11);
+				editor_visible = true;
+				adjustGraphLayout();
+				
+				SwingUtilities.invokeLater(new Runnable() {
+			
+					@Override
+					public void run() { 
 
+						if (!jLabel7.getText().equals("")) {
+							System.out.println("Function selected " + jLabel7.getText());
+							loadFunctionInTextEditor(jLabel7.getText());
+						}
+
+					}
+				});
+			
+			}
+			
+			
+		} else {
+		
+			if (editor_visible) {
+				
+				//System.out.println("Hide editor");
+				Main.storeEditorVisible(false);
+				jCheckBoxMenuItem1.setSelected(false);
+				jToggleButton1.setSelected(false);
+				jSplitPane4.setRightComponent(null);
+				editor_visible = false;
+				adjustGraphLayout();
+			
+			}
+			
+		}
+		
+	}
+	
+	private void createTextEditor() {
+		
+		textArea = new RSyntaxTextArea(10, 10);
+		textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_CPLUSPLUS);
+		//textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_C);
+		textArea.setCodeFoldingEnabled(true);
+		textArea.setAntiAliasingEnabled(true);
+		textArea.setEditable(false);
+		
+		JPopupMenu popup = textArea.getPopupMenu();
+		popup.addSeparator();
+		ActionEditor a = new ActionEditor();
+		a.setMainWindow(this);
+		popup.add(new JMenuItem(a));
+		
+		RTextScrollPane sp = new RTextScrollPane(textArea);
+		sp.setFoldIndicatorEnabled(true);
+		//Gutter gutter = sp.getGutter();
+		//gutter.setBookmarkingEnabled(true);
+		//gutter.setBookmarkIcon(new ImageIcon(getClass().getResource("/aprofplot/gui/resources/bookmark.png")));
+		jPanel11.add(sp);
+		
+		/*
+		SwingUtilities.invokeLater(new Runnable() {
+			
+			@Override
+			public void run() { 
+				textArea.setCaretPosition(textArea.getText().length() / 2);
+			}
+		});
+		*/	  
+	}
+
+	private String cleanCPPSignature(String sig) {
+	
+		int index = sig.indexOf("(");
+		if (index >= 0) sig = sig.substring(0, index);
+		
+		index = sig.indexOf("<");
+		while (index >= 0) {
+			
+			int index2 = sig.indexOf(">", index);
+			if (index2 < 0) { // fail :( 
+				System.out.println("I need to clean function name " + sig +
+										" but I failed... BUG");
+				break;
+			} 
+			String sig_a = sig.substring(0, index);
+			String sig_b = sig.substring(index2 + 1);
+			sig = sig_a + sig_b;
+			
+			index = sig.indexOf("<");
+			
+		}
+		
+		index = sig.lastIndexOf(" ");
+		if (index >= 0) sig = sig.substring(index + 1);
+	
+		//System.out.println(sig);
+		
+		return sig;
+	} 
+	
+	public void loadFunctionInTextEditor(String name) {
+		
+		if (sym == null) return;
+		if (!editor_visible) return;
+		
+		name = cleanCPPSignature(name);
+		
+		loading = true;
+		Symbol s = sym.get(name);
+		
+		if (s == null) {
+			
+			//System.out.println("Function " + name + " was not found in the symbol table");
+			
+			try {
+				/*
+				final String error = "Source code of this function not found\n";
+				textArea.read(new StringReader(error + "\n"), null);
+				if (highlight_line != null) textArea.removeLineHighlight(highlight_line);
+				highlight_line = textArea.addLineHighlight(0, Color.RED);
+				*/
+				final JFrame m = this;
+				SwingUtilities.invokeLater(new Runnable() {
+			
+					@Override
+					public void run() { 
+						
+						javax.swing.JOptionPane.showMessageDialog(m, "Source code of the function not found");
+						//textArea.setCaretPosition(error.length());
+						loading = false;
+					}
+				});
+				
+			} catch (Exception ex) {
+				//
+			}
+			/*
+			jComboBox1.setSelectedIndex(-1);
+			jComboBox1.repaint();
+			*/
+			return;
+		
+		}
+		
+		Iterator i = files.iterator();
+		int k = 0;
+		while (i.hasNext()) {
+			
+			String file = (String) i.next();
+			if (file.equals(s.getFile())) {
+				break;
+			}
+			k++;
+		}
+		final int selected = k;
+		//System.out.println("K is " + k);
+		
+		File f = new File(s.getFile());
+		int count = s.getLine() - 1;
+		int offset = 0;
+		try {
+			
+			BufferedReader r = new BufferedReader(new FileReader(f));
+			textArea.read(r, null);
+			r.close();
+			
+			// calculate offset
+			r = new BufferedReader(new FileReader(f));
+			String line = null;
+			
+			while(count > 0 && (line = r.readLine()) != null) {
+				
+				offset += line.length() + 1;
+				count--;
+				
+			}
+			
+			r.close();
+			
+		} catch (Exception ex) {
+			//System.out.println(ex);
+		}
+		
+		final int f_offset = offset;
+		try {
+			
+			if (highlight_line != null) textArea.removeLineHighlight(highlight_line);
+			highlight_line = textArea.addLineHighlight(s.getLine() - 1, Color.ORANGE);
+		
+		} catch (BadLocationException ex) {
+			//
+		}
+		
+		SwingUtilities.invokeLater(new Runnable() {
+			
+			@Override
+			public void run() { 
+				textArea.setCaretPosition(f_offset);
+				jComboBox1.setSelectedIndex(selected);
+				jComboBox1.repaint();
+				loading = false;
+			}
+		});
+	
+	}
+	
 	// For now we decide to disable context tree panel 
 	/*
 	private void expandContextTree() {
@@ -2458,6 +3106,8 @@ public class MainWindow extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton10;
+    private javax.swing.JButton jButton11;
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
@@ -2466,6 +3116,7 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JButton jButton7;
     private javax.swing.JButton jButton8;
     private javax.swing.JButton jButton9;
+    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem1;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem10;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem11;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem12;
@@ -2482,6 +3133,7 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem7;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem8;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem9;
+    private javax.swing.JComboBox jComboBox1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
@@ -2509,7 +3161,10 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JMenuItem jMenuItem5;
     private javax.swing.JMenuItem jMenuItem6;
     private javax.swing.JMenuItem jMenuItem7;
+    private javax.swing.JMenuItem jMenuItem8;
     private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel10;
+    private javax.swing.JPanel jPanel11;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
@@ -2526,20 +3181,28 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JScrollPane jScrollPane5;
     private javax.swing.JSeparator jSeparator1;
+    private javax.swing.JSeparator jSeparator10;
+    private javax.swing.JSeparator jSeparator11;
     private javax.swing.JToolBar.Separator jSeparator2;
     private javax.swing.JToolBar.Separator jSeparator3;
     private javax.swing.JSeparator jSeparator4;
     private javax.swing.JToolBar.Separator jSeparator5;
     private javax.swing.JToolBar.Separator jSeparator6;
     private javax.swing.JToolBar.Separator jSeparator7;
+    private javax.swing.JSeparator jSeparator8;
+    private javax.swing.JSeparator jSeparator9;
     private javax.swing.JSplitPane jSplitPane1;
     private javax.swing.JSplitPane jSplitPane2;
     private javax.swing.JSplitPane jSplitPane3;
+    private javax.swing.JSplitPane jSplitPane4;
     private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JTable jTable1;
     private javax.swing.JTable jTable2;
     private javax.swing.JTextField jTextField1;
+    private javax.swing.JTextField jTextField2;
+    private javax.swing.JToggleButton jToggleButton1;
     private javax.swing.JToggleButton jToggleButton10;
+    private javax.swing.JToggleButton jToggleButton2;
     private javax.swing.JToggleButton jToggleButton4;
     private javax.swing.JToolBar jToolBar1;
     private javax.swing.JTree jTree1;
@@ -2558,6 +3221,9 @@ public class MainWindow extends javax.swing.JFrame {
 						RtnGraphPanel, MccGraphPanel;
 	private javax.swing.table.TableRowSorter<javax.swing.table.TableModel> routines_table_sorter;
 	private javax.swing.table.TableRowSorter<javax.swing.table.TableModel> sms_table_sorter;
+	
+	private RSyntaxTextArea textArea = null;
+	private Object highlight_line = null;
 	
 	private String[] routines_filter_criteria = null;
 	private String[] rms_filter_criteria = null;

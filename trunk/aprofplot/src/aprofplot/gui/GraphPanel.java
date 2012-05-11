@@ -689,7 +689,7 @@ public class GraphPanel extends javax.swing.JPanel {
         });
         jPanel2.add(jButton1);
 
-        jToggleButton3.setFont(new java.awt.Font("Ubuntu", 1, 13)); // NOI18N
+        jToggleButton3.setFont(new java.awt.Font("Ubuntu", 1, 13));
         jToggleButton3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/type.png"))); // NOI18N
         jToggleButton3.setToolTipText("Select cost type");
         jToggleButton3.setBorderPainted(false);
@@ -744,6 +744,8 @@ public class GraphPanel extends javax.swing.JPanel {
     }// </editor-fold>//GEN-END:initComponents
 
 	private void chartMouseReleased() {
+		
+		//System.out.println(this.getSize(null));
 		
 		double cmin_x = domainAxis.getLowerBound();
 		double cmax_x = domainAxis.getUpperBound();
