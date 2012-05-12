@@ -33,7 +33,7 @@ This should build a jar file.
 === Run ===
 If you have downloaded aprof-plot from our download section, you can run it in this way:
 {{{
-cd aprof-plot-0.1
+cd aprof-plot-X.X.X
 java -jar aprof-plot.jar
 }}}
 If you have downloaded aprof-plot from our SVN, then you can run the built jar in this way:
