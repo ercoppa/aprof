@@ -219,16 +219,17 @@ public class Main {
 					
 				} else if (tag.equals("src")) { // last source dir
 			
-					if (tokenizer.hasMoreTokens())
-						lastSourceDir = tokenizer.nextToken();
+					while (tokenizer.hasMoreTokens())
+						lastSourceDir = lastSourceDir + " " +tokenizer.nextToken();
 				
 				} else if(tag.equals("editor")) { // editor visible
 				
 					editor = true;
 				
 				} else if (tag.equals("ctags")) { 
-			
-					ctags = tokenizer.nextToken();
+					
+					if (tokenizer.hasMoreTokens())
+						ctags = tokenizer.nextToken();
 			
 				} else { // last path
 					
