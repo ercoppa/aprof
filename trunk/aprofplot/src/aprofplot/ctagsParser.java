@@ -35,40 +35,79 @@ public class ctagsParser {
 		
 		try {
 			
-			Process p = Runtime.getRuntime().exec(Main.getCtagsPath() +
-								" -R -x --extra=+q " + source.getPath());
+			String[] args = new String[]{Main.getCtagsPath(), "-R", "-x", "--extra=+q",
+											source.getPath()};
+			Process p = Runtime.getRuntime().exec(args);
 			BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()));
+			BufferedReader error = new BufferedReader(new InputStreamReader(p.getErrorStream()));
 			ls = new HashMap<String, Symbol>();
 			files = new HashSet<String>();
 			
 			String line=null;
- 
+			
+			/*
+			while((line = error.readLine()) != null) {
+				System.out.println(line);
+			}
+			*/
+			
 			while((line = input.readLine()) != null) {
 				
+				//System.out.println(line);
+				
 				StringTokenizer tokenizer = new StringTokenizer(line);
+				if (!tokenizer.hasMoreTokens()) continue;
 				String name = tokenizer.nextToken();
 				
 				if(name.contains("::operator")) {
 					
+					if (!tokenizer.hasMoreTokens()) continue;
 					name = name + tokenizer.nextToken();
 					
 				}
 				
+				if (!tokenizer.hasMoreTokens()) continue;
 				String type = tokenizer.nextToken();
+				if (!tokenizer.hasMoreTokens()) continue;
 				String lns = tokenizer.nextToken();
 				
 				if (type.equals("function") || type.equals("macro")) {
 					
 					int ln = Integer.parseInt(lns);
+					if (!tokenizer.hasMoreTokens()) continue;
 					String file = tokenizer.nextToken();
+					boolean file_name_valid = true;
 					
+					while (!file.toLowerCase().contains(".c") &&
+						!file.toLowerCase().contains(".cpp") &&
+						!file.toLowerCase().contains(".cc") &&
+						!file.toLowerCase().contains(".h") &&
+						!file.toLowerCase().contains(".cc") &&
+						!file.toLowerCase().contains(".cxx") &&
+						!file.toLowerCase().contains(".h++") &&
+						!file.toLowerCase().contains(".h+") &&
+						!file.toLowerCase().contains(".cp") &&
+						!file.toLowerCase().contains(".hpp") &&
+						!file.toLowerCase().contains(".hxx")) {
+					
+						if (!tokenizer.hasMoreTokens()) {
+							file_name_valid = false;
+							break;
+						}
+						file = file + " " + tokenizer.nextToken(); 
+					
+					}
+					
+					if (!file_name_valid) continue;
+					
+					//System.out.println(file);
 					if(!files.contains(file))
 						files.add(file);
 					
 					ls.put(name, new Symbol(name, ln, file, Symbol.FUNCTION));
 					//System.out.println("Function " + name + " at line " + line_n + " of " + file);
 				}
-				//System.out.println(line);
+
 			}
 			
 			int exitVal = -1;
@@ -82,7 +121,8 @@ public class ctagsParser {
 			return ls;
 			
 		} catch (IOException ex) {
-			//System.out.println("Fail to read ctags output [1]");
+			//System.out.println(ex);
+			System.out.println("Fail to read ctags output [1]");
 		}
 		
 		return null;

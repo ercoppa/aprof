@@ -2457,7 +2457,7 @@ public class MainWindow extends javax.swing.JFrame {
 	}
 
 	private void findRoutineByName() {
-		String query = jTextField1.getText();
+		String query = jTextField1.getText().toLowerCase();
 		if (jTable1.getRowCount() > 0 && !query.equals("")) {
 			int i = jTable1.getSelectedRow();
 			if (i < 0) i = 0;
@@ -2467,7 +2467,7 @@ public class MainWindow extends javax.swing.JFrame {
 			int start = i;
 			while (true) {
 				Routine rtn = ((RoutinesTableModel)jTable1.getModel()).getRoutine(jTable1.convertRowIndexToModel(i));
-				if (rtn.getName().contains(query)) {
+				if (rtn.getName().toLowerCase().contains(query)) {
 					jTable1.setRowSelectionInterval(i,i);
 					if (jTable1.getParent() instanceof javax.swing.JViewport) { // Scroll to visible; thanks to fiontan
 						javax.swing.JViewport viewport = (javax.swing.JViewport)jTable1.getParent();
@@ -2492,7 +2492,7 @@ public class MainWindow extends javax.swing.JFrame {
 	private void findRoutineByNameInSource() {
 		
 		if (sym == null) return;
-		String query = jTextField2.getText();
+		String query = jTextField2.getText().toLowerCase();
 		
 		if (query.equals("")) return;
 		
@@ -2505,7 +2505,7 @@ public class MainWindow extends javax.swing.JFrame {
 		while(index < a.length) {
 		
 			String name = (String) a[index++];
-			if (name.contains(query)) {
+			if (name.toLowerCase().contains(query)) {
 				source_index = index;
 				loadFunctionInTextEditor(name);
 				return;
