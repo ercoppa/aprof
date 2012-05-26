@@ -14,7 +14,7 @@ svn co http://aprof.googlecode.com/svn/trunk/benchmark/dsp
 {{{
 cd aprof_valgrind
 make
-time ./inst/bin/valgrind --tool=aprof path/to/benchmark/dsp/bin/dsp < path/to/benchmark/dsp/scripts/aprof/aprof_benchmark1.txt
+time ./inst/bin/valgrind --tool=aprof path/to/benchmark/dsp/bin/dsp < path/to/benchmark/dsp/scripts/aprof/qaprof_benchmark1.txt
 }}}
 
 == Platform ==
