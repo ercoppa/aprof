@@ -4,9 +4,6 @@ import aprofplot.*;
 import aprofplot.jfreechart.SamplingXYLineAndShapeRenderer;
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.PrintWriter;
 import java.util.*;
 import org.jfree.chart.*;
 import org.jfree.chart.axis.*;
@@ -215,7 +212,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		});
 
 		initComponents();
-		this.add(chartPanel, BorderLayout.CENTER);
+		this.add(chartPanel);
 
 		if (graph_type == RTN_PLOT || graph_type == RATIO_PLOT)
 			this.setVisible(false);
@@ -300,8 +297,7 @@ public class GraphPanel extends javax.swing.JPanel {
         jRadioButtonMenuItem13 = new javax.swing.JRadioButtonMenuItem();
         jRadioButtonMenuItem14 = new javax.swing.JRadioButtonMenuItem();
         jRadioButtonMenuItem15 = new javax.swing.JRadioButtonMenuItem();
-        jPanel1 = new javax.swing.JPanel();
-        jPanel2 = new javax.swing.JPanel();
+        jToolBar1 = new javax.swing.JToolBar();
         jToggleButton1 = new javax.swing.JToggleButton();
         jToggleButton2 = new javax.swing.JToggleButton();
         jButton2 = new javax.swing.JButton();
@@ -311,8 +307,7 @@ public class GraphPanel extends javax.swing.JPanel {
         jToggleButton3 = new javax.swing.JToggleButton();
         jToggleButton4 = new javax.swing.JToggleButton();
         jButton3 = new javax.swing.JButton();
-        jPanel3 = new javax.swing.JPanel();
-        jPanel4 = new javax.swing.JPanel();
+        jPanel1 = new javax.swing.JPanel();
         jLabel2 = new javax.swing.JLabel();
 
         jPopupMenu1.addPopupMenuListener(new javax.swing.event.PopupMenuListener() {
@@ -616,49 +611,57 @@ public class GraphPanel extends javax.swing.JPanel {
         groupMenuButtonGroup3.add(jRadioButtonMenuItem14);
         groupMenuButtonGroup3.add(jRadioButtonMenuItem15);
 
-        setBorder(javax.swing.BorderFactory.createTitledBorder(""));
-        setLayout(new java.awt.BorderLayout());
+        setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        setLayout(new javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS));
 
-        jPanel1.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 1));
-        jPanel1.setLayout(new java.awt.BorderLayout());
-
-        jPanel2.setLayout(new javax.swing.BoxLayout(jPanel2, javax.swing.BoxLayout.LINE_AXIS));
+        jToolBar1.setBorder(null);
+        jToolBar1.setFloatable(false);
+        jToolBar1.setRollover(true);
+        jToolBar1.setMargin(new java.awt.Insets(4, 3, 3, 3));
 
         jToggleButton1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Xlog-icon.png"))); // NOI18N
         jToggleButton1.setToolTipText("toggle x axis logarithmic scale");
-        jToggleButton1.setBorderPainted(false);
         jToggleButton1.setFocusTraversalPolicyProvider(true);
+        jToggleButton1.setFocusable(false);
+        jToggleButton1.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jToggleButton1.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
         jToggleButton1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jToggleButton1ActionPerformed(evt);
             }
         });
-        jPanel2.add(jToggleButton1);
+        jToolBar1.add(jToggleButton1);
 
         jToggleButton2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Ylog-icon.png"))); // NOI18N
         jToggleButton2.setToolTipText("toggle y axis logarithmic scale");
-        jToggleButton2.setBorderPainted(false);
+        jToggleButton2.setFocusable(false);
+        jToggleButton2.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jToggleButton2.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
         jToggleButton2.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jToggleButton2ActionPerformed(evt);
             }
         });
-        jPanel2.add(jToggleButton2);
+        jToolBar1.add(jToggleButton2);
 
         jButton2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Maximize-icon.png"))); // NOI18N
-        jButton2.setBorderPainted(false);
         jButton2.setEnabled(false);
+        jButton2.setFocusable(false);
+        jButton2.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButton2.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
         jButton2.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton2ActionPerformed(evt);
             }
         });
         jButton2.setVisible(false);
-        jPanel2.add(jButton2);
+        jToolBar1.add(jButton2);
 
         jToggleButton6.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Incorporate-icon.png"))); // NOI18N
         jToggleButton6.setToolTipText("group graph points");
-        jToggleButton6.setBorderPainted(false);
+        jToggleButton6.setFocusable(false);
+        jToggleButton6.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jToggleButton6.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
         jToggleButton6.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jToggleButton6ActionPerformed(evt);
@@ -666,33 +669,43 @@ public class GraphPanel extends javax.swing.JPanel {
         });
         if (graph_type == RTN_PLOT)
         jToggleButton6.setVisible(false);
-        jPanel2.add(jToggleButton6);
+        jToolBar1.add(jToggleButton6);
 
         jToggleButton7.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/RatioType-icon.png"))); // NOI18N
         jToggleButton7.setToolTipText("select ratio type");
-        jToggleButton7.setBorderPainted(false);
+        jToggleButton7.setFocusable(false);
+        jToggleButton7.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jToggleButton7.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
         jToggleButton7.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jToggleButton7ActionPerformed(evt);
             }
         });
         if (graph_type != RATIO_PLOT) jToggleButton7.setVisible(false);
-        jPanel2.add(jToggleButton7);
+        jToolBar1.add(jToggleButton7);
 
         jButton1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/SavePlot-icon.png"))); // NOI18N
         jButton1.setToolTipText("export as PNG image");
-        jButton1.setBorderPainted(false);
+        jButton1.setBorder(null);
+        jButton1.setFocusable(false);
+        jButton1.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButton1.setMaximumSize(new java.awt.Dimension(28, 28));
+        jButton1.setMinimumSize(new java.awt.Dimension(28, 28));
+        jButton1.setPreferredSize(new java.awt.Dimension(28, 28));
+        jButton1.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
         jButton1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton1ActionPerformed(evt);
             }
         });
-        jPanel2.add(jButton1);
+        jToolBar1.add(jButton1);
 
         jToggleButton3.setFont(new java.awt.Font("Ubuntu", 1, 13));
         jToggleButton3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/type.png"))); // NOI18N
         jToggleButton3.setToolTipText("Select cost type");
-        jToggleButton3.setBorderPainted(false);
+        jToggleButton3.setFocusable(false);
+        jToggleButton3.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jToggleButton3.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
         jToggleButton3.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jToggleButton3ActionPerformed(evt);
@@ -700,12 +713,14 @@ public class GraphPanel extends javax.swing.JPanel {
         });
         if (graph_type != COST_PLOT && graph_type != RATIO_PLOT)
         jToggleButton3.setVisible(false);
-        jPanel2.add(jToggleButton3);
+        jToolBar1.add(jToggleButton3);
 
-        jToggleButton4.setFont(new java.awt.Font("Ubuntu", 1, 13)); // NOI18N
+        jToggleButton4.setFont(new java.awt.Font("Ubuntu", 1, 13));
         jToggleButton4.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/tool_curve.png"))); // NOI18N
         jToggleButton4.setToolTipText("Smooth point window");
-        jToggleButton4.setBorderPainted(false);
+        jToggleButton4.setFocusable(false);
+        jToggleButton4.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jToggleButton4.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
         jToggleButton4.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jToggleButton4ActionPerformed(evt);
@@ -713,22 +728,30 @@ public class GraphPanel extends javax.swing.JPanel {
         });
         if (graph_type == RTN_PLOT)
         jToggleButton4.setVisible(false);
-        jPanel2.add(jToggleButton4);
+        jToolBar1.add(jToggleButton4);
 
         jButton3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/zoom_out_16.png"))); // NOI18N
         jButton3.setToolTipText("Zoom out");
-        jButton3.setBorderPainted(false);
+        jButton3.setBorder(null);
         jButton3.setEnabled(false);
         jButton3.setVisible(false);
+        jButton3.setFocusable(false);
+        jButton3.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButton3.setMaximumSize(new java.awt.Dimension(28, 28));
+        jButton3.setMinimumSize(new java.awt.Dimension(28, 28));
+        jButton3.setPreferredSize(new java.awt.Dimension(28, 28));
+        jButton3.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
         jButton3.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton3ActionPerformed(evt);
             }
         });
-        jPanel2.add(jButton3);
+        jToolBar1.add(jButton3);
 
-        jPanel1.add(jPanel2, java.awt.BorderLayout.WEST);
-        jPanel1.add(jPanel3, java.awt.BorderLayout.CENTER);
+        jPanel1.setBorder(null);
+        jPanel1.setMinimumSize(new java.awt.Dimension(30, 10));
+        jPanel1.setPreferredSize(new java.awt.Dimension(30, 10));
+        jToolBar1.add(jPanel1);
 
         if (graph_type == FREQ_PLOT || graph_type == MMM_PLOT || graph_type == RTN_PLOT)
         jLabel2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Dummy.png"))); // NOI18N
@@ -736,11 +759,9 @@ public class GraphPanel extends javax.swing.JPanel {
             jLabel2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Color-scale.png"))); // NOI18N
             //jLabel2.setBorder(new javax.swing.border.LineBorder(java.awt.Color.BLACK));
         }
-        jPanel4.add(jLabel2);
+        jToolBar1.add(jLabel2);
 
-        jPanel1.add(jPanel4, java.awt.BorderLayout.EAST);
-
-        add(jPanel1, java.awt.BorderLayout.NORTH);
+        add(jToolBar1);
     }// </editor-fold>//GEN-END:initComponents
 
 	private void chartMouseReleased() {
@@ -977,7 +998,6 @@ public class GraphPanel extends javax.swing.JPanel {
 		x_log_scale = logscale;
 		jToggleButton1.setSelected(logscale);
 		updateXAxis(false);
-		refresh(false);
 	
 	}
 
@@ -2293,9 +2313,6 @@ public class GraphPanel extends javax.swing.JPanel {
     private javax.swing.JMenuItem jMenuItem8;
     private javax.swing.JMenuItem jMenuItem9;
     private javax.swing.JPanel jPanel1;
-    private javax.swing.JPanel jPanel2;
-    private javax.swing.JPanel jPanel3;
-    private javax.swing.JPanel jPanel4;
     private javax.swing.JPopupMenu jPopupMenu1;
     private javax.swing.JPopupMenu jPopupMenu2;
     private javax.swing.JPopupMenu jPopupMenu3;
@@ -2321,6 +2338,7 @@ public class GraphPanel extends javax.swing.JPanel {
     private javax.swing.JToggleButton jToggleButton4;
     private javax.swing.JToggleButton jToggleButton6;
     private javax.swing.JToggleButton jToggleButton7;
+    private javax.swing.JToolBar jToolBar1;
     // End of variables declaration//GEN-END:variables
 	private javax.swing.ButtonGroup groupMenuButtonGroup;
 	private javax.swing.ButtonGroup groupMenuButtonGroup2;
