@@ -135,15 +135,15 @@ public class MainWindow extends javax.swing.JFrame {
         jScrollPane5 = new javax.swing.JScrollPane();
         jPanel9 = new javax.swing.JPanel();
         jPanel11 = new javax.swing.JPanel();
-        jPanel10 = new javax.swing.JPanel();
-        jSeparator9 = new javax.swing.JSeparator();
+        jToolBar2 = new javax.swing.JToolBar();
+        jSeparator9 = new javax.swing.JToolBar.Separator();
         jToggleButton2 = new javax.swing.JToggleButton();
-        jSeparator11 = new javax.swing.JSeparator();
+        jSeparator11 = new javax.swing.JToolBar.Separator();
         jTextField2 = new javax.swing.JTextField();
         jButton11 = new javax.swing.JButton();
-        jSeparator8 = new javax.swing.JSeparator();
+        jSeparator8 = new javax.swing.JToolBar.Separator();
         jComboBox1 = new javax.swing.JComboBox();
-        jSeparator10 = new javax.swing.JSeparator();
+        jSeparator10 = new javax.swing.JToolBar.Separator();
         jSplitPane2 = new javax.swing.JSplitPane();
         jPanel6 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
@@ -218,6 +218,10 @@ public class MainWindow extends javax.swing.JFrame {
 
         jButton5.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Filter-icon.png"))); // NOI18N
         jButton5.setToolTipText("Filter routines");
+        jButton5.setBorder(null);
+        jButton5.setMaximumSize(new java.awt.Dimension(28, 28));
+        jButton5.setMinimumSize(new java.awt.Dimension(28, 28));
+        jButton5.setPreferredSize(new java.awt.Dimension(28, 28));
         jScrollPane1.setCorner(javax.swing.ScrollPaneConstants.UPPER_RIGHT_CORNER, jButton5);
         jButton5.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -227,6 +231,10 @@ public class MainWindow extends javax.swing.JFrame {
 
         jButton4.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Filter-icon.png"))); // NOI18N
         jButton4.setToolTipText("Filter rms");
+        jButton4.setBorder(null);
+        jButton4.setMaximumSize(new java.awt.Dimension(28, 28));
+        jButton4.setMinimumSize(new java.awt.Dimension(28, 28));
+        jButton4.setPreferredSize(new java.awt.Dimension(28, 28));
         jScrollPane2.setCorner(javax.swing.ScrollPaneConstants.UPPER_RIGHT_CORNER, jButton4);
         jButton4.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -320,12 +328,17 @@ public class MainWindow extends javax.swing.JFrame {
             }
         });
 
+        jToolBar1.setFloatable(false);
         jToolBar1.setRollover(true);
+        jToolBar1.setMargin(new java.awt.Insets(0, 3, 0, 0));
 
         jButton3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/NewWindow-icon.png"))); // NOI18N
         jButton3.setToolTipText("open a new window");
+        jButton3.setBorder(null);
         jButton3.setFocusable(false);
         jButton3.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButton3.setMinimumSize(new java.awt.Dimension(28, 28));
+        jButton3.setPreferredSize(new java.awt.Dimension(28, 28));
         jButton3.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
         jButton3.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -336,8 +349,11 @@ public class MainWindow extends javax.swing.JFrame {
 
         jButton1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Open-icon.png"))); // NOI18N
         jButton1.setToolTipText("open an Aprof report file");
+        jButton1.setBorder(null);
         jButton1.setFocusable(false);
         jButton1.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButton1.setMaximumSize(new java.awt.Dimension(28, 28));
+        jButton1.setPreferredSize(new java.awt.Dimension(28, 28));
         jButton1.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
         jButton1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -348,9 +364,13 @@ public class MainWindow extends javax.swing.JFrame {
 
         jButton7.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Save-icon.png"))); // NOI18N
         jButton7.setToolTipText("save report changes");
+        jButton7.setBorder(null);
         jButton7.setEnabled(false);
         jButton7.setFocusable(false);
         jButton7.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButton7.setMaximumSize(new java.awt.Dimension(28, 28));
+        jButton7.setMinimumSize(new java.awt.Dimension(28, 28));
+        jButton7.setPreferredSize(new java.awt.Dimension(28, 28));
         jButton7.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
         jButton7.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -361,9 +381,13 @@ public class MainWindow extends javax.swing.JFrame {
 
         jButton10.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/fs-directory.png"))); // NOI18N
         jButton10.setToolTipText("Set source code directory");
+        jButton10.setBorder(null);
         jButton10.setEnabled(false);
         jButton10.setFocusable(false);
         jButton10.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButton10.setMaximumSize(new java.awt.Dimension(28, 28));
+        jButton10.setMinimumSize(new java.awt.Dimension(28, 28));
+        jButton10.setPreferredSize(new java.awt.Dimension(28, 28));
         jButton10.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
         jButton10.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -374,6 +398,7 @@ public class MainWindow extends javax.swing.JFrame {
 
         jButton9.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/refresh.png"))); // NOI18N
         jButton9.setToolTipText("Reload last recent report");
+        jButton9.setBorder(null);
         jButton9.setEnabled(false);
         ArrayList<File> r = Main.getRecentFiles();
         if (r.size() > 0) {
@@ -381,6 +406,9 @@ public class MainWindow extends javax.swing.JFrame {
         }
         jButton9.setFocusable(false);
         jButton9.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButton9.setMaximumSize(new java.awt.Dimension(28, 28));
+        jButton9.setMinimumSize(new java.awt.Dimension(28, 28));
+        jButton9.setPreferredSize(new java.awt.Dimension(28, 28));
         jButton9.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
         jButton9.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -392,9 +420,13 @@ public class MainWindow extends javax.swing.JFrame {
 
         jButton6.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Merge-icon.png"))); // NOI18N
         jButton6.setToolTipText("merge two or more aprof report files");
+        jButton6.setBorder(null);
         jButton6.setEnabled(false);
         jButton6.setFocusable(false);
         jButton6.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButton6.setMaximumSize(new java.awt.Dimension(28, 28));
+        jButton6.setMinimumSize(new java.awt.Dimension(28, 28));
+        jButton6.setPreferredSize(new java.awt.Dimension(28, 28));
         jButton6.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
         jButton6.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -448,8 +480,12 @@ public class MainWindow extends javax.swing.JFrame {
 
         jButton8.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Settings-icon.png"))); // NOI18N
         jButton8.setToolTipText("settings");
+        jButton8.setBorder(null);
         jButton8.setFocusable(false);
         jButton8.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButton8.setMaximumSize(new java.awt.Dimension(28, 28));
+        jButton8.setMinimumSize(new java.awt.Dimension(28, 28));
+        jButton8.setPreferredSize(new java.awt.Dimension(28, 28));
         jButton8.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
         jButton8.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -472,8 +508,12 @@ public class MainWindow extends javax.swing.JFrame {
 
         jButton2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Search-icon.png"))); // NOI18N
         jButton2.setToolTipText("find in routines");
+        jButton2.setBorder(null);
         jButton2.setFocusable(false);
         jButton2.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButton2.setMaximumSize(new java.awt.Dimension(28, 28));
+        jButton2.setMinimumSize(new java.awt.Dimension(28, 28));
+        jButton2.setPreferredSize(new java.awt.Dimension(28, 28));
         jButton2.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
         jButton2.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -545,33 +585,29 @@ public class MainWindow extends javax.swing.JFrame {
         jPanel11.setBackground(new java.awt.Color(38, 26, 14));
         jPanel11.setLayout(new javax.swing.BoxLayout(jPanel11, javax.swing.BoxLayout.Y_AXIS));
 
-        jPanel10.setMaximumSize(new java.awt.Dimension(32767, 30));
-        jPanel10.setMinimumSize(new java.awt.Dimension(200, 30));
-        jPanel10.setPreferredSize(new java.awt.Dimension(200, 30));
-        jPanel10.setLayout(new javax.swing.BoxLayout(jPanel10, javax.swing.BoxLayout.X_AXIS));
-
-        jSeparator9.setOrientation(javax.swing.SwingConstants.VERTICAL);
-        jSeparator9.setMaximumSize(new java.awt.Dimension(2, 2));
-        jPanel10.add(jSeparator9);
+        jToolBar2.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 1));
+        jToolBar2.setFloatable(false);
+        jToolBar2.setRollover(true);
+        jToolBar2.setMaximumSize(new java.awt.Dimension(32767, 30));
+        jToolBar2.add(jSeparator9);
 
         jToggleButton2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/chain_pencil.png"))); // NOI18N
         jToggleButton2.setSelected(true);
         jToggleButton2.setToolTipText("Load the source of the function selected in the routine table");
-        jToggleButton2.setBorderPainted(false);
         jToggleButton2.setEnabled(false);
+        jToggleButton2.setFocusable(false);
+        jToggleButton2.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
         jToggleButton2.setMaximumSize(new java.awt.Dimension(26, 26));
         jToggleButton2.setMinimumSize(new java.awt.Dimension(26, 26));
         jToggleButton2.setPreferredSize(new java.awt.Dimension(26, 26));
+        jToggleButton2.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
         jToggleButton2.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jToggleButton2ActionPerformed(evt);
             }
         });
-        jPanel10.add(jToggleButton2);
-
-        jSeparator11.setOrientation(javax.swing.SwingConstants.VERTICAL);
-        jSeparator11.setMaximumSize(new java.awt.Dimension(2, 2));
-        jPanel10.add(jSeparator11);
+        jToolBar2.add(jToggleButton2);
+        jToolBar2.add(jSeparator11);
 
         jTextField2.setEnabled(false);
         jTextField2.setMaximumSize(new java.awt.Dimension(150, 26));
@@ -582,45 +618,35 @@ public class MainWindow extends javax.swing.JFrame {
                 jTextField2ActionPerformed(evt);
             }
         });
-        jPanel10.add(jTextField2);
+        jToolBar2.add(jTextField2);
 
         jButton11.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Search-icon.png"))); // NOI18N
-        jButton11.setBorderPainted(false);
         jButton11.setEnabled(false);
+        jButton11.setFocusable(false);
+        jButton11.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
         jButton11.setMargin(new java.awt.Insets(0, 2, 0, 2));
+        jButton11.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
         jButton11.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton11ActionPerformed(evt);
             }
         });
-        jPanel10.add(jButton11);
-
-        jSeparator8.setForeground(new java.awt.Color(242, 241, 240));
-        jSeparator8.setOrientation(javax.swing.SwingConstants.VERTICAL);
-        jSeparator8.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 10, 1, 100));
-        jSeparator8.setEnabled(false);
-        jSeparator8.setMaximumSize(new java.awt.Dimension(20, 26));
-        jSeparator8.setMinimumSize(new java.awt.Dimension(20, 26));
-        jSeparator8.setPreferredSize(new java.awt.Dimension(20, 26));
-        jPanel10.add(jSeparator8);
+        jToolBar2.add(jButton11);
+        jToolBar2.add(jSeparator8);
 
         jComboBox1.setMaximumRowCount(10);
         jComboBox1.setEnabled(false);
         jComboBox1.setMaximumSize(new java.awt.Dimension(32767, 26));
-        jComboBox1.setMinimumSize(new java.awt.Dimension(200, 26));
-        jComboBox1.setPreferredSize(new java.awt.Dimension(200, 26));
+        jComboBox1.setMinimumSize(new java.awt.Dimension(300, 26));
         jComboBox1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jComboBox1ActionPerformed(evt);
             }
         });
-        jPanel10.add(jComboBox1);
+        jToolBar2.add(jComboBox1);
+        jToolBar2.add(jSeparator10);
 
-        jSeparator10.setOrientation(javax.swing.SwingConstants.VERTICAL);
-        jSeparator10.setMaximumSize(new java.awt.Dimension(2, 2));
-        jPanel10.add(jSeparator10);
-
-        jPanel11.add(jPanel10);
+        jPanel11.add(jToolBar2);
 
         /*
         jSplitPane4.setRightComponent(jPanel11);
@@ -1095,7 +1121,13 @@ public class MainWindow extends javax.swing.JFrame {
 		jLabel3.setText("Profile report for " + report.getAppName() + " (" + report.getCommandLine() + ")");
 		jLabel1.setText(" Routines: " + report.getRoutineCount() + " ");
 		jLabel4.setText(" Contexts: " + report.getTotalContexts() + " ");
-		jLabel5.setText(" Total cost: " + report.getTotalCost() + " ");
+		if (report.getTotalCost() < 10000)
+			jLabel5.setText(" Total cost: " + report.getTotalCost() + " ");
+		else {
+			double exp = Math.log10(report.getTotalCost());
+			String exp10 = String.format("%.2f", exp);
+			jLabel5.setText(" Total cost: 10^" + exp10  + " ");
+		}
 		jLabel6.setText(" Calls: " + report.getTotalCalls() + " ");
 		jLabel7.setText("");
 	
@@ -2816,11 +2848,11 @@ public class MainWindow extends javax.swing.JFrame {
 			if (exit == 0) return true;
 			
 		} catch (IOException ex) {
-			//System.out.println("Fail to start a process [ctags installed test][1]");
+			System.out.println("Fail to start a process [ctags installed test][1]");
 		} catch (IllegalThreadStateException i) {
-			//System.out.println("Fail to start a process [ctags installed test][2]");
+			System.out.println("Fail to start a process [ctags installed test][2]");
 		} catch (InterruptedException ex) {
-			//System.out.println("Fail to start a process [ctags installed test][3]");
+			System.out.println("Fail to start a process [ctags installed test][3]");
 		}
 		
 		return false;
@@ -2876,6 +2908,8 @@ public class MainWindow extends javax.swing.JFrame {
 	}
 	
 	private void createTextEditor() {
+		
+		if (textArea != null) return;
 		
 		textArea = new RSyntaxTextArea(10, 10);
 		textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_CPLUSPLUS);
@@ -3163,7 +3197,6 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JMenuItem jMenuItem7;
     private javax.swing.JMenuItem jMenuItem8;
     private javax.swing.JPanel jPanel1;
-    private javax.swing.JPanel jPanel10;
     private javax.swing.JPanel jPanel11;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
@@ -3205,6 +3238,7 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JToggleButton jToggleButton2;
     private javax.swing.JToggleButton jToggleButton4;
     private javax.swing.JToolBar jToolBar1;
+    private javax.swing.JToolBar jToolBar2;
     private javax.swing.JTree jTree1;
     private javax.swing.JMenuItem recentMenuItem1;
     private javax.swing.JMenuItem recentMenuItem2;
