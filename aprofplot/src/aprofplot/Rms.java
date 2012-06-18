@@ -2,7 +2,7 @@ package aprofplot;
 
 public class Rms implements Comparable<Rms> {
 
-	private int rms;
+	private long rms;
 	private long min_cost;
 	private long max_cost;
 	private double total_cost;
@@ -20,7 +20,7 @@ public class Rms implements Comparable<Rms> {
 	// pos 2 -> log_e(log_e(n)) exponent
 	private static double[] ratio_config = {1, 0, 0};
 
-	public Rms(int rms, long min_cost,
+	public Rms(long rms, long min_cost,
 			long max_cost, double total_cost, double sqr_total_cost, long occ) {
 
 		this.rms = rms;
@@ -43,7 +43,7 @@ public class Rms implements Comparable<Rms> {
 		ratio_config = rc;
 	}
 
-	public int getRms() {
+	public long getRms() {
 		return rms;
 	}
 
@@ -151,7 +151,7 @@ public class Rms implements Comparable<Rms> {
 	@Override
 	public int hashCode() {
 		int hash = 7;
-		hash = 97 * hash + this.rms;
+		hash = 97 * hash + (int)this.rms;
 		return hash;
 	}
 

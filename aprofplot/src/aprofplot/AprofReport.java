@@ -206,14 +206,14 @@ public class AprofReport {
 			if (token.equals("q")) { // context point
 			
 				int context_id = Integer.parseInt(tokenizer.nextToken());
-				int sms = Integer.parseInt(tokenizer.nextToken());
+				long rms = Long.parseLong(tokenizer.nextToken());
 				long min_cost = Long.parseLong(tokenizer.nextToken());
 				long max_cost = Long.parseLong(tokenizer.nextToken());
 				long tot_cost = Long.parseLong(tokenizer.nextToken());
 				Double sqr_total_cost = Double.parseDouble(tokenizer.nextToken());
 				int occ = Integer.parseInt(tokenizer.nextToken());
 				
-				Rms te = new Rms(sms, min_cost, max_cost, tot_cost, 
+				Rms te = new Rms(rms, min_cost, max_cost, tot_cost, 
 									sqr_total_cost, occ);
 				
 				RoutineContext c = null;

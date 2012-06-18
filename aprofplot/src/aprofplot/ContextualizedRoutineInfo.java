@@ -59,7 +59,7 @@ public class ContextualizedRoutineInfo extends RoutineInfo {
 		
 		// Merge duplicates
 		Iterator i = lazy_list.iterator();
-		int current_rms = lazy_list.get(0).getRms();
+		long current_rms = lazy_list.get(0).getRms();
 		long min_cost = Long.MAX_VALUE;
 		long max_cost = 0;
 		double total_cost = 0;
