@@ -10,16 +10,16 @@ public abstract class Routine implements Comparable<Routine> {
 	private double max_avg_cost;
 	private double total_cost;
 	private long total_calls;
-	private int min_rms;
-	private int max_rms;
+	private long min_rms;
+	private long max_rms;
 	// Read memory size elements for this routine
 	private ArrayList<Rms> rms_list;
 	
 	// Mcc cache hack
-	private int last_mcc_n = -1;
+	private long last_mcc_n = -1;
 	private double last_mcc_est = 0;
 	private double last_mcc_occ = 0;
-	private int last_mcc_index = 0;
+	private long last_mcc_index = 0;
 	
 	// Sort rms list status
 	public final static int UNSORTED = 0;
@@ -87,11 +87,11 @@ public abstract class Routine implements Comparable<Routine> {
 		return total_calls;
 	}
 	
-	public int getMaxRms() {
+	public long getMaxRms() {
 		return max_rms;
 	}
 	
-	public int getMinRms() {
+	public long getMinRms() {
 		return min_rms;
 	}
 
@@ -119,13 +119,13 @@ public abstract class Routine implements Comparable<Routine> {
 		return -1;
 	}
 	
-	public double getMcc(int n) {
+	public double getMcc(long n) {
 		
 		if (sort_status != SORT_BY_ACCESS) sortRmsListByAccesses();
 		
 		double est = 0;
 		double sum_occ = 0;
-		int i = 0;
+		long i = 0;
 		
 		// Use cache if possible...
 		if (last_mcc_n != -1 && n >= last_mcc_n) {
@@ -135,7 +135,7 @@ public abstract class Routine implements Comparable<Routine> {
 		}
 		
 		for(; i < rms_list.size(); i++) {
-			Rms s = rms_list.get(i);
+			Rms s = rms_list.get((int)i);
 			if (s.getRms() > n) {
 				i--;
 				break;

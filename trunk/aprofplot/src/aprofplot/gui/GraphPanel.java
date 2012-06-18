@@ -1631,7 +1631,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		
 		if (this.rtn_info != null && graph_type != RTN_PLOT) {
 			
-			int max = rtn_info.getMaxRms();
+			long max = rtn_info.getMaxRms();
 			group_threshold_base = (int) Math.log10(max) + 1;
 			smooth_threshold_base = (int) Math.log10(max) + 1;
 			
