@@ -180,7 +180,7 @@ public class AprofReport {
 			if (token.equals("p")) { // routine point
 				
 				int rtn_id = Integer.parseInt(tokenizer.nextToken());
-				int sms = Integer.parseInt(tokenizer.nextToken());
+				long sms = Long.parseLong(tokenizer.nextToken());
 				long min_cost = Long.parseLong(tokenizer.nextToken());
 				long max_cost = Long.parseLong(tokenizer.nextToken());
 				double cost_sum = Double.parseDouble(tokenizer.nextToken());
