@@ -1,3 +1,5 @@
 * [PlotExamples plot examples]
+
 * [Aprofplot visualizer]
-   *[Aprofplot#Download download]
+
+*[Aprofplot#Download download]
