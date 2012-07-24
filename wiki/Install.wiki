@@ -2,6 +2,11 @@
 
 === Install aprof ===
 
+Currently, aprof does not ship with Valgrind, so you have to download it from our svn repository:
+{{{
+svn checkout http://aprof.googlecode.com/svn/trunk/valgrind aprof_valgrind
+}}}
+
 To compile it (automake tools are needed):
 {{{
 cd aprof_valgrind
@@ -17,10 +22,26 @@ make install
 If you are on an ARM/PPC architecture please read [AprofOnARM_PPC this] first.
 
 
-=== Install aprof-plot (visualizer) (SVN version) ===
+=== Install aprof-plot ===
+
+You can download the latest release of aprof-plot from the [http://code.google.com/p/aprof/downloads/list download section]. 
+
+If you want to try the latest version, you can download it from SVN:
+{{{
+svn checkout http://aprof.googlecode.com/svn/trunk/aprofplot aprofplot
+}}}
+
+JCommon, JFreeChart and RSyntaxTextArea are required by aprofplot; they are included in the aprofplot code repository (under `aprofplot/lib`).
+
+In order to use the source code browsing function, you need to have installed on your system a recent version of [http://ctags.sourceforge.net/ ctags]. 
+
+==== ctags on Mac OS X ====
+
+For example, on Mac OS X, you can download a recent binary (dmg) of ctags [http://code.google.com/p/rudix/downloads/detail?name=ctags-5.8-1.dmg&can=2&q=label%3ARudix-2011 here]. Then you need to set in aprof-plot `/usr/local/bin/exuberant-ctags` as ctags binary (see below).
+
+To make the jar file, run the following commands:
+
 {{{
 cd aprofplot
 ant
 }}}
-
-This should build a jar file.
