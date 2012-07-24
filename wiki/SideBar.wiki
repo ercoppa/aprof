@@ -1,5 +1,6 @@
  * [UserGuide Introduction]
- * [Aprofplot aprof plot]
- * [Install Install]
+ * [BasicUsage Basic usage]
+ * [Aprofplot Browse reports]
  * [PlotExamples Plot examples]
  * [ReportFileFormat Report file format]
+ * [Install Install]
