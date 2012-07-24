@@ -1,4 +1,4 @@
  * [Aprofplot aprof plot]
-   * [Aprofplot#Download download]
- * [Install Installing aprof]
+ * [Download Download]
+ * [Install Install]
  * [PlotExamples Plot examples]
