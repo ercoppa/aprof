@@ -1,5 +1,5 @@
 #summary aprof's user guide
 
-== User Guide ==
+== Introduction ==
 
 ...
