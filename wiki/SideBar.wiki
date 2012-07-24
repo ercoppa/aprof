@@ -2,3 +2,4 @@
  * [Aprofplot aprof plot]
  * [Install Install]
  * [PlotExamples Plot examples]
+ * [ReportFileFormat Report file format]
