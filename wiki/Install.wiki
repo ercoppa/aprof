@@ -15,3 +15,12 @@ make install
 }}}
 
 If you are on an ARM/PPC architecture please read [AprofOnARM_PPC this] first.
+
+
+=== Install aprof-plot (visualizer) (SVN version) ===
+{{{
+cd aprofplot
+ant
+}}}
+
+This should build a jar file.
