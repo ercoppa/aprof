@@ -26,7 +26,7 @@ If you are on an ARM/PPC architecture please read [AprofOnARM_PPC this] first.
 
 You can download the latest release of aprof-plot from the [http://code.google.com/p/aprof/downloads/list download section]. 
 
-If you want to try the latest version, you can download it from SVN:
+Alternatively, if you want to try the latest version under development, you can download it from SVN:
 {{{
 svn checkout http://aprof.googlecode.com/svn/trunk/aprofplot aprofplot
 }}}
