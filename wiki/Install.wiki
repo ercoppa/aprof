@@ -1,10 +1,7 @@
 #summary Instructions for installing aprof
 
 == Installing aprof ==
-Currently, aprof does not ship with Valgrind, so you have to download it from our svn repo:
-{{{
-svn checkout http://aprof.googlecode.com/svn/trunk/valgrind aprof_valgrind
-}}}
+
 To compile it (automake tools are needed):
 {{{
 cd aprof_valgrind
