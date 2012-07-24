@@ -1,5 +1,7 @@
 == Basic usage ==
 
+==== Profile a program ====
+
 To start a profile run for a program, execute:
 
 {{{
@@ -8,8 +10,9 @@ cd aprof_valgrind
 }}}
 aprof will produce, in the working directory, a report for each thread of your program. Each report is a text file that has a name of the form `PID_TID-4.aprof` and contains profile data in [ReportFileFormat aprof's file format]. Report files can be visualized with [Aprofplot aprof-plot].
 
-To browse the profile report, start aprof-plot as follows:
+==== Browse profile reports ====
 
+To browse the profile report, start aprof-plot as follows:
 
  * If you have downloaded aprof-plot from our download section, you can run it in this way:
 {{{
