@@ -1,6 +1,6 @@
-#summary Instructions for installing aprof
+#summary Instructions for installing aprof and aprof-plot
 
-== Installing aprof ==
+=== Install aprof ===
 
 To compile it (automake tools are needed):
 {{{
