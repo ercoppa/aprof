@@ -1,1 +1,1 @@
-* [Aprofplot aprof-plot]
+[PlotExamples plot examples]
