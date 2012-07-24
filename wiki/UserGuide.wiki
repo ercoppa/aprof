@@ -2,4 +2,4 @@
 
 == User Guide ==
 
-<img src="http://aprof.googlecode.com/svn/trunk/aprofplot/graphs/aprof-plot-0.1c.png"/>
+...
