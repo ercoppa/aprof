@@ -31,7 +31,7 @@
 
 /* Behaviour macro */
 #define SUF					2	// Implementation of stack union find {1,2}
-#define CHECK_SUF_OVERFLOW	0	// On 64bit machine, we map only 16GB...
+#define CHECK_SUF_OVERFLOW	1	// On 64bit machine, we map only 16GB...
 #define EMPTY_ANALYSIS		0	// if 1, analyesis routines are empty (use in combination with EVENTCOUNT)
 #define DEBUG				0	// Enable some sanity checks
 #define VERBOSE				0	// 0 disabled, 1 function + thread, 2 function + thread + load/store/modify

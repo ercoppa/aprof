@@ -4,7 +4,7 @@
 #ifdef __i386__
 #define SPM_SIZE 65536 // 4GB
 #else
-#define SPM_SIZE 65536 * 8 * 4 // 128GB address space
+#define SPM_SIZE (65536 * 8 * 4 * 2)// 128GB address space
 #endif
 
 #if ADDR_MULTIPLE == 1
