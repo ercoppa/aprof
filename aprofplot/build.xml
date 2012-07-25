@@ -1,82 +1,74 @@
-<project name="aprof-plot" basedir="." default="jar">
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- You may freely edit this file. See commented blocks below for -->
+<!-- some examples of how to customize the build. -->
+<!-- (If you delete it and reopen the project it will be recreated.) -->
+<!-- By default, only the Clean and Build commands use this build script. -->
+<!-- Commands such as Run, Debug, and Test only use this build script if -->
+<!-- the Compile on Save feature is turned off for the project. -->
+<!-- You can turn off the Compile on Save (or Deploy on Save) setting -->
+<!-- in the project's Project Properties dialog box.-->
+<project name="aprof-plot" default="default" basedir=".">
+    <description>Builds, tests, and runs the project aprof-plot.</description>
+    <import file="nbproject/build-impl.xml"/>
+    <!--
 
-	<!--<property name="lib.dir" value="/usr/share/java/" />-->
-	<property name="lib.dir" value="lib" />
-	<property name="main-class"  value="aprofplot.Main"/>
+    There exist several targets which are by default empty and which can be 
+    used for execution of your tasks. These targets are usually executed 
+    before and after some main targets. They are: 
 
-    	<path id="classpath">
-        	<fileset dir="${lib.dir}" includes="**/*.jar"/>
-    	</path>
+      -pre-init:                 called before initialization of project properties
+      -post-init:                called after initialization of project properties
+      -pre-compile:              called before javac compilation
+      -post-compile:             called after javac compilation
+      -pre-compile-single:       called before javac compilation of single file
+      -post-compile-single:      called after javac compilation of single file
+      -pre-compile-test:         called before javac compilation of JUnit tests
+      -post-compile-test:        called after javac compilation of JUnit tests
+      -pre-compile-test-single:  called before javac compilation of single JUnit test
+      -post-compile-test-single: called after javac compilation of single JUunit test
+      -pre-jar:                  called before JAR building
+      -post-jar:                 called after JAR building
+      -post-clean:               called after cleaning build products
 
-	<property name="build" value="build"/>
-	
-	<target name="clean">
-		<delete dir="${build}"/>
-	</target>
+    (Targets beginning with '-' are not intended to be called on their own.)
 
-	<target name="init" depends="clean">
-		<mkdir dir="${build}"/>
-	</target>	
-	
-	<target name="compile" depends="init">
-		<!-- Compile the java code -->
-		<javac srcdir="src" destdir="${build}" classpathref="classpath" includeantruntime="false" />
-	</target>	
-	
-	<target name="jar" depends="compile">
-		<!-- Build the jar file -->
-		<jar basedir="${build}" destfile="${build}/aprof-plot.jar">
-			
-			<!-- Non funziona poi a runtime... 
-			<zipgroupfileset dir="${lib.dir}" includes="jfreechart.jar" /> 
-			-->
-			
-			<manifest>
-        			<attribute name="Main-Class" value="${main-class}"/>
-      			</manifest>
-			<fileset dir="src">
-            			<include name="aprofplot/gui/resources/*.png" />
-        		</fileset>
-		</jar>
-	</target>
+    Example of inserting an obfuscator after compilation could look like this:
 
-	<target name="script" depends="compile">
-                <!-- Build the jar file -->
-                <jar basedir="${build}" destfile="${build}/script.jar">
-
-                        <!-- Non funziona poi a runtime... 
-                        <zipgroupfileset dir="${lib.dir}" includes="jfreechart.jar" /> 
-                        -->
-
-                        <manifest>
-                                <attribute name="Main-Class" value="aprofplot.extractData"/>
-                        </manifest>
-                        <fileset dir="src">
-                                <include name="aprofplot/gui/resources/*.png" />
-                        </fileset>
-                </jar>
+        <target name="-post-compile">
+            <obfuscate>
+                <fileset dir="${build.classes.dir}"/>
+            </obfuscate>
         </target>
 
-	<target name="run-script">
-                <java classname="aprofplot.extractData" fork="true">
-                        <classpath>
-                                <path refid="classpath"/>
-                                <path location="${build}/script.jar"/>
-                        </classpath>
-			<arg value="${report}"/>
-                </java>
+    For list of available properties check the imported 
+    nbproject/build-impl.xml file. 
+
+
+    Another way to customize the build is by overriding existing main targets.
+    The targets of interest are: 
+
+      -init-macrodef-javac:     defines macro for javac compilation
+      -init-macrodef-junit:     defines macro for junit execution
+      -init-macrodef-debug:     defines macro for class debugging
+      -init-macrodef-java:      defines macro for class execution
+      -do-jar-with-manifest:    JAR building (if you are using a manifest)
+      -do-jar-without-manifest: JAR building (if you are not using a manifest)
+      run:                      execution of project 
+      -javadoc-build:           Javadoc generation
+      test-report:              JUnit report generation
+
+    An example of overriding the target for project execution could look like this:
+
+        <target name="run" depends="aprof-plot-impl.jar">
+            <exec dir="bin" executable="launcher.exe">
+                <arg file="${dist.jar}"/>
+            </exec>
         </target>
 
-	<target name="run">
-        	<java classname="${main-class}" fork="true">
-			<classpath>
-                		<path refid="classpath"/> 
-               			<path location="${build}/aprof-plot.jar"/>
-            		</classpath>
-			<jvmarg value="-XX:+UseConcMarkSweepGC" />
-			<jvmarg value="-Xms128m" />
-			<jvmarg value="-Xmx1024m" />
-		</java>
-    	</target>
-	
+    Notice that the overridden target depends on the jar target and not only on 
+    the compile target as the regular run target does. Again, for a list of available 
+    properties which you can use, check the target you are overriding in the
+    nbproject/build-impl.xml file. 
+
+    -->
 </project>
