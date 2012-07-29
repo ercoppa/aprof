@@ -12,7 +12,7 @@ If the version line is missing, the default version number is zero.
 ----
 * e: executable file modification date*
 
-Syntax: `e date-time`, where `date-time` is the modification date and time of the profiled executable file.
+Syntax: `e mtime`, where `mtime` is the modification time of the profiled executable file.
 
 ----
 * t: report creation date*
