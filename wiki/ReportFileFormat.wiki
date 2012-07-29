@@ -52,16 +52,15 @@ Syntax: `k total-program-cost`, where `total-program-cost` is the total cost (64
 ----
 * r: routine info*
 
-Syntax: `r "routine-name" "image-name" routine-id hash-value`, where:
+Syntax: `r "routine-name" "image-name" routine-id`, where:
 
   * `"routine-name"`: string specifying the (possibly demangled) name of the routine
   * `"image-name"`: string specifying the pathname of the image containing the routine
   * `routine-id`: distinct numerical id associated to the routine (32 bit unsigned integer)
-  * `hash-value`: hash value of the demangled function name
 
 Example:
 
-`r "mmap" "/lib/i386-linux-gnu/ld-2.13.so" 30 155511`
+`r "mmap" "/lib/i386-linux-gnu/ld-2.13.so" 30`
 
 ----
 
