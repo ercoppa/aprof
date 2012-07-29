@@ -54,7 +54,7 @@ Syntax: `k total-program-cost`, where `total-program-cost` is the total cost (64
 
 Syntax: `r "routine-name" "image-name" routine-id hash-value`, where:
 
-  * `"routine-name"`: string specifying the (possibly mangled) name of the routine
+  * `"routine-name"`: string specifying the (possibly demangled) name of the routine
   * `"image-name"`: string specifying the pathname of the image containing the routine
   * `routine-id`: distinct numerical id associated to the routine (32 bit unsigned integer)
   * `hash-value`: hash value of the demangled function name
@@ -64,17 +64,14 @@ Example:
 `r "mmap" "/lib/i386-linux-gnu/ld-2.13.so" 30 155511`
 
 ----
-* u: routine demangled name*
 
-Syntax: `u routine-id "demangled-name"`, where:
+* u: routine mangled name*
+
+Syntax: `u routine-id "mangled-name"`, where:
 
   * `routine-id`: id of the routine (32 bit unsigned integer)
-  * `demangled-name`: string specifying demangled name of the routine
-
-Example:
-
-`u 431 "ogdf::VariableEmbeddingInserter::doCall"`
-
+  * `mangled-name`: string specifying mangled name of the routine
+<wiki:comment>
 ----
 * d: routine full demangled name*
 
@@ -86,7 +83,7 @@ Syntax: `d routine-id "full-demangled-name"`, where:
 Example:
 
 `d 431 "ogdf::VariableEmbeddingInserter::doCall(ogdf::PlanRep&, ogdf::List<ogdf::EdgeElement*> const&, bool, ogdf::EdgeArray<int> const*, ogdf::EdgeArray<bool> const*, ogdf::EdgeArray<unsigned int> const*)"`
-
+</wiki:comment>
 ----
 * p: routine performance point*
 
