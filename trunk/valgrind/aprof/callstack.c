@@ -1,20 +1,46 @@
 /*
- * Simulated stack  
+ * Simulated stack. aprof can traces function in two ways:
+ * - with an internal tracing mechanism (same approach of callgrind)
+ * - through the help of GCC instrumentation (-finstrument-functions)
+ *   more info at http://code.google.com/p/aprof/wiki/AprofOnARM_PPC
  * 
  * Last changed: $Date$
  * Revision:     $Rev$
  */
 
+/*
+   This file is part of aprof, an input sensitive profiler.
+
+   Copyright (C) 2011-2012, Emilio Coppa (ercoppa@gmail.com),
+                            Camil Demetrescu,
+                            Irene Finocchi
+
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation; either version 2 of the
+   License, or (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+   02111-1307, USA.
+
+   The GNU General Public License is contained in the file COPYING.
+*/
+
 #include "aprof.h"
 
-#define VERBOSE_TRACE_FUNCTION 0
+/* HT of all functions and ELF object */
+HashTable * APROF_(fn_ht) = NULL;
+HashTable * APROF_(obj_ht) = NULL;
 
-/* HT of all function */
-HashTable * fn_ht = NULL;
-HashTable * obj_ht = NULL;
-
-#if 0 // We use a macro now...
-Activation * get_activation(ThreadData * tdata, unsigned int depth) {
+#if 0 // We use a macro now... but maybe useful when debugging
+Activation * APROF_(get_activation)(ThreadData * tdata, unsigned int depth) {
 
 	AP_ASSERT(tdata != NULL, "Invalid tdata in get_activation");
 	AP_ASSERT(depth > 0 && depth < 5000, "Invalid depth");
@@ -24,7 +50,7 @@ Activation * get_activation(ThreadData * tdata, unsigned int depth) {
 		
 		#if DEBUG_ALLOCATION
 		int j = 0;
-		for (j = 0; j < tdata->max_stack_size; j++) add_alloc(ACT);
+		for (j = 0; j < tdata->max_stack_size; j++) APROF_(add_alloc)(ACT);
 		#endif
 		
 		tdata->max_stack_size = tdata->max_stack_size * 2; 
@@ -44,21 +70,21 @@ Activation * get_activation(ThreadData * tdata, unsigned int depth) {
 }
 #endif
 
-Activation * resize_stack(ThreadData * tdata, unsigned int depth) {
+Activation * APROF_(resize_stack)(ThreadData * tdata, unsigned int depth) {
 
 	#if DEBUG
 	AP_ASSERT(tdata != NULL, "Invalid tdata in get_activation");
 	#endif
 	
 	/* Safety check, better always run this :) */
-	AP_ASSERT(depth > 0 && depth < 5000, "Invalid depth");
+	AP_ASSERT(depth > 0 && depth < MAX_STACK_SIZE, "Invalid depth");
 
 	/* Expand stack if necessary */
 	if (depth - 1 >= tdata->max_stack_size) {
 		
 		#if DEBUG_ALLOCATION
 		int j = 0;
-		for (j = 0; j < tdata->max_stack_size; j++) add_alloc(ACT);
+		for (j = 0; j < tdata->max_stack_size; j++) APROF_(add_alloc)(ACT);
 		#endif
 		
 		tdata->max_stack_size = tdata->max_stack_size * 2; 
@@ -84,9 +110,7 @@ Activation * resize_stack(ThreadData * tdata, unsigned int depth) {
 
 }
 
-#if SUF == 2
-
-Activation * get_activation_by_aid(ThreadData * tdata, UInt aid) {
+Activation * APROF_(get_activation_by_aid)(ThreadData * tdata, UInt aid) {
 	
 	#if DEBUG
 	AP_ASSERT(tdata != NULL, "Invalid tdata");
@@ -116,8 +140,8 @@ Activation * get_activation_by_aid(ThreadData * tdata, UInt aid) {
 	}
 	
 	/* 
-	 * ok, now try 2^i steps back, remeber min and max act 
-	 * and eventually do binary search between them...
+	 * ok, now try 2^i steps back, remember min and max act 
+	 * and then do binary search between them...
 	 */
 	int max = tdata->stack_depth - 3;
 	int min = tdata->stack_depth - 3;
@@ -243,9 +267,7 @@ Activation * get_activation_by_aid(ThreadData * tdata, UInt aid) {
 
 }
 
-#endif
-
-static UInt str_hash(const Char *s) {
+UInt APROF_(str_hash)(const Char *s) {
 	
 	UInt hash_value = 0;
 	for ( ; *s; s++)
@@ -260,7 +282,7 @@ static UInt str_hash(const Char *s) {
 
 /* Global vars */
 
-jump_t last_exit = NONE;
+jump_t APROF_(last_exit) = NONE;
 
 /* 
  * _ld_runtime_resolve need a special handling,
@@ -271,17 +293,17 @@ jump_t last_exit = NONE;
  */
 static Addr runtime_resolve_addr   = 0;
 static int  runtime_resolve_length = 0;
-/* HT of all BB */
-HashTable * bb_ht = NULL;
+/* HT of all BBs */
+HashTable * APROF_(bb_ht) = NULL;
 
 /* End global vars */
 
 /* Obtain a BB from bb_ht or allocate a new BB */
-BB * get_BB(UWord target) {
+BB * APROF_(get_BB)(UWord target) {
 	
 	//VG_(printf)("Asked BB for %lu\n", target);
 	
-	BB * bb = HT_lookup(bb_ht, target);
+	BB * bb = HT_lookup(APROF_(bb_ht), target);
 	if (bb == NULL) {
 		
 		bb = VG_(calloc)("bb", sizeof(BB), 1);
@@ -290,10 +312,8 @@ BB * get_BB(UWord target) {
 		#endif
 		
 		#if DEBUG_ALLOCATION
-		add_alloc(BBS);
+		APROF_(add_alloc)(BBS);
 		#endif
-		
-		
 		
 	}
 	
@@ -452,10 +472,11 @@ static Bool search_runtime_resolve(char * obj_name, UWord obj_start,
     return False;
 }
 
-/* End callgrind functions */
+/* End callgrind code */
+
 
 /* Push a new activation on the stack */
-static void push_stack(ThreadData * tdata, UWord sp, Function * f, Bool skip) {
+static void APROF_(push_stack)(ThreadData * tdata, UWord sp, Function * f, Bool skip) {
 	
 	#if DEBUG
 	AP_ASSERT(tdata != NULL, "Invalid tdata");
@@ -464,7 +485,7 @@ static void push_stack(ThreadData * tdata, UWord sp, Function * f, Bool skip) {
 	#endif
 	
 	tdata->stack_depth++;
-	Activation * act = get_activation(tdata, tdata->stack_depth);
+	Activation * act = APROF_(get_activation)(tdata, tdata->stack_depth);
 	#if DEBUG
 	AP_ASSERT(act != NULL, "Invalid activation info");
 	#endif
@@ -472,12 +493,12 @@ static void push_stack(ThreadData * tdata, UWord sp, Function * f, Bool skip) {
 	RoutineInfo * rtn_info = HT_lookup(tdata->routine_hash_table, (UWord) f); 
 	if (rtn_info == NULL) {
 		
-		rtn_info = new_routine_info(tdata, f, (UWord) f);
+		rtn_info = APROF_(new_routine_info)(tdata, f, (UWord) f);
 		#if DEBUG
 		AP_ASSERT(rtn_info != NULL, "Invalid routine info");
 		#endif
 		
-	}
+	} 
 	
 	#if IGNORE_DL_RUNTIME
 	if (skip) act->skip = True;
@@ -488,16 +509,16 @@ static void push_stack(ThreadData * tdata, UWord sp, Function * f, Bool skip) {
 	act->ret_addr = 0; /* We change this maybe in the future if this fn calls another fn */
 	act->rtn_info = rtn_info;
 	
-	function_enter(tdata, act);
+	APROF_(function_enter)(tdata, act);
 
 }
 
 /* 
  * Sync stack with current SP (CSP), if n_frames > 0
  * and CSP == SP, pop out n_frames activation.
- * Return how many activations are removed from the stack.
+ * Return how many activations are been removed from the stack.
  */
-static UInt pop_stack(ThreadData * tdata, UWord csp, UInt n_frames,
+static UInt APROF_(pop_stack)(ThreadData * tdata, UWord csp, UInt n_frames,
 												Activation * current) {
 	
 	UInt n_pop = 0;
@@ -517,7 +538,7 @@ static UInt pop_stack(ThreadData * tdata, UWord csp, UInt n_frames,
 	{
 		
 		
-		function_exit(tdata, current);
+        APROF_(function_exit)(tdata, current);
 		
 		if (n_frames > 0) n_frames--;
 		n_pop++;
@@ -535,24 +556,24 @@ static UInt pop_stack(ThreadData * tdata, UWord csp, UInt n_frames,
 }
 
 /* Helper function called at start of a BB */
-VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
+VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
 
 	#if DEBUG
 	AP_ASSERT(target > 0, "Invalid target");
 	AP_ASSERT(bb != NULL, "Invalid BB");
 	#endif
 	
-	#if VERBOSE_TRACE_FUNCTION
+	#if VERBOSE == 4
 	VG_(printf)("Start BB %lu\n", target);
 	#endif
 
 	/* Safety check due to an old bug of Valgrind */
 	#if DEBUG
-	AP_ASSERT(current_TID == VG_(get_running_tid)(), "TID mismatch");
+	AP_ASSERT(APROF_(current_TID) == VG_(get_running_tid)(), "TID mismatch");
 	#endif
 
 	/* Get thread data */
-	ThreadData * tdata = current_tdata;
+	ThreadData * tdata = APROF_(current_tdata);
 	#if DEBUG
 	AP_ASSERT(tdata != NULL, "Invalid tdata");
 	#endif
@@ -565,11 +586,11 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 	BB * last_bb = tdata->last_bb;
 	enum jump_t exit = NONE;
 	if (last_bb != NULL) {
-		exit = last_exit;
+		exit = APROF_(last_exit);
 	}
 
-	/* Obtain current stack pointer */
-	UWord csp = (UWord) VG_(get_SP)(current_TID);
+	/* Get current stack pointer */
+	UWord csp = (UWord) VG_(get_SP)(APROF_(current_TID));
 	
 	Bool different_obj = False;
 	Bool different_sect = False;
@@ -577,7 +598,7 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 	/* Create a new BB structure */
 	if (bb->key == 0) {
 		
-		#if VERBOSE_TRACE_FUNCTION
+		#if VERBOSE == 4
 		VG_(printf)("Populating BB info\n");
 		#endif
 		
@@ -591,8 +612,9 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 		#if DEBUG
 		AP_ASSERT(fn != NULL, "function name not allocable");
 		#endif
+		
 		#if DEBUG_ALLOCATION
-		add_alloc(FN_NAME);
+		APROF_(add_alloc)(FN_NAME);
 		#endif
 		
 		/* 
@@ -622,8 +644,8 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 		UInt hash = 0;
 		if (info_fn) {
 			
-			hash = str_hash(fn);
-			f = HT_lookup(fn_ht, hash);
+			hash = APROF_(str_hash)(fn);
+			f = HT_lookup(APROF_(fn_ht), hash);
 			
 			while (f != NULL && VG_(strcmp)(f->name, fn) != 0) {
 				f = f->next;
@@ -639,15 +661,15 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 			/* Obtain object name */
 			obj_name = di ?	(char *) VG_(DebugInfo_get_filename)(di) : NULL;
 			
-			#if VERBOSE_TRACE_FUNCTION
+			#if VERBOSE == 4
 			VG_(printf)("Test different object\n");
 			#endif
 			
 			UInt hash_obj = 0;
 			if (obj_name != NULL) {
 				
-				hash_obj = str_hash(obj_name);
-				obj = HT_lookup(obj_ht, hash_obj);
+				hash_obj = APROF_(str_hash)(obj_name);
+				obj = HT_lookup(APROF_(obj_ht), hash_obj);
 				
 				while (obj != NULL && VG_(strcmp)(obj->name, obj_name) != 0) {
 					obj = obj->next;
@@ -664,12 +686,12 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 					obj->key = hash_obj;
 					obj->name = obj_name_c;
 					obj->filename = NULL; /* FixMe */
-					HT_add_node(obj_ht, obj->key, obj);
+					HT_add_node(APROF_(obj_ht), obj->key, obj);
 					
 					#if DEBUG_ALLOCATION
-					add_alloc(HTN);
-					add_alloc(OBJ_NAME);
-					add_alloc(OBJ);
+					APROF_(add_alloc)(HTN);
+					APROF_(add_alloc)(OBJ_NAME);
+					APROF_(add_alloc)(OBJ);
 					#endif
 					
 				}
@@ -714,9 +736,9 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 		}
 		
 		/* 
-		 * We don't have info, but this is something probably
+		 * We don't have info about current fn, but this is something probably
 		 * interesting anyway (various functions are implemented 
-		 * directly in assembly, maybe get for this also more
+		 * directly in assembly, maybe we should get for this also more
 		 * info about filename/line/dir as callgrind does )
 		 */
 		Bool unknown = False;
@@ -734,12 +756,12 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 				
 		if (info_fn && f == NULL) {
 			
-			/* Maybe we rename the function...*/
-			UInt hash_2 = str_hash(fn);
+			/* Maybe we have renamed the function...*/
+			UInt hash_2 = APROF_(str_hash)(fn);
 			if (hash != hash_2) {
 				
 				hash = hash_2;
-				f = HT_lookup(fn_ht, hash);
+				f = HT_lookup(APROF_(fn_ht), hash);
 				
 				while (f != NULL && VG_(strcmp)(f->name, fn) != 0) {
 					f = f->next;
@@ -754,7 +776,7 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 				#endif
 				
 				#if DEBUG_ALLOCATION
-				add_alloc(FNS);
+				APROF_(add_alloc)(FNS);
 				#endif
 				
 				f->key = hash;
@@ -792,7 +814,7 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 						f->mangled = mangled;
 						
 						#if DEBUG_ALLOCATION
-						add_alloc(MANGLED);
+						APROF_(add_alloc)(MANGLED);
 						#endif
 						
 					} else
@@ -800,31 +822,36 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 				}
 				else VG_(free)(mangled);
 				
-				HT_add_node(fn_ht, f->key, f);
+				HT_add_node(APROF_(fn_ht), f->key, f);
 				#if DEBUG_ALLOCATION
-				add_alloc(HTN);
+				APROF_(add_alloc)(HTN);
 				#endif
 				
 				f->obj = obj;
 			
 			} else {
+				
 				VG_(free)(fn);
+				
 				#if DEBUG_ALLOCATION
-				remove_alloc(FN_NAME);
+				APROF_(remove_alloc)(FN_NAME);
 				#endif
 			}
 			
 			if (!info_fn) {
+				
 				VG_(free)(fn);
 				#if DEBUG_ALLOCATION
-				remove_alloc(FN_NAME);
+				APROF_(remove_alloc)(FN_NAME);
 				#endif
+			
 			}
+			
 		} else {
 			
 			VG_(free)(fn);
 			#if DEBUG_ALLOCATION
-			remove_alloc(FN_NAME);
+			APROF_(remove_alloc)(FN_NAME);
 			#endif
 			
 		}
@@ -835,25 +862,25 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 		AP_ASSERT(bb->fn != NULL, "Invalid fn node");
 		#endif
 		
-		HT_add_node(bb_ht, bb->key, bb);
+		HT_add_node(APROF_(bb_ht), bb->key, bb);
 		#if DEBUG
-		BB * bb_t = HT_lookup(bb_ht, bb->key);
+		BB * bb_t = HT_lookup(APROF_(bb_ht), bb->key);
 		if (bb_t == NULL) AP_ASSERT(0, "BB inserted not found");
 		#endif
 		
 		#if DEBUG_ALLOCATION
-		add_alloc(HTN);
+		APROF_(add_alloc)(HTN);
 		#endif
 	
 	}
 	
-	#if VERBOSE_TRACE_FUNCTION
+	#if VERBOSE == 4
 	VG_(printf)("Test different obj\n");
 	#endif
 	if (!different_obj && last_bb != NULL && bb->fn->obj != last_bb->fn->obj)
 		different_obj = True;
 
-	#if VERBOSE_TRACE_FUNCTION
+	#if VERBOSE == 4
 	VG_(printf)("Test different section\n");
 	#endif
 	if (last_bb != NULL && bb->obj_section != last_bb->obj_section)
@@ -868,14 +895,14 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 	/* Current activation */
 	Activation * current = NULL;
 	if (tdata->stack_depth > 0) {
-		current = get_activation(tdata, tdata->stack_depth);
+		current = APROF_(get_activation)(tdata, tdata->stack_depth);
 		#if DEBUG
 		AP_ASSERT(current != NULL, "Invalid activation");
 		#endif
 	}
 	
 	/* 
-	 * If last BB do an Ijk_Ret exit not always this is a real return.
+	 * If last BB does an Ijk_Ret exit not always this is a real return.
 	 * From setup_bbcc of callgrind: 
 	 * -----
 	 * We have a real return if
@@ -893,7 +920,7 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 	 */
 	if (exit == BBRET) {
 		
-		#if VERBOSE_TRACE_FUNCTION
+		#if VERBOSE == 4
 		VG_(printf)("Try RET as CALL\n");
 		#endif
 		
@@ -942,7 +969,7 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 			ret_as_call = True;
 			exit = BBOTHER;
 			
-			#if VERBOSE_TRACE_FUNCTION
+			#if VERBOSE == 4
 			VG_(printf)("Call because RET as CALL\n");
 			#endif
 		}
@@ -958,7 +985,7 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 	Bool call_emulation = False;
 	if (last_bb != NULL && exit != BBCALL && exit != BBRET) {
 		
-		#if VERBOSE_TRACE_FUNCTION
+		#if VERBOSE == 4
 		VG_(printf)("Try call emulation\n");
 		#endif
 		
@@ -973,20 +1000,20 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 			 */
 			if (tdata->stack_depth > 0 && last_bb->is_dl_runtime_resolve) {
 				
-				#if VERBOSE_TRACE_FUNCTION
+				#if VERBOSE == 4
 				VG_(printf)("POP caused by dl_runtime_resolve\n");
 				#endif
 				
 				/* Update current stack pointer */
 				csp = current->sp;
-				function_exit(tdata, current);
+				APROF_(function_exit)(tdata, current);
 				
 				/* Adjust stack */
 				#if DEBUG
 				AP_ASSERT(tdata->stack_depth > 0, "Stack depth not possible");
 				#endif
 				tdata->stack_depth--;
-				current = get_activation(tdata, tdata->stack_depth);
+				current = APROF_(get_activation)(tdata, tdata->stack_depth);
 				
 			}
 			
@@ -998,7 +1025,7 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 			 */
 			call_emulation = True;
 			
-			#if VERBOSE_TRACE_FUNCTION
+			#if VERBOSE == 4
 			VG_(printf)("Call emulution is true\n");
 			#endif
 			
@@ -1012,11 +1039,11 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 	 */
 	if (exit == BBRET) {
 		
-		#if VERBOSE_TRACE_FUNCTION
+		#if VERBOSE == 4
 		VG_(printf)("Calling POP stack\n");
 		#endif
 		
-		pop_stack(tdata, csp, n_pop, current);
+		APROF_(pop_stack)(tdata, csp, n_pop, current);
 		
 	} else {
 		
@@ -1026,14 +1053,14 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 		 */
 		if (tdata->stack_depth > 0) {
 			
-			#if VERBOSE_TRACE_FUNCTION
+			#if VERBOSE == 4
 			VG_(printf)("Try to see if is a RET\n");
 			#endif
 			
-			n_pop = pop_stack(tdata, csp, 0, current);
+			n_pop = APROF_(pop_stack)(tdata, csp, 0, current);
 			if (n_pop > 0) {
 				
-				#if VERBOSE_TRACE_FUNCTION
+				#if VERBOSE == 4
 				VG_(printf)("Call deleted\n");
 				#endif
 				
@@ -1043,7 +1070,7 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 		
 		if (exit == BBCALL) {
 			
-			#if VERBOSE_TRACE_FUNCTION
+			#if VERBOSE == 4
 			VG_(printf)("This is a CALL\n");
 			#endif
 			
@@ -1053,7 +1080,7 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 			
 			if (tdata->stack_depth > 0 && last_bb != NULL && last_bb->exit == BBCALL) {
 				
-				#if VERBOSE_TRACE_FUNCTION
+				#if VERBOSE == 4
 				VG_(printf)("Assign ret address\n");
 				#endif
 				
@@ -1063,11 +1090,11 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 				current->ret_addr = last_bb->key + last_bb->instr_offset;
 			}
 			
-			#if VERBOSE_TRACE_FUNCTION
+			#if VERBOSE == 4
 			VG_(printf)("Call PUSH stack\n");
 			#endif
 			
-			push_stack(tdata, csp, bb->fn, bb->is_dl_runtime_resolve); 
+			APROF_(push_stack)(tdata, csp, bb->fn, bb->is_dl_runtime_resolve); 
 			
 		}
 		
@@ -1075,7 +1102,7 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 	
 	#if 0
 	if (tdata->stack_depth > 0) {
-		Activation * acta = get_activation(tdata, tdata->stack_depth);
+		Activation * acta = APROF_(get_activation)(tdata, tdata->stack_depth);
 		if (acta->rtn_info->fn != bb->fn)
 			VG_(printf)("Skipped function %s\n", bb->fn->name);
 	} else
@@ -1086,13 +1113,13 @@ VG_REGPARM(2) void BB_start(UWord target, BB * bb) {
 	tdata->last_bb = bb;
 	
 	/* Reset exit of current BB */
-	last_exit = BBOTHER;
+	APROF_(last_exit) = BBOTHER;
 
 }
 
 #else
 
-Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
+Bool APROF_(trace_function)(ThreadId tid, UWord * arg, UWord * ret) {
 	
 	/* Is this client request for aprof? */
 	if (!VG_IS_TOOL_USERREQ('V','A',arg[0])) return False;
@@ -1101,7 +1128,7 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 	return True;
 	#endif
 	
-	ThreadData * tdata = current_tdata;
+	ThreadData * tdata = APROF_(current_tdata);
 	#if DEBUG
 	AP_ASSERT(tdata != NULL, "Invalid tdata");
 	#endif
@@ -1114,7 +1141,7 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 	if (arg[2] == 1) {
 		
 		tdata->stack_depth++;
-		Activation * act = get_activation(tdata, tdata->stack_depth);
+		Activation * act = APROF_(get_activation)(tdata, tdata->stack_depth);
 		#if DEBUG
 		AP_ASSERT(act != NULL, "Invalid activation info");
 		#endif
@@ -1125,14 +1152,14 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 		#endif
 		
 		#if DEBUG_ALLOCATION
-		add_alloc(FN_NAME);
+		APROF_(add_alloc)(FN_NAME);
 		#endif
 		
 		if (!VG_(get_fnname)(target, rtn_name, NAME_SIZE))
 			VG_(sprintf)(rtn_name, "%p", (void *) target);
 		
 		Function * fn = NULL;
-		fn = HT_lookup(fn_ht, target);
+		fn = HT_lookup(APROF_(fn_ht), target);
 		
 		RoutineInfo * rtn_info = NULL;
 		if (fn != NULL) {
@@ -1148,7 +1175,7 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 				#endif
 				
 				#if DEBUG_ALLOCATION
-				add_alloc(FNS);
+				APROF_(add_alloc)(FNS);
 				#endif
 				
 				char * mangled = VG_(calloc)("mangled", NAME_SIZE, 1);
@@ -1161,7 +1188,7 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 					fn->mangled = mangled;
 					
 					#if DEBUG_ALLOCATION
-					add_alloc(MANGLED);
+					APROF_(add_alloc)(MANGLED);
 					#endif
 					
 				} else VG_(free)(mangled);
@@ -1177,8 +1204,8 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 				#endif
 				
 				Object * obj = NULL;
-				UInt hash_obj = str_hash(obj_name);
-				obj = HT_lookup(obj_ht, hash_obj);
+				UInt hash_obj = APROF_(str_hash)(obj_name);
+				obj = HT_lookup(APROF_(obj_ht), hash_obj);
 				while(obj != NULL && VG_(strcmp)(obj->name, obj_name) != 0)
 					obj = obj->next;
 				
@@ -1195,15 +1222,15 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 					#endif
 					
 					#if DEBUG_ALLOCATION
-					add_alloc(OBJ_NAME);
-					add_alloc(OBJ);
-					add_alloc(HTN);
+					APROF_(add_alloc)(OBJ_NAME);
+					APROF_(add_alloc)(OBJ);
+					APROF_(add_alloc)(HTN);
 					#endif
 					
 					obj->name = obj_name;
 					obj->key = hash_obj;
 					
-					HT_add_node(obj_ht, obj->key, obj);
+					HT_add_node(APROF_(obj_ht), obj->key, obj);
 					
 				}
 				
@@ -1211,15 +1238,15 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 				fn->name = rtn_name;
 				fn->obj = obj;
 				
-				HT_add_node(fn_ht, fn->key, fn);
+				HT_add_node(APROF_(fn_ht), fn->key, fn);
 				
 				#if DEBUG_ALLOCATION
-				add_alloc(HTN);
+				APROF_(add_alloc)(HTN);
 				#endif
 			
 			}
 			
-			rtn_info = new_routine_info(tdata, fn, target);
+			rtn_info = APROF_(new_routine_info)(tdata, fn, target);
 			#if DEBUG
 			AP_ASSERT(rtn_info != NULL, "Invalid routine info");
 			#endif
@@ -1228,16 +1255,16 @@ Bool trace_function(ThreadId tid, UWord * arg, UWord * ret) {
 		
 		act->rtn_info = rtn_info;
 		
-		function_enter(tdata, act);
+		APROF_(function_enter)(tdata, act);
 	
 	} else if (arg[2] == 2) {
 		
-		Activation * act = get_activation(tdata, tdata->stack_depth);
+		Activation * act = APROF_(get_activation)(tdata, tdata->stack_depth);
 		#if DEBUG
 		AP_ASSERT(act != NULL, "Invalid activation");
 		#endif
 		
-		function_exit(tdata, act);
+		APROF_(function_exit)(tdata, act);
 		
 		#if DEBUG
 		AP_ASSERT(tdata->stack_depth > 0, "Stack depth not possible");

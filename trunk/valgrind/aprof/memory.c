@@ -4,12 +4,45 @@
  * Last changed: $Date$
  * Revision:     $Rev$
  */
+ 
+/*
+   This file is part of aprof, an input sensitive profiler.
+
+   Copyright (C) 2011-2012, Emilio Coppa (ercoppa@gmail.com),
+                            Camil Demetrescu,
+                            Irene Finocchi
+
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation; either version 2 of the
+   License, or (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+   02111-1307, USA.
+
+   The GNU General Public License is contained in the file COPYING.
+*/
 
 #include "aprof.h"
 
-VG_REGPARM(3) void trace_access(UWord type, Addr addr, SizeT size) {
+/* Memory resolution: we can aggregate addresses in order
+ * to decrese the shadow memory. 
+ * - 1 => finest resolution, each byte has its timestamp
+ * - 2 => every 2 byte we have a single timestamp 
+ * - ...
+ */
+UInt APROF_(addr_multiple) = 4;
+
+VG_REGPARM(3) void APROF_(trace_access)(UWord type, Addr addr, SizeT size) {
 	
-	ThreadData * tdata = current_tdata;
+	ThreadData * tdata = APROF_(current_tdata);
 	#if DEBUG
 	AP_ASSERT(tdata != NULL, "Invalid tdata");
 	#endif
@@ -30,81 +63,66 @@ VG_REGPARM(3) void trace_access(UWord type, Addr addr, SizeT size) {
 	#if EMPTY_ANALYSIS
 	return;
 	#endif
-	
+    
 	if (tdata->stack_depth == 0) return;
-	
+    
 	#if TRACE_FUNCTION
 	if (tdata->skip) return;
 	#endif
 	
 	#if COSTANT_MEM_ACCESS
-	//addr = (addr>>2)<<2;
-	addr = addr & ~(ADDR_MULTIPLE-1);
+	addr = addr & ~(APROF_(addr_multiple)-1);
 	//size = 1;
 	#else
 	
-	#if ADDR_MULTIPLE > 1
-	UInt diff = addr & (ADDR_MULTIPLE-1);
-	addr -= diff;
-	if (size + diff < ADDR_MULTIPLE) 
-		size = 1;
-	else if (((size + diff) % ADDR_MULTIPLE) == 0)
-		size = (size + diff) / ADDR_MULTIPLE;
-	else
-		size = 1 + ((size + diff) / ADDR_MULTIPLE);
-	#endif
+	if (APROF_(addr_multiple) > 1) {
+		
+		UInt diff = addr & (APROF_(addr_multiple)-1);
+		addr -= diff;
+		if (size + diff < APROF_(addr_multiple)) 
+			size = 1;
+		else if (((size + diff) % APROF_(addr_multiple)) == 0)
+			size = (size + diff) / APROF_(addr_multiple);
+		else
+			size = 1 + ((size + diff) / APROF_(addr_multiple));
+	
+	}
 	
 	#endif
-	
+    
 	#if !COSTANT_MEM_ACCESS
 	unsigned int i = 0;
 	for (i = 0; i < size; i++) {
 	#endif
 		
-		#if SUF == 1
-
-		int addr_depth = UF_insert(tdata->accesses, 
+		Activation * act = APROF_(get_activation)(tdata, tdata->stack_depth);
+        
+        UInt old_aid = LK_insert( tdata->accesses,
+									
 									#if !COSTANT_MEM_ACCESS
-									addr+(i*ADDR_MULTIPLE),
-									#else
-									addr,
-									#endif 
-									tdata->stack_depth);
-		
-		if (tdata->stack_depth > addr_depth) {
-			
-			if (type == LOAD || type == MODIFY) {
-				get_activation(tdata, tdata->stack_depth)->sms++;
-				if (addr_depth >= 0)
-					get_activation(tdata, addr_depth)->sms--;
-			}
-			
-		}
-		
-		#else
-		Activation * act = get_activation(tdata, tdata->stack_depth);
-		UInt old_aid = SUF_insert( tdata->accesses, 
-									#if !COSTANT_MEM_ACCESS
-									addr+(i*ADDR_MULTIPLE),
+									addr+(i*APROF_(addr_multiple)),
 									#else
 									addr,
 									#endif
+									
 									act->aid);
-		
+        
 		if (old_aid < act->aid && (type == LOAD || type == MODIFY)) {
-			act->sms++;
-			//VG_(printf)("Incremented SMS\n");
-			if (old_aid > 0 && old_aid >= get_activation(tdata, 1)->aid) {
-				get_activation_by_aid(tdata, old_aid)->sms--;
+			
+			act->rms++;
+			//VG_(printf)("Incremented RMS\n");
+			if (old_aid > 0 && old_aid >= APROF_(get_activation)(tdata, 1)->aid) {
+				
+				APROF_(get_activation_by_aid)(tdata, old_aid)->rms--;
 				//VG_(printf)("Decremented SMS of ancestor %s\n", 
-				//	get_activation_by_aid(tdata, old_aid)->rtn_info->fn->name);
+				//	APROF_(get_activation_by_aid)(tdata, old_aid)->rtn_info->fn->name);
+			
 			}
 
 		}
-		#endif
 		
 	#if !COSTANT_MEM_ACCESS
 	}
 	#endif
-	
+    
 }

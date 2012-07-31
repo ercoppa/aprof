@@ -5,6 +5,31 @@
  * Revision:     $Rev$
  */
 
+/*
+   This file is part of aprof, an input sensitive profiler.
+
+   Copyright (C) 2011-2012, Emilio Coppa (ercoppa@gmail.com),
+                            Camil Demetrescu,
+                            Irene Finocchi
+
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation; either version 2 of the
+   License, or (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+   02111-1307, USA.
+
+   The GNU General Public License is contained in the file COPYING.
+*/
+
 #include "aprof.h"
 
 /* Up to this many unnotified events are allowed.  Must be at least two,
@@ -50,9 +75,9 @@ typedef struct {
 } Event;
 
 static Event events[N_EVENTS];
-Int   events_used = 0;
+Int   APROF_(events_used) = 0;
 
-void flushEvents(IRSB* sb) {
+void APROF_(flushEvents)(IRSB* sb) {
 	
 	Int        i;
 	Char*      helperName = NULL;
@@ -61,7 +86,7 @@ void flushEvents(IRSB* sb) {
 	IRDirty*   di;
 	Event*     ev;
 
-	for (i = 0; i < events_used; i++) {
+	for (i = 0; i < APROF_(events_used); i++) {
 
 		ev = &events[i];
 
@@ -74,20 +99,20 @@ void flushEvents(IRSB* sb) {
 							argv = mkIRExprVec_3(	mkIRExpr_HWord(LOAD), 
 													ev->addr, 
 													mkIRExpr_HWord( ev->size ) );
-							helperAddr = trace_access;
+							helperAddr = APROF_(trace_access);
 							break;
 
 			case Event_Dw:  helperName = "trace_store";
 							argv = mkIRExprVec_3(	mkIRExpr_HWord(STORE), 
 													ev->addr, 
 													mkIRExpr_HWord( ev->size ) );
-							helperAddr =  trace_access; break;
+							helperAddr =  APROF_(trace_access); break;
 
 			case Event_Dm:  helperName = "trace_modify";
 							argv = mkIRExprVec_3(	mkIRExpr_HWord(MODIFY), 
 													ev->addr, 
 													mkIRExpr_HWord( ev->size ) );
-							helperAddr =  trace_access; break;
+							helperAddr =  APROF_(trace_access); break;
 			
 			default:
 				tl_assert(0);
@@ -105,7 +130,7 @@ void flushEvents(IRSB* sb) {
 		}
 	}
 
-	events_used = 0;
+	APROF_(events_used) = 0;
 }
 
 // WARNING:  If you aren't interested in instruction reads, you can omit the
@@ -113,37 +138,37 @@ void flushEvents(IRSB* sb) {
 // must still call this function, addEvent_Ir() -- it is necessary to add
 // the Ir events to the events list so that merging of paired load/store
 // events into modify events works correctly.
-void addEvent_Ir ( IRSB* sb, IRAtom* iaddr, UInt isize ) {
+void APROF_(addEvent_Ir) ( IRSB* sb, IRAtom* iaddr, UInt isize ) {
 	
 	Event* evt;
 	tl_assert( (VG_MIN_INSTR_SZB <= isize && isize <= VG_MAX_INSTR_SZB)
 											|| VG_CLREQ_SZB == isize );
-	if (events_used == N_EVENTS)
-		flushEvents(sb);
-	tl_assert(events_used >= 0 && events_used < N_EVENTS);
-	evt = &events[events_used];
+	if (APROF_(events_used) == N_EVENTS)
+		APROF_(flushEvents)(sb);
+	tl_assert(APROF_(events_used) >= 0 && APROF_(events_used) < N_EVENTS);
+	evt = &events[APROF_(events_used)];
 	evt->ekind = Event_Ir;
 	evt->addr  = iaddr;
 	evt->size  = isize;
-	events_used++;
+	APROF_(events_used)++;
 }
 
-void addEvent_Dr ( IRSB* sb, IRAtom* daddr, Int dsize ) {
+void APROF_(addEvent_Dr) ( IRSB* sb, IRAtom* daddr, Int dsize ) {
 	
 	Event* evt;
 	tl_assert(isIRAtom(daddr));
 	tl_assert(dsize >= 1 && dsize <= MAX_DSIZE);
-	if (events_used == N_EVENTS)
-		flushEvents(sb);
-	tl_assert(events_used >= 0 && events_used < N_EVENTS);
-	evt = &events[events_used];
+	if (APROF_(events_used) == N_EVENTS)
+		APROF_(flushEvents)(sb);
+	tl_assert(APROF_(events_used) >= 0 && APROF_(events_used) < N_EVENTS);
+	evt = &events[APROF_(events_used)];
 	evt->ekind = Event_Dr;
 	evt->addr  = daddr;
 	evt->size  = dsize;
-	events_used++;
+	APROF_(events_used)++;
 }
 
-void addEvent_Dw ( IRSB* sb, IRAtom* daddr, Int dsize ) {
+void APROF_(addEvent_Dw) ( IRSB* sb, IRAtom* daddr, Int dsize ) {
 	
 	Event* lastEvt;
 	Event* evt;
@@ -151,8 +176,8 @@ void addEvent_Dw ( IRSB* sb, IRAtom* daddr, Int dsize ) {
 	tl_assert(dsize >= 1 && dsize <= MAX_DSIZE);
 
 	// Is it possible to merge this write with the preceding read?
-	lastEvt = &events[events_used-1];
-	if (events_used > 0
+	lastEvt = &events[APROF_(events_used)-1];
+	if (APROF_(events_used) > 0
 		&& lastEvt->ekind == Event_Dr
 		&& lastEvt->size  == dsize
 		&& eqIRAtom(lastEvt->addr, daddr)) {
@@ -161,12 +186,12 @@ void addEvent_Dw ( IRSB* sb, IRAtom* daddr, Int dsize ) {
 	}
 
 	// No.  Add as normal.
-	if (events_used == N_EVENTS)
-		flushEvents(sb);
-	tl_assert(events_used >= 0 && events_used < N_EVENTS);
-	evt = &events[events_used];
+	if (APROF_(events_used) == N_EVENTS)
+		APROF_(flushEvents)(sb);
+	tl_assert(APROF_(events_used) >= 0 && APROF_(events_used) < N_EVENTS);
+	evt = &events[APROF_(events_used)];
 	evt->ekind = Event_Dw;
 	evt->size  = dsize;
 	evt->addr  = daddr;
-	events_used++;
+	APROF_(events_used)++;
 }

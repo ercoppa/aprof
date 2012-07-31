@@ -1,11 +1,49 @@
 /*
- * Setup of valgrind and instrumentation  
+ * Setup of valgrind and instrumentation needed by aprof;
+ * command line parser
  * 
  * Last changed: $Date$
  * Revision:     $Rev$
  */
+ 
+ /*
+   This file is part of aprof, an input sensitive profiler.
+
+   Copyright (C) 2011-2012, Emilio Coppa (ercoppa@gmail.com),
+                            Camil Demetrescu,
+                            Irene Finocchi
+
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation; either version 2 of the
+   License, or (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+   02111-1307, USA.
+
+   The GNU General Public License is contained in the file COPYING.
+*/
 
 #include "aprof.h"
+
+/*
+ * Merge reports of different runs of the same
+ * binary program.
+ */
+Bool APROF_(merge_report_runs) = False;
+
+/*
+ * Merge reports of different thread of the same
+ * running process.
+ */
+Bool APROF_(merge_report_threads) = False;
 
 #if MEM_TRACE && IGNORE_REPEAT_ACC
 
@@ -14,10 +52,14 @@
 #endif
 
 #define INIT_SIZE_ADDR_ACC 32
-static UInt addr_accessed_size = INIT_SIZE_ADDR_ACC;
-static IRExpr ** addr_accessed = NULL;
+static UInt  APROF_(addr_accessed_size) = INIT_SIZE_ADDR_ACC;
+static IRExpr **  APROF_(addr_accessed) = NULL;
 
-static Bool do_access(IRExpr * e) {
+/*
+ * Return true if the accessed memory address was not accessed previously
+ * by the current BB. Linear search.
+ */
+static Bool APROF_(do_access)(IRExpr * e) {
 	
 	#if DEBUG
 	AP_ASSERT(e != NULL, "Invalid IRExpr");
@@ -25,37 +67,39 @@ static Bool do_access(IRExpr * e) {
 	#endif
 	
 	int i = 0;
-	for(; i < addr_accessed_size; i++) {
-		if (addr_accessed[i] == NULL) break;
-		if (eqIRAtom(addr_accessed[i], e)) {
-			//VG_(printf)("Addr already accessed\n");
-			//addr_accessed[i] = e;
+	for(; i < APROF_(addr_accessed_size); i++) {
+		
+		if (APROF_(addr_accessed)[i] == NULL) break;
+		
+		if (eqIRAtom(APROF_(addr_accessed)[i], e)) {
 			return False;
 		}
+	
 	}
 	
-	if (i >= addr_accessed_size) {
+	// resize the array
+	if (i >= APROF_(addr_accessed_size)) {
+		
 		//VG_(printf)("Relocate addr_accessed\n");
 		IRExpr ** addr_accessed2 = VG_(calloc)("addr acc", 
-								sizeof(IRExpr *), addr_accessed_size*2);
+								sizeof(IRExpr *), APROF_(addr_accessed_size)*2);
 		int j = 0;
-		for (; j < addr_accessed_size; j++) 
-			addr_accessed2[j] = addr_accessed[j];
-		addr_accessed_size = addr_accessed_size * 2;
-		VG_(free)(addr_accessed);
-		addr_accessed = addr_accessed2;
-	} 
-	addr_accessed[i] = e;
+		for (; j < APROF_(addr_accessed_size); j++) 
+			addr_accessed2[j] = APROF_(addr_accessed)[j];
+		APROF_(addr_accessed_size) = APROF_(addr_accessed_size) * 2;
+		VG_(free)(APROF_(addr_accessed));
+		APROF_(addr_accessed) = addr_accessed2;
+	}
+	
+	APROF_(addr_accessed)[i] = e;
 	
 	return True;
 }
 
 #endif
 
-extern Int events_used;
-
 static
-IRSB* instrument (  VgCallbackClosure* closure, 
+IRSB* APROF_(instrument) (  VgCallbackClosure* closure, 
 					IRSB* sbIn,
 					VexGuestLayout* layout, 
 					VexGuestExtents* vge,
@@ -64,10 +108,12 @@ IRSB* instrument (  VgCallbackClosure* closure,
 	Int        i;
 	IRSB*      sbOut;
 	IRTypeEnv* tyenv = sbIn->tyenv;
-	events_used = 0;
+	APROF_(events_used) = 0;
 
 	#if MEM_TRACE && IGNORE_REPEAT_ACC
-	addr_accessed = VG_(calloc)("addr acc", sizeof(IRExpr *), addr_accessed_size);
+	APROF_(addr_accessed_size) = INIT_SIZE_ADDR_ACC;
+	APROF_(addr_accessed) = VG_(calloc)("addr acc", 
+				sizeof(IRExpr *), APROF_(addr_accessed_size));
 	#endif
 	
 	#if TRACE_FUNCTION
@@ -89,7 +135,7 @@ IRSB* instrument (  VgCallbackClosure* closure,
 	
 	#if TRACE_FUNCTION
 	
-	BB * bb = get_BB(sbIn->stmts[i]->Ist.IMark.addr);
+	BB * bb = APROF_(get_BB)(sbIn->stmts[i]->Ist.IMark.addr);
 	#if DEBUG
 	AP_ASSERT(bb != NULL, "Invalid BB")
 	#endif
@@ -97,7 +143,7 @@ IRSB* instrument (  VgCallbackClosure* closure,
 	IRExpr  * e3 = mkIRExpr_HWord ( (HWord) bb );
 	IRExpr  * e2 = mkIRExpr_HWord ( (HWord) (Addr)sbIn->stmts[i]->Ist.IMark.addr );
 	IRDirty * di3 = unsafeIRDirty_0_N( 2, "BB start",
-								VG_(fnptr_to_fnentry)( &BB_start ),
+								VG_(fnptr_to_fnentry)( &APROF_(BB_start) ),
 								mkIRExprVec_2( e2, e3 ) );
 
 	addStmtToIRSB( sbOut, IRStmt_Dirty(di3) );
@@ -106,7 +152,7 @@ IRSB* instrument (  VgCallbackClosure* closure,
 	
 	#if TIME == BB_COUNT && !TRACE_FUNCTION
 	IRDirty * di2 = unsafeIRDirty_0_N( 0, "add_one_guest_BB", 
-	VG_(fnptr_to_fnentry)( &add_one_guest_BB ), 
+	VG_(fnptr_to_fnentry)( &APROF_(add_one_guest_BB) ), 
 								mkIRExprVec_0() );
 	addStmtToIRSB( sbOut, IRStmt_Dirty(di2) );
 	#endif
@@ -147,7 +193,7 @@ IRSB* instrument (  VgCallbackClosure* closure,
 
 				#if TIME == INSTR
 				di = unsafeIRDirty_0_N( 0, "add_one_guest_instr",
-										VG_(fnptr_to_fnentry)( &add_one_guest_instr ), 
+										VG_(fnptr_to_fnentry)( &APROF_(add_one_guest_instr) ), 
 										mkIRExprVec_0() );
 				addStmtToIRSB( sbOut, IRStmt_Dirty(di) );
 				#endif
@@ -155,9 +201,9 @@ IRSB* instrument (  VgCallbackClosure* closure,
 				#if MEM_TRACE
 				
 				#if IGNORE_REPEAT_ACC
-				//do_access(mkIRExpr_HWord( (HWord)st->Ist.IMark.addr ));
+				//APROF_(do_access)(mkIRExpr_HWord( (HWord)st->Ist.IMark.addr ));
 				#else
-				addEvent_Ir( sbOut, mkIRExpr_HWord( (HWord)st->Ist.IMark.addr ),
+				APROF_(addEvent_Ir)( sbOut, mkIRExpr_HWord( (HWord)st->Ist.IMark.addr ),
 								st->Ist.IMark.len );
 				#endif
 				
@@ -179,22 +225,23 @@ IRSB* instrument (  VgCallbackClosure* closure,
 				#if MEM_TRACE
 				IRExpr* data = st->Ist.WrTmp.data;
 				if (data->tag == Iex_Load) {
+					
 					#if IGNORE_REPEAT_ACC
 					IRExpr * a = data->Iex.Load.addr;
-					if (do_access(a)) {
+					if (APROF_(do_access)(a)) {
 						helperNameA = "trace_load";
 						argvA = mkIRExprVec_3(	mkIRExpr_HWord(LOAD),
 												a, 
 												mkIRExpr_HWord( sizeofIRType(data->Iex.Load.ty) )
 											);
-						helperAddrA = trace_access;
+						helperAddrA = APROF_(trace_access);
 						diA = unsafeIRDirty_0_N( 3, helperNameA, 
 									VG_(fnptr_to_fnentry)( helperAddrA ),
 									argvA );
 						addStmtToIRSB( sbOut, IRStmt_Dirty(diA) );
 					}
 					#else
-					addEvent_Dr( sbOut, data->Iex.Load.addr,
+					APROF_(addEvent_Dr)( sbOut, data->Iex.Load.addr,
 									sizeofIRType(data->Iex.Load.ty) );
 					#endif
 				}
@@ -208,22 +255,23 @@ IRSB* instrument (  VgCallbackClosure* closure,
 				
 				#if MEM_TRACE
 				IRExpr * data  = st->Ist.Store.data;
+				
 				#if IGNORE_REPEAT_ACC
 				IRExpr * a = st->Ist.Store.addr;
-				if (do_access(a)) {
+				if (APROF_(do_access)(a)) {
 					helperNameA = "trace_store";
 					argvA = mkIRExprVec_3(	mkIRExpr_HWord(STORE),
 											a, 
 											mkIRExpr_HWord( sizeofIRType(typeOfIRExpr(tyenv, data)) )
 										);
-					helperAddrA = trace_access;
+					helperAddrA = APROF_(trace_access);
 					diA = unsafeIRDirty_0_N( 3, helperNameA, 
 								VG_(fnptr_to_fnentry)( helperAddrA ),
 								argvA );
 					addStmtToIRSB( sbOut, IRStmt_Dirty(diA) );
 				}
 				#else
-				addEvent_Dw(sbOut, st->Ist.Store.addr,
+				APROF_(addEvent_Dw)(sbOut, st->Ist.Store.addr,
 							sizeofIRType(typeOfIRExpr(tyenv, data)) );
 				#endif
 				#endif
@@ -238,20 +286,22 @@ IRSB* instrument (  VgCallbackClosure* closure,
 				Int dsize;
 				IRDirty* d = st->Ist.Dirty.details;
 				if (d->mFx != Ifx_None) {
+					
 					// This dirty helper accesses memory.  Collect the details.
 					tl_assert(d->mAddr != NULL);
 					tl_assert(d->mSize != 0);
 					dsize = d->mSize;
+					
 					#if IGNORE_REPEAT_ACC
 					IRExpr * a = d->mAddr;
 					if (d->mFx == Ifx_Read || d->mFx == Ifx_Modify) {
-						if (do_access(a)) {
+						if (APROF_(do_access)(a)) {
 							helperNameA = "trace_load";
 							argvA = mkIRExprVec_3(	mkIRExpr_HWord(LOAD),
 														a, 
 														mkIRExpr_HWord( dsize )
 													);
-							helperAddrA = trace_access;
+							helperAddrA = APROF_(trace_access);
 							diA = unsafeIRDirty_0_N( 3, helperNameA, 
 										VG_(fnptr_to_fnentry)( helperAddrA ),
 										argvA );
@@ -259,13 +309,13 @@ IRSB* instrument (  VgCallbackClosure* closure,
 						}
 					}
 					else if (d->mFx == Ifx_Write) {
-						if (do_access(a)) {
+						if (APROF_(do_access)(a)) {
 							helperNameA = "trace_store";
 							argvA = mkIRExprVec_3(	mkIRExpr_HWord(STORE),
 														a, 
 														mkIRExpr_HWord( dsize )
 													);
-							helperAddrA = trace_access;
+							helperAddrA = APROF_(trace_access);
 							diA = unsafeIRDirty_0_N( 3, helperNameA, 
 										VG_(fnptr_to_fnentry)( helperAddrA ),
 										argvA );
@@ -274,10 +324,10 @@ IRSB* instrument (  VgCallbackClosure* closure,
 					}
 					#else
 					if (d->mFx == Ifx_Read || d->mFx == Ifx_Modify) {
-						addEvent_Dr( sbOut, d->mAddr, dsize );
+						APROF_(addEvent_Dr)( sbOut, d->mAddr, dsize );
 					}
 					if (d->mFx == Ifx_Write || d->mFx == Ifx_Modify) {
-						addEvent_Dw( sbOut, d->mAddr, dsize );
+						APROF_(addEvent_Dw)( sbOut, d->mAddr, dsize );
 					}
 					#endif
 				} else {
@@ -310,21 +360,21 @@ IRSB* instrument (  VgCallbackClosure* closure,
 				
 				#if IGNORE_REPEAT_ACC
 				IRExpr * a = cas->addr;
-				if (do_access(a)) {
+				if (APROF_(do_access)(a)) {
 					helperNameA = "trace_load";
 					argvA = mkIRExprVec_3(	mkIRExpr_HWord(LOAD),
 											a, 
 											mkIRExpr_HWord( dataSize )
 										);
-					helperAddrA = trace_access;
+					helperAddrA = APROF_(trace_access);
 					diA = unsafeIRDirty_0_N( 3, helperNameA, 
 								VG_(fnptr_to_fnentry)( helperAddrA ),
 								argvA );
 					addStmtToIRSB( sbOut, IRStmt_Dirty(diA) );
 				}
 				#else
-				addEvent_Dr( sbOut, cas->addr, dataSize );
-				addEvent_Dw( sbOut, cas->addr, dataSize );
+				APROF_(addEvent_Dr)( sbOut, cas->addr, dataSize );
+				APROF_(addEvent_Dw)( sbOut, cas->addr, dataSize );
 				#endif
 				
 				#endif
@@ -340,42 +390,44 @@ IRSB* instrument (  VgCallbackClosure* closure,
 				if (st->Ist.LLSC.storedata == NULL) {
 					/* LL */
 					dataTy = typeOfIRTemp(tyenv, st->Ist.LLSC.result);
+					
 					#if IGNORE_REPEAT_ACC
 					IRExpr * a = st->Ist.LLSC.addr;
-					if (do_access(a)) {
+					if (APROF_(do_access)(a)) {
 						helperNameA = "trace_load";
 						argvA = mkIRExprVec_3(	mkIRExpr_HWord(LOAD),
 												a, 
 												mkIRExpr_HWord( sizeofIRType(dataTy) )
 											);
-						helperAddrA = trace_access;
+						helperAddrA = APROF_(trace_access);
 						diA = unsafeIRDirty_0_N( 3, helperNameA, 
 									VG_(fnptr_to_fnentry)( helperAddrA ),
 									argvA );
 						addStmtToIRSB( sbOut, IRStmt_Dirty(diA) );
 					}
+					
 					#else
-					addEvent_Dr( sbOut, st->Ist.LLSC.addr, sizeofIRType(dataTy) );
+					APROF_(addEvent_Dr)( sbOut, st->Ist.LLSC.addr, sizeofIRType(dataTy) );
 					#endif
 				} else {
 					/* SC */
 					dataTy = typeOfIRExpr(tyenv, st->Ist.LLSC.storedata);
 					#if IGNORE_REPEAT_ACC
 					IRExpr * a = st->Ist.LLSC.addr;
-					if (do_access(a)) {
+					if (APROF_(do_access)(a)) {
 						helperNameA = "trace_store";
 						argvA = mkIRExprVec_3(	mkIRExpr_HWord(STORE),
 												a, 
 												mkIRExpr_HWord( sizeofIRType(dataTy) )
 											);
-						helperAddrA = trace_access;
+						helperAddrA = APROF_(trace_access);
 						diA = unsafeIRDirty_0_N( 3, helperNameA, 
 									VG_(fnptr_to_fnentry)( helperAddrA ),
 									argvA );
 						addStmtToIRSB( sbOut, IRStmt_Dirty(diA) );
 					}
 					#else
-					addEvent_Dw( sbOut, st->Ist.LLSC.addr, sizeofIRType(dataTy) );
+					APROF_(addEvent_Dw)( sbOut, st->Ist.LLSC.addr, sizeofIRType(dataTy) );
 					#endif
 				}
 				#endif
@@ -386,7 +438,7 @@ IRSB* instrument (  VgCallbackClosure* closure,
 
 			case Ist_Exit: {
 				#if MEM_TRACE && !IGNORE_REPEAT_ACC
-				flushEvents(sbOut);
+				APROF_(flushEvents)(sbOut);
 				#endif
 				addStmtToIRSB( sbOut, st );      // Original statement
 				break;
@@ -410,8 +462,8 @@ IRSB* instrument (  VgCallbackClosure* closure,
 	addStmtToIRSB( sbOut, IRStmt_Store(Endness, 
 					IRExpr_Const(
 									hWordTy == Ity_I32 ?
-									IRConst_U32( (UWord) &last_exit ) :
-									IRConst_U64( (UWord) &last_exit )
+									IRConst_U32( (UWord) &APROF_(last_exit) ) :
+									IRConst_U64( (UWord) &APROF_(last_exit) )
 								),
 					IRExpr_Const(IRConst_U32(bb->exit))
 					)
@@ -425,10 +477,10 @@ IRSB* instrument (  VgCallbackClosure* closure,
 	
 	#if !IGNORE_REPEAT_ACC
 	/* At the end of the sbIn.  Flush outstandings. */
-	flushEvents(sbOut);
+	APROF_(flushEvents)(sbOut);
 	#else
-	VG_(free)(addr_accessed);
-	addr_accessed_size = INIT_SIZE_ADDR_ACC;
+	VG_(free)(APROF_(addr_accessed));
+	APROF_(addr_accessed_size) = INIT_SIZE_ADDR_ACC;
 	#endif
 	
 	#endif
@@ -437,95 +489,117 @@ IRSB* instrument (  VgCallbackClosure* closure,
 }
 
 /* aprof initialization */
-static void post_clo_init(void) {
+static void APROF_(post_clo_init)(void) {
 	
 	#if TRACE_FUNCTION
-	bb_ht = HT_construct(VG_(free));
-	AP_ASSERT(bb_ht != NULL, "bb ht not allocable");
+	
+	APROF_(bb_ht) = HT_construct(VG_(free));
+	AP_ASSERT(APROF_(bb_ht) != NULL, "bb ht not allocable");
 	
 	#if DEBUG_ALLOCATION
-	add_alloc(HT);
+	APROF_(add_alloc)(HT);
 	#endif
 	
 	#endif
 	
-	fn_ht = HT_construct(VG_(free));
-	AP_ASSERT(fn_ht != NULL, "fn ht not allocable");
+	APROF_(fn_ht) = HT_construct(VG_(free));
+	AP_ASSERT(APROF_(fn_ht) != NULL, "fn ht not allocable");
 	
-	obj_ht = HT_construct(VG_(free));
-	AP_ASSERT(obj_ht != NULL, "fn ht not allocable");
+	APROF_(obj_ht) = HT_construct(VG_(free));
+	AP_ASSERT(APROF_(obj_ht) != NULL, "fn ht not allocable");
 	
 	#if DEBUG_ALLOCATION
-	add_alloc(HT);
+	APROF_(add_alloc)(HT);
 	#endif
 	
 }
 
-/* Funzione per presentare risultati in fase finale */
-static void fini(Int exitcode) {
+/* aprof finalization */
+static void APROF_(fini)(Int exitcode) {
 	
 	#if DEBUG_ALLOCATION
-	print_alloc();
+	APROF_(print_alloc)();
 	#endif
 	
 	#if TRACE_FUNCTION 
-	HT_destruct(bb_ht);
+	HT_destruct(APROF_(bb_ht));
 	#endif
 	
-	HT_destruct(fn_ht);
-	HT_destruct(obj_ht);
-
-	#if 0
-	/* test compression SUF2 */
-	StackUF * uf = SUF_create();
-	SUF_insert(uf, 0, 5);
-	SUF_insert(uf, 5, 5);
-	SUF_insert(uf, 9, 5);
-	SUF_print(uf);
-	SUF_insert(uf, 13, 10);
-	SUF_insert(uf, 5, 10);
-	SUF_insert(uf, 9, 10);
-	SUF_print(uf);
-	SUF_insert(uf, 15, 15);
-	SUF_insert(uf, 9, 15);
-	SUF_print(uf);
-	SUF_insert(uf, 15, 20);
-	SUF_print(uf);
-	
-	UInt arr_aid[2] = { 5, 20 };
-	SUF_compress(uf, arr_aid, 2);
-	SUF_print(uf);
-	#endif
+	HT_destruct(APROF_(fn_ht));
+	HT_destruct(APROF_(obj_ht));
 
 }
 
-void do_signal(ThreadId tid, Int sigNo, Bool alt_stack);
-void do_signal(ThreadId tid, Int sigNo, Bool alt_stack) {
+/*
+ * I don't have yet tested what happens when a singnal
+ * is received wrt shadow stack 
+ */
+static void APROF_(signal)(ThreadId tid, Int sigNo, Bool alt_stack) {
 	AP_ASSERT(0, "There is a signal");
 }
 
-
-/* Valgrind init */
-static void pre_clo_init(void) {
-
-	VG_(details_name)				("aprof");
-	VG_(details_version)			("0.1");
-	VG_(details_description)		("Input-sensitive Profiler - http://code.google.com/p/aprof/");
-	VG_(details_copyright_author)	("By Emilio Coppa, Camil Demetrescu, Irene Finocchi");
-	VG_(details_bug_reports_to)		("ercoppa@gmail.com");
-
-	VG_(basic_tool_funcs) 			(post_clo_init, instrument, fini);
+static Bool APROF_(cmd_line)(Char* argv) {
 	
-	#if !TRACE_FUNCTION
-	VG_(needs_client_requests)		(trace_function);
+	int value = 0;
+	
+	if VG_INT_CLO(argv, "--memory-resolution", value) {
+		APROF_(addr_multiple) = value;
+	}
+	
+	#if CCT == 0
+	if VG_BOOL_CLO(argv, "--merge-report-threads", APROF_(merge_report_threads)) {};
+	if VG_BOOL_CLO(argv, "--merge-report-runs", APROF_(merge_report_runs)) {};
+	if (APROF_(merge_report_runs)) APROF_(merge_report_threads) = True;
 	#endif
 	
-	VG_(track_start_client_code)	(switch_thread);
-	VG_(track_pre_thread_ll_exit)	(thread_exit);
-	VG_(track_pre_deliver_signal)	(do_signal);
+	return True;
+}
+
+static void APROF_(print_usage)(void) {
+	
+	VG_(printf)(
+		"    --memory-resolution=<n>        Memory resolution of the shadow memory {1, 2, 4, 8, 16} [4]\n"
+		#if CCT == 0
+		"    --merge-report-threads=yes|no  Merge reports of all threads for current process [yes]\n"
+		"    --merge-report-runs=yes|no     Merge reports of the current program with reports of previous program runs [yes]\n"
+		"                                   reports must be in the current working directory \n"
+		"                                   timestamp (mtime) of the program has to be the same \n"
+		"                                   this option implies --merge-report-threads=yes \n"
+		#endif
+	);
+}
+
+/* Valgrind init */
+static void APROF_(pre_clo_init)(void) {
+
+	VG_(details_name)				("aprof");
+	VG_(details_version)			("0.1.1");
+	VG_(details_description)		("Input-sensitive Profiler - http://code.google.com/p/aprof/");
+	VG_(details_copyright_author)	("by Emilio Coppa, Camil Demetrescu, Irene Finocchi");
+	VG_(details_bug_reports_to)		("ercoppa@gmail.com");
+
+	VG_(basic_tool_funcs) 			(	
+										APROF_(post_clo_init), 
+										APROF_(instrument), 
+										APROF_(fini)
+									);
+	
+	VG_(needs_command_line_options)		(
+											APROF_(cmd_line), 
+											APROF_(print_usage),
+											NULL
+										);
+	
+	#if !TRACE_FUNCTION
+	VG_(needs_client_requests)		(APROF_(trace_function));
+	#endif
+	
+	VG_(track_start_client_code)	(APROF_(switch_thread));
+	VG_(track_pre_thread_ll_exit)	(APROF_(thread_exit));
+	VG_(track_pre_deliver_signal)	(APROF_(signal));
 	
 	VG_(clo_vex_control).iropt_unroll_thresh = 0;
 	VG_(clo_vex_control).guest_chase_thresh  = 0;
 }
 
-VG_DETERMINE_INTERFACE_VERSION(pre_clo_init)
+VG_DETERMINE_INTERFACE_VERSION(APROF_(pre_clo_init))
