@@ -13,8 +13,8 @@ endif
 
 aprof_SOURCES_COMMON =  CCT.c fwrite.c thread.c report.c \
 						events.c function.c memory.c time.c \
-						./hashtable/hashtable.c ./pool/pool.c \
-						./SUF/union_find.c ./SUF2/suf.c\
+						./hashtable/hashtable.c \
+						lookup_table.c \
 						callstack.c debug.c main.c
 
 aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_SOURCES      = \

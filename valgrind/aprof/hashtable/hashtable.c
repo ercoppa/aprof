@@ -1,3 +1,6 @@
+/*--------------------------------------------------------------------*/
+/*--- Modified  version of hash table implementation of Valgrind   ---*/
+/*--------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------*/
 /*--- A separately-chained hash table.               m_hashtable.c ---*/
@@ -67,7 +70,7 @@ HashTable * HT_construct(void * func)
    #if DEBUG_ALLOCATION
    int i = 0;
    for (i = 0; i < n_chains; i++)
-      add_alloc(HTNC);
+      APROF_(add_alloc)(HTNC);
    #endif
 
    return table;
@@ -108,7 +111,7 @@ static void resize (HashTable * table)
    #if DEBUG_ALLOCATION
    int q = 0;
    for (q = 0; q < (new_chains - table->n_chains); q++)
-      add_alloc(HTNC);
+      APROF_(add_alloc)(HTNC);
    #endif
 
    table->n_chains = new_chains;

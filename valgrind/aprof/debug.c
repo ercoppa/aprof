@@ -3,10 +3,15 @@
 #if DEBUG_ALLOCATION
 
 static UInt alloc_type_size[A_NONE] = {
-	sizeof(BB), sizeof(RoutineInfo), sizeof(Function), 
+	#if TRACE_FUNCTION
+	sizeof(BB), 
+	#else
+	0,
+	#endif
+	sizeof(RoutineInfo), sizeof(Function), 
 	sizeof(ThreadData), NAME_SIZE, sizeof(Activation),
 	NAME_SIZE, 0, sizeof(HashNode),
-	sizeof(SSM),  sizeof(SMSInfo),  sizeof(HashTable), sizeof(void *),
+	sizeof(SSM),  sizeof(RMSInfo),  sizeof(HashTable), sizeof(void *),
 	sizeof(CCTS), sizeof(Object), NAME_SIZE
 };
 
@@ -21,7 +26,7 @@ static char * alloc_type_name[A_NONE] = {
 
 static UInt alloc_counter[A_NONE] = { 0 };
 
-void add_alloc(UWord type) {
+void APROF_(add_alloc)(UWord type) {
 	
 	alloc_counter[type]++;
 	/*
@@ -35,14 +40,14 @@ void add_alloc(UWord type) {
 	
 }
 
-void remove_alloc(UWord type) {
+void APROF_(remove_alloc)(UWord type) {
 	
 	alloc_counter[type]--;
 	return;
 	
 }
 
-void print_alloc(void) {
+void APROF_(print_alloc)(void) {
 	
 	UInt est = 0;
 	
