@@ -32,6 +32,9 @@
 
 #include "aprof.h"
 
+/* # running threads */
+UInt APROF_(running_threads) = 0;
+
 /* All threads running */
 static ThreadData * threads[VG_N_THREADS];
 
@@ -115,6 +118,8 @@ static ThreadData * APROF_(thread_start)(ThreadId tid){
 	tdata->entry_time = APROF_(time)();
 	#endif
 
+	APROF_(running_threads)++;
+
 	return tdata;
 
 }
@@ -183,6 +188,8 @@ void APROF_(thread_exit)(ThreadId tid){
 	#endif
 	
 	APROF_(generate_report)(tdata, tid);
+	
+	APROF_(running_threads)--;
 	
 	/* destroy all thread data data */
 	
