@@ -361,6 +361,7 @@ extern Int APROF_(events_used);
 /* Info about thread currently running (thread.c) */
 extern ThreadId APROF_(current_TID);
 extern ThreadData * APROF_(current_tdata); 
+extern UInt APROF_(running_threads); /* # running threads */
 
 /* Basic block info HT and last BB exit type (callstack.c) */
 #if TRACE_FUNCTION

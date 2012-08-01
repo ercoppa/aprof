@@ -188,7 +188,7 @@ UInt LK_insert(LookupTable * suf, UWord addr, UInt ts) {
 
 UInt LK_lookup(LookupTable * suf, UWord addr) {
 	
-	UWord j = (addr & 0xffff) / APROF_(addr_multiple);
+	UWord j = (addr & 0xffff) >> APROF_(res_shift);
 	
 	#ifdef __i386__
 	

@@ -33,7 +33,7 @@
 #include "aprof.h"
 
 // last modification time of the current program
-static ULong binary_time = 0;
+static ULong APROF_(binary_time) = 0;
 
 static Char * put_delim(Char * str, Int size) {
 	
@@ -334,10 +334,21 @@ static Char * report_name(Char * filename_priv, Int tid) {
 
 	#if REPORT_NAME == 1
 	
-	if (tid > 1)
-		VG_(sprintf)(filename_priv, "%s_%u.aprof", VG_(basename)(prog_name), tid - 1);
-	else
-		VG_(sprintf)(filename_priv, "%s.aprof", VG_(basename)(prog_name));
+	if ((APROF_(merge_report_runs) || APROF_(merge_report_threads)) 
+		&& APROF_(running_threads) > 1) {
+		
+		VG_(sprintf)(filename_priv, "%d_%u_%d.aprof", VG_(getpid)(), 
+									tid - 1, APROF_(addr_multiple));
+		
+	} else {
+	
+		if (tid > 1)
+			VG_(sprintf)(filename_priv, "%s_%u.aprof", 
+					VG_(basename)(prog_name), tid - 1);
+		else
+			VG_(sprintf)(filename_priv, "%s.aprof", 
+				VG_(basename)(prog_name));
+	}
 	
 	#elif REPORT_NAME == 2
 	VG_(sprintf)(filename_priv, "%d_%u_%d.aprof", VG_(getpid)(), 
@@ -349,7 +360,7 @@ static Char * report_name(Char * filename_priv, Int tid) {
 }
 
 
-static Char ** search_report(Int * n, Bool all_runs) {
+static UInt search_report(Char ** reports, Bool all_runs) {
 	
 	SysRes r = VG_(open)("./", VKI_O_RDONLY, 
 						VKI_S_IRUSR|VKI_S_IWUSR);
@@ -358,8 +369,8 @@ static Char ** search_report(Int * n, Bool all_runs) {
 	
 	struct vki_dirent * file;
 	Char buf[1024] = {0};
-	Char ** reports = VG_(calloc)("report array", sizeof(Char *) * 256, 1);
-	
+	UInt n = 0;
+
 	for ( ; ; ) {
 	
 		Int res = VG_(getdents)(dir, (struct vki_dirent *) &buf, 1024);
@@ -371,42 +382,30 @@ static Char ** search_report(Int * n, Bool all_runs) {
 		for (i = 0; i < res;) {
 
 			file = (struct vki_dirent *) (buf + i);
-			if (all_runs) {
-				if (VG_(strlen)(file->d_name) > 6 && 
-						VG_(strcmp)(".aprof", file->d_name + 
-						VG_(strlen)(file->d_name) - 6) == 0) {
+			if (VG_(strcmp)(".aprof", file->d_name + 
+					VG_(strlen)(file->d_name) - 6) == 0) {
+				
+				if (!all_runs) {
 					
-					reports[(*n)++] = VG_(strdup)("report", file->d_name);
-					//VG_(printf)("File %s - %d\n", file->d_name, file->d_reclen);
-				}
-			} else {
+					Char pid[10] = {0};
+					VG_(sprintf)(pid, "%d", VG_(getpid)()); 
+					if (VG_(strncmp)(file->d_name, pid,
+						VG_(strlen)(pid)) != 0) 
+						continue;
+					
+				} 
 				
-				#if REPORT_NAME == 1
-				
-				if (VG_(strncmp)(file->d_name, VG_(basename)(prog_name),
-						VG_(strlen)(VG_(basename)(prog_name))) == 0) {
-				
-				#elif REPORT_NAME == 2
-				
-				Char pid[10] = {0};
-				VG_(sprintf)(pid, "%d", VG_(getpid)()); 
-				if (VG_(strncmp)(file->d_name, pid,
-						VG_(strlen)(pid)) == 0) {
-				
-				#endif	
-				
-					reports[(*n)++] = VG_(strdup)("report", file->d_name);
-					//VG_(printf)("File %s - %d\n", file->d_name, file->d_reclen);
-				}
-				
+				reports[n++] = VG_(strdup)("report", file->d_name);
+				//VG_(printf)("File %s - %d\n", file->d_name, file->d_reclen);
 			}
+			
 			i += file->d_reclen;
 			
 		}
 	
 	}
 	
-	return reports;
+	return n;
 }
 
 void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
@@ -414,31 +413,38 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
 	Char filename_priv[1024] = {0};
 	Char * prog_name = (Char *) VG_(args_the_exename);
 	
-	Int n = 0, j = 0;
-	Char ** reports = NULL;
-	
-	if (APROF_(merge_report_runs))
-		reports = search_report(&n, True);
-	else if (APROF_(merge_report_threads))
-		reports = search_report(&n, False);
-	
-	for (j = 0; j < n; j++) {
+	/* last thread? try to merge... */
+	if (APROF_(running_threads) == 1) {
 		
-		//VG_(printf)("Merging report: %s\n", reports[j]);
-		Bool m = merge_report(reports[j], tdata);
-		if (m) {
+		Int n = 0, j = 0;
+		Char ** reports = VG_(calloc)("report array", sizeof(Char *) * 256, 1);
+		
+		if (APROF_(merge_report_runs))
+			n = search_report(reports, True);
+		else if (APROF_(merge_report_threads)) 
+			n = search_report(reports, False);
+		
+		for (j = 0; j < n; j++) {
 			
-			Char name[1024];
-			VG_(sprintf)(name, "%s_merged", reports[j]);  
-			VG_(rename) (reports[j], name);
-			
-			//VG_(unlink) (reports[j]);
+			//VG_(printf)("Merging report: %s\n", reports[j]);
+			Bool m = merge_report(reports[j], tdata);
+			if (m) {
+				
+				Char name[1024];
+				VG_(sprintf)(name, "%s_merged", reports[j]);  
+				VG_(rename) (reports[j], name);
+				
+				//VG_(unlink) (reports[j]);
+			}
 		}
+		
+		VG_(free)(reports);
+	
 	}
 	
 	/*
 	 * This does not work because we don't have the real path
-	if (binary_time == 0) {
+	if (APROF_(binary_time) == 0) {
 		
 		// Get binary time
 		struct vg_stat buf;
@@ -479,7 +485,7 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
 	APROF_(fwrite)(report, buffer, VG_(strlen)(buffer));
 	
 	// write mtime binary
-	VG_(sprintf)(buffer, "e %llu\n", binary_time);
+	VG_(sprintf)(buffer, "e %llu\n", APROF_(binary_time));
 	APROF_(fwrite)(report, buffer, VG_(strlen)(buffer));
 	
 	// write metric type
