@@ -35,25 +35,37 @@
 // # timestamp in the last level of the lookup table
 static UInt APROF_(flt_size) = 16384; // default value for 
                                       // memory resoloution = 4
+                                      
+static UInt APROF_(res_shift) = 2;
                                                                                       
 LookupTable * LK_create(void) {
 
 	switch(APROF_(addr_multiple)) {
 		
 		case 4:
-			APROF_(flt_size) = 16384; break;
+			APROF_(flt_size) = 16384; 
+			APROF_(res_shift) = 2;
+			break;
 		
 		case 1:
-			APROF_(flt_size) = 65536; break;
+			APROF_(flt_size) = 65536; 
+			APROF_(res_shift) = 0;
+			break;
 		
 		case 2:
-			APROF_(flt_size) = 32768; break;
+			APROF_(flt_size) = 32768; 
+			APROF_(res_shift) = 1;
+			break;
 		
 		case 8:
-			APROF_(flt_size) = 8192; break;
+			APROF_(flt_size) = 8192; 
+			APROF_(res_shift) = 3;
+			break;
 		
 		case 16:
-			APROF_(flt_size) = 4096; break;
+			APROF_(flt_size) = 4096; 
+			APROF_(res_shift) = 4;
+			break;
 		
 		default:
 			AP_ASSERT(0, "Supported memory resolutions: 1, 2, 4, 8 or 16");
@@ -112,7 +124,10 @@ UInt LK_insert(LookupTable * suf, UWord addr, UInt ts) {
     
 	#endif
 	
-	UWord j = (addr & 0xffff) / APROF_(addr_multiple);
+	// this is slow!!! 
+	//UWord j = (addr & 0xffff) / APROF_(addr_multiple);
+	// faster:
+	UWord j = (addr & 0xffff) >> APROF_(res_shift);
 	
 	#ifndef __i386__
 	if (suf->table[i] == NULL) {
@@ -128,37 +143,45 @@ UInt LK_insert(LookupTable * suf, UWord addr, UInt ts) {
 		
 	}
 	#endif
-    
+
 	#ifdef __i386__
-	UInt * ssm = suf->table[i];
+	if (suf->table[i] == NULL) {
 	#else
-	UInt * ssm = suf->table[i]->table[k];
+	if (suf->table[i]->table[k] == NULL) {
 	#endif
 	
-	if (ssm == NULL) {
-		
 		#ifdef __i386__
 		suf->table[i] = VG_(calloc)("suf sm", sizeof(UInt) * APROF_(flt_size), 1);
-		ssm = suf->table[i];
 		#else
 		suf->table[i]->table[k] = VG_(calloc)("suf sm", sizeof(UInt) * APROF_(flt_size), 1);
-		ssm = suf->table[i]->table[k];
-		#endif
-		
-		#if DEBUG
-		AP_ASSERT(ssm != NULL, "SUF sm not allocable");
 		#endif
 		
 		#if DEBUG_ALLOCATION
 		APROF_(add_alloc)(SEG_SUF);
 		#endif
+		
+		#ifdef __i386__
+		suf->table[i][j] = ts;;
+		#else
+		suf->table[i]->table[k][j] = ts;
+		#endif
+
+		return 0;
 	
 	}
 	
-	UInt old = ssm[j];
+	#ifdef __i386__
+	UInt old = suf->table[i][j];
+	#else
+	UInt old = suf->table[i]->table[k][j];
+	#endif
 	if (old < ts) /* avoid a write if possible... */
-		ssm[j] = ts;
-    
+	#ifdef __i386__
+		suf->table[i][j] = ts;
+	#else
+		suf->table[i]->table[k][j] = ts;
+	#endif
+	
 	return old;
 
 }

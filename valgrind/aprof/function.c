@@ -211,7 +211,9 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
 		
 		// create new context node
 		cnode = (CCTNode*) VG_(calloc)("CCT", sizeof(CCTNode), 1);
+		#if DEBUG
 		AP_ASSERT(cnode != NULL, "Can't allocate CTT node");
+		#endif
 
 		#if DEBUG_ALLOCATION
 		APROF_(add_alloc)(CCTS);
@@ -360,9 +362,11 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
 	if (info_access->min_cumulative_time > partial_cumulative) 
 		info_access->min_cumulative_time = partial_cumulative;
 	
+	#if DEBUG
 	AP_ASSERT(info_access->max_cumulative_time >= info_access->min_cumulative_time, "Min max mismatch");
 	if (info_access->calls_number == 1)
 		AP_ASSERT(info_access->min_cumulative_time == info_access->max_cumulative_time, "Min max mismatch");
+	#endif
 	
 	#if DISCARD_UNKNOWN
 	}

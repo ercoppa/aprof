@@ -42,8 +42,10 @@ HashTable * APROF_(obj_ht) = NULL;
 #if 0 // We use a macro now... but maybe useful when debugging
 Activation * APROF_(get_activation)(ThreadData * tdata, unsigned int depth) {
 
+	#if DEBUG
 	AP_ASSERT(tdata != NULL, "Invalid tdata in get_activation");
 	AP_ASSERT(depth > 0 && depth < 5000, "Invalid depth");
+	#endif
 
 	/* Expand stack if necessary */
 	if (depth - 1 >= tdata->max_stack_size) {
@@ -61,8 +63,9 @@ Activation * APROF_(get_activation)(ThreadData * tdata, unsigned int depth) {
 		
 		tdata->stack = VG_(realloc)("stack", tdata->stack, 
 							tdata->max_stack_size * sizeof(Activation));
+		#if DEBUG
 		AP_ASSERT(tdata->stack, "stack not reallocable");
-	
+		#endif
 	}
 	
 	return tdata->stack + depth - 1;
@@ -273,7 +276,9 @@ UInt APROF_(str_hash)(const Char *s) {
 	for ( ; *s; s++)
 		hash_value = 31 * hash_value + *s;
 	
+	#if DEBUG
 	AP_ASSERT(hash_value > 0, "Invalid hash value for this function or obj");
+	#endif
 	
 	return hash_value;
 }

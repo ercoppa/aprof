@@ -46,7 +46,7 @@
 #ifndef _LK_H_
 #define _LK_H_
 
-//#undef __i386__
+//#define __i386__
 
 #ifdef __i386__
 #define LK_SIZE 65536 // 4GB

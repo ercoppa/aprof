@@ -48,13 +48,17 @@ static ThreadData * APROF_(thread_start)(ThreadId tid){
 	#endif
 	
 	ThreadData * tdata = VG_(calloc)("thread_data", sizeof(ThreadData), 1);
+	#if DEBUG
 	AP_ASSERT(tdata != NULL, "thread data not allocable");
+	#endif
 	
 	#if DEBUG_ALLOCATION
 	APROF_(add_alloc)(TS);
 	#endif
 	
+	#if DEBUG
 	AP_ASSERT(tid - 1 < VG_N_THREADS && tid > 0, "Tid is too big");
+	#endif
 	threads[tid-1] = tdata;
 	
 	/* we deallocate all routine info when we generate the report */
@@ -68,7 +72,9 @@ static ThreadData * APROF_(thread_start)(ThreadId tid){
 	tdata->stack_depth = 0;
 	tdata->max_stack_size = STACK_SIZE;
 	tdata->stack = VG_(calloc)("stack", STACK_SIZE * sizeof(Activation), 1);
+	#if DEBUG
 	AP_ASSERT(tdata->stack != NULL, "stack not allocable");
+	#endif
 	
 	#if DEBUG_ALLOCATION
 	int j = 0;
@@ -92,7 +98,9 @@ static ThreadData * APROF_(thread_start)(ThreadId tid){
 	
 	// allocate dummy CCT root
 	tdata->root = (CCTNode*) VG_(calloc)("CCT", sizeof(CCTNode), 1);
+	#if DEBUG
 	AP_ASSERT(tdata->root != NULL, "Can't allocate CCT root node");
+	#endif
 
 	#if DEBUG_ALLOCATION
 	APROF_(add_alloc)(CCTS);
@@ -119,10 +127,14 @@ void APROF_(thread_exit)(ThreadId tid){
 	#if VERBOSE
 	VG_(printf)("Exit thread %d\n", tid);
 	#endif
-
+	
+	#if DEBUG
 	AP_ASSERT(tid - 1 < VG_N_THREADS && tid > 0, "Invalid tid")
+	#endif
 	ThreadData * tdata = threads[tid - 1];
+	#if DEBUG
 	AP_ASSERT(tdata != NULL, "Invalid tdata")
+	#endif
 	
 	/* Unregister thread info */
 	threads[tid -1] = NULL;
@@ -202,8 +214,6 @@ void APROF_(switch_thread)(ThreadId tid, ULong blocks_dispatched) {
 	 */
 	 
 	if (tid == APROF_(current_TID)) return;
-	
-	
 	
 	#if TRACE_FUNCTION
 	/* save last exit of the previous thread */
