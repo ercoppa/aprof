@@ -35,7 +35,7 @@
 /* Memory resolution: we can aggregate addresses in order
  * to decrese the shadow memory. 
  * - 1 => finest resolution, each byte has its timestamp
- * - 2 => every 2 byte we have a single timestamp 
+ * - 2 => every 2 bytes we have a single timestamp 
  * - ...
  */
 UInt APROF_(addr_multiple) = 4;

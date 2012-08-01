@@ -494,7 +494,9 @@ static void APROF_(post_clo_init)(void) {
 	#if TRACE_FUNCTION
 	
 	APROF_(bb_ht) = HT_construct(VG_(free));
+	#if DEBUG
 	AP_ASSERT(APROF_(bb_ht) != NULL, "bb ht not allocable");
+	#endif
 	
 	#if DEBUG_ALLOCATION
 	APROF_(add_alloc)(HT);
@@ -503,10 +505,14 @@ static void APROF_(post_clo_init)(void) {
 	#endif
 	
 	APROF_(fn_ht) = HT_construct(VG_(free));
+	#if DEBUG
 	AP_ASSERT(APROF_(fn_ht) != NULL, "fn ht not allocable");
+	#endif
 	
 	APROF_(obj_ht) = HT_construct(VG_(free));
+	#if DEBUG
 	AP_ASSERT(APROF_(obj_ht) != NULL, "fn ht not allocable");
+	#endif
 	
 	#if DEBUG_ALLOCATION
 	APROF_(add_alloc)(HT);
