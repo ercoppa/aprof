@@ -552,7 +552,7 @@ static Bool APROF_(cmd_line)(Char* argv) {
 		APROF_(addr_multiple) = value;
 	}
 	
-	#if CCT == 0
+	#if CCT == 0 && defined(VGO_linux)
 	if VG_BOOL_CLO(argv, "--merge-report-threads", APROF_(merge_report_threads)) {};
 	if VG_BOOL_CLO(argv, "--merge-report-runs", APROF_(merge_report_runs)) {};
 	if (APROF_(merge_report_runs)) APROF_(merge_report_threads) = True;
@@ -565,9 +565,9 @@ static void APROF_(print_usage)(void) {
 	
 	VG_(printf)(
 		"    --memory-resolution=<n>        Memory resolution of the shadow memory {1, 2, 4, 8, 16} [4]\n"
-		#if CCT == 0
-		"    --merge-report-threads=yes|no  Merge reports of all threads for current process [yes]\n"
-		"    --merge-report-runs=yes|no     Merge reports of the current program with reports of previous program runs [yes]\n"
+		#if CCT == 0 && defined(VGO_linux)
+		"    --merge-report-threads=yes|no  Merge reports of all threads for current process [no]\n"
+		"    --merge-report-runs=yes|no     Merge reports of the current program with reports of previous program runs [no]\n"
 		"                                   reports must be in the current working directory \n"
 		"                                   timestamp (mtime) of the program has to be the same \n"
 		"                                   this option implies --merge-report-threads=yes \n"
