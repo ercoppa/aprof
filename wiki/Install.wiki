@@ -2,19 +2,16 @@
 
 === Install aprof ===
 
-Currently, aprof does not ship with Valgrind, so you have to download it from our svn repository:
-{{{
-svn checkout http://aprof.googlecode.com/svn/trunk/valgrind aprof_valgrind
-}}}
+Currently, aprof does not ship with Valgrind, so you have to download it from our [http://code.google.com/p/aprof/downloads/list download section]. 
 
-To compile it (automake tools are needed):
+Uncompress the tgz package and compile it (automake tools are needed):
 {{{
-cd aprof_valgrind
+cd aprof-X.Y.Z
 ./autogen.sh
 ./configure --prefix=`pwd`/inst
 make
 }}}
-the downloaded repository includes Valgrind 3.7.0 - svn rev. 12556. Using the `--prefix` param of the `configure` command we avoid any collision with other installations of Valgrind in your system. aprof will be installed locally under the `aprof_valgrind/inst` directory. You can install it with:
+last stable version includes Valgrind 3.8.0 - svn rev. 12556. Using the `--prefix` param of the `configure` command we avoid any collision with other installations of Valgrind in your system. aprof will be installed locally under the `aprof_valgrind/inst` directory. You can install it with:
 {{{
 make install
 }}}
