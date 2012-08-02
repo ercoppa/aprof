@@ -9,7 +9,7 @@ Alternatively, if you want to try the latest version under development, you can 
 svn checkout http://aprof.googlecode.com/svn/trunk/valgrind aprof
 }}}
 
-Uncompress the tgz package and compile it (automake tools are needed):
+Uncompress the tgz package (if stable version) and compile it (automake tools are needed):
 {{{
 cd aprof-X.Y.Z
 ./autogen.sh
