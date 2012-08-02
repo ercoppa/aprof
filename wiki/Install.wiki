@@ -4,6 +4,11 @@
 
 Currently, aprof does not ship with Valgrind, so you have to download it from our [http://code.google.com/p/aprof/downloads/list download section]. 
 
+Alternatively, if you want to try the latest version under development, you can download it from SVN:
+{{{
+svn checkout http://aprof.googlecode.com/svn/trunk/valgrind aprof
+}}}
+
 Uncompress the tgz package and compile it (automake tools are needed):
 {{{
 cd aprof-X.Y.Z
