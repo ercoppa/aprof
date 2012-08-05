@@ -1128,7 +1128,7 @@ public class GraphPanel extends javax.swing.JPanel {
 	}//GEN-LAST:event_jToggleButton2ActionPerformed
 
 	private void jToggleButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton6ActionPerformed
-		
+        
 		// Grouing button
 		if (jToggleButton6.isSelected()) {
 			jPopupMenu1.show(jToggleButton6, 0, jToggleButton6.getHeight());
@@ -1522,8 +1522,9 @@ public class GraphPanel extends javax.swing.JPanel {
 		
 		// Smooth window menu: 1-th entry
 		setSmoothThreshold(1);
-		if (this.main_window.arePlotsLinked())
-			main_window.setSmoothThresholdAll(graph_type, 1);
+		if (this.main_window.arePlotsLinked()) {
+            main_window.setSmoothThresholdAll(graph_type, 1);
+        }
 		
 	}//GEN-LAST:event_jRadioButtonMenuItem10ActionPerformed
 
@@ -1531,8 +1532,9 @@ public class GraphPanel extends javax.swing.JPanel {
 		
 		// Smooth window menu: 2-th entry
 		setSmoothThreshold(2);
-		if (this.main_window.arePlotsLinked())
-			main_window.setSmoothThresholdAll(graph_type, 2);
+		if (this.main_window.arePlotsLinked()) {
+            main_window.setSmoothThresholdAll(graph_type, 2);
+        }
 		
 	}//GEN-LAST:event_jRadioButtonMenuItem11ActionPerformed
 
@@ -1558,8 +1560,9 @@ public class GraphPanel extends javax.swing.JPanel {
 		
 		// Smooth window menu: 5-th entry
 		setSmoothThreshold(5);
-		if (this.main_window.arePlotsLinked())
-			main_window.setSmoothThresholdAll(graph_type, 5);
+		if (this.main_window.arePlotsLinked()) {
+            main_window.setSmoothThresholdAll(graph_type, 5);
+        }
 		
 	}//GEN-LAST:event_jRadioButtonMenuItem14ActionPerformed
 
@@ -1567,8 +1570,9 @@ public class GraphPanel extends javax.swing.JPanel {
 		
 		// Smooth window menu: 6-th entry
 		setSmoothThreshold(6);
-		if (this.main_window.arePlotsLinked())
-			main_window.setSmoothThresholdAll(graph_type, 6);
+		if (this.main_window.arePlotsLinked()) {
+            main_window.setSmoothThresholdAll(graph_type, 6);
+        }
 		
 	}//GEN-LAST:event_jRadioButtonMenuItem15ActionPerformed
 
@@ -1645,37 +1649,73 @@ public class GraphPanel extends javax.swing.JPanel {
 			sum_y = 0; sum_y2 = 0; sum_y3 = 0; sum_x = 0;
 			sum_occ = 0;
 			
-			
-			jRadioButtonMenuItem1.setText(Integer.toString((int)Math.pow(group_threshold_base, 0)));
-			jRadioButtonMenuItem2.setText(Integer.toString((int)Math.pow(group_threshold_base, 1)));
-			jRadioButtonMenuItem3.setText(Integer.toString((int)Math.pow(group_threshold_base, 2)));
-			jRadioButtonMenuItem4.setText(Integer.toString((int)Math.pow(group_threshold_base, 3)));
-			jRadioButtonMenuItem5.setText(Integer.toString((int)Math.pow(group_threshold_base, 4)));
-			jRadioButtonMenuItem6.setText(Integer.toString((int)Math.pow(group_threshold_base, 5)));
-			
-				
+            if (rtn_info.getSizeRmsList() <= 0) {
+                
+                jRadioButtonMenuItem1.setText("0");
+                jRadioButtonMenuItem2.setText("0");
+                jRadioButtonMenuItem3.setText("0");
+                jRadioButtonMenuItem4.setText("0");
+                jRadioButtonMenuItem5.setText("0");
+                jRadioButtonMenuItem6.setText("0");
+                jRadioButtonMenuItem10.setText("0");
+                jRadioButtonMenuItem11.setText("0");
+                jRadioButtonMenuItem12.setText("0");
+                jRadioButtonMenuItem13.setText("0");
+                jRadioButtonMenuItem14.setText("0");
+                jRadioButtonMenuItem15.setText("0");
+                
+                return;
+                
+            }
+
+             jRadioButtonMenuItem1.setText(Integer.toString((int)Math.pow(group_threshold_base, 0)));
+             jRadioButtonMenuItem2.setText(Integer.toString((int)Math.pow(group_threshold_base, 1)));
+             jRadioButtonMenuItem3.setText(Integer.toString((int)Math.pow(group_threshold_base, 2)));
+             jRadioButtonMenuItem4.setText(Integer.toString((int)Math.pow(group_threshold_base, 3)));
+             jRadioButtonMenuItem5.setText(Integer.toString((int)Math.pow(group_threshold_base, 4)));
+             jRadioButtonMenuItem6.setText(Integer.toString((int)Math.pow(group_threshold_base, 5)));
+
+            
 			int val = (int)Math.pow(smooth_threshold_base, 0);
-			if (val % 2 == 0) val++; // we want an odd number...
+            if (rtn_info.getSizeRmsList() > 0 && val >= rtn_info.getSizeRmsList()) {
+                val = rtn_info.getSizeRmsList() - 1;
+            }
+			if (rtn_info.getSizeRmsList() > 0 && val % 2 == 0) val++; // we want an odd number...
 			jRadioButtonMenuItem10.setText(Integer.toString(val));
 
 			val = (int)Math.pow(smooth_threshold_base, 1);
-			if (val % 2 == 0) val++;
+            if (rtn_info.getSizeRmsList() > 0 && val >= rtn_info.getSizeRmsList()) {
+                val = rtn_info.getSizeRmsList() - 1;
+            }
+			if (rtn_info.getSizeRmsList() > 0 && val % 2 == 0) val++;
 			jRadioButtonMenuItem11.setText(Integer.toString(val));
 
 			val = (int)Math.pow(smooth_threshold_base, 2);
-			if (val % 2 == 0) val++;
+			if (rtn_info.getSizeRmsList() > 0 && val >= rtn_info.getSizeRmsList()) {
+                val = rtn_info.getSizeRmsList() - 1;
+            }
+            if (rtn_info.getSizeRmsList() > 0 && val % 2 == 0) val++;
 			jRadioButtonMenuItem12.setText(Integer.toString(val));
 
 			val = (int)Math.pow(smooth_threshold_base, 3);
-			if (val % 2 == 0) val++;
+            if (rtn_info.getSizeRmsList() > 0 && val >= rtn_info.getSizeRmsList()) {
+                val = rtn_info.getSizeRmsList() - 1;
+            }
+            if (rtn_info.getSizeRmsList() > 0 && val % 2 == 0) val++;
 			jRadioButtonMenuItem13.setText(Integer.toString(val));
 
 			val = (int)Math.pow(smooth_threshold_base, 4);
-			if (val % 2 == 0) val++;
+			if (rtn_info.getSizeRmsList() > 0 && val >= rtn_info.getSizeRmsList()) {
+                val = rtn_info.getSizeRmsList() - 1;
+            }
+            if (rtn_info.getSizeRmsList() > 0 && val % 2 == 0) val++;
 			jRadioButtonMenuItem14.setText(Integer.toString(val));
 
 			val = (int)Math.pow(smooth_threshold_base, 5);
-			if (val % 2 == 0) val++;
+			if (rtn_info.getSizeRmsList() > 0 && val >= rtn_info.getSizeRmsList()) {
+                val = rtn_info.getSizeRmsList() - 1;
+            }
+            if (rtn_info.getSizeRmsList() > 0 && val % 2 == 0) val++;
 			jRadioButtonMenuItem15.setText(Integer.toString(val));
 			
 		}
@@ -1895,7 +1935,7 @@ public class GraphPanel extends javax.swing.JPanel {
 			return;
 		}
 		
-		if (rtn_info == null) return;
+		if (rtn_info == null || rtn_info.getSizeRmsList() <= 0) return;
 		
 		if (group_threshold == 1 && smooth_threshold == 1) {
 			
@@ -2173,9 +2213,8 @@ public class GraphPanel extends javax.swing.JPanel {
 				n += c;
 				
 				//System.out.println("Aggiungo punto - current: " +  current + " head: " + head);
-				
 				double x = l[current % l.length].getRms();
-
+                    
 				if (graph_type == MMM_PLOT) {
 
 					series[0].add(x, sum/n, false);
