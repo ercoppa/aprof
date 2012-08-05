@@ -16,7 +16,7 @@ gcc -Wall your_code.c gcc-instrument/instr-gcc.c -finstrument-functions -o your_
 }}}
 Of course if your program/lib uses a makefile, you have to modify it in a similarly way.
 
+== Disabling internal function tracing ==
 
-<wiki:comment>
-*EXPLAIN HOW TO DISABLE INTERNAL FUNCTION TRACING IN APROF*
-</wiki:comment>
+In order to disable the internal function tracing of aprof, you need
+to edit in `/path_to_aprof/valgrind/aprof/aprof.h` the value of `TRACE_FUNCTION` from `1` to `0`. Then you need to recompile aprof.
