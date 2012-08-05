@@ -41,7 +41,7 @@ To make the jar file, run the following commands:
 
 {{{
 cd aprofplot
-ant
+ant jar
 }}}
 
 ==== Set ctags binary path ====
