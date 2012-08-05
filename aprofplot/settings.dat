@@ -1,6 +1,6 @@
 /home/ercoppa/Dropbox/aprof-paper/benchmark/SPEC2006/Cluster/log spec ADDR=4/h264
 blacklist 0 
-graph_order 0 7 2 3 4 5 1 
+graph_order 7 2 3 4 5 1 
 src  /home/ercoppa/Desktop/code/CPU2006 _sourcecode/403.gcc/src
 ctags ctags-exuberant
 rtn_display 0
