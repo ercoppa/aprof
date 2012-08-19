@@ -32,35 +32,7 @@
 */
 
 #include "../valgrind/include/valgrind.h"
-
-/*
- * Three possible key types:
- * 1) read memory size (computed by aprof)
- * 2) custom value (64 bit integer)
- * 3) calling context (computed by aprof)
- */
-
-#define FIRST_RMS      1 /* 000 000 001 */
-#define FIRST_CUSTOM   2 /* 000 000 010 */
-#define FIRST_CC       4 /* 000 000 100 */
-
-#define SECOND_RMS     8 /* 000 001 000 */
-#define SECOND_CUSTOM 16 /* 000 010 000 */
-#define SECOND_CC     32 /* 000 100 000 */
-
-#define THIRD_RMS     64 /* 001 000 000 */
-#define THIRD_CUSTOM 128 /* 010 000 000 */
-#define THIRD_CC     256 /* 100 000 000 */
-
-/* Configuration values: combine previous cases... */
-#define CUSTOM        (FIRST_CUSTOM)
-#define RMS_CUSTOM    (FIRST_RMS || SECOND_CUSTOM)
-#define CUSTOM_RMS    (FIRST_CUSTOM || SECOND_RMS)
-#define CUSTOM_CUSTOM (FIRST_CUSTOM || SECOND_RMS)
-#define RMS_CC        (FIRST_RMS || SECOND_CC)
-#define RMS_CUSTOM_CC (FIRST_RMS || SECOND_CUSTOM || THIRD_CC)
-#define RMS_CUSTOM_CUSTOM (FIRST_RMS || SECOND_CUSTOM || THIRD_CUSTOM)
-/* add others in future... */
+#include "../valgrind/aprof/conf_keys.h"
 
 /* only a custom key */
 #define SET_PROFILE_KEY(k) set_profile_keys(CUSTOM, key, 0, 0); 
