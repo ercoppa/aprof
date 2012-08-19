@@ -53,6 +53,7 @@
 #include "hashtable/hashtable.h"
 #include "../coregrind/pub_core_options.h"
 #include "lookup_table.h"
+#include "conf_keys.h"
 
 #define APROF_(str) VGAPPEND(vgAprof_,str)
 
@@ -106,6 +107,10 @@
 #define Endness Iend_LE
 #else
 #error "Unknown endianness"
+#endif
+
+#if TRACE_FUNCTION == 0
+#error "Use the stable version, external tracing is temporarily broken"
 #endif
 
 /* Failure/error function */
