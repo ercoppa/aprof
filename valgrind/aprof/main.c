@@ -596,9 +596,7 @@ static void APROF_(pre_clo_init)(void) {
 											NULL
 										);
 	
-	#if !TRACE_FUNCTION
-	VG_(needs_client_requests)		(APROF_(trace_function));
-	#endif
+	VG_(needs_client_requests)		(APROF_(client_request));
 	
 	VG_(track_start_client_code)	(APROF_(switch_thread));
 	VG_(track_pre_thread_ll_exit)	(APROF_(thread_exit));
