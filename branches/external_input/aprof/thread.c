@@ -95,8 +95,7 @@ static ThreadData * APROF_(thread_start)(ThreadId tid){
 	#endif
 	
 	tdata->accesses = LK_create();
-	tdata->next_aid = 1;
-	
+
 	#if CCT
 	
 	// allocate dummy CCT root

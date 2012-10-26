@@ -10,7 +10,8 @@
 
    Copyright (C) 2011-2012, Emilio Coppa (ercoppa@gmail.com),
                             Camil Demetrescu,
-                            Irene Finocchi
+                            Irene Finocchi,
+                            Romolo Marotta
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -158,9 +159,10 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
 	act->entry_time          = start;
 	act->rms                 = 0;
 	act->total_children_time = 0;
-	act->aid                 = tdata->next_aid++;
+	act->aid                 = ++APROF_(global_counter);
 	
 	/* check & fix timestamp overflow */
+	#if 0 // this code is wrong
 	if (act->aid == 0) {
 		
 		//SUF_print(tdata->accesses);
@@ -185,6 +187,7 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
 		//VG_(printf)("Current aid is %u\nNext aid is %u\n", act->aid, tdata->next_aid);
 		
 	}
+	#endif
 	
 	#if DISCARD_UNKNOWN
 	if (!rtn_info->fn->discard_info) {

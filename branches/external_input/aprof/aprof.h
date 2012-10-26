@@ -266,7 +266,7 @@ typedef struct {
     ULong          total_children_time;  // total time spent in children
     UInt           rms;                  // RMS of activation (always not negative when an activation ends)
     RoutineInfo *  rtn_info;             // pointer to info record of activated routine
-    UInt           aid;                  // Activation ID
+    UInt           aid;                  // Activation ID (value of the global counter when this act started)
     
     #if CCT
     CCTNode *      node;                 // pointer to the CCT node associated with the call
@@ -289,7 +289,6 @@ typedef struct ThreadData {
     Activation *    stack;               // activation stack
     UInt            max_stack_size;      // max stack size
     ULong           next_routine_id;     // the routine_id that will be assigned to the next routine_info
-    UInt            next_aid;            // Activation aid that will be assigned to the next Activation
     ULong           other_metric;        // needed when merging reports
     
     #if CCT
@@ -372,6 +371,13 @@ extern jump_t APROF_(last_exit);
 /* HTs about ELF objects and functions (callstack.c) */
 extern HashTable * APROF_(obj_ht);
 extern HashTable * APROF_(fn_ht);
+
+/* 
+ * Global shadow memory and a global counter 
+ * used for checking latest "version" of an input (memory.c)
+ */
+extern LookupTable * APROF_(global_shadow_memory);
+extern UInt APROF_(global_counter);
 
 /* Functions */
 

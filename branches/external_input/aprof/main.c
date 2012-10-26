@@ -11,7 +11,8 @@
 
    Copyright (C) 2011-2012, Emilio Coppa (ercoppa@gmail.com),
                             Camil Demetrescu,
-                            Irene Finocchi
+                            Irene Finocchi,
+                            Romolo Marotta
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -517,6 +518,8 @@ static void APROF_(post_clo_init)(void) {
 	#if DEBUG_ALLOCATION
 	APROF_(add_alloc)(HT);
 	#endif
+	
+	APROF_(global_shadow_memory) = LK_create();
 	
 }
 

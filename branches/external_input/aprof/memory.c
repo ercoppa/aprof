@@ -10,7 +10,8 @@
 
    Copyright (C) 2011-2012, Emilio Coppa (ercoppa@gmail.com),
                             Camil Demetrescu,
-                            Irene Finocchi
+                            Irene Finocchi,
+                            Romolo Marotta
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -39,6 +40,20 @@
  * - ...
  */
 UInt APROF_(addr_multiple) = 4;
+
+/* 
+ * Global shadow memory used for checking latest "version" of an input.
+ * If a routine writes a memory cell, we update the associated timestamp
+ * in the global shadow memory with the current value of the global counter 
+ */
+LookupTable * APROF_(global_shadow_memory) = NULL;
+
+/*
+ * This global counter is increased by one when there is:
+ * - a new routine activation
+ * - a write of a memory cell
+ */
+UInt APROF_(global_counter) = 0;
 
 VG_REGPARM(3) void APROF_(trace_access)(UWord type, Addr addr, SizeT size) {
 	
@@ -97,25 +112,77 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type, Addr addr, SizeT size) {
 		
 		Activation * act = APROF_(get_activation)(tdata, tdata->stack_depth);
         
-        UInt old_aid = LK_insert( tdata->accesses,
-									
-									#if !COSTANT_MEM_ACCESS
-									addr+(i*APROF_(addr_multiple)),
-									#else
-									addr,
-									#endif
-									
-									act->aid);
+		UInt ts;
+		UInt old_ts;
+		UInt wts;
+		
+		/*
+		 * We are writing a new input value. So, this is a new "version"
+		 * of the memory cell. Update its timestamp in the global shadow memory.
+		 */
+		if (type == STORE || type == MODIFY) {
+			
+			ts = ++APROF_(global_counter);
+			
+			// ToDo: handle overflow!
+			
+			wts = LK_insert(APROF_(global_shadow_memory), 
+							#if !COSTANT_MEM_ACCESS
+							addr+(i*APROF_(addr_multiple)),
+							#else
+							addr,
+							#endif
+							ts);
+			
+		} else { 
+			
+			/*
+			 * This is a load. What is the latest "version" of this
+			 * memory cell? Get timestamp of the memory cell in
+			 * the global shadow memory.
+			 */
+			
+			ts = APROF_(global_counter);
+			wts = LK_lookup(APROF_(global_shadow_memory),
+							#if !COSTANT_MEM_ACCESS
+							addr+(i*APROF_(addr_multiple));
+							#else
+							addr);
+							#endif
+
+		}
+
+		/*
+		 * Update the timestamp in the private shadow memory.
+		 */
+		old_ts = LK_insert(tdata->accesses,
+							#if !COSTANT_MEM_ACCESS
+							addr+(i*APROF_(addr_multiple)),
+							#else
+							addr,
+							#endif
+							ts);
+		
+		if(type == STORE)
+			#if COSTANT_MEM_ACCESS
+			return;
+			#else
+			continue;
+			#endif
+
+		if(old_ts < wts){
+			act->rms++;
+		}
         
-		if (old_aid < act->aid && (type == LOAD || type == MODIFY)) {
+		else if (old_ts < act->aid) {
 			
 			act->rms++;
 			//VG_(printf)("Incremented RMS\n");
-			if (old_aid > 0 && old_aid >= APROF_(get_activation)(tdata, 1)->aid) {
+			if (old_ts > 0 && old_ts >= APROF_(get_activation)(tdata, 1)->aid) {
 				
-				APROF_(get_activation_by_aid)(tdata, old_aid)->rms--;
+				APROF_(get_activation_by_aid)(tdata, old_ts)->rms--;
 				//VG_(printf)("Decremented SMS of ancestor %s\n", 
-				//	APROF_(get_activation_by_aid)(tdata, old_aid)->rtn_info->fn->name);
+				//	APROF_(get_activation_by_aid)(tdata, old_ts)->rtn_info->fn->name);
 			
 			}
 
