@@ -104,7 +104,7 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type, Addr addr, SizeT size) {
 	}
 	
 	#endif
-    
+     
 	#if !COSTANT_MEM_ACCESS
 	unsigned int i = 0;
 	for (i = 0; i < size; i++) {
@@ -133,7 +133,7 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type, Addr addr, SizeT size) {
 							addr,
 							#endif
 							ts);
-			
+
 		} else { 
 			
 			/*
@@ -163,12 +163,14 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type, Addr addr, SizeT size) {
 							#endif
 							ts);
 		
-		if(type == STORE)
+
+		if(type == STORE) {
 			#if COSTANT_MEM_ACCESS
 			return;
 			#else
 			continue;
 			#endif
+		}
 
 		if(old_ts < wts){
 			act->rms++;
@@ -191,5 +193,6 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type, Addr addr, SizeT size) {
 	#if !COSTANT_MEM_ACCESS
 	}
 	#endif
-    
+	
+  
 }

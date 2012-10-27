@@ -520,7 +520,6 @@ static void APROF_(post_clo_init)(void) {
 	#endif
 	
 	APROF_(global_shadow_memory) = LK_create();
-	
 }
 
 /* aprof finalization */
@@ -582,9 +581,9 @@ static void APROF_(print_usage)(void) {
 static void APROF_(pre_clo_init)(void) {
 
 	VG_(details_name)				("aprof");
-	VG_(details_version)			("0.1.1");
+	VG_(details_version)			("0.2");
 	VG_(details_description)		("Input-sensitive Profiler - http://code.google.com/p/aprof/");
-	VG_(details_copyright_author)	("by Emilio Coppa, Camil Demetrescu, Irene Finocchi");
+	VG_(details_copyright_author)	("by Emilio Coppa, Camil Demetrescu, Irene Finocchi, Romolo Marotta");
 	VG_(details_bug_reports_to)		("ercoppa@gmail.com");
 
 	VG_(basic_tool_funcs) 			(	

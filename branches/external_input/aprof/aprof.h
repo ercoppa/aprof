@@ -10,7 +10,8 @@
 
    Copyright (C) 2011-2012, Emilio Coppa (ercoppa@gmail.com),
                             Camil Demetrescu,
-                            Irene Finocchi
+                            Irene Finocchi,
+                            Romolo Marotta
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -58,7 +59,7 @@
 
 /* Behaviour macro */
 #define EMPTY_ANALYSIS      0   // if 1, analysis routines are empty (useful in combination with EVENTCOUNT)
-#define DEBUG               0   // Enable some sanity checks
+#define DEBUG               1   // Enable some sanity checks
 #define VERBOSE             0   // 0 disabled, 1 function + thread, 2 function + thread + load/store/modify,
                                 // 4 very verbose function tracing
 #define EVENTCOUNT          0   // 0 disabled, 1 memory accesses, 2 functions, 3 mem+fn
@@ -83,7 +84,7 @@
 
 /* shadow memory  */
 
-#define CHECK_OVERFLOW      0   // On 64bit machine, we map only 2048GB...
+#define CHECK_OVERFLOW      1   // On 64bit machine, we map only 2048GB...
 
 /*
  * We need to search an aid in the shadow stack...
