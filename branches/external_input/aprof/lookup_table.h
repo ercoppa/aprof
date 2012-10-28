@@ -119,5 +119,5 @@ UInt LK_lookup(LookupTable * lt, UWord key);
  * arr_rid contains the valid timestamps for the current shodow stack
  */
 void LK_compress(LookupTable * lt, UInt * arr_rid, UInt size_arr);
-
+void LK_compress_global(UInt * array, UInt dim);
 #endif

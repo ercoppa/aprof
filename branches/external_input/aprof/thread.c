@@ -32,6 +32,7 @@
 
 #include "aprof.h"
 
+
 /* # running threads */
 UInt APROF_(running_threads) = 0;
 
@@ -43,6 +44,7 @@ ThreadId APROF_(current_TID) = VG_INVALID_THREADID; /* 0 */
 
 /* Current running thread data */
 ThreadData * APROF_(current_tdata) = NULL; 
+
 
 static ThreadData * APROF_(thread_start)(ThreadId tid){
 
@@ -250,3 +252,82 @@ void APROF_(switch_thread)(ThreadId tid, ULong blocks_dispatched) {
 }
 
 
+int APROF_(overflow_handler)(){
+	
+	UInt sum=0; 
+	UInt max=0; 
+	int max_ind[2] = {0, 0};
+	UInt count_thread = APROF_(running_threads);
+	Activation * act_max;
+	int index[count_thread];
+
+	UInt* array; 
+	/*an array where are two kind of timestamp 
+	* if i%2==0 array[i] is a write-ts
+	* else is a activation-ts */
+
+	int i,j, k;
+	k = i = j  = 0;
+
+	
+	/*compute the number of different activation-ts */
+
+	while(i<count_thread && j<VG_N_THREADS){
+		if(threads[j] == NULL)
+			j++;
+		else{
+			sum += (index[i] = threads[j++]->stack_depth);
+			i++;
+		}
+	}
+	
+	/* every avtivation-ts is preceded and succeeded
+	* by an activation */
+	
+	sum = sum << 1;
+	sum++;
+	
+	array = VG_(calloc)("array", sum, sizeof(UInt));
+	max = 0;
+	
+	/* put in array the activation-ts using a merge 
+	* and assign the new ts*/
+
+	for(i=sum-2;i>0;i-=2){
+			k =0;
+
+		for(j=0;j<count_thread;j++){
+
+			while(threads[k]==NULL)k++;
+
+			if(index[j]>0){
+				act_max = APROF_(get_activation)(threads[k], index[j]);
+				if(max < act_max->aid){
+				max_ind[1] = j;
+				max_ind[0] = k;
+				}
+			}
+	
+		}
+		act_max = APROF_(get_activation)(threads[max_ind[0]], index[max_ind[1]]);
+		array[i] = act_max->aid;
+		index[max_ind[1]]--;
+		act_max->aid = i;
+
+	}
+	
+	 LK_compress_global(array, sum);
+	
+	i=j=0;
+	while(i<count_thread && j<VG_N_THREADS){
+		if(threads[j] == NULL)
+			j++;
+		else{
+			LK_compress(threads[j++]->accesses, array, sum);
+			i++;
+		}
+	}
+
+	VG_(free)(array);
+	return sum+1;
+}

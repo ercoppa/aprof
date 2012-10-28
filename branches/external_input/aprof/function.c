@@ -162,32 +162,11 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
 	act->aid                 = ++APROF_(global_counter);
 	
 	/* check & fix timestamp overflow */
-	#if 0 // this code is wrong
-	if (act->aid == 0) {
+	if (act->aid == 0) 
+				act->aid = APROF_(global_counter) = APROF_(overflow_handler)();
 		
-		//SUF_print(tdata->accesses);
-		
-		//VG_(printf)("\nSUF compress\n");
-		
-		/* Collect all valid aid */
-		UInt * arr_aid = VG_(calloc)("arr rid", tdata->stack_depth - 1, sizeof(UInt));
-		int j = 0;
-		for (j = 0; j < tdata->stack_depth - 1; j++) {
-			Activation * act_c = APROF_(get_activation)(tdata, j + 1);
-			arr_aid[j] = act_c->aid;
-			act_c->aid = j + 1;
-			//VG_(printf)("Aid was %u, now is %u\n", arr_aid[j], j+1);
-		}
-		LK_compress(tdata->accesses, arr_aid, tdata->stack_depth -1);
-		VG_(free)(arr_aid);
-		
-		tdata->next_aid = tdata->stack_depth;
-		act->aid = tdata->next_aid++;
-		
-		//VG_(printf)("Current aid is %u\nNext aid is %u\n", act->aid, tdata->next_aid);
-		
-	}
-	#endif
+	
+	
 	
 	#if DISCARD_UNKNOWN
 	if (!rtn_info->fn->discard_info) {

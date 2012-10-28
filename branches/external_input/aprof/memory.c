@@ -124,7 +124,10 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type, Addr addr, SizeT size) {
 			
 			ts = ++APROF_(global_counter);
 			
-			// ToDo: handle overflow!
+			/* overflow handler*/
+			if(ts==0)
+				ts = APROF_(global_counter) = APROF_(overflow_handler)();
+			
 			
 			wts = LK_insert(APROF_(global_shadow_memory), 
 							#if !COSTANT_MEM_ACCESS
@@ -196,3 +199,17 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type, Addr addr, SizeT size) {
 	
   
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
