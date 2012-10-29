@@ -282,7 +282,9 @@ void LK_compress(LookupTable * uf, UInt * arr_rid, UInt size_arr) {
 
 void LK_compress_global(UInt * array, UInt dim){
 	
-	int i, j, k, h, l;
+	VG_(printf)("\nCOMPRESS GSM\n");
+	
+	UInt i, j, k, h, l;
 	k = i = j = l = 0;
 	
 	/* compress different write-timestamps between 
@@ -330,7 +332,9 @@ void LK_compress_global(UInt * array, UInt dim){
 								/* update the older write */
 								if(array[k + 1] == 0 || ts < array[k + 1])
 									array[k + 1] = ts;
-							
+								
+								VG_(printf)("%u => %u\n", ts, k + 1);
+								
 								/* assign new write-ts */
 								table[c] = k + 1;
 								break;
@@ -348,6 +352,8 @@ void LK_compress_global(UInt * array, UInt dim){
 								/* update the older write */
 								if(array[k - 1] == 0 || ts < array[k - 1])
 									array[k - 1] = ts;
+							
+								VG_(printf)("%u => %u\n", ts, k - 1);
 							
 								/* assign new write-ts */
 								table[c] = k - 1;

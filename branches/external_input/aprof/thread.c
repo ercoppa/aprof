@@ -251,6 +251,27 @@ void APROF_(switch_thread)(ThreadId tid, ULong blocks_dispatched) {
 	#endif
 }
 
+void APROF_(print_stacks_acts)() {
+
+	int i = 0;
+	for (i = 0; i < APROF_(running_threads); i++) {
+	
+		if (threads[i] == NULL) continue;
+		int depth = threads[i]->stack_depth;
+		VG_(printf)("STACK THREAD %u\n", i);
+		
+		while (depth > 0) {
+			
+			VG_(printf)("[%d] %u\n", depth, 
+				APROF_(get_activation)(threads[i], depth)->aid);
+			
+		}
+		
+	}
+	
+	
+}
+
 /*
  * global_counter is 32 bit integer so it can overflow. To overcome this
  * issue we compress our set of valid timestamps (e.g., after an overflow).
@@ -281,6 +302,8 @@ UInt APROF_(overflow_handler)(void){
 
 	int i, j, k;
 	k = i = j = 0;
+	
+	APROF_(print_stacks_acts)();
 	
 	/* compute the number of different activation-ts */
 
@@ -357,8 +380,18 @@ UInt APROF_(overflow_handler)(void){
 
 	}
 	
+	VG_(printf)("\nArray overflow:\n");
+	for (i = 0; i < sum; i++)
+		VG_(printf)("%lu ", array[i]);
+	
+	APROF_(print_stacks_acts)();
+	
 	// compress global shadow memory and compute new "cumulative" write-ts 
 	LK_compress_global(array, sum);
+	
+	VG_(printf)("\nArray overflow:\n");
+	for (i = 0; i < sum; i++)
+		VG_(printf)("%lu ", array[i]);
 	
 	// compress all private shadow memories
 	i = j = 0;
