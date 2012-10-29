@@ -391,7 +391,7 @@ void APROF_(fclose)(FILE * f);
 /* handlers of thread events (thread.c) */
 void APROF_(switch_thread)(ThreadId tid, ULong blocks_dispatched);
 void APROF_(thread_exit)(ThreadId tid);
-int APROF_(overflow_handler)(void);
+UInt APROF_(overflow_handler)(void);
 
 /* report functions (report.c) */
 void APROF_(generate_report)(ThreadData * tdata, ThreadId tid);

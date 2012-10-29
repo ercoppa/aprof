@@ -251,25 +251,38 @@ void APROF_(switch_thread)(ThreadId tid, ULong blocks_dispatched) {
 	#endif
 }
 
-
-int APROF_(overflow_handler)(void){
+/*
+ * global_counter is 32 bit integer so it can overflow. To overcome this
+ * issue we compress our set of valid timestamps (e.g., after an overflow).
+ * 
+ * 1) scan all shadow thread stacks (in parallel): collect the (sorted) 
+ *    set of used timestamps by all activations.
+ * 
+ * 2) After and before each activation ts insert a (unknown... for now) ts:
+ *    all writes between two activations will be assigned to this ts.
+ * 
+ * 3) element i-th of the set is associated to the new timestamp i.
+ *    re-assign ts to all activations.
+ * 
+ * 4) re-assign ts in the global shadow memory (see LK_compress_global)
+ *    and compute unknown ts
+ * 
+ * 5) re-assign ts in all private shadow memories (see LK_compress)
+ * 
+ * Return the new starting value for the global counter.
+ */
+UInt APROF_(overflow_handler)(void){
 	
-	UInt sum = 0; 
+	UInt sum = 0; // # valid timestamps
 	UInt max = 0; 
-	int max_ind[2] = {0, 0};
 	UInt count_thread = APROF_(running_threads);
 	Activation * act_max;
-	int index[count_thread];
+	int index[count_thread]; 
 
-	UInt* array; 
-	/*an array where are two kind of timestamp 
-	* if i%2==0 array[i] is a write-ts
-	* else is a activation-ts */
-
-	int i,j, k;
+	int i, j, k;
 	k = i = j = 0;
 	
-	/*compute the number of different activation-ts */
+	/* compute the number of different activation-ts */
 
 	while(i < count_thread && j < VG_N_THREADS){
 		
@@ -281,22 +294,45 @@ int APROF_(overflow_handler)(void){
 		}
 	}
 	
-	/* every activation-ts is preceded and succeeded
-	* by an activation */
-	
+	/* 
+	 * Between two activation ts we insert a "cumulative" ts
+	 * for all the write ops (performed btw these two time instants).
+	 * The value of this ts is unknown (we compute the right value
+	 * in LK_compress_global) so we only double the size of the
+	 * set of valid ts. 
+	 */
 	sum = sum << 1;
 	sum++;
 	
-	array = VG_(calloc)("array overflow", sum, sizeof(UInt));
+	/* 
+	 * an array where are two kind of timestamps 
+	 * if i % 2 == 0 array[i] is a write-ts
+	 * else is a activation-ts 
+	 */
+	UInt* array = VG_(calloc)("array overflow", sum, sizeof(UInt));
 	max = 0;
 	
-	/* put in array the activation-ts using a merge 
-	* and assign the new ts*/
-
+	/*
+	 * Info about activation/thread with the max activation-ts
+	 *  max_ind[0]: index of the thread in threads[]
+	 *  max_ind[1]: this is the index in index[] associated to this thread.
+	 *              index[i] contains the lower activation (of the shadow
+	 *              stack for i-th thread) already checked as candidate
+	 *              for the current max      
+	 */
+	int max_ind[2] = {0, 0};
+	
+	/* 
+	 * Collect valid activation-ts using a merge 
+	 * and re-assign the new ts 
+	 *  
+	 *  i -= 2 because we alternate act-ts and write-ts
+	 */
 	for(i = sum-2; i > 0; i -= 2){
 		
 		k = 0;
 
+		/* find the max activation ts among all shadow stacks */ 
 		for(j = 0; j < count_thread; j++){
 
 			while(threads[k] == NULL) k++;
@@ -316,13 +352,15 @@ int APROF_(overflow_handler)(void){
 		}
 		act_max = APROF_(get_activation)(threads[max_ind[0]], index[max_ind[1]]);
 		array[i] = act_max->aid;
-		index[max_ind[1]]--;
-		act_max->aid = i;
+		index[max_ind[1]]--; // next time we check for the max the caller of this act
+		act_max->aid = i; // re-assign ts
 
 	}
 	
+	// compress global shadow memory and compute new "cumulative" write-ts 
 	LK_compress_global(array, sum);
 	
+	// compress all private shadow memories
 	i = j = 0;
 	while(i < count_thread && j < VG_N_THREADS){
 		if(threads[j] == NULL)
