@@ -125,9 +125,10 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type, Addr addr, SizeT size) {
 			ts = ++APROF_(global_counter);
 			
 			/* overflow handler*/
-			if(ts == 0)
+			if(ts == 20000) {
 				ts = APROF_(global_counter) = APROF_(overflow_handler)();
-			
+				AP_ASSERT(0, "Check overflow");
+			}
 			
 			wts = LK_insert(APROF_(global_shadow_memory), 
 							#if !COSTANT_MEM_ACCESS

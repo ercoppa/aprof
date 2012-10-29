@@ -536,6 +536,8 @@ static void APROF_(fini)(Int exitcode) {
 	HT_destruct(APROF_(fn_ht));
 	HT_destruct(APROF_(obj_ht));
 
+	//VG_(printf)("Global counter: %u\n", APROF_(global_counter));
+
 }
 
 /*

@@ -258,11 +258,11 @@ void APROF_(print_stacks_acts)() {
 	
 		if (threads[i] == NULL) continue;
 		int depth = threads[i]->stack_depth;
-		VG_(printf)("STACK THREAD %u\n", i);
+		VG_(printf)("\nSTACK THREAD %u\n", i);
 		
 		while (depth > 0) {
 			
-			VG_(printf)("[%d] %u\n", depth, 
+			VG_(printf)("[%d] %u\n", depth--, 
 				APROF_(get_activation)(threads[i], depth)->aid);
 			
 		}
@@ -293,6 +293,8 @@ void APROF_(print_stacks_acts)() {
  * Return the new starting value for the global counter.
  */
 UInt APROF_(overflow_handler)(void){
+	
+	VG_(printf)("\nOVERFLOW HANDLER\n");
 	
 	UInt sum = 0; // # valid timestamps
 	UInt max = 0; 
@@ -383,8 +385,11 @@ UInt APROF_(overflow_handler)(void){
 	VG_(printf)("\nArray overflow:\n");
 	for (i = 0; i < sum; i++)
 		VG_(printf)("%lu ", array[i]);
+	VG_(printf)("\n");
 	
 	APROF_(print_stacks_acts)();
+	
+	AP_ASSERT(0, "Controllia correttezza overflow");
 	
 	// compress global shadow memory and compute new "cumulative" write-ts 
 	LK_compress_global(array, sum);
