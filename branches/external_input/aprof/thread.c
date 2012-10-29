@@ -262,9 +262,9 @@ void APROF_(print_stacks_acts)() {
 		
 		while (depth > 0) {
 			
-			VG_(printf)("[%d] %u\n", depth--, 
+			VG_(printf)("[%d] %u\n", depth, 
 				APROF_(get_activation)(threads[i], depth)->aid);
-			
+			depth--;
 		}
 		
 	}
@@ -300,7 +300,7 @@ UInt APROF_(overflow_handler)(void){
 	UInt max = 0; 
 	UInt count_thread = APROF_(running_threads);
 	Activation * act_max;
-	int index[count_thread]; 
+	int * index = VG_(calloc)("index for merge", count_thread, sizeof(int)); 
 
 	int i, j, k;
 	k = i = j = 0;
@@ -319,6 +319,11 @@ UInt APROF_(overflow_handler)(void){
 		}
 	}
 	
+	VG_(printf)("\nArray index:");
+	for (i = 0; i < count_thread; i++)
+		VG_(printf)(" %d ", index[i]);
+	VG_(printf)("\n\n");
+	
 	/* 
 	 * Between two activation ts we insert a "cumulative" ts
 	 * for all the write ops (performed btw these two time instants).
@@ -335,7 +340,6 @@ UInt APROF_(overflow_handler)(void){
 	 * else is a activation-ts 
 	 */
 	UInt* array = VG_(calloc)("array overflow", sum, sizeof(UInt));
-	max = 0;
 	
 	/*
 	 * Info about activation/thread with the max activation-ts
@@ -356,6 +360,7 @@ UInt APROF_(overflow_handler)(void){
 	for(i = sum-2; i > 0; i -= 2){
 		
 		k = 0;
+		max = 0;
 
 		/* find the max activation ts among all shadow stacks */ 
 		for(j = 0; j < count_thread; j++){
@@ -365,6 +370,7 @@ UInt APROF_(overflow_handler)(void){
 			if(index[j] > 0){
 				
 				act_max = APROF_(get_activation)(threads[k], index[j]);
+				VG_(printf)("Checking: %u - %d\n", act_max->aid, index[j]);
 				if(max < act_max->aid){
 				
 					max_ind[1] = j;
@@ -373,9 +379,11 @@ UInt APROF_(overflow_handler)(void){
 				}
 			
 			}
+			k++;
 	
 		}
 		act_max = APROF_(get_activation)(threads[max_ind[0]], index[max_ind[1]]);
+		VG_(printf)("Max: %u\n\n", act_max->aid);
 		array[i] = act_max->aid;
 		index[max_ind[1]]--; // next time we check for the max the caller of this act
 		act_max->aid = i; // re-assign ts
@@ -384,7 +392,7 @@ UInt APROF_(overflow_handler)(void){
 	
 	VG_(printf)("\nArray overflow:\n");
 	for (i = 0; i < sum; i++)
-		VG_(printf)("%lu ", array[i]);
+		VG_(printf)("%u ", array[i]);
 	VG_(printf)("\n");
 	
 	APROF_(print_stacks_acts)();
@@ -396,7 +404,7 @@ UInt APROF_(overflow_handler)(void){
 	
 	VG_(printf)("\nArray overflow:\n");
 	for (i = 0; i < sum; i++)
-		VG_(printf)("%lu ", array[i]);
+		VG_(printf)("%u ", array[i]);
 	
 	// compress all private shadow memories
 	i = j = 0;
