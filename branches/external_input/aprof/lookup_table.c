@@ -34,7 +34,7 @@
 
 // # timestamp in the last level of the lookup table
 static UInt APROF_(flt_size) = 16384; // default value for 
-                                      // memory resoloution = 4
+                                      // memory resolution = 4
                                       
 static UInt APROF_(res_shift) = 2;
                                                                                       
@@ -279,63 +279,72 @@ void LK_compress(LookupTable * uf, UInt * arr_rid, UInt size_arr) {
 	//VG_(printf)("Scanned %u segment\n", i);
 
 }
+
 void LK_compress_global(UInt * array, UInt dim){
-	int i,j, k, h, l;
+	
+	int i, j, k, h, l;
 	k = i = j = l = 0;
 	
-		
 	/* compress different write-timestamps between 
 	* the same activation-timestamps */
 	
-	for(i=0;i<LK_SIZE;i++){
+	for(i = 0; i < LK_SIZE; i++){
 		
 		#ifndef __i386__
 		
-		if( APROF_(global_shadow_memory)->table[i]!=NULL)
+		if(APROF_(global_shadow_memory)->table[i] != NULL)
 			
-			for(j=0;j<ILT_SIZE;j++){
-				UInt* table =  APROF_(global_shadow_memory)->table[i]->table[j];;
+			for(j = 0; j < ILT_SIZE; j++){
+				
+				UInt* table = APROF_(global_shadow_memory)->table[i]->table[j];
 
 		#else
-			UInt* table =  APROF_(global_shadow_memory)->table[i];
+			UInt* table = APROF_(global_shadow_memory)->table[i];
 		#endif
-			if(table!=NULL){
+		
+			if(table != NULL){
+				
 				UInt c;
 				for (c = 0; c < APROF_(flt_size); c++){
+					
 					UInt ts = table[c];
-					h=1;
-					l=dim-2;
+					h = 1;
+					l = dim - 2;
 
-				/* binary search */
+					/* binary search */
 
-					while(h<l){
-						k = (l-h)/2 + h;
-						if(k%2==0)k++;
+					while(h < l){
+						
+						k = (l - h) / 2 + h;
+						if(k % 2 == 0) k++;
 
 						if(array[k] < ts){
 
 							h = k;
 							
-							if(k+2>=dim || ts < array[k+2]){
-							/* update the older write */
-								if(array[k+1] == 0 || ts < array[k+1])
-									array[k+1] = ts;
-							/*assign new write-ts*/
-								table[c] = k+1;
+							if(k + 2 >= dim || ts < array[k + 2]){
+								
+								/* update the older write */
+								if(array[k + 1] == 0 || ts < array[k + 1])
+									array[k + 1] = ts;
+							
+								/* assign new write-ts */
+								table[c] = k + 1;
 								break;
 							}
 
-						}
+						} else {
 							
-						else{
 							l = k;
 		
-							if(k-2<0 || ts > array[k-2]){
-							/* update the older write */
-								if(array[k-1] == 0 || ts < array[k-1])
-									array[k-1] = ts;
-							/*assign new write-ts*/
-								table[c] = k-1;
+							if(k - 2 < 0 || ts > array[k-2]){
+								
+								/* update the older write */
+								if(array[k - 1] == 0 || ts < array[k - 1])
+									array[k - 1] = ts;
+							
+								/* assign new write-ts */
+								table[c] = k - 1;
 								break;
 							}
 							

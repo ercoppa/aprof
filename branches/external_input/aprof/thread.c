@@ -252,10 +252,10 @@ void APROF_(switch_thread)(ThreadId tid, ULong blocks_dispatched) {
 }
 
 
-int APROF_(overflow_handler)(){
+int APROF_(overflow_handler)(void){
 	
-	UInt sum=0; 
-	UInt max=0; 
+	UInt sum = 0; 
+	UInt max = 0; 
 	int max_ind[2] = {0, 0};
 	UInt count_thread = APROF_(running_threads);
 	Activation * act_max;
@@ -267,12 +267,12 @@ int APROF_(overflow_handler)(){
 	* else is a activation-ts */
 
 	int i,j, k;
-	k = i = j  = 0;
-
+	k = i = j = 0;
 	
 	/*compute the number of different activation-ts */
 
-	while(i<count_thread && j<VG_N_THREADS){
+	while(i < count_thread && j < VG_N_THREADS){
+		
 		if(threads[j] == NULL)
 			j++;
 		else{
@@ -281,31 +281,36 @@ int APROF_(overflow_handler)(){
 		}
 	}
 	
-	/* every avtivation-ts is preceded and succeeded
+	/* every activation-ts is preceded and succeeded
 	* by an activation */
 	
 	sum = sum << 1;
 	sum++;
 	
-	array = VG_(calloc)("array", sum, sizeof(UInt));
+	array = VG_(calloc)("array overflow", sum, sizeof(UInt));
 	max = 0;
 	
 	/* put in array the activation-ts using a merge 
 	* and assign the new ts*/
 
-	for(i=sum-2;i>0;i-=2){
-			k =0;
+	for(i = sum-2; i > 0; i -= 2){
+		
+		k = 0;
 
-		for(j=0;j<count_thread;j++){
+		for(j = 0; j < count_thread; j++){
 
-			while(threads[k]==NULL)k++;
+			while(threads[k] == NULL) k++;
 
-			if(index[j]>0){
+			if(index[j] > 0){
+				
 				act_max = APROF_(get_activation)(threads[k], index[j]);
 				if(max < act_max->aid){
-				max_ind[1] = j;
-				max_ind[0] = k;
+				
+					max_ind[1] = j;
+					max_ind[0] = k;
+				
 				}
+			
 			}
 	
 		}
@@ -316,10 +321,10 @@ int APROF_(overflow_handler)(){
 
 	}
 	
-	 LK_compress_global(array, sum);
+	LK_compress_global(array, sum);
 	
-	i=j=0;
-	while(i<count_thread && j<VG_N_THREADS){
+	i = j = 0;
+	while(i < count_thread && j < VG_N_THREADS){
 		if(threads[j] == NULL)
 			j++;
 		else{
@@ -329,5 +334,5 @@ int APROF_(overflow_handler)(){
 	}
 
 	VG_(free)(array);
-	return sum+1;
+	return sum + 1;
 }
