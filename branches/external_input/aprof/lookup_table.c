@@ -317,11 +317,14 @@ void LK_compress_global(UInt * array, UInt dim){
 						
 						k = (l - h) / 2 + h;
 						if(k % 2 == 0) k++;
-
-						if(array[k] < ts){
+						
+						if(array[k] < ts){  
 
 							h = k;
 							
+							/*
+							 * Check if array[k] < ts < array[k + 2]
+							 */
 							if(k + 2 >= dim || ts < array[k + 2]){
 								
 								/* update the older write */
@@ -336,7 +339,10 @@ void LK_compress_global(UInt * array, UInt dim){
 						} else {
 							
 							l = k;
-		
+							
+							/*
+							 * Check if array[k - 2] < ts < array[k]
+							 */
 							if(k - 2 < 0 || ts > array[k-2]){
 								
 								/* update the older write */
@@ -349,6 +355,8 @@ void LK_compress_global(UInt * array, UInt dim){
 							}
 							
 						}
+						
+						AP_ASSERT(h <= l, "timestamp not found");
 
 					}
 				}
