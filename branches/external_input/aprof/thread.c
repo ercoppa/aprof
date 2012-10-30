@@ -484,14 +484,19 @@ UInt APROF_(overflow_handler)(void){
 
 	#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
 	APROF_(fprint_stacks_acts)(post_overflow);
-	APROF_(fclose)(pre_overflow);
-	APROF_(fclose)(post_overflow);
 	#endif
 	
 	// compress global shadow memory and compute new "cumulative" write-ts 
 	LK_compress_global(array, sum);
 	
-	
+
+	#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
+	APROF_(fclose)(pre_overflow);
+	APROF_(fclose)(post_overflow);
+	#endif
+		
+
+
 	#if OVERFLOW_DEBUG == 1 || OVERFLOW_DEBUG == 3
 	VG_(printf)("\nArray overflow:\n");
 	for (i = 0; i < sum; i++)

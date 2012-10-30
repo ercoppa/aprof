@@ -37,7 +37,12 @@ static UInt APROF_(flt_size) = 16384; // default value for
                                       // memory resolution = 4
                                       
 static UInt APROF_(res_shift) = 2;
-                                                                                      
+                 
+
+#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
+	extern FILE* pre_overflow;
+	extern FILE* post_overflow;  
+#endif                                                                   
 LookupTable * LK_create(void) {
 
 	switch(APROF_(addr_multiple)) {
@@ -282,8 +287,22 @@ void LK_compress(LookupTable * uf, UInt * arr_rid, UInt size_arr) {
 
 void LK_compress_global(UInt * array, UInt dim){
 	
+	#if OVERFLOW_DEBUG != 0
 	VG_(printf)("\nCOMPRESS GSM\n");
+	#endif
 	
+	#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
+	char* buffer_pre =  VG_(calloc)("overflow reports file buffer1", BUFFER_SIZE, sizeof(char));
+	char* buffer_post =  VG_(calloc)("overflow reports file buffer2", BUFFER_SIZE, sizeof(char));
+	UInt counter_pre = 0;
+	UInt counter_post = 0;
+	extern FILE* pre_overflow;
+	extern FILE* post_overflow;  
+	counter_pre += VG_(sprintf)(buffer_pre, "\nGLOBAL SHADOW MEMORY\n\n");
+	counter_post += VG_(sprintf)(buffer_post, "\nGLOBAL SHADOW MEMORY\n\n");
+	#endif
+	
+
 	UInt i, j, k, h, l;
 	k = i = j = l = 0;
 	
@@ -318,18 +337,62 @@ void LK_compress_global(UInt * array, UInt dim){
 					/*hope there are a lot "ancient" writes*/
 
 					if(ts < array[h]){
+
+							#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
+							counter_pre += VG_(sprintf)(buffer_pre+counter_pre, "%u\n", table[c]);
+							counter_post += VG_(sprintf)(buffer_post+counter_post, "%u\n", 0);
+							if(counter_pre>BUFFER_SIZE-11){
+								APROF_(fwrite)(pre_overflow, buffer_pre, counter_pre);
+								int z = 0;
+								while(z<counter_pre) ((int*)buffer_pre)[z++] =0;
+								counter_pre = 0;
+							}
+							if(counter_post>BUFFER_SIZE-11){
+								APROF_(fwrite)(post_overflow, buffer_post, counter_post);
+								int z = 0;
+								while(z<counter_post) ((int*)buffer_post)[z++] =0;
+								counter_post = 0;
+							}
+							#endif
+
 						table[c] = 0;
+							
+							#if OVERFLOW_DEBUG == 1 || OVERFLOW_DEBUG == 3
 								VG_(printf)("%u => %u\n", ts, 0);
+							#endif
+
 						continue;
 					}
 					
 					/*vice versa*/
 
 					if(ts > array[l]){
+							
+							#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
+							counter_pre += VG_(sprintf)(buffer_pre+counter_pre, "%u\n", table[c]);
+							counter_post += VG_(sprintf)(buffer_post+counter_post, "%u\n", l+1);
+							if(counter_pre>BUFFER_SIZE-11){
+								APROF_(fwrite)(pre_overflow, buffer_pre, counter_pre);
+								int z = 0;
+								while(z<counter_pre) ((int*)buffer_pre)[z++] =0;
+								counter_pre = 0;
+							}
+							if(counter_post>BUFFER_SIZE-11){
+								APROF_(fwrite)(post_overflow, buffer_post, counter_post);
+								int z = 0;
+								while(z<counter_post) ((int*)buffer_post)[z++] =0;
+								counter_post = 0;
+							}
+							#endif
+
 						table[c] = ++l;
 						if(array[l] == 0 || ts < array[l])
 									array[l] = ts;
+						
+					
+						#if OVERFLOW_DEBUG == 1 || OVERFLOW_DEBUG == 3
 								VG_(printf)("%u => %u\n", ts, l);
+						#endif
 						continue;
 					}
 
@@ -358,6 +421,26 @@ void LK_compress_global(UInt * array, UInt dim){
 									array[k] = ts;
 								
 								/* assign new write-ts */
+
+								#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
+								counter_pre += VG_(sprintf)(buffer_pre+counter_pre, "%u\n", table[c]);
+								counter_post += VG_(sprintf)(buffer_post+counter_post, "%u\n", k);
+								if(counter_pre>BUFFER_SIZE-11){
+									APROF_(fwrite)(pre_overflow, buffer_pre, counter_pre);
+									int z = 0;
+									while(z<counter_pre) ((int*)buffer_pre)[z++] =0;
+									counter_pre = 0;
+								}
+								if(counter_post>BUFFER_SIZE-11){
+									APROF_(fwrite)(post_overflow, buffer_post, counter_post);
+									int z = 0;
+									while(z<counter_post) ((int*)buffer_post)[z++] =0;
+									counter_post = 0;
+								}
+								#endif
+
+
+
 								table[c] = k;
 								break;
 							}
@@ -381,6 +464,23 @@ void LK_compress_global(UInt * array, UInt dim){
 							
 								/* assign new write-ts */
 								table[c] = k;
+
+								#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
+								counter_pre += VG_(sprintf)(buffer_pre+counter_pre, "%u\n", table[c]);
+								counter_post += VG_(sprintf)(buffer_post+counter_post, "%u\n", k);
+								if(counter_pre>BUFFER_SIZE-11){
+									APROF_(fwrite)(pre_overflow, buffer_pre, counter_pre);
+									int z = 0;
+									while(z<counter_pre) ((int*)buffer_pre)[z++] =0;
+									counter_pre = 0;
+								}
+								if(counter_post>BUFFER_SIZE-11){
+									APROF_(fwrite)(post_overflow, buffer_post, counter_post);
+									int z = 0;
+									while(z<counter_post) ((int*)buffer_post)[z++] =0;
+									counter_post = 0;
+								}
+								#endif
 								
 								break;
 							}
@@ -407,18 +507,44 @@ void LK_compress_global(UInt * array, UInt dim){
 						if(array[k] == 0 || ts < array[k])
 									array[k] = ts;
 							
-							
+
+								#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
+								counter_pre += VG_(sprintf)(buffer_pre+counter_pre, "%u\n", table[c]);
+								counter_post += VG_(sprintf)(buffer_post+counter_post, "%u\n", k);
+								if(counter_pre>BUFFER_SIZE-11){
+									APROF_(fwrite)(pre_overflow, buffer_pre, counter_pre);
+									int z = 0;
+									while(z<counter_pre) ((int*)buffer_pre)[z++] =0;
+									counter_pre = 0;
+								}
+								if(counter_post>BUFFER_SIZE-11){
+									APROF_(fwrite)(post_overflow, buffer_post, counter_post);
+									int z = 0;
+									while(z<counter_post) ((int*)buffer_post)[z++] =0;
+									counter_post = 0;
+								}
+								#endif							
+
+
 								/* assign new write-ts */
 								table[c] = k;
 
 					
 					}
+#if OVERFLOW_DEBUG == 1 || OVERFLOW_DEBUG == 3
 								VG_(printf)("%u => %u\n", ts, k);
+#endif
 				}
 			}
 		#ifndef __i386__
 		}
 		#endif
 	}
-
+	counter_pre += VG_(sprintf)(buffer_pre+counter_pre, "\n$\n");
+	counter_post += VG_(sprintf)(buffer_post+counter_post, "\n$\n");
+	APROF_(fwrite)(pre_overflow, buffer_pre, counter_pre);
+	APROF_(fwrite)(post_overflow, buffer_post, counter_post);
+	
+	VG_(free)(buffer_pre);
+	VG_(free)(buffer_post);
 }

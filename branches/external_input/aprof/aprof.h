@@ -62,7 +62,7 @@
 #define DEBUG               1   // Enable some sanity checks
 #define VERBOSE             0   // 0 disabled, 1 function + thread, 2 function + thread + load/store/modify,
                                 // 4 very verbose function tracing
-#define OVERFLOW_DEBUG		3  	// if 0 disabled
+#define OVERFLOW_DEBUG		2  	// if 0 disabled
 								// if 1 print checks on console
 								// if 2 generate report file
 								// if 3 like 1 & 2
@@ -386,6 +386,7 @@ extern HashTable * APROF_(fn_ht);
  */
 extern LookupTable * APROF_(global_shadow_memory);
 extern UInt APROF_(global_counter);
+
 
 /* Functions */
 
