@@ -59,8 +59,7 @@ void APROF_(fflush)(FILE * f) {
 	
 	f->fw_pos = 0;
 
-}
-
+}/* for debug*/
 void APROF_(fwrite)(FILE * f, char * buffer, unsigned int size) {
 
 	if (buffer == NULL || size == 0) return;

@@ -45,6 +45,10 @@ ThreadId APROF_(current_TID) = VG_INVALID_THREADID; /* 0 */
 /* Current running thread data */
 ThreadData * APROF_(current_tdata) = NULL; 
 
+/*For overflow_handler debug*/
+FILE* pre_overflow;
+FILE* post_overflow;
+UInt overflow_counter = 0;
 
 static ThreadData * APROF_(thread_start)(ThreadId tid){
 
@@ -272,6 +276,28 @@ void APROF_(print_stacks_acts)() {
 	
 }
 
+void APROF_(fprint_stacks_acts)() {
+
+	int i = 0;
+	for (i = 0; i < APROF_(running_threads); i++) {
+	
+		if (threads[i] == NULL) continue;
+		int depth = threads[i]->stack_depth;
+		VG_(printf)("\nSTACK THREAD %u\n", i);
+		
+		while (depth > 0) {
+			
+			VG_(printf)("[%d] %u\n", depth, 
+				APROF_(get_activation)(threads[i], depth)->aid);
+			depth--;
+		}
+		
+	}
+	
+	
+}
+
+
 /*
  * global_counter is 32 bit integer so it can overflow. To overcome this
  * issue we compress our set of valid timestamps (e.g., after an overflow).
@@ -299,7 +325,7 @@ UInt APROF_(overflow_handler)(void){
 	UInt sum = 0; // # valid timestamps
 	UInt max = 0; 
 	UInt count_thread = APROF_(running_threads);
-	Activation * act_max;
+	Activation * act_tmp;
 	int * index = VG_(calloc)("index for merge", count_thread, sizeof(int)); 
 
 	int i, j, k;
@@ -343,13 +369,14 @@ UInt APROF_(overflow_handler)(void){
 	
 	/*
 	 * Info about activation/thread with the max activation-ts
-	 *  max_ind[0]: index of the thread in threads[]
-	 *  max_ind[1]: this is the index in index[] associated to this thread.
+	 *  act_max: 	the current activation eith the higher ts
+	 *  max_ind: this is the index in index[] associated to this thread.
 	 *              index[i] contains the lower activation (of the shadow
 	 *              stack for i-th thread) already checked as candidate
 	 *              for the current max      
 	 */
-	int max_ind[2] = {0, 0};
+	int max_ind = 0;
+	Activation * act_max;
 	
 	/* 
 	 * Collect valid activation-ts using a merge 
@@ -369,12 +396,13 @@ UInt APROF_(overflow_handler)(void){
 
 			if(index[j] > 0){
 				
-				act_max = APROF_(get_activation)(threads[k], index[j]);
-				VG_(printf)("Checking: %u - %d\n", act_max->aid, index[j]);
-				if(max < act_max->aid){
-				
-					max_ind[1] = j;
-					max_ind[0] = k;
+				act_tmp = APROF_(get_activation)(threads[k], index[j]);
+				VG_(printf)("Checking: %u - %d\n", act_tmp->aid, index[j]);
+				if(max < act_tmp->aid){
+					
+					max = act_tmp->aid;
+					act_max = act_tmp;
+					max_ind = j;
 				
 				}
 			
@@ -382,10 +410,10 @@ UInt APROF_(overflow_handler)(void){
 			k++;
 	
 		}
-		act_max = APROF_(get_activation)(threads[max_ind[0]], index[max_ind[1]]);
+
 		VG_(printf)("Max: %u\n\n", act_max->aid);
 		array[i] = act_max->aid;
-		index[max_ind[1]]--; // next time we check for the max the caller of this act
+		index[max_ind]--; // next time we check for the max the caller of this act
 		act_max->aid = i; // re-assign ts
 
 	}
@@ -397,15 +425,17 @@ UInt APROF_(overflow_handler)(void){
 	
 	APROF_(print_stacks_acts)();
 	
-	AP_ASSERT(0, "Controllia correttezza overflow");
 	
 	// compress global shadow memory and compute new "cumulative" write-ts 
 	LK_compress_global(array, sum);
 	
+	
+
 	VG_(printf)("\nArray overflow:\n");
 	for (i = 0; i < sum; i++)
 		VG_(printf)("%u ", array[i]);
 	
+	VG_(printf)("\ncompress all private shadow memories\n");
 	// compress all private shadow memories
 	i = j = 0;
 	while(i < count_thread && j < VG_N_THREADS){

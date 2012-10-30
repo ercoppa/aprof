@@ -308,63 +308,112 @@ void LK_compress_global(UInt * array, UInt dim){
 				
 				UInt c;
 				for (c = 0; c < APROF_(flt_size); c++){
-					
+					if(table[c] == 0)continue;
 					UInt ts = table[c];
+					
+					
 					h = 1;
 					l = dim - 2;
+					
+					/*hope there are a lot "ancient" writes*/
+
+					if(ts < array[h]){
+						table[c] = 0;
+								VG_(printf)("%u => %u\n", ts, 0);
+						continue;
+					}
+					
+					/*vice versa*/
+
+					if(ts > array[l]){
+						table[c] = ++l;
+						if(array[l] == 0 || ts < array[l])
+									array[l] = ts;
+								VG_(printf)("%u => %u\n", ts, l);
+						continue;
+					}
+
+					
 
 					/* binary search */
+					
+					while(h != l-2){
 
-					while(h < l){
+						k = (l+h)/2 ;
+						if(k % 2 == 0) k--;
 						
-						k = (l - h) / 2 + h;
-						if(k % 2 == 0) k++;
-						
-						if(array[k] < ts){  
 
+						//VG_(printf)("h: %u, k:%u, l:%u\n", h, k, l);
+						if(array[k] < ts){ 
 							h = k;
 							
 							/*
 							 * Check if array[k] < ts < array[k + 2]
 							 */
-							if(k + 2 >= dim || ts < array[k + 2]){
-								
-								/* update the older write */
-								if(array[k + 1] == 0 || ts < array[k + 1])
-									array[k + 1] = ts;
-								
-								VG_(printf)("%u => %u\n", ts, k + 1);
+
+							if(ts < array[k + 2]){
+								k++;
+								/* update to older write */
+								if(array[k] == 0 || ts < array[k])
+									array[k] = ts;
 								
 								/* assign new write-ts */
-								table[c] = k + 1;
+								table[c] = k;
 								break;
 							}
 
 						} else {
 							
-							l = k;
 							
+							l = k;
+
 							/*
 							 * Check if array[k - 2] < ts < array[k]
 							 */
-							if(k - 2 < 0 || ts > array[k-2]){
-								
-								/* update the older write */
-								if(array[k - 1] == 0 || ts < array[k - 1])
-									array[k - 1] = ts;
+
+							if(ts > array[k-2]){
+
+								k--;
+								/* update to older write */
+								if(array[k] == 0 || ts < array[k])
+									array[k] = ts;
 							
-								VG_(printf)("%u => %u\n", ts, k - 1);
 							
 								/* assign new write-ts */
-								table[c] = k - 1;
+								table[c] = k;
+								
 								break;
 							}
 							
+							
 						}
 						
-						AP_ASSERT(h <= l, "timestamp not found");
-
 					}
+		
+					/*base case
+					*ex: h = 1 and l = 3 	
+					*	the possible values are: 0 , 2	or 4*/
+					
+					if(h == l-2){
+						
+						if(ts < array[h])
+							k = h-1;
+						else if (ts > array[l])
+							k = l+1;
+						else //paranoia
+							k = h+1;
+						
+						/* update to older write */
+						if(array[k] == 0 || ts < array[k])
+									array[k] = ts;
+							
+							
+								/* assign new write-ts */
+								table[c] = k;
+
+					
+					}
+								VG_(printf)("%u => %u\n", ts, k);
 				}
 			}
 		#ifndef __i386__

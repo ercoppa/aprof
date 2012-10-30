@@ -125,7 +125,7 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type, Addr addr, SizeT size) {
 			ts = ++APROF_(global_counter);
 			
 			/* overflow handler*/
-			if(ts == 20000) {
+			if(ts >= 20000) {
 				ts = APROF_(global_counter) = APROF_(overflow_handler)();
 				AP_ASSERT(0, "Check overflow");
 			}
