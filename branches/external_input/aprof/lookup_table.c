@@ -37,12 +37,7 @@ static UInt APROF_(flt_size) = 16384; // default value for
                                       // memory resolution = 4
                                       
 static UInt APROF_(res_shift) = 2;
-                 
-
-#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
-	extern FILE* pre_overflow;
-	extern FILE* post_overflow;  
-#endif                                                                   
+                                                                                 
 LookupTable * LK_create(void) {
 
 	switch(APROF_(addr_multiple)) {
@@ -463,7 +458,6 @@ void LK_compress_global(UInt * array, UInt dim){
 							
 							
 								/* assign new write-ts */
-								table[c] = k;
 
 								#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
 								counter_pre += VG_(sprintf)(buffer_pre+counter_pre, "%u\n", table[c]);
@@ -481,6 +475,8 @@ void LK_compress_global(UInt * array, UInt dim){
 									counter_post = 0;
 								}
 								#endif
+
+								table[c] = k;
 								
 								break;
 							}

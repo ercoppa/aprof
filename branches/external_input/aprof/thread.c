@@ -363,10 +363,10 @@ UInt APROF_(overflow_handler)(void){
 	#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
 	char* fname  = VG_(calloc)("name of overflow reports file", 100, sizeof(char));
 	
-	 VG_(sprintf)(fname, "pre_overflow_%u.txt\n", overflow_counter);
+	 VG_(sprintf)(fname, "pre_overflow_%u.txt", overflow_counter);
 	pre_overflow = APROF_(fopen)(fname);
 
-	VG_(sprintf)(fname, "post_overflow_%u.txt\n", overflow_counter);
+	VG_(sprintf)(fname, "post_overflow_%u.txt", overflow_counter);
 	post_overflow = APROF_(fopen)(fname);
 
 	overflow_counter++;
@@ -476,7 +476,7 @@ UInt APROF_(overflow_handler)(void){
 	#if OVERFLOW_DEBUG == 1 || OVERFLOW_DEBUG == 3
 	VG_(printf)("\nArray overflow:\n");
 	for (i = 0; i < sum; i++)
-		VG_(printf)("%u ", array[i]);
+		VG_(printf)("[%u] %u \n",i, array[i]);
 	VG_(printf)("\n");
 	
 	APROF_(print_stacks_acts)();
@@ -500,7 +500,7 @@ UInt APROF_(overflow_handler)(void){
 	#if OVERFLOW_DEBUG == 1 || OVERFLOW_DEBUG == 3
 	VG_(printf)("\nArray overflow:\n");
 	for (i = 0; i < sum; i++)
-		VG_(printf)("%u ", array[i]);
+		VG_(printf)("[%u] %u \n",i, array[i]);
 	
 	VG_(printf)("\ncompress all private shadow memories\n");
 	#endif
