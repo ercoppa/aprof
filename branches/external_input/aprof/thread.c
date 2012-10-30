@@ -45,10 +45,16 @@ ThreadId APROF_(current_TID) = VG_INVALID_THREADID; /* 0 */
 /* Current running thread data */
 ThreadData * APROF_(current_tdata) = NULL; 
 
-/*For overflow_handler debug*/
+/*For overflow_handler debug
+ * pre_overflow => activation & write ts before overflow
+* post_overflow => activation & write ts after overflow
+* overflow_counter => overflow occurrences*/
+
+#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
 FILE* pre_overflow;
 FILE* post_overflow;
 UInt overflow_counter = 0;
+#endif
 
 static ThreadData * APROF_(thread_start)(ThreadId tid){
 
@@ -256,7 +262,8 @@ void APROF_(switch_thread)(ThreadId tid, ULong blocks_dispatched) {
 }
 
 void APROF_(print_stacks_acts)() {
-
+	
+	
 	int i = 0;
 	for (i = 0; i < APROF_(running_threads); i++) {
 	
@@ -275,25 +282,44 @@ void APROF_(print_stacks_acts)() {
 	
 	
 }
-
-void APROF_(fprint_stacks_acts)() {
-
+/* print in a file the activations live in stacks 
+ * for debug*/
+void APROF_(fprint_stacks_acts)(FILE* f) {
+	
+	
+	char* buffer =  VG_(calloc)("overflow reports file buffer", BUFFER_SIZE, sizeof(char));
+	UInt counter = 0;
 	int i = 0;
+	counter+=VG_(sprintf)(buffer+counter, "STACKS\n\n");
 	for (i = 0; i < APROF_(running_threads); i++) {
 	
 		if (threads[i] == NULL) continue;
 		int depth = threads[i]->stack_depth;
-		VG_(printf)("\nSTACK THREAD %u\n", i);
-		
 		while (depth > 0) {
-			
-			VG_(printf)("[%d] %u\n", depth, 
-				APROF_(get_activation)(threads[i], depth)->aid);
+				counter += VG_(sprintf)(buffer+counter, "%u\n", APROF_(get_activation)(threads[i], depth)->aid);
+				if(counter>BUFFER_SIZE-11){
+					APROF_(fwrite)(f, buffer, counter);
+					int k = 0;
+					while(k<counter) ((int*)buffer)[k++] =0;
+					counter = 0;
+				}
 			depth--;
 		}
 		
+		counter += VG_(sprintf)(buffer+counter, "\n");
+		
+			if(counter>BUFFER_SIZE-11){
+					APROF_(fwrite)(f, buffer, counter);
+					int k = 0;
+					while(k<counter) ((int*)buffer)[k++] =0;
+					counter = 0;
+				}
+		
 	}
+	counter += VG_(sprintf)(buffer+counter, "$\n");
+	APROF_(fwrite)(f, buffer, counter);
 	
+	VG_(free)(buffer);
 	
 }
 
@@ -320,8 +346,10 @@ void APROF_(fprint_stacks_acts)() {
  */
 UInt APROF_(overflow_handler)(void){
 	
+	#if OVERFLOW_DEBUG != 0
 	VG_(printf)("\nOVERFLOW HANDLER\n");
-	
+	#endif
+
 	UInt sum = 0; // # valid timestamps
 	UInt max = 0; 
 	UInt count_thread = APROF_(running_threads);
@@ -330,9 +358,26 @@ UInt APROF_(overflow_handler)(void){
 
 	int i, j, k;
 	k = i = j = 0;
+
+	/*create over_flow report file*/
+	#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
+	char* fname  = VG_(calloc)("name of overflow reports file", 100, sizeof(char));
 	
+	 VG_(sprintf)(fname, "pre_overflow_%u.txt\n", overflow_counter);
+	pre_overflow = APROF_(fopen)(fname);
+
+	VG_(sprintf)(fname, "post_overflow_%u.txt\n", overflow_counter);
+	post_overflow = APROF_(fopen)(fname);
+
+	overflow_counter++;
+	APROF_(fprint_stacks_acts)(pre_overflow);
+	
+	#endif
+
+	#if OVERFLOW_DEBUG == 1 || OVERFLOW_DEBUG == 3
 	APROF_(print_stacks_acts)();
-	
+	#endif
+
 	/* compute the number of different activation-ts */
 
 	while(i < count_thread && j < VG_N_THREADS){
@@ -345,11 +390,14 @@ UInt APROF_(overflow_handler)(void){
 		}
 	}
 	
+	#if OVERFLOW_DEBUG == 1 || OVERFLOW_DEBUG == 3
 	VG_(printf)("\nArray index:");
 	for (i = 0; i < count_thread; i++)
 		VG_(printf)(" %d ", index[i]);
 	VG_(printf)("\n\n");
-	
+	#endif
+
+
 	/* 
 	 * Between two activation ts we insert a "cumulative" ts
 	 * for all the write ops (performed btw these two time instants).
@@ -397,7 +445,11 @@ UInt APROF_(overflow_handler)(void){
 			if(index[j] > 0){
 				
 				act_tmp = APROF_(get_activation)(threads[k], index[j]);
+				
+				#if OVERFLOW_DEBUG == 1 || OVERFLOW_DEBUG == 3
 				VG_(printf)("Checking: %u - %d\n", act_tmp->aid, index[j]);
+				#endif
+
 				if(max < act_tmp->aid){
 					
 					max = act_tmp->aid;
@@ -411,31 +463,44 @@ UInt APROF_(overflow_handler)(void){
 	
 		}
 
+		#if OVERFLOW_DEBUG == 1 || OVERFLOW_DEBUG == 3
 		VG_(printf)("Max: %u\n\n", act_max->aid);
+		#endif
+
 		array[i] = act_max->aid;
 		index[max_ind]--; // next time we check for the max the caller of this act
 		act_max->aid = i; // re-assign ts
 
 	}
 	
+	#if OVERFLOW_DEBUG == 1 || OVERFLOW_DEBUG == 3
 	VG_(printf)("\nArray overflow:\n");
 	for (i = 0; i < sum; i++)
 		VG_(printf)("%u ", array[i]);
 	VG_(printf)("\n");
 	
 	APROF_(print_stacks_acts)();
-	
+	#endif
+
+	#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
+	APROF_(fprint_stacks_acts)(post_overflow);
+	APROF_(fclose)(pre_overflow);
+	APROF_(fclose)(post_overflow);
+	#endif
 	
 	// compress global shadow memory and compute new "cumulative" write-ts 
 	LK_compress_global(array, sum);
 	
 	
-
+	#if OVERFLOW_DEBUG == 1 || OVERFLOW_DEBUG == 3
 	VG_(printf)("\nArray overflow:\n");
 	for (i = 0; i < sum; i++)
 		VG_(printf)("%u ", array[i]);
 	
 	VG_(printf)("\ncompress all private shadow memories\n");
+	#endif
+	
+	AP_ASSERT(0, "Check overflow");
 	// compress all private shadow memories
 	i = j = 0;
 	while(i < count_thread && j < VG_N_THREADS){

@@ -62,6 +62,11 @@
 #define DEBUG               1   // Enable some sanity checks
 #define VERBOSE             0   // 0 disabled, 1 function + thread, 2 function + thread + load/store/modify,
                                 // 4 very verbose function tracing
+#define OVERFLOW_DEBUG		3  	// if 0 disabled
+								// if 1 print checks on console
+								// if 2 generate report file
+								// if 3 like 1 & 2
+
 #define EVENTCOUNT          0   // 0 disabled, 1 memory accesses, 2 functions, 3 mem+fn
 #define CCT                 0   // if 1, keep a calling context tree for each thread to include context information in reports
 #define COSTANT_MEM_ACCESS  1   // if 1, memory access with size >1 are managed as size==1
@@ -70,6 +75,8 @@
 #define RDTSC               2   // rdtsc intel instruction timestamp
 #define BB_COUNT            3   // count BB executed
 #define TIME                BB_COUNT
+
+
 
 #define TRACE_FUNCTION      1   // if 1, aprof trace functions by itself, otherwise it supposes
                                 // that the program is instrumentated by GCC
