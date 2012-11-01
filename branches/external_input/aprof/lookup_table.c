@@ -224,8 +224,8 @@ void LK_compress(LookupTable * uf, UInt * arr_rid, UInt size_arr) {
 	UInt counter_post = 0;
 	extern FILE* pre_overflow;
 	extern FILE* post_overflow;  
-	counter_pre += VG_(sprintf)(buffer_pre, "\n SHADOW MEMORY PRIVATA\n\n");
-	counter_post += VG_(sprintf)(buffer_post, "\n SHADOW MEMORY PRIVATA\n\n");
+	counter_pre += VG_(sprintf)(buffer_pre, "\nSHADOW MEMORY PRIVATA\n\n");
+	counter_post += VG_(sprintf)(buffer_post, "\nSHADOW MEMORY PRIVATA\n\n");
 	#endif
 	//int q = 0;
 	//for (q = 0; q < size_arr; q++) VG_(printf)("arr_rid[%d]: %u\n", q, arr_rid[q]);
@@ -455,7 +455,7 @@ void LK_compress_global(UInt * array, UInt dim){
 
 						//VG_(printf)("h: %u, k:%u, l:%u\n", h, k, l);
 						if(array[k] < ts){ 
-							h = k;
+							
 							
 							/*
 							 * Check if array[k] < ts < array[k + 2]
@@ -491,11 +491,12 @@ void LK_compress_global(UInt * array, UInt dim){
 								table[c] = k;
 								break;
 							}
+							h = k;
 
 						} else {
 							
 							
-							l = k;
+							
 
 							/*
 							 * Check if array[k - 2] < ts < array[k]
@@ -532,7 +533,7 @@ void LK_compress_global(UInt * array, UInt dim){
 								
 								break;
 							}
-							
+							l = k;
 							
 						}
 						

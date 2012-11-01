@@ -502,9 +502,6 @@ UInt APROF_(overflow_handler)(void){
 	VG_(printf)("\ncompress all private shadow memories\n");
 	#endif
 	
-	APROF_(fclose)(pre_overflow);
-	APROF_(fclose)(post_overflow);
-	AP_ASSERT(0, "Check overflow");
 	
 	// compress all private shadow memories
 	i = j = 0;
