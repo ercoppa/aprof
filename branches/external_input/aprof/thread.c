@@ -300,7 +300,7 @@ void APROF_(fprint_stacks_acts)(FILE* f) {
 				if(counter>BUFFER_SIZE-11){
 					APROF_(fwrite)(f, buffer, counter);
 					int k = 0;
-					while(k<counter) ((int*)buffer)[k++] =0;
+					while(k<counter) (buffer)[k++] =0;
 					counter = 0;
 				}
 			depth--;
@@ -311,7 +311,7 @@ void APROF_(fprint_stacks_acts)(FILE* f) {
 			if(counter>BUFFER_SIZE-11){
 					APROF_(fwrite)(f, buffer, counter);
 					int k = 0;
-					while(k<counter) ((int*)buffer)[k++] =0;
+					while(k<counter) (buffer)[k++] =0;
 					counter = 0;
 				}
 		
@@ -490,10 +490,7 @@ UInt APROF_(overflow_handler)(void){
 	LK_compress_global(array, sum);
 	
 
-	#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
-	APROF_(fclose)(pre_overflow);
-	APROF_(fclose)(post_overflow);
-	#endif
+	
 		
 
 
@@ -505,7 +502,10 @@ UInt APROF_(overflow_handler)(void){
 	VG_(printf)("\ncompress all private shadow memories\n");
 	#endif
 	
+	APROF_(fclose)(pre_overflow);
+	APROF_(fclose)(post_overflow);
 	AP_ASSERT(0, "Check overflow");
+	
 	// compress all private shadow memories
 	i = j = 0;
 	while(i < count_thread && j < VG_N_THREADS){
@@ -516,7 +516,12 @@ UInt APROF_(overflow_handler)(void){
 			i++;
 		}
 	}
-
-	VG_(free)(array);
+	
+	#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
+	APROF_(fclose)(pre_overflow);
+	APROF_(fclose)(post_overflow);
+	#endif
+	AP_ASSERT(0, "Check overflow");
+	//VG_(free)(array);
 	return sum + 1;
 }

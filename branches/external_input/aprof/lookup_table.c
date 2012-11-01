@@ -217,7 +217,16 @@ UInt LK_lookup(LookupTable * suf, UWord addr) {
 }
 
 void LK_compress(LookupTable * uf, UInt * arr_rid, UInt size_arr) {
-	
+	#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
+	char* buffer_pre =  VG_(calloc)("overflow reports file buffer3", BUFFER_SIZE, sizeof(char));
+	char* buffer_post =  VG_(calloc)("overflow reports file buffer4", BUFFER_SIZE, sizeof(char));
+	UInt counter_pre = 0;
+	UInt counter_post = 0;
+	extern FILE* pre_overflow;
+	extern FILE* post_overflow;  
+	counter_pre += VG_(sprintf)(buffer_pre, "\n SHADOW MEMORY PRIVATA\n\n");
+	counter_post += VG_(sprintf)(buffer_post, "\n SHADOW MEMORY PRIVATA\n\n");
+	#endif
 	//int q = 0;
 	//for (q = 0; q < size_arr; q++) VG_(printf)("arr_rid[%d]: %u\n", q, arr_rid[q]);
 	
@@ -247,8 +256,26 @@ void LK_compress(LookupTable * uf, UInt * arr_rid, UInt size_arr) {
 						int k = 0;
 						for (k = size_arr - 1; k >= 0; k--) {
 							
-							if (arr_rid[k] <= rid) {
-								table[j] = k + 1;
+							if (arr_rid[k] <= rid && arr_rid[k]!=0) {
+
+								#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
+								counter_pre += VG_(sprintf)(buffer_pre+counter_pre, "%u\n", table[j]);
+								counter_post += VG_(sprintf)(buffer_post+counter_post, "%u\n", k);
+								if(counter_pre>BUFFER_SIZE-11){
+									APROF_(fwrite)(pre_overflow, buffer_pre, counter_pre);
+									int z = 0;
+									while(z<counter_pre) (buffer_pre)[z++] =0;
+									counter_pre = 0;
+								}
+								if(counter_post>BUFFER_SIZE-11){
+									APROF_(fwrite)(post_overflow, buffer_post, counter_post);
+									int z = 0;
+									while(z<counter_post) (buffer_post)[z++] =0;
+									counter_post = 0;
+								}
+								#endif
+
+								table[j] = k;
 								//VG_(printf)("reassign [%u:%d] with %d\n", i, j, k+1);
 								break;
 							}
@@ -262,7 +289,27 @@ void LK_compress(LookupTable * uf, UInt * arr_rid, UInt size_arr) {
 						 * with an aid of a setup libc function
 						 * invoked before main() )
 						 */
-						if (k < 0) table[j] = 0;
+						if (k < 0){
+								#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
+								counter_pre += VG_(sprintf)(buffer_pre+counter_pre, "%u\n", table[j]);
+								counter_post += VG_(sprintf)(buffer_post+counter_post, "%u\n", 0);
+								if(counter_pre>BUFFER_SIZE-11){
+									APROF_(fwrite)(pre_overflow, buffer_pre, counter_pre);
+									int z = 0;
+									while(z<counter_pre) (buffer_pre)[z++] =0;
+									counter_pre = 0;
+								}
+								if(counter_post>BUFFER_SIZE-11){
+									APROF_(fwrite)(post_overflow, buffer_post, counter_post);
+									int z = 0;
+									while(z<counter_post) (buffer_post)[z++] =0;
+									counter_post = 0;
+								}
+								#endif
+
+							table[j] = 0;
+				
+						}
 						//AP_ASSERT(k >= 0, "Invalid reassignment");
 						
 					}
@@ -277,7 +324,12 @@ void LK_compress(LookupTable * uf, UInt * arr_rid, UInt size_arr) {
 		i++;
 	}
 	//VG_(printf)("Scanned %u segment\n", i);
-
+	counter_pre += VG_(sprintf)(buffer_pre+counter_pre, "\n$\n");
+	counter_post += VG_(sprintf)(buffer_post+counter_post, "\n$\n");
+	APROF_(fwrite)(pre_overflow, buffer_pre, counter_pre);
+	APROF_(fwrite)(post_overflow, buffer_post, counter_post);
+	VG_(free)(buffer_pre);
+	VG_(free)(buffer_post);
 }
 
 void LK_compress_global(UInt * array, UInt dim){
@@ -339,13 +391,13 @@ void LK_compress_global(UInt * array, UInt dim){
 							if(counter_pre>BUFFER_SIZE-11){
 								APROF_(fwrite)(pre_overflow, buffer_pre, counter_pre);
 								int z = 0;
-								while(z<counter_pre) ((int*)buffer_pre)[z++] =0;
+								while(z<counter_pre) (buffer_pre)[z++] =0;
 								counter_pre = 0;
 							}
 							if(counter_post>BUFFER_SIZE-11){
 								APROF_(fwrite)(post_overflow, buffer_post, counter_post);
 								int z = 0;
-								while(z<counter_post) ((int*)buffer_post)[z++] =0;
+								while(z<counter_post) (buffer_post)[z++] =0;
 								counter_post = 0;
 							}
 							#endif
@@ -369,13 +421,13 @@ void LK_compress_global(UInt * array, UInt dim){
 							if(counter_pre>BUFFER_SIZE-11){
 								APROF_(fwrite)(pre_overflow, buffer_pre, counter_pre);
 								int z = 0;
-								while(z<counter_pre) ((int*)buffer_pre)[z++] =0;
+								while(z<counter_pre) (buffer_pre)[z++] =0;
 								counter_pre = 0;
 							}
 							if(counter_post>BUFFER_SIZE-11){
 								APROF_(fwrite)(post_overflow, buffer_post, counter_post);
 								int z = 0;
-								while(z<counter_post) ((int*)buffer_post)[z++] =0;
+								while(z<counter_post) (buffer_post)[z++] =0;
 								counter_post = 0;
 							}
 							#endif
@@ -423,13 +475,13 @@ void LK_compress_global(UInt * array, UInt dim){
 								if(counter_pre>BUFFER_SIZE-11){
 									APROF_(fwrite)(pre_overflow, buffer_pre, counter_pre);
 									int z = 0;
-									while(z<counter_pre) ((int*)buffer_pre)[z++] =0;
+									while(z<counter_pre) (buffer_pre)[z++] =0;
 									counter_pre = 0;
 								}
 								if(counter_post>BUFFER_SIZE-11){
 									APROF_(fwrite)(post_overflow, buffer_post, counter_post);
 									int z = 0;
-									while(z<counter_post) ((int*)buffer_post)[z++] =0;
+									while(z<counter_post) (buffer_post)[z++] =0;
 									counter_post = 0;
 								}
 								#endif
@@ -465,13 +517,13 @@ void LK_compress_global(UInt * array, UInt dim){
 								if(counter_pre>BUFFER_SIZE-11){
 									APROF_(fwrite)(pre_overflow, buffer_pre, counter_pre);
 									int z = 0;
-									while(z<counter_pre) ((int*)buffer_pre)[z++] =0;
+									while(z<counter_pre) (buffer_pre)[z++] =0;
 									counter_pre = 0;
 								}
 								if(counter_post>BUFFER_SIZE-11){
 									APROF_(fwrite)(post_overflow, buffer_post, counter_post);
 									int z = 0;
-									while(z<counter_post) ((int*)buffer_post)[z++] =0;
+									while(z<counter_post) (buffer_post)[z++] =0;
 									counter_post = 0;
 								}
 								#endif
@@ -510,13 +562,13 @@ void LK_compress_global(UInt * array, UInt dim){
 								if(counter_pre>BUFFER_SIZE-11){
 									APROF_(fwrite)(pre_overflow, buffer_pre, counter_pre);
 									int z = 0;
-									while(z<counter_pre) ((int*)buffer_pre)[z++] =0;
+									while(z<counter_pre) (buffer_pre)[z++] =0;
 									counter_pre = 0;
 								}
 								if(counter_post>BUFFER_SIZE-11){
 									APROF_(fwrite)(post_overflow, buffer_post, counter_post);
 									int z = 0;
-									while(z<counter_post) ((int*)buffer_post)[z++] =0;
+									while(z<counter_post) (buffer_post)[z++] =0;
 									counter_post = 0;
 								}
 								#endif							
