@@ -324,12 +324,14 @@ void LK_compress(LookupTable * uf, UInt * arr_rid, UInt size_arr) {
 		i++;
 	}
 	//VG_(printf)("Scanned %u segment\n", i);
+	#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
 	counter_pre += VG_(sprintf)(buffer_pre+counter_pre, "\n$\n");
 	counter_post += VG_(sprintf)(buffer_post+counter_post, "\n$\n");
 	APROF_(fwrite)(pre_overflow, buffer_pre, counter_pre);
 	APROF_(fwrite)(post_overflow, buffer_post, counter_post);
 	VG_(free)(buffer_pre);
 	VG_(free)(buffer_post);
+	#endif
 }
 
 void LK_compress_global(UInt * array, UInt dim){
@@ -589,6 +591,7 @@ void LK_compress_global(UInt * array, UInt dim){
 		}
 		#endif
 	}
+	#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
 	counter_pre += VG_(sprintf)(buffer_pre+counter_pre, "\n$\n");
 	counter_post += VG_(sprintf)(buffer_post+counter_post, "\n$\n");
 	APROF_(fwrite)(pre_overflow, buffer_pre, counter_pre);
@@ -596,4 +599,5 @@ void LK_compress_global(UInt * array, UInt dim){
 	
 	VG_(free)(buffer_pre);
 	VG_(free)(buffer_post);
+	#endif
 }

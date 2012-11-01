@@ -518,7 +518,7 @@ UInt APROF_(overflow_handler)(void){
 	APROF_(fclose)(pre_overflow);
 	APROF_(fclose)(post_overflow);
 	#endif
-	AP_ASSERT(0, "Check overflow");
-	//VG_(free)(array);
+	//AP_ASSERT(0, "Check overflow");
+	VG_(free)(array);
 	return sum + 1;
 }

@@ -32,6 +32,8 @@
 */
 
 #include "aprof.h"
+#include "pub_tool_vkiscnums.h"
+
 
 /* Memory resolution: we can aggregate addresses in order
  * to decrese the shadow memory. 
@@ -109,7 +111,7 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type, Addr addr, SizeT size) {
 	unsigned int i = 0;
 	for (i = 0; i < size; i++) {
 	#endif
-		
+
 		Activation * act = APROF_(get_activation)(tdata, tdata->stack_depth);
         
 		UInt ts;
@@ -120,12 +122,16 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type, Addr addr, SizeT size) {
 		 * We are writing a new input value. So, this is a new "version"
 		 * of the memory cell. Update its timestamp in the global shadow memory.
 		 */
-		if (type == STORE || type == MODIFY) {
+		
+		
+
+
+		 if (type == STORE || type == MODIFY) {
 			
 			ts = ++APROF_(global_counter);
 			
 			/* overflow handler*/
-			if(ts == 20000) {
+			if(ts == 0) {
 				ts = APROF_(global_counter) = APROF_(overflow_handler)();
 				
 			}
@@ -200,11 +206,213 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type, Addr addr, SizeT size) {
 	
   
 }
+#if SYSCALL_WRAPPING == 1
+
+VG_REGPARM(3) void APROF_(sys_trace_access)(Addr addr, SizeT size) {
+	
+	#if COSTANT_MEM_ACCESS
+	addr = addr & ~(APROF_(addr_multiple)-1);
+	//size = 1;
+	#else
+	
+	if (APROF_(addr_multiple) > 1) {
+		
+		UInt diff = addr & (APROF_(addr_multiple)-1);
+		addr -= diff;
+		if (size + diff < APROF_(addr_multiple)) 
+			size = 1;
+		else if (((size + diff) % APROF_(addr_multiple)) == 0)
+			size = (size + diff) / APROF_(addr_multiple);
+		else
+			size = 1 + ((size + diff) / APROF_(addr_multiple));
+	
+	}
+	
+	#endif
+     
+	#if !COSTANT_MEM_ACCESS
+	unsigned int i = 0;
+	for (i = 0; i < size; i++) {
+	#endif
+
+		UInt ts = ++APROF_(global_counter);
+			
+			/* overflow handler*/
+			if(ts == 0) {
+				ts = APROF_(global_counter) = APROF_(overflow_handler)();
+				
+			}
+			
+			LK_insert(APROF_(global_shadow_memory), 
+							#if !COSTANT_MEM_ACCESS
+							addr+(i*APROF_(addr_multiple)),
+							#else
+							addr,
+							#endif
+							ts);
+	
+			#if COSTANT_MEM_ACCESS
+			return;
+			#else
+			continue;
+			#endif
+			
+		
+
+	#if !COSTANT_MEM_ACCESS
+	}
+	#endif
+	
+  
+}
 
 
 
+void APROF_(pre_syscall)(ThreadId tid, UInt syscallno, UWord* args, UInt nArgs){}
+	
+void APROF_(post_syscall)(ThreadId tid, UInt syscallno, UWord* args, UInt nArgs, SysRes res){
 
+	#if defined(VGO_linux)
+	if(res._isError) return;
+	#elif defined(VGO_darwin)
+	if(res._mode==SysRes_UNIX_ERR)return;
+	#endif
 
+	SizeT size = (SizeT)sr_Res(res);
+
+	
+	if(	
+		syscallno== __NR_read || 
+
+		#if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
+		syscallno== __NR_recv ||
+		#endif
+
+		#if !defined(VGP_x86_linux) && !defined(VGP_s390x_linux)
+		syscallno== __NR_recvfrom ||
+		#endif
+
+		#if defined(VGP_x86_darwin) || defined(VGP_amd64_darwin)
+		syscallno== __NR_pread
+		#else
+		syscallno== __NR_pread64  
+		#endif
+
+		){
+
+				
+				Addr addr = args[1];
+				APROF_(sys_trace_access)(addr, size);
+
+	
+
+	}
+	else if(
+		syscallno== __NR_readv
+		#if !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin)
+		|| syscallno== __NR_preadv
+		#endif
+		){
+				struct iovec* base = (struct iovec*)args[1];
+				UWord iovcnt = args[2];
+				UWord i;
+				SizeT iov_len;
+				for(i=0;i<iovcnt;i++){
+					if(size==0)break;
+
+					Addr tadd = base[i].iov_base;
+					if(base[i].iov_len <= size)					
+						 iov_len = base[i].iov_len;
+					else
+						 iov_len = size;
+											
+					size -= iov_len; 					
+					
+					APROF_(sys_trace_access)(tadd, iov_len);
+					
+				}
+	
+
+	}
+	else if(
+		syscallno== __NR_write ||
+
+		#if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
+		syscallno== __NR_send ||
+		#endif
+
+		#if !defined(VGP_x86_linux) && !defined(VGP_s390x_linux)
+		syscallno== __NR_sendto ||
+		#endif
+
+		#if defined(VGP_x86_darwin) || defined(VGP_amd64_darwin)
+		syscallno== __NR_pwrite
+		#else
+		syscallno== __NR_pwrite64  
+		#endif
+
+		){
+		Addr addr = args[1];
+		APROF_(trace_access)(LOAD, addr, size);
+
+	}
+	else if(
+		syscallno== __NR_writev
+		#if !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin)
+		|| syscallno== __NR_pwritev
+		#endif
+		){
+				struct iovec* base = (struct iovec*)args[1];
+				UWord iovcnt = args[2];
+				UWord i;
+				SizeT iov_len;
+				for(i=0;i<iovcnt;i++){
+					if(size==0)break;
+
+					Addr tadd = base[i].iov_base;
+					if(base[i].iov_len <= size)					
+						 iov_len = base[i].iov_len;
+					else
+						 iov_len = size;
+											
+					size -= iov_len; 					
+					
+					APROF_(trace_access)(LOAD, tadd, iov_len);
+					
+				}
+	
+
+	}else if(
+		syscallno== __NR_msgrcv
+		#if !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin)
+		//|| syscallno== __NR_pwritev
+		#endif
+		){
+								
+					Addr addr = args[1];
+					APROF_(sys_trace_access)( addr, size + sizeof(long int));
+					
+				
+	
+
+	}else if(
+		syscallno== __NR_msgsnd
+		#if !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin)
+		//|| syscallno== __NR_pwritev
+		#endif
+		){
+								
+					Addr addr = args[1];
+					SizeT s = args[2];
+					APROF_(trace_access)(LOAD, addr, s + sizeof(long int));
+					
+				
+	
+
+	}
+}
+
+#endif
 
 
 

@@ -69,6 +69,7 @@
 
 #define EVENTCOUNT          0   // 0 disabled, 1 memory accesses, 2 functions, 3 mem+fn
 #define CCT                 0   // if 1, keep a calling context tree for each thread to include context information in reports
+#define SYSCALL_WRAPPING	1
 #define COSTANT_MEM_ACCESS  1   // if 1, memory access with size >1 are managed as size==1
 #define NO_TIME             0   // No time 
 #define INSTR               1   // Count guest intel instruction 
@@ -127,7 +128,7 @@
 
 typedef IRExpr IRAtom;
 // type of memory access
-typedef enum access_t { LOAD, STORE, MODIFY } access_t;
+typedef enum access_t { LOAD, STORE, MODIFY} access_t;
 
 #if TRACE_FUNCTION
 
@@ -335,6 +336,16 @@ typedef struct ThreadData {
 
 } ThreadData;
 
+/*Useful for syscall wrapping*/
+
+#if !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin)
+struct iovec {
+               void  *iov_base;    /* Starting address */
+               SizeT iov_len;     /* Number of bytes to transfer */
+};
+#endif
+
+
 /* Global vars */
 
 /* Memory resolution: we can aggregate addresses in order
@@ -413,6 +424,11 @@ void APROF_(print_report_CCT)(FILE * f, CCTNode * root, UInt parent_id);
 
 /* Memory access handler (memory.c) */
 VG_REGPARM(3) void APROF_(trace_access)(UWord type, Addr addr, SizeT size);
+
+/* Syscall wrappers (memory.c) */
+void APROF_(pre_syscall)(ThreadId tid, UInt syscallno, UWord* args, UInt nArgs);
+void APROF_(post_syscall)(ThreadId tid, UInt syscallno, UWord* args, UInt nArgs, SysRes res);
+
 
 /* Function entry/exit handlers (function.c) */
 RoutineInfo * APROF_(new_routine_info)(ThreadData * tdata, Function * fn, UWord target);

@@ -603,10 +603,14 @@ static void APROF_(pre_clo_init)(void) {
 	#if !TRACE_FUNCTION
 	VG_(needs_client_requests)		(APROF_(trace_function));
 	#endif
-	
+
+	#if SYSCALL_WRAPPING == 1
+	VG_(needs_syscall_wrapper) 	(APROF_(pre_syscall), APROF_(post_syscall));
+	#endif
+
 	VG_(track_start_client_code)	(APROF_(switch_thread));
 	VG_(track_pre_thread_ll_exit)	(APROF_(thread_exit));
-	VG_(track_pre_deliver_signal)	(APROF_(signal));
+//	VG_(track_pre_deliver_signal)	(APROF_(signal));
 	
 	VG_(clo_vex_control).iropt_unroll_thresh = 0;
 	VG_(clo_vex_control).guest_chase_thresh  = 0;
