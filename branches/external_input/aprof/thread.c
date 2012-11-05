@@ -234,7 +234,8 @@ void APROF_(switch_thread)(ThreadId tid, ULong blocks_dispatched) {
 	if (tid == APROF_(current_TID)) return;
 	
 	++APROF_(global_counter);
-		if(APROF_(global_counter) == APROF_(overflow_handler)();
+		if(APROF_(global_counter) == 0)
+				APROF_(global_counter) =APROF_(overflow_handler)();
 			
 
 	#if TRACE_FUNCTION
@@ -359,7 +360,7 @@ UInt APROF_(overflow_handler)(void){
 	UInt count_thread = APROF_(running_threads);
 	Activation * act_tmp;
 	int * index = VG_(calloc)("index for merge", count_thread, sizeof(int)); 
-	LookupTable* shamem= VG_(calloc)(count_thread, sizeof(shamem));
+	LookupTable** shamem= VG_(calloc)("pointers to GSM and all PSM", count_thread, sizeof(shamem));
 
 	int i, j, k;
 	k = i = j = 0;
@@ -423,8 +424,6 @@ UInt APROF_(overflow_handler)(void){
 	/* 
 	 * Collect valid activation-ts using a merge 
 	 * and re-assign the new ts 
-	 *  
-	 *  i -= 2 because we alternate act-ts and write-ts
 	 */
 	for(i = sum-1; i > 0; i--){
 		

@@ -325,7 +325,7 @@ void LK_compress(LookupTable * uf, UInt * arr_rid, UInt size_arr) {
 	#endif
 }
 
-void LK_compress_all_shadow(UInt * array, UInt dim, LookupTable* shamem_array){
+void LK_compress_all_shadow(UInt * array, UInt dim, LookupTable** shamem_array){
 	
 	/*#if OVERFLOW_DEBUG != 0
 	VG_(printf)("\nCOMPRESS GSM\n");
@@ -360,7 +360,6 @@ void LK_compress_all_shadow(UInt * array, UInt dim, LookupTable* shamem_array){
 
 	UInt count_thread = APROF_(running_threads);
 	
-	LookupTable* shamem_array = VG_(calloc)(count_thread, sizeof(shamem_array));
 
 
 	UInt i, j, k,ts, t;
@@ -373,7 +372,7 @@ void LK_compress_all_shadow(UInt * array, UInt dim, LookupTable* shamem_array){
 		
 		/*Scan GSM*/
 
-		UInt* table = APROF_(global_shadow_memory)->table[i];
+		UInt* table = (UInt*) APROF_(global_shadow_memory)->table[i];
 
 			for(j = 0; j < ILT_SIZE; j++){
 
@@ -381,7 +380,7 @@ void LK_compress_all_shadow(UInt * array, UInt dim, LookupTable* shamem_array){
 				* if not we assume wts[x] = 0 */
 
 				if(table != NULL)
-					table = table->table[j];
+					table = ((ILT*) table)->table[j];
 
 					for (k = 0; k < APROF_(flt_size); k++){
 						
@@ -399,7 +398,7 @@ void LK_compress_all_shadow(UInt * array, UInt dim, LookupTable* shamem_array){
 							/* check if this cell was accessed by thread t*/
 
 							if(app_tab == NULL || 
-									(app_tab = app_tab->table[j]) == NULL) continue;
+									(app_tab = ((ILT*) app_tab)->table[j]) == NULL) continue;
 							
 							/* it means that this value is not accessed by thread t*/
 							if(app_tab[k] < table[k])
