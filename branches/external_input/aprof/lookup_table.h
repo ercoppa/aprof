@@ -123,5 +123,6 @@ void LK_compress(LookupTable * lt, UInt * arr_rid, UInt size_arr);
 /*
  * 
  */
-void LK_compress_global(UInt * array, UInt dim);
+void LK_compress_all_shadow(UInt * array, UInt dim);
+UInt binary_search(UInt* array, UInt init, UInt dim, UInt ts);
 #endif

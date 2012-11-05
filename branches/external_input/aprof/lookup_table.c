@@ -217,16 +217,7 @@ UInt LK_lookup(LookupTable * suf, UWord addr) {
 }
 
 void LK_compress(LookupTable * uf, UInt * arr_rid, UInt size_arr) {
-	#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
-	char* buffer_pre =  VG_(calloc)("overflow reports file buffer3", BUFFER_SIZE, sizeof(char));
-	char* buffer_post =  VG_(calloc)("overflow reports file buffer4", BUFFER_SIZE, sizeof(char));
-	UInt counter_pre = 0;
-	UInt counter_post = 0;
-	extern FILE* pre_overflow;
-	extern FILE* post_overflow;  
-	counter_pre += VG_(sprintf)(buffer_pre, "\nSHADOW MEMORY PRIVATA\n\n");
-	counter_post += VG_(sprintf)(buffer_post, "\nSHADOW MEMORY PRIVATA\n\n");
-	#endif
+	
 	//int q = 0;
 	//for (q = 0; q < size_arr; q++) VG_(printf)("arr_rid[%d]: %u\n", q, arr_rid[q]);
 	
@@ -261,16 +252,16 @@ void LK_compress(LookupTable * uf, UInt * arr_rid, UInt size_arr) {
 								#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
 								counter_pre += VG_(sprintf)(buffer_pre+counter_pre, "%u\n", table[j]);
 								counter_post += VG_(sprintf)(buffer_post+counter_post, "%u\n", k);
-								if(counter_pre>BUFFER_SIZE-11){
+								if(counter_pre>16384-11){
 									APROF_(fwrite)(pre_overflow, buffer_pre, counter_pre);
 									int z = 0;
-									while(z<counter_pre) (buffer_pre)[z++] =0;
+									while(z<16384/4) ((int*)buffer_pre)[z++] =0;
 									counter_pre = 0;
 								}
-								if(counter_post>BUFFER_SIZE-11){
+								if(counter_post>16384-11){
 									APROF_(fwrite)(post_overflow, buffer_post, counter_post);
 									int z = 0;
-									while(z<counter_post) (buffer_post)[z++] =0;
+									while(z<16384/4) ((int*)buffer_post)[z++] =0;
 									counter_post = 0;
 								}
 								#endif
@@ -293,16 +284,16 @@ void LK_compress(LookupTable * uf, UInt * arr_rid, UInt size_arr) {
 								#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
 								counter_pre += VG_(sprintf)(buffer_pre+counter_pre, "%u\n", table[j]);
 								counter_post += VG_(sprintf)(buffer_post+counter_post, "%u\n", 0);
-								if(counter_pre>BUFFER_SIZE-11){
+								if(counter_pre>16384-11){
 									APROF_(fwrite)(pre_overflow, buffer_pre, counter_pre);
 									int z = 0;
-									while(z<counter_pre) (buffer_pre)[z++] =0;
+									while(z<16384/4) ((int*)buffer_pre)[z++] =0;
 									counter_pre = 0;
 								}
-								if(counter_post>BUFFER_SIZE-11){
+								if(counter_post>16384-11){
 									APROF_(fwrite)(post_overflow, buffer_post, counter_post);
 									int z = 0;
-									while(z<counter_post) (buffer_post)[z++] =0;
+									while(z<16384/4) ((int*)buffer_post)[z++] =0;
 									counter_post = 0;
 								}
 								#endif
@@ -329,20 +320,20 @@ void LK_compress(LookupTable * uf, UInt * arr_rid, UInt size_arr) {
 	counter_post += VG_(sprintf)(buffer_post+counter_post, "\n$\n");
 	APROF_(fwrite)(pre_overflow, buffer_pre, counter_pre);
 	APROF_(fwrite)(post_overflow, buffer_post, counter_post);
-	VG_(free)(buffer_pre);
-	VG_(free)(buffer_post);
+	//VG_(free)(buffer_pre);
+	//VG_(free)(buffer_post);
 	#endif
 }
 
-void LK_compress_global(UInt * array, UInt dim){
+void LK_compress_all_shadow(UInt * array, UInt dim, LookupTable* shamem_array){
 	
-	#if OVERFLOW_DEBUG != 0
+	/*#if OVERFLOW_DEBUG != 0
 	VG_(printf)("\nCOMPRESS GSM\n");
 	#endif
 	
 	#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
-	char* buffer_pre =  VG_(calloc)("overflow reports file buffer1", BUFFER_SIZE, sizeof(char));
-	char* buffer_post =  VG_(calloc)("overflow reports file buffer2", BUFFER_SIZE, sizeof(char));
+	char* buffer_pre =  VG_(calloc)("overflow reports file buffer1", 16384, sizeof(char));
+	char* buffer_post =  VG_(calloc)("overflow reports file buffer2", 16384, sizeof(char));
 	UInt counter_pre = 0;
 	UInt counter_post = 0;
 	extern FILE* pre_overflow;
@@ -350,254 +341,111 @@ void LK_compress_global(UInt * array, UInt dim){
 	counter_pre += VG_(sprintf)(buffer_pre, "\nGLOBAL SHADOW MEMORY\n\n");
 	counter_post += VG_(sprintf)(buffer_post, "\nGLOBAL SHADOW MEMORY\n\n");
 	#endif
-	
+		#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
+							counter_pre += VG_(sprintf)(buffer_pre+counter_pre, "%u\n", table[c]);
+							counter_post += VG_(sprintf)(buffer_post+counter_post, "%u\n", 0);
+							if(counter_pre>16384-11){
+								APROF_(fwrite)(pre_overflow, buffer_pre, counter_pre);
+								int z = 0;
+								while(z<16384/4) ((int*)buffer_pre)[z++] =0;
+								counter_pre = 0;
+							}
+							if(counter_post>16384-11){
+								APROF_(fwrite)(post_overflow, buffer_post, counter_post);
+								int z = 0;
+								while(z<16384/4) ((int*)buffer_post)[z++] =0;
+								counter_post = 0;
+							}
+							#endif*/
 
-	UInt i, j, k, h, l;
-	k = i = j = l = 0;
+	UInt count_thread = APROF_(running_threads);
 	
-	/* compress different write-timestamps between 
-	* the same activation-timestamps */
+	LookupTable* shamem_array = VG_(calloc)(count_thread, sizeof(shamem_array));
+
+
+	UInt i, j, k,ts, t;
+	ts = i = j = k = t =0;
+
+	
+	/* Compress all shadow memory */
 	
 	for(i = 0; i < LK_SIZE; i++){
 		
-		#ifndef __i386__
-		
-		if(APROF_(global_shadow_memory)->table[i] != NULL)
-			
+		/*Scan GSM*/
+
+		UInt* table = APROF_(global_shadow_memory)->table[i];
+
 			for(j = 0; j < ILT_SIZE; j++){
-				
-				UInt* table = APROF_(global_shadow_memory)->table[i]->table[j];
 
-		#else
-			UInt* table = APROF_(global_shadow_memory)->table[i];
-		#endif
-		
-			if(table != NULL){
-				
-				UInt c;
-				for (c = 0; c < APROF_(flt_size); c++){
-					if(table[c] == 0)continue;
-					UInt ts = table[c];
-					
-					
-					h = 1;
-					l = dim - 2;
-					
-					/*hope there are a lot "ancient" writes*/
+				/*check if this first level chunck of GSM is valid
+				* if not we assume wts[x] = 0 */
 
-					if(ts < array[h]){
+				if(table != NULL)
+					table = table->table[j];
 
-							#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
-							counter_pre += VG_(sprintf)(buffer_pre+counter_pre, "%u\n", table[c]);
-							counter_post += VG_(sprintf)(buffer_post+counter_post, "%u\n", 0);
-							if(counter_pre>BUFFER_SIZE-11){
-								APROF_(fwrite)(pre_overflow, buffer_pre, counter_pre);
-								int z = 0;
-								while(z<counter_pre) (buffer_pre)[z++] =0;
-								counter_pre = 0;
-							}
-							if(counter_post>BUFFER_SIZE-11){
-								APROF_(fwrite)(post_overflow, buffer_post, counter_post);
-								int z = 0;
-								while(z<counter_post) (buffer_post)[z++] =0;
-								counter_post = 0;
-							}
-							#endif
-
-						table[c] = 0;
-							
-							#if OVERFLOW_DEBUG == 1 || OVERFLOW_DEBUG == 3
-								VG_(printf)("%u => %u\n", ts, 0);
-							#endif
-
-						continue;
-					}
-					
-					/*vice versa*/
-
-					if(ts > array[l]){
-							
-							#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
-							counter_pre += VG_(sprintf)(buffer_pre+counter_pre, "%u\n", table[c]);
-							counter_post += VG_(sprintf)(buffer_post+counter_post, "%u\n", l+1);
-							if(counter_pre>BUFFER_SIZE-11){
-								APROF_(fwrite)(pre_overflow, buffer_pre, counter_pre);
-								int z = 0;
-								while(z<counter_pre) (buffer_pre)[z++] =0;
-								counter_pre = 0;
-							}
-							if(counter_post>BUFFER_SIZE-11){
-								APROF_(fwrite)(post_overflow, buffer_post, counter_post);
-								int z = 0;
-								while(z<counter_post) (buffer_post)[z++] =0;
-								counter_post = 0;
-							}
-							#endif
-
-						table[c] = ++l;
-						if(array[l] == 0 || ts < array[l])
-									array[l] = ts;
+					for (k = 0; k < APROF_(flt_size); k++){
 						
-					
-						#if OVERFLOW_DEBUG == 1 || OVERFLOW_DEBUG == 3
-								VG_(printf)("%u => %u\n", ts, l);
-						#endif
-						continue;
+						/* check if this last level of GSM is valid
+						* if not we assume wts[x] = 0 */
+
+						if(table != NULL)	
+							ts = binary_search(array, 0, dim, table[k]);
+						else
+							ts = 0;
+
+						for(t = 0; t < count_thread; t++){
+							UInt* app_tab = shamem_array[t]->table[i];
+
+							/* check if this cell was accessed by thread t*/
+
+							if(app_tab == NULL || 
+									(app_tab = app_tab->table[j]) == NULL) continue;
+							
+							/* it means that this value is not accessed by thread t*/
+							if(app_tab[k] < table[k])
+									app_tab[k] = 0;
+
+							/* thread t wrote this value*/
+							else if(app_tab[k] == table[k])
+									app_tab[k] = ts;
+
+							/* thread t read this value so we have to reassign the ts
+							* to the greater activation-ts that satisfy  wts[x] <= ats*/
+
+							else 
+								app_tab[k] = binary_search(array, ts, dim, app_tab[k]);
+		
+						}
+
+						if(table != NULL)	
+							table[k] = ts;
+
 					}
+				
+			}
+		
+	}
+}
 
-					
-
-					/* binary search */
-					
-					while(h != l-2){
+UInt binary_search(UInt* array, UInt init, UInt dim, UInt ts){
+	UInt l,h,k;
+	l = init;
+	h = dim -1;
+	while(l != h-1){
 
 						k = (l+h)/2 ;
-						if(k % 2 == 0) k--;
 						
-
-						//VG_(printf)("h: %u, k:%u, l:%u\n", h, k, l);
-						if(array[k] < ts){ 
-							
-							
-							/*
-							 * Check if array[k] < ts < array[k + 2]
-							 */
-
-							if(ts < array[k + 2]){
-								k++;
-								/* update to older write */
-								if(array[k] == 0 || ts < array[k])
-									array[k] = ts;
-								
-								/* assign new write-ts */
-
-								#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
-								counter_pre += VG_(sprintf)(buffer_pre+counter_pre, "%u\n", table[c]);
-								counter_post += VG_(sprintf)(buffer_post+counter_post, "%u\n", k);
-								if(counter_pre>BUFFER_SIZE-11){
-									APROF_(fwrite)(pre_overflow, buffer_pre, counter_pre);
-									int z = 0;
-									while(z<counter_pre) (buffer_pre)[z++] =0;
-									counter_pre = 0;
-								}
-								if(counter_post>BUFFER_SIZE-11){
-									APROF_(fwrite)(post_overflow, buffer_post, counter_post);
-									int z = 0;
-									while(z<counter_post) (buffer_post)[z++] =0;
-									counter_post = 0;
-								}
-								#endif
-
-
-
-								table[c] = k;
-								break;
-							}
-							h = k;
-
-						} else {
-							
-							
-							
-
-							/*
-							 * Check if array[k - 2] < ts < array[k]
-							 */
-
-							if(ts > array[k-2]){
-
-								k--;
-								/* update to older write */
-								if(array[k] == 0 || ts < array[k])
-									array[k] = ts;
-							
-							
-								/* assign new write-ts */
-
-								#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
-								counter_pre += VG_(sprintf)(buffer_pre+counter_pre, "%u\n", table[c]);
-								counter_post += VG_(sprintf)(buffer_post+counter_post, "%u\n", k);
-								if(counter_pre>BUFFER_SIZE-11){
-									APROF_(fwrite)(pre_overflow, buffer_pre, counter_pre);
-									int z = 0;
-									while(z<counter_pre) (buffer_pre)[z++] =0;
-									counter_pre = 0;
-								}
-								if(counter_post>BUFFER_SIZE-11){
-									APROF_(fwrite)(post_overflow, buffer_post, counter_post);
-									int z = 0;
-									while(z<counter_post) (buffer_post)[z++] =0;
-									counter_post = 0;
-								}
-								#endif
-
-								table[c] = k;
-								
-								break;
-							}
+						if(array[k] == ts)
+							return k;
+					
+						else if(array[k] < ts)
 							l = k;
-							
-						}
-						
-					}
-		
-					/*base case
-					*ex: h = 1 and l = 3 	
-					*	the possible values are: 0 , 2	or 4*/
-					
-					if(h == l-2){
-						
-						if(ts < array[h])
-							k = h-1;
-						else if (ts > array[l])
-							k = l+1;
-						else //paranoia
-							k = h+1;
-						
-						/* update to older write */
-						if(array[k] == 0 || ts < array[k])
-									array[k] = ts;
-							
 
-								#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
-								counter_pre += VG_(sprintf)(buffer_pre+counter_pre, "%u\n", table[c]);
-								counter_post += VG_(sprintf)(buffer_post+counter_post, "%u\n", k);
-								if(counter_pre>BUFFER_SIZE-11){
-									APROF_(fwrite)(pre_overflow, buffer_pre, counter_pre);
-									int z = 0;
-									while(z<counter_pre) (buffer_pre)[z++] =0;
-									counter_pre = 0;
-								}
-								if(counter_post>BUFFER_SIZE-11){
-									APROF_(fwrite)(post_overflow, buffer_post, counter_post);
-									int z = 0;
-									while(z<counter_post) (buffer_post)[z++] =0;
-									counter_post = 0;
-								}
-								#endif							
-
-
-								/* assign new write-ts */
-								table[c] = k;
-
-					
-					}
-#if OVERFLOW_DEBUG == 1 || OVERFLOW_DEBUG == 3
-								VG_(printf)("%u => %u\n", ts, k);
-#endif
-				}
-			}
-		#ifndef __i386__
-		}
-		#endif
-	}
-	#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
-	counter_pre += VG_(sprintf)(buffer_pre+counter_pre, "\n$\n");
-	counter_post += VG_(sprintf)(buffer_post+counter_post, "\n$\n");
-	APROF_(fwrite)(pre_overflow, buffer_pre, counter_pre);
-	APROF_(fwrite)(post_overflow, buffer_post, counter_post);
+						else
+							h = k;
 	
-	VG_(free)(buffer_pre);
-	VG_(free)(buffer_post);
-	#endif
+	}
+	return l;
+
+
 }

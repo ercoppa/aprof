@@ -60,6 +60,7 @@ UInt APROF_(global_counter) = 0;
 VG_REGPARM(3) void APROF_(trace_access)(UWord type, Addr addr, SizeT size) {
 	
 	ThreadData * tdata = APROF_(current_tdata);
+	if(tdata == NULL) return;
 	#if DEBUG
 	AP_ASSERT(tdata != NULL, "Invalid tdata");
 	#endif
@@ -128,13 +129,9 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type, Addr addr, SizeT size) {
 
 		 if (type == STORE || type == MODIFY) {
 			
-			ts = ++APROF_(global_counter);
+			ts = APROF_(global_counter);
 			
-			/* overflow handler*/
-			if(ts == 0) {
-				ts = APROF_(global_counter) = APROF_(overflow_handler)();
-				
-			}
+			
 			
 			wts = LK_insert(APROF_(global_shadow_memory), 
 							#if !COSTANT_MEM_ACCESS
@@ -155,7 +152,7 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type, Addr addr, SizeT size) {
 			ts = APROF_(global_counter);
 			wts = LK_lookup(APROF_(global_shadow_memory),
 							#if !COSTANT_MEM_ACCESS
-							addr+(i*APROF_(addr_multiple));
+							addr+(i*APROF_(addr_multiple)));
 							#else
 							addr);
 							#endif
@@ -208,7 +205,7 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type, Addr addr, SizeT size) {
 }
 #if SYSCALL_WRAPPING == 1
 
-VG_REGPARM(3) void APROF_(sys_trace_access)(Addr addr, SizeT size) {
+void APROF_(sys_trace_access)(Addr addr, SizeT size) {
 	
 	#if COSTANT_MEM_ACCESS
 	addr = addr & ~(APROF_(addr_multiple)-1);
@@ -320,7 +317,7 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno, UWord* args, UInt nArgs,
 				for(i=0;i<iovcnt;i++){
 					if(size==0)break;
 
-					Addr tadd = base[i].iov_base;
+					Addr tadd = (Addr) base[i].iov_base;
 					if(base[i].iov_len <= size)					
 						 iov_len = base[i].iov_len;
 					else

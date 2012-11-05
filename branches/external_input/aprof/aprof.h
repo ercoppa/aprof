@@ -62,7 +62,7 @@
 #define DEBUG               1   // Enable some sanity checks
 #define VERBOSE             0   // 0 disabled, 1 function + thread, 2 function + thread + load/store/modify,
                                 // 4 very verbose function tracing
-#define OVERFLOW_DEBUG		2 	// if 0 disabled
+#define OVERFLOW_DEBUG		0 	// if 0 disabled
 								// if 1 print checks on console
 								// if 2 generate report file
 								// if 3 like 1 & 2
@@ -70,7 +70,7 @@
 #define EVENTCOUNT          0   // 0 disabled, 1 memory accesses, 2 functions, 3 mem+fn
 #define CCT                 0   // if 1, keep a calling context tree for each thread to include context information in reports
 #define SYSCALL_WRAPPING	1
-#define COSTANT_MEM_ACCESS  1   // if 1, memory access with size >1 are managed as size==1
+#define COSTANT_MEM_ACCESS  0   // if 1, memory access with size >1 are managed as size==1
 #define NO_TIME             0   // No time 
 #define INSTR               1   // Count guest intel instruction 
 #define RDTSC               2   // rdtsc intel instruction timestamp
@@ -87,7 +87,7 @@
 #define IGNORE_DL_RUNTIME   1   // if 1, disable analysis for dl_runtime_resolve (and its children)
 #define REPORT_VERSION      1   // see documentation on our site
 #define DISCARD_UNKNOWN     1   // discard info about PLT or unknown function (but this not implies to discard info about its children)
-#define IGNORE_REPEAT_ACC   1   // if 1, ignore repeated accesses to the same address within a BB
+#define IGNORE_REPEAT_ACC   0   // if 1, ignore repeated accesses to the same address within a BB
 #define REPORT_NAME         2   // if 1 report name is prog_TID.aprof, if 2 is PID_TID_ADDRMULTIPLE.aprof
 
 /* shadow memory  */

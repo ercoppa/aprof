@@ -3,7 +3,7 @@
 #include <pthread.h>
 #include <unistd.h>
 
-#define STOP 50
+#define STOP 1000
 #define BUF_SIZE 1024
 
 int buffer[BUF_SIZE] = {0};

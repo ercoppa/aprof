@@ -233,6 +233,10 @@ void APROF_(switch_thread)(ThreadId tid, ULong blocks_dispatched) {
 	 
 	if (tid == APROF_(current_TID)) return;
 	
+	++APROF_(global_counter);
+		if(APROF_(global_counter) == APROF_(overflow_handler)();
+			
+
 	#if TRACE_FUNCTION
 	/* save last exit of the previous thread */
 	if (APROF_(current_tdata) != NULL)
@@ -346,15 +350,16 @@ void APROF_(fprint_stacks_acts)(FILE* f) {
  */
 UInt APROF_(overflow_handler)(void){
 	
-	#if OVERFLOW_DEBUG != 0
+	//#if OVERFLOW_DEBUG != 0
 	VG_(printf)("\nOVERFLOW HANDLER\n");
-	#endif
+	//#endif
 
 	UInt sum = 0; // # valid timestamps
 	UInt max = 0; 
 	UInt count_thread = APROF_(running_threads);
 	Activation * act_tmp;
 	int * index = VG_(calloc)("index for merge", count_thread, sizeof(int)); 
+	LookupTable* shamem= VG_(calloc)(count_thread, sizeof(shamem));
 
 	int i, j, k;
 	k = i = j = 0;
@@ -385,6 +390,7 @@ UInt APROF_(overflow_handler)(void){
 		if(threads[j] == NULL)
 			j++;
 		else{
+			shamem[i] = threads[j]->accesses;
 			sum += (index[i] = threads[j++]->stack_depth);
 			i++;
 		}
@@ -397,21 +403,9 @@ UInt APROF_(overflow_handler)(void){
 	VG_(printf)("\n\n");
 	#endif
 
-
-	/* 
-	 * Between two activation ts we insert a "cumulative" ts
-	 * for all the write ops (performed btw these two time instants).
-	 * The value of this ts is unknown (we compute the right value
-	 * in LK_compress_global) so we only double the size of the
-	 * set of valid ts. 
-	 */
-	sum = sum << 1;
-	sum++;
 	
 	/* 
-	 * an array where are two kind of timestamps 
-	 * if i % 2 == 0 array[i] is a write-ts
-	 * else is a activation-ts 
+	 * an array where are activation-ts 
 	 */
 	UInt* array = VG_(calloc)("array overflow", sum, sizeof(UInt));
 	
@@ -432,7 +426,7 @@ UInt APROF_(overflow_handler)(void){
 	 *  
 	 *  i -= 2 because we alternate act-ts and write-ts
 	 */
-	for(i = sum-2; i > 0; i -= 2){
+	for(i = sum-1; i > 0; i--){
 		
 		k = 0;
 		max = 0;
@@ -487,11 +481,8 @@ UInt APROF_(overflow_handler)(void){
 	#endif
 	
 	// compress global shadow memory and compute new "cumulative" write-ts 
-	LK_compress_global(array, sum);
+	LK_compress_all_shadow(array, sum, shamem);
 	
-
-	
-		
 
 
 	#if OVERFLOW_DEBUG == 1 || OVERFLOW_DEBUG == 3
@@ -502,17 +493,6 @@ UInt APROF_(overflow_handler)(void){
 	VG_(printf)("\ncompress all private shadow memories\n");
 	#endif
 	
-	
-	// compress all private shadow memories
-	i = j = 0;
-	while(i < count_thread && j < VG_N_THREADS){
-		if(threads[j] == NULL)
-			j++;
-		else{
-			LK_compress(threads[j++]->accesses, array, sum);
-			i++;
-		}
-	}
 	
 	#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
 	APROF_(fclose)(pre_overflow);
