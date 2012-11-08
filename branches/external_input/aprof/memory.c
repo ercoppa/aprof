@@ -232,7 +232,7 @@ void APROF_(sys_trace_access)(Addr addr, SizeT size) {
 	for (i = 0; i < size; i++) {
 	#endif
 
-		UInt ts = ++APROF_(global_counter);
+		UInt ts = APROF_(global_counter);
 			
 			
 			LK_insert(APROF_(global_shadow_memory), 
@@ -292,7 +292,9 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno, UWord* args, UInt nArgs,
 
 		){
 
-				
+				APROF_(global_counter)++;
+				if(APROF_(global_counter) == 0)
+					APROF_(global_counter) =APROF_(overflow_handler)();
 				Addr addr = args[1];
 				APROF_(sys_trace_access)(addr, size);
 
@@ -305,6 +307,10 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno, UWord* args, UInt nArgs,
 		|| syscallno== __NR_preadv
 		#endif
 		){
+			
+				APROF_(global_counter)++;
+				if(APROF_(global_counter) == 0)
+					APROF_(global_counter) =APROF_(overflow_handler)();
 				struct iovec* base = (struct iovec*)args[1];
 				UWord iovcnt = args[2];
 				UWord i;
@@ -380,7 +386,9 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno, UWord* args, UInt nArgs,
 		//|| syscallno== __NR_pwritev
 		#endif
 		){
-								
+							APROF_(global_counter)++;	
+				if(APROF_(global_counter) == 0)
+					APROF_(global_counter) =APROF_(overflow_handler)();
 					Addr addr = args[1];
 					APROF_(sys_trace_access)( addr, size + sizeof(long int));
 					
