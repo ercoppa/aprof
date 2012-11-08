@@ -280,27 +280,12 @@ void LK_compress(LookupTable * uf, UInt * arr_rid, UInt size_arr) {
 						 * with an aid of a setup libc function
 						 * invoked before main() )
 						 */
-						if (k < 0){
-								#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
-								counter_pre += VG_(sprintf)(buffer_pre+counter_pre, "%u\n", table[j]);
-								counter_post += VG_(sprintf)(buffer_post+counter_post, "%u\n", 0);
-								if(counter_pre>16384-11){
-									APROF_(fwrite)(pre_overflow, buffer_pre, counter_pre);
-									int z = 0;
-									while(z<16384/4) ((int*)buffer_pre)[z++] =0;
-									counter_pre = 0;
-								}
-								if(counter_post>16384-11){
-									APROF_(fwrite)(post_overflow, buffer_post, counter_post);
-									int z = 0;
-									while(z<16384/4) ((int*)buffer_post)[z++] =0;
-									counter_post = 0;
-								}
-								#endif
+						if (k < 0)
+								
 
 							table[j] = 0;
 				
-						}
+						
 						//AP_ASSERT(k >= 0, "Invalid reassignment");
 						
 					}
@@ -314,15 +299,7 @@ void LK_compress(LookupTable * uf, UInt * arr_rid, UInt size_arr) {
 		#endif
 		i++;
 	}
-	//VG_(printf)("Scanned %u segment\n", i);
-	#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
-	counter_pre += VG_(sprintf)(buffer_pre+counter_pre, "\n$\n");
-	counter_post += VG_(sprintf)(buffer_post+counter_post, "\n$\n");
-	APROF_(fwrite)(pre_overflow, buffer_pre, counter_pre);
-	APROF_(fwrite)(post_overflow, buffer_post, counter_post);
-	//VG_(free)(buffer_pre);
-	//VG_(free)(buffer_post);
-	#endif
+
 }
 
 void LK_compress_all_shadow(UInt * array, UInt dim, LookupTable** shamem_array){

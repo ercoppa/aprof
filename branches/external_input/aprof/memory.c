@@ -234,11 +234,6 @@ void APROF_(sys_trace_access)(Addr addr, SizeT size) {
 
 		UInt ts = ++APROF_(global_counter);
 			
-			/* overflow handler*/
-			if(ts == 0) {
-				ts = APROF_(global_counter) = APROF_(overflow_handler)();
-				
-			}
 			
 			LK_insert(APROF_(global_shadow_memory), 
 							#if !COSTANT_MEM_ACCESS

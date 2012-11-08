@@ -380,9 +380,9 @@ UInt APROF_(overflow_handler)(void){
 	
 	#endif
 
-	#if OVERFLOW_DEBUG == 1 || OVERFLOW_DEBUG == 3
+
 	APROF_(print_stacks_acts)();
-	#endif
+
 
 	/* compute the number of different activation-ts */
 
@@ -466,38 +466,28 @@ UInt APROF_(overflow_handler)(void){
 
 	}
 	
-	#if OVERFLOW_DEBUG == 1 || OVERFLOW_DEBUG == 3
-	VG_(printf)("\nArray overflow:\n");
-	for (i = 0; i < sum; i++)
-		VG_(printf)("[%u] %u \n",i, array[i]);
-	VG_(printf)("\n");
+	
 	
 	APROF_(print_stacks_acts)();
-	#endif
 
 	#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
 	APROF_(fprint_stacks_acts)(post_overflow);
 	#endif
 	
+
+	
+	VG_(printf)("\ncompress all private shadow memories\n");
+
 	// compress global shadow memory and compute new "cumulative" write-ts 
 	LK_compress_all_shadow(array, sum, shamem);
 	
-
-
-	#if OVERFLOW_DEBUG == 1 || OVERFLOW_DEBUG == 3
-	VG_(printf)("\nArray overflow:\n");
-	for (i = 0; i < sum; i++)
-		VG_(printf)("[%u] %u \n",i, array[i]);
-	
-	VG_(printf)("\ncompress all private shadow memories\n");
-	#endif
 	
 	
 	#if OVERFLOW_DEBUG == 2 || OVERFLOW_DEBUG == 3
 	APROF_(fclose)(pre_overflow);
 	APROF_(fclose)(post_overflow);
 	#endif
-	//AP_ASSERT(0, "Check overflow");
+
 	VG_(free)(array);
 	return sum + 1;
 }
