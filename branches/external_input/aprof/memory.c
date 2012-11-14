@@ -275,7 +275,7 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno, UWord* args, UInt nArgs,
 		#if defined(VGP_x86_darwin) || defined(VGP_amd64_darwin)
 		syscallno == __NR_pread
 		#else
-		syscalln o== __NR_pread64  
+		syscallno == __NR_pread64  
 		#endif
 
 		){
