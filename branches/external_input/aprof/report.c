@@ -330,30 +330,36 @@ static Bool merge_report(Char * report, ThreadData * tdata) {
 	return True;
 } 
 
-static Char * report_name(Char * filename_priv, Int tid) {
+static Char * report_name(Char * filename_priv, UInt tid, UInt postfix_c) {
 
 	#if REPORT_NAME == 1
 	
 	if ((APROF_(merge_report_runs) || APROF_(merge_report_threads)) 
 		&& APROF_(running_threads) > 1) {
 		
-		VG_(sprintf)(filename_priv, "%d_%u_%d.aprof", VG_(getpid)(), 
+		VG_(sprintf)(filename_priv, "%d_%u_%d", VG_(getpid)(), 
 									tid - 1, APROF_(addr_multiple));
 		
 	} else {
 	
 		if (tid > 1)
-			VG_(sprintf)(filename_priv, "%s_%u.aprof", 
+			VG_(sprintf)(filename_priv, "%s_%u", 
 					VG_(basename)(prog_name), tid - 1);
 		else
-			VG_(sprintf)(filename_priv, "%s.aprof", 
+			VG_(sprintf)(filename_priv, "%s", 
 				VG_(basename)(prog_name));
 	}
 	
 	#elif REPORT_NAME == 2
-	VG_(sprintf)(filename_priv, "%d_%u_%d.aprof", VG_(getpid)(), 
+	VG_(sprintf)(filename_priv, "%d_%u_%d", VG_(getpid)(), 
 									tid - 1, APROF_(addr_multiple));
 	#endif
+	
+	char postfix[128];
+	if (postfix_c > 0) VG_(sprintf)(postfix, "_%u.aprof", postfix_c);
+	else VG_(sprintf)(postfix, ".aprof");
+	
+	VG_(strcat)(filename_priv, postfix);
 
 	return filename_priv;
 
@@ -456,11 +462,23 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
 	
 	/* Add path to log filename */
 	Char * filename = VG_(expand_file_name)("aprof log", 
-			report_name(filename_priv, tid));
+			report_name(filename_priv, tid, 0));
 
     // open report file
 	FILE * report = APROF_(fopen)(filename);
+	UInt attempt = 0;
+	while (report == NULL && attempt < 32) {
+		
+		filename = VG_(expand_file_name)("aprof log", 
+			report_name(filename_priv, tid, attempt));
+		
+		report = APROF_(fopen)(filename);
+		
+		attempt++;
+	}
+
 	AP_ASSERT(report != NULL, "Can't create report file");
+	//VG_(printf)("Writing report TID=%u file=%s\n", tid, filename);
 
 	char buffer[10000];
 

@@ -36,9 +36,11 @@
 
 FILE * APROF_(fopen)(char * name){
 	
-	SysRes res = VG_(open)(name, VKI_O_CREAT|VKI_O_WRONLY|VKI_O_TRUNC, VKI_S_IRUSR|VKI_S_IWUSR);
+	SysRes res = VG_(open)(name, VKI_O_EXCL|VKI_O_CREAT|VKI_O_WRONLY, VKI_S_IRUSR|VKI_S_IWUSR);
 	int file = (Int) sr_Res(res);
-	AP_ASSERT(file != -1, "Can't create a log file.")
+	if (file <= 0) return NULL;
+	
+	//AP_ASSERT(file >= 0, "Can't create a log file.")
 	
 	FILE * f = VG_(malloc)("log_file", sizeof(FILE));
 	f->file = file;

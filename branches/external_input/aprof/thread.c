@@ -234,9 +234,8 @@ void APROF_(switch_thread)(ThreadId tid, ULong blocks_dispatched) {
 	if (tid == APROF_(current_TID)) return;
 	
 	++APROF_(global_counter);
-		if(APROF_(global_counter) == 0)
-				APROF_(global_counter) =APROF_(overflow_handler)();
-			
+	if(APROF_(global_counter) == 0)
+		APROF_(global_counter) = APROF_(overflow_handler)();
 
 	#if TRACE_FUNCTION
 	/* save last exit of the previous thread */

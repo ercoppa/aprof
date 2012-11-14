@@ -163,10 +163,7 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
 	
 	/* check & fix timestamp overflow */
 	if (act->aid == 0) 
-				act->aid = APROF_(global_counter) = APROF_(overflow_handler)();
-		
-	
-	
+		act->aid = APROF_(global_counter) = APROF_(overflow_handler)();
 	
 	#if DISCARD_UNKNOWN
 	if (!rtn_info->fn->discard_info) {
