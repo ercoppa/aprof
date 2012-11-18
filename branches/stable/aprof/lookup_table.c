@@ -205,7 +205,7 @@ UInt LK_lookup(LookupTable * suf, UWord addr) {
 	AP_ASSERT((i <= LK_SIZE), "Address overflow");
 	#endif
 	
-	UWord k = (addr >> 16) & 0x4000;
+	UWord k = (addr >> 16) & 0x3fff;
 	if (suf->table[i] == NULL) return 0;
 	UInt * ssm = suf->table[i]->table[k];
 	if (ssm == NULL) return 0;
