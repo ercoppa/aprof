@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2011 Julian Seward
+   Copyright (C) 2000-2012 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -125,6 +125,12 @@ extern UInt VG_(amd64_darwin_REDIR_FOR_arc4random)( void );
 #if defined(VGP_s390x_linux)
 extern Addr VG_(s390x_linux_SUBST_FOR_sigreturn);
 extern Addr VG_(s390x_linux_SUBST_FOR_rt_sigreturn);
+#endif
+
+#if defined(VGP_mips32_linux)
+extern Addr  VG_(mips32_linux_SUBST_FOR_sigreturn);
+extern Addr  VG_(mips32_linux_SUBST_FOR_rt_sigreturn);
+extern UInt  VG_(mips32_linux_REDIR_FOR_strlen)( void* );
 #endif
 
 #endif   // __PUB_CORE_TRAMPOLINE_H

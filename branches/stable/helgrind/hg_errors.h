@@ -8,7 +8,7 @@
    This file is part of Helgrind, a Valgrind tool for detecting errors
    in threaded programs.
 
-   Copyright (C) 2007-2011 OpenWorks Ltd
+   Copyright (C) 2007-2012 OpenWorks Ltd
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
@@ -39,13 +39,13 @@ Bool  HG_(eq_Error)        ( VgRes not_used, Error* e1, Error* e2 );
 void  HG_(before_pp_Error) ( Error* err );
 void  HG_(pp_Error)        ( Error* err );
 UInt  HG_(update_extra)    ( Error* err );
-Bool  HG_(recognised_suppression) ( Char* name, Supp *su );
-Bool  HG_(read_extra_suppression_info) ( Int fd, Char** bufpp, SizeT* nBufp,
+Bool  HG_(recognised_suppression) ( const HChar* name, Supp *su );
+Bool  HG_(read_extra_suppression_info) ( Int fd, HChar** bufpp, SizeT* nBufp,
                                          Supp* su );
 Bool  HG_(error_matches_suppression) ( Error* err, Supp* su );
-Char* HG_(get_error_name) ( Error* err );
+const HChar* HG_(get_error_name) ( Error* err );
 Bool  HG_(get_extra_suppression_info) ( Error* err,
-                                        /*OUT*/Char* buf, Int nBuf );
+                                        /*OUT*/HChar* buf, Int nBuf );
 
 /* Functions for recording various kinds of errors. */
 void HG_(record_error_Race) ( Thread* thr, 

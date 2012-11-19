@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2011 Julian Seward
+   Copyright (C) 2000-2012 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -70,7 +70,8 @@ typedef Int ArenaId;
 // minimum alignment.  Must be a power of 2 greater than 4, and should be
 // greater than 8.
 #if   defined(VGP_x86_linux)   || \
-      defined(VGP_arm_linux)
+      defined(VGP_arm_linux)   || \
+      defined(VGP_mips32_linux)
 #  define VG_MIN_MALLOC_SZB        8
 // Nb: We always use 16 bytes for Darwin, even on 32-bits, so it can be used
 // for any AltiVec- or SSE-related type.  This matches the Darwin libc.
@@ -102,16 +103,16 @@ struct vg_mallinfo {
    int keepcost; /* top-most, releasable (via malloc_trim) space */
 };
 
-extern void* VG_(arena_malloc)  ( ArenaId arena, HChar* cc, SizeT nbytes );
+extern void* VG_(arena_malloc)  ( ArenaId arena, const HChar* cc, SizeT nbytes );
 extern void  VG_(arena_free)    ( ArenaId arena, void* ptr );
-extern void* VG_(arena_calloc)  ( ArenaId arena, HChar* cc,
+extern void* VG_(arena_calloc)  ( ArenaId arena, const HChar* cc,
                                   SizeT nmemb, SizeT bytes_per_memb );
-extern void* VG_(arena_realloc) ( ArenaId arena, HChar* cc,
+extern void* VG_(arena_realloc) ( ArenaId arena, const HChar* cc,
                                   void* ptr, SizeT size );
-extern void* VG_(arena_memalign)( ArenaId aid, HChar* cc,
+extern void* VG_(arena_memalign)( ArenaId aid, const HChar* cc,
                                   SizeT req_alignB, SizeT req_pszB );
-extern Char* VG_(arena_strdup)  ( ArenaId aid, HChar* cc, 
-                                  const Char* s);
+extern HChar* VG_(arena_strdup)  ( ArenaId aid, const HChar* cc, 
+                                   const HChar* s);
 
 extern SizeT VG_(arena_malloc_usable_size) ( ArenaId aid, void* payload );
 

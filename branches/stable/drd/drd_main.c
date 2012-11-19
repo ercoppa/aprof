@@ -1,7 +1,7 @@
 /*
   This file is part of drd, a thread error detector.
 
-  Copyright (C) 2006-2011 Bart Van Assche <bvanassche@acm.org>.
+  Copyright (C) 2006-2012 Bart Van Assche <bvanassche@acm.org>.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
@@ -65,7 +65,7 @@ static Bool s_trace_alloc;
 /**
  * Implement the needs_command_line_options for drd.
  */
-static Bool DRD_(process_cmd_line_option)(Char* arg)
+static Bool DRD_(process_cmd_line_option)(const HChar* arg)
 {
    int check_stack_accesses   = -1;
    int join_list_vol          = -1;
@@ -89,8 +89,8 @@ static Bool DRD_(process_cmd_line_option)(Char* arg)
    int trace_segment          = -1;
    int trace_semaphore        = -1;
    int trace_suppression      = -1;
-   Char* trace_address        = 0;
-   Char* ptrace_address       = 0;
+   const HChar* trace_address = 0;
+   const HChar* ptrace_address= 0;
 
    if      VG_BOOL_CLO(arg, "--check-stack-var",     check_stack_accesses) {}
    else if VG_INT_CLO (arg, "--join-list-vol",       join_list_vol) {}
@@ -262,7 +262,7 @@ static void DRD_(print_debug_usage)(void)
 
 static void drd_pre_mem_read(const CorePart part,
                              const ThreadId tid,
-                             Char* const s,
+                             const HChar* const s,
                              const Addr a,
                              const SizeT size)
 {
@@ -274,10 +274,10 @@ static void drd_pre_mem_read(const CorePart part,
 
 static void drd_pre_mem_read_asciiz(const CorePart part,
                                     const ThreadId tid,
-                                    Char* const s,
+                                    const HChar* const s,
                                     const Addr a)
 {
-   const char* p = (void*)a;
+   const HChar* p = (void*)a;
    SizeT size = 0;
 
    // Don't segfault if the string starts in an obviously stupid
@@ -325,8 +325,21 @@ void drd_start_using_mem(const Addr a1, const SizeT len,
                       a1, len, DRD_(running_thread_inside_pthread_create)()
                       ? " (inside pthread_create())" : "");
 
+#if 0
    if (!is_stack_mem && DRD_(g_free_is_write))
       DRD_(thread_stop_using_mem)(a1, a2);
+#else
+   /*
+    * Sometimes it happens that a client starts using a memory range that has
+    * been accessed before but for which drd_stop_using_mem() has not been
+    * called for the entire range. It is not yet clear whether this is an
+    * out-of-range access by the client, an issue in the Valgrind core or an
+    * issue in DRD. Avoid that this issue triggers false positive reports by
+    * always clearing accesses for newly allocated memory ranges. See also
+    * http://bugs.kde.org/show_bug.cgi?id=297147.
+    */
+   DRD_(thread_stop_using_mem)(a1, a2);
+#endif
 
    if (UNLIKELY(DRD_(any_address_is_traced)()))
    {
@@ -399,7 +412,7 @@ void DRD_(clean_memory)(const Addr a1, const SizeT len)
 static const Bool trace_sectsuppr = False;
 
 /**
- * Suppress data race reports on all addresses contained in .plt and
+ * Suppress data race reports on all addresses contained in .plt, .got and
  * .got.plt sections inside the address range [ a, a + len [. The data in
  * these sections is modified by _dl_relocate_object() every time a function
  * in a shared library is called for the first time. Since the first call
@@ -407,6 +420,7 @@ static const Bool trace_sectsuppr = False;
  * such calls can cause conflicting accesses. See also Ulrich Drepper's
  * paper "How to Write Shared Libraries" for more information about relocation
  * (http://people.redhat.com/drepper/dsohowto.pdf).
+ * Note: the contents of the .got section is only modified by the MIPS resolver.
  */
 static void DRD_(suppress_relocation_conflicts)(const Addr a, const SizeT len)
 {
@@ -441,6 +455,16 @@ static void DRD_(suppress_relocation_conflicts)(const Addr a, const SizeT len)
 	    VG_(dmsg)("Suppressing .got.plt @ 0x%lx size %ld\n", avma, size);
          tl_assert(VG_(DebugInfo_sect_kind)(NULL, 0, avma) == Vg_SectGOTPLT);
          DRD_(start_suppression)(avma, avma + size, ".gotplt");
+      }
+
+      avma = VG_(DebugInfo_get_got_avma)(di);
+      size = VG_(DebugInfo_get_got_size)(di);
+      tl_assert((avma && size) || (avma == 0 && size == 0));
+      if (size > 0) {
+	 if (trace_sectsuppr)
+	    VG_(dmsg)("Suppressing .got @ 0x%lx size %ld\n", avma, size);
+         tl_assert(VG_(DebugInfo_sect_kind)(NULL, 0, avma) == Vg_SectGOT);
+         DRD_(start_suppression)(avma, avma + size, ".got");
       }
    }
 }
@@ -784,7 +808,7 @@ void drd_pre_clo_init(void)
    VG_(details_name)            ("drd");
    VG_(details_version)         (NULL);
    VG_(details_description)     ("a thread error detector");
-   VG_(details_copyright_author)("Copyright (C) 2006-2011, and GNU GPL'd,"
+   VG_(details_copyright_author)("Copyright (C) 2006-2012, and GNU GPL'd,"
                                  " by Bart Van Assche.");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
 
@@ -838,7 +862,7 @@ void drd_pre_clo_init(void)
    DRD_(thread_init)();
 
    {
-      Char* const smi = VG_(getenv)("DRD_SEGMENT_MERGING_INTERVAL");
+      HChar* const smi = VG_(getenv)("DRD_SEGMENT_MERGING_INTERVAL");
       if (smi)
          DRD_(thread_set_segment_merge_interval)(VG_(strtoll10)(smi, NULL));
    }

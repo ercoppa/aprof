@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2011 OpenWorks LLP
+   Copyright (C) 2004-2012 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -37,7 +37,6 @@
 #define __LIBVEX_PUB_GUEST_X86_H
 
 #include "libvex_basictypes.h"
-#include "libvex_emwarn.h"
 
 
 /*---------------------------------------------------------------*/
@@ -197,8 +196,8 @@ typedef
       HWord  guest_LDT; /* host addr, a VexGuestX86SegDescr* */
       HWord  guest_GDT; /* host addr, a VexGuestX86SegDescr* */
 
-      /* Emulation warnings */
-      UInt   guest_EMWARN;
+      /* Emulation notes */
+      UInt   guest_EMNOTE;
 
       /* For clflush: record start and length of area to invalidate */
       UInt guest_TISTART;
@@ -221,8 +220,8 @@ typedef
          been interrupted by a signal. */
       UInt guest_IP_AT_SYSCALL;
 
-      /* Padding to make it have an 16-aligned size */
-      UInt padding1;
+      /* Padding to make it have an 32-aligned size */
+      UInt padding[5];
    }
    VexGuestX86State;
 

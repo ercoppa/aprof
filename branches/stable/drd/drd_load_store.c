@@ -1,7 +1,7 @@
 /*
   This file is part of drd, a thread error detector.
 
-  Copyright (C) 2006-2011 Bart Van Assche <bvanassche@acm.org>.
+  Copyright (C) 2006-2012 Bart Van Assche <bvanassche@acm.org>.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
@@ -49,6 +49,8 @@
 #define STACK_POINTER_OFFSET OFFSET_arm_R13
 #elif defined(VGA_s390x)
 #define STACK_POINTER_OFFSET OFFSET_s390x_r15
+#elif defined(VGA_mips32)
+#define STACK_POINTER_OFFSET OFFSET_mips32_r29
 #else
 #error Unknown architecture.
 #endif
@@ -91,7 +93,7 @@ void DRD_(trace_mem_access)(const Addr addr, const SizeT size,
 {
    if (DRD_(is_any_traced)(addr, addr + size))
    {
-      char* vc;
+      HChar* vc;
 
       vc = DRD_(vc_aprint)(DRD_(thread_get_vc)(DRD_(thread_get_running_tid)()));
       if (access_type == eStore && size <= sizeof(HWord)) {
@@ -579,6 +581,7 @@ IRSB* DRD_(instrument)(VgCallbackClosure* const closure,
                        IRSB* const bb_in,
                        VexGuestLayout* const layout,
                        VexGuestExtents* const vge,
+                       VexArchInfo* archinfo_host,
                        IRType const gWordTy,
                        IRType const hWordTy)
 {

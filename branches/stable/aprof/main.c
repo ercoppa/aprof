@@ -103,12 +103,16 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
 					IRSB* sbIn,
 					VexGuestLayout* layout, 
 					VexGuestExtents* vge,
+					VexArchInfo* archinfo_host,
 					IRType gWordTy, IRType hWordTy ) {
 
 	Int        i;
 	IRSB*      sbOut;
 	IRTypeEnv* tyenv = sbIn->tyenv;
 	APROF_(events_used) = 0;
+
+	if (gWordTy != hWordTy) /* We don't currently support this case. */
+		VG_(tool_panic)("host/guest word size mismatch");
 
 	#if MEM_TRACE && IGNORE_REPEAT_ACC
 	APROF_(addr_accessed_size) = INIT_SIZE_ADDR_ACC;
@@ -119,9 +123,6 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
 	#if TRACE_FUNCTION
 	UInt instr_offset = 0;
 	#endif
-
-	if (gWordTy != hWordTy) /* We don't currently support this case. */
-		VG_(tool_panic)("host/guest word size mismatch");
 
 	/* Set up SB */
 	sbOut = deepCopyIRSBExceptStmts(sbIn);
@@ -158,7 +159,7 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
 	#endif
    
 	#if MEM_TRACE && IGNORE_REPEAT_ACC
-	Char * helperNameA;
+	HChar * helperNameA;
 	void * helperAddrA;
 	IRExpr * * argvA;
 	IRDirty * diA;
@@ -544,7 +545,7 @@ static void APROF_(signal)(ThreadId tid, Int sigNo, Bool alt_stack) {
 	AP_ASSERT(0, "There is a signal");
 }
 
-static Bool APROF_(cmd_line)(Char* argv) {
+static Bool APROF_(cmd_line)(const HChar* argv) {
 	
 	int value = 0;
 	

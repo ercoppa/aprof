@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2011 OpenWorks LLP
+   Copyright (C) 2004-2012 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -37,7 +37,6 @@
 #define __LIBVEX_PUB_GUEST_PPC32_H
 
 #include "libvex_basictypes.h"
-#include "libvex_emwarn.h"
 
 
 /*---------------------------------------------------------------*/
@@ -207,8 +206,8 @@ typedef
       /* Vector Status and Control Register */
       /* 1192 */ UInt guest_VSCR;
 
-      /* Emulation warnings */
-      /* 1196 */ UInt guest_EMWARN;
+      /* Emulation notes */
+      /* 1196 */ UInt guest_EMNOTE;
 
       /* For icbi: record start and length of area to invalidate */
       /* 1200 */ UInt guest_TISTART;

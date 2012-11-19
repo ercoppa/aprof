@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2011 Julian Seward 
+   Copyright (C) 2000-2012 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -61,6 +61,8 @@
 
 #include "pub_core_gdbserver.h"   // VG_(tool_instrument_then_gdbserver_if_needed)
 
+#include "libvex_emnote.h"        // For PPC, EmWarn_PPC64_redir_underflow
+
 /*------------------------------------------------------------*/
 /*--- Stats                                                ---*/
 /*------------------------------------------------------------*/
@@ -71,7 +73,7 @@ static UInt n_SP_updates_generic_unknown = 0;
 
 void VG_(print_translation_stats) ( void )
 {
-   Char buf[7];
+   HChar buf[7];
    UInt n_SP_updates = n_SP_updates_fast + n_SP_updates_generic_known
                                          + n_SP_updates_generic_unknown;
    VG_(percentify)(n_SP_updates_fast, n_SP_updates, 1, 6, buf);
@@ -163,7 +165,7 @@ static void add_SP_alias(IRTemp temp, Long delta)
    if (N_ALIASES == next_SP_alias_slot) next_SP_alias_slot = 0;
 }
 
-static Bool get_SP_delta(IRTemp temp, ULong* delta)
+static Bool get_SP_delta(IRTemp temp, Long* delta)
 {
    Int i;      // i must be signed!
    vg_assert(IRTemp_INVALID != temp);
@@ -220,6 +222,7 @@ IRSB* tool_instrument_then_gdbserver_if_needed ( VgCallbackClosure* closureV,
                                                  IRSB*              sb_in, 
                                                  VexGuestLayout*    layout, 
                                                  VexGuestExtents*   vge,
+                                                 VexArchInfo*       vai,
                                                  IRType             gWordTy, 
                                                  IRType             hWordTy )
 {
@@ -228,6 +231,7 @@ IRSB* tool_instrument_then_gdbserver_if_needed ( VgCallbackClosure* closureV,
                                    sb_in,
                                    layout,
                                    vge,
+                                   vai,
                                    gWordTy,
                                    hWordTy),
        layout,
@@ -259,10 +263,11 @@ IRSB* vg_SP_update_pass ( void*             closureV,
                           IRSB*             sb_in, 
                           VexGuestLayout*   layout, 
                           VexGuestExtents*  vge,
+                          VexArchInfo*      vai,
                           IRType            gWordTy, 
                           IRType            hWordTy )
 {
-   Int         i, j, minoff_ST, maxoff_ST, sizeof_SP, offset_SP;
+   Int         i, j, k, minoff_ST, maxoff_ST, sizeof_SP, offset_SP;
    Int         first_SP, last_SP, first_Put, last_Put;
    IRDirty     *dcall, *d;
    IRStmt*     st;
@@ -334,6 +339,8 @@ IRSB* vg_SP_update_pass ( void*             closureV,
          dcall->fxState[0].fx     = Ifx_Read;                           \
          dcall->fxState[0].offset = layout->offset_SP;                  \
          dcall->fxState[0].size   = layout->sizeof_SP;                  \
+         dcall->fxState[0].nRepeats  = 0;                               \
+         dcall->fxState[0].repeatLen = 0;                               \
                                                                         \
          addStmtToIRSB( bb, IRStmt_Dirty(dcall) );                      \
                                                                         \
@@ -362,6 +369,8 @@ IRSB* vg_SP_update_pass ( void*             closureV,
          dcall->fxState[0].fx     = Ifx_Read;                           \
          dcall->fxState[0].offset = layout->offset_SP;                  \
          dcall->fxState[0].size   = layout->sizeof_SP;                  \
+         dcall->fxState[0].nRepeats  = 0;                               \
+         dcall->fxState[0].repeatLen = 0;                               \
                                                                         \
          addStmtToIRSB( bb, IRStmt_Dirty(dcall) );                      \
                                                                         \
@@ -586,7 +595,7 @@ IRSB* vg_SP_update_pass ( void*             closureV,
          deal with SP changing in weird ways (well, we can, but not at
          this time of night).  */
       if (st->tag == Ist_PutI) {
-         descr = st->Ist.PutI.descr;
+         descr = st->Ist.PutI.details->descr;
          minoff_ST = descr->base;
          maxoff_ST = descr->base 
                      + descr->nElems * sizeofIRType(descr->elemTy) - 1;
@@ -597,13 +606,16 @@ IRSB* vg_SP_update_pass ( void*             closureV,
       if (st->tag == Ist_Dirty) {
          d = st->Ist.Dirty.details;
          for (j = 0; j < d->nFxState; j++) {
-            minoff_ST = d->fxState[j].offset;
-            maxoff_ST = d->fxState[j].offset + d->fxState[j].size - 1;
             if (d->fxState[j].fx == Ifx_Read || d->fxState[j].fx == Ifx_None)
                continue;
-            if (!(offset_SP > maxoff_ST
-                  || (offset_SP + sizeof_SP - 1) < minoff_ST))
-               goto complain;
+            /* Enumerate the described state segments */
+            for (k = 0; k < 1 + d->fxState[j].nRepeats; k++) {
+               minoff_ST = d->fxState[j].offset + k * d->fxState[j].repeatLen;
+               maxoff_ST = minoff_ST + d->fxState[j].size - 1;
+               if (!(offset_SP > maxoff_ST
+                     || (offset_SP + sizeof_SP - 1) < minoff_ST))
+                  goto complain;
+            }
          }
       }
 
@@ -719,7 +731,7 @@ void log_bytes ( HChar* bytes, Int nbytes )
 
 static Bool translations_allowable_from_seg ( NSegment const* seg )
 {
-#  if defined(VGA_x86) || defined(VGA_s390x)
+#  if defined(VGA_x86) || defined(VGA_s390x) || defined(VGA_mips32)
    Bool allowR = True;
 #  else
    Bool allowR = False;
@@ -905,7 +917,7 @@ static void gen_PUSH ( IRSB* bb, IRExpr* e )
    Int    stack_size       = VEX_GUEST_PPC64_REDIR_STACK_SIZE;
    Int    offB_REDIR_SP    = offsetof(VexGuestPPC64State,guest_REDIR_SP);
    Int    offB_REDIR_STACK = offsetof(VexGuestPPC64State,guest_REDIR_STACK);
-   Int    offB_EMWARN      = offsetof(VexGuestPPC64State,guest_EMWARN);
+   Int    offB_EMNOTE      = offsetof(VexGuestPPC64State,guest_EMNOTE);
    Int    offB_CIA         = offsetof(VexGuestPPC64State,guest_CIA);
    Bool   is64             = True;
    IRType ty_Word          = Ity_I64;
@@ -919,7 +931,7 @@ static void gen_PUSH ( IRSB* bb, IRExpr* e )
    Int    stack_size       = VEX_GUEST_PPC32_REDIR_STACK_SIZE;
    Int    offB_REDIR_SP    = offsetof(VexGuestPPC32State,guest_REDIR_SP);
    Int    offB_REDIR_STACK = offsetof(VexGuestPPC32State,guest_REDIR_STACK);
-   Int    offB_EMWARN      = offsetof(VexGuestPPC32State,guest_EMWARN);
+   Int    offB_EMNOTE      = offsetof(VexGuestPPC32State,guest_EMNOTE);
    Int    offB_CIA         = offsetof(VexGuestPPC32State,guest_CIA);
    Bool   is64             = False;
    IRType ty_Word          = Ity_I32;
@@ -953,11 +965,11 @@ static void gen_PUSH ( IRSB* bb, IRExpr* e )
    /* Bomb out if t1 >=s stack_size, that is, (stack_size-1)-t1 <s 0.
       The destination (0) is a bit bogus but it doesn't matter since
       this is an unrecoverable error and will lead to Valgrind
-      shutting down.  _EMWARN is set regardless - that's harmless
+      shutting down.  _EMNOTE is set regardless - that's harmless
       since is only has a meaning if the exit is taken. */
    addStmtToIRSB(
       bb,
-      IRStmt_Put(offB_EMWARN, mkU32(EmWarn_PPC64_redir_overflow))
+      IRStmt_Put(offB_EMNOTE, mkU32(EmWarn_PPC64_redir_overflow))
    );
    addStmtToIRSB(
       bb,
@@ -984,8 +996,8 @@ static void gen_PUSH ( IRSB* bb, IRExpr* e )
    /* PutI/GetI have I32-typed indexes regardless of guest word size */
    addStmtToIRSB(
       bb, 
-      IRStmt_PutI(descr, narrowTo32(bb->tyenv,IRExpr_RdTmp(t1)), 0, e)
-   );
+      IRStmt_PutI(mkIRPutI(descr, 
+                           narrowTo32(bb->tyenv,IRExpr_RdTmp(t1)), 0, e)));
 }
 
 
@@ -999,7 +1011,7 @@ static IRTemp gen_POP ( IRSB* bb )
    Int    stack_size       = VEX_GUEST_PPC64_REDIR_STACK_SIZE;
    Int    offB_REDIR_SP    = offsetof(VexGuestPPC64State,guest_REDIR_SP);
    Int    offB_REDIR_STACK = offsetof(VexGuestPPC64State,guest_REDIR_STACK);
-   Int    offB_EMWARN      = offsetof(VexGuestPPC64State,guest_EMWARN);
+   Int    offB_EMNOTE      = offsetof(VexGuestPPC64State,guest_EMNOTE);
    Int    offB_CIA         = offsetof(VexGuestPPC64State,guest_CIA);
    Bool   is64             = True;
    IRType ty_Word          = Ity_I64;
@@ -1011,7 +1023,7 @@ static IRTemp gen_POP ( IRSB* bb )
    Int    stack_size       = VEX_GUEST_PPC32_REDIR_STACK_SIZE;
    Int    offB_REDIR_SP    = offsetof(VexGuestPPC32State,guest_REDIR_SP);
    Int    offB_REDIR_STACK = offsetof(VexGuestPPC32State,guest_REDIR_STACK);
-   Int    offB_EMWARN      = offsetof(VexGuestPPC32State,guest_EMWARN);
+   Int    offB_EMNOTE      = offsetof(VexGuestPPC32State,guest_EMNOTE);
    Int    offB_CIA         = offsetof(VexGuestPPC32State,guest_CIA);
    Bool   is64             = False;
    IRType ty_Word          = Ity_I32;
@@ -1039,7 +1051,7 @@ static IRTemp gen_POP ( IRSB* bb )
    /* Bomb out if t1 < 0.  Same comments as gen_PUSH apply. */
    addStmtToIRSB(
       bb,
-      IRStmt_Put(offB_EMWARN, mkU32(EmWarn_PPC64_redir_underflow))
+      IRStmt_Put(offB_EMNOTE, mkU32(EmWarn_PPC64_redir_underflow))
    );
    addStmtToIRSB(
       bb,
@@ -1181,6 +1193,12 @@ Bool mk_preamble__set_NRADDR_to_zero ( void* closureV, IRSB* bb )
          nraddr_szB == 8 ? mkU64(0) : mkU32(0)
       )
    );
+#  if defined(VGP_mips32_linux)
+   // t9 needs to be set to point to the start of the redirected function.
+   VgCallbackClosure* closure = (VgCallbackClosure*)closureV;
+   Int    offB_GPR25 = offsetof(VexGuestMIPS32State,guest_r25);
+   addStmtToIRSB( bb, IRStmt_Put( offB_GPR25, mkU32( closure->readdr )) );
+#  endif
 #  if defined(VG_PLAT_USES_PPCTOC)
    { VgCallbackClosure* closure = (VgCallbackClosure*)closureV;
      addStmtToIRSB(
@@ -1217,6 +1235,11 @@ Bool mk_preamble__set_NRADDR_to_nraddr ( void* closureV, IRSB* bb )
             : IRExpr_Const(IRConst_U32( (UInt)closure->nraddr ))
       )
    );
+#  if defined(VGP_mips32_linux)
+   // t9 needs to be set to point to the start of the redirected function.
+   Int    offB_GPR25 = offsetof(VexGuestMIPS32State,guest_r25);
+   addStmtToIRSB( bb, IRStmt_Put( offB_GPR25, mkU32( closure->readdr )) );
+#  endif
 #  if defined(VGP_ppc64_linux)
    addStmtToIRSB( 
       bb,
@@ -1326,8 +1349,8 @@ Bool VG_(translate) ( ThreadId tid,
    if ((kind == T_Redir_Wrap || kind == T_Redir_Replace)
        && (VG_(clo_verbosity) >= 2 || VG_(clo_trace_redir))) {
       Bool ok;
-      Char name1[512] = "";
-      Char name2[512] = "";
+      HChar name1[512] = "";
+      HChar name2[512] = "";
       name1[0] = name2[0] = 0;
       ok = VG_(get_fnname_w_offset)(nraddr, name1, 512);
       if (!ok) VG_(strcpy)(name1, "???");
@@ -1345,9 +1368,9 @@ Bool VG_(translate) ( ThreadId tid,
 
    /* If doing any code printing, print a basic block start marker */
    if (VG_(clo_trace_flags) || debugging_translation) {
-      Char fnname[512] = "UNKNOWN_FUNCTION";
+      HChar fnname[512] = "UNKNOWN_FUNCTION";
       VG_(get_fnname_w_offset)(addr, fnname, 512);
-      const UChar* objname = "UNKNOWN_OBJECT";
+      const HChar* objname = "UNKNOWN_OBJECT";
       OffT         objoff  = 0;
       DebugInfo*   di      = VG_(find_DebugInfo)( addr );
       if (di) {
@@ -1402,6 +1425,7 @@ Bool VG_(translate) ( ThreadId tid,
    }
    else
    if ( (VG_(clo_trace_flags) > 0
+        && VG_(get_bbs_translated)() <= VG_(clo_trace_notabove)
         && VG_(get_bbs_translated)() >= VG_(clo_trace_notbelow) )) {
       verbosity = VG_(clo_trace_flags);
    }
@@ -1484,15 +1508,16 @@ Bool VG_(translate) ( ThreadId tid,
         They are entirely legal but longwinded so as to maximise the
         chance of the C typechecker picking up any type snafus. */
      IRSB*(*f)(VgCallbackClosure*,
-               IRSB*,VexGuestLayout*,VexGuestExtents*,
+               IRSB*,VexGuestLayout*,VexGuestExtents*, VexArchInfo*,
                IRType,IRType)
         = VG_(clo_vgdb) != Vg_VgdbNo
              ? tool_instrument_then_gdbserver_if_needed
              : VG_(tdict).tool_instrument;
      IRSB*(*g)(void*,
-               IRSB*,VexGuestLayout*,VexGuestExtents*,
+               IRSB*,VexGuestLayout*,VexGuestExtents*,VexArchInfo*,
                IRType,IRType)
-       = (IRSB*(*)(void*,IRSB*,VexGuestLayout*,VexGuestExtents*,IRType,IRType))f;
+       = (IRSB*(*)(void*,IRSB*,VexGuestLayout*,VexGuestExtents*,
+                   VexArchInfo*,IRType,IRType))f;
      vta.instrument1     = g;
    }
    /* No need for type kludgery here. */

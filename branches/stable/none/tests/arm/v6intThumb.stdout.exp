@@ -16767,19 +16767,19 @@ movs r0, r1 :: rd 0x00000000 rm 0x00000000, c:v-in 0, cpsr 0x40000000  Z
 movs r0, r1 :: rd 0x80000000 rm 0x80000000, c:v-in 0, cpsr 0x80000000 N   
 movs r0, #0 :: rd 0x00000000 rm 0x00000000, c:v-in 0, cpsr 0x40000000  Z  
 movs r0, #1 :: rd 0x00000001 rm 0x00000000, c:v-in 0, cpsr 0x00000000     
-movs r0, r1 :: rd 0x00000001 rm 0x00000001, c:v-in 1, cpsr 0x00000000     
-movs r0, r1 :: rd 0x00000000 rm 0x00000000, c:v-in 1, cpsr 0x40000000  Z  
-movs r0, r1 :: rd 0x80000000 rm 0x80000000, c:v-in 1, cpsr 0x80000000 N   
+movs r0, r1 :: rd 0x00000001 rm 0x00000001, c:v-in 1, cpsr 0x10000000    V
+movs r0, r1 :: rd 0x00000000 rm 0x00000000, c:v-in 1, cpsr 0x50000000  Z V
+movs r0, r1 :: rd 0x80000000 rm 0x80000000, c:v-in 1, cpsr 0x90000000 N  V
 movs r0, #0 :: rd 0x00000000 rm 0x00000000, c:v-in 1, cpsr 0x50000000  Z V
 movs r0, #1 :: rd 0x00000001 rm 0x00000000, c:v-in 1, cpsr 0x10000000    V
-movs r0, r1 :: rd 0x00000001 rm 0x00000001, c:v-in 2, cpsr 0x00000000     
-movs r0, r1 :: rd 0x00000000 rm 0x00000000, c:v-in 2, cpsr 0x40000000  Z  
-movs r0, r1 :: rd 0x80000000 rm 0x80000000, c:v-in 2, cpsr 0x80000000 N   
+movs r0, r1 :: rd 0x00000001 rm 0x00000001, c:v-in 2, cpsr 0x20000000   C 
+movs r0, r1 :: rd 0x00000000 rm 0x00000000, c:v-in 2, cpsr 0x60000000  ZC 
+movs r0, r1 :: rd 0x80000000 rm 0x80000000, c:v-in 2, cpsr 0xa0000000 N C 
 movs r0, #0 :: rd 0x00000000 rm 0x00000000, c:v-in 2, cpsr 0x60000000  ZC 
 movs r0, #1 :: rd 0x00000001 rm 0x00000000, c:v-in 2, cpsr 0x20000000   C 
-movs r0, r1 :: rd 0x00000001 rm 0x00000001, c:v-in 3, cpsr 0x00000000     
-movs r0, r1 :: rd 0x00000000 rm 0x00000000, c:v-in 3, cpsr 0x40000000  Z  
-movs r0, r1 :: rd 0x80000000 rm 0x80000000, c:v-in 3, cpsr 0x80000000 N   
+movs r0, r1 :: rd 0x00000001 rm 0x00000001, c:v-in 3, cpsr 0x30000000   CV
+movs r0, r1 :: rd 0x00000000 rm 0x00000000, c:v-in 3, cpsr 0x70000000  ZCV
+movs r0, r1 :: rd 0x80000000 rm 0x80000000, c:v-in 3, cpsr 0xb0000000 N CV
 movs r0, #0 :: rd 0x00000000 rm 0x00000000, c:v-in 3, cpsr 0x70000000  ZCV
 movs r0, #1 :: rd 0x00000001 rm 0x00000000, c:v-in 3, cpsr 0x30000000   CV
 MVN
@@ -17450,3 +17450,26 @@ uxtah r0, r1, r2, ROR #24 :: rd 0x3141724e rm 0x31415927, rn 0x27189819, c:v-in 
 uxtah r0, r1, r2, ROR #16 :: rd 0x3141803f rm 0x31415927, rn 0x27189819, c:v-in 0, cpsr 0xc0000000 NZ  
 uxtah r0, r1, r2, ROR #8  :: rd 0x314171bf rm 0x31415927, rn 0x27189819, c:v-in 0, cpsr 0xc0000000 NZ  
 uxtah r0, r1, r2, ROR #0  :: rd 0x3141f140 rm 0x31415927, rn 0x27189819, c:v-in 0, cpsr 0xc0000000 NZ  
+------------ SMMUL ------------
+smmul   r0, r1, r2 :: rd 0x00000000 rm 0x00000000, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+smmul   r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+smmul   r0, r1, r2 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+smmul   r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0xffffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+smmul   r0, r1, r2 :: rd 0x3fffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+smmul   r0, r1, r2 :: rd 0x00000000 rm 0x0000ffff, rn 0x0000ffff, c:v-in 0, cpsr 0xc0000000 NZ  
+smmul   r0, r1, r2 :: rd 0x048e8c61 rm 0xe444dc25, rn 0xd5eef620, c:v-in 0, cpsr 0xc0000000 NZ  
+smmul   r0, r1, r2 :: rd 0xfd764d51 rm 0x06ea9b2a, rn 0xa2108661, c:v-in 0, cpsr 0xc0000000 NZ  
+smmul   r0, r1, r2 :: rd 0x0657af1f rm 0x448f3a5f, rn 0x17aecf57, c:v-in 0, cpsr 0xc0000000 NZ  
+smmul   r0, r1, r2 :: rd 0xffe5afbd rm 0x4b0c2337, rn 0xffa63d6c, c:v-in 0, cpsr 0xc0000000 NZ  
+smmul   r0, r1, r2 :: rd 0xffc528bc rm 0xf91d5f56, rn 0x088bc0f9, c:v-in 0, cpsr 0xc0000000 NZ  
+smmulr  r0, r1, r2 :: rd 0x00000000 rm 0x00000000, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+smmulr  r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0x00000000, c:v-in 0, cpsr 0xc0000000 NZ  
+smmulr  r0, r1, r2 :: rd 0x00000000 rm 0x00000000, rn 0xffffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+smmulr  r0, r1, r2 :: rd 0x00000000 rm 0xffffffff, rn 0xffffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+smmulr  r0, r1, r2 :: rd 0x3fffffff rm 0x7fffffff, rn 0x7fffffff, c:v-in 0, cpsr 0xc0000000 NZ  
+smmulr  r0, r1, r2 :: rd 0x00000001 rm 0x0000ffff, rn 0x0000ffff, c:v-in 0, cpsr 0xc0000000 NZ  
+smmulr  r0, r1, r2 :: rd 0x048e8c61 rm 0xe444dc25, rn 0xd5eef620, c:v-in 0, cpsr 0xc0000000 NZ  
+smmulr  r0, r1, r2 :: rd 0xfd764d52 rm 0x06ea9b2a, rn 0xa2108661, c:v-in 0, cpsr 0xc0000000 NZ  
+smmulr  r0, r1, r2 :: rd 0x0657af1f rm 0x448f3a5f, rn 0x17aecf57, c:v-in 0, cpsr 0xc0000000 NZ  
+smmulr  r0, r1, r2 :: rd 0xffe5afbd rm 0x4b0c2337, rn 0xffa63d6c, c:v-in 0, cpsr 0xc0000000 NZ  
+smmulr  r0, r1, r2 :: rd 0xffc528bd rm 0xf91d5f56, rn 0x088bc0f9, c:v-in 0, cpsr 0xc0000000 NZ  

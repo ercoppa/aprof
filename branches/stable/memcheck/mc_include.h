@@ -8,7 +8,7 @@
    This file is part of MemCheck, a heavyweight Valgrind tool for
    detecting memory errors.
 
-   Copyright (C) 2000-2011 Julian Seward 
+   Copyright (C) 2000-2012 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -42,8 +42,12 @@
 /*--- Tracking the heap                                    ---*/
 /*------------------------------------------------------------*/
 
-/* We want at least a 16B redzone on client heap blocks for Memcheck */
-#define MC_MALLOC_REDZONE_SZB    16
+/* By default, we want at least a 16B redzone on client heap blocks
+   for Memcheck.
+   The default can be modified by --redzone-size. */
+#define MC_MALLOC_DEFAULT_REDZONE_SZB    16
+// effective redzone, as (possibly) modified by --redzone-size:
+extern SizeT MC_(Malloc_Redzone_SzB);
 
 /* For malloc()/new/new[] vs. free()/delete/delete[] mismatch checking. */
 typedef
@@ -338,9 +342,9 @@ void MC_(who_points_at) ( Addr address, SizeT szB);
 
 // if delta_mode == LCD_Any, prints in buf an empty string
 // otherwise prints a delta in the layout  " (+%'lu)" or " (-%'lu)" 
-extern char * MC_(snprintf_delta) (char * buf, Int size, 
-                                   SizeT current_val, SizeT old_val, 
-                                   LeakCheckDeltaMode delta_mode);
+extern HChar * MC_(snprintf_delta) (HChar * buf, Int size, 
+                                    SizeT current_val, SizeT old_val, 
+                                    LeakCheckDeltaMode delta_mode);
 
 
 Bool MC_(is_valid_aligned_word)     ( Addr a );
@@ -368,17 +372,17 @@ void MC_(before_pp_Error)    ( Error* err );
 void MC_(pp_Error)           ( Error* err );
 UInt MC_(update_Error_extra) ( Error* err );
 
-Bool MC_(is_recognised_suppression) ( Char* name, Supp* su );
+Bool MC_(is_recognised_suppression) ( const HChar* name, Supp* su );
 
-Bool MC_(read_extra_suppression_info) ( Int fd, Char** buf,
+Bool MC_(read_extra_suppression_info) ( Int fd, HChar** buf,
                                         SizeT* nBuf, Supp *su );
 
 Bool MC_(error_matches_suppression) ( Error* err, Supp* su );
 
 Bool MC_(get_extra_suppression_info) ( Error* err,
-                                       /*OUT*/Char* buf, Int nBuf );
+                                       /*OUT*/HChar* buf, Int nBuf );
 
-Char* MC_(get_error_name) ( Error* err );
+const HChar* MC_(get_error_name) ( Error* err );
 
 /* Recording of errors */
 void MC_(record_address_error) ( ThreadId tid, Addr a, Int szB,
@@ -391,12 +395,12 @@ void MC_(record_free_error)            ( ThreadId tid, Addr a );
 void MC_(record_illegal_mempool_error) ( ThreadId tid, Addr a );
 void MC_(record_freemismatch_error)    ( ThreadId tid, MC_Chunk* mc );
 
-void MC_(record_overlap_error)  ( ThreadId tid, Char* function,
+void MC_(record_overlap_error)  ( ThreadId tid, const HChar* function,
                                   Addr src, Addr dst, SizeT szB );
-void MC_(record_core_mem_error) ( ThreadId tid, Char* msg );
-void MC_(record_regparam_error) ( ThreadId tid, Char* msg, UInt otag );
+void MC_(record_core_mem_error) ( ThreadId tid, const HChar* msg );
+void MC_(record_regparam_error) ( ThreadId tid, const HChar* msg, UInt otag );
 void MC_(record_memparam_error) ( ThreadId tid, Addr a, 
-                                  Bool isAddrErr, Char* msg, UInt otag );
+                                  Bool isAddrErr, const HChar* msg, UInt otag );
 void MC_(record_user_error)     ( ThreadId tid, Addr a,
                                   Bool isAddrErr, UInt otag );
 
@@ -425,7 +429,7 @@ typedef
       Addr        start;
       SizeT       size;
       ExeContext* where;
-      Char*       desc;
+      HChar*      desc;
    } 
    CGenBlock;
 
@@ -549,17 +553,20 @@ VG_REGPARM(2) void  MC_(helperc_b_store2) ( Addr a, UWord d32 );
 VG_REGPARM(2) void  MC_(helperc_b_store4) ( Addr a, UWord d32 );
 VG_REGPARM(2) void  MC_(helperc_b_store8) ( Addr a, UWord d32 );
 VG_REGPARM(2) void  MC_(helperc_b_store16)( Addr a, UWord d32 );
+VG_REGPARM(2) void  MC_(helperc_b_store32)( Addr a, UWord d32 );
 VG_REGPARM(1) UWord MC_(helperc_b_load1) ( Addr a );
 VG_REGPARM(1) UWord MC_(helperc_b_load2) ( Addr a );
 VG_REGPARM(1) UWord MC_(helperc_b_load4) ( Addr a );
 VG_REGPARM(1) UWord MC_(helperc_b_load8) ( Addr a );
 VG_REGPARM(1) UWord MC_(helperc_b_load16)( Addr a );
+VG_REGPARM(1) UWord MC_(helperc_b_load32)( Addr a );
 
 /* Functions defined in mc_translate.c */
 IRSB* MC_(instrument) ( VgCallbackClosure* closure,
                         IRSB* bb_in, 
                         VexGuestLayout* layout, 
                         VexGuestExtents* vge,
+                        VexArchInfo* archinfo_host,
                         IRType gWordTy, IRType hWordTy );
 
 IRSB* MC_(final_tidy) ( IRSB* );

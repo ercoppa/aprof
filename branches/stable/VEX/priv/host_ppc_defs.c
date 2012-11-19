@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2011 OpenWorks LLP
+   Copyright (C) 2004-2012 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -1092,7 +1092,7 @@ PPCInstr* PPCInstr_DfpRound128 ( HReg dst_hi, HReg dst_lo, HReg src_hi,
    i->Pin.DfpRound128.r_rmc  = r_rmc;
    return i;
 }
-PPCInstr* PPCInstr_DfpQuantize ( PPCAvFpOp op, HReg dst, HReg srcL, HReg srcR,
+PPCInstr* PPCInstr_DfpQuantize ( PPCFpOp op, HReg dst, HReg srcL, HReg srcR,
                                  PPCRI* rmc ) {
    PPCInstr* i             = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag                  = Pin_DfpQuantize;
@@ -1103,7 +1103,7 @@ PPCInstr* PPCInstr_DfpQuantize ( PPCAvFpOp op, HReg dst, HReg srcL, HReg srcR,
    i->Pin.DfpQuantize.rmc  = rmc;
    return i;
 }
-PPCInstr* PPCInstr_DfpQuantize128 ( PPCAvFpOp op, HReg dst_hi, HReg dst_lo, 
+PPCInstr* PPCInstr_DfpQuantize128 ( PPCFpOp op, HReg dst_hi, HReg dst_lo,
                                     HReg src_hi, HReg src_lo, PPCRI* rmc ) {
    /* dst is used to pass left operand in and return result */
    PPCInstr* i                  = LibVEX_Alloc(sizeof(PPCInstr));
@@ -1624,7 +1624,7 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
    case Pin_Load: {
       Bool idxd = toBool(i->Pin.Load.src->tag == Pam_RR);
       UChar sz = i->Pin.Load.sz;
-      UChar c_sz = sz==1 ? 'b' : sz==2 ? 'h' : sz==4 ? 'w' : 'd';
+      HChar c_sz = sz==1 ? 'b' : sz==2 ? 'h' : sz==4 ? 'w' : 'd';
       vex_printf("l%c%s%s ", c_sz, sz==8 ? "" : "z", idxd ? "x" : "" );
       ppHRegPPC(i->Pin.Load.dst);
       vex_printf(",");
@@ -1640,7 +1640,7 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
    case Pin_Store: {
       UChar sz = i->Pin.Store.sz;
       Bool idxd = toBool(i->Pin.Store.dst->tag == Pam_RR);
-      UChar c_sz = sz==1 ? 'b' : sz==2 ? 'h' : sz==4 ? 'w' : /*8*/ 'd';
+      HChar c_sz = sz==1 ? 'b' : sz==2 ? 'h' : sz==4 ? 'w' : /*8*/ 'd';
       vex_printf("st%c%s ", c_sz, idxd ? "x" : "" );
       ppHRegPPC(i->Pin.Store.src);
       vex_printf(",");
@@ -1927,7 +1927,7 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
 
    case Pin_AvSplat: {
       UChar sz = i->Pin.AvSplat.sz;
-      UChar ch_sz = toUChar( (sz == 8) ? 'b' : (sz == 16) ? 'h' : 'w' );
+      HChar ch_sz = toUChar( (sz == 8) ? 'b' : (sz == 16) ? 'h' : 'w' );
       vex_printf("vsplt%s%c ",
                  i->Pin.AvSplat.src->tag == Pvi_Imm ? "is" : "", ch_sz);
       ppHRegPPC(i->Pin.AvSplat.dst);
@@ -2758,6 +2758,7 @@ void mapRegs_PPCInstr ( HRegRemap* m, PPCInstr* i, Bool mode64 )
       mapReg(m, &i->Pin.DfpQuantize128.dst_lo);
       mapReg(m, &i->Pin.DfpQuantize128.src_hi);
       mapReg(m, &i->Pin.DfpQuantize128.src_lo);
+      return;
    case Pin_DfpD128toD64:
       mapReg(m, &i->Pin.DfpD128toD64.src_hi);
       mapReg(m, &i->Pin.DfpD128toD64.src_lo);

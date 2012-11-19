@@ -217,6 +217,8 @@ EXTRA_DIST =                                        \
 	sem_open3.vgtest                            \
 	sem_open_traced.stderr.exp                  \
 	sem_open_traced.vgtest                      \
+	sem_wait.stderr.exp                         \
+	sem_wait.vgtest                             \
 	sigalrm.stderr.exp                          \
 	sigalrm.vgtest                              \
 	sigaltstack.stderr.exp                      \
@@ -231,6 +233,7 @@ EXTRA_DIST =                                        \
 	tc03_re_excl.vgtest                         \
 	tc04_free_lock.stderr.exp-x86               \
 	tc04_free_lock.stderr.exp-ppc               \
+	tc04_free_lock.stderr.exp-s390              \
 	tc04_free_lock.vgtest                       \
 	tc05_simple_race.stderr.exp                 \
 	tc05_simple_race.vgtest                     \
@@ -245,6 +248,7 @@ EXTRA_DIST =                                        \
 	tc09_bad_unlock.stderr.exp-x86              \
 	tc09_bad_unlock.stderr.exp-ppc              \
 	tc09_bad_unlock.stderr.exp-glibc2.8         \
+	tc09_bad_unlock.stderr.exp-s390             \
 	tc09_bad_unlock.vgtest                      \
 	tc10_rec_lock.stderr.exp                    \
 	tc10_rec_lock.vgtest                        \
@@ -326,6 +330,7 @@ check_PROGRAMS =      \
   rwlock_type_checking \
   sem_as_mutex        \
   sem_open            \
+  sem_wait            \
   sigalrm             \
   thread_name         \
   threaded-fork       \
@@ -434,3 +439,5 @@ endif
 
 std_thread_SOURCES          = std_thread.cpp
 std_thread_CXXFLAGS         = $(AM_CXXFLAGS) -std=c++0x
+
+sem_wait_SOURCES            = sem_wait.cpp

@@ -5,7 +5,7 @@
 /*
   This file is part of DRD, a thread error detector.
 
-  Copyright (C) 2006-2011 Bart Van Assche <bvanassche@acm.org>.
+  Copyright (C) 2006-2012 Bart Van Assche <bvanassche@acm.org>.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
@@ -367,7 +367,7 @@ static int DRD_(detected_linuxthreads)(void)
 #if defined(linux)
 #if defined(_CS_GNU_LIBPTHREAD_VERSION)
    /* Linux with a recent glibc. */
-   char buffer[256];
+   HChar buffer[256];
    unsigned len;
    len = confstr(_CS_GNU_LIBPTHREAD_VERSION, buffer, sizeof(buffer));
    assert(len <= sizeof(buffer));

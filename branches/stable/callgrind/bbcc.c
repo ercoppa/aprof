@@ -6,7 +6,7 @@
 /*
    This file is part of Callgrind, a Valgrind tool for call tracing.
 
-   Copyright (C) 2002-2011, Josef Weidendorfer (Josef.Weidendorfer@gmx.de)
+   Copyright (C) 2002-2012, Josef Weidendorfer (Josef.Weidendorfer@gmx.de)
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -338,9 +338,9 @@ void insert_bbcc_into_hash(BBCC* bbcc)
 	     current_bbccs.entries);
 }
 
-static Char* mangled_cxt(Context* cxt, int rec_index)
+static const HChar* mangled_cxt(Context* cxt, int rec_index)
 {
-    static Char mangled[FN_NAME_LEN];
+    static HChar mangled[FN_NAME_LEN];
     int i, p;
 
     if (!cxt) return "(no context)";
@@ -413,6 +413,8 @@ static BBCC* clone_bbcc(BBCC* orig, Context* cxt, Int rec_index)
     CLG_DEBUGIF(3)
       CLG_(print_bbcc)(-2, bbcc);
 
+    // FIXME: mangled_cxt returns a pointer to a static buffer that
+    // gets overwritten with each invocation. 
     CLG_DEBUG(2,"- clone_BBCC(%p, %d) for BB %#lx\n"
 		"   orig %s\n"
 		"   new  %s\n",
@@ -482,7 +484,8 @@ static void handleUnderflow(BB* bb)
   BB* source_bb;
   Bool seen_before;
   fn_node* caller;
-  int fn_number, *pactive;
+  int fn_number;
+  unsigned *pactive;
   call_entry* call_entry_up;
 
   CLG_DEBUG(1,"  Callstack underflow !\n");
@@ -571,7 +574,12 @@ void CLG_(setup_bbcc)(BB* bb)
    */
   tid = VG_(get_running_tid)();
 #if 1
-  CLG_(switch_thread)(tid);
+  /* CLG_(switch_thread) is a no-op when tid is equal to CLG_(current_tid).
+   * As this is on the hot path, we only call CLG_(switch_thread)(tid)
+   * if tid differs from the CLG_(current_tid).
+   */
+  if (UNLIKELY(tid != CLG_(current_tid)))
+     CLG_(switch_thread)(tid);
 #else
   CLG_ASSERT(VG_(get_running_tid)() == CLG_(current_tid));
 #endif

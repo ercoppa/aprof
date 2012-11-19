@@ -53,7 +53,7 @@ sub printHeader {
 }
 
 sub printVersion {
-  print "callgrind_control-3.8.0.SVN\n";
+  print "callgrind_control-3.9.0.SVN\n";
   exit;
 }
 

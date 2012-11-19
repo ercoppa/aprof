@@ -8,7 +8,7 @@
    This file is part of Cachegrind, a Valgrind tool for cache
    profiling programs.
 
-   Copyright (C) 2002-2011 Nicholas Nethercote
+   Copyright (C) 2002-2012 Nicholas Nethercote
       njn@valgrind.org
 
    This program is free software; you can redistribute it and/or
@@ -67,7 +67,13 @@
 
 static Bool  clo_cache_sim  = True;  /* do cache simulation? */
 static Bool  clo_branch_sim = False; /* do branch simulation? */
-static Char* clo_cachegrind_out_file = "cachegrind.out.%p";
+static const HChar* clo_cachegrind_out_file = "cachegrind.out.%p";
+
+/*------------------------------------------------------------*/
+/*--- Cachesim configuration                               ---*/
+/*------------------------------------------------------------*/
+
+static Int min_line_size = 0; /* min of L1 and LL cache line sizes */
 
 /*------------------------------------------------------------*/
 /*--- Types and Data Structures                            ---*/
@@ -96,9 +102,9 @@ typedef
 // - Traversed for dumping stats at end in file/func/line hierarchy.
 
 typedef struct {
-   Char* file;
-   Char* fn;
-   Int   line;
+   HChar* file;
+   HChar* fn;
+   Int    line;
 }
 CodeLoc;
 
@@ -171,7 +177,8 @@ static OSet* stringTable;
 static Int  distinct_files      = 0;
 static Int  distinct_fns        = 0;
 static Int  distinct_lines      = 0;
-static Int  distinct_instrs     = 0;
+static Int  distinct_instrsGen  = 0;
+static Int  distinct_instrsNoX  = 0;
 
 static Int  full_debugs         = 0;
 static Int  file_line_debugs    = 0;
@@ -184,18 +191,18 @@ static Int  no_debugs           = 0;
 
 static Word stringCmp( const void* key, const void* elem )
 {
-   return VG_(strcmp)(*(Char**)key, *(Char**)elem);
+   return VG_(strcmp)(*(HChar**)key, *(HChar**)elem);
 }
 
 // Get a permanent string;  either pull it out of the string table if it's
 // been encountered before, or dup it and put it into the string table.
-static Char* get_perm_string(Char* s)
+static HChar* get_perm_string(HChar* s)
 {
-   Char** s_ptr = VG_(OSetGen_Lookup)(stringTable, &s);
+   HChar** s_ptr = VG_(OSetGen_Lookup)(stringTable, &s);
    if (s_ptr) {
       return *s_ptr;
    } else {
-      Char** s_node = VG_(OSetGen_AllocNode)(stringTable, sizeof(Char*));
+      HChar** s_node = VG_(OSetGen_AllocNode)(stringTable, sizeof(HChar*));
       *s_node = VG_(strdup)("cg.main.gps.1", s);
       VG_(OSetGen_Insert)(stringTable, s_node);
       return *s_node;
@@ -206,10 +213,10 @@ static Char* get_perm_string(Char* s)
 /*--- CC table operations                                  ---*/
 /*------------------------------------------------------------*/
 
-static void get_debug_info(Addr instr_addr, Char file[FILE_LEN],
-                           Char fn[FN_LEN], Int* line)
+static void get_debug_info(Addr instr_addr, HChar file[FILE_LEN],
+                           HChar fn[FN_LEN], UInt* line)
 {
-   Char dir[FILE_LEN];
+   HChar dir[FILE_LEN];
    Bool found_dirname;
    Bool found_file_line = VG_(get_filename_linenum)(
                              instr_addr, 
@@ -248,8 +255,8 @@ static void get_debug_info(Addr instr_addr, Char file[FILE_LEN],
 // Returns a pointer to the line CC, creates a new one if necessary.
 static LineCC* get_lineCC(Addr origAddr)
 {
-   Char    file[FILE_LEN], fn[FN_LEN];
-   Int     line;
+   HChar   file[FILE_LEN], fn[FN_LEN];
+   UInt    line;
    CodeLoc loc;
    LineCC* lineCC;
 
@@ -289,16 +296,28 @@ static LineCC* get_lineCC(Addr origAddr)
 /*--- Cache simulation functions                           ---*/
 /*------------------------------------------------------------*/
 
+/* A common case for an instruction read event is that the
+ * bytes read belong to the same cache line in both L1I and LL
+ * (if cache line sizes of L1 and LL are the same).
+ * As this can be detected at instrumentation time, and results
+ * in faster simulation, special-casing is benefical.
+ *
+ * Abbrevations used in var/function names:
+ *  IrNoX - instruction read does not cross cache lines
+ *  IrGen - generic instruction read; not detected as IrNoX
+ *  Ir    - not known / not important whether it is an IrNoX
+ */
+
 // Only used with --cache-sim=no.
 static VG_REGPARM(1)
-void log_1I(InstrInfo* n)
+void log_1Ir(InstrInfo* n)
 {
    n->parent->Ir.a++;
 }
 
 // Only used with --cache-sim=no.
 static VG_REGPARM(2)
-void log_2I(InstrInfo* n, InstrInfo* n2)
+void log_2Ir(InstrInfo* n, InstrInfo* n2)
 {
    n->parent->Ir.a++;
    n2->parent->Ir.a++;
@@ -306,66 +325,78 @@ void log_2I(InstrInfo* n, InstrInfo* n2)
 
 // Only used with --cache-sim=no.
 static VG_REGPARM(3)
-void log_3I(InstrInfo* n, InstrInfo* n2, InstrInfo* n3)
+void log_3Ir(InstrInfo* n, InstrInfo* n2, InstrInfo* n3)
 {
    n->parent->Ir.a++;
    n2->parent->Ir.a++;
    n3->parent->Ir.a++;
 }
 
+// Generic case for instruction reads: may cross cache lines.
+// All other Ir handlers expect IrNoX instruction reads.
 static VG_REGPARM(1)
-void log_1I_0D_cache_access(InstrInfo* n)
+void log_1IrGen_0D_cache_access(InstrInfo* n)
 {
-   //VG_(printf)("1I_0D :  CCaddr=0x%010lx,  iaddr=0x%010lx,  isize=%lu\n",
+   //VG_(printf)("1IrGen_0D :  CCaddr=0x%010lx,  iaddr=0x%010lx,  isize=%lu\n",
    //             n, n->instr_addr, n->instr_len);
-   cachesim_I1_doref(n->instr_addr, n->instr_len, 
-                     &n->parent->Ir.m1, &n->parent->Ir.mL);
+   cachesim_I1_doref_Gen(n->instr_addr, n->instr_len,
+			 &n->parent->Ir.m1, &n->parent->Ir.mL);
+   n->parent->Ir.a++;
+}
+
+static VG_REGPARM(1)
+void log_1IrNoX_0D_cache_access(InstrInfo* n)
+{
+   //VG_(printf)("1IrNoX_0D :  CCaddr=0x%010lx,  iaddr=0x%010lx,  isize=%lu\n",
+   //             n, n->instr_addr, n->instr_len);
+   cachesim_I1_doref_NoX(n->instr_addr, n->instr_len,
+			 &n->parent->Ir.m1, &n->parent->Ir.mL);
    n->parent->Ir.a++;
 }
 
 static VG_REGPARM(2)
-void log_2I_0D_cache_access(InstrInfo* n, InstrInfo* n2)
+void log_2IrNoX_0D_cache_access(InstrInfo* n, InstrInfo* n2)
 {
-   //VG_(printf)("2I_0D : CC1addr=0x%010lx, i1addr=0x%010lx, i1size=%lu\n"
-   //            "        CC2addr=0x%010lx, i2addr=0x%010lx, i2size=%lu\n",
+   //VG_(printf)("2IrNoX_0D : CC1addr=0x%010lx, i1addr=0x%010lx, i1size=%lu\n"
+   //            "            CC2addr=0x%010lx, i2addr=0x%010lx, i2size=%lu\n",
    //            n,  n->instr_addr,  n->instr_len,
    //            n2, n2->instr_addr, n2->instr_len);
-   cachesim_I1_doref(n->instr_addr, n->instr_len, 
-                     &n->parent->Ir.m1, &n->parent->Ir.mL);
+   cachesim_I1_doref_NoX(n->instr_addr, n->instr_len,
+			 &n->parent->Ir.m1, &n->parent->Ir.mL);
    n->parent->Ir.a++;
-   cachesim_I1_doref(n2->instr_addr, n2->instr_len, 
-                     &n2->parent->Ir.m1, &n2->parent->Ir.mL);
+   cachesim_I1_doref_NoX(n2->instr_addr, n2->instr_len,
+			 &n2->parent->Ir.m1, &n2->parent->Ir.mL);
    n2->parent->Ir.a++;
 }
 
 static VG_REGPARM(3)
-void log_3I_0D_cache_access(InstrInfo* n, InstrInfo* n2, InstrInfo* n3)
+void log_3IrNoX_0D_cache_access(InstrInfo* n, InstrInfo* n2, InstrInfo* n3)
 {
-   //VG_(printf)("3I_0D : CC1addr=0x%010lx, i1addr=0x%010lx, i1size=%lu\n"
-   //            "        CC2addr=0x%010lx, i2addr=0x%010lx, i2size=%lu\n"
-   //            "        CC3addr=0x%010lx, i3addr=0x%010lx, i3size=%lu\n",
+   //VG_(printf)("3IrNoX_0D : CC1addr=0x%010lx, i1addr=0x%010lx, i1size=%lu\n"
+   //            "            CC2addr=0x%010lx, i2addr=0x%010lx, i2size=%lu\n"
+   //            "            CC3addr=0x%010lx, i3addr=0x%010lx, i3size=%lu\n",
    //            n,  n->instr_addr,  n->instr_len,
    //            n2, n2->instr_addr, n2->instr_len,
    //            n3, n3->instr_addr, n3->instr_len);
-   cachesim_I1_doref(n->instr_addr, n->instr_len, 
-                     &n->parent->Ir.m1, &n->parent->Ir.mL);
+   cachesim_I1_doref_NoX(n->instr_addr, n->instr_len,
+			 &n->parent->Ir.m1, &n->parent->Ir.mL);
    n->parent->Ir.a++;
-   cachesim_I1_doref(n2->instr_addr, n2->instr_len, 
-                     &n2->parent->Ir.m1, &n2->parent->Ir.mL);
+   cachesim_I1_doref_NoX(n2->instr_addr, n2->instr_len,
+			 &n2->parent->Ir.m1, &n2->parent->Ir.mL);
    n2->parent->Ir.a++;
-   cachesim_I1_doref(n3->instr_addr, n3->instr_len, 
-                     &n3->parent->Ir.m1, &n3->parent->Ir.mL);
+   cachesim_I1_doref_NoX(n3->instr_addr, n3->instr_len,
+			 &n3->parent->Ir.m1, &n3->parent->Ir.mL);
    n3->parent->Ir.a++;
 }
 
 static VG_REGPARM(3)
-void log_1I_1Dr_cache_access(InstrInfo* n, Addr data_addr, Word data_size)
+void log_1IrNoX_1Dr_cache_access(InstrInfo* n, Addr data_addr, Word data_size)
 {
-   //VG_(printf)("1I_1Dr:  CCaddr=0x%010lx,  iaddr=0x%010lx,  isize=%lu\n"
+   //VG_(printf)("1IrNoX_1Dr:  CCaddr=0x%010lx,  iaddr=0x%010lx,  isize=%lu\n"
    //            "                               daddr=0x%010lx,  dsize=%lu\n",
    //            n, n->instr_addr, n->instr_len, data_addr, data_size);
-   cachesim_I1_doref(n->instr_addr, n->instr_len, 
-                     &n->parent->Ir.m1, &n->parent->Ir.mL);
+   cachesim_I1_doref_NoX(n->instr_addr, n->instr_len,
+			 &n->parent->Ir.m1, &n->parent->Ir.mL);
    n->parent->Ir.a++;
 
    cachesim_D1_doref(data_addr, data_size, 
@@ -374,13 +405,13 @@ void log_1I_1Dr_cache_access(InstrInfo* n, Addr data_addr, Word data_size)
 }
 
 static VG_REGPARM(3)
-void log_1I_1Dw_cache_access(InstrInfo* n, Addr data_addr, Word data_size)
+void log_1IrNoX_1Dw_cache_access(InstrInfo* n, Addr data_addr, Word data_size)
 {
-   //VG_(printf)("1I_1Dw:  CCaddr=0x%010lx,  iaddr=0x%010lx,  isize=%lu\n"
+   //VG_(printf)("1IrNoX_1Dw:  CCaddr=0x%010lx,  iaddr=0x%010lx,  isize=%lu\n"
    //            "                               daddr=0x%010lx,  dsize=%lu\n",
    //            n, n->instr_addr, n->instr_len, data_addr, data_size);
-   cachesim_I1_doref(n->instr_addr, n->instr_len, 
-                     &n->parent->Ir.m1, &n->parent->Ir.mL);
+   cachesim_I1_doref_NoX(n->instr_addr, n->instr_len,
+			 &n->parent->Ir.m1, &n->parent->Ir.mL);
    n->parent->Ir.a++;
 
    cachesim_D1_doref(data_addr, data_size, 
@@ -389,9 +420,9 @@ void log_1I_1Dw_cache_access(InstrInfo* n, Addr data_addr, Word data_size)
 }
 
 static VG_REGPARM(3)
-void log_0I_1Dr_cache_access(InstrInfo* n, Addr data_addr, Word data_size)
+void log_0Ir_1Dr_cache_access(InstrInfo* n, Addr data_addr, Word data_size)
 {
-   //VG_(printf)("0I_1Dr:  CCaddr=0x%010lx,  daddr=0x%010lx,  dsize=%lu\n",
+   //VG_(printf)("0Ir_1Dr:  CCaddr=0x%010lx,  daddr=0x%010lx,  dsize=%lu\n",
    //            n, data_addr, data_size);
    cachesim_D1_doref(data_addr, data_size, 
                      &n->parent->Dr.m1, &n->parent->Dr.mL);
@@ -399,9 +430,9 @@ void log_0I_1Dr_cache_access(InstrInfo* n, Addr data_addr, Word data_size)
 }
 
 static VG_REGPARM(3)
-void log_0I_1Dw_cache_access(InstrInfo* n, Addr data_addr, Word data_size)
+void log_0Ir_1Dw_cache_access(InstrInfo* n, Addr data_addr, Word data_size)
 {
-   //VG_(printf)("0I_1Dw:  CCaddr=0x%010lx,  daddr=0x%010lx,  dsize=%lu\n",
+   //VG_(printf)("0Ir_1Dw:  CCaddr=0x%010lx,  daddr=0x%010lx,  dsize=%lu\n",
    //            n, data_addr, data_size);
    cachesim_D1_doref(data_addr, data_size, 
                      &n->parent->Dw.m1, &n->parent->Dw.mL);
@@ -473,12 +504,13 @@ typedef
 
 typedef 
    enum { 
-      Ev_Ir,  // Instruction read
-      Ev_Dr,  // Data read
-      Ev_Dw,  // Data write
-      Ev_Dm,  // Data modify (read then write)
-      Ev_Bc,  // branch conditional
-      Ev_Bi   // branch indirect (to unknown destination)
+      Ev_IrNoX,  // Instruction read not crossing cache lines
+      Ev_IrGen,  // Generic Ir, not being detected as IrNoX
+      Ev_Dr,     // Data read
+      Ev_Dw,     // Data write
+      Ev_Dm,     // Data modify (read then write)
+      Ev_Bc,     // branch conditional
+      Ev_Bi      // branch indirect (to unknown destination)
    }
    EventTag;
 
@@ -488,7 +520,9 @@ typedef
       InstrInfo* inode;
       union {
          struct {
-         } Ir;
+         } IrGen;
+         struct {
+         } IrNoX;
          struct {
             IRAtom* ea;
             Int     szB;
@@ -595,7 +629,6 @@ SB_info* get_SB_info(IRSB* sbIn, Addr origAddr)
    sbInfo->SB_addr  = origAddr;
    sbInfo->n_instrs = n_instrs;
    VG_(OSetGen_Insert)( instrInfoTable, sbInfo );
-   distinct_instrs++;
 
    return sbInfo;
 }
@@ -604,8 +637,11 @@ SB_info* get_SB_info(IRSB* sbIn, Addr origAddr)
 static void showEvent ( Event* ev )
 {
    switch (ev->tag) {
-      case Ev_Ir: 
-         VG_(printf)("Ir %p\n", ev->inode);
+      case Ev_IrGen:
+         VG_(printf)("IrGen %p\n", ev->inode);
+         break;
+      case Ev_IrNoX:
+         VG_(printf)("IrNoX %p\n", ev->inode);
          break;
       case Ev_Dr:
          VG_(printf)("Dr %p %d EA=", ev->inode, ev->Ev.Dr.szB);
@@ -661,7 +697,7 @@ InstrInfo* setup_InstrInfo ( CgState* cgs, Addr instr_addr, UInt instr_len )
 static void flushEvents ( CgState* cgs )
 {
    Int        i, regparms;
-   Char*      helperName;
+   const HChar* helperName;
    void*      helperAddr;
    IRExpr**   argv;
    IRExpr*    i_node_expr;
@@ -696,8 +732,8 @@ static void flushEvents ( CgState* cgs )
       /* Decide on helper fn to call and args to pass it, and advance
          i appropriately. */
       switch (ev->tag) {
-         case Ev_Ir:
-            /* Merge an Ir with a following Dr/Dm. */
+         case Ev_IrNoX:
+            /* Merge an IrNoX with a following Dr/Dm. */
             if (ev2 && (ev2->tag == Ev_Dr || ev2->tag == Ev_Dm)) {
                /* Why is this true?  It's because we're merging an Ir
                   with a following Dr or Dm.  The Ir derives from the
@@ -708,36 +744,36 @@ static void flushEvents ( CgState* cgs )
                   immediately preceding Ir.  Same applies to analogous
                   assertions in the subsequent cases. */
                tl_assert(ev2->inode == ev->inode);
-               helperName = "log_1I_1Dr_cache_access";
-               helperAddr = &log_1I_1Dr_cache_access;
+               helperName = "log_1IrNoX_1Dr_cache_access";
+               helperAddr = &log_1IrNoX_1Dr_cache_access;
                argv = mkIRExprVec_3( i_node_expr,
                                      get_Event_dea(ev2),
                                      mkIRExpr_HWord( get_Event_dszB(ev2) ) );
                regparms = 3;
                i += 2;
             }
-            /* Merge an Ir with a following Dw. */
+            /* Merge an IrNoX with a following Dw. */
             else
             if (ev2 && ev2->tag == Ev_Dw) {
                tl_assert(ev2->inode == ev->inode);
-               helperName = "log_1I_1Dw_cache_access";
-               helperAddr = &log_1I_1Dw_cache_access;
+               helperName = "log_1IrNoX_1Dw_cache_access";
+               helperAddr = &log_1IrNoX_1Dw_cache_access;
                argv = mkIRExprVec_3( i_node_expr,
                                      get_Event_dea(ev2),
                                      mkIRExpr_HWord( get_Event_dszB(ev2) ) );
                regparms = 3;
                i += 2;
             }
-            /* Merge an Ir with two following Irs. */
+            /* Merge an IrNoX with two following IrNoX's. */
             else
-            if (ev2 && ev3 && ev2->tag == Ev_Ir && ev3->tag == Ev_Ir)
+            if (ev2 && ev3 && ev2->tag == Ev_IrNoX && ev3->tag == Ev_IrNoX)
             {
                if (clo_cache_sim) {
-                  helperName = "log_3I_0D_cache_access";
-                  helperAddr = &log_3I_0D_cache_access;
+                  helperName = "log_3IrNoX_0D_cache_access";
+                  helperAddr = &log_3IrNoX_0D_cache_access;
                } else {
-                  helperName = "log_3I";
-                  helperAddr = &log_3I;
+                  helperName = "log_3Ir";
+                  helperAddr = &log_3Ir;
                }
                argv = mkIRExprVec_3( i_node_expr, 
                                      mkIRExpr_HWord( (HWord)ev2->inode ), 
@@ -745,15 +781,15 @@ static void flushEvents ( CgState* cgs )
                regparms = 3;
                i += 3;
             }
-            /* Merge an Ir with one following Ir. */
+            /* Merge an IrNoX with one following IrNoX. */
             else
-            if (ev2 && ev2->tag == Ev_Ir) {
+            if (ev2 && ev2->tag == Ev_IrNoX) {
                if (clo_cache_sim) {
-                  helperName = "log_2I_0D_cache_access";
-                  helperAddr = &log_2I_0D_cache_access;
+                  helperName = "log_2IrNoX_0D_cache_access";
+                  helperAddr = &log_2IrNoX_0D_cache_access;
                } else {
-                  helperName = "log_2I";
-                  helperAddr = &log_2I;
+                  helperName = "log_2Ir";
+                  helperAddr = &log_2Ir;
                }
                argv = mkIRExprVec_2( i_node_expr,
                                      mkIRExpr_HWord( (HWord)ev2->inode ) );
@@ -763,22 +799,34 @@ static void flushEvents ( CgState* cgs )
             /* No merging possible; emit as-is. */
             else {
                if (clo_cache_sim) {
-                  helperName = "log_1I_0D_cache_access";
-                  helperAddr = &log_1I_0D_cache_access;
+                  helperName = "log_1IrNoX_0D_cache_access";
+                  helperAddr = &log_1IrNoX_0D_cache_access;
                } else {
-                  helperName = "log_1I";
-                  helperAddr = &log_1I;
+                  helperName = "log_1Ir";
+                  helperAddr = &log_1Ir;
                }
                argv = mkIRExprVec_1( i_node_expr );
                regparms = 1;
                i++;
             }
             break;
+         case Ev_IrGen:
+            if (clo_cache_sim) {
+	       helperName = "log_1IrGen_0D_cache_access";
+	       helperAddr = &log_1IrGen_0D_cache_access;
+	    } else {
+	       helperName = "log_1Ir";
+	       helperAddr = &log_1Ir;
+	    }
+	    argv = mkIRExprVec_1( i_node_expr );
+	    regparms = 1;
+	    i++;
+            break;
          case Ev_Dr:
          case Ev_Dm:
             /* Data read or modify */
-            helperName = "log_0I_1Dr_cache_access";
-            helperAddr = &log_0I_1Dr_cache_access;
+            helperName = "log_0Ir_1Dr_cache_access";
+            helperAddr = &log_0Ir_1Dr_cache_access;
             argv = mkIRExprVec_3( i_node_expr, 
                                   get_Event_dea(ev), 
                                   mkIRExpr_HWord( get_Event_dszB(ev) ) );
@@ -787,8 +835,8 @@ static void flushEvents ( CgState* cgs )
             break;
          case Ev_Dw:
             /* Data write */
-            helperName = "log_0I_1Dw_cache_access";
-            helperAddr = &log_0I_1Dw_cache_access;
+            helperName = "log_0Ir_1Dw_cache_access";
+            helperAddr = &log_0Ir_1Dw_cache_access;
             argv = mkIRExprVec_3( i_node_expr,
                                   get_Event_dea(ev), 
                                   mkIRExpr_HWord( get_Event_dszB(ev) ) );
@@ -836,8 +884,14 @@ static void addEvent_Ir ( CgState* cgs, InstrInfo* inode )
    tl_assert(cgs->events_used >= 0 && cgs->events_used < N_EVENTS);
    evt = &cgs->events[cgs->events_used];
    init_Event(evt);
-   evt->tag      = Ev_Ir;
    evt->inode    = inode;
+   if (cachesim_is_IrNoX(inode->instr_addr, inode->instr_len)) {
+      evt->tag = Ev_IrNoX;
+      distinct_instrsNoX++;
+   } else {
+      evt->tag = Ev_IrGen;
+      distinct_instrsGen++;
+   }
    cgs->events_used++;
 }
 
@@ -846,7 +900,7 @@ void addEvent_Dr ( CgState* cgs, InstrInfo* inode, Int datasize, IRAtom* ea )
 {
    Event* evt;
    tl_assert(isIRAtom(ea));
-   tl_assert(datasize >= 1 && datasize <= MIN_LINE_SIZE);
+   tl_assert(datasize >= 1 && datasize <= min_line_size);
    if (!clo_cache_sim)
       return;
    if (cgs->events_used == N_EVENTS)
@@ -868,7 +922,7 @@ void addEvent_Dw ( CgState* cgs, InstrInfo* inode, Int datasize, IRAtom* ea )
    Event* evt;
 
    tl_assert(isIRAtom(ea));
-   tl_assert(datasize >= 1 && datasize <= MIN_LINE_SIZE);
+   tl_assert(datasize >= 1 && datasize <= min_line_size);
 
    if (!clo_cache_sim)
       return;
@@ -946,6 +1000,7 @@ IRSB* cg_instrument ( VgCallbackClosure* closure,
                       IRSB* sbIn, 
                       VexGuestLayout* layout, 
                       VexGuestExtents* vge,
+                      VexArchInfo* archinfo_host,
                       IRType gWordTy, IRType hWordTy )
 {
    Int        i, isize;
@@ -1058,8 +1113,8 @@ IRSB* cg_instrument ( VgCallbackClosure* closure,
                // instructions will be done inaccurately, but they're
                // very rare and this avoids errors from hitting more
                // than two cache lines in the simulation.
-               if (dataSize > MIN_LINE_SIZE)
-                  dataSize = MIN_LINE_SIZE;
+               if (dataSize > min_line_size)
+                  dataSize = min_line_size;
                if (d->mFx == Ifx_Read || d->mFx == Ifx_Modify)
                   addEvent_Dr( &cgs, curr_inode, dataSize, d->mAddr );
                if (d->mFx == Ifx_Write || d->mFx == Ifx_Modify)
@@ -1085,8 +1140,8 @@ IRSB* cg_instrument ( VgCallbackClosure* closure,
             if (cas->dataHi != NULL)
                dataSize *= 2; /* since it's a doubleword-CAS */
             /* I don't think this can ever happen, but play safe. */
-            if (dataSize > MIN_LINE_SIZE)
-               dataSize = MIN_LINE_SIZE;
+            if (dataSize > min_line_size)
+               dataSize = min_line_size;
             addEvent_Dr( &cgs, curr_inode, dataSize, cas->addr );
             addEvent_Dw( &cgs, curr_inode, dataSize, cas->addr );
             break;
@@ -1252,7 +1307,8 @@ static void fprint_CC_table_and_calc_totals(void)
 {
    Int     i, fd;
    SysRes  sres;
-   Char    buf[512], *currFile = NULL, *currFn = NULL;
+   HChar    buf[512];
+   HChar   *currFile = NULL, *currFn = NULL;
    LineCC* lineCC;
 
    // Setup output filename.  Nb: it's important to do this now, ie. as late
@@ -1260,7 +1316,7 @@ static void fprint_CC_table_and_calc_totals(void)
    // output file format string contains a %p (pid) specifier, both the
    // parent and child will incorrectly write to the same file;  this
    // happened in 3.3.0.
-   Char* cachegrind_out_file =
+   HChar* cachegrind_out_file =
       VG_(expand_file_name)("--cachegrind-out-file", clo_cachegrind_out_file);
 
    sres = VG_(open)(cachegrind_out_file, VKI_O_CREAT|VKI_O_TRUNC|VKI_O_WRONLY,
@@ -1457,7 +1513,8 @@ static UInt ULong_width(ULong n)
 
 static void cg_fini(Int exitcode)
 {
-   static Char buf1[128], buf2[128], buf3[128], buf4[123], fmt[128];
+   static HChar buf1[128], buf2[128], buf3[128], buf4[123];
+   static HChar fmt[128];
 
    CacheCC  D_total;
    BranchCC B_total;
@@ -1581,10 +1638,11 @@ static void cg_fini(Int exitcode)
                           file_line_debugs + no_debugs;
 
       VG_(dmsg)("\n");
-      VG_(dmsg)("cachegrind: distinct files: %d\n", distinct_files);
-      VG_(dmsg)("cachegrind: distinct fns:   %d\n", distinct_fns);
-      VG_(dmsg)("cachegrind: distinct lines: %d\n", distinct_lines);
-      VG_(dmsg)("cachegrind: distinct instrs:%d\n", distinct_instrs);
+      VG_(dmsg)("cachegrind: distinct files     : %d\n", distinct_files);
+      VG_(dmsg)("cachegrind: distinct functions : %d\n", distinct_fns);
+      VG_(dmsg)("cachegrind: distinct lines     : %d\n", distinct_lines);
+      VG_(dmsg)("cachegrind: distinct instrs NoX: %d\n", distinct_instrsNoX);
+      VG_(dmsg)("cachegrind: distinct instrs Gen: %d\n", distinct_instrsGen);
       VG_(dmsg)("cachegrind: debug lookups      : %d\n", debug_lookups);
       
       VG_(percentify)(full_debugs,      debug_lookups, 1, 6, buf1);
@@ -1640,7 +1698,7 @@ void cg_discard_superblock_info ( Addr64 orig_addr64, VexGuestExtents vge )
 /*--- Command line processing                                      ---*/
 /*--------------------------------------------------------------------*/
 
-static Bool cg_process_cmd_line_option(Char* arg)
+static Bool cg_process_cmd_line_option(const HChar* arg)
 {
    if (VG_(str_clo_cache_opt)(arg,
                               &clo_I1_cache,
@@ -1685,10 +1743,12 @@ static void cg_pre_clo_init(void)
    VG_(details_version)         (NULL);
    VG_(details_description)     ("a cache and branch-prediction profiler");
    VG_(details_copyright_author)(
-      "Copyright (C) 2002-2011, and GNU GPL'd, by Nicholas Nethercote et al.");
+      "Copyright (C) 2002-2012, and GNU GPL'd, by Nicholas Nethercote et al.");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
    VG_(details_avg_translation_sizeB) ( 500 );
 
+   VG_(clo_vex_control).iropt_register_updates
+      = VexRegUpdSpAtMemAccess; // overridable by the user.
    VG_(basic_tool_funcs)          (cg_post_clo_init,
                                    cg_instrument,
                                    cg_fini);
@@ -1724,9 +1784,27 @@ static void cg_post_clo_init(void)
                                        &clo_D1_cache,
                                        &clo_LL_cache);
 
-   cachesim_I1_initcache(I1c);
-   cachesim_D1_initcache(D1c);
-   cachesim_LL_initcache(LLc);
+   // min_line_size is used to make sure that we never feed
+   // accesses to the simulator straddling more than two
+   // cache lines at any cache level
+   min_line_size = (I1c.line_size < D1c.line_size) ? I1c.line_size : D1c.line_size;
+   min_line_size = (LLc.line_size < min_line_size) ? LLc.line_size : min_line_size;
+
+   Int largest_load_or_store_size
+      = VG_(machine_get_size_of_largest_guest_register)();
+   if (min_line_size < largest_load_or_store_size) {
+      /* We can't continue, because the cache simulation might
+         straddle more than 2 lines, and it will assert.  So let's
+         just stop before we start. */
+      VG_(umsg)("Cachegrind: cannot continue: the minimum line size (%d)\n",
+                (Int)min_line_size);
+      VG_(umsg)("  must be equal to or larger than the maximum register size (%d)\n",
+                largest_load_or_store_size );
+      VG_(umsg)("  but it is not.  Exiting now.\n");
+      VG_(exit)(1);
+   }
+
+   cachesim_initcaches(I1c, D1c, LLc);
 }
 
 VG_DETERMINE_INTERFACE_VERSION(cg_pre_clo_init)

@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2011 Julian Seward 
+   Copyright (C) 2000-2012 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -51,7 +51,7 @@ Bool VG_(clo_trace_malloc)  = False;
 UInt VG_(clo_alignment)     = VG_MIN_MALLOC_SZB;
 
 
-Bool VG_(replacement_malloc_process_cmd_line_option)(Char* arg)
+Bool VG_(replacement_malloc_process_cmd_line_option)(const HChar* arg)
 {
    if VG_INT_CLO(arg, "--alignment", VG_(clo_alignment)) {
       if (VG_(clo_alignment) < VG_MIN_MALLOC_SZB ||

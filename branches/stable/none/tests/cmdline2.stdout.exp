@@ -50,7 +50,9 @@ usage: valgrind [options] prog-and-args
                               [use current 'ulimit' value]
 
   user options for Valgrind tools that replace malloc:
-    --alignment=<number>      set minimum alignment of heap allocations [...]
+    --alignment=<number>      set minimum alignment of heap allocations [not used by this tool]
+    --redzone-size=<number>   set minimum size of redzones added before/after
+                              heap blocks (in bytes). [not used by this tool]
 
   uncommon user options for all Valgrind tools:
     --fullpath-after=         (with nothing after the '=')
@@ -80,6 +82,11 @@ usage: valgrind [options] prog-and-args
     --require-text-symbol=:sonamepattern:symbolpattern    abort run if the
                               stated shared object doesn't have the stated
                               text symbol.  Patterns can contain ? and *.
+    --soname-synonyms=syn1=pattern1,syn2=pattern2,... synonym soname
+              specify patterns for function wrapping or replacement.
+              To use a non-libc malloc library that is
+                  in the main exe:  --soname-synonyms=somalloc=NONE
+                  in libxyzzy.so:   --soname-synonyms=somalloc=libxyzzy.so
 
   user options for Nulgrind:
     (none)
@@ -91,6 +98,7 @@ usage: valgrind [options] prog-and-args
     --trace-flags=<XXXXXXXX>   show generated code? (X = 0|1) [00000000]
     --profile-flags=<XXXXXXXX> ditto, but for profiling (X = 0|1) [00000000]
     --trace-notbelow=<number> only show BBs above <number> [999999999]
+    --trace-notabove=<number> only show BBs below <number> [0]
     --trace-syscalls=no|yes   show all system calls? [no]
     --trace-signals=no|yes    show signal handling details? [no]
     --trace-symtab=no|yes     show symbol table details? [no]
@@ -102,6 +110,8 @@ usage: valgrind [options] prog-and-args
     --trace-redir=no|yes      show redirection details? [no]
     --trace-sched=no|yes      show thread scheduler details? [no]
     --profile-heap=no|yes     profile Valgrind's own space use
+    --core-redzone-size=<number>  set minimum size of redzones added before/after
+                              heap blocks allocated for Valgrind internal use (in bytes) [4]
     --wait-for-gdb=yes|no     pause on startup to wait for gdb attach
     --sym-offsets=yes|no      show syms in form 'name+offset' ? [no]
     --command-line-only=no|yes  only use command line options [no]
@@ -109,7 +119,10 @@ usage: valgrind [options] prog-and-args
   Vex options for all Valgrind tools:
     --vex-iropt-verbosity=<0..9>           [0]
     --vex-iropt-level=<0..2>               [2]
-    --vex-iropt-precise-memory-exns=no|yes [no]
+    --vex-iropt-register-updates=sp-at-mem-access
+                                |unwindregs-at-mem-access
+                                |allregs-at-mem-access
+                                |allregs-at-each-insn  [unwindregs-at-mem-access]
     --vex-iropt-unroll-thresh=<0..400>     [120]
     --vex-guest-max-insns=<1..100>         [50]
     --vex-guest-chase-thresh=<0..99>       [10]
@@ -123,7 +136,7 @@ usage: valgrind [options] prog-and-args
        0000 0100   show selecting insns
        0000 0010   show after reg-alloc
        0000 0001   show final assembly
-      (Nb: you need --trace-notbelow with --trace-flags for full details)
+      (Nb: you need --trace-notbelow and/or --trace-notabove with --trace-flags for full details)
 
   debugging options for Valgrind tools that report errors
     --dump-error=<number>     show translation for basic block associated
@@ -137,9 +150,9 @@ usage: valgrind [options] prog-and-args
 
   Extra options read from ~/.valgrindrc, $VALGRIND_OPTS, ./.valgrindrc
 
-  Nulgrind is Copyright (C) 2002-2011, and GNU GPL'd, by Nicholas Nethercote.
-  Valgrind is Copyright (C) 2000-2011, and GNU GPL'd, by Julian Seward et al.
-  LibVEX is Copyright (C) 2004-2011, and GNU GPL'd, by OpenWorks LLP et al.
+  Nulgrind is Copyright (C) 2002-2012, and GNU GPL'd, by Nicholas Nethercote.
+  Valgrind is Copyright (C) 2000-2012, and GNU GPL'd, by Julian Seward et al.
+  LibVEX is Copyright (C) 2004-2012, and GNU GPL'd, by OpenWorks LLP et al.
 
   Bug reports, feedback, admiration, abuse, etc, to: www.valgrind.org.
 

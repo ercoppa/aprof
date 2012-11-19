@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2011 OpenWorks LLP
+   Copyright (C) 2004-2012 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -34,12 +34,13 @@
 */
 
 #include "libvex_basictypes.h"
-#include "libvex_emwarn.h"
+#include "libvex_emnote.h"
 #include "libvex_guest_x86.h"
 #include "libvex_ir.h"
 #include "libvex.h"
 
 #include "main_util.h"
+#include "main_globals.h"
 #include "guest_generic_bb_to_IR.h"
 #include "guest_x86_defs.h"
 #include "guest_generic_x87.h"
@@ -435,7 +436,7 @@ static UInt n_calc_cond = 0;
 static void showCounts ( void )
 {
    Int op, co;
-   Char ch;
+   HChar ch;
    vex_printf("\nTotal calls: calc_all=%u   calc_cond=%u   calc_c=%u\n",
               n_calc_all, n_calc_cond, n_calc_c);
 
@@ -772,7 +773,7 @@ static inline Bool isU32 ( IRExpr* e, UInt n )
               && e->Iex.Const.con->Ico.U32 == n );
 }
 
-IRExpr* guest_x86_spechelper ( HChar*   function_name,
+IRExpr* guest_x86_spechelper ( const HChar* function_name,
                                IRExpr** args,
                                IRStmt** precedingStmts,
                                Int      n_precedingStmts )
@@ -1472,7 +1473,7 @@ ULong x86g_check_fldcw ( UInt fpucw )
    UInt rmode = (fpucw >> 10) & 3;
 
    /* Detect any required emulation warnings. */
-   VexEmWarn ew = EmWarn_NONE;
+   VexEmNote ew = EmNote_NONE;
 
    if ((fpucw & 0x3F) != 0x3F) {
       /* unmasked exceptions! */
@@ -1509,7 +1510,7 @@ ULong x86g_check_ldmxcsr ( UInt mxcsr )
    UInt rmode = (mxcsr >> 13) & 3;
 
    /* Detect any required emulation warnings. */
-   VexEmWarn ew = EmWarn_NONE;
+   VexEmNote ew = EmNote_NONE;
 
    if ((mxcsr & 0x1F80) != 0x1F80) {
       /* unmasked exceptions! */
@@ -1560,7 +1561,7 @@ void x86g_dirtyhelper_FINIT ( VexGuestX86State* gst )
    appears to differ from the former only in that the 8 FP registers
    themselves are not transferred into the guest state. */
 static
-VexEmWarn do_put_x87 ( Bool moveRegs,
+VexEmNote do_put_x87 ( Bool moveRegs,
                        /*IN*/UChar* x87_state,
                        /*OUT*/VexGuestX86State* vex_state )
 {
@@ -1573,7 +1574,7 @@ VexEmWarn do_put_x87 ( Bool moveRegs,
    UInt       tagw    = x87->env[FP_ENV_TAG];
    UInt       fpucw   = x87->env[FP_ENV_CTRL];
    UInt       c3210   = x87->env[FP_ENV_STAT] & 0x4700;
-   VexEmWarn  ew;
+   VexEmNote  ew;
    UInt       fpround;
    ULong      pair;
 
@@ -1609,7 +1610,7 @@ VexEmWarn do_put_x87 ( Bool moveRegs,
       emulation warnings. */
    pair    = x86g_check_fldcw ( (UInt)fpucw );
    fpround = (UInt)pair;
-   ew      = (VexEmWarn)(pair >> 32);
+   ew      = (VexEmNote)(pair >> 32);
    
    vex_state->guest_FPROUND = fpround & 3;
 
@@ -1754,11 +1755,11 @@ void x86g_dirtyhelper_FXSAVE ( VexGuestX86State* gst, HWord addr )
 
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (writes guest state, reads guest mem) */
-VexEmWarn x86g_dirtyhelper_FXRSTOR ( VexGuestX86State* gst, HWord addr )
+VexEmNote x86g_dirtyhelper_FXRSTOR ( VexGuestX86State* gst, HWord addr )
 {
    Fpu_State tmp;
-   VexEmWarn warnX87 = EmWarn_NONE;
-   VexEmWarn warnXMM = EmWarn_NONE;
+   VexEmNote warnX87 = EmNote_NONE;
+   VexEmNote warnXMM = EmNote_NONE;
    UShort*   addrS   = (UShort*)addr;
    UChar*    addrC   = (UChar*)addr;
    U128*     xmm     = (U128*)(addr + 160);
@@ -1832,13 +1833,13 @@ VexEmWarn x86g_dirtyhelper_FXRSTOR ( VexGuestX86State* gst, HWord addr )
                 | ((((UInt)addrS[13]) & 0xFFFF) << 16);
      ULong w64 = x86g_check_ldmxcsr( w32 );
 
-     warnXMM = (VexEmWarn)(w64 >> 32);
+     warnXMM = (VexEmNote)(w64 >> 32);
 
      gst->guest_SSEROUND = (UInt)w64;
    }
 
    /* Prefer an X87 emwarn over an XMM one, if both exist. */
-   if (warnX87 != EmWarn_NONE)
+   if (warnX87 != EmNote_NONE)
       return warnX87;
    else
       return warnXMM;
@@ -1854,7 +1855,7 @@ void x86g_dirtyhelper_FSAVE ( VexGuestX86State* gst, HWord addr )
 
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (writes guest state, reads guest mem) */
-VexEmWarn x86g_dirtyhelper_FRSTOR ( VexGuestX86State* gst, HWord addr )
+VexEmNote x86g_dirtyhelper_FRSTOR ( VexGuestX86State* gst, HWord addr )
 {
    return do_put_x87( True/*regs too*/, (UChar*)addr, gst );
 }
@@ -1874,7 +1875,7 @@ void x86g_dirtyhelper_FSTENV ( VexGuestX86State* gst, HWord addr )
 
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (writes guest state, reads guest mem) */
-VexEmWarn x86g_dirtyhelper_FLDENV ( VexGuestX86State* gst, HWord addr )
+VexEmNote x86g_dirtyhelper_FLDENV ( VexGuestX86State* gst, HWord addr )
 {
    return do_put_x87( False/*don't move regs*/, (UChar*)addr, gst);
 }
@@ -2513,21 +2514,6 @@ ULong x86g_calculate_mmx_pmaddwd ( ULong xx, ULong yy )
 }
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
-UInt x86g_calculate_mmx_pmovmskb ( ULong xx )
-{
-   UInt r = 0;
-   if (xx & (1ULL << (64-1))) r |= (1<<7);
-   if (xx & (1ULL << (56-1))) r |= (1<<6);
-   if (xx & (1ULL << (48-1))) r |= (1<<5);
-   if (xx & (1ULL << (40-1))) r |= (1<<4);
-   if (xx & (1ULL << (32-1))) r |= (1<<3);
-   if (xx & (1ULL << (24-1))) r |= (1<<2);
-   if (xx & (1ULL << (16-1))) r |= (1<<1);
-   if (xx & (1ULL << ( 8-1))) r |= (1<<0);
-   return r;
-}
-
-/* CALLED FROM GENERATED CODE: CLEAN HELPER */
 ULong x86g_calculate_mmx_psadbw ( ULong xx, ULong yy )
 {
    UInt t = 0;
@@ -2541,14 +2527,6 @@ ULong x86g_calculate_mmx_psadbw ( ULong xx, ULong yy )
    t += (UInt)abdU8( sel8x8_0(xx), sel8x8_0(yy) );
    t &= 0xFFFF;
    return (ULong)t;
-}
-
-/* CALLED FROM GENERATED CODE: CLEAN HELPER */
-UInt x86g_calculate_sse_pmovmskb ( ULong w64hi, ULong w64lo )
-{
-   UInt rHi8 = x86g_calculate_mmx_pmovmskb ( w64hi );
-   UInt rLo8 = x86g_calculate_mmx_pmovmskb ( w64lo );
-   return ((rHi8 & 0xFF) << 8) | (rLo8 & 0xFF);
 }
 
 
@@ -2719,7 +2697,7 @@ void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state )
    vex_state->guest_LDT = 0;
    vex_state->guest_GDT = 0;
 
-   vex_state->guest_EMWARN = EmWarn_NONE;
+   vex_state->guest_EMNOTE = EmNote_NONE;
 
    /* SSE2 has a 'clflush' cache-line-invalidator which uses these. */
    vex_state->guest_TISTART = 0;
@@ -2729,17 +2707,23 @@ void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state )
    vex_state->guest_SC_CLASS = 0;
    vex_state->guest_IP_AT_SYSCALL = 0;
 
-   vex_state->padding1 = 0;
+   Int i;
+   for (i = 0; i < sizeof(vex_state->padding)
+                   / sizeof(vex_state->padding[0]); i++) {
+      vex_state->padding[i] = 0;
+   }
 }
 
 
 /* Figure out if any part of the guest state contained in minoff
    .. maxoff requires precise memory exceptions.  If in doubt return
-   True (but this is generates significantly slower code).  
+   True (but this generates significantly slower code).  
 
    By default we enforce precise exns for guest %ESP, %EBP and %EIP
    only.  These are the minimum needed to extract correct stack
    backtraces from x86 code.
+
+   Only %ESP is needed in mode VexRegUpdSpAtMemAccess.   
 */
 Bool guest_x86_state_requires_precise_mem_exns ( Int minoff, 
                                                  Int maxoff)
@@ -2751,14 +2735,16 @@ Bool guest_x86_state_requires_precise_mem_exns ( Int minoff,
    Int eip_min = offsetof(VexGuestX86State, guest_EIP);
    Int eip_max = eip_min + 4 - 1;
 
-   if (maxoff < ebp_min || minoff > ebp_max) {
-      /* no overlap with ebp */
+   if (maxoff < esp_min || minoff > esp_max) {
+      /* no overlap with esp */
+      if (vex_control.iropt_register_updates == VexRegUpdSpAtMemAccess)
+         return False; // We only need to check stack pointer.
    } else {
       return True;
    }
 
-   if (maxoff < esp_min || minoff > esp_max) {
-      /* no overlap with esp */
+   if (maxoff < ebp_min || minoff > ebp_max) {
+      /* no overlap with ebp */
    } else {
       return True;
    }
@@ -2821,7 +2807,7 @@ VexGuestLayout
                  /* 15 */ ALWAYSDEFD(guest_SS),
                  /* 16 */ ALWAYSDEFD(guest_LDT),
                  /* 17 */ ALWAYSDEFD(guest_GDT),
-                 /* 18 */ ALWAYSDEFD(guest_EMWARN),
+                 /* 18 */ ALWAYSDEFD(guest_EMNOTE),
                  /* 19 */ ALWAYSDEFD(guest_SSEROUND),
                  /* 20 */ ALWAYSDEFD(guest_TISTART),
                  /* 21 */ ALWAYSDEFD(guest_TILEN),

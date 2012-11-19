@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2011 OpenWorks LLP
+   Copyright (C) 2004-2012 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -36,6 +36,9 @@
 #ifndef __VEX_HOST_AMD64_DEFS_H
 #define __VEX_HOST_AMD64_DEFS_H
 
+#include "libvex_basictypes.h"
+#include "libvex.h"                      // VexArch
+#include "host_generic_regs.h"           // HReg
 
 /* --------- Registers. --------- */
 
@@ -71,7 +74,6 @@ extern HReg hregAMD64_FAKE5 ( void );
 
 extern HReg hregAMD64_XMM0  ( void );
 extern HReg hregAMD64_XMM1  ( void );
-extern HReg hregAMD64_XMM2  ( void );
 extern HReg hregAMD64_XMM3  ( void );
 extern HReg hregAMD64_XMM4  ( void );
 extern HReg hregAMD64_XMM5  ( void );
@@ -82,9 +84,6 @@ extern HReg hregAMD64_XMM9  ( void );
 extern HReg hregAMD64_XMM10 ( void );
 extern HReg hregAMD64_XMM11 ( void );
 extern HReg hregAMD64_XMM12 ( void );
-extern HReg hregAMD64_XMM13 ( void );
-extern HReg hregAMD64_XMM14 ( void );
-extern HReg hregAMD64_XMM15 ( void );
 
 
 /* --------- Condition codes, AMD encoding. --------- */
@@ -399,6 +398,9 @@ typedef
       Ain_SseReRg,     /* SSE binary general reg-reg, Re, Rg */
       Ain_SseCMov,     /* SSE conditional move */
       Ain_SseShuf,     /* SSE2 shuffle (pshufd) */
+      //uu Ain_AvxLdSt,     /* AVX load/store 256 bits,
+      //uu                     no alignment constraints */
+      //uu Ain_AvxReRg,     /* AVX binary general reg-reg, Re, Rg */
       Ain_EvCheck,     /* Event check */
       Ain_ProfInc      /* 64-bit profile counter increment */
    }
@@ -664,6 +666,16 @@ typedef
             HReg   src;
             HReg   dst;
          } SseShuf;
+         //uu struct {
+         //uu    Bool        isLoad;
+         //uu    HReg        reg;
+         //uu    AMD64AMode* addr;
+         //uu } AvxLdSt;
+         //uu struct {
+         //uu    AMD64SseOp op;
+         //uu    HReg       src;
+         //uu    HReg       dst;
+         //uu } AvxReRg;
          struct {
             AMD64AMode* amCounter;
             AMD64AMode* amFailAddr;
@@ -726,6 +738,8 @@ extern AMD64Instr* AMD64Instr_Sse64FLo   ( AMD64SseOp, HReg, HReg );
 extern AMD64Instr* AMD64Instr_SseReRg    ( AMD64SseOp, HReg, HReg );
 extern AMD64Instr* AMD64Instr_SseCMov    ( AMD64CondCode, HReg src, HReg dst );
 extern AMD64Instr* AMD64Instr_SseShuf    ( Int order, HReg src, HReg dst );
+//uu extern AMD64Instr* AMD64Instr_AvxLdSt    ( Bool isLoad, HReg, AMD64AMode* );
+//uu extern AMD64Instr* AMD64Instr_AvxReRg    ( AMD64SseOp, HReg, HReg );
 extern AMD64Instr* AMD64Instr_EvCheck    ( AMD64AMode* amCounter,
                                            AMD64AMode* amFailAddr );
 extern AMD64Instr* AMD64Instr_ProfInc    ( void );

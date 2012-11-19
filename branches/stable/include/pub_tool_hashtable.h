@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2005-2011 Nicholas Nethercote
+   Copyright (C) 2005-2012 Nicholas Nethercote
       njn@valgrind.org
 
    This program is free software; you can redistribute it and/or
@@ -53,7 +53,7 @@ typedef struct _VgHashTable * VgHashTable;
    be freed with VG_(free)().  The table starts small but will
    periodically be expanded.  This is transparent to the users of this
    module. */
-extern VgHashTable VG_(HT_construct) ( HChar* name );
+extern VgHashTable VG_(HT_construct) ( const HChar* name );
 
 /* Count the number of nodes in a table. */
 extern Int VG_(HT_count_nodes) ( VgHashTable table );

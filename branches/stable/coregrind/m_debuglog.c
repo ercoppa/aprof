@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2011 Julian Seward 
+   Copyright (C) 2000-2012 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -71,17 +71,19 @@ void VG_(debugLog_setXml)(Bool xml)
 
 #if defined(VGP_x86_linux)
 
-static UInt local_sys_write_stderr ( HChar* buf, Int n )
+static UInt local_sys_write_stderr ( const HChar* buf, Int n )
 {
    Int result;
 
    __asm__ volatile (
+      "pushl %%ebx\n"
       "movl  $"VG_STRINGIFY(__NR_write)", %%eax\n" /* %eax = __NR_write */
       "movl  $2, %%ebx\n"       /* %ebx = stderr */
       "int   $0x80\n"           /* write(stderr, buf, n) */
+      "popl %%ebx\n"
       : /*wr*/    "=a" (result)
       : /*rd*/    "c" (buf), "d" (n)
-      : /*trash*/ "ebx", "edi", "memory", "cc"
+      : /*trash*/ "edi", "memory", "cc"
    );
 
    return result >= 0 ? result : -1;
@@ -102,7 +104,7 @@ static UInt local_sys_getpid ( void )
 
 #elif defined(VGP_amd64_linux)
 __attribute__((noinline))
-static UInt local_sys_write_stderr ( HChar* buf, Int n )
+static UInt local_sys_write_stderr ( const HChar* buf, Int n )
 {
    volatile Long block[2];
    block[0] = (Long)buf;
@@ -145,7 +147,7 @@ static UInt local_sys_getpid ( void )
 
 #elif defined(VGP_ppc32_linux)
 
-static UInt local_sys_write_stderr ( HChar* buf, Int n )
+static UInt local_sys_write_stderr ( const HChar* buf, Int n )
 {
    volatile Int block[2];
    block[0] = (Int)buf;
@@ -188,7 +190,7 @@ static UInt local_sys_getpid ( void )
 
 #elif defined(VGP_ppc64_linux)
 
-static UInt local_sys_write_stderr ( HChar* buf, Int n )
+static UInt local_sys_write_stderr ( const HChar* buf, Int n )
 {
    volatile Long block[2];
    block[0] = (Long)buf;
@@ -231,7 +233,7 @@ static UInt local_sys_getpid ( void )
 
 #elif defined(VGP_arm_linux)
 
-static UInt local_sys_write_stderr ( HChar* buf, Int n )
+static UInt local_sys_write_stderr ( const HChar* buf, Int n )
 {
    volatile Int block[2];
    block[0] = (Int)buf;
@@ -272,7 +274,7 @@ static UInt local_sys_getpid ( void )
    asm code.  Both macros give the same results for Unix-class syscalls (which
    these all are, as identified by the use of 'int 0x80'). */
 __attribute__((noinline))
-static UInt local_sys_write_stderr ( HChar* buf, Int n )
+static UInt local_sys_write_stderr ( const HChar* buf, Int n )
 {
    UInt __res;
    __asm__ volatile (
@@ -314,7 +316,7 @@ static UInt local_sys_getpid ( void )
 #elif defined(VGP_amd64_darwin)
 
 __attribute__((noinline))
-static UInt local_sys_write_stderr ( HChar* buf, Int n )
+static UInt local_sys_write_stderr ( const HChar* buf, Int n )
 {
    UInt __res;
    __asm__ volatile (
@@ -348,12 +350,12 @@ static UInt local_sys_getpid ( void )
 }
 
 #elif defined(VGP_s390x_linux)
-static UInt local_sys_write_stderr ( HChar* buf, Int n )
+static UInt local_sys_write_stderr ( const HChar* buf, Int n )
 {
-   register Int    r2     asm("2") = 2;      /* file descriptor STDERR */
-   register HChar* r3     asm("3") = buf;
-   register ULong  r4     asm("4") = n;
-   register ULong  r2_res asm("2");
+   register Int          r2     asm("2") = 2;      /* file descriptor STDERR */
+   register const HChar* r3     asm("3") = buf;
+   register ULong        r4     asm("4") = n;
+   register ULong        r2_res asm("2");
    ULong __res;
 
    __asm__ __volatile__ (
@@ -388,6 +390,43 @@ static UInt local_sys_getpid ( void )
    return (UInt)(__res);
 }
 
+#elif defined(VGP_mips32_linux)
+static UInt local_sys_write_stderr ( const HChar* buf, Int n )
+{
+   volatile Int block[2];
+   block[0] = (Int)buf;
+   block[1] = n;
+   __asm__ volatile (
+      "li   $4, 2\n\t"        /* stderr */
+      "lw   $5, 0(%0)\n\t"    /* buf */
+      "lw   $6, 4(%0)\n\t"    /* n */
+      "move $7, $0\n\t"
+      "li   $2, %1\n\t"       /* set v0 = __NR_write */
+      "syscall\n\t"           /* write() */
+      "nop\n\t"
+      :
+      : "r" (block), "n" (__NR_write)
+      : "2", "4", "5", "6", "7"
+   );
+   if (block[0] < 0)
+      block[0] = -1;
+   return (UInt)block[0];
+}
+
+static UInt local_sys_getpid ( void )
+{
+   UInt __res;
+   __asm__ volatile (
+      "li   $2, %1\n\t"       /* set v0 = __NR_getpid */
+      "syscall\n\t"      /* getpid() */
+      "nop\n\t"
+      "move  %0, $2\n"
+      : "=r" (__res)
+      : "n" (__NR_getpid)
+      : "$2" );
+   return __res;
+}
+
 
 #else
 # error Unknown platform
@@ -414,7 +453,7 @@ static HChar local_toupper ( HChar c )
 
 /* Emit buf[0 .. n-1] to stderr.  Unfortunately platform-specific. 
 */
-static void emit ( HChar* buf, Int n )
+static void emit ( const HChar* buf, Int n )
 {
    if (n >= 1)
       (void)local_sys_write_stderr(buf, n);
@@ -450,7 +489,7 @@ UInt myvprintf_str ( void(*send)(HChar,void*),
                      void* send_arg2,
                      Int flags, 
                      Int width, 
-                     HChar* str, 
+                     const HChar* str, 
                      Bool capitalise )
 {
 #  define MAYBE_TOUPPER(ch) (capitalise ? local_toupper(ch) : (ch))
@@ -496,12 +535,12 @@ UInt myvprintf_str ( void(*send)(HChar,void*),
 static 
 UInt myvprintf_str_XML_simplistic ( void(*send)(HChar,void*),
                                     void* send_arg2,
-                                    HChar* str )
+                                    const HChar* str )
 {
    UInt   ret = 0;
    Int    i;
    Int    len = local_strlen(str);
-   HChar* alt;
+   const HChar* alt;
 
    for (i = 0; i < len; i++) {
       switch (str[i]) {
@@ -546,7 +585,7 @@ UInt myvprintf_int64 ( void(*send)(HChar,void*),
    Int    ind = 0;
    Int    i, nc = 0;
    Bool   neg = False;
-   HChar* digits = capitalised ? "0123456789ABCDEF" : "0123456789abcdef";
+   const HChar* digits = capitalised ? "0123456789ABCDEF" : "0123456789abcdef";
    UInt   ret = 0;
 
    if (base < 2 || base > 16)
@@ -723,15 +762,15 @@ VG_(debugLog_vprintf) (
                i++;
                /* %pS, like %s but escaping chars for XML safety */
                /* Note: simplistic; ignores field width and flags */
-               char *str = va_arg (vargs, char *);
-               if (str == (char*) 0)
+               HChar *str = va_arg (vargs, HChar *);
+               if (str == NULL)
                   str = "(null)";
                ret += myvprintf_str_XML_simplistic(send, send_arg2, str);
             } else if (format[i+1] == 's') {
                i++;
                /* %ps, synonym for %s with --xml=no / %pS with --xml=yes */
-               char *str = va_arg (vargs, char *);
-               if (str == (char*) 0)
+               HChar *str = va_arg (vargs, HChar *);
+               if (str == NULL)
                   str = "(null)";
                if (clo_xml)
                   ret += myvprintf_str_XML_simplistic(send, send_arg2, str);
@@ -767,16 +806,16 @@ VG_(debugLog_vprintf) (
             send(va_arg (vargs, int), send_arg2);
             break;
          case 's': case 'S': { /* %s */
-            char *str = va_arg (vargs, char *);
-            if (str == (char*) 0) str = "(null)";
+            HChar *str = va_arg (vargs, HChar *);
+            if (str == NULL) str = "(null)";
             ret += myvprintf_str(send, send_arg2, 
                                  flags, width, str, format[i]=='S');
             break;
          }
 
 //         case 'y': { /* %y - print symbol */
-//            Char buf[100];
-//            Char *cp = buf;
+//            HChar buf[100];
+//            HChar *cp = buf;
 //            Addr a = va_arg(vargs, Addr);
 //
 //            if (flags & VG_MSG_PAREN)
@@ -810,7 +849,7 @@ static Int loglevel = 0;
 
 /* Module startup. */
 /* EXPORTED */
-void VG_(debugLog_startup) ( Int level, HChar* who )
+void VG_(debugLog_startup) ( Int level, const HChar* who )
 {
    if (level < 0)  level = 0;
    if (level > 10) level = 10;
@@ -886,7 +925,7 @@ void VG_(debugLog) ( Int level, const HChar* modulename,
    (void)myvprintf_str ( add_to_buf, &buf, 0, 1, ":", False );
    (void)myvprintf_int64 ( add_to_buf, &buf, 0, 10, 1, False, (ULong)level );
    (void)myvprintf_str ( add_to_buf, &buf, 0, 1, ":", False );
-   (void)myvprintf_str ( add_to_buf, &buf, 0, 8, (HChar*)modulename, False );
+   (void)myvprintf_str ( add_to_buf, &buf, 0, 8, modulename, False );
    (void)myvprintf_str ( add_to_buf, &buf, 0, indent, "", False );
 
    va_start(vargs,format);

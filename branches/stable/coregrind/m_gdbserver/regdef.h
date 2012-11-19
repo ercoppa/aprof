@@ -1,5 +1,5 @@
 /* Register protocol definition structures for the GNU Debugger
-   Copyright 2001, 2002 Free Software Foundation, Inc.
+   Copyright 2001, 2002, 2012 Free Software Foundation, Inc.
 
    This file is part of GDB.
    It has been modified to integrate it in valgrind
@@ -25,7 +25,7 @@
 struct reg
 {
   /* The name of this register - NULL for pad entries.  */
-  const char *name;
+  char *name;
 
   /* At the moment, both of the following bit counts must be divisible
      by eight (to match the representation as two hex digits) and divisible

@@ -40,6 +40,8 @@ EXTRA_DIST = \
 	pth_barrier1.vgtest pth_barrier1.stdout.exp pth_barrier1.stderr.exp \
 	pth_barrier2.vgtest pth_barrier2.stdout.exp pth_barrier2.stderr.exp \
 	pth_barrier3.vgtest pth_barrier3.stdout.exp pth_barrier3.stderr.exp \
+	pth_destroy_cond.vgtest \
+		pth_destroy_cond.stdout.exp pth_destroy_cond.stderr.exp \
 	pth_spinlock.vgtest pth_spinlock.stdout.exp pth_spinlock.stderr.exp \
 	rwlock_race.vgtest rwlock_race.stdout.exp rwlock_race.stderr.exp \
 	rwlock_test.vgtest rwlock_test.stdout.exp rwlock_test.stderr.exp \
@@ -78,16 +80,19 @@ EXTRA_DIST = \
 		tc17_sembar.stderr.exp \
 	tc18_semabuse.vgtest tc18_semabuse.stdout.exp \
 		tc18_semabuse.stderr.exp \
+		tc18_semabuse.stderr.exp-linux-mips32 \
 	tc19_shadowmem.vgtest tc19_shadowmem.stdout.exp \
-		tc19_shadowmem.stderr.exp \
+		tc19_shadowmem.stderr.exp tc19_shadowmem.stderr.exp-mips32 \
 	tc20_verifywrap.vgtest tc20_verifywrap.stdout.exp \
-		tc20_verifywrap.stderr.exp \
+		tc20_verifywrap.stderr.exp tc20_verifywrap.stderr.exp-mips32 \
+		tc20_verifywrap.stderr.exp-s390x \
 	tc21_pthonce.vgtest tc21_pthonce.stdout.exp tc21_pthonce.stderr.exp \
 	tc22_exit_w_lock.vgtest tc22_exit_w_lock.stdout.exp \
 		tc22_exit_w_lock.stderr.exp \
 		tc22_exit_w_lock.stderr.exp-kfail-x86 \
 	tc23_bogus_condwait.vgtest tc23_bogus_condwait.stdout.exp \
 		tc23_bogus_condwait.stderr.exp \
+		tc23_bogus_condwait.stderr.exp-mips32 \
 	tc24_nonzero_sem.vgtest tc24_nonzero_sem.stdout.exp \
 		tc24_nonzero_sem.stderr.exp
 
@@ -106,6 +111,7 @@ check_PROGRAMS = \
 	locked_vs_unlocked1 \
 	locked_vs_unlocked2 \
 	locked_vs_unlocked3 \
+	pth_destroy_cond \
 	t2t \
 	tc01_simple_race \
 	tc02_simple_tls \

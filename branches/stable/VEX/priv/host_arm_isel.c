@@ -7,11 +7,11 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2011 OpenWorks LLP
+   Copyright (C) 2004-2012 OpenWorks LLP
       info@open-works.net
 
    NEON support is
-   Copyright (C) 2010-2011 Samsung Electronics
+   Copyright (C) 2010-2012 Samsung Electronics
    contributed by Dmitry Zhurikhin <zhur@ispras.ru>
               and Kirill Batuzov <batuzovk@ispras.ru>
 
@@ -1133,14 +1133,15 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 
 //zz   /* --------- TERNARY OP --------- */
 //zz   case Iex_Triop: {
+//zz      IRTriop *triop = e->Iex.Triop.details;
 //zz      /* C3210 flags following FPU partial remainder (fprem), both
 //zz         IEEE compliant (PREM1) and non-IEEE compliant (PREM). */
-//zz      if (e->Iex.Triop.op == Iop_PRemC3210F64
-//zz          || e->Iex.Triop.op == Iop_PRem1C3210F64) {
+//zz      if (triop->op == Iop_PRemC3210F64
+//zz          || triop->op == Iop_PRem1C3210F64) {
 //zz         HReg junk = newVRegF(env);
 //zz         HReg dst  = newVRegI(env);
-//zz         HReg srcL = iselDblExpr(env, e->Iex.Triop.arg2);
-//zz         HReg srcR = iselDblExpr(env, e->Iex.Triop.arg3);
+//zz         HReg srcL = iselDblExpr(env, triop->arg2);
+//zz         HReg srcR = iselDblExpr(env, triop->arg3);
 //zz         /* XXXROUNDINGFIXME */
 //zz         /* set roundingmode here */
 //zz         addInstr(env, X86Instr_FpBinary(
@@ -1274,7 +1275,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
           || e->Iex.Binop.op == Iop_GetElem16x4
           || e->Iex.Binop.op == Iop_GetElem32x2) {
          HReg res = newVRegI(env);
-         HReg arg = iselNeon64Expr(env, e->Iex.Triop.arg1);
+         HReg arg = iselNeon64Expr(env, e->Iex.Binop.arg1);
          UInt index, size;
          if (e->Iex.Binop.arg2->tag != Iex_Const ||
              typeOfIRExpr(env->type_env, e->Iex.Binop.arg2) != Ity_I8) {
@@ -1299,7 +1300,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
           || e->Iex.Binop.op == Iop_GetElem16x8
           || e->Iex.Binop.op == Iop_GetElem32x4) {
          HReg res = newVRegI(env);
-         HReg arg = iselNeonExpr(env, e->Iex.Triop.arg1);
+         HReg arg = iselNeonExpr(env, e->Iex.Binop.arg1);
          UInt index, size;
          if (e->Iex.Binop.arg2->tag != Iex_Const ||
              typeOfIRExpr(env->type_env, e->Iex.Binop.arg2) != Ity_I8) {
@@ -1361,6 +1362,12 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             fn = &h_generic_calc_QSub8Ux4; break;
          case Iop_Sad8Ux4:
             fn = &h_generic_calc_Sad8Ux4; break;
+         case Iop_QAdd32S:
+            fn = &h_generic_calc_QAdd32S; break;
+         case Iop_QSub32S:
+            fn = &h_generic_calc_QSub32S; break;
+         case Iop_QSub16Ux2:
+            fn = &h_generic_calc_QSub16Ux2; break;
          default:
             break;
       }
@@ -3597,18 +3604,20 @@ static HReg iselNeon64Expr_wrk ( ISelEnv* env, IRExpr* e )
    } /* if (e->tag == Iex_Unop) */
 
    if (e->tag == Iex_Triop) {
-      switch (e->Iex.Triop.op) {
+      IRTriop *triop = e->Iex.Triop.details;
+
+      switch (triop->op) {
          case Iop_Extract64: {
             HReg res = newVRegD(env);
-            HReg argL = iselNeon64Expr(env, e->Iex.Triop.arg1);
-            HReg argR = iselNeon64Expr(env, e->Iex.Triop.arg2);
+            HReg argL = iselNeon64Expr(env, triop->arg1);
+            HReg argR = iselNeon64Expr(env, triop->arg2);
             UInt imm4;
-            if (e->Iex.Triop.arg3->tag != Iex_Const ||
-                typeOfIRExpr(env->type_env, e->Iex.Triop.arg3) != Ity_I8) {
+            if (triop->arg3->tag != Iex_Const ||
+                typeOfIRExpr(env->type_env, triop->arg3) != Ity_I8) {
                vpanic("ARM target supports Iop_Extract64 with constant "
                       "third argument less than 16 only\n");
             }
-            imm4 = e->Iex.Triop.arg3->Iex.Const.con->Ico.U8;
+            imm4 = triop->arg3->Iex.Const.con->Ico.U8;
             if (imm4 >= 8) {
                vpanic("ARM target supports Iop_Extract64 with constant "
                       "third argument less than 16 only\n");
@@ -3621,16 +3630,16 @@ static HReg iselNeon64Expr_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_SetElem16x4:
          case Iop_SetElem32x2: {
             HReg res = newVRegD(env);
-            HReg dreg = iselNeon64Expr(env, e->Iex.Triop.arg1);
-            HReg arg = iselIntExpr_R(env, e->Iex.Triop.arg3);
+            HReg dreg = iselNeon64Expr(env, triop->arg1);
+            HReg arg = iselIntExpr_R(env, triop->arg3);
             UInt index, size;
-            if (e->Iex.Triop.arg2->tag != Iex_Const ||
-                typeOfIRExpr(env->type_env, e->Iex.Triop.arg2) != Ity_I8) {
+            if (triop->arg2->tag != Iex_Const ||
+                typeOfIRExpr(env->type_env, triop->arg2) != Ity_I8) {
                vpanic("ARM target supports SetElem with constant "
                       "second argument only\n");
             }
-            index = e->Iex.Triop.arg2->Iex.Const.con->Ico.U8;
-            switch (e->Iex.Triop.op) {
+            index = triop->arg2->Iex.Const.con->Ico.U8;
+            switch (triop->op) {
                case Iop_SetElem8x8: vassert(index < 8); size = 0; break;
                case Iop_SetElem16x4: vassert(index < 4); size = 1; break;
                case Iop_SetElem32x2: vassert(index < 2); size = 2; break;
@@ -5244,18 +5253,20 @@ static HReg iselNeonExpr_wrk ( ISelEnv* env, IRExpr* e )
    }
 
    if (e->tag == Iex_Triop) {
-      switch (e->Iex.Triop.op) {
+      IRTriop *triop = e->Iex.Triop.details;
+
+      switch (triop->op) {
          case Iop_ExtractV128: {
             HReg res = newVRegV(env);
-            HReg argL = iselNeonExpr(env, e->Iex.Triop.arg1);
-            HReg argR = iselNeonExpr(env, e->Iex.Triop.arg2);
+            HReg argL = iselNeonExpr(env, triop->arg1);
+            HReg argR = iselNeonExpr(env, triop->arg2);
             UInt imm4;
-            if (e->Iex.Triop.arg3->tag != Iex_Const ||
-                typeOfIRExpr(env->type_env, e->Iex.Triop.arg3) != Ity_I8) {
+            if (triop->arg3->tag != Iex_Const ||
+                typeOfIRExpr(env->type_env, triop->arg3) != Ity_I8) {
                vpanic("ARM target supports Iop_ExtractV128 with constant "
                       "third argument less than 16 only\n");
             }
-            imm4 = e->Iex.Triop.arg3->Iex.Const.con->Ico.U8;
+            imm4 = triop->arg3->Iex.Const.con->Ico.U8;
             if (imm4 >= 16) {
                vpanic("ARM target supports Iop_ExtractV128 with constant "
                       "third argument less than 16 only\n");
@@ -5412,16 +5423,18 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
    }
 
    if (e->tag == Iex_Triop) {
-      switch (e->Iex.Triop.op) {
+      IRTriop *triop = e->Iex.Triop.details;
+
+      switch (triop->op) {
          case Iop_DivF64:
          case Iop_MulF64:
          case Iop_AddF64:
          case Iop_SubF64: {
             ARMVfpOp op = 0; /*INVALID*/
-            HReg argL = iselDblExpr(env, e->Iex.Triop.arg2);
-            HReg argR = iselDblExpr(env, e->Iex.Triop.arg3);
+            HReg argL = iselDblExpr(env, triop->arg2);
+            HReg argR = iselDblExpr(env, triop->arg3);
             HReg dst  = newVRegD(env);
-            switch (e->Iex.Triop.op) {
+            switch (triop->op) {
                case Iop_DivF64: op = ARMvfp_DIV; break;
                case Iop_MulF64: op = ARMvfp_MUL; break;
                case Iop_AddF64: op = ARMvfp_ADD; break;
@@ -5555,16 +5568,18 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
    }
 
    if (e->tag == Iex_Triop) {
-      switch (e->Iex.Triop.op) {
+      IRTriop *triop = e->Iex.Triop.details;
+
+      switch (triop->op) {
          case Iop_DivF32:
          case Iop_MulF32:
          case Iop_AddF32:
          case Iop_SubF32: {
             ARMVfpOp op = 0; /*INVALID*/
-            HReg argL = iselFltExpr(env, e->Iex.Triop.arg2);
-            HReg argR = iselFltExpr(env, e->Iex.Triop.arg3);
+            HReg argL = iselFltExpr(env, triop->arg2);
+            HReg argR = iselFltExpr(env, triop->arg3);
             HReg dst  = newVRegF(env);
-            switch (e->Iex.Triop.op) {
+            switch (triop->op) {
                case Iop_DivF32: op = ARMvfp_DIV; break;
                case Iop_MulF32: op = ARMvfp_MUL; break;
                case Iop_AddF32: op = ARMvfp_ADD; break;
@@ -6013,6 +6028,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          case Ijk_NoDecode:
          case Ijk_NoRedir:
          case Ijk_Sys_syscall:
+         case Ijk_TInval:
          {
             HReg r = iselIntExpr_R(env, IRExpr_Const(stmt->Ist.Exit.dst));
             addInstr(env, ARMInstr_XAssisted(r, amR15T, cc,
@@ -6103,6 +6119,7 @@ static void iselNext ( ISelEnv* env,
       case Ijk_NoDecode:
       case Ijk_NoRedir:
       case Ijk_Sys_syscall:
+      case Ijk_TInval:
       {
          HReg       r      = iselIntExpr_R(env, next);
          ARMAMode1* amR15T = ARMAMode1_RI(hregARM_R8(), offsIP);

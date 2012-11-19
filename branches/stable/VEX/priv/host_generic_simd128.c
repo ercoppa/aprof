@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2010-2011 OpenWorks GbR
+   Copyright (C) 2010-2012 OpenWorks GbR
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -356,6 +356,16 @@ void VEX_REGPARM(3)
    res->w16[5] = narrow32to16(argL->w32[1]);
    res->w16[6] = narrow32to16(argL->w32[2]);
    res->w16[7] = narrow32to16(argL->w32[3]);
+}
+
+void VEX_REGPARM(3)
+     h_generic_calc_Perm32x4 ( /*OUT*/V128* res,
+                               V128* argL, V128* argR )
+{
+   res->w32[0] = argL->w32[ argR->w32[0] & 3 ];
+   res->w32[1] = argL->w32[ argR->w32[1] & 3 ];
+   res->w32[2] = argL->w32[ argR->w32[2] & 3 ];
+   res->w32[3] = argL->w32[ argR->w32[3] & 3 ];
 }
 
 

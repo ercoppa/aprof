@@ -80,7 +80,7 @@ Int   APROF_(events_used) = 0;
 void APROF_(flushEvents)(IRSB* sb) {
 	
 	Int        i;
-	Char*      helperName = NULL;
+	HChar*      helperName = NULL;
 	void*      helperAddr = NULL;
 	IRExpr**   argv = NULL;
 	IRDirty*   di;

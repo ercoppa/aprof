@@ -8,10 +8,10 @@
    This file is part of Callgrind, a Valgrind tool for call graph
    profiling programs.
 
-   Copyright (C) 2002-2011, Josef Weidendorfer (Josef.Weidendorfer@gmx.de)
+   Copyright (C) 2002-2012, Josef Weidendorfer (Josef.Weidendorfer@gmx.de)
 
    This tool is derived from and contains code from Cachegrind
-   Copyright (C) 2002-2011 Nicholas Nethercote (njn@valgrind.org)
+   Copyright (C) 2002-2012 Nicholas Nethercote (njn@valgrind.org)
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -51,6 +51,10 @@ Bool CLG_(instrument_state) = True; /* Instrumentation on ? */
 
 /* thread and signal handler specific */
 exec_state CLG_(current_state);
+
+/* min of L1 and LL cache line sizes.  This only gets set to a
+   non-zero value if we are doing cache simulation. */
+Int CLG_(min_line_size) = 0;
 
 
 /*------------------------------------------------------------*/
@@ -373,7 +377,7 @@ static void showEvent ( Event* ev )
 static void flushEvents ( ClgState* clgs )
 {
    Int        i, regparms, inew;
-   Char*      helperName;
+   const HChar* helperName;
    void*      helperAddr;
    IRExpr**   argv;
    IRExpr*    i_node_expr;
@@ -613,8 +617,9 @@ void addEvent_Dr ( ClgState* clgs, InstrInfo* inode, Int datasize, IRAtom* ea )
 {
    Event* evt;
    tl_assert(isIRAtom(ea));
-   tl_assert(datasize >= 1 && datasize <= MIN_LINE_SIZE);
+   tl_assert(datasize >= 1);
    if (!CLG_(clo).simulate_cache) return;
+   tl_assert(datasize <= CLG_(min_line_size));
 
    if (clgs->events_used == N_EVENTS)
       flushEvents(clgs);
@@ -634,8 +639,9 @@ void addEvent_Dw ( ClgState* clgs, InstrInfo* inode, Int datasize, IRAtom* ea )
    Event* lastEvt;
    Event* evt;
    tl_assert(isIRAtom(ea));
-   tl_assert(datasize >= 1 && datasize <= MIN_LINE_SIZE);
+   tl_assert(datasize >= 1);
    if (!CLG_(clo).simulate_cache) return;
+   tl_assert(datasize <= CLG_(min_line_size));
 
    /* Is it possible to merge this write with the preceding read? */
    lastEvt = &clgs->events[clgs->events_used-1];
@@ -903,6 +909,7 @@ IRSB* CLG_(instrument)( VgCallbackClosure* closure,
 			IRSB* sbIn,
 			VexGuestLayout* layout,
 			VexGuestExtents* vge,
+                        VexArchInfo* archinfo_host,
 			IRType gWordTy, IRType hWordTy )
 {
    Int      i;
@@ -1027,8 +1034,8 @@ IRSB* CLG_(instrument)( VgCallbackClosure* closure,
 	       // instructions will be done inaccurately, but they're
 	       // very rare and this avoids errors from hitting more
 	       // than two cache lines in the simulation.
-	       if (dataSize > MIN_LINE_SIZE)
-		  dataSize = MIN_LINE_SIZE;
+	       if (CLG_(clo).simulate_cache && dataSize > CLG_(min_line_size))
+		  dataSize = CLG_(min_line_size);
 	       if (d->mFx == Ifx_Read || d->mFx == Ifx_Modify)
 		  addEvent_Dr( &clgs, curr_inode, dataSize, d->mAddr );
 	       if (d->mFx == Ifx_Write || d->mFx == Ifx_Modify)
@@ -1370,7 +1377,7 @@ void zero_state_cost(thread_info* t)
 /* Ups, this can go very wrong... */
 extern void VG_(discard_translations) ( Addr64 start, ULong range, HChar* who );
 
-void CLG_(set_instrument_state)(Char* reason, Bool state)
+void CLG_(set_instrument_state)(const HChar* reason, Bool state)
 {
   if (CLG_(instrument_state) == state) {
     CLG_DEBUG(2, "%s: instrumentation already %s\n",
@@ -1396,7 +1403,7 @@ void CLG_(set_instrument_state)(Char* reason, Bool state)
 /* helper for dump_state_togdb */
 static void dump_state_of_thread_togdb(thread_info* ti)
 {
-    static Char buf[512];
+    static HChar buf[512];
     static FullCost sum = 0, tmp = 0;
     Int t, p, i;
     BBCC *from, *to;
@@ -1442,7 +1449,7 @@ static void dump_state_of_thread_togdb(thread_info* ti)
 /* Dump current state */
 static void dump_state_togdb(void)
 {
-    static Char buf[512];
+    static HChar buf[512];
     thread_info** th;
     int t, p;
     Int orig_tid = CLG_(current_tid);
@@ -1494,11 +1501,11 @@ static void print_monitor_help ( void )
 }
 
 /* return True if request recognised, False otherwise */
-static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
+static Bool handle_gdb_monitor_command (ThreadId tid, const HChar *req)
 {
-   Char* wcmd;
-   Char s[VG_(strlen(req))]; /* copy for strtok_r */
-   Char *ssaveptr;
+   HChar* wcmd;
+   HChar s[VG_(strlen(req))]; /* copy for strtok_r */
+   HChar *ssaveptr;
 
    VG_(strcpy) (s, req);
 
@@ -1522,7 +1529,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
    }
 
    case 3: { /* status */
-     Char* arg = VG_(strtok_r) (0, " ", &ssaveptr);
+     HChar* arg = VG_(strtok_r) (0, " ", &ssaveptr);
      if (arg && (VG_(strcmp)(arg, "internal") == 0)) {
        /* internal interface to callgrind_control */
        dump_state_togdb();
@@ -1543,7 +1550,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, Char *req)
    }
 
    case 4: { /* instrumentation */
-     Char* arg = VG_(strtok_r) (0, " ", &ssaveptr);
+     HChar* arg = VG_(strtok_r) (0, " ", &ssaveptr);
      if (!arg) {
        VG_(gdb_printf)("instrumentation: %s\n",
 		       CLG_(instrument_state) ? "on":"off");
@@ -1574,8 +1581,8 @@ Bool CLG_(handle_client_request)(ThreadId tid, UWord *args, UWord *ret)
 
    case VG_USERREQ__DUMP_STATS_AT:
      {
-       Char buf[512];
-       VG_(sprintf)(buf,"Client Request: %s", (Char*)args[1]);
+       HChar buf[512];
+       VG_(sprintf)(buf,"Client Request: %s", (HChar*)args[1]);
        CLG_(dump_profile)(buf, True);
        *ret = 0;                 /* meaningless */
      }
@@ -1604,7 +1611,7 @@ Bool CLG_(handle_client_request)(ThreadId tid, UWord *args, UWord *ret)
      break;
 
    case VG_USERREQ__GDB_MONITOR_COMMAND: {
-      Bool handled = handle_gdb_monitor_command (tid, (Char*)args[1]);
+      Bool handled = handle_gdb_monitor_command (tid, (HChar*)args[1]);
       if (handled)
          *ret = 1;
       else
@@ -1693,7 +1700,8 @@ static UInt ULong_width(ULong n)
 static
 void branchsim_printstat(int l1, int l2, int l3)
 {
-    static Char buf1[128], buf2[128], buf3[128], fmt[128];
+    static HChar buf1[128], buf2[128], buf3[128];
+    static HChar fmt[128];
     FullCost total;
     ULong Bc_total_b, Bc_total_mp, Bi_total_b, Bi_total_mp;
     ULong B_total_b, B_total_mp;
@@ -1731,7 +1739,8 @@ void branchsim_printstat(int l1, int l2, int l3)
 static
 void finish(void)
 {
-  Char buf[32+COSTS_LEN], fmt[128];
+  HChar buf[32+COSTS_LEN];
+  HChar fmt[128];
   Int l1, l2, l3;
   FullCost total;
 
@@ -1883,9 +1892,29 @@ static void clg_start_client_code_callback ( ThreadId tid, ULong blocks_done )
 static
 void CLG_(post_clo_init)(void)
 {
-   VG_(clo_vex_control).iropt_unroll_thresh = 0;
-   VG_(clo_vex_control).guest_chase_thresh = 0;
+   if (VG_(clo_vex_control).iropt_register_updates
+       != VexRegUpdSpAtMemAccess) {
+      CLG_DEBUG(1, " Using user specified value for "
+                "--vex-iropt-register-updates\n");
+   } else {
+      CLG_DEBUG(1, 
+                " Using default --vex-iropt-register-updates="
+                "sp-at-mem-access\n");
+   }
 
+   if (VG_(clo_vex_control).iropt_unroll_thresh != 0) {
+      VG_(message)(Vg_UserMsg, 
+                   "callgrind only works with --vex-iropt-unroll-thresh=0\n"
+                   "=> resetting it back to 0\n");
+      VG_(clo_vex_control).iropt_unroll_thresh = 0;   // cannot be overriden.
+   }
+   if (VG_(clo_vex_control).guest_chase_thresh != 0) {
+      VG_(message)(Vg_UserMsg,
+                   "callgrind only works with --vex-guest-chase-thresh=0\n"
+                   "=> resetting it back to 0\n");
+      VG_(clo_vex_control).guest_chase_thresh = 0; // cannot be overriden.
+   }
+   
    CLG_DEBUG(1, "  dump threads: %s\n", CLG_(clo).separate_threads ? "Yes":"No");
    CLG_DEBUG(1, "  call sep. : %d\n", CLG_(clo).separate_callers);
    CLG_DEBUG(1, "  rec. sep. : %d\n", CLG_(clo).separate_recursions);
@@ -1925,10 +1954,15 @@ void CLG_(pre_clo_init)(void)
     VG_(details_name)            ("Callgrind");
     VG_(details_version)         (NULL);
     VG_(details_description)     ("a call-graph generating cache profiler");
-    VG_(details_copyright_author)("Copyright (C) 2002-2011, and GNU GPL'd, "
+    VG_(details_copyright_author)("Copyright (C) 2002-2012, and GNU GPL'd, "
 				  "by Josef Weidendorfer et al.");
     VG_(details_bug_reports_to)  (VG_BUGS_TO);
     VG_(details_avg_translation_sizeB) ( 500 );
+
+    VG_(clo_vex_control).iropt_register_updates
+       = VexRegUpdSpAtMemAccess; // overridable by the user.
+    VG_(clo_vex_control).iropt_unroll_thresh = 0;   // cannot be overriden.
+    VG_(clo_vex_control).guest_chase_thresh = 0;    // cannot be overriden.
 
     VG_(basic_tool_funcs)        (CLG_(post_clo_init),
                                   CLG_(instrument),

@@ -22,6 +22,9 @@ endif
 if VGCONF_ARCHS_INCLUDE_S390X
 SUBDIRS += s390x
 endif
+if VGCONF_ARCHS_INCLUDE_MIPS32
+SUBDIRS += mips32
+endif
 
 # OS-specific tests
 if VGCONF_OS_IS_LINUX
@@ -36,7 +39,7 @@ if VGCONF_PLATFORMS_INCLUDE_X86_LINUX
 SUBDIRS += x86-linux
 endif
 
-DIST_SUBDIRS = x86 amd64 ppc32 ppc64 arm s390x linux darwin x86-linux .
+DIST_SUBDIRS = x86 amd64 ppc32 ppc64 arm s390x mips32 linux darwin x86-linux .
 
 dist_noinst_SCRIPTS = \
 	filter_cmdline0 \
@@ -46,7 +49,8 @@ dist_noinst_SCRIPTS = \
 	filter_none_discards \
 	filter_shell_output \
 	filter_stderr \
-	filter_timestamp
+	filter_timestamp \
+	allexec_prepare_prereq
 
 noinst_HEADERS = fdleak.h
 
@@ -55,7 +59,7 @@ EXTRA_DIST = \
 	allexec64.stdout.exp allexec64.stderr.exp allexec64.vgtest\
 	ansi.stderr.exp ansi.vgtest \
 	args.stderr.exp args.stdout.exp args.vgtest \
-	async-sigs.stderr.exp async-sigs.vgtest \
+	async-sigs.stderr.exp async-sigs.stderr.exp-mips32 async-sigs.vgtest \
 	bitfield1.stderr.exp bitfield1.vgtest \
 	bug129866.vgtest bug129866.stderr.exp bug129866.stdout.exp \
 	closeall.stderr.exp closeall.vgtest \
@@ -91,6 +95,7 @@ EXTRA_DIST = \
 	fork.stderr.exp fork.stdout.exp fork.vgtest \
 	fucomip.stderr.exp fucomip.vgtest \
 	gxx304.stderr.exp gxx304.vgtest \
+	ifunc.stderr.exp ifunc.stdout.exp ifunc.vgtest \
 	manythreads.stdout.exp manythreads.stderr.exp manythreads.vgtest \
 	map_unaligned.stderr.exp map_unaligned.vgtest \
 	map_unmap.stderr.exp map_unmap.stdout.exp map_unmap.vgtest \
@@ -135,7 +140,7 @@ EXTRA_DIST = \
 	sem.stderr.exp sem.stdout.exp sem.vgtest \
 	semlimit.stderr.exp semlimit.stdout.exp semlimit.vgtest \
 	shell shell.vgtest shell.stderr.exp shell.stderr.exp-dash \
-	    shell.stdout.exp \
+	    shell.stdout.exp shell.stderr.exp-dash2 \
 	shell_badinterp shell_badinterp.vgtest shell_badinterp.stderr.exp \
 	shell_binaryfile shell_binaryfile.vgtest shell_binaryfile.stderr.exp \
 	shell_dir.vgtest shell_dir.stderr.exp \
@@ -223,6 +228,9 @@ if ! VGCONF_OS_IS_DARWIN
    check_PROGRAMS += rlimit64_nofile 
 endif
 
+if BUILD_IFUNC_TESTS
+   check_PROGRAMS += ifunc
+endif
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)

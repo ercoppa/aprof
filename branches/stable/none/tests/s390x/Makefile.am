@@ -6,29 +6,45 @@ INSN_TESTS = clc clcle cvb cvd icm lpr tcxb lam_stam xc mvst add sub mul \
              and or xor insert div srst fold_And16 flogr sub_EI add_EI \
              and_EI or_EI xor_EI insert_EI mul_GE add_GE condloadstore \
              op_exception fgx stck stckf stcke stfle cksm mvcl clcl troo \
-             trto trot trtt tr tre
+             trto trot trtt tr tre cij cgij clij clgij crj cgrj clrj clgrj \
+             cs csg cds cdsg cu21 cu21_1 cu24 cu24_1 cu42 cu12 cu12_1 \
+             ex_sig ex_clone cu14 cu14_1 cu41 fpconv ecag fpext fpext_warn \
+             rounding-1 rounding-2 rounding-3 rounding-4 rounding-5 bfp-1 \
+             bfp-2 bfp-3 bfp-4 srnm srnmb comp-1 comp-2 exrl tmll tm stmg \
+	     ex clst mvc test_clone test_fork test_sig rounding-6 \
+	     spechelper-alr spechelper-algr \
+	     spechelper-slr spechelper-slgr \
+	     spechelper-cr  spechelper-clr  \
+	     spechelper-ltr spechelper-or   \
+	     spechelper-icm-1  spechelper-icm-2 spechelper-tmll \
+	     spechelper-tm
+if BUILD_DFP_TESTS
+  INSN_TESTS += dfp-1
+endif
 
 check_PROGRAMS = $(INSN_TESTS) \
 		 allexec \
-		 ex_sig \
-		 ex_clone \
 		 op00
 
 EXTRA_DIST = \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
-	ex_sig.stdout.exp ex_sig.stderr.exp ex_sig.vgtest \
-	ex_clone.stdout.exp ex_clone.stderr.exp ex_clone.vgtest \
+	ecag.stdout.exp-z10ec ecag.stdout.exp-z196 \
 	op00.stderr.exp1 op00.stderr.exp2 op00.vgtest \
+	fpext_fail.vgtest fpext_fail.stderr.exp fpext_fail.stdout.exp \
 	test.h opcodes.h add.h  and.h  div.h  insert.h \
-	mul.h  or.h  sub.h  test.h  xor.h table.h
+	mul.h  or.h  sub.h  xor.h table.h svc.h rounding.h
 
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@
 AM_CCASFLAGS += @FLAG_M64@
 
 allexec_CFLAGS   = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
+tcxb_CFLAGS      = $(AM_CFLAGS) -std=gnu99
+cu12_1_CFLAGS    = $(AM_CFLAGS) -DM3=1
+cu14_1_CFLAGS    = $(AM_CFLAGS) -DM3=1
+cu21_1_CFLAGS    = $(AM_CFLAGS) -DM3=1
+cu24_1_CFLAGS    = $(AM_CFLAGS) -DM3=1
 
 ex_clone_LDFLAGS = -lpthread
-tcxb_CFLAGS      = $(AM_CFLAGS) -std=gnu99
