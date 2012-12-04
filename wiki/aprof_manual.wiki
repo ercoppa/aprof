@@ -1,0 +1,5 @@
+# aprof user manual
+
+= Introduction =
+
+aprof is a [http://valgrind.org/ Valgrind] tool. You can find a more èhttp://valgrind.org/docs/manual/manual.html general user manual] about this binary instrumentation framework on its official site.
