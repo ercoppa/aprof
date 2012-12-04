@@ -2,3 +2,12 @@
 
 = Profiling a simple program =
 
+This tutorial explains how to profile a program with aprof and how to analyze the collected profiling data using aprof-plot.
+
+== A simple program ==
+
+Suppose we want to analyze the performance of our implementation of a [http://en.wikipedia.org/wiki/Merge_sort merge sort algorithm]. For example, this can be our program code:
+
+{{{
+
+}}} 
