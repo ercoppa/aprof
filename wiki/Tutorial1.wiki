@@ -1,0 +1,4 @@
+# A tutorial on how to profile a simple program with aprof and analyze the profiling data using aprof-plot
+
+= Profiling a simple program =
+
