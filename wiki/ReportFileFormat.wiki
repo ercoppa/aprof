@@ -86,22 +86,23 @@ Example:
 ----
 * p: routine performance point*
 
-Syntax: `p routine-id rms min max sum sqr-sum self-sum occ`, where:
+Syntax: `p routine-id rms min max sum occ real-sum self-sum`, where:
 
   * `routine-id`: id of the routine (32 bit unsigned integer)
   * `rms`: read memory size of the point (32 bit unsigned integer)
   * `min`: minimum routine cost on the given rms (64 bit unsigned integer)
   * `max`: maximum routine cost on the given rms (64 bit unsigned integer)
   * `sum`: sum of routine cumulative costs on the given rms (64 bit unsigned integer)
-  * `sqr-sum`: sum of squares of routine sumulative costs on the given rms (64 bit unsigned integer)
-  * `self_sum`: sum of routine self costs on the given rms (64 bit unsigned integer)
-  * `occ`: number of routine calls on the given rms (64 bit unsigned integer)
+  * `occ`: number of routine calls on the given rms (64 bit unsigned 
+integer)
+  * `real-sum`: _real_ sum of routine cumulative costs on the given rms (cost of an activation is ignored if there is an active ancestor in the call stack with the same function name)(64 bit unsigned integer)
+  * `self-sum`: sum of routine self costs on the given rms (64 bit unsigned integer)
 
 Example:
 
-`p 7 23 15 37 270 5712 200 10` 
+`p 7 23 15 37 270 10 199 200` 
 
-means that the routine with id 7 was called 10 times on rms 23, requiring a minimum of 15 cost units, a maximum of 37 cost units, a total cost of 270 units, a total self time of 200 units and sum of squares 5712.
+means that the routine with id 7 was called 10 times on rms 23, requiring a minimum of 15 cost units, a maximum of 37 cost units, a total cost of 270 units, a total real cost of 199 and a total self cost of 200 units.
 
 ----
 * x: distinct calling context info*
@@ -123,19 +124,19 @@ means that node 352 of the CCT is a context of routine 24 and its parent node is
 ----
 * q: calling context performance point*
 
-Syntax: `q context-id rms min max sum sqr-sum occ`, where:
+Syntax: `q context-id rms min max sum occ real-sum self-sum`, where:
 
   * `context-id`: id of the calling context (32 bit unsigned integer)
   * `rms`: read memory size of the point (32 bit unsigned integer)
   * `min`: minimum context cost on the given rms (64 bit unsigned integer)
   * `max`: maximum context cost on the given rms (64 bit unsigned integer)
   * `sum`: sum of context costs on the given rms (64 bit unsigned integer)
-  * `sqr-sum`: sum of squares of context costs on the given rms (64 bit unsigned integer)
-  * `self_sum`: sum of routine self costs on the given rms (64 bit unsigned integer)
   * `occ`: number of context activations on the given rms (64 bit unsigned integer)
+  * `real-sum`: _real_ sum of routine cumulative costs on the given rms (cost of an activation is ignored if there is an active ancestor in the call stack with the same function name)(64 bit unsigned integer)
+  * `self-sum`: sum of routine self costs on the given rms (64 bit unsigned integer)
 
 Example:
 
-`p 624 23 15 37 270 5712 200 10` 
+`p 624 23 15 37 270 10 199 200` 
 
-means that the calling context 624 was activated 10 times on rms 23, requiring a minimum of 15 cost units, a maximum of 37 cost units, a total cost of 270 units, a total self cost of 250 units and sum of squares 5712.
+means that the calling context 624 was activated 10 times on rms 23, requiring a minimum of 15 cost units, a maximum of 37 cost units, a total cost of 270 units, a total real cost of 199 and a total self cost of 200 units.
