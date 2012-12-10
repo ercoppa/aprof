@@ -137,6 +137,6 @@ Syntax: `q context-id rms min max sum occ real-sum self-sum`, where:
 
 Example:
 
-`p 624 23 15 37 270 10 199 200` 
+`q 624 23 15 37 270 10 199 200` 
 
 means that the calling context 624 was activated 10 times on rms 23, requiring a minimum of 15 cost units, a maximum of 37 cost units, a total cost of 270 units, a total real cost of 199 and a total self cost of 200 units.
