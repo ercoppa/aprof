@@ -2,6 +2,6 @@
  * [BasicUsage Basic usage]
  * [Install Install]
  * [aprof_manual aprof manual]
- * [aprof-plot_manual aprof-plot manual]
+ * [aprof_plot_manual aprof-plot manual]
  * [tutorial Tutorial]
  * [PlotExamples Gallery]
