@@ -3,5 +3,5 @@
  * [Install Install]
  * [aprof_manual aprof manual]
  * [aprof_plot_manual aprof-plot manual]
- * [tutorial Tutorial]
+ * [Tutorial1 Tutorial]
  * [PlotExamples Gallery]
