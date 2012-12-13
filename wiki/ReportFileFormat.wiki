@@ -1,4 +1,4 @@
-== Report file format (vs. 1.2) ==
+== Report file format (vs. 1.3) ==
 
 Report file data are specified one item per line. Each line starts with a tag:
 
@@ -97,12 +97,14 @@ Syntax: `p routine-id rms min max sum occ real-sum self-sum`, where:
 integer)
   * `real-sum`: _real_ sum of routine cumulative costs on the given rms (cost of an activation is ignored if there is an active ancestor in the call stack with the same function name)(64 bit unsigned integer)
   * `self-sum`: sum of routine self costs on the given rms (64 bit unsigned integer)
+  * `self-min`: minimum routine self cost on the given rms (64 bit unsigned integer)
+  * `self-max`:  maximum routine self cost on the given rms (64 bit unsigned integer)
 
 Example:
 
-`p 7 23 15 37 270 10 199 200` 
+`p 7 23 15 37 270 10 199 200 10 10` 
 
-means that the routine with id 7 was called 10 times on rms 23, requiring a minimum of 15 cost units, a maximum of 37 cost units, a total cost of 270 units, a total real cost of 199 and a total self cost of 200 units.
+means that the routine with id 7 was called 10 times on rms 23, requiring a minimum of 15 cost units, a maximum of 37 cost units, a total cost of 270 units, a total real cost of 199, a total self cost of 200 units, a minimum self of 10 cost units and a maximum self of 10 cost units.
 
 ----
 * x: distinct calling context info*
@@ -134,9 +136,11 @@ Syntax: `q context-id rms min max sum occ real-sum self-sum`, where:
   * `occ`: number of context activations on the given rms (64 bit unsigned integer)
   * `real-sum`: _real_ sum of routine cumulative costs on the given rms (cost of an activation is ignored if there is an active ancestor in the call stack with the same function name)(64 bit unsigned integer)
   * `self-sum`: sum of routine self costs on the given rms (64 bit unsigned integer)
+  * `self-min`: minimum routine self cost on the given rms (64 bit unsigned integer)
+  * `self-max`:  maximum routine self cost on the given rms (64 bit unsigned integer)
 
 Example:
 
-`q 624 23 15 37 270 10 199 200` 
+`q 624 23 15 37 270 10 199 200 10 10` 
 
-means that the calling context 624 was activated 10 times on rms 23, requiring a minimum of 15 cost units, a maximum of 37 cost units, a total cost of 270 units, a total real cost of 199 and a total self cost of 200 units.
+means that the calling context 624 was activated 10 times on rms 23, requiring a minimum of 15 cost units, a maximum of 37 cost units, a total cost of 270 units, a total real cost of 199, a total self cost of 200 units, a minimum self of 10 cost units and a maximum self of 10 cost units.
