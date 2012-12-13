@@ -82,4 +82,5 @@ public class RoutineInfo extends Routine {
 		hash = 31 * hash + this.id;
 		return hash;
 	}
+    
 }

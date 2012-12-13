@@ -6,7 +6,8 @@ public class Rms implements Comparable<Rms> {
 	private long min_cost;
 	private long max_cost;
 	private double total_cost;
-	private double sqr_total_cost;
+    private double total_real_cost;
+	private double total_self;
 	private long occ;
 	
 	public static final int MAX_COST = 0;
@@ -20,14 +21,15 @@ public class Rms implements Comparable<Rms> {
 	// pos 2 -> log_e(log_e(n)) exponent
 	private static double[] ratio_config = {1, 0, 0};
 
-	public Rms(long rms, long min_cost,
-			long max_cost, double total_cost, double sqr_total_cost, long occ) {
+	public Rms(long rms, long min_cost, long max_cost, double total_cost, 
+                double total_real_cost, double total_self, long occ) {
 
 		this.rms = rms;
 		this.min_cost = min_cost;
 		this.max_cost = max_cost;
 		this.total_cost = total_cost;
-		this.sqr_total_cost = sqr_total_cost;
+        this.total_real_cost = total_real_cost;
+		this.total_self = total_self;
 		this.occ = occ;
 		
 		if (rms > 0) this.ratio = this.max_cost / this.rms;
@@ -58,9 +60,22 @@ public class Rms implements Comparable<Rms> {
 	public double getTotalCost() {
 		return total_cost;
 	}
-
+    
+    public double getTotalRealCost() {
+        
+        // old report
+        if (total_real_cost == 0 && total_self == 0)
+            return getTotalCost();
+        
+        return total_real_cost;
+    }
+    
+    public double getTotalSelfCost() {
+        return total_self;
+    }
+    
 	public double getSqrTotalCost() {
-		return sqr_total_cost;
+		return (getTotalCost()*getTotalCost());
 	}
 
 	public double getVar() {
@@ -162,7 +177,8 @@ public class Rms implements Comparable<Rms> {
 				Math.min(this.min_cost, te.min_cost),
 				Math.max(this.max_cost, te.max_cost), 
 				this.total_cost + te.getTotalCost(),
-				this.sqr_total_cost + te.getSqrTotalCost(),
+                this.total_real_cost + te.getTotalRealCost(),
+				this.total_self + te.getTotalSelfCost(),
 				this.occ + te.getOcc());
 	}
 }

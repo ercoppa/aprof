@@ -31,7 +31,7 @@ public class MainWindow extends javax.swing.JFrame {
 	boolean append_graph = false;
 	
 	// Perfomance monitor
-	PerfomanceMonitor perf = new PerfomanceMonitor();
+	PerformanceMonitor perf = new PerformanceMonitor();
 	
 	// Used for adapt correctly layout
 	private JPanel fake = null;
@@ -1079,8 +1079,8 @@ public class MainWindow extends javax.swing.JFrame {
 	
 	public AprofReport getCurrentReport(){
 		return report;
-	}
-	
+    }
+    
 	private void showStackTrace(boolean show) {
 		if (show) {
 			jSplitPane3.setDividerSize(6);
@@ -1133,7 +1133,7 @@ public class MainWindow extends javax.swing.JFrame {
 	
 	}
 
-	protected void loadReport(final File file) throws Exception {
+	protected void loadReport(final File file) {
 		
 		//System.out.println("Loading[1]: " + file);
 		
@@ -1148,8 +1148,11 @@ public class MainWindow extends javax.swing.JFrame {
 				try {
 					setReport(new AprofReport(file), file);
 				} catch (Exception ex) {
-					System.out.println("Fail to load");
+					//System.out.println("Fail to load");
 					System.out.println(ex);
+                    jProgressBar1.setVisible(false);
+                    jProgressBar1.setEnabled(false);
+                    failLoadReport(file, ex);
 				}
 				return report;
 			}
@@ -1158,6 +1161,13 @@ public class MainWindow extends javax.swing.JFrame {
 		worker.execute();
 		
 	}
+    
+    private void failLoadReport(File file, Exception e) {
+        //e.printStackTrace();
+        javax.swing.JOptionPane.showMessageDialog(this, 
+                "Couldn't open the chosen file", "Error", 
+                javax.swing.JOptionPane.ERROR_MESSAGE);
+    }
 		
 	private void setReport(AprofReport report, File file) throws Exception {
 		
@@ -1169,8 +1179,11 @@ public class MainWindow extends javax.swing.JFrame {
 		
 		//System.out.println("Loading[2]: " + file);
 		
+        
 		this.report = report;
-		
+		Main.addRecentFile(file);
+		refreshRecentFiles();
+        
 		// reload button
 		jButton9.setEnabled(true);
 		jButton9.setToolTipText("Reload this report");
@@ -1317,16 +1330,7 @@ public class MainWindow extends javax.swing.JFrame {
 		if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
 			java.io.File file = chooser.getSelectedFile();
 			Main.storeLastReportPath(file.getParent());
-			try {
-				loadReport(file);
-				Main.addRecentFile(file);
-				refreshRecentFiles();
-			} catch (Exception e) {
-				e.printStackTrace();
-				javax.swing.JOptionPane.showMessageDialog(this, 
-						"Couldn't open the selected file", "Error", 
-						javax.swing.JOptionPane.ERROR_MESSAGE);
-			}
+            loadReport(file);
 		}
 	
 	}
@@ -1349,6 +1353,10 @@ public class MainWindow extends javax.swing.JFrame {
 			}
 		}
 	}
+    
+    public void refreshRoutineTable() {
+        ((RoutinesTableModel)jTable1.getModel()).refresh();
+    }
 
 	protected boolean arePlotsLinked() {
 		return this.linked_plots;
@@ -1500,7 +1508,7 @@ public class MainWindow extends javax.swing.JFrame {
 			if (jCheckBoxMenuItem7.isSelected()) MccGraphPanel.setData(r);
 			*/
 			
-			perf.start(this, PerfomanceMonitor.ELABORATE);
+			perf.start(this, PerformanceMonitor.ELABORATE);
 			
 			if (jCheckBoxMenuItem4.isSelected()) CostGraphPanel.setRoutine(r);
 			if (jCheckBoxMenuItem8.isSelected()) ratioGraphPanel.setRoutine(r);
@@ -1555,7 +1563,7 @@ public class MainWindow extends javax.swing.JFrame {
 			
 			}
 			
-			perf.stop(this, PerfomanceMonitor.ELABORATE);
+			perf.stop(this, PerformanceMonitor.ELABORATE);
 			System.gc();
 			//updateContextTree(r);
 			
@@ -1714,19 +1722,9 @@ public class MainWindow extends javax.swing.JFrame {
 		if (entry < 0 || entry >= r.size()) return;
 	
 		java.io.File f = Main.getRecentFiles().get(entry);
-		try {
-			
-			saveForm();
-			disableSaveCommand();
-			
-			loadReport(f);
-			Main.addRecentFile(f);
-		} catch (Exception e) {
-			javax.swing.JOptionPane.showMessageDialog(this, "Couldn't open the selected file", "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
-			Main.removeRecentFile(f);
-		} finally {
-			this.refreshRecentFiles();
-		}
+        saveForm();
+        disableSaveCommand();
+        loadReport(f);
 		
 	}
 	
@@ -2578,15 +2576,15 @@ public class MainWindow extends javax.swing.JFrame {
 		RtnGraphPanel = new GraphPanel(GraphPanel.RTN_PLOT, this);
 		MccGraphPanel = new GraphPanel(GraphPanel.MCC_PLOT, this);
 		
-		// Set perfomance monitor
-		CostGraphPanel.setPerfomanceMonitor(perf);
-		ratioGraphPanel.setPerfomanceMonitor(perf);
-		freqGraphPanel.setPerfomanceMonitor(perf);
-		MMMGraphPanel.setPerfomanceMonitor(perf);
-		TotalCostGraphPanel.setPerfomanceMonitor(perf);
-		VarGraphPanel.setPerfomanceMonitor(perf);
-		RtnGraphPanel.setPerfomanceMonitor(perf);
-		MccGraphPanel.setPerfomanceMonitor(perf);
+		// Set performance monitor
+		CostGraphPanel.setPerformanceMonitor(perf);
+		ratioGraphPanel.setPerformanceMonitor(perf);
+		freqGraphPanel.setPerformanceMonitor(perf);
+		MMMGraphPanel.setPerformanceMonitor(perf);
+		TotalCostGraphPanel.setPerformanceMonitor(perf);
+		VarGraphPanel.setPerformanceMonitor(perf);
+		RtnGraphPanel.setPerformanceMonitor(perf);
+		MccGraphPanel.setPerformanceMonitor(perf);
 		
 		ArrayList<Integer> graph_order = Main.getGraphOrder();
 		// Reset graph order (addGraph will set this later)
@@ -3078,6 +3076,13 @@ public class MainWindow extends javax.swing.JFrame {
 	
 	}
 	
+    public boolean isCumulativeTotalCost() {
+        
+        if (Main.getTotalCost() == Main.COST_CUMULATIVE) return true;        
+        return false;
+    
+    }
+    
 	// For now we decide to disable context tree panel 
 	/*
 	private void expandContextTree() {

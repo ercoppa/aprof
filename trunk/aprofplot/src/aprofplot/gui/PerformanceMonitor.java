@@ -6,7 +6,7 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.event.ChartProgressEvent;
 import org.jfree.chart.event.ChartProgressListener;
 
-public class PerfomanceMonitor implements ChartProgressListener {
+public class PerformanceMonitor implements ChartProgressListener {
 	
 	public static final int DRAW = 1;
 	public static final int ELABORATE = 2;

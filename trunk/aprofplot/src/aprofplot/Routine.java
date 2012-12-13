@@ -8,7 +8,8 @@ public abstract class Routine implements Comparable<Routine> {
 	private double min_cost;
 	private double max_cost;
 	private double max_avg_cost;
-	private double total_cost;
+    private double total_cost;
+    private double total_self;
 	private long total_calls;
 	private long min_rms;
 	private long max_rms;
@@ -26,12 +27,11 @@ public abstract class Routine implements Comparable<Routine> {
 	public final static int SORT_BY_ACCESS = 1;
 	public final static int SORT_OTHER = 2;
 	private int sort_status = UNSORTED;
-	
+	     
 	public Routine() {
 		
 		min_cost = Long.MAX_VALUE;
 		max_cost = 0;
-		total_cost = 0;
 		total_calls = 0;
 		min_rms = Integer.MAX_VALUE;
 		max_rms = 0;
@@ -56,7 +56,8 @@ public abstract class Routine implements Comparable<Routine> {
 		if (r.getRms() > max_rms) max_rms = r.getRms();
 		if (r.getRms() < min_rms) min_rms = r.getRms();
 		
-		total_cost += r.getTotalCost();
+        total_cost += r.getTotalRealCost();
+        total_self += r.getTotalSelfCost();
 		total_calls += r.getOcc();
 	
 		// Invalid mcc cache
@@ -66,7 +67,7 @@ public abstract class Routine implements Comparable<Routine> {
 		sort_status = UNSORTED;
 		
 	}
-
+    
 	public double getMinCost() {
 		return min_cost;
 	}
@@ -82,7 +83,11 @@ public abstract class Routine implements Comparable<Routine> {
 	public double getTotalCost() {
 		return total_cost;
 	}
-
+    
+    public double getTotalSelfCost() {
+        return total_self;
+    }
+    
 	public long getTotalCalls() {
 		return total_calls;
 	}
