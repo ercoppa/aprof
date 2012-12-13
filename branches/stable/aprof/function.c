@@ -125,7 +125,12 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
 	AP_ASSERT(tdata != NULL, "Thread data is not valid");
 	AP_ASSERT(act != NULL, "Invalid activation info");
 	#endif
-	
+	/*
+	if (VG_(strcmp)(act->rtn_info->fn->name, "__strcmp_sse42") == 0) {
+		inside_strcmp = 1;
+		VG_(printf)("\n\n");
+	}
+	*/
 	#if VERBOSE
 	VG_(printf)("Enter: %s\n", act->rtn_info->fn->name);
 	/*
@@ -144,16 +149,14 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
 	return;
 	#endif
 	
-	ULong start = APROF_(time)();
+	ULong start = APROF_(time)(tdata);
 
 	RoutineInfo * rtn_info = act->rtn_info;
 	#if DEBUG
 	AP_ASSERT(rtn_info != NULL, "Invalid rtn info");
 	#endif
-	
-	rtn_info->calls++;
+
 	rtn_info->recursion_pending++;
-	if (rtn_info->recursion_pending > 1) rtn_info->recursive = 1;
 	act->rtn_info            = rtn_info;
 	act->entry_time          = start;
 	act->rms                 = 0;
@@ -162,8 +165,6 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
 	
 	/* check & fix timestamp overflow */
 	if (act->aid == 0) {
-		
-		//SUF_print(tdata->accesses);
 		
 		//VG_(printf)("\nSUF compress\n");
 		
@@ -228,6 +229,9 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
 		cnode->routine_id = act->rtn_info->routine_id;
 		cnode->context_id = tdata->next_context_id++;
 		
+		#if CCT_GRAPHIC
+		cnode->name = act->rtn_info->fn->name;
+		#endif
 	}
 
 	// store context node into current activation record
@@ -250,7 +254,12 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
 	AP_ASSERT(tdata != NULL, "Thread data is not valid");
 	AP_ASSERT(act != NULL, "Invalid activation info");
 	#endif
-	
+	/*
+	if (VG_(strcmp)(act->rtn_info->fn->name, "__strcmp_sse42") == 0) {
+		VG_(printf)("\n\n");
+		inside_strcmp = 0;
+	}
+	*/
 	#if VERBOSE
 	VG_(printf)("Exit: %s\n", act->rtn_info->fn->name);
 	#endif
@@ -262,8 +271,8 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
 	#if EMPTY_ANALYSIS
 	return;
 	#endif
-	
-	ULong start = APROF_(time)();
+
+	ULong start = APROF_(time)(tdata);
 	RoutineInfo * rtn_info = act->rtn_info;
 
 	ULong partial_cumulative = start - act->entry_time;
@@ -271,12 +280,6 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
 	#if DISCARD_UNKNOWN
 	if (!rtn_info->fn->discard_info) {
 	#endif
-	
-	if (rtn_info->recursion_pending < 2) 
-		rtn_info->total_cumulative_time += partial_cumulative;
-
-	ULong partial_self = partial_cumulative - act->total_children_time;
-	rtn_info->total_self_time += partial_self;
 	
 	// check if routine has ever been called with this RMS
 	RMSInfo * info_access = NULL;
@@ -350,17 +353,31 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
 	}
 
 	// bookkeeping
-	info_access->cumulative_time_sum += partial_cumulative;
+	
 	info_access->calls_number++;
 	
-	info_access->cumulative_time_sqr_sum += 
-		partial_cumulative * partial_cumulative;
+	/* cumulative cost */
+	info_access->cumulative_time_sum += partial_cumulative;
 	
 	if (info_access->max_cumulative_time < partial_cumulative) 
 		info_access->max_cumulative_time = partial_cumulative;
 	
 	if (info_access->min_cumulative_time > partial_cumulative) 
 		info_access->min_cumulative_time = partial_cumulative;
+	
+	/* real cumulative cost */
+	if (rtn_info->recursion_pending < 2) 
+		info_access->cumul_real_time_sum += partial_cumulative;
+
+	/* self cost */
+	ULong partial_self = partial_cumulative - act->total_children_time;
+	info_access->self_time_sum += partial_self;
+	
+	if (info_access->self_time_max < partial_self) 
+		info_access->self_time_max = partial_self;
+	
+	if (info_access->self_time_min > partial_self) 
+		info_access->self_time_min = partial_self;
 	
 	#if DEBUG
 	AP_ASSERT(info_access->max_cumulative_time >= info_access->min_cumulative_time, "Min max mismatch");
@@ -374,6 +391,7 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
 	
 	rtn_info->recursion_pending--;
 	
+
 	// merge accesses of current activation with those of the parent activation
 	if (tdata->stack_depth > 1) {
 
@@ -382,17 +400,17 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
 		AP_ASSERT(parent_activation != NULL, "Invalid parent activation");
 		#endif
 
-		#if TRACE_FUNCTION
+		#if TRACE_FUNCTION && IGNORE_DL_RUNTIME
 		if (!tdata->skip) {
 		#endif
 		
 			parent_activation->rms                 += act->rms;
 			parent_activation->total_children_time += partial_cumulative;
 		
-		#if TRACE_FUNCTION
+		#if TRACE_FUNCTION && IGNORE_DL_RUNTIME
 		} else {
 	
-			#if TIME == BB_COUNT
+			#if TIME == BB_COUNT 
 			if (act->skip)
 				tdata->bb_c -= partial_cumulative;
 			#else
@@ -404,9 +422,8 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
 	
 	}
 	
-	//VG_(printf)("SMS: %lu\n", act->sms);
-	
-	#if TRACE_FUNCTION
+
+	#if TRACE_FUNCTION && IGNORE_DL_RUNTIME 
 	if (act->skip) tdata->skip = False;
 	#endif
 

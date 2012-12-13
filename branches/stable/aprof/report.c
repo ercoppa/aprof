@@ -130,6 +130,13 @@ static Function * merge_tuple(HChar * line, Int size,
 			
 		}
 		
+		RoutineInfo * rtn_info = HT_lookup(tdata->routine_hash_table, (UWord)curr);
+		if (rtn_info == NULL) {
+			
+			rtn_info = APROF_(new_routine_info)(tdata, curr, (UWord) curr);
+		
+		} 
+
 	} else if (token[0] == 'd') { 
 		
 		if (curr == NULL || curr->mangled != NULL) 
@@ -177,17 +184,35 @@ static Function * merge_tuple(HChar * line, Int size,
 		ULong sum = VG_(strtoull10) ((HChar *)token, NULL);
 		if (sum == 0) return curr;
 		
-		// sqr_sum
-		token = VG_(strtok)(NULL, "@");
-		if (token == NULL) return curr;
-		ULong sqr_sum = VG_(strtoull10) ((HChar *)token, NULL);
-		if (sqr_sum == 0) return curr;
-		
 		// occ
 		token = VG_(strtok)(NULL, "@");
 		if (token == NULL) return curr;
 		ULong occ = VG_(strtoull10) ((HChar *)token, NULL);
 		if (occ == 0) return curr;
+		
+		// cumul_real
+		token = VG_(strtok)(NULL, "@");
+		if (token == NULL) return curr;
+		ULong cumul_real = VG_(strtoull10) ((HChar *)token, NULL);
+		if (cumul_real == 0) return curr;
+		
+		// self_total
+		token = VG_(strtok)(NULL, "@");
+		if (token == NULL) return curr;
+		ULong self = VG_(strtoull10) ((HChar *)token, NULL);
+		if (self == 0) return curr;
+		
+		// self_min
+		token = VG_(strtok)(NULL, "@");
+		if (token == NULL) return curr;
+		ULong self_min = VG_(strtoull10) ((HChar *)token, NULL);
+		if (self_min == 0) return curr;
+		
+		// self_max
+		token = VG_(strtok)(NULL, "@");
+		if (token == NULL) return curr;
+		ULong self_max = VG_(strtoull10) ((HChar *)token, NULL);
+		if (self_max == 0) return curr;
 		
 		/*
 		VG_(printf)("Tuple: %s %llu %llu %llu %llu %llu %llu\n",
@@ -225,13 +250,22 @@ static Function * merge_tuple(HChar * line, Int size,
 		
 		info_access->cumulative_time_sum += sum;
 		info_access->calls_number += occ;
-		info_access->cumulative_time_sqr_sum += sqr_sum;
-		
+
 		if (info_access->max_cumulative_time < max) 
 			info_access->max_cumulative_time = max;
 	
 		if (info_access->min_cumulative_time > min) 
 			info_access->min_cumulative_time = min;
+		
+		info_access->cumul_real_time_sum += cumul_real;
+		info_access->self_time_sum += self;
+		
+		if (info_access->self_time_min > self_min) 
+			info_access->self_time_min = self_min;
+	
+		if (info_access->self_time_max < self_max) 
+			info_access->self_time_max = self_max;
+		
 		/*
 		VG_(printf)("Current tuple: %s %lu %llu %llu %llu %llu %llu\n",
 						curr->name, info_access->key, 
@@ -241,7 +275,7 @@ static Function * merge_tuple(HChar * line, Int size,
 						info_access->cumulative_time_sqr_sum, 
 						info_access->calls_number);
 		*/
-		
+
 	} else if (token[0] == 'a') {
 		
 		token = VG_(strtok)(NULL, "@");
@@ -259,7 +293,7 @@ static Function * merge_tuple(HChar * line, Int size,
 		if (VG_(strcmp)((HChar *)app, (HChar *) VG_(args_the_exename)) != 0) 
 			return (void *)1; /* special value */
 	
-	} else if (token[0] == 'a') {
+	} else if (token[0] == 'k') {
 		
 		token = VG_(strtok)(NULL, "@");
 		if (token == NULL) return curr;
@@ -267,6 +301,19 @@ static Function * merge_tuple(HChar * line, Int size,
 		if (sum == 0) return curr;
 		
 		tdata->other_metric += sum;
+		
+	} else if (token[0] == 'v') {
+		
+		token = VG_(strtok)(NULL, "@");
+		if (token == NULL) return curr;
+		ULong ver = VG_(strtoull10) ((HChar *)token, NULL);
+		if (ver != REPORT_VERSION) 
+			return (void *)1; /* special value */
+		
+	} else if (token[0] == 'q') {
+		
+		// Merge of report with CCT is not supported
+		return (void *)1; /* special value */
 		
 	}
 	
@@ -303,9 +350,12 @@ static Bool merge_report(HChar * report, ThreadData * tdata) {
 				line[offset++] = '\0';
 				//VG_(printf)("# %s\n", line);
 				current_routine = merge_tuple(line, offset,
-						current_routine, tdata);
+					current_routine, tdata);
 				
-				/* this means that the report has a different command */
+				/* 
+				 * this means that the report has a different command 
+				 * OR different report version
+				 */
 				if (current_routine == (void *)1) {
 					//VG_(printf)("No merge\n");
 					VG_(close)(file);
@@ -319,7 +369,7 @@ static Bool merge_report(HChar * report, ThreadData * tdata) {
 			AP_ASSERT(offset < 1024, "Line too long");
 		}
 		
-	} 
+	}	
 	
 	line[offset++] = '\0';
 	//VG_(printf)("# %s\n", line);
@@ -418,6 +468,7 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
 	HChar filename_priv[1024] = {0};
 	HChar * prog_name = (HChar *) VG_(args_the_exename);
 	
+	#if CCT == 0
 	/* last thread? try to merge... */
 	if (APROF_(running_threads) == 1) {
 		
@@ -446,6 +497,7 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
 		VG_(free)(reports);
 	
 	}
+	#endif
 	
 	/*
 	 * This does not work because we don't have the real path
@@ -476,7 +528,9 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
 		attempt++;
 	}
 
+	if (report == NULL) VG_(printf)("File: %s", filename);
 	AP_ASSERT(report != NULL, "Can't create report file");
+	
 	//VG_(printf)("Writing report TID=%u file=%s\n", tid, filename);
 
 	char buffer[10000];
@@ -586,14 +640,17 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
 			
 			while (info_access != NULL) {
 				
-				VG_(sprintf)(buffer, "q %lu %lu %u %u %llu %llu %llu\n",
+				VG_(sprintf)(buffer, "q %lu %lu %llu %llu %llu %llu %llu %llu\n",
 					ht->key, 
 					info_access->key,
 					info_access->min_cumulative_time,
 					info_access->max_cumulative_time,
-					info_access->cumulative_time_sum, 
-					info_access->cumulative_time_sqr_sum, 
-					info_access->calls_number);
+					info_access->cumulative_time_sum,  
+					info_access->calls_number,
+					info_access->cumul_real_time_sum,
+					info_access->self_time_sum,
+					info_access->self_time_min,
+					info_access->self_time_max);
 
 				APROF_(fwrite)(report, buffer, VG_(strlen)(buffer));
 
@@ -613,14 +670,17 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
 		
 		while (info_access != NULL) {
 			
-			VG_(sprintf)(buffer, "p %llu %lu %llu %llu %llu %llu %llu\n", 
+			VG_(sprintf)(buffer, "p %llu %lu %llu %llu %llu %llu %llu %llu\n", 
 				rtn_info->routine_id,
 				info_access->key,
 				info_access->min_cumulative_time,
 				info_access->max_cumulative_time,
 				info_access->cumulative_time_sum, 
-				info_access->cumulative_time_sqr_sum, 
-				info_access->calls_number);
+				info_access->calls_number,
+				info_access->cumul_real_time_sum,
+				info_access->self_time_sum,
+                info_access->self_time_min,
+				info_access->self_time_max);
 			
 			APROF_(fwrite)(report, buffer, VG_(strlen)(buffer));
 			
@@ -646,6 +706,19 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
 	
 	#if CCT
 	APROF_(print_report_CCT)(report, tdata->root, 0);
+	#endif
+	
+	#if CCT_GRAPHIC
+	VG_(sprintf)(filename_priv, "%s_%u.graph", VG_(basename)(prog_name), tid - 1);
+	filename = VG_(expand_file_name)("aprof log", filename_priv);
+	FILE * cct_rep = APROF_(fopen)(filename);
+	AP_ASSERT(cct_rep != NULL, "Can't create CCT report file");
+	VG_(sprintf)(buffer, "digraph G {\n");
+	APROF_(fwrite)(cct_rep, buffer, VG_(strlen)(buffer));
+	APROF_(print_cct_graph)(cct_rep, tdata->root, 0, NULL);
+	VG_(sprintf)(buffer, "}\n");
+	APROF_(fwrite)(cct_rep, buffer, VG_(strlen)(buffer));
+	APROF_(fclose)(cct_rep);
 	#endif
 
 	// close report file

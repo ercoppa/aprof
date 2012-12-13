@@ -75,11 +75,12 @@
                                 // with -finstrument-functions
 #define MEM_TRACE           1   // if 0 disable mem instrumentation
 #define DEBUG_ALLOCATION    0   // if 1, check every allocation made by aprof
-#define IGNORE_DL_RUNTIME   1   // if 1, disable analysis for dl_runtime_resolve (and its children)
-#define REPORT_VERSION      1   // see documentation on our site
-#define DISCARD_UNKNOWN     1   // discard info about PLT or unknown function (but this not implies to discard info about its children)
+#define IGNORE_DL_RUNTIME   0   // if 1, disable analysis for dl_runtime_resolve (and its children)
+#define REPORT_VERSION      3   // see documentation on our site: 1 == 1.1, 2 == 1.2, ...
+#define DISCARD_UNKNOWN     1   // discard info about PLT or unknown function (but this not imply to discard info about its children)
 #define IGNORE_REPEAT_ACC   1   // if 1, ignore repeated accesses to the same address within a BB
 #define REPORT_NAME         2   // if 1 report name is prog_TID.aprof, if 2 is PID_TID_ADDRMULTIPLE.aprof
+#define CCT_GRAPHIC         0   // output CCT as dot language in an external file (file.graph); EXPERIMENTAL
 
 /* shadow memory  */
 
@@ -116,6 +117,8 @@
                                 }
 
 /* Data structures */
+
+extern unsigned int inside_strcmp;
 
 typedef IRExpr IRAtom;
 // type of memory access
@@ -221,6 +224,10 @@ typedef struct CCTNode {
     ULong               routine_id;      // the routine id associated with this CCT node
     UInt                context_id;      // the context id associated with this CCT node
 
+    #if CCT_GRAPHIC
+    char *              name;            // Name of routine associated to this node
+    #endif
+
 } CCTNode;
 
 #endif
@@ -232,14 +239,10 @@ typedef struct {
     void *       next;                   // HT node attr...
     ULong        routine_id;             // unique id for this routine
     Function *   fn;                     // Info (name, file, etc) about this routine
-    ULong        total_self_time;        // total self time for this routine
-    ULong        total_cumulative_time;  // total cumulative time for this routine
-    ULong        calls;                  // number times this routine has been called
-    Int          recursive;              // 1 if the routine has ever been called recursively
     Int          recursion_pending;      // number of pending activations (> 1 means recursive)
     
     #if !CCT
-    HashTable *  rms_map;                // set of unique SMSInfo records for this routine
+    HashTable *  rms_map;                // set of unique RMSInfo records for this routine
     #else
     HashTable *  context_rms_map;        // set of pairs <context_id, sms_map>
     #endif
@@ -251,11 +254,15 @@ typedef struct {
 
     UWord       key;                     // rms value for this record
     void *      next;                    // HT node value
-    ULong       max_cumulative_time;     // maximum time spent by the routine in calls with this sms
-    ULong       min_cumulative_time;     // minimum time spent by the routine in calls with this sms
-    ULong       cumulative_time_sum;     // total time spent by the routine in calls with this sms
+    ULong       min_cumulative_time;     // minimum time spent by the routine in calls with this rms
+    ULong       max_cumulative_time;     // maximum time spent by the routine in calls with this rms
+    ULong       cumulative_time_sum;     // total time spent by the routine in calls with this rms
     ULong       calls_number;            // number of times the routine has been called with this sms
-    ULong       cumulative_time_sqr_sum; // sum of squares of times spent by the routine in calls with this sms
+    ULong       cumul_real_time_sum;     // total time spent by the routine in calls with this rms
+                                         // without considering recursive call of the same function
+    ULong       self_time_sum;           // total self time spent by the routine in calls with this rms
+    ULong       self_time_min;           // minimum self time spent by the routine in calls with this rms
+    ULong       self_time_max;           // maximum self time spent by the routine in calls with this rms
 
 } RMSInfo;
 
@@ -361,7 +368,7 @@ extern Int APROF_(events_used);
 /* Info about thread currently running (thread.c) */
 extern ThreadId APROF_(current_TID);
 extern ThreadData * APROF_(current_tdata); 
-extern UInt APROF_(running_threads); /* # running threads */
+extern UInt APROF_(running_threads); /* # running threads */;
 
 /* Basic block info HT and last BB exit type (callstack.c) */
 #if TRACE_FUNCTION
@@ -384,6 +391,7 @@ void APROF_(fclose)(FILE * f);
 /* handlers of thread events (thread.c) */
 void APROF_(switch_thread)(ThreadId tid, ULong blocks_dispatched);
 void APROF_(thread_exit)(ThreadId tid);
+void APROF_(kill_threads)(void);
 
 /* report functions (report.c) */
 void APROF_(generate_report)(ThreadData * tdata, ThreadId tid);
@@ -405,7 +413,7 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act);
 void APROF_(function_exit)(ThreadData * tdata, Activation * act);
 
 /* time (time.c) */
-ULong APROF_(time)(void);
+ULong APROF_(time)(ThreadData * tdata);
 #if TIME == INSTR
 VG_REGPARM(0) void APROF_(add_one_guest_instr)(void);
 #endif
@@ -433,6 +441,7 @@ Activation * APROF_(resize_stack)(ThreadData * tdata, unsigned int depth);
 UInt APROF_(str_hash)(const Char *s);
 
 #if TRACE_FUNCTION
+void APROF_(unwind_stack)(ThreadData * tdata);
 BB * APROF_(get_BB)(UWord target);
 VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb);
 #else
@@ -448,5 +457,9 @@ void APROF_(print_alloc)(void);
 
 /* internal debug info of valgrind */
 Bool VG_(get_fnname_no_cxx_demangle) (Addr a, Char* buf, Int nbuf);
+
+#if CCT_GRAPHIC
+void APROF_(print_cct_graph)(FILE * f, CCTNode* root, UInt parent_id, char * parent_name);
+#endif
 
 #endif
