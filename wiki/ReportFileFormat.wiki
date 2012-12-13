@@ -93,8 +93,7 @@ Syntax: `p routine-id rms min max sum occ real-sum self-sum`, where:
   * `min`: minimum routine cost on the given rms (64 bit unsigned integer)
   * `max`: maximum routine cost on the given rms (64 bit unsigned integer)
   * `sum`: sum of routine cumulative costs on the given rms (64 bit unsigned integer)
-  * `occ`: number of routine calls on the given rms (64 bit unsigned 
-integer)
+  * `occ`: number of routine calls on the given rms (64 bit unsigned integer)
   * `real-sum`: _real_ sum of routine cumulative costs on the given rms (cost of an activation is ignored if there is an active ancestor in the call stack with the same function name)(64 bit unsigned integer)
   * `self-sum`: sum of routine self costs on the given rms (64 bit unsigned integer)
   * `self-min`: minimum routine self cost on the given rms (64 bit unsigned integer)
