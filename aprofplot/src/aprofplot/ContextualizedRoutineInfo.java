@@ -63,7 +63,8 @@ public class ContextualizedRoutineInfo extends RoutineInfo {
 		long min_cost = Long.MAX_VALUE;
 		long max_cost = 0;
 		double total_cost = 0;
-		double sqr_total_cost = 0;
+        double total_real_cost = 0;
+		double total_self = 0;
 		long occ = 0;
 		while (i.hasNext()) {
 			
@@ -71,7 +72,7 @@ public class ContextualizedRoutineInfo extends RoutineInfo {
 			if (r.getRms() > current_rms) {
 				
 				Rms rr = new Rms(current_rms, min_cost, max_cost, total_cost,
-									sqr_total_cost, occ);
+									total_real_cost, total_self, occ);
 				
 				addRms(rr);
 				
@@ -79,7 +80,8 @@ public class ContextualizedRoutineInfo extends RoutineInfo {
 				min_cost = Long.MAX_VALUE;
 				max_cost = 0;
 				total_cost = 0;
-				sqr_total_cost = 0;
+                total_real_cost = 0;
+				total_self = 0;
 				occ = 0;
 				current_rms = r.getRms();
 				
@@ -89,13 +91,14 @@ public class ContextualizedRoutineInfo extends RoutineInfo {
 			min_cost = (long) Math.min(min_cost, r.getMinCost());
 			max_cost = (long) Math.max(max_cost, r.getMaxCost());
 			total_cost += r.getTotalCost();
-			sqr_total_cost += r.getSqrTotalCost();
+            total_real_cost += r.getTotalRealCost();
+			total_self += r.getTotalSelfCost();
 			occ += r.getOcc();
 			
 		}
 		
 		Rms rr = new Rms(current_rms, min_cost, max_cost, total_cost,
-									sqr_total_cost, occ);
+									total_real_cost, total_self, occ);
 				
 		addRms(rr);
 		

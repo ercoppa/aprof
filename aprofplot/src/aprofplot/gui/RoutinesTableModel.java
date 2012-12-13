@@ -155,13 +155,19 @@ public class RoutinesTableModel extends AbstractTableModel {
 					return rtn_info.getImage();
 				
 			case 2: // Routine Total cost
-					return new Double(rtn_info.getTotalCost());
-				
+                    if (main.isCumulativeTotalCost())
+                        return new Double(rtn_info.getTotalCost());
+                    else
+                        return new Double(rtn_info.getTotalSelfCost());
+                
 			case 3: // # Rms
 					return new Integer(rtn_info.getSizeRmsList());
 			
 			case 4: // % total cost rtn wrt all rtns
-					return new Double((rtn_info.getTotalCost() / report.getTotalCost()) * 100);
+                    if (main.isCumulativeTotalCost())
+                        return new Double((rtn_info.getTotalCost() / report.getTotalCost()) * 100);
+                    else
+                        return new Double((rtn_info.getTotalSelfCost() / report.getTotalCost()) * 100);
 			
 			case 5: // Cost Plot: we already set the renderer for Routine class
 					return rtn_info;

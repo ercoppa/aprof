@@ -35,8 +35,8 @@ public class GraphPanel extends javax.swing.JPanel {
 	public static final int MAXIMIZED = 0;
 	public static final int ZOOMED = 1;
 
-	// Perfomance monitor
-	PerfomanceMonitor perf = null;
+	// Performance monitor
+	PerformanceMonitor perf = null;
 	
 	private int graph_type;
 	private int cost_type;
@@ -2254,7 +2254,7 @@ public class GraphPanel extends javax.swing.JPanel {
 
 	}
 
-	public void setPerfomanceMonitor(PerfomanceMonitor p) {
+	public void setPerformanceMonitor(PerformanceMonitor p) {
 		
 		perf = p;
 		chart.addProgressListener(p);
@@ -2301,7 +2301,7 @@ public class GraphPanel extends javax.swing.JPanel {
 
 	private void refresh(boolean resetAxis) {
 		
-		if (perf != null) perf.start(this, PerfomanceMonitor.ELABORATE);
+		if (perf != null) perf.start(this, PerformanceMonitor.ELABORATE);
 		
 		disableNotification(true);
 		
@@ -2310,7 +2310,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		
 		disableNotification(false);
 		
-		if (perf != null) perf.stop(this, PerfomanceMonitor.ELABORATE);
+		if (perf != null) perf.stop(this, PerformanceMonitor.ELABORATE);
 		
 		System.gc();
 		

@@ -11,7 +11,11 @@ public class Main {
 	public static final int DEMANGLED = 0;
 	public static final int DEMANGLED_FULL = 1;
 	private static final int RECENT_SIZE = 6;
-
+    
+    // Total cost type
+    public final static int COST_CUMULATIVE = 0;
+    public final static int COST_SELF       = 1;
+    
 	private static ArrayList<MainWindow> windows = new ArrayList<MainWindow>();
 	private static ArrayList<String> blacklist = new ArrayList<String>();
 	private static ArrayList<File> recent_files = new ArrayList<File>();
@@ -21,6 +25,7 @@ public class Main {
 	private static String lastSourceDir = "";
 	private static boolean editor = false;
 	private static int rtn_display_mode = DEMANGLED;
+    private static int cost_total = COST_CUMULATIVE;
 	private static String ctags = "ctags-exuberant";
 	
 	public synchronized static void newWindow() {
@@ -33,6 +38,27 @@ public class Main {
 			}
 		});
 	}
+    
+    public synchronized static int getTotalCost() {
+        return cost_total;
+    }
+    
+    public synchronized static void setTotalCost(int cost) {
+        
+        switch(cost){
+            
+            case COST_CUMULATIVE:
+                cost_total = COST_CUMULATIVE;
+                break;
+                
+            case COST_SELF:
+                cost_total = COST_SELF;
+                break;
+                
+            default:
+                throw new RuntimeException("Invalid total cost");
+        }
+    }
 	
 	public synchronized static void removeWindow(MainWindow window) {
 		windows.remove(window);
@@ -161,6 +187,11 @@ public class Main {
 			out.print("rtn_display ");
 			if (rtn_display_mode == DEMANGLED) out.println("0");
 			else out.println("1");
+            
+            out.print("cost_display ");
+			if (cost_total == COST_CUMULATIVE) out.println("0");
+			else out.println("1");
+            
 			for (int i = 0; i < recent_files.size(); i++) 
 				out.println("recent " + recent_files.get(i));
 			out.close();
@@ -198,6 +229,11 @@ public class Main {
 					
 					if (tokenizer.hasMoreTokens())
 						rtn_display_mode = Integer.parseInt(tokenizer.nextToken());
+					
+				} else if (tag.equals("cost_display")) {
+					
+					if (tokenizer.hasMoreTokens())
+						cost_total = Integer.parseInt(tokenizer.nextToken());
 					
 				} else if (tag.equals("graph_order")) {
 					
@@ -275,11 +311,21 @@ public class Main {
 	
 	}
 	
+    private void compare(String reportA, String reportB) {
+        
+    }
+    
 	/**
 	 * @param args the command line arguments
 	 */
 	public static void main(String[] args) {
 		
+        if (args.length > 1) {
+            CompareReport c = new CompareReport(args[0], args[1]);
+            c.printDiff();
+            return;
+        }
+        
 		// Mac OS X integration
 		System.setProperty("apple.laf.useScreenMenuBar", "true");
 		System.setProperty("com.apple.mrj.application.apple.menu.about.name", "aprof-plot");

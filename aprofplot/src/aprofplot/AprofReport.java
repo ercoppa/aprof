@@ -11,6 +11,7 @@ public class AprofReport {
 	private int version;
 	private String metric;
 	private double total_cost;
+    private double total_self_cost;
 	private long total_calls;
 	private long total_contexts;
 	private ArrayList<RoutineInfo> routines;
@@ -82,17 +83,18 @@ public class AprofReport {
 
 			if (token.equals("r")) { // routine
 				
-				String rtn_name = null;
-				String lib = null;
-				String id = null;
+				String rtn_name;
+				String lib;
+                String sum = null;
+				String id;
 			
 				Scanner s = new Scanner(str);
-				s.findInLine("r \"([^\"]+)\" \"([^\"]+)\" ([0-9]+)");
-				MatchResult result = s.match();
+                s.findInLine("r \"([^\"]+)\" \"([^\"]+)\" ([0-9]+)");
+                MatchResult result = s.match();
 
 				rtn_name = result.group(1);
 				lib = result.group(2);
-				id = result.group(3);
+                id = result.group(3);
 				
 				int rtn_id = Integer.parseInt(id);
 				
@@ -103,13 +105,14 @@ public class AprofReport {
 					if (r == null) throw new IndexOutOfBoundsException();
 					r.setImage(lib);
 					r.setName(rtn_name);
-					
+                    
 				} catch(IndexOutOfBoundsException e) {
 					
 					if (contexts.isEmpty())
 						r = new RoutineInfo(rtn_id, rtn_name, lib);
 					else
-						r = (RoutineInfo) new ContextualizedRoutineInfo(rtn_id, rtn_name, lib);
+						r = (RoutineInfo) new ContextualizedRoutineInfo(rtn_id, 
+                                                   rtn_name, lib);
 					
 					while (routines.size() <= rtn_id) // Force capacity of array
 						routines.add(null);
@@ -139,7 +142,8 @@ public class AprofReport {
 					r = routines.get(routine_id);
 					if (r == null) throw new IndexOutOfBoundsException();
 					if (!(r instanceof ContextualizedRoutineInfo)) {
-						rc = new ContextualizedRoutineInfo(r.getID(), r.getName(), r.getImage());
+						rc = new ContextualizedRoutineInfo(r.getID(), 
+                                    r.getName(), r.getImage());
 						routines.set(routine_id, rc);
 					} else rc = (ContextualizedRoutineInfo)r;
 				} catch (IndexOutOfBoundsException e) {
@@ -180,14 +184,26 @@ public class AprofReport {
 			if (token.equals("p")) { // routine point
 				
 				int rtn_id = Integer.parseInt(tokenizer.nextToken());
-				long sms = Long.parseLong(tokenizer.nextToken());
+				long rms = Long.parseLong(tokenizer.nextToken());
 				long min_cost = Long.parseLong(tokenizer.nextToken());
 				long max_cost = Long.parseLong(tokenizer.nextToken());
 				double cost_sum = Double.parseDouble(tokenizer.nextToken());
-				double cost_sqr_sum = Double.parseDouble(tokenizer.nextToken());
-				long occ = Long.parseLong(tokenizer.nextToken());
-				Rms te = new Rms(sms, min_cost, max_cost, 
-											cost_sum, cost_sqr_sum, occ);
+                
+                if (this.version < 2) tokenizer.nextToken(); // skip sqr cost
+                
+                long occ = Long.parseLong(tokenizer.nextToken());
+                
+                double real = 0;
+                double self = 0;
+                if (this.version >= 2) {
+                    real = Double.parseDouble(tokenizer.nextToken());
+                    self = Double.parseDouble(tokenizer.nextToken());
+                    total_self_cost += self;
+                }
+                
+                Rms te = new Rms(rms, min_cost, max_cost, cost_sum, 
+                                    real, self, occ);
+                
 				RoutineInfo r = null;
 				try {
 					r = routines.get(rtn_id);
@@ -209,12 +225,22 @@ public class AprofReport {
 				long rms = Long.parseLong(tokenizer.nextToken());
 				long min_cost = Long.parseLong(tokenizer.nextToken());
 				long max_cost = Long.parseLong(tokenizer.nextToken());
-				long tot_cost = Long.parseLong(tokenizer.nextToken());
-				Double sqr_total_cost = Double.parseDouble(tokenizer.nextToken());
-				int occ = Integer.parseInt(tokenizer.nextToken());
-				
+				double tot_cost = Double.parseDouble(tokenizer.nextToken());
+                
+                if (this.version < 2) tokenizer.nextToken(); // skip sqr cost
+                
+                long occ = Long.parseLong(tokenizer.nextToken());
+                
+                double real = 0;
+                double self = 0;                
+                if (this.version >= 2) {
+                    real = Double.parseDouble(tokenizer.nextToken());
+                    self = Double.parseDouble(tokenizer.nextToken());
+                    total_self_cost += self;
+                }
+                
 				Rms te = new Rms(rms, min_cost, max_cost, tot_cost, 
-									sqr_total_cost, occ);
+									real, self, occ);
 				
 				RoutineContext c = null;
 				try {
@@ -308,9 +334,26 @@ public class AprofReport {
 			tot_calls_class_sms[id] += calls;
 			if (max_calls_class_sms[id] < calls) max_calls_class_sms[id] = calls;
 		}
+        
+        if (total_self_cost != total_cost) {
+            System.out.println("Total cost: " + total_cost);
+            System.out.println("Total self: " + total_self_cost);
+        }
 
 	}
 
+    public HashMap<String, Routine> getHashMapRoutines() {
+        
+        HashMap<String, Routine> h = new HashMap<String, Routine>();
+        Iterator i = routines.iterator();
+        while(i.hasNext()) {
+            Routine r = (Routine) i.next();
+            h.put(r.getName(), r);
+        }
+            
+        return h;
+    }
+    
 	public void save() throws Exception {
 		
 		File tmp = new File(this.file.getParent(), "aprof-plot.tmp");
@@ -513,6 +556,10 @@ public class AprofReport {
 	public double getTotalCost() {
 		return total_cost;
 	}
+    
+    public double getTotalSelfCost() {
+        return total_self_cost;
+    }
 
 	public long getTotalCalls() {
 		return total_calls;
