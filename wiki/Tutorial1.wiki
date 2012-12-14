@@ -61,5 +61,4 @@ The `main()` function invokes our quick sort implementation different times. Eac
 
 The quick sort implementation is not very optimized but we expect:
   * `partition()` should be O(n)
-  * `quick_sort_ric()` should be O( n * log(n) ) because the input is composed by random integers. 
-
+  * `quick_sort_ric()` should be O( n \* log(n) ) because the input is composed by random integers (average case performance). 
