@@ -98,7 +98,7 @@ public class AprofReport {
 				
 				int rtn_id = Integer.parseInt(id);
 				
-				RoutineInfo r = null;
+				RoutineInfo r;
 				try {
 					
 					r = routines.get(rtn_id);
@@ -201,8 +201,14 @@ public class AprofReport {
                     total_self_cost += self;
                 }
                 
+                long self_min = 0, self_max = 0;
+                if (this.version >= 3) {
+                    self_min = Long.parseLong(tokenizer.nextToken());
+                    self_max = Long.parseLong(tokenizer.nextToken());
+                }
+                
                 Rms te = new Rms(rms, min_cost, max_cost, cost_sum, 
-                                    real, self, occ);
+                                    real, self, occ, self_min, self_max);
                 
 				RoutineInfo r = null;
 				try {
@@ -239,8 +245,14 @@ public class AprofReport {
                     total_self_cost += self;
                 }
                 
+                long self_min = 0, self_max = 0;
+                if (this.version >= 3) {
+                    self_min = Long.parseLong(tokenizer.nextToken());
+                    self_max = Long.parseLong(tokenizer.nextToken());
+                }
+                
 				Rms te = new Rms(rms, min_cost, max_cost, tot_cost, 
-									real, self, occ);
+									real, self, occ, self_min, self_max);
 				
 				RoutineContext c = null;
 				try {
@@ -278,7 +290,7 @@ public class AprofReport {
 				while (tokenizer.hasMoreTokens()) {
 					name += (tokenizer.nextToken() + " ");
 				}
-				name.trim();
+                name = name.trim();
 				routines.get(index).setMangledName(name);
 				
 				continue;
@@ -319,8 +331,8 @@ public class AprofReport {
 		for (int i=0; i<routines.size(); i++) {
 			
 			long calls = routines.get(i).getTotalCalls();
-			if (routines.get(i).getTotalCost() > total_cost)
-				total_cost = routines.get(i).getTotalCost();
+			if (routines.get(i).getTotalCumulativeCost() > total_cost)
+				total_cost = routines.get(i).getTotalCumulativeCost();
 			total_calls += calls;
 			
 			int ne = routines.get(i).getSizeRmsList();

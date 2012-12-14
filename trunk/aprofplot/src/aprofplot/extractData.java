@@ -14,6 +14,10 @@ public class extractData {
 	
 	public static void main(String[] args) {
 		
+        /*
+         * Check cumulative versus self cost
+         */
+        
 		if (args.length < 1) {
 			System.out.println("You need to pass the name of the report...");
 			return;

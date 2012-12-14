@@ -74,7 +74,7 @@ public class MainWindow extends javax.swing.JFrame {
 		} catch (Exception e) {
 		
 			System.out.println("Fatal error during start of MainWindow [1]");
-			//e.printStackTrace();
+			e.printStackTrace();
 			System.exit(1);
 		
 		}
@@ -523,7 +523,7 @@ public class MainWindow extends javax.swing.JFrame {
         jToolBar1.add(jButton2);
         jToolBar1.add(jSeparator7);
 
-        jLabel7.setFont(new java.awt.Font("DejaVu Sans", 1, 13));
+        jLabel7.setFont(new java.awt.Font("DejaVu Sans", 1, 13)); // NOI18N
         jToolBar1.add(jLabel7);
 
         getContentPane().add(jToolBar1, java.awt.BorderLayout.NORTH);
@@ -704,7 +704,7 @@ public class MainWindow extends javax.swing.JFrame {
 
         jPanel7.setLayout(new java.awt.BorderLayout());
 
-        jLabel3.setFont(new java.awt.Font("DejaVu Sans", 1, 13));
+        jLabel3.setFont(new java.awt.Font("DejaVu Sans", 1, 13)); // NOI18N
         jLabel3.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel3.setText(" ");
         jPanel7.add(jLabel3, java.awt.BorderLayout.CENTER);
@@ -722,7 +722,7 @@ public class MainWindow extends javax.swing.JFrame {
         jScrollPane2.setVerticalScrollBarPolicy(javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
         jScrollPane2.setPreferredSize(new java.awt.Dimension(550, 450));
 
-        jTable2.setModel(new RmsTableModel(null));
+        jTable2.setModel(new RmsTableModel());
         jTable2.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         /*javax.swing.table.TableRowSorter<javax.swing.table.TableModel> */sms_table_sorter
         = new javax.swing.table.TableRowSorter<javax.swing.table.TableModel>(jTable2.getModel());
@@ -1168,7 +1168,24 @@ public class MainWindow extends javax.swing.JFrame {
                 "Couldn't open the chosen file", "Error", 
                 javax.swing.JOptionPane.ERROR_MESSAGE);
     }
-		
+    
+    private void sortRoutineTableByRms() {
+        
+        List <RowSorter.SortKey> routine_table_sortKeys 
+					= new ArrayList<RowSorter.SortKey>();
+        routine_table_sortKeys.add(new RowSorter.SortKey(3, SortOrder.DESCENDING));
+        routines_table_sorter.setSortKeys(routine_table_sortKeys);
+
+        routines_table_sorter.setSortable(5, false);
+    
+    }
+    
+    private void sortRmsTableByRms() {
+        List <RowSorter.SortKey> sms_table_sortKeys = new ArrayList<RowSorter.SortKey>();
+        sms_table_sortKeys.add(new RowSorter.SortKey(0, SortOrder.ASCENDING));
+        sms_table_sorter.setSortKeys(sms_table_sortKeys);
+    }
+    
 	private void setReport(AprofReport report, File file) throws Exception {
 		
 		/*
@@ -1219,12 +1236,8 @@ public class MainWindow extends javax.swing.JFrame {
 				m.setData(final_report);
 
 				// If routine table change structure, sorting by rms does not work anymore
-				java.util.List <RowSorter.SortKey> routine_table_sortKeys 
-					= new ArrayList<RowSorter.SortKey>();
-				routine_table_sortKeys.add(new RowSorter.SortKey(3, SortOrder.DESCENDING));
-				routines_table_sorter.setSortKeys(routine_table_sortKeys);
-
-				routines_table_sorter.setSortable(5, false);
+				sortRoutineTableByRms();
+                
 				if (final_report.hasContexts()) {
 				
 					 final Comparator<String> contextOrder = new Comparator<String>() {
@@ -1339,7 +1352,7 @@ public class MainWindow extends javax.swing.JFrame {
 		
 		int viewIndex = jTable1.getSelectedRow();
 		int viewIndex2 = jTable2.getSelectedRow();
-		((RmsTableModel)jTable2.getModel()).refresh();
+		((RmsTableModel)jTable2.getModel()).setData(rtn_info);
 		if (viewIndex2 >= 0) {
 			int modelIndex2 = jTable1.convertRowIndexToModel(viewIndex2);
 			viewIndex2 = jTable1.convertRowIndexToView(modelIndex2);
@@ -1355,7 +1368,15 @@ public class MainWindow extends javax.swing.JFrame {
 	}
     
     public void refreshRoutineTable() {
-        ((RoutinesTableModel)jTable1.getModel()).refresh();
+        ((RoutinesTableModel)jTable1.getModel()).setData(report);
+        setRoutinesTableFilter(routines_filter_criteria);
+        sortRoutineTableByRms();
+    }
+    
+    public void refreshRmsTable() {
+        ((RmsTableModel)jTable2.getModel()).setData(rtn_info);
+        refreshRmsTableFilter();
+        sortRmsTableByRms();
     }
 
 	protected boolean arePlotsLinked() {
@@ -1474,102 +1495,11 @@ public class MainWindow extends javax.swing.JFrame {
 	
 	}
 	
-	private void jTable1ValueChanged(javax.swing.event.ListSelectionEvent evt) {
-		
-		if (loading) return;
-		
-		int viewIndex = jTable1.getSelectedRow();
-		if (viewIndex >= 0) {
-			
-			int modelIndex = jTable1.convertRowIndexToModel(viewIndex);
-			Routine r = ((RoutinesTableModel)jTable1.getModel()).getRoutine(modelIndex);
-			
-			if (this.rtn_info == r) return;
-			//System.out.println("Selected row in routine table");
-			
-			String name = r.getName();
-			if (r instanceof RoutineContext) {
-				name += (" (" +((RoutineContext)r).getContextId() + "/" + ((RoutineContext)r).getOverallRoutine().getContextCount() + ")");
-			}
-			jLabel7.setText(name);
-			
-			// Load function source code in the editor
-			if (linked_editor)
-				loadFunctionInTextEditor(name);
-			
-			// Update all graph (except routine graph)
-			/*
-			if (jCheckBoxMenuItem4.isSelected()) CostGraphPanel.setData(r);
-			if (jCheckBoxMenuItem8.isSelected()) ratioGraphPanel.setData(r);
-			if (jCheckBoxMenuItem10.isSelected()) freqGraphPanel.setData(r);
-			if (jCheckBoxMenuItem5.isSelected()) MMMGraphPanel.setData(r);
-			if (jCheckBoxMenuItem9.isSelected()) VarGraphPanel.setData(r);
-			if (jCheckBoxMenuItem6.isSelected()) TotalCostGraphPanel.setData(r);
-			if (jCheckBoxMenuItem7.isSelected()) MccGraphPanel.setData(r);
-			*/
-			
-			perf.start(this, PerformanceMonitor.ELABORATE);
-			
-			if (jCheckBoxMenuItem4.isSelected()) CostGraphPanel.setRoutine(r);
-			if (jCheckBoxMenuItem8.isSelected()) ratioGraphPanel.setRoutine(r);
-			if (jCheckBoxMenuItem10.isSelected()) freqGraphPanel.setRoutine(r);
-			if (jCheckBoxMenuItem5.isSelected()) MMMGraphPanel.setRoutine(r);
-			if (jCheckBoxMenuItem9.isSelected()) VarGraphPanel.setRoutine(r);
-			if (jCheckBoxMenuItem6.isSelected()) TotalCostGraphPanel.setRoutine(r);
-			if (jCheckBoxMenuItem7.isSelected()) MccGraphPanel.setRoutine(r);
-			
-			Iterator i = r.getRmsListIterator();
-			while (i.hasNext()) {
-				
-				Rms te = (Rms) i.next();
-				
-				if (jCheckBoxMenuItem4.isSelected()) CostGraphPanel.addPoint(te);
-				if (jCheckBoxMenuItem8.isSelected()) ratioGraphPanel.addPoint(te);
-				if (jCheckBoxMenuItem10.isSelected()) freqGraphPanel.addPoint(te);
-				if (jCheckBoxMenuItem5.isSelected()) MMMGraphPanel.addPoint(te);
-				if (jCheckBoxMenuItem9.isSelected()) VarGraphPanel.addPoint(te);
-				if (jCheckBoxMenuItem6.isSelected()) TotalCostGraphPanel.addPoint(te);
-				if (jCheckBoxMenuItem7.isSelected()) MccGraphPanel.addPoint(te);
-				
-			}
-			
-			if (jCheckBoxMenuItem4.isSelected()) CostGraphPanel.maximize();
-			if (jCheckBoxMenuItem8.isSelected()) ratioGraphPanel.maximize();
-			if (jCheckBoxMenuItem10.isSelected()) freqGraphPanel.maximize();
-			if (jCheckBoxMenuItem5.isSelected()) MMMGraphPanel.maximize();
-			if (jCheckBoxMenuItem9.isSelected()) VarGraphPanel.maximize();
-			if (jCheckBoxMenuItem6.isSelected()) TotalCostGraphPanel.maximize();
-			if (jCheckBoxMenuItem7.isSelected()) MccGraphPanel.maximize();
-			
-			// enable/disable entries in export menu related to routine
-			if (r == null) jMenuItem11.setEnabled(false);
-			else jMenuItem11.setEnabled(true);
-
-			this.rtn_info = r;
-			
-			// Update routine profile panel
-			((RmsTableModel)jTable2.getModel()).setData(r);
-			
-			// Update stack trace panel
-			if (r instanceof RoutineContext) {
-				
-				((StackTraceListModel)jList1.getModel()).setData(((RoutineContext)r).getStackTrace());
-				showStackTrace(true);
-				
-			} else {
-				
-				((StackTraceListModel)jList1.getModel()).setData(null);
-				showStackTrace(false);
-			
-			}
-			
-			perf.stop(this, PerformanceMonitor.ELABORATE);
-			System.gc();
-			//updateContextTree(r);
-			
-		} else {
-			
-			((RmsTableModel)jTable2.getModel()).setData(null);
+    private void loadRoutine(Routine r) {
+    
+        if (r == null) {
+            
+            ((RmsTableModel)jTable2.getModel()).setData(null);
 			((StackTraceListModel)jList1.getModel()).setData(null);
 			jLabel7.setText("");
 			
@@ -1585,6 +1515,111 @@ public class MainWindow extends javax.swing.JFrame {
 			
 			// Initially hide stack trace panel
 			showStackTrace(false);
+            return;
+        }
+        
+        String name = r.getName();
+        
+        if (r instanceof RoutineContext) {
+            name += (" (" +((RoutineContext)r).getContextId() + "/" +
+                    ((RoutineContext)r).getOverallRoutine().getContextCount() 
+                    + ")");
+        }
+        jLabel7.setText(name);
+
+        // Load function source code in the editor
+        if (linked_editor)
+            loadFunctionInTextEditor(name);
+
+        // Update all graph (except routine graph)
+        /*
+        if (jCheckBoxMenuItem4.isSelected()) CostGraphPanel.setData(r);
+        if (jCheckBoxMenuItem8.isSelected()) ratioGraphPanel.setData(r);
+        if (jCheckBoxMenuItem10.isSelected()) freqGraphPanel.setData(r);
+        if (jCheckBoxMenuItem5.isSelected()) MMMGraphPanel.setData(r);
+        if (jCheckBoxMenuItem9.isSelected()) VarGraphPanel.setData(r);
+        if (jCheckBoxMenuItem6.isSelected()) TotalCostGraphPanel.setData(r);
+        if (jCheckBoxMenuItem7.isSelected()) MccGraphPanel.setData(r);
+        */
+
+        perf.start(this, PerformanceMonitor.ELABORATE);
+
+        if (jCheckBoxMenuItem4.isSelected()) CostGraphPanel.setRoutine(r);
+        if (jCheckBoxMenuItem8.isSelected()) ratioGraphPanel.setRoutine(r);
+        if (jCheckBoxMenuItem10.isSelected()) freqGraphPanel.setRoutine(r);
+        if (jCheckBoxMenuItem5.isSelected()) MMMGraphPanel.setRoutine(r);
+        if (jCheckBoxMenuItem9.isSelected()) VarGraphPanel.setRoutine(r);
+        if (jCheckBoxMenuItem6.isSelected()) TotalCostGraphPanel.setRoutine(r);
+        if (jCheckBoxMenuItem7.isSelected()) MccGraphPanel.setRoutine(r);
+
+        Iterator i = r.getRmsListIterator();
+        while (i.hasNext()) {
+
+            Rms te = (Rms) i.next();
+
+            if (jCheckBoxMenuItem4.isSelected()) CostGraphPanel.addPoint(te);
+            if (jCheckBoxMenuItem8.isSelected()) ratioGraphPanel.addPoint(te);
+            if (jCheckBoxMenuItem10.isSelected()) freqGraphPanel.addPoint(te);
+            if (jCheckBoxMenuItem5.isSelected()) MMMGraphPanel.addPoint(te);
+            if (jCheckBoxMenuItem9.isSelected()) VarGraphPanel.addPoint(te);
+            if (jCheckBoxMenuItem6.isSelected()) TotalCostGraphPanel.addPoint(te);
+            if (jCheckBoxMenuItem7.isSelected()) MccGraphPanel.addPoint(te);
+
+        }
+
+        if (jCheckBoxMenuItem4.isSelected()) CostGraphPanel.maximize();
+        if (jCheckBoxMenuItem8.isSelected()) ratioGraphPanel.maximize();
+        if (jCheckBoxMenuItem10.isSelected()) freqGraphPanel.maximize();
+        if (jCheckBoxMenuItem5.isSelected()) MMMGraphPanel.maximize();
+        if (jCheckBoxMenuItem9.isSelected()) VarGraphPanel.maximize();
+        if (jCheckBoxMenuItem6.isSelected()) TotalCostGraphPanel.maximize();
+        if (jCheckBoxMenuItem7.isSelected()) MccGraphPanel.maximize();
+
+        // enable/disable entries in export menu related to routine
+        if (r == null) jMenuItem11.setEnabled(false);
+        else jMenuItem11.setEnabled(true);
+
+        this.rtn_info = r;
+
+        // Update routine profile panel
+        ((RmsTableModel)jTable2.getModel()).setData(r);
+
+        // Update stack trace panel
+        if (r instanceof RoutineContext) {
+
+            ((StackTraceListModel)jList1.getModel()).setData(((RoutineContext)r).getStackTrace());
+            showStackTrace(true);
+
+        } else {
+
+            ((StackTraceListModel)jList1.getModel()).setData(null);
+            showStackTrace(false);
+
+        }
+
+        perf.stop(this, PerformanceMonitor.ELABORATE);
+        System.gc();
+        //updateContextTree(r);
+    
+    }
+    
+	private void jTable1ValueChanged(javax.swing.event.ListSelectionEvent evt) {
+		
+		if (loading) return;
+		
+		int viewIndex = jTable1.getSelectedRow();
+		if (viewIndex >= 0) {
+			
+			int modelIndex = jTable1.convertRowIndexToModel(viewIndex);
+			Routine r = ((RoutinesTableModel)jTable1.getModel()).getRoutine(modelIndex);
+			
+			if (this.rtn_info == r) return;
+			//System.out.println("Selected row in routine table");
+			loadRoutine(r);
+			
+		} else {
+			
+			loadRoutine(null);
 		
 		}
 
@@ -1862,15 +1897,23 @@ public class MainWindow extends javax.swing.JFrame {
 				tmp = chooser.getSelectedFile();
 				tmp.createNewFile();
 				PrintWriter out = new PrintWriter(new FileWriter(tmp));
+                
+                out.println("# RMS CUMUL_MIN CUMUL_MAX CUMUL_SUM "
+                            + "REAL_SUM OCC SELF_SUM SELF_MIN SELF_MAX");
+                
 				while (it.hasNext()) {
 
 					Rms s = (Rms) it.next();
-					out.print(s.getRms() + " " + (int) s.getMinCost() 
-										+ " " + (int) s.getMaxCost() 
-										+ " " + (long) s.getTotalCost()
-										+ " " + (long)s.getSqrTotalCost()
-										+ " " + (long)s.getOcc());
-					out.format(" %.2f%n", rtn_info.getMcc(s.getRms()));
+					out.println(s.getRms() + " " + (int) s.getCumulativeMinCost() 
+										+ " " + (int) s.getCumulativeMaxCost() 
+										+ " " + (long) s.getTotalCumulativeCost()
+                                        + " " + (long) s.getTotalRealCost()
+										+ " " + (long)s.getOcc()
+                                        + " " + (int) s.getSelfMinCost() 
+										+ " " + (int) s.getSelfMaxCost() 
+										+ " " + (long) s.getTotalSelfCost()
+                              );
+					//out.format(" %.2f%n", rtn_info.getMcc(s.getRms()));
 
 				}
 				out.close();
@@ -2428,6 +2471,10 @@ public class MainWindow extends javax.swing.JFrame {
 		if (MccGraphPanel != null) MccGraphPanel.refreshFilter();
 	}
 
+    protected void refreshRmsTableFilter() {
+		setRmsTableFilter(rms_filter_criteria);
+	}
+    
 	protected void setRmsTableFilter(String[] criteria) {
 		
 		this.rms_filter_criteria = criteria;
@@ -3076,11 +3123,22 @@ public class MainWindow extends javax.swing.JFrame {
 	
 	}
 	
-    public boolean isCumulativeTotalCost() {
+    public boolean isDisplayCumulativeTotalCost() {
         
-        if (Main.getTotalCost() == Main.COST_CUMULATIVE) return true;        
+        if (Main.getDisplayTotalCost() == Main.COST_CUMULATIVE) return true;        
         return false;
     
+    }
+    
+    public boolean isChartCumulativeCost() {
+        
+        if (Main.getChartCost() == Main.COST_CUMULATIVE) return true;        
+        return false;
+    
+    }
+    
+    public void refreshRoutine() {
+        loadRoutine(this.rtn_info);
     }
     
 	// For now we decide to disable context tree panel 
@@ -3219,16 +3277,16 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JScrollPane jScrollPane5;
     private javax.swing.JSeparator jSeparator1;
-    private javax.swing.JSeparator jSeparator10;
-    private javax.swing.JSeparator jSeparator11;
+    private javax.swing.JToolBar.Separator jSeparator10;
+    private javax.swing.JToolBar.Separator jSeparator11;
     private javax.swing.JToolBar.Separator jSeparator2;
     private javax.swing.JToolBar.Separator jSeparator3;
     private javax.swing.JSeparator jSeparator4;
     private javax.swing.JToolBar.Separator jSeparator5;
     private javax.swing.JToolBar.Separator jSeparator6;
     private javax.swing.JToolBar.Separator jSeparator7;
-    private javax.swing.JSeparator jSeparator8;
-    private javax.swing.JSeparator jSeparator9;
+    private javax.swing.JToolBar.Separator jSeparator8;
+    private javax.swing.JToolBar.Separator jSeparator9;
     private javax.swing.JSplitPane jSplitPane1;
     private javax.swing.JSplitPane jSplitPane2;
     private javax.swing.JSplitPane jSplitPane3;
@@ -3265,7 +3323,7 @@ public class MainWindow extends javax.swing.JFrame {
 	private Object highlight_line = null;
 	
 	private String[] routines_filter_criteria = null;
-	private String[] rms_filter_criteria = null;
+	private String[] rms_filter_criteria = new String[4];
 	private AprofReport report;
 	private boolean linked_plots = true;
 	private javax.swing.JMenuItem[] recentMenuItems = new javax.swing.JMenuItem[6];

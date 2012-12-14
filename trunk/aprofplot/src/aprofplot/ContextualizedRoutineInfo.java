@@ -45,7 +45,7 @@ public class ContextualizedRoutineInfo extends RoutineInfo {
 	
 	public void mergeLazyList() {
 		
-		if (lazy_list.size() == 0) return;
+		if (lazy_list.isEmpty()) return;
 		
 		// Sort the list
 		Collections.sort(lazy_list, new Comparator<Rms> () {
@@ -65,6 +65,8 @@ public class ContextualizedRoutineInfo extends RoutineInfo {
 		double total_cost = 0;
         double total_real_cost = 0;
 		double total_self = 0;
+        long self_min = 0;
+        long self_max = 0;
 		long occ = 0;
 		while (i.hasNext()) {
 			
@@ -72,7 +74,8 @@ public class ContextualizedRoutineInfo extends RoutineInfo {
 			if (r.getRms() > current_rms) {
 				
 				Rms rr = new Rms(current_rms, min_cost, max_cost, total_cost,
-									total_real_cost, total_self, occ);
+									total_real_cost, total_self, occ, 
+                                    self_min, self_max);
 				
 				addRms(rr);
 				
@@ -82,23 +85,28 @@ public class ContextualizedRoutineInfo extends RoutineInfo {
 				total_cost = 0;
                 total_real_cost = 0;
 				total_self = 0;
+                self_min = 0;
+                self_max = 0;
 				occ = 0;
 				current_rms = r.getRms();
 				
 			}
 			
 			// update
-			min_cost = (long) Math.min(min_cost, r.getMinCost());
-			max_cost = (long) Math.max(max_cost, r.getMaxCost());
-			total_cost += r.getTotalCost();
+			min_cost = (long) Math.min(min_cost, r.getCumulativeMinCost());
+			max_cost = (long) Math.max(max_cost, r.getCumulativeMaxCost());
+			total_cost += r.getTotalCumulativeCost();
             total_real_cost += r.getTotalRealCost();
 			total_self += r.getTotalSelfCost();
-			occ += r.getOcc();
+            self_min = (long) Math.min(self_min, r.getSelfMinCost());
+			self_max = (long) Math.max(self_max, r.getSelfMaxCost());
+            occ += r.getOcc();
 			
 		}
 		
 		Rms rr = new Rms(current_rms, min_cost, max_cost, total_cost,
-									total_real_cost, total_self, occ);
+									total_real_cost, total_self, occ,
+                                    self_min, self_max);
 				
 		addRms(rr);
 		

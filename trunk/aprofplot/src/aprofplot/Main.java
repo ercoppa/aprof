@@ -25,7 +25,8 @@ public class Main {
 	private static String lastSourceDir = "";
 	private static boolean editor = false;
 	private static int rtn_display_mode = DEMANGLED;
-    private static int cost_total = COST_CUMULATIVE;
+    private static int display_cost_total = COST_CUMULATIVE;
+    private static int chart_cost = COST_CUMULATIVE;
 	private static String ctags = "ctags-exuberant";
 	
 	public synchronized static void newWindow() {
@@ -39,24 +40,45 @@ public class Main {
 		});
 	}
     
-    public synchronized static int getTotalCost() {
-        return cost_total;
+    public synchronized static int getDisplayTotalCost() {
+        return display_cost_total;
     }
     
-    public synchronized static void setTotalCost(int cost) {
+    public synchronized static void setDisplayTotalCost(int cost) {
         
         switch(cost){
             
             case COST_CUMULATIVE:
-                cost_total = COST_CUMULATIVE;
+                display_cost_total = COST_CUMULATIVE;
                 break;
                 
             case COST_SELF:
-                cost_total = COST_SELF;
+                display_cost_total = COST_SELF;
                 break;
                 
             default:
                 throw new RuntimeException("Invalid total cost");
+        }
+    }
+    
+    public synchronized static int getChartCost() {
+        return chart_cost;
+    }
+    
+    public synchronized static void setChartCost(int cost) {
+        
+        switch(cost){
+            
+            case COST_CUMULATIVE:
+                chart_cost = COST_CUMULATIVE;
+                break;
+                
+            case COST_SELF:
+                chart_cost = COST_SELF;
+                break;
+                
+            default:
+                throw new RuntimeException("Invalid cost");
         }
     }
 	
@@ -189,7 +211,11 @@ public class Main {
 			else out.println("1");
             
             out.print("cost_display ");
-			if (cost_total == COST_CUMULATIVE) out.println("0");
+			if (display_cost_total == COST_CUMULATIVE) out.println("0");
+			else out.println("1");
+            
+            out.print("chart_cost ");
+			if (chart_cost == COST_CUMULATIVE) out.println("0");
 			else out.println("1");
             
 			for (int i = 0; i < recent_files.size(); i++) 
@@ -233,7 +259,12 @@ public class Main {
 				} else if (tag.equals("cost_display")) {
 					
 					if (tokenizer.hasMoreTokens())
-						cost_total = Integer.parseInt(tokenizer.nextToken());
+						display_cost_total = Integer.parseInt(tokenizer.nextToken());
+					
+				} else if (tag.equals("chart_cost")) {
+					
+					if (tokenizer.hasMoreTokens())
+						chart_cost = Integer.parseInt(tokenizer.nextToken());
 					
 				} else if (tag.equals("graph_order")) {
 					
@@ -310,10 +341,6 @@ public class Main {
 		graph_order.add(5); // variance cost plot		
 	
 	}
-	
-    private void compare(String reportA, String reportB) {
-        
-    }
     
 	/**
 	 * @param args the command line arguments

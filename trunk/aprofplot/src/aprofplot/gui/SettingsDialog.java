@@ -26,8 +26,11 @@ public class SettingsDialog extends javax.swing.JDialog {
         if (Main.getRtnDisplayMode() == Main.DEMANGLED) jRadioButton1.setSelected(true);
 		else jRadioButton2.setSelected(true);
         
-         if (Main.getTotalCost() == Main.COST_CUMULATIVE) jRadioButton5.setSelected(true);
+        if (Main.getDisplayTotalCost() == Main.COST_CUMULATIVE) jRadioButton5.setSelected(true);
 		else jRadioButton6.setSelected(true);
+        
+        if (Main.getChartCost() == Main.COST_CUMULATIVE) jRadioButton7.setSelected(true);
+		else jRadioButton8.setSelected(true);
         
 		jButton2.setEnabled(false);
 		this.setResizable(false);
@@ -44,6 +47,8 @@ public class SettingsDialog extends javax.swing.JDialog {
     private void initComponents() {
 
         buttonGroup1 = new ButtonGroup();
+        buttonGroup2 = new ButtonGroup();
+        buttonGroup3 = new ButtonGroup();
         jTabbedPane1 = new JTabbedPane();
         jPanel4 = new JPanel();
         jPanel7 = new JPanel();
@@ -52,6 +57,9 @@ public class SettingsDialog extends javax.swing.JDialog {
         jPanel8 = new JPanel();
         jRadioButton5 = new JRadioButton();
         jRadioButton6 = new JRadioButton();
+        jPanel9 = new JPanel();
+        jRadioButton7 = new JRadioButton();
+        jRadioButton8 = new JRadioButton();
         jPanel1 = new JPanel();
         jScrollPane1 = new JScrollPane();
         jTextArea1 = new JTextArea();
@@ -74,7 +82,7 @@ public class SettingsDialog extends javax.swing.JDialog {
         jTabbedPane1.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
 
         jPanel4.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));
-        jPanel4.setLayout(new GridLayout(2, 1));
+        jPanel4.setLayout(new GridLayout(3, 1));
 
         jPanel7.setBorder(BorderFactory.createTitledBorder("Routine naming policy"));
         jPanel7.setLayout(new BoxLayout(jPanel7, BoxLayout.Y_AXIS));
@@ -99,10 +107,10 @@ public class SettingsDialog extends javax.swing.JDialog {
 
         jPanel4.add(jPanel7);
 
-        jPanel8.setBorder(BorderFactory.createTitledBorder("Cost displayed by routine's table "));
+        jPanel8.setBorder(BorderFactory.createTitledBorder("Displayed cost in routine table"));
         jPanel8.setLayout(new BoxLayout(jPanel8, BoxLayout.Y_AXIS));
 
-        buttonGroup1.add(jRadioButton5);
+        buttonGroup2.add(jRadioButton5);
         jRadioButton5.setText("Cumulative total cost");
         jRadioButton5.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
@@ -111,7 +119,7 @@ public class SettingsDialog extends javax.swing.JDialog {
         });
         jPanel8.add(jRadioButton5);
 
-        buttonGroup1.add(jRadioButton6);
+        buttonGroup2.add(jRadioButton6);
         jRadioButton6.setText("Self total cost ");
         jRadioButton6.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
@@ -121,6 +129,30 @@ public class SettingsDialog extends javax.swing.JDialog {
         jPanel8.add(jRadioButton6);
 
         jPanel4.add(jPanel8);
+        jPanel8.getAccessibleContext().setAccessibleName("Displayed cost in routine table");
+
+        jPanel9.setBorder(BorderFactory.createTitledBorder("Displayed cost in charts"));
+        jPanel9.setLayout(new BoxLayout(jPanel9, BoxLayout.Y_AXIS));
+
+        buttonGroup3.add(jRadioButton7);
+        jRadioButton7.setText("Cumulative cost");
+        jRadioButton7.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                jRadioButton7ActionPerformed(evt);
+            }
+        });
+        jPanel9.add(jRadioButton7);
+
+        buttonGroup3.add(jRadioButton8);
+        jRadioButton8.setText("Self cost ");
+        jRadioButton8.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                jRadioButton8ActionPerformed(evt);
+            }
+        });
+        jPanel9.add(jRadioButton8);
+
+        jPanel4.add(jPanel9);
 
         jTabbedPane1.addTab("Display", jPanel4);
         jPanel4.getAccessibleContext().setAccessibleName("");
@@ -198,13 +230,13 @@ public class SettingsDialog extends javax.swing.JDialog {
         jPanel5.setLayout(jPanel5Layout);
         jPanel5Layout.setHorizontalGroup(
             jPanel5Layout.createParallelGroup(Alignment.LEADING)
-            .addComponent(jPanel6, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 392, Short.MAX_VALUE)
+            .addComponent(jPanel6, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 682, Short.MAX_VALUE)
         );
         jPanel5Layout.setVerticalGroup(
             jPanel5Layout.createParallelGroup(Alignment.LEADING)
             .addGroup(jPanel5Layout.createSequentialGroup()
                 .addComponent(jPanel6, GroupLayout.PREFERRED_SIZE, 100, GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(200, Short.MAX_VALUE))
+                .addContainerGap(127, Short.MAX_VALUE))
         );
 
         jTabbedPane1.addTab("Tools", jPanel5);
@@ -256,10 +288,15 @@ public class SettingsDialog extends javax.swing.JDialog {
 		if (jRadioButton1.isSelected()) Main.storeRtnDisplayMode(Main.DEMANGLED);
 		else Main.storeRtnDisplayMode(Main.DEMANGLED_FULL);
 		
-        if (jRadioButton5.isSelected()) Main.setTotalCost(Main.COST_CUMULATIVE);
-		else Main.setTotalCost(Main.COST_SELF);
+        if (jRadioButton5.isSelected()) Main.setDisplayTotalCost(Main.COST_CUMULATIVE);
+		else Main.setDisplayTotalCost(Main.COST_SELF);
+        
+        if (jRadioButton7.isSelected()) Main.setChartCost(Main.COST_CUMULATIVE);
+		else Main.setChartCost(Main.COST_SELF);
         
         ((MainWindow)getParent()).refreshRoutineTable();
+        ((MainWindow)getParent()).refreshRmsTable();
+        ((MainWindow)getParent()).refreshRoutine();
         
         Main.storeBlacklist(blacklist, jCheckBox1.isSelected());
 		((MainWindow)getParent()).refreshRoutinesTableFilter();
@@ -324,9 +361,19 @@ public class SettingsDialog extends javax.swing.JDialog {
         jButton2.setEnabled(true);
     }//GEN-LAST:event_jRadioButton6ActionPerformed
 
+    private void jRadioButton7ActionPerformed(ActionEvent evt) {//GEN-FIRST:event_jRadioButton7ActionPerformed
+        jButton2.setEnabled(true);
+    }//GEN-LAST:event_jRadioButton7ActionPerformed
+
+    private void jRadioButton8ActionPerformed(ActionEvent evt) {//GEN-FIRST:event_jRadioButton8ActionPerformed
+        jButton2.setEnabled(true);
+    }//GEN-LAST:event_jRadioButton8ActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private ButtonGroup buttonGroup1;
+    private ButtonGroup buttonGroup2;
+    private ButtonGroup buttonGroup3;
     private JButton jButton1;
     private JButton jButton2;
     private JButton jButton3;
@@ -342,10 +389,13 @@ public class SettingsDialog extends javax.swing.JDialog {
     private JPanel jPanel6;
     private JPanel jPanel7;
     private JPanel jPanel8;
+    private JPanel jPanel9;
     private JRadioButton jRadioButton1;
     private JRadioButton jRadioButton2;
     private JRadioButton jRadioButton5;
     private JRadioButton jRadioButton6;
+    private JRadioButton jRadioButton7;
+    private JRadioButton jRadioButton8;
     private JScrollPane jScrollPane1;
     private JTabbedPane jTabbedPane1;
     private JTextArea jTextArea1;
