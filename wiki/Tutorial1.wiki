@@ -57,9 +57,9 @@ int main() {
 }
 }}} 
 
-The `main()` function invokes our quick sort implementation different times. Each time the array is filled with some random numbers. In a real program probably our quick sort implementation would be called during the normal execution of our application and so we don't need to create an _unrealistic_ `main()` in order to profile our code.
+The `main()` function invokes our quick sort implementation different times. Each time the array is filled with some random numbers. In a real program probably our quick sort implementation would be called during the normal execution of our application and so we don't need to create an _unrealistic_ `main()` in order to profile our code. `quick_sort_ric()` and `partition()` are textbook implementations and therefore they are not very optimized (the first element of the array is chosen as pivot by `partition()`).
 
-Our quick sort implementation is not very optimized but we expect that:
+We expect that:
   * `partition()` should be O(n)
   * `quick_sort_ric()` should be O( n `*` log(n) ) because the input is composed by random integers (average case performance). 
 
