@@ -5,11 +5,15 @@ import java.util.*;
 public abstract class Routine implements Comparable<Routine> {
 
 	// Some statistics about the routine
-	private double min_cost;
-	private double max_cost;
-	private double max_avg_cost;
+	private double min_cost; // cumulative
+	private double max_cost; // cumulative
+	private double max_avg_cost; // cumulative
+    
     private double total_cost;
     private double total_self;
+    private double self_min; 
+    private double self_max_avg;
+    private double self_max;
 	private long total_calls;
 	private long min_rms;
 	private long max_rms;
@@ -17,6 +21,7 @@ public abstract class Routine implements Comparable<Routine> {
 	private ArrayList<Rms> rms_list;
 	
 	// Mcc cache hack
+    private int chart_cost = Main.COST_CUMULATIVE;
 	private long last_mcc_n = -1;
 	private double last_mcc_est = 0;
 	private double last_mcc_occ = 0;
@@ -30,11 +35,15 @@ public abstract class Routine implements Comparable<Routine> {
 	     
 	public Routine() {
 		
-		min_cost = Long.MAX_VALUE;
+		min_cost = Double.MAX_VALUE;
 		max_cost = 0;
+        max_avg_cost = 0;
 		total_calls = 0;
 		min_rms = Integer.MAX_VALUE;
 		max_rms = 0;
+        self_min = Double.MAX_VALUE;
+        self_max = 0;
+        self_max_avg = 0;
 		rms_list = new ArrayList<Rms>();
 	
 	}
@@ -50,10 +59,15 @@ public abstract class Routine implements Comparable<Routine> {
 
 		rms_list.add(r);
 		
-		if (r.getCost() < min_cost) min_cost = r.getCost();
-		if (r.getCost() > max_cost) max_cost = r.getCost();
-		if (r.getAvgCost() > max_avg_cost) max_avg_cost = r.getAvgCost();
-		if (r.getRms() > max_rms) max_rms = r.getRms();
+		if (r.getCumulativeMinCost() < min_cost) min_cost = r.getCumulativeMinCost();
+		if (r.getCumulativeMaxCost() > max_cost) max_cost = r.getCumulativeMaxCost();
+		if (r.getCumulativeAvgCost() > max_avg_cost) max_avg_cost = r.getCumulativeAvgCost();
+        
+        if (r.getSelfMinCost() < self_min) self_min = r.getSelfMinCost();
+		if (r.getSelfMaxCost() > self_max) self_max = r.getSelfMaxCost();
+		if (r.getSelfAvgCost() > self_max_avg) self_max_avg = r.getSelfAvgCost();
+		
+        if (r.getRms() > max_rms) max_rms = r.getRms();
 		if (r.getRms() < min_rms) min_rms = r.getRms();
 		
         total_cost += r.getTotalRealCost();
@@ -69,20 +83,40 @@ public abstract class Routine implements Comparable<Routine> {
 	}
     
 	public double getMinCost() {
-		return min_cost;
+        
+        if (Main.getChartCost() == Main.COST_CUMULATIVE)
+            return min_cost;
+		
+        return self_min;
 	}
 	
 	public double getMaxCost() {
-		return max_cost;
+        
+        if (Main.getChartCost() == Main.COST_CUMULATIVE)
+            return max_cost;
+		
+        return self_max;
 	}
 
 	public double getMaxAvgCost() {
-		return max_avg_cost;
+        
+        if (Main.getChartCost() == Main.COST_CUMULATIVE)
+            return max_avg_cost;
+		
+        return self_max_avg;
 	}
 
 	public double getTotalCost() {
-		return total_cost;
+        
+        if (Main.getChartCost() == Main.COST_CUMULATIVE)
+            return total_cost;
+		
+        return total_self;
 	}
+    
+    public double getTotalCumulativeCost() {
+        return total_cost;
+    }
     
     public double getTotalSelfCost() {
         return total_self;
@@ -127,7 +161,11 @@ public abstract class Routine implements Comparable<Routine> {
 	public double getMcc(long n) {
 		
 		if (sort_status != SORT_BY_ACCESS) sortRmsListByAccesses();
-		
+		if (Main.getChartCost() != this.chart_cost) {
+            this.chart_cost = Main.getChartCost();
+            last_mcc_n = -1;
+        }
+        
 		double est = 0;
 		double sum_occ = 0;
 		long i = 0;

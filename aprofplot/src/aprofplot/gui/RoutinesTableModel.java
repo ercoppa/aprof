@@ -9,8 +9,8 @@ public class RoutinesTableModel extends AbstractTableModel {
 	
 	private AprofReport report;
 	private ArrayList<Routine> elements;
-	private String[] columnNames;
-	private Class[] columnTypes;
+	private ArrayList<String> columnNames;
+	private ArrayList<Class> columnTypes;
 	private MainWindow main = null;
 	
 	public RoutinesTableModel(AprofReport report, MainWindow main) {
@@ -20,61 +20,69 @@ public class RoutinesTableModel extends AbstractTableModel {
 
 	private void updateColumns(boolean hasContext) {
 		
+        columnNames = new ArrayList<String>();
+        columnTypes = new ArrayList<Class>();
+        
+        // Name
+        columnNames.add("Routine");
+        columnTypes.add(String.class);
+        
+        // Lib name
+        columnNames.add("Lib");
+        columnTypes.add(String.class);
+        
+        // Cost
+        if (Main.getDisplayTotalCost() == Main.COST_CUMULATIVE)
+            columnNames.add("Cost (cumul.)");
+        else
+            columnNames.add("Cost (self)");
+        
+        columnTypes.add(Double.class);
+        
+        // # RMS
+        columnNames.add("#RMS");
+        columnTypes.add(Integer.class);
+        
+        // Cost %
+        if (Main.getDisplayTotalCost() == Main.COST_CUMULATIVE)
+            columnNames.add("Cost % (cumul.)");
+        else
+            columnNames.add("Cost % (self)");
+        
+        columnTypes.add(Double.class);
+        
+        // Cost plot
+        if (Main.getChartCost() == Main.COST_CUMULATIVE)
+            columnNames.add("Cost plot (cumul.)");
+        else
+            columnNames.add("Cost plot (self)");
+        
+        columnTypes.add(Routine.class);
+        
+        // Calls
+        columnNames.add("Calls");
+        columnTypes.add(Integer.class);
+        
+        // Calls %
+        columnNames.add("Calls %");
+        columnTypes.add(Double.class);
+        
 		if (hasContext) {
-			columnNames = new String [] {
-											"Routine",
-											"Lib",
-											"Cost",
-											"#Rms",
-											"Cost %",
-											"Cost plot",
-											"Calls",
-											"Calls %",
-											"Collapsed",
-											"#Contexts",
-											"Favorite"
-										};
-
-			columnTypes = new Class[] {
-										String.class,
-										String.class,
-										Double.class,
-										Integer.class,
-										Double.class,
-										Routine.class,
-										Integer.class,
-										Double.class,
-										Boolean.class,
-										String.class,
-										Boolean.class
-									};
-		} else {
-			
-			columnNames = new String [] {
-											"Routine",
-											"Lib",
-											"Cost",
-											"#Rms",
-											"Cost %",
-											"Cost plot",
-											"Calls",
-											"Calls %",
-											"Favorite"
-										};
-
-			columnTypes = new Class[] {
-										String.class,
-										String.class,
-										Double.class,
-										Integer.class,
-										Double.class,
-										Routine.class,
-										Integer.class,
-										Double.class,
-										Boolean.class
-									};
-			
-		}
+            
+            // Collapsed
+            columnNames.add("Collapsed");
+            columnTypes.add(Boolean.class);
+            
+            // Context
+            columnNames.add("#Context");
+            columnTypes.add(String.class);
+            
+        }
+        
+        // Favorites
+        columnNames.add("Favorites");
+        columnTypes.add(Boolean.class);
+        
 	}
 	
 	public final void setData(AprofReport report) {
@@ -88,26 +96,26 @@ public class RoutinesTableModel extends AbstractTableModel {
 		
 		} else
 			updateColumns(false);
-		
+        
 		fireTableStructureChanged();
 		fireTableDataChanged();
 	}
 
 	@Override
 	public Class getColumnClass(int columnIndex) {
-		if (columnIndex >= columnTypes.length) return null;
-		return columnTypes[columnIndex];
+		if (columnIndex >= columnTypes.size()) return null;
+		return columnTypes.get(columnIndex);
 	}
 
 	@Override
 	public int getColumnCount() {
-		return columnTypes.length;
+		return columnTypes.size();
 	}
 
 	@Override
 	public String getColumnName(int columnIndex) {
-		if (columnIndex >= columnTypes.length) return null;
-		return columnNames[columnIndex];
+		if (columnIndex >= columnTypes.size()) return null;
+		return columnNames.get(columnIndex);
 	}
 
 	@Override
@@ -122,10 +130,10 @@ public class RoutinesTableModel extends AbstractTableModel {
 		if (report == null) return false;
 		
 		// Fovourite
-		if (columnIndex == columnNames.length - 1) return true;
+		if (columnIndex == columnNames.size() - 1) return true;
 		
 		// Collapse context
-		if (report.hasContexts() && columnIndex == columnNames.length - 3) {
+		if (report.hasContexts() && columnIndex == columnNames.size() - 3) {
 			Routine rtn = elements.get(rowIndex);
 			return (rtn instanceof ContextualizedRoutineInfo) || 
 						(rtn instanceof RoutineContext);
@@ -155,8 +163,8 @@ public class RoutinesTableModel extends AbstractTableModel {
 					return rtn_info.getImage();
 				
 			case 2: // Routine Total cost
-                    if (main.isCumulativeTotalCost())
-                        return new Double(rtn_info.getTotalCost());
+                    if (main.isDisplayCumulativeTotalCost())
+                        return new Double(rtn_info.getTotalCumulativeCost());
                     else
                         return new Double(rtn_info.getTotalSelfCost());
                 
@@ -164,10 +172,12 @@ public class RoutinesTableModel extends AbstractTableModel {
 					return new Integer(rtn_info.getSizeRmsList());
 			
 			case 4: // % total cost rtn wrt all rtns
-                    if (main.isCumulativeTotalCost())
-                        return new Double((rtn_info.getTotalCost() / report.getTotalCost()) * 100);
+                    if (main.isDisplayCumulativeTotalCost())
+                        return new Double((rtn_info.getTotalCumulativeCost() / 
+                                report.getTotalCost()) * 100);
                     else
-                        return new Double((rtn_info.getTotalSelfCost() / report.getTotalCost()) * 100);
+                        return new Double((rtn_info.getTotalSelfCost() / 
+                                report.getTotalCost()) * 100);
 			
 			case 5: // Cost Plot: we already set the renderer for Routine class
 					return rtn_info;
@@ -184,7 +194,7 @@ public class RoutinesTableModel extends AbstractTableModel {
 		
 		if (report.hasContexts()) {
 			
-			if (columnIndex == columnNames.length - 3) { // Collapsed?
+			if (columnIndex == columnNames.size() - 3) { // Collapsed?
 				
 				if (rtn_info instanceof ContextualizedRoutineInfo)
 					return new Boolean(((ContextualizedRoutineInfo)rtn_info).getCollapsed());
@@ -192,7 +202,7 @@ public class RoutinesTableModel extends AbstractTableModel {
 				
 			}
 			
-			if (columnIndex == columnNames.length - 2) { // # context
+			if (columnIndex == columnNames.size() - 2) { // # context
 			
 				 if (rtn_info instanceof ContextualizedRoutineInfo)
 					return "" + ((ContextualizedRoutineInfo)rtn_info).getContextCount();
@@ -206,12 +216,12 @@ public class RoutinesTableModel extends AbstractTableModel {
 		} 
 		
 		// Fav
-		if (columnIndex == columnNames.length -1) {
+		if (columnIndex == columnNames.size() -1) {
 			
 			String fav = "" + rtn_info.getID();
 			if (rtn_info instanceof RoutineContext)
 				fav += ("_" + ((RoutineContext)rtn_info).getContextId());
-			return new Boolean(report.isFavorite(fav));
+			return report.isFavorite(fav);
 
 		}
 		
@@ -242,7 +252,7 @@ public class RoutinesTableModel extends AbstractTableModel {
 	@Override
 	public void setValueAt(final Object aValue, final int rowIndex, int columnIndex) {
 		
-		if (report.hasContexts() && columnIndex == columnNames.length - 3) {
+		if (report.hasContexts() && columnIndex == columnNames.size() - 3) {
 			
 			main.inhibit_selection(true);
 			
@@ -263,7 +273,7 @@ public class RoutinesTableModel extends AbstractTableModel {
 		
 			});
 			
-		} else if (columnIndex == columnNames.length - 1) {
+		} else if (columnIndex == columnNames.size() - 1) {
 			
 			Routine rtn_info = elements.get(rowIndex);
 			String fav = ""+rtn_info.getID();
@@ -286,7 +296,4 @@ public class RoutinesTableModel extends AbstractTableModel {
 		return this.elements.indexOf(r);
 	}
 
-	public void refresh() {
-		fireTableDataChanged();
-	}
 }

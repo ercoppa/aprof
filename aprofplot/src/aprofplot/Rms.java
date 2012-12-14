@@ -3,11 +3,13 @@ package aprofplot;
 public class Rms implements Comparable<Rms> {
 
 	private long rms;
-	private long min_cost;
-	private long max_cost;
-	private double total_cost;
+	private long min_cost; // cumulative
+	private long max_cost; // cumulative
+	private double total_cost; // cumulative
     private double total_real_cost;
 	private double total_self;
+    private long self_min;
+    private long self_max;
 	private long occ;
 	
 	public static final int MAX_COST = 0;
@@ -22,7 +24,8 @@ public class Rms implements Comparable<Rms> {
 	private static double[] ratio_config = {1, 0, 0};
 
 	public Rms(long rms, long min_cost, long max_cost, double total_cost, 
-                double total_real_cost, double total_self, long occ) {
+                double total_real_cost, double total_self, long occ,
+                long self_min, long self_max) {
 
 		this.rms = rms;
 		this.min_cost = min_cost;
@@ -30,10 +33,18 @@ public class Rms implements Comparable<Rms> {
 		this.total_cost = total_cost;
         this.total_real_cost = total_real_cost;
 		this.total_self = total_self;
+        this.self_min = self_min;
+        this.self_max = self_max;
 		this.occ = occ;
 		
-		if (rms > 0) this.ratio = this.max_cost / this.rms;
-		else this.ratio = this.max_cost;
+        long cost = 0;
+        if (Main.getChartCost() == Main.COST_CUMULATIVE)
+            cost = this.max_cost;
+        else
+            cost = this.self_max;
+        
+		if (rms > 0) this.ratio = cost / this.rms;
+		else this.ratio = cost;
 	
 	}
 
@@ -50,16 +61,28 @@ public class Rms implements Comparable<Rms> {
 	}
 
 	public double getMinCost() {
-		return min_cost;
+        
+        if (Main.getChartCost() == Main.COST_CUMULATIVE)
+            return getCumulativeMinCost();
+        
+		return getSelfMinCost();
 	}
 
 	public double getMaxCost() {
-		return max_cost;
+        
+        if (Main.getChartCost() == Main.COST_CUMULATIVE)
+    		return getCumulativeMaxCost();
+        
+        return getSelfMaxCost();
 	}
 
 	public double getTotalCost() {
-		return total_cost;
-	}
+        
+        if (Main.getChartCost() == Main.COST_CUMULATIVE)
+    		return getTotalCumulativeCost();
+	
+        return getTotalSelfCost();
+    }
     
     public double getTotalRealCost() {
         
@@ -68,6 +91,10 @@ public class Rms implements Comparable<Rms> {
             return getTotalCost();
         
         return total_real_cost;
+    }
+   
+     public double getTotalCumulativeCost() {
+        return total_cost;
     }
     
     public double getTotalSelfCost() {
@@ -87,7 +114,11 @@ public class Rms implements Comparable<Rms> {
 	}
 
 	public double getAvgCost() {
-		return (double) total_cost / occ;
+        
+        if (Main.getChartCost() == Main.COST_CUMULATIVE)
+    		return getCumulativeAvgCost();
+        
+		return getSelfAvgCost();
 	}
 
 	public double getCost() {
@@ -174,11 +205,37 @@ public class Rms implements Comparable<Rms> {
 		if (this.rms != te.rms) return null;
 		return new Rms(
 				this.rms,
-				Math.min(this.min_cost, te.min_cost),
-				Math.max(this.max_cost, te.max_cost), 
-				this.total_cost + te.getTotalCost(),
+				Math.min(this.min_cost, te.getCumulativeMinCost()),
+				Math.max(this.max_cost, te.getCumulativeMaxCost()), 
+				this.total_cost + te.getTotalCumulativeCost(),
                 this.total_real_cost + te.getTotalRealCost(),
 				this.total_self + te.getTotalSelfCost(),
-				this.occ + te.getOcc());
+				this.occ + te.getOcc(),
+                this.self_min + te.getSelfMinCost(),
+                this.self_max + te.getSelfMaxCost());
 	}
+
+    public long getCumulativeMinCost() {
+        return min_cost;
+    }
+    
+    public long getCumulativeMaxCost() {
+        return max_cost;
+    }
+    
+    public long getSelfMinCost() {
+        return self_min;
+    }
+
+    public long getSelfMaxCost() {
+        return self_max;
+    }
+
+    public double getCumulativeAvgCost() {
+        return getTotalCumulativeCost() / getOcc();
+    }
+
+    public double getSelfAvgCost() {
+        return getTotalSelfCost() / getOcc();
+    }
 }
