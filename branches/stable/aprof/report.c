@@ -54,6 +54,7 @@ static HChar * put_delim(HChar * str, Int size) {
 	return str;
 }
 
+#if CCT == 0
 static Function * merge_tuple(HChar * line, Int size, 
 							Function * curr, ThreadData * tdata) {
 	
@@ -378,6 +379,7 @@ static Bool merge_report(HChar * report, ThreadData * tdata) {
 	VG_(close)(file);
 	return True;
 } 
+#endif
 
 static HChar * report_name(HChar * filename_priv, UInt tid, UInt postfix_c) {
 
