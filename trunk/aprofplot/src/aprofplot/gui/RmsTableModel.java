@@ -92,7 +92,7 @@ public class RmsTableModel extends AbstractTableModel {
 		switch (columnIndex) {
 			case 0: return te.getRms();
 			case 1: return te.getMinCost();
-			case 2: return te.getAvgCost();
+			case 2: return Math.ceil(te.getAvgCost() * 10) / 10;
 			case 3: return te.getMaxCost();
 			case 4: return te.getOcc();
 			//case 5: return te.getVar();
