@@ -118,8 +118,6 @@
 
 /* Data structures */
 
-extern unsigned int inside_strcmp;
-
 typedef IRExpr IRAtom;
 // type of memory access
 typedef enum access_t { LOAD, STORE, MODIFY } access_t;
@@ -364,6 +362,12 @@ extern Bool APROF_(merge_report_runs);
 
 /* memory events (events.c) */
 extern Int APROF_(events_used);
+
+#if 0
+extern unsigned int inside_strcmp;
+extern UWord last_addr;
+#endif
+
 
 /* Info about thread currently running (thread.c) */
 extern ThreadId APROF_(current_TID);

@@ -125,12 +125,14 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
 	AP_ASSERT(tdata != NULL, "Thread data is not valid");
 	AP_ASSERT(act != NULL, "Invalid activation info");
 	#endif
-	/*
-	if (VG_(strcmp)(act->rtn_info->fn->name, "__strcmp_sse42") == 0) {
+
+	#if 0
+	if (VG_(strcmp)(act->rtn_info->fn->name, "strcmp") == 0) {
 		inside_strcmp = 1;
 		VG_(printf)("\n\n");
 	}
-	*/
+	#endif
+	
 	#if VERBOSE
 	VG_(printf)("Enter: %s\n", act->rtn_info->fn->name);
 	/*
@@ -254,12 +256,14 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
 	AP_ASSERT(tdata != NULL, "Thread data is not valid");
 	AP_ASSERT(act != NULL, "Invalid activation info");
 	#endif
-	/*
-	if (VG_(strcmp)(act->rtn_info->fn->name, "__strcmp_sse42") == 0) {
-		VG_(printf)("\n\n");
+	
+	#if 0
+	if (VG_(strcmp)(act->rtn_info->fn->name, "strcmp") == 0) {
+		VG_(printf)("RMS: %d#\n\n", act->rms);
 		inside_strcmp = 0;
 	}
-	*/
+	#endif
+	
 	#if VERBOSE
 	VG_(printf)("Exit: %s\n", act->rtn_info->fn->name);
 	#endif
@@ -331,8 +335,9 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
 		#endif
 		
 		// init minimum cumulative time for sms entry
-		info_access->min_cumulative_time = (UInt)-1;
-		
+		info_access->min_cumulative_time = (ULong)-1;
+		info_access->self_time_min = (ULong)-1;
+        
 		info_access->key = act->rms;
 		#if CCT
 		HT_add_node(rms_map, info_access->key, info_access);

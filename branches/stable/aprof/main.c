@@ -98,19 +98,26 @@ static Bool APROF_(do_access)(IRExpr * e) {
 
 #endif
 
+#if 0
 unsigned int inside_strcmp = 0;
+UWord last_addr = 0;
 
 VG_REGPARM(1) void APROF_(IMark_handler)(UWord addr);
 VG_REGPARM(1) void APROF_(IMark_handler)(UWord addr) {
 	
+	DebugInfo * di = VG_(find_DebugInfo)(addr);
+	PtrdiffT offset = di ? VG_(DebugInfo_get_text_bias)(di):0;
+	last_addr = addr - offset;
+	
+	#if 0
 	if (inside_strcmp == 1) {
 		
-		DebugInfo * di = VG_(find_DebugInfo)(addr);
-		PtrdiffT offset = di ? VG_(DebugInfo_get_text_bias)(di):0;
 		VG_(printf)("Instruction: %#lx\n", addr - offset);
 	
 	}
+	#endif
 }
+#endif
 
 static
 IRSB* APROF_(instrument) (  VgCallbackClosure* closure, 
@@ -205,13 +212,15 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
 			}
 
 			case Ist_IMark: {
-				/*
+				
+				#if 0
 				IRExpr  * imark = mkIRExpr_HWord ( (HWord) (Addr) st->Ist.IMark.addr );
 				diA = unsafeIRDirty_0_N( 1, "IMark",
 								VG_(fnptr_to_fnentry)( &APROF_(IMark_handler) ),
 								mkIRExprVec_1( imark ) );
 				addStmtToIRSB( sbOut, IRStmt_Dirty(diA) );
-				*/
+				#endif
+				
 				#if TIME == INSTR
 				di = unsafeIRDirty_0_N( 0, "add_one_guest_instr",
 										VG_(fnptr_to_fnentry)( &APROF_(add_one_guest_instr) ), 

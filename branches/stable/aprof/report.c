@@ -640,7 +640,7 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
 			
 			while (info_access != NULL) {
 				
-				VG_(sprintf)(buffer, "q %lu %lu %llu %llu %llu %llu %llu %llu\n",
+				VG_(sprintf)(buffer, "q %lu %lu %llu %llu %llu %llu %llu %llu %llu %llu\n",
 					ht->key, 
 					info_access->key,
 					info_access->min_cumulative_time,
@@ -670,7 +670,7 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
 		
 		while (info_access != NULL) {
 			
-			VG_(sprintf)(buffer, "p %llu %lu %llu %llu %llu %llu %llu %llu\n", 
+			VG_(sprintf)(buffer, "p %llu %lu %llu %llu %llu %llu %llu %llu %llu %llu\n", 
 				rtn_info->routine_id,
 				info_access->key,
 				info_access->min_cumulative_time,
