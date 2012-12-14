@@ -79,7 +79,7 @@
 #define REPORT_VERSION      3   // see documentation on our site: 1 == 1.1, 2 == 1.2, ...
 #define DISCARD_UNKNOWN     1   // discard info about PLT or unknown function (but this not imply to discard info about its children)
 #define IGNORE_REPEAT_ACC   1   // if 1, ignore repeated accesses to the same address within a BB
-#define REPORT_NAME         2   // if 1 report name is prog_TID.aprof, if 2 is PID_TID_ADDRMULTIPLE.aprof
+#define REPORT_NAME         3   // if 1 report name is prog_TID.aprof, if 2 is PID_TID_ADDRMULTIPLE.aprof
 #define CCT_GRAPHIC         0   // output CCT as dot language in an external file (file.graph); EXPERIMENTAL
 
 /* shadow memory  */
