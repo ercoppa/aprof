@@ -69,4 +69,8 @@ In order to profile our code we don't need any special compilation flag. The onl
 {{{
 gcc -o quick_tutorial quick_tutorial.c
 }}}
-where `quick_tutotial` is a text file containing the previous example code.
+where `quick_tutotial.c` is a text file containing the previous example code.
+
+== Profile ==
+
+== Analyze profile data ==
