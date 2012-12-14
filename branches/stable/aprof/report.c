@@ -401,7 +401,7 @@ static HChar * report_name(HChar * filename_priv, UInt tid, UInt postfix_c) {
 				VG_(basename)(prog_name));
 	}
 	
-	#elif REPORT_NAME == 2
+	#elif REPORT_NAME >= 2
 	VG_(sprintf)(filename_priv, "%d_%u_%d", VG_(getpid)(), 
 									tid - 1, APROF_(addr_multiple));
 	#endif
