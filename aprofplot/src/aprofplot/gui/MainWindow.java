@@ -1121,13 +1121,16 @@ public class MainWindow extends javax.swing.JFrame {
 		jLabel3.setText("Profile report for " + report.getAppName() + " (" + report.getCommandLine() + ")");
 		jLabel1.setText(" Routines: " + report.getRoutineCount() + " ");
 		jLabel4.setText(" Contexts: " + report.getTotalContexts() + " ");
-		if (report.getTotalCost() < 10000)
+        jLabel5.setText(" Total cost: " + report.getTotalCost() + " ");
+		/*
+        if (report.getTotalCost() < 10000)
 			jLabel5.setText(" Total cost: " + report.getTotalCost() + " ");
 		else {
 			double exp = Math.log10(report.getTotalCost());
 			String exp10 = String.format("%.2f", exp);
 			jLabel5.setText(" Total cost: 10^" + exp10  + " ");
 		}
+        */
 		jLabel6.setText(" Calls: " + report.getTotalCalls() + " ");
 		jLabel7.setText("");
 	
