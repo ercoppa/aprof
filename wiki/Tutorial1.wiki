@@ -200,8 +200,12 @@ int main() {
 }
 }}}
 
+If we profile the program and open the new report, we can see that `quick_sort_ric` has a clear quadratic trend:
+
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-16.png]
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-17.png]
+
+Of course the trend of `partition` does not change, it remains linear but the trend is a lot more neat:
 
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-18.png]
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-19.png]
