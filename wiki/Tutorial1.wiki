@@ -147,3 +147,4 @@ By scrolling down the charts' area, you should see this new chart:
 
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-5.png]
 
+This chart allows us to simply apply `guess ratio rule`. This is a simple method for evaluating the growth rate of a function by considering a guess function `h` and analyzing the trend of ratio `f (n)/h(n)`. If `f ∈ O(h)`, then the ratio will stabilize to a non-negative constant, while if `f ∈ O(h)` it (eventually) increases.
