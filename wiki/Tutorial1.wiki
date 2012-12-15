@@ -149,4 +149,6 @@ By scrolling down the charts' area, you should see this new chart:
 
 This chart allows us to simply apply `guess ratio rule`. This is a simple method for evaluating the growth rate of a function by considering a guess function `h` and analyzing the trend of ratio `T(n)/H(n)`. If `T ∈ O(H)`, then the ratio will stabilize to a non-negative constant, while if `T ∉ O(H)` it (eventually) increases.
 
-In the last screenshot, we can observe that the trend of ratio `T(n)/H(n)` does not stabilize to a constant.
+In the last screenshot, we can observe that the trend of ratio `T(n)/n` (where `T(n)` is cost of our routine and `n` is the value of RMS) does not stabilize to a constant. Our next guess should be `n * log(n)`:
+
+[http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-6.png] [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-7.png]
