@@ -11,6 +11,7 @@ Suppose we want to analyze the performance of our implementation of a [http://en
 {{{
 #include <stdlib.h>
 #include <time.h>
+#include <stdio.h>
 
 int partition(int v[], int a, int b) {
 	int pivot = a;
@@ -52,7 +53,9 @@ int main() {
 
 		quick_sort_ric(v, 0, j-1);
 	}
-    
+	
+	printf("End\n");
+
 	return 0;
 }
 }}} 
@@ -72,5 +75,22 @@ gcc -o quick_tutorial quick_tutorial.c
 where `quick_tutorial.c` is a text file containing the previous example code.
 
 == Profile ==
+
+You can install `aprof` following the _[Install Instructions for installing aprof and aprof-plot]_. We can profile our program with the following command:
+{{{
+path-to-aprof/inst/bin/valgrind --tool=aprof ./quick_tutorial
+}}}
+The output should be somithing like this:
+{{{
+==28001== aprof-0.1.1, Input-sensitive Profiler - http://code.google.com/p/aprof/
+==28001== by Emilio Coppa, Camil Demetrescu, Irene Finocchi
+==28001== Using Valgrind-3.9.0.SVN and LibVEX; rerun with -h for copyright info
+==28001== Command: ./quick_tutorial
+==28001== 
+End
+==28001==
+}}}
+The first and last line of the output give us the PID (`28001`). In the current working directory we should find a report called `28001_0_4.aprof` (or `quick_tutorial_0_4.aprof`).
+
 
 == Analyze profile data ==
