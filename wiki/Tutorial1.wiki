@@ -66,7 +66,7 @@ We expect that:
   * `partition()` should be O(n)
   * `quick_sort_ric()` should be O( n `*` log(n) ) because the input is composed by random integers (average case performance). 
 
-== Compile ==
+== Compiling the program ==
 
 In order to profile our code we don't need any special compilation flag (e.g, `-g` or `-pg`). The only requirement is that our application binary should not be stripped out of the function symbols (by default GCC does not strip a binary). So, we can compile our example code in the usual way:
 {{{
@@ -74,7 +74,7 @@ gcc -o quick_tutorial quick_tutorial.c
 }}}
 where `quick_tutorial.c` is a text file containing the previous example code.
 
-== Profile ==
+== Profiling ==
 
 You can install `aprof` following the _[Install Instructions for installing aprof and aprof-plot]_. We can profile our program with the following command:
 {{{
@@ -90,7 +90,6 @@ The output should be somithing like this:
 End
 ==28001==
 }}}
-The first and last line of the output provide us the PID (`28001`) of the program execution. In the current working directory we should find a report called `28001_0_4.aprof` (or `quick_tutorial_0_4.aprof`).
+The first and last line of the output provide us the PID (`28001`) of the program execution. In the current working directory we should find a report called `28001_0_4.aprof` (or `quick_tutorial_0_4.aprof`). This report is a text-file written following the [ReportFileFormat aprof report file format].
 
-
-== Analyze profile data ==
+== Analyzing the profiling data ==
