@@ -99,3 +99,15 @@ In order to analyze our report we can use [aprof_plot_manual aprof-plot], a Java
 Open the report in `aprof-plot` using the menu `File > Open File...` and search the report in your filesystem. This is what you should see:
 
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-1.png] 
+
+We can identify three main graphical components:
+
+[http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-2.png] 
+
+The first component is the `routine table`. This a list of all profiled routines of your program with several useful information (e.g., name, cumulative cost, number of collected RMS, etc.).
+
+The second component is the `routine profile`. If you select a function in the routine table, then this component displays all the collected tuples (RMS value, min cost, max cost, frequency, etc.) for the chosen routine. 
+
+Finally, the third component displays several charts for the current selected routine.
+
+In order to have a more detailed explanation of all `aprof-plot` components and features please see our _[aprof_plot_manual aprof-prof manual]_.
