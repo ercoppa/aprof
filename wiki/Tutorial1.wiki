@@ -152,3 +152,15 @@ This chart allows us to simply apply `guess ratio rule`. This is a simple method
 In the last screenshot, we can observe that the trend of ratio `T(n)/n` (where `T(n)` is cost of our routine and `n` is the value of RMS) does not stabilize to a constant. Our next guess should be `n * log(n)`:
 
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-6.png] [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-7.png]
+
+The trend stabilized to a constant :)
+And if we try with `n^2`:
+
+[http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-8.png] 
+
+Zoom in:
+
+[http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-9.png]
+[http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-10.png]
+
+The trend decreases. In conclusion, we have a confirmation that our implementation of quick sort and in particular `quick_sort_ric` is `O(n * log(n) )`.
