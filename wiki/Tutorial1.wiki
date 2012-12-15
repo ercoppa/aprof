@@ -205,7 +205,11 @@ If we profile the program and open the new report, we can see that `quick_sort_r
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-16.png]
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-17.png]
 
-Of course the trend of `partition` does not change, it remains linear but the trend is a lot more neat:
+This is the result of our pivot choice. Of course the trend of `partition` does not change: it remains linear but the trend is a lot more neat:
 
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-18.png]
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-19.png]
+
+In conclusion with `aprof` and `aprof-plot` we can profile our application, obtain clues about groth rates of our routines and possibly find a asymptotic bottleneck. Moreover we can understand some properties of our input workloads (e.g., the typical input sizes and their frequency). 
+
+As the example shows, the same code can be efficient on one workload (e.g., random integers) and inefficient on another one (e.g., sorted integers). `aprof` is a dynamic analysis tools and therefore allows us to test our program on real workload.
