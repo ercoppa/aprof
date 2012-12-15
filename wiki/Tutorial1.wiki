@@ -90,7 +90,7 @@ The output should be somithing like this:
 End
 ==28001==
 }}}
-The first and last line of the output give us the PID (`28001`). In the current working directory we should find a report called `28001_0_4.aprof` (or `quick_tutorial_0_4.aprof`).
+The first and last line of the output provide us the PID (`28001`) of the program execution. In the current working directory we should find a report called `28001_0_4.aprof` (or `quick_tutorial_0_4.aprof`).
 
 
 == Analyze profile data ==
