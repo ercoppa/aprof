@@ -117,3 +117,7 @@ In order to have a more detailed explanation of all `aprof-plot` components and 
 === Analyze our quick sort implementation ===
 
 Let's focus on our quick sort implementation. Select `quick_sort_ric` function in the routine table and observe the `cost plot` chart (the first one):
+
+[http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-3.png]
+
+On x axis we have the [aprof_manual RMS metric]. This can be seen as an estimation on input sizes. Instead on y axis we find a execution cost metric (by default `aprof` counts the number of executed [http://en.wikipedia.org/wiki/Basic_block basic blocks]).
