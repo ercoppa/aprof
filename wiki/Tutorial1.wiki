@@ -120,7 +120,7 @@ Let's focus on our quick sort implementation. Select `quick_sort_ric` function i
 
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-3.png]
 
-On x axis we have the [aprof_manual RMS metric]. This can be seen as an estimation of input sizes on which your function was executed. Instead on y axis we find a execution cost metric (by default `aprof` counts the number of executed [http://en.wikipedia.org/wiki/Basic_block basic blocks]). Points of the chart are colored based on their frequency (number of times your routine was executed on a specific RMS). The legend on top of chart specifies the exact frequency value of each color:
+On x axis we have the [aprof_manual RMS metric]. This can be seen as an estimation of input sizes on which your function was executed. Instead on y axis we find an execution cost metric (by default `aprof` counts the number of executed [http://en.wikipedia.org/wiki/Basic_block basic blocks]). Points of the chart are colored based on their frequency (number of times your routine was executed on a specific RMS). The legend on top of chart specifies the exact frequency value of each color:
 
 [http://aprof.googlecode.com/svn/trunk/wiki_images/Color-scale.png]
 
@@ -175,3 +175,27 @@ The chart is a little bit chaotic. We can smooth the trend:
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-14.png]
 
 We can see that the trend (almost) stabilizes to a specific constant and therefore our `partition` routine can be assumed to be linear (at least on the tested workload).
+
+=== A different worklaod ===
+
+Our implementation of quick sort is efficient on a workload composed by random integers. But what happens if we change our workload? Maybe the workload of our application is unknown to us. We can see how the performance of our code changes if we sort a sorted array. For example, we can modify the `main()` function in this way:
+{{{
+int main() {
+    
+	int v[1024*10];
+	int n = sizeof(v)/sizeof(int);
+	int j = n, i = 0;
+
+	for (j = 0; j < n; j += 100) {
+	
+		for (i = 0; i < j; i++)
+			v[i] = i;
+
+		quick_sort_ric(v, 0, j-1);
+	}
+    
+	printf("End\n");
+    
+	return 0;
+}
+}}}
