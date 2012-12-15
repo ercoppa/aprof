@@ -174,4 +174,4 @@ The chart is a little bit chaotic. We can smooth the trend:
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-13.png]
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-14.png]
 
-We can see that the trend (almost) stabilizes to a specific constant and therefore our `partition` routine can be assumed to linear (at least on the tested workload).
+We can see that the trend (almost) stabilizes to a specific constant and therefore our `partition` routine can be assumed to be linear (at least on the tested workload).
