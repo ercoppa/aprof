@@ -138,3 +138,12 @@ We can analyze in more detail our input workload using the `frequency plot` (the
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-10.png]
 
 This chart confirms our observation on the frequency of input sizes.
+
+Now, enable the `curve bounding plot`:
+
+[http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-4.png]
+
+By scrolling down the charts' area, you should see this new chart:
+
+[http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-5.png]
+
