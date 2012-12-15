@@ -129,4 +129,6 @@ Select an area of the chart with your mouse in order to zoom in and better analy
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-3a.png]
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-3b.png]
 
- 
+This chart reveals two things:
+  * the trend of `quick_sort_ric` is not quatric, maybe linear or n`*`log(n)
+  * `quick_sort_ric` is executed on small input sizes most of the times (the smaller is the RMS, the higher is the frequency): this is expected as quick sort is a divide-and-conquer sorting algorithm.
