@@ -62,6 +62,8 @@ So, the first call requires 256 seconds, the second one 512 and the third one 10
 || || *traditional profiler* || *`aprof`* || 
 || `count_zero` || calls: 3 <br> total exec time: 1792 secs <br> average exec time: 597.3 secs || calls: 3 <br> execution`]`1`]`: input size 258, time 256 secs <br> execution`[`2`]`: input size 514, time 512 secs <br> execution`]`3`]`: input size 1026, time 1024 secs ||
 
+The info provided by `aprof` are a lot more precise: you can easily build a chart and evaluate the trend growth rate (a linear trend as expected). A traditional profiler can only give you aggregate info because it does not know the input size of a routine invocation and therefore it treats all the routine calls as executed on the same unknown input size. 
+
 == Usage ==
 
 See the [BasicUsage#Profile_a_program basic usage page]
