@@ -1,10 +1,10 @@
 # aprof user manual
 
+<wiki:toc max_depth="4" />
+
 = aprof: an input-sensitive perfomance profiler =
 
 aprof is a [http://valgrind.org/ Valgrind] tool. You can find a more [http://valgrind.org/docs/manual/manual.html general user manual] about this binary instrumentation framework on its official site.
-
-<wiki:toc max_depth="3" />
 
 == Overview ==
 
