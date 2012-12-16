@@ -86,6 +86,8 @@ sum += count_zero(v, 1024);
 }}}
 on this example `aprof` gives us all the information needed to draw a chart with 1024 points and perform an accurate evaluation of the tren growth rate for `count_zero`.
 
+=== Performance Metric ===
+
 == Usage ==
 
 See the [BasicUsage#Profile_a_program basic usage page]
