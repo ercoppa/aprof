@@ -79,6 +79,14 @@ int count_zero(int v[], int n) {
 This is a recursive implementation of the previous iterative `count_zero`. Observe that, just like the iterative version, the first invocation of function `count_zero` has RMS `n`,,1,,` = n + 2`. However, calling `count_zero` on parameter `n` also results in `n` additional recursive activations of the function for all size values ranging from `n − 1` down to `0`. Therefore, `aprof` collect `n + 1` performance
 tuples from just one starting activation. The read memory size corresponding to the i-th invocation is `n`,,i,, = `n − i + 3`, for each i ∈ [1, n + 1].
 
+The result of recursion is that from just this code:
+{{{
+int sum = 0;
+int v[1024];
+sum += count_zero(v, 1024);
+}}}
+on this example `aprof` gives us all the information needed to draw a chart with 1024 points and perform an accurate evaluation of the tren growth rate for `count_zero`.
+
 == Usage ==
 
 See the [BasicUsage#Profile_a_program basic usage page]
