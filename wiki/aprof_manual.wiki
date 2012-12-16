@@ -2,7 +2,7 @@
 
 = aprof: an input-sensitive perfomance profiler =
 
-Aprof is a [http://valgrind.org/ Valgrind] tool. You can find a more [http://valgrind.org/docs/manual/manual.html general user manual] about this binary instrumentation framework on its official site.
+aprof is a [http://valgrind.org/ Valgrind] tool. You can find a more [http://valgrind.org/docs/manual/manual.html general user manual] about this binary instrumentation framework on its official site.
 
 == Overview ==
 
