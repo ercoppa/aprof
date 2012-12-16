@@ -6,7 +6,7 @@ aprof is a [http://valgrind.org/ Valgrind] tool. You can find a more [http://val
 
 == Overview ==
 
-
+`aprof` automatically measures how the performance of individual routines scales as a function of the input size, yielding clues to their growth rate. The output of the profiler is, for each executed routine of the program, a set of tuples that aggregate performance costs by input size.
 
 == Usage ==
 
