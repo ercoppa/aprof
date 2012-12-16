@@ -67,6 +67,22 @@ The info provided by `aprof` is a lot more precise: for example you can easily d
 || *traditional profiler* || *`aprof`* ||
 || [http://aprof.googlecode.com/svn/trunk/wiki_images/example-2a.png] || [http://aprof.googlecode.com/svn/trunk/wiki_images/example-2b.png] ||
 
+==== Example ====
+
+The RMS metric is really powerful. Suppose your `count_zero` code is:
+{{{
+int count_zero(int v[], int n) {
+    if (n<1) return 0;
+    return (v[n-1]==0 ? 1:0) + count_zero(v, n-1);
+}
+}}}
+This is a recursive implementation of the previous iterative `count_zero`. Observe that, just like the iterative version, the first invocation of function `count_zero` has RMS `n`,,1,,` = n + 2`. However, calling count zero on parameter
+n also results in n additional recursive activations of the function for all size
+values ranging from n −1 down to 0. Therefore, We collect n +1 performance
+tuples from just one starting activation, i.e., |Ncount zero | = n + 1. The
+read memory size corresponding to the i-th invocation is ni = n − i + 3, for
+each i ∈ [1, n + 1].
+
 == Usage ==
 
 See the [BasicUsage#Profile_a_program basic usage page]
