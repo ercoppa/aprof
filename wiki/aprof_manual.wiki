@@ -32,7 +32,7 @@ See the [BasicUsage#Profile_a_program basic usage page]
 In the stable version of `aprof`, client requests are used only for external function entry/exit point tracing. See [AprofOnARM_PPC this page] for more details. Two client requests are parsed by `aprof`:
 
   # `VALGRIND_DO_CLIENT_REQUEST(<dummy_var>, 0, VG_USERREQ_TOOL_BASE('V', 'A'), <function_identifier>, <function_status>, 0, 0, 0);`
-  # `VALGRIND_DO_CLIENT_REQUEST(<dummy_varible>, 0, VG_USERREQ_TOOL_BASE('V', 'A'), <function_identifier>, <function_status>, 0, 0, 0);`	
+  # `VALGRIND_DO_CLIENT_REQUEST(<dummy_var>, 0, VG_USERREQ_TOOL_BASE('V', 'A'), <function_identifier>, <function_status>, 0, 0, 0);`	
 
 where:
   * `<dummy_var>` is an int variable (not used)
