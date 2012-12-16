@@ -2,11 +2,14 @@
 
 = aprof: an input-sensitive perfomance profiler =
 
+
 aprof is a [http://valgrind.org/ Valgrind] tool. You can find a more [http://valgrind.org/docs/manual/manual.html general user manual] about this binary instrumentation framework on its official site.
 
 == Overview ==
 
-`aprof` automatically measures how the performance of individual routines scales as a function of the input size, yielding clues to their growth rate. The output of the profiler is, for each executed routine of the program, a set of tuples that aggregate performance costs by input size.
+Input-Sensitive profiling is a novel performance profiling methodology for helping developers discover hidden asymptotic inefficiencies in the code. It has been described in a [http://code.google.com/p/aprof/#Research_papers PLDI 2012 paper], where you can find a more detailed description about this technique.
+
+From one or more runs of a program, `aprof` automatically measures how the performance of individual routines scales as a function of the input size, yielding clues to their growth rate. The output of the profiler is, for each executed routine of the program, a set of tuples that aggregate performance costs by input size.
 
 == Usage ==
 
