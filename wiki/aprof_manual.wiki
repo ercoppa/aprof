@@ -25,6 +25,8 @@ void swap(int * a, int * b) {
 }
 }}}
 
+This function takes as arguments two pointers to integers and simply swaps their values by using a temporary variable. Any call of `swap` has RMS equal to 4, which accounts for the addresses of lvalues a, b, *a and *b. Notice that each of them is first accessed by a read operation: a and *a at line 2, b and *b at line 3. Variable temp is not counted in the RMS as it is first accessed by the write operation at line 2.
+
 == Usage ==
 
 See the [BasicUsage#Profile_a_program basic usage page]
