@@ -37,6 +37,17 @@ In the next example we will understand why an estimation of the input size can b
 
 ==== Example 2 ====
 
+{{{
+int count_zero(int v[], int n) {
+    int i, count = 0;
+    for (i=0; i<n; i++) count += (v[i]==0 ? 1:0);
+    return count;
+}
+}}}
+
+The function, which counts the number of 0’s in the input array v, has RMS `n + 2`: it reads variables `v` and `n`, and the first `n` cells of the array pointed to by `v`. `aprof` collect one performance tuple for
+each distinct value of `n` on which count zero is called during the execution of the program.
+
 == Usage ==
 
 See the [BasicUsage#Profile_a_program basic usage page]
