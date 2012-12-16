@@ -15,6 +15,16 @@ From one or more runs of a program, `aprof` automatically measures how the perfo
 
 In order to estimate the input size of a routine invocation at runtime, `aprof` uses a new effective metric called *Read Memory Size* (*RMS*) that counts the number of distinct memory cells first accessed by a routine `f`, or by a descendant of `f` in the call tree, with a read operation. The main idea behind the definition of RMS is that cells that are accessed by a function for the first time with a read operation contain the input values of the routine. Conversely, if a cell is first written and then read by the routine, the read value is not part of the input as it was determined by the routine itself.
 
+To better understand this metric, let's discuss an example:
+
+{{{
+void swap(int * a, int * b) {
+    int temp = *a; 
+    *a = *b; 
+    *b = temp; 
+}
+}}}
+
 == Usage ==
 
 See the [BasicUsage#Profile_a_program basic usage page]
