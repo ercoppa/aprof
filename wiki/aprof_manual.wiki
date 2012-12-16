@@ -90,11 +90,9 @@ on this example `aprof` gives us all the information needed to draw a chart with
 
 `aprof` counts [http://en.wikipedia.org/wiki/Basic_block basic blocks] as performance measure: we observed that, compared to running time measurements, this adds a light burden to the analysis time overhead, and improves accuracy in characterizing asymptotic behavior even on small workloads. The choice of counting basic blocks rather than measuring time for studying asymptotic trends has several other advantages:
   * *accuracy*: block counts are exact and therefore issues of insufficient timer resolution do not apply;
-  * *repeatability*: if a program is deterministic, so its measure; this
-measurement metric does not depend on the operating system or architecture if the program’s control flow does not;
+  * *repeatability*: if a program is deterministic, so its measure; this measurement metric does not depend on the operating system or architecture if the program’s control flow does not;
   * *lack of bias*: the mechanism of measurement does not affect its result; in contrast, the mechanism of measuring time distorts its own results;
-  * *low overhead*: counting basic block execution is cheap because we
-already need to instrument every basic block in order to trace function calls and returns.
+  * *low overhead*: counting basic block execution is cheap because we already need to instrument every basic block in order to trace function calls and returns.
 
 == Usage ==
 
