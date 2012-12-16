@@ -1,6 +1,6 @@
 # aprof user manual
 
-= Aprof: an input-sensitive perfomance profiler =
+= aprof: an input-sensitive perfomance profiler =
 
 Aprof is a [http://valgrind.org/ Valgrind] tool. You can find a more [http://valgrind.org/docs/manual/manual.html general user manual] about this binary instrumentation framework on its official site.
 
@@ -8,6 +8,10 @@ Aprof is a [http://valgrind.org/ Valgrind] tool. You can find a more [http://val
 
 == Usage ==
 
-== Aprof command-line options ==
+== aprof command-line options ==
 
-== Aprof specific client requests ==
+== aprof specific client requests ==
+
+== Report file format ==
+
+See the [ReportFileFormat report file format page].
