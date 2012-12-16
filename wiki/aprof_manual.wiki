@@ -59,7 +59,8 @@ sum += count_zero(v, 1024); // count zeroes first 1024 int of v[]
 }}}
 So, the first call requires 256 seconds, the second one 512 and the third one 1024 seconds. If we now profile our application with a traditional profiler and with `aprof` we get:
 
-
+|| || *traditional profiler* || *`aprof`* || 
+|| `count_zero` || ||
 
 == Usage ==
 
