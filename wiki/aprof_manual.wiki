@@ -14,6 +14,11 @@ See the [BasicUsage#Profile_a_program basic usage page]
 
 == aprof command-line options ==
 
+`--memory-resolution=<n> [default: 4]`
+
+  To reduce the space needed by the shadow memory, `aprof` allows users to configure the resolution of distinct observable memory objects, trading space for accuracy. 
+  Possible valid values are: 1, 2, 4, 8, 16. 
+
 == aprof specific client requests ==
 
 == Report file format ==
