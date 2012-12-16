@@ -1,4 +1,3 @@
-
 == Basic usage ==
 
 === Profile a program ===
@@ -9,7 +8,7 @@ To start a profile run for a program, execute:
 cd aprof_valgrind
 ./inst/bin/valgrind --tool=aprof your-program [program options]
 }}}
-aprof will produce, in the working directory, a report for each thread of your program. Each report is a text file that has a name of the form `PID_TID-4.aprof` and contains profile data in [ReportFileFormat aprof's file format]. Report files can be visualized with [Aprofplot aprof-plot].
+aprof will produce, in the working directory, a report for each thread of your program. Each report is a text file that has a name of the form `PID_TID-4.aprof` (4 is the default [aprof_manual#aprof_command-line_options memory resolution] in `aprof`) and contains profile data in [ReportFileFormat aprof's file format]. Report files can be visualized with [Aprofplot aprof-plot].
 
 === Visualize profile reports ===
 
