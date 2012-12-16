@@ -20,7 +20,7 @@ last stable version includes Valgrind 3.8.0 - svn rev. 12556. Using the `--prefi
 {{{
 make install
 }}}
-Please note that the `README` and `INSTALL` files in the source directory are the ones provided by Valgrind and they can give you different instructions (goal: system installation).
+*Please note* that the `README` and `INSTALL` files in the source directory are the ones provided by Valgrind developers and they can give you different instructions (goal: system installation).
 
 If you are on an ARM/PPC architecture please read [AprofOnARM_PPC this] first.
 
