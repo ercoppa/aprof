@@ -1,0 +1,15 @@
+== Run aprof-plot ==
+
+To analyze the profile report, start aprof-plot as follows:
+
+ * If you have downloaded aprof-plot from our download section, you can run it in this way:
+{{{
+cd aprof-plot-X.Y.Z
+java -jar aprof-plot.jar
+}}}
+
+ * If you have downloaded aprof-plot from our SVN, then you can run the built jar in this way:
+{{{
+cd aprofplot
+ant run
+}}}
