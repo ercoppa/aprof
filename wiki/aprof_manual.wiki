@@ -10,7 +10,7 @@ aprof is a [http://valgrind.org/ Valgrind] tool. You can find a more [http://val
 
 == Usage ==
 
-See the [/BasicUsage#Profile_a_program basic usage page]
+See the [BasicUsage#Profile_a_program basic usage page]
 
 == aprof command-line options ==
 
