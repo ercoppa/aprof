@@ -29,6 +29,8 @@ See the [BasicUsage#Profile_a_program basic usage page]
 
 == aprof specific client requests ==
 
+In the stable version of `aprof`, client requests are used only for external function entry/exit point tracing. See [AprofOnARM_PPC this page] for more details.
+
 == Report file format ==
 
 See the [ReportFileFormat report file format page].
