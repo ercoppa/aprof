@@ -48,6 +48,19 @@ int count_zero(int v[], int n) {
 The function, which counts the number of 0’s in the input array v, has RMS `n + 2`: it reads variables `v` and `n`, and the first `n` cells of the array pointed to by `v`. `aprof` collect one performance tuple for
 each distinct value of `n` on which count zero is called during the execution of the program.
 
+Suppose that `count_zero` requires `n` seconds to be executed and your application calls `count_zero` three times. For example:
+
+{{{
+int sum = 0;
+int v[1024];
+sum += count_zero(v, 256); // count zeroes first 256 int of v[]
+sum += count_zero(v, 512); // count zeroes first 512 int of v[]
+sum += count_zero(v, 1024); // count zeroes first 1024 int of v[]
+}}}
+So, the first call requires 256 seconds, the second one 512 and the third one 1024 seconds. If we now profile our application with a traditional profiler and with `aprof` we get:
+
+
+
 == Usage ==
 
 See the [BasicUsage#Profile_a_program basic usage page]
