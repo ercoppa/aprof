@@ -1,9 +1,28 @@
+
 == Basic usage ==
 
 === Profile a program ===
 
-See [aprof_manual#Usage usage of aprof].
+To start a profile run for a program, execute:
+
+{{{
+cd aprof_valgrind
+./inst/bin/valgrind --tool=aprof your-program [program options]
+}}}
+aprof will produce, in the working directory, a report for each thread of your program. Each report is a text file that has a name of the form `PID_TID-4.aprof` and contains profile data in [ReportFileFormat aprof's file format]. Report files can be visualized with [Aprofplot aprof-plot].
 
 === Visualize profile reports ===
 
-See [aprof_plot_manual#Run_aprof-plot usage of aprof-plot]
+To analyze the profile report, start aprof-plot as follows:
+
+ * If you have downloaded aprof-plot from our download section, you can run it in this way:
+{{{
+cd aprof-plot-X.Y.Z
+java -jar aprof-plot.jar
+}}}
+
+ * If you have downloaded aprof-plot from our SVN, then you can run the built jar in this way:
+{{{
+cd aprofplot
+ant run
+}}}
