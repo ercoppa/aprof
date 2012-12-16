@@ -84,7 +84,7 @@ int sum = 0;
 int v[1024];
 sum += count_zero(v, 1024);
 }}}
-on this example `aprof` gives us all the information needed to draw a chart with 1024 points and thus allows us to perform an accurate evaluation of the tren growth rate for `count_zero`.
+on this example `aprof` gives us all the information needed to draw a chart with 1024 points and thus allows us to perform an accurate evaluation of the trend growth rate for `count_zero`.
 
 === Performance Metric ===
 
