@@ -67,7 +67,7 @@ The info provided by `aprof` is a lot more precise: for example you can easily d
 || *traditional profiler* || *`aprof`* ||
 || [http://aprof.googlecode.com/svn/trunk/wiki_images/example-2a.png] || [http://aprof.googlecode.com/svn/trunk/wiki_images/example-2b.png] ||
 
-==== Example ====
+==== Example 3 ====
 
 The RMS metric is really powerful. Suppose your `count_zero` code is:
 {{{
