@@ -37,7 +37,7 @@ In the stable version of `aprof`, client requests are used only for external fun
 where:
   * `<dummy_var>` is an int variable (not used)
   * `<function_identifier>` is an identifier of the function (e.g., the routine address)
-  * `<function_status>`: one if entry point; two is exit point
+  * `<function_status>`: one if entry point; two if exit point
 
 == Report file format ==
 
