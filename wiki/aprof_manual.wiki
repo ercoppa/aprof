@@ -64,8 +64,8 @@ So, the first call requires 256 seconds, the second one 512 and the third one 10
 
 The info provided by `aprof` is a lot more precise: for example you can easily draw a chart and evaluate the trend growth rate (a linear trend as expected). A traditional profiler can only give you aggregate info because it does not know the input size of a routine invocation and therefore it treats all the routine calls as executed on the same unknown input size.
 
-|| *traditional profiler* || *`aprof`*
-|| [http://aprof.googlecode.com/svn/trunk/wiki_images/example-2a.png] || [http://aprof.googlecode.com/svn/trunk/wiki_images/example-2a.png] ||
+|| *traditional profiler* || *`aprof`* ||
+|| [http://aprof.googlecode.com/svn/trunk/wiki_images/example-2a.png] || [http://aprof.googlecode.com/svn/trunk/wiki_images/example-2b.png] ||
 
 == Usage ==
 
