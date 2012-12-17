@@ -1,0 +1,5 @@
+# contact page
+
+= Contact us =
+
+If you have problem or question  on `aprof`, `aprof-plot` or this site (e.g., mistakes, old information, etc) you can send an email to ercoppa [at] gmail [dot] com.
