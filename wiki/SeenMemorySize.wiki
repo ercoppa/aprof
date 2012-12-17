@@ -1,3 +1,0 @@
-=RMS: Read memory size=
-
-Under construction.
