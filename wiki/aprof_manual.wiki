@@ -80,7 +80,7 @@ sum += count_zero(v, 1024); // count zeroes first 1024 int of v[]
 So, the first call requires 256 seconds, the second one 512 and the third one 1024 seconds. If we now profile our application with a traditional profiler and with `aprof` we get:
 
 || || *traditional profiler* || *`aprof`* || 
-|| `count_zero` || calls: 3 <br> total exec time: 1792 secs <br> average exec time: 597.3 secs || calls: 3 <br> total exec time: 1792 secs <br> average exec time: 597.3 secs <br> execution`]`1`]`: input size 258, time 256 secs <br> execution`[`2`]`: input size 514, time 512 secs <br> execution`]`3`]`: input size 1026, time 1024 secs ||
+|| `count_zero` || calls: 3 <br> total exec time: 1792 secs <br> average exec time: 597.3 secs || calls: 3 <br> total exec time: 1792 secs <br> average exec time: 597.3 secs <br> execution`[`1`]`: input size 258, time 256 secs <br> execution`[`2`]`: input size 514, time 512 secs <br> execution`[`3`]`: input size 1026, time 1024 secs ||
 
 The info provided by `aprof` is a lot more precise: for example you can easily draw a chart and evaluate the trend growth rate (a linear trend as expected). A traditional profiler can only give you aggregate info because it does not know the input size of a routine invocation and therefore it treats all the routine calls as executed on the same unknown input size.
 
