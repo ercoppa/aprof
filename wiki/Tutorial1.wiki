@@ -120,7 +120,7 @@ Let's focus on our quick sort implementation. Select `quick_sort_ric` function i
 
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-3.png]
 
-On x axis we have the [aprof_manual#Input_size_estimation:_Read_Memory_Size_(RMS) RMS metric]. This can be seen as an estimation of input sizes on which your function was executed. Instead on y axis we find an execution cost metric (by default `aprof` counts the number of executed [http://en.wikipedia.org/wiki/Basic_block basic blocks]). Points of the chart are colored based on their frequency (number of times your routine was executed on a specific RMS). The legend on top of chart specifies the exact frequency value of each color:
+On x axis we have the [aprof_manual#Input_size_estimation:_Read_Memory_Size_(RMS) RMS metric]. This can be seen as an estimation of input sizes on which your function was executed. Instead on y axis we find an execution cost metric (by default `aprof` counts the number of executed [aprof_manual#Performance_Metric basic blocks]). Points of the chart are colored based on their frequency (number of times your routine was executed on a specific RMS). The legend on top of chart specifies the exact frequency value of each color:
 
 [http://aprof.googlecode.com/svn/trunk/wiki_images/Color-scale.png]
 
