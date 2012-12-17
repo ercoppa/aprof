@@ -1,7 +1,7 @@
 == Source organization ==
   * *branches/*:
     * *stable/*: stable version of aprof, check out this!
-    * *external_input*: experimental support for external input (e.g., disk I/O)
+    * *external_input*: experimental version of aprof with support for external input (e.g., disk I/O)
   * *trunk/*: development branch
     * *aprofplot/*: a java GUI for displaying aprof logs
     * *benchmark/*: some tools/code used for aprof's benchmarks
