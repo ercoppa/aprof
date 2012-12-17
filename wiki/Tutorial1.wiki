@@ -178,7 +178,7 @@ We can see that the trend (almost) stabilizes to a specific constant and therefo
 
 === A different workload ===
 
-Our implementation of quick sort is efficient on a workload composed by random integers. But what happens if we change our workload? Maybe the workload of our application is unknown to us. We can see how the performance of our code changes if we sort a sorted array. For example, we can modify the `main()` function in this way:
+Our implementation of quick sort is efficient on a workload composed by random integers. But what happens if we change our workload? Maybe the workload of our application is unknown to us. We can see how the performance of our code changes if we sort a sorted array. For example, we can modify the `main` function in this way:
 {{{
 int main() {
     
