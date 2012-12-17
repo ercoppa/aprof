@@ -16,7 +16,7 @@ In order to estimate the input size of a routine invocation at runtime, `aprof` 
 
   The read memory size (RMS) of the execution of a routine `f` is the number of distinct memory cells first accessed by `f`, or by a descendant of `f` in the call tree, with a read operation.
 
-The main idea behind the definition of RMS is that cells that are accessed by a function for the first time with a read operation contain the input values of the routine. Conversely, if a cell is first written and then read by the routine, the read value is not part of the input as it was determined by the routine itself. Please see the animated example in our [http://aprof.googlecode.com/files/aprof-PLDI.pdf PLDI slides] to understand what is the exact meaning of a _first access_ by a function to a memory cell.
+The main idea behind the definition of RMS is that cells that are accessed by a function for the first time with a read operation contain the input values of the routine. Conversely, if a cell is first written and then read by the routine, the read value is not part of the input as it was determined by the routine itself. Please see the animated example in our [http://aprof.googlecode.com/files/aprof-PLDI.pdf PLDI slides] to understand what is the exact meaning of a _first access_ to a memory cell by a function.
 
 To better understand this metric, let's discuss some examples.
 
