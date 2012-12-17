@@ -2,7 +2,7 @@
 
 = Profiling a simple program =
 
-This tutorial explains how to profile a program with aprof and how to analyze the collected profiling data using aprof-plot.
+This tutorial explains how to profile a program with `aprof` and how to analyze the collected profiling data using `aprof-plot`.
 
 == A simple program ==
 
