@@ -55,7 +55,7 @@ This function takes as arguments two pointers to integers and simply swaps their
 
 In the next example we will understand why an estimation of the input size can be really useful.
 
-==== Example 2 ====
+==== Example 3 ====
 
 {{{
 int count_zero(int v[], int n) {
@@ -87,7 +87,7 @@ The info provided by `aprof` is a lot more precise: for example you can easily d
 || *traditional profiler* || *`aprof`* ||
 || [http://aprof.googlecode.com/svn/trunk/wiki_images/example-2a.png] || [http://aprof.googlecode.com/svn/trunk/wiki_images/example-2b.png] ||
 
-==== Example 3 ====
+==== Example 4 ====
 
 The RMS metric is really powerful. Suppose your `count_zero` code is:
 {{{
