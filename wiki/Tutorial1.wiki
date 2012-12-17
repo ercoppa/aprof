@@ -1,4 +1,4 @@
-# A tutorial on how to profile a simple program with [aprof_manual aprof] and analyze the profiling data using [aprof_plot_manual aprof-plot]
+# A tutorial on how to profile a simple program with [aprof_manual `aprof`] and analyze the profiling data using [aprof_plot_manual `aprof-plot`]
 
 = Profiling a simple program =
 
