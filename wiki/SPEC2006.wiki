@@ -7,8 +7,9 @@
 
 ==== Summary ====
 
-We summarize results in [https://docs.google.com/spreadsheet/ccc?key=0AjPEdOad795XdFRhZkVsY3dBUDhYT1AtT2NEclhGeEE this spreadsheet].
-
+We summarize results in:
+  * *ref workloads*: [https://docs.google.com/spreadsheet/ccc?key=0AjPEdOad795XdFRhZkVsY3dBUDhYT1AtT2NEclhGeEE this spreadsheet].
+  * *test workloads*: [https://docs.google.com/spreadsheet/ccc?key=0AjPEdOad795XdGtvdDZWalhpY2FaanlweGhQUjR6WWc  this spreadsheet]
 === Platform 2 ===
 
   * Macbook 5,1
