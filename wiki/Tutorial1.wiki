@@ -137,7 +137,7 @@ We can analyze in more detail our input workload using the `RMS frequency plot` 
 
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-10.png] [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-15.png]
 
-This chart confirms our observation on the frequency of input sizes. On the right we can see the `routine profile`, this can be useful if we want to know the exact frequency for each RMS value.
+This chart confirms our observation on the frequency of input sizes. On the right we can see the `routine profile`, this can be useful if we want to know the exact frequency (or cost) for each RMS value.
 
 Now, enable the `curve bounding plot`:
 
