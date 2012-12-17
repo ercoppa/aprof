@@ -24,17 +24,17 @@ To better understand this metric, let's discuss some examples.
 
 In order to compute the RMS metric you need to see your code as a trace of program operations, including routine activations (`call`), routine completions (`return`), and read/write memory accesses (`read` and `write`). For example, consider this trace:
 {{{
-call f
-  read x
-  write y
-  call g
-    read x
-    read y
-    read z
-    write w
-    return
-  read w
-  return
+ 1. call f
+ 2.  read x
+ 3.  write y 
+ 4.  call g
+ 5.    read x
+ 6.    read y
+ 7.    read z
+ 8.    write w
+ 9.    return
+10.  read w
+11.  return
 }}} 
 Function `g` performs three first-read operations (lines 5 – 7) and its RMS is thus 3. Function `f` performs five read operations, three of which through its subroutine `g`. However, its RMS is only 2: the read operations at line 5, line 6, and line 10 are not first-reads with respect to `f`. Indeed, `x` has been already read at line 2 and `y` and `w` are written at lines 3 and 8, respectively, before being read. Hence, only the read operations at lines 2 and 7 contribute to the computation of the read memory size of function `f`.
 
