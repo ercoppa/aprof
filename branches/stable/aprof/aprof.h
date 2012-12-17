@@ -436,7 +436,7 @@ void APROF_(addEvent_Dw)(IRSB* sb, IRAtom* daddr, Int dsize);
 /* Callstack management (callstack.c) */
 Activation * APROF_(get_activation_by_aid)(ThreadData * tdata, UInt aid);
 
-#define vgAprof_get_activation(tdata, depth) ((depth-1 >= tdata->max_stack_size) ? \
+#define vgAprof_get_activation(tdata, depth) ((depth >= tdata->max_stack_size) ? \
                                         APROF_(resize_stack)(tdata, depth) : \
                                         (tdata->stack + depth - 1))
                                         

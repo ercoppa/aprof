@@ -51,7 +51,7 @@ CCTNode * APROF_(parent_CCT)(ThreadData * tdata) {
 	CCTNode * node = APROF_(get_activation)(tdata, depth - 1)->node;
 	while (node == NULL) {
 		depth--;
-		if (depth == 0) return tdata->root;
+		if (depth <= 1) return tdata->root;
 		node = APROF_(get_activation)(tdata, depth - 1)->node;
 	}
 	return node;
