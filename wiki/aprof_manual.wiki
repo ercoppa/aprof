@@ -16,12 +16,33 @@ In order to estimate the input size of a routine invocation at runtime, `aprof` 
 
   The read memory size (RMS) of the execution of a routine `f` is the number of distinct memory cells first accessed by `f`, or by a descendant of `f` in the call tree, with a read operation.
 
-The main idea behind the definition of RMS is that cells that are accessed by a function for the first time with a read operation contain the input values of the routine. Conversely, if a cell is first written and then read by the routine, the read value is not part of the input as it was determined by the routine itself. Please see the animated example in our [http://aprof.googlecode.com/files/aprof-PLDI.pdf PLDI slides] to understand what is the exact meaning of a _first access_ to a memory cell by a function.
+The main idea behind the definition of RMS is that cells that are accessed by a function for the first time with a read operation contain the input values of the routine. Conversely, if a cell is first written and then read by the routine, the read value is not part of the input as it was determined by the routine itself. 
 
 To better understand this metric, let's discuss some examples.
 
 ==== Example 1 ====
 
+In order to compute the RMS metric you need to see your code as a trace of program operations, including routine activations (`call`), routine completions (`return`), and read/write memory accesses (`read` and `write`). For example, consider this trace:
+{{{
+call f
+  read x
+  write y
+  call g
+    read x
+    read y
+    read z
+    write w
+    return
+  read w
+  return
+}}} 
+Function `g` performs three first-read operations (lines 5 – 7) and its RMS is thus 3. Function `f` performs five read operations, three of which through its subroutine `g`. However, its RMS is only 2: the read operations at line 5, line 6, and line 10 are not first-reads with respect to `f`. Indeed, `x` has been already read at line 2 and `y` and `w` are written at lines 3 and 8, respectively, before being read. Hence, only the read operations at lines 2 and 7 contribute to the computation of the read memory size of function `f`.
+
+A better explanation (with an animation) of this example is provided inside our [http://aprof.googlecode.com/files/aprof-PLDI.pdf PLDI slides].
+
+==== Example 2 ====
+
+Let's now discuss an example with real C code:
 {{{
 void swap(int * a, int * b) {
     int temp = *a; 
