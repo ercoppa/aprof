@@ -60,11 +60,11 @@ int main() {
 }
 }}} 
 
-The `main` function invokes our quick sort implementation different times. Each time the array is filled with some random numbers. In a real program probably our quick sort implementation would be called during the normal execution of our application and so we don't need to create an _unrealistic_ `main` in order to profile our code. `quick_sort_ric()` and `partition()` are textbook implementations and therefore they are not very optimized (the first element of the array is chosen as pivot by `partition()`).
+The `main` function invokes our quick sort implementation different times. Each time the array is filled with some random numbers. In a real program probably our quick sort implementation would be called during the normal execution of our application and so we don't need to create an _unrealistic_ `main` in order to profile our code. `quick_sort_ric` and `partition` are textbook implementations and therefore they are not very optimized (the first element of the array is chosen as pivot by `partition`).
 
 We expect that:
-  * `partition()` should be O(n)
-  * `quick_sort_ric()` should be O( n `*` log(n) ) because the input is composed by random integers (average case performance). 
+  * `partition` should be `O(n)`
+  * `quick_sort_ric` should be `O( n * log(n) )` because the input is composed by random integers (average case performance). 
 
 == Compiling the program ==
 
@@ -108,7 +108,7 @@ We can identify three main graphical components:
 
 The first component is the `routine table`. This a list of all profiled routines of your program with several useful information (e.g., name, cumulative cost, number of collected RMS, etc.).
 
-The second component is the `routine profile`. If you select a function in the routine table, then this component displays all the collected tuples (RMS value, min cost, max cost, frequency, etc.) for the chosen routine. 
+The second component is the `routine profile`. If you select a function in the routine table, then this component displays all the collected tuples ([aprof_manual#Input_size_estimation:_Read_Memory_Size_(RMS) RMS value], min cost, max cost, frequency, etc.) for the chosen routine. 
 
 Finally, the third component displays several charts for the current selected routine.
 
