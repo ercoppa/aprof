@@ -5,3 +5,4 @@
  * [aprof_plot_manual aprof-plot manual]
  * [Tutorial1 Tutorial]
  * [PlotExamples Gallery]
+ * [ContactUs Contact us]
