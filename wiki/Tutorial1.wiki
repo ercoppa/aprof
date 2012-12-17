@@ -153,7 +153,7 @@ In the last screenshot, we can observe that the trend of ratio `T(n)/n` (where `
 
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-6.png] [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-7.png]
 
-The trend stabilized to a constant :)
+The trend stabilizes to a constant :)
 And if we try with `n^2`:
 
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-8.png] 
