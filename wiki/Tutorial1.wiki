@@ -133,7 +133,7 @@ This chart reveals two things:
   * the trend of `quick_sort_ric` is not quadratic, maybe linear or `n*log(n)`;
   * `quick_sort_ric` is executed on small input sizes most of the times (the smaller is the RMS, the higher is the frequency): this is expected as quick sort is a divide-and-conquer sorting algorithm.
 
-We can analyze in more detail our input workload using the `frequency plot` (the chart is zoomed in):
+We can analyze in more detail our input workload using the `RMS frequency plot` (the second one; the chart is zoomed in):
 
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-10.png] [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-15.png]
 
