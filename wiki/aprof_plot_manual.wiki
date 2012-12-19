@@ -25,10 +25,10 @@ We can identify four main core graphical components:
 
 We have:
 
- * component 1: the [aprof_plot_manual#Charts charts's area], several charts are shown based on the selected routine
- * component 2: the [aprof_plot_manual#Routine_table routine table], a list of all profiled routines of our program
- * component 3: the [aprof_plot_manual#Routine_profile routine profile], a list of all collected performance tuples for the selected routine
- * component 4: the [aprof_plot_manual#Main_menu_&_toolbar menubar and toolbar]
+ * component 1: the [aprof_plot_manual#Main_menu_&_toolbar menubar and toolbar]
+ * component 2: the [aprof_plot_manual#Charts charts's area], several charts are shown based on the selected routine
+ * component 3: the [aprof_plot_manual#Routine_table routine table], a list of all profiled routines of our program
+ * component 4: the [aprof_plot_manual#Routine_profile routine profile], a list of all collected performance tuples for the selected routine
 
 Let's discuss in details all aspects and features of `aprof-plot`.
 
