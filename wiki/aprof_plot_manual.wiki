@@ -49,7 +49,7 @@ Let's discuss in details all aspects and features of `aprof-plot`.
 
 === `Edit` ===
 
-|| `Settings...` || - || Open the [prof_plot_manual#Settings settings] dialog. ||
+|| `Settings...` || [http://aprof.googlecode.com/svn/trunk/wiki_images/Settings-icon.png] || Open the [prof_plot_manual#Settings settings] dialog. ||
 
 === `View` ===
 
