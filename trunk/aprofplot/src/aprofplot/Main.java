@@ -34,6 +34,7 @@ public class Main {
 			@Override
 			public void run() {
 				MainWindow window = new MainWindow();
+                window.postStart();
 				windows.add(window);
 				window.setVisible(true);
 			}

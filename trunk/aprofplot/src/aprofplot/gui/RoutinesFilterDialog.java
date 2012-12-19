@@ -1,11 +1,17 @@
 package aprofplot.gui;
 
+import java.util.ArrayList;
+
 public class RoutinesFilterDialog extends javax.swing.JDialog {
 
 	/** Creates new form RoutinesFilterDialog - modal means if it's a blocking activity */
-	public RoutinesFilterDialog(java.awt.Frame parent, boolean modal, java.util.ArrayList<String> v, String[] criteria) {
+	public RoutinesFilterDialog(java.awt.Frame parent, boolean modal, 
+            java.util.ArrayList<String> v, String[] criteria,
+            boolean is_routine_table) {
 		
 		super(parent, modal);
+        this.is_routine_table = is_routine_table;
+        
 		liblist = v;
 		initComponents();
 		
@@ -46,6 +52,11 @@ public class RoutinesFilterDialog extends javax.swing.JDialog {
 		}
 	
 	}
+    
+    public RoutinesFilterDialog(java.awt.Frame parent, boolean modal, 
+            java.util.ArrayList<String> v, String[] criteria) {
+        this(parent, modal, v, criteria, true);
+    }
 
 	/** This method is called from within the constructor to
 	 * initialize the form.
@@ -105,7 +116,7 @@ public class RoutinesFilterDialog extends javax.swing.JDialog {
 
         jPanel3.setLayout(new javax.swing.BoxLayout(jPanel3, javax.swing.BoxLayout.LINE_AXIS));
 
-        jCheckBox1.setText("Time %  >=  ");
+        jCheckBox1.setText("Cost %  >=  ");
         jCheckBox1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jCheckBox1ActionPerformed(evt);
@@ -230,8 +241,10 @@ public class RoutinesFilterDialog extends javax.swing.JDialog {
 			if (jCheckBox3.isSelected()) criteria[2] = jTextField2.getText();
 			if (jCheckBox5.isSelected()) criteria[3] = jTextField4.getText();
 			
-			((MainWindow)this.getParent()).setRoutinesTableFilter(criteria);
-		
+            if (is_routine_table)
+    			((MainWindow)this.getParent()).setRoutinesTableFilter(criteria);
+            else
+                ((MainWindow)this.getParent()).setContextsTableFilter(criteria);
 		}
 	}//GEN-LAST:event_jButton1ActionPerformed
 
@@ -326,5 +339,6 @@ public class RoutinesFilterDialog extends javax.swing.JDialog {
     private javax.swing.JTextField jTextField2;
     private javax.swing.JTextField jTextField4;
     // End of variables declaration//GEN-END:variables
-	private java.util.ArrayList<String> liblist = null;
+	private ArrayList<String> liblist = null;
+    private boolean is_routine_table = true;
 }
