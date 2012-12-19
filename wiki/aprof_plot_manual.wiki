@@ -30,6 +30,8 @@ We have:
  * component 3: the routine profile, a list of all collected performance tuples for the selected routine
  * component 4: the menubar and toolbar
 
+Let's discuss in details all aspects and features of `aprof-plot`.
+
 == Main menu & toolbar ==
 
 == Routine table ==
