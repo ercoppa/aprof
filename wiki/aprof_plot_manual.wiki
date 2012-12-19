@@ -23,7 +23,18 @@ We can identify four main core graphical components:
 
 [http://aprof.googlecode.com/svn/trunk/wiki_images/aprof-plot-1.png] 
 
+We have:
+
+ * component 1: the charts's area, several charts are shown based on the selected routine
+ * component 2: the routine table, a list of all profiled routines of our program
+ * component 3: the routine profile, a list of all collected performance tuples for the selected routine
+ * component 4: the menubar and toolbar
+
 == Main menu & toolbar ==
+
+== Routine table ==
+
+== Routine profile == 
 
 == Charts ==
 
