@@ -48,7 +48,7 @@ Let's discuss in details all aspects and features of `aprof-plot`.
 
 === `Edit` ===
 
-=== `View' ===
+=== `View` ===
 
 === `Help` ===
 
