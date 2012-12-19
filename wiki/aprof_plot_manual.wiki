@@ -42,9 +42,9 @@ Let's discuss in details all aspects and features of `aprof-plot`.
 || " || `Save` || [http://aprof.googlecode.com/svn/trunk/wiki_images/Save-icon.png] || Save the report. This is enabled only if you have set/unset some routines as favorites. ||
 || " || `Export` || - || From this submenu, you can export: <br> - routine profile: all the performance tuples (a routine must be selected in the routine table) <br> - program profile: info about profiled routines <br> - program statistics: several statistics about your application run|| 
 || " || `Merge...` || [http://aprof.googlecode.com/svn/trunk/wiki_images/Merge-icon.png] || Disabled. ||
-|| " || `Exit` || - || Close the current window. ||
+|| " || `Exit` || - || Close the current window. || <br>
 || `Edit` || `Settings...` || [http://aprof.googlecode.com/svn/trunk/wiki_images/Settings-icon.png] || Open the [aprof_plot_manual#Settings settings] dialog. ||
-|| `View` || *Menu element* || *Toolbar  image* || *Description* ||
+|| `View` || ||  ||  ||
 || `Help` || `About` || - || Open a dialog with info about `aprof-plot`. ||
 
 == Routine table ==
