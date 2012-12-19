@@ -106,4 +106,8 @@ public class RmsTableModel extends AbstractTableModel {
 		// not available
 		return;
 	}
+    
+    public void refreshStructure() {
+        fireTableStructureChanged();
+    }
 }

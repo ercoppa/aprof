@@ -85,7 +85,7 @@ public class ContextualizedRoutineInfo extends RoutineInfo {
 				total_cost = 0;
                 total_real_cost = 0;
 				total_self = 0;
-                self_min = 0;
+                self_min = Long.MAX_VALUE;
                 self_max = 0;
 				occ = 0;
 				current_rms = r.getRms();

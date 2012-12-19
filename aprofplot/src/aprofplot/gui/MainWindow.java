@@ -4,6 +4,8 @@ import aprofplot.*;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Insets;
+import java.awt.Rectangle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.*;
@@ -13,6 +15,7 @@ import javax.swing.tree.*;
 import java.util.*;
 import java.io.*;
 import java.net.URL;
+import javax.swing.RowSorter.SortKey;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
@@ -39,6 +42,9 @@ public class MainWindow extends javax.swing.JFrame {
 	
 	// Are we loading a new report?
 	private boolean loading = false;
+    
+    // are we a routine with context with a click mouse event?
+    private boolean loading_routine = false;
 	
 	// Is the editor visible ?
 	private boolean editor_visible = false;
@@ -69,6 +75,7 @@ public class MainWindow extends javax.swing.JFrame {
 			initGraph();
 			refreshRecentFiles();
 			resetRoutineTableFilter();
+            resetContextsTableFilter();
 			checkEditor();
 		
 		} catch (Exception e) {
@@ -101,6 +108,7 @@ public class MainWindow extends javax.swing.JFrame {
         jCheckBoxMenuItem9 = new javax.swing.JCheckBoxMenuItem();
         jCheckBoxMenuItem8 = new javax.swing.JCheckBoxMenuItem();
         jCheckBoxMenuItem11 = new javax.swing.JCheckBoxMenuItem();
+        jButton12 = new javax.swing.JButton();
         jToolBar1 = new javax.swing.JToolBar();
         jButton3 = new javax.swing.JButton();
         jButton1 = new javax.swing.JButton();
@@ -146,8 +154,10 @@ public class MainWindow extends javax.swing.JFrame {
         jSeparator10 = new javax.swing.JToolBar.Separator();
         jSplitPane2 = new javax.swing.JSplitPane();
         jPanel6 = new javax.swing.JPanel();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        jTable1 = new JTable(new RoutinesTableModel(this.report, this)) {
+        jLabel3 = new javax.swing.JLabel();
+        jSplitPane5 = new javax.swing.JSplitPane();
+        jScrollPane6 = new javax.swing.JScrollPane();
+        jTable3 = new JTable(new RoutinesTableModel(this.report, this, false)) {
             public Component prepareRenderer(TableCellRenderer renderer, int row, int column)
             {
                 try {
@@ -166,8 +176,26 @@ public class MainWindow extends javax.swing.JFrame {
                 }
             }
         };
-        jPanel7 = new javax.swing.JPanel();
-        jLabel3 = new javax.swing.JLabel();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        jTable1 = new JTable(new RoutinesTableModel(this.report, this, ((RoutinesTableModel)jTable3.getModel()))) {
+            public Component prepareRenderer(TableCellRenderer renderer, int row, int column)
+            {
+                try {
+                    if (renderer == null) {
+                        System.out.println("Renderer is null");
+                        return null;
+                    }
+                    Component c = super.prepareRenderer(renderer, row, column);
+                    if (c != null && !c.getBackground().equals(getSelectionBackground())) {
+                        c.setBackground(java.awt.Color.WHITE);
+                    }
+                    return c;
+                } catch(NullPointerException e) {
+                    System.out.println("row: " + row + " col: " + column);
+                    return null;
+                }
+            }
+        };
         jTabbedPane1 = new javax.swing.JTabbedPane();
         jSplitPane3 = new javax.swing.JSplitPane();
         jPanel4 = new javax.swing.JPanel();
@@ -315,6 +343,19 @@ public class MainWindow extends javax.swing.JFrame {
             }
         });
         jPopupMenu1.add(jCheckBoxMenuItem11);
+
+        jButton12.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Filter-icon.png"))); // NOI18N
+        jButton12.setToolTipText("Filter routines");
+        jButton12.setBorder(null);
+        jButton12.setMaximumSize(new java.awt.Dimension(28, 28));
+        jButton12.setMinimumSize(new java.awt.Dimension(28, 28));
+        jButton12.setPreferredSize(new java.awt.Dimension(28, 28));
+        jScrollPane6.setCorner(javax.swing.ScrollPaneConstants.UPPER_RIGHT_CORNER, jButton12);
+        jButton12.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton12ActionPerformed(evt);
+            }
+        });
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
         setTitle("aprof-plot");
@@ -670,46 +711,63 @@ public class MainWindow extends javax.swing.JFrame {
 
         jPanel6.setLayout(new java.awt.BorderLayout());
 
+        jLabel3.setBackground(new java.awt.Color(36, 29, 21));
+        jLabel3.setFont(new java.awt.Font("DejaVu Sans", 1, 13)); // NOI18N
+        jLabel3.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabel3.setText(" ");
+        jPanel6.add(jLabel3, java.awt.BorderLayout.NORTH);
+
+        jSplitPane5.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
+
+        jScrollPane6.setVisible(false);
+        jScrollPane6.setHorizontalScrollBarPolicy(javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        jScrollPane6.setVerticalScrollBarPolicy(javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+        jScrollPane6.setEnabled(false);
+
+        jTable3.setRowHeight(52);
+        jTable3.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+        jScrollPane6.setViewportView(jTable3);
+        restoreSortingContextsTable();
+        jTable3.setDefaultRenderer(Routine.class, new PlotThumbRenderer());
+
+        jTable3.getSelectionModel().addListSelectionListener(new javax.swing.event.ListSelectionListener() {
+            public void valueChanged(javax.swing.event.ListSelectionEvent evt) {
+                jTable3ValueChanged(evt);
+            }
+        });
+
+        jSplitPane5.setBottomComponent(jScrollPane6);
+
         jScrollPane1.setVerticalScrollBarPolicy(javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 
         jTable1.setDoubleBuffered(true);
         //jTable1.setAutoCreateColumnsFromModel(false);
         jTable1.setRowHeight(52);
         jTable1.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
-        routines_table_sorter
-        = new javax.swing.table.TableRowSorter<javax.swing.table.TableModel>(jTable1.getModel());
-        jTable1.setRowSorter(routines_table_sorter);
-
-        java.util.List <javax.swing.RowSorter.SortKey> routine_table_sortKeys
-        = new java.util.ArrayList<javax.swing.RowSorter.SortKey>();
-        routine_table_sortKeys.add(new javax.swing.RowSorter.SortKey(3, javax.swing.SortOrder.DESCENDING));
-        routines_table_sorter.setSortKeys(routine_table_sortKeys);
-
-        routines_table_sorter.setSortable(5, false);
-
+        restoreSortingRoutinesTable();
         jTable1.setDefaultRenderer(Routine.class, new PlotThumbRenderer());
+        jTable1.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jTable1MouseClicked(evt);
+            }
+        });
         jTable1.getSelectionModel().addListSelectionListener(new javax.swing.event.ListSelectionListener() {
             public void valueChanged(javax.swing.event.ListSelectionEvent evt) {
                 jTable1ValueChanged(evt);
             }
         });
+        /*
         jTable1.getModel().addTableModelListener(new javax.swing.event.TableModelListener() {
             public void tableChanged(javax.swing.event.TableModelEvent evt) {
                 jTable1TableChanged(evt);
             }
         });
+        */
         jScrollPane1.setViewportView(jTable1);
 
-        jPanel6.add(jScrollPane1, java.awt.BorderLayout.CENTER);
+        jSplitPane5.setTopComponent(jScrollPane1);
 
-        jPanel7.setLayout(new java.awt.BorderLayout());
-
-        jLabel3.setFont(new java.awt.Font("DejaVu Sans", 1, 13)); // NOI18N
-        jLabel3.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel3.setText(" ");
-        jPanel7.add(jLabel3, java.awt.BorderLayout.CENTER);
-
-        jPanel6.add(jPanel7, java.awt.BorderLayout.PAGE_START);
+        jPanel6.add(jSplitPane5, java.awt.BorderLayout.CENTER);
 
         jSplitPane2.setLeftComponent(jPanel6);
 
@@ -724,14 +782,7 @@ public class MainWindow extends javax.swing.JFrame {
 
         jTable2.setModel(new RmsTableModel());
         jTable2.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
-        /*javax.swing.table.TableRowSorter<javax.swing.table.TableModel> */sms_table_sorter
-        = new javax.swing.table.TableRowSorter<javax.swing.table.TableModel>(jTable2.getModel());
-        jTable2.setRowSorter(sms_table_sorter);
-
-        java.util.List <javax.swing.RowSorter.SortKey> sms_table_sortKeys
-        = new java.util.ArrayList<javax.swing.RowSorter.SortKey>();
-        sms_table_sortKeys.add(new javax.swing.RowSorter.SortKey(0, javax.swing.SortOrder.ASCENDING));
-        sms_table_sorter.setSortKeys(sms_table_sortKeys);
+        restoreSortingRmsTable();
         jTable2.getSelectionModel().addListSelectionListener(new javax.swing.event.ListSelectionListener() {
             public void valueChanged(javax.swing.event.ListSelectionEvent evt) {
                 jTable2ValueChanged(evt);
@@ -759,9 +810,8 @@ public class MainWindow extends javax.swing.JFrame {
 
         jPanel5.add(jScrollPane3, java.awt.BorderLayout.CENTER);
 
-        if(false) {
-            jSplitPane3.setRightComponent(jPanel5);
-        } else jSplitPane3.setRightComponent(null);
+        jSplitPane3.setRightComponent(jPanel5);
+        jPanel5.setVisible(false);
 
         jTabbedPane1.addTab("Routine profile", jSplitPane3);
 
@@ -1052,6 +1102,40 @@ public class MainWindow extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    public void postStart() {
+       contexts_divider = jSplitPane5.getSize().height / 2;
+    }
+    
+    public boolean setVisibleContextsTable(boolean visible) {
+       
+       //System.out.println("Set visible");
+       //Thread.dumpStack();
+        
+       boolean old = jScrollPane6.isVisible();
+       if (old)
+          contexts_divider = jSplitPane5.getDividerLocation();
+       
+       if (visible) {
+           
+           jSplitPane5.setDividerSize(6);
+           jSplitPane5.setDividerLocation(contexts_divider);
+           jScrollPane6.setVisible(visible);
+           //scrollToVisibleRoutinesTable();
+           
+       } else {
+           
+           jScrollPane6.setVisible(visible);
+           jSplitPane5.setDividerSize(0);
+           jSplitPane5.setDividerLocation(1.0);
+       }
+       
+       return old;
+    }
+    
+    public boolean isVisibleContextsTable() {
+       return jScrollPane6.isVisible();
+    }
+    
 	public void checkEditor() {
 
 		if(isCtagsInstalled()) {
@@ -1081,15 +1165,27 @@ public class MainWindow extends javax.swing.JFrame {
 		return report;
     }
     
-	private void showStackTrace(boolean show) {
-		if (show) {
+	private void setVisibleStackTrace(boolean show) {
+		
+        if (jPanel5.isVisible())
+            stack_trace_divider = jSplitPane3.getDividerLocation();
+        
+        if (show) {
+            
 			jSplitPane3.setDividerSize(6);
-			jSplitPane3.setDividerLocation(0.5);
-			jSplitPane3.setRightComponent(jPanel5);
+            if (stack_trace_divider > 0)
+    			jSplitPane3.setDividerLocation(stack_trace_divider);
+			else
+                jSplitPane3.setDividerLocation(0.5);
+            
+            jPanel5.setVisible(true);
+            
 		} else {
+            
+            jPanel5.setVisible(false);
 			jSplitPane3.setDividerSize(0);
-			jSplitPane3.setRightComponent(null);
-		}
+		
+        }
 	}
 	
 	protected final void refreshRecentFiles() {
@@ -1173,21 +1269,142 @@ public class MainWindow extends javax.swing.JFrame {
                 javax.swing.JOptionPane.ERROR_MESSAGE);
     }
     
-    private void sortRoutineTableByRms() {
-        
-        List <RowSorter.SortKey> routine_table_sortKeys 
-					= new ArrayList<RowSorter.SortKey>();
-        routine_table_sortKeys.add(new RowSorter.SortKey(3, SortOrder.DESCENDING));
-        routines_table_sorter.setSortKeys(routine_table_sortKeys);
-
-        routines_table_sorter.setSortable(5, false);
-    
+    @SuppressWarnings("unchecked")
+    public void saveSortingRoutinesTable() {
+        routines_sort = (List<RowSorter.SortKey>) routines_table_sorter.getSortKeys(); 
     }
     
-    private void sortRmsTableByRms() {
-        List <RowSorter.SortKey> sms_table_sortKeys = new ArrayList<RowSorter.SortKey>();
-        sms_table_sortKeys.add(new RowSorter.SortKey(0, SortOrder.ASCENDING));
-        sms_table_sorter.setSortKeys(sms_table_sortKeys);
+    public void restoreSortingRoutinesTable() {
+        
+        if (routines_table_sorter == null) {
+            
+            routines_table_sorter = new TableRowSorter<TableModel>(jTable1.getModel());
+            jTable1.setRowSorter(routines_table_sorter);
+            
+        }
+        
+        /* default: sort by RMS */
+        if (routines_sort == null) {
+            
+            routines_sort = new ArrayList<RowSorter.SortKey>();
+            routines_sort.add(new RowSorter.SortKey(3, SortOrder.DESCENDING));
+            
+        }
+            
+        routines_table_sorter.setSortKeys(routines_sort);
+        routines_table_sorter.setSortable(5, false);
+    }
+    
+    @SuppressWarnings("unchecked")
+    public void saveSortingRmsTable() {
+        rms_sort = (List<RowSorter.SortKey>) rms_table_sorter.getSortKeys(); 
+    }
+    
+    public void restoreSortingRmsTable() {
+        
+        if (rms_table_sorter == null) {
+            
+            rms_table_sorter = new TableRowSorter<TableModel>(jTable2.getModel());
+            jTable2.setRowSorter(rms_table_sorter);
+            
+        }
+        
+        /* default: sort by RMS */
+        if (rms_sort == null) {
+            
+            rms_sort = new ArrayList<RowSorter.SortKey>();
+            rms_sort.add(new RowSorter.SortKey(0, SortOrder.ASCENDING));
+            
+        }
+        
+        rms_table_sorter.setSortKeys(rms_sort);
+    }
+    
+    @SuppressWarnings("unchecked")
+    public void saveSortingContextsTable() {
+        contexts_sort = (List<RowSorter.SortKey>) contexts_table_sorter.getSortKeys(); 
+    }
+    
+    public void restoreSortingContextsTable() {
+        
+        if (contexts_table_sorter == null) {
+            
+            contexts_table_sorter = new TableRowSorter<TableModel>(jTable3.getModel());
+            jTable3.setRowSorter(contexts_table_sorter);
+            
+        }
+        
+        setComparatorContexts();
+        
+        /* default: sort by RMS */
+        if (contexts_sort == null) {
+            
+            contexts_sort = new ArrayList<RowSorter.SortKey>();
+            contexts_sort.add(new RowSorter.SortKey(3, SortOrder.DESCENDING));
+            
+        }
+        
+        contexts_table_sorter.setSortKeys(contexts_sort);
+        contexts_table_sorter.setSortable(5, false);
+    }
+    
+    private void setComparatorContexts() {
+        
+        if (report == null) return;
+        
+        if (report.hasContexts()) {
+
+            final Comparator<String> contextOrder = new Comparator<String>() {
+
+               @Override
+               public int compare(String t, String t1) {
+
+                   if (t == null && t1 == null) return 0;
+                   if (t == null) return 1;
+                   if (t1 == null) return -1;
+
+                   int i1 = t.indexOf("/");
+                   int i2 = t1.indexOf("/");
+
+                   int c1 = 0; int c1_n = 0;
+                   int c2 = 0; int c2_n = 0;
+
+                   if (i1 < 0) {
+
+                       if (t.equals("")) c1 = 0;
+                       else c1 = Integer.parseInt(t);
+
+                   } else {
+
+                       c1_n = Integer.parseInt(t.substring(0, i1));
+                       c1 = Integer.parseInt(t.substring(i1 + 1));
+
+                   }
+
+                   if (i2 < 0) {
+
+                       if (t1.equals("")) c2 = 0;
+                       else c2 = Integer.parseInt(t1);
+
+                   } else {
+
+                       //System.out.println(t1 + " " + t1.substring(0, i2) + " / " + t1.substring(i2 + 1));
+                       c2_n = Integer.parseInt(t1.substring(0, i2));
+                       c2 = Integer.parseInt(t1.substring(i2 + 1));
+
+                   }
+
+                   if (c1 != c2) return c1 - c2;
+
+                   return c1_n - c2_n;
+
+               }
+
+            };
+
+            contexts_table_sorter.setComparator(8, contextOrder);
+
+       }
     }
     
 	private void setReport(AprofReport report, File file) throws Exception {
@@ -1235,66 +1452,16 @@ public class MainWindow extends javax.swing.JFrame {
 			
 			@Override
 			public void run() { 
-		 
-				RoutinesTableModel m = (RoutinesTableModel)jTable1.getModel();
-				m.setData(final_report);
-
-				// If routine table change structure, sorting by rms does not work anymore
-				sortRoutineTableByRms();
                 
-				if (final_report.hasContexts()) {
-				
-					 final Comparator<String> contextOrder = new Comparator<String>() {
-
-						@Override
-						public int compare(String t, String t1) {
-							
-							if (t == null && t1 == null) return 0;
-							if (t == null) return 1;
-							if (t1 == null) return -1;
-							
-							int i1 = t.indexOf("/");
-							int i2 = t1.indexOf("/");
-							
-							int c1 = 0; int c1_n = 0;
-							int c2 = 0; int c2_n = 0;
-							
-							if (i1 < 0) {
-								
-								if (t.equals("")) c1 = 0;
-								else c1 = Integer.parseInt(t);
-							
-							} else {
-							
-								c1_n = Integer.parseInt(t.substring(0, i1));
-								c1 = Integer.parseInt(t.substring(i1 + 1));
-							
-							}
-							
-							if (i2 < 0) {
-								
-								if (t1.equals("")) c2 = 0;
-								else c2 = Integer.parseInt(t1);
-							
-							} else {
-							
-								//System.out.println(t1 + " " + t1.substring(0, i2) + " / " + t1.substring(i2 + 1));
-								c2_n = Integer.parseInt(t1.substring(0, i2));
-								c2 = Integer.parseInt(t1.substring(i2 + 1));
-							
-							}
-							
-							if (c1 != c2) return c1 - c2;
-							
-							return c1_n - c2_n;
-	
-						}
-					
-					 };
-					 routines_table_sorter.setComparator(9, contextOrder);
-					 
-					 
-				}
+				RoutinesTableModel m = (RoutinesTableModel)jTable1.getModel();
+                saveSortingRoutinesTable();
+				m.setData(final_report);
+                restoreSortingRoutinesTable();
+                
+                RoutinesTableModel m2 = (RoutinesTableModel)jTable3.getModel();
+                saveSortingContextsTable();
+				m2.setData(final_report);
+                restoreSortingContextsTable();
 				
 				// Clear routinr profile
 				((RmsTableModel)jTable2.getModel()).setData(null);
@@ -1311,7 +1478,7 @@ public class MainWindow extends javax.swing.JFrame {
 		
 	}
 
-	private void saveForm() {
+	private boolean saveForm() {
 	
 		if (jButton7.isEnabled()) {
 			int choice = javax.swing.JOptionPane.showConfirmDialog(this,
@@ -1319,7 +1486,7 @@ public class MainWindow extends javax.swing.JFrame {
 													  "Unsaved changes",
 													  javax.swing.JOptionPane.YES_NO_CANCEL_OPTION,
 													  javax.swing.JOptionPane.QUESTION_MESSAGE);
-			if (choice == javax.swing.JOptionPane.CANCEL_OPTION) return;
+			if (choice == javax.swing.JOptionPane.CANCEL_OPTION) return false;
 			if (choice == javax.swing.JOptionPane.OK_OPTION) {
 				try {
 					report.save();
@@ -1329,7 +1496,7 @@ public class MainWindow extends javax.swing.JFrame {
 			}
 			
 		}
-	
+        return true;
 	}
 	
 	private void openFile() {
@@ -1371,16 +1538,33 @@ public class MainWindow extends javax.swing.JFrame {
 		}
 	}
     
-    public void refreshRoutineTable() {
+    public void refreshRoutinesTable() {
+        saveSortingRoutinesTable();
         ((RoutinesTableModel)jTable1.getModel()).setData(report);
         setRoutinesTableFilter(routines_filter_criteria);
-        sortRoutineTableByRms();
+        restoreSortingRoutinesTable();
     }
     
-    public void refreshRmsTable() {
+    public void refreshContextsTable() {
+        
+        if (isVisibleContextsTable()) {
+            
+            if (rtn_info instanceof RoutineContext)
+                ((RoutinesTableModel)jTable1.getModel()).loadContexts(
+                        ((RoutineContext)rtn_info).getOverallRoutine(), true);
+            else
+                ((RoutinesTableModel)jTable1.getModel()).loadContexts(rtn_info, true);
+        }
+        //setRoutinesTableFilter(routines_filter_criteria);
+        
+    }
+    
+    public void refreshRmsTable(boolean skip_refresh_plot) {
+        saveSortingRmsTable();
         ((RmsTableModel)jTable2.getModel()).setData(rtn_info);
-        refreshRmsTableFilter();
-        sortRmsTableByRms();
+        ((RmsTableModel)jTable2.getModel()).refreshStructure();
+        if (skip_refresh_plot) refreshRmsTableFilter();
+        restoreSortingRmsTable();
     }
 
 	protected boolean arePlotsLinked() {
@@ -1473,7 +1657,7 @@ public class MainWindow extends javax.swing.JFrame {
 
 	private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
 
-		saveForm();
+		if (!saveForm()) return;
 		Main.removeWindow(this);
 		this.dispose();
 		
@@ -1500,27 +1684,38 @@ public class MainWindow extends javax.swing.JFrame {
 	}
 	
     private void loadRoutine(Routine r) {
-    
+        
+        this.rtn_info = r;
+        
         if (r == null) {
             
             ((RmsTableModel)jTable2.getModel()).setData(null);
-			((StackTraceListModel)jList1.getModel()).setData(null);
-			jLabel7.setText("");
+            
+            if (isVisibleContextsTable())
+                ((RoutinesTableModel)jTable1.getModel()).loadContexts(null, false);
+			
+            ((StackTraceListModel)jList1.getModel()).setData(null);
+            
+            //System.out.println("Reset routine");
+			//Thread.dumpStack();
+            jLabel7.setText("");
 			
 			if (jCheckBoxMenuItem4.isSelected()) CostGraphPanel.clearData();
-			if (jCheckBoxMenuItem8.isSelected()) ratioGraphPanel.clearData();
-			if (jCheckBoxMenuItem10.isSelected()) freqGraphPanel.clearData();
-			if (jCheckBoxMenuItem5.isSelected()) MMMGraphPanel.clearData();
+            if (jCheckBoxMenuItem7.isSelected()) MccGraphPanel.clearData();
+            if (jCheckBoxMenuItem10.isSelected()) freqGraphPanel.clearData();
+            if (jCheckBoxMenuItem5.isSelected()) MMMGraphPanel.clearData();
+            if (jCheckBoxMenuItem6.isSelected()) TotalCostGraphPanel.clearData();
 			if (jCheckBoxMenuItem9.isSelected()) VarGraphPanel.clearData();
-			if (jCheckBoxMenuItem6.isSelected()) TotalCostGraphPanel.clearData();
-			if (jCheckBoxMenuItem7.isSelected()) MccGraphPanel.clearData();
-
+            if (jCheckBoxMenuItem8.isSelected()) ratioGraphPanel.clearData();
+            
 			//updateContextTree(null);
 			
 			// Initially hide stack trace panel
-			showStackTrace(false);
+			setVisibleStackTrace(false);
             return;
         }
+        
+        //System.out.println("Refresh routine");
         
         String name = r.getName();
         
@@ -1583,21 +1778,24 @@ public class MainWindow extends javax.swing.JFrame {
         if (r == null) jMenuItem11.setEnabled(false);
         else jMenuItem11.setEnabled(true);
 
-        this.rtn_info = r;
-
         // Update routine profile panel
         ((RmsTableModel)jTable2.getModel()).setData(r);
-
+        
+        if (r instanceof ContextualizedRoutineInfo) {
+            ((RoutinesTableModel)jTable1.getModel()).loadContexts(r, true);
+            refreshContextsTableFilter();
+        }
+            
         // Update stack trace panel
         if (r instanceof RoutineContext) {
 
             ((StackTraceListModel)jList1.getModel()).setData(((RoutineContext)r).getStackTrace());
-            showStackTrace(true);
+            setVisibleStackTrace(true);
 
         } else {
 
             ((StackTraceListModel)jList1.getModel()).setData(null);
-            showStackTrace(false);
+            setVisibleStackTrace(false);
 
         }
 
@@ -1610,27 +1808,79 @@ public class MainWindow extends javax.swing.JFrame {
 	private void jTable1ValueChanged(javax.swing.event.ListSelectionEvent evt) {
 		
 		if (loading) return;
+        loading_routine = true;
+
+        int viewIndex = jTable1.getSelectedRow();
+        if (viewIndex >= 0) {
+
+            int modelIndex = jTable1.convertRowIndexToModel(viewIndex);
+            Routine r = ((RoutinesTableModel)jTable1.getModel()).getRoutine(modelIndex);
+
+            if (rtn_info == r) return;
+            //System.out.println("Selected row in routine table");
+            loadRoutine(r);
+
+        } else {
+
+            if (rtn_info == null) return;
+            //System.out.println("Invalid selectin in routine table");
+            setVisibleContextsTable(false);
+            loadRoutine(null);
+
+        }
+
+        scrollToVisibleRoutinesTable();
+        loading_routine = false;      
+        
+	}
+    
+    public void scrollToVisibleRoutinesTable() {
+        
+        int viewIndex = jTable1.getSelectedRow();
+        // Scroll routine table to visible; thanks to fiontan
+        if (jTable1.getParent() instanceof javax.swing.JViewport) { 
+            javax.swing.JViewport viewport = (javax.swing.JViewport)jTable1.getParent();
+            java.awt.Rectangle rect = jTable1.getCellRect(viewIndex, 0, true);
+            java.awt.Point pos = viewport.getViewPosition();
+            rect.translate(-pos.x, -pos.y);
+            viewport.scrollRectToVisible(rect);
+        }
+
+    }
+    
+    private void jTable3ValueChanged(javax.swing.event.ListSelectionEvent evt) {
 		
-		int viewIndex = jTable1.getSelectedRow();
+		if (loading) return;
+		
+		int viewIndex = jTable3.getSelectedRow();
 		if (viewIndex >= 0) {
 			
-			int modelIndex = jTable1.convertRowIndexToModel(viewIndex);
-			Routine r = ((RoutinesTableModel)jTable1.getModel()).getRoutine(modelIndex);
+            if (viewIndex >= jTable3.getRowCount()) {
+                //System.out.println("Invalid row index:" + viewIndex);
+            }
+            
+			int modelIndex = jTable3.convertRowIndexToModel(viewIndex);
+			Routine r = ((RoutinesTableModel)jTable3.getModel()).getRoutine(modelIndex);
 			
 			if (this.rtn_info == r) return;
-			//System.out.println("Selected row in routine table");
+			//System.out.println("Selected row in context table");
 			loadRoutine(r);
 			
 		} else {
 			
-			loadRoutine(null);
-		
+            if(true) return;
+            if (!isVisibleContextsTable()) return;
+            if (!loading_routine) {
+                //System.out.println("Selected invalid row in context table");
+                loadRoutine(null);
+            }
+            
 		}
 
 		// Scroll routine table to visible; thanks to fiontan
 		if (jTable1.getParent() instanceof javax.swing.JViewport) { 
-			javax.swing.JViewport viewport = (javax.swing.JViewport)jTable1.getParent();
-			java.awt.Rectangle rect = jTable1.getCellRect(viewIndex, 0, true);
+			javax.swing.JViewport viewport = (javax.swing.JViewport)jTable3.getParent();
+			java.awt.Rectangle rect = jTable3.getCellRect(viewIndex, 0, true);
 			java.awt.Point pos = viewport.getViewPosition();
 			rect.translate(-pos.x, -pos.y);
 			viewport.scrollRectToVisible(rect);
@@ -1654,7 +1904,6 @@ public class MainWindow extends javax.swing.JFrame {
 	private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
 		
 		// Routine filter button (corner routine table)
-
 		if (report != null) {
 			java.util.ArrayList<String> liblist = null;
 			liblist = report.getLibList();
@@ -1705,21 +1954,14 @@ public class MainWindow extends javax.swing.JFrame {
 		(new MergeReportsDialog(this, true)).setVisible(true);
 	}//GEN-LAST:event_jButton6ActionPerformed
 
-	private void enableSaveCommand() {
+	public void enableSaveCommand() {
 		jButton7.setEnabled(true);
 		jMenuItem6.setEnabled(true);
 	}
 
-	private void disableSaveCommand() {
+	public void disableSaveCommand() {
 		jButton7.setEnabled(false);
 		jMenuItem6.setEnabled(false);
-	}
-
-	private void jTable1TableChanged(javax.swing.event.TableModelEvent evt) {
-		// Routine table change
-		if (evt.getType() == javax.swing.event.TableModelEvent.UPDATE
-				&& evt.getColumn() != javax.swing.event.TableModelEvent.ALL_COLUMNS) 
-			enableSaveCommand();
 	}
 
 	private void jButton7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton7ActionPerformed
@@ -2342,6 +2584,23 @@ public class MainWindow extends javax.swing.JFrame {
 		
 	}//GEN-LAST:event_jToggleButton2ActionPerformed
 
+    private void jTable1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable1MouseClicked
+        loading_routine = true;
+        jTable1ValueChanged(null);
+        loading_routine = false;
+    }//GEN-LAST:event_jTable1MouseClicked
+
+    private void jButton12ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton12ActionPerformed
+        
+        // Contexts filter button (corner contexts table)
+		if (rtn_info != null) {
+			ArrayList<String> liblist = null;
+			liblist = report.getLibList();
+			(new RoutinesFilterDialog(this, true, liblist, 
+                    contexts_filter_criteria, false)).setVisible(true);
+		}
+    }//GEN-LAST:event_jButton12ActionPerformed
+
 	private void resetRoutineTableFilter() {
 		
 		// reset filter over routine table
@@ -2353,11 +2612,27 @@ public class MainWindow extends javax.swing.JFrame {
 		refreshRoutinesTableFilter();
 		
 	}
+    
+    private void resetContextsTableFilter() {
+		
+		// reset filter over routine table
+		contexts_filter_criteria = new String[4];
+		contexts_filter_criteria[0] = null;
+		contexts_filter_criteria[1] = null;
+		contexts_filter_criteria[2] = null;
+		contexts_filter_criteria[3] = "5";
+		refreshContextsTableFilter();
+		
+	}
 
 	protected void refreshRoutinesTableFilter() {
 		setRoutinesTableFilter(routines_filter_criteria);
 	}
 
+    protected void refreshContextsTableFilter() {
+		setContextsTableFilter(contexts_filter_criteria);
+	}
+    
 	protected void setRoutinesTableFilter(String[] criteria) {
 		
 		routines_filter_criteria = criteria;
@@ -2460,11 +2735,115 @@ public class MainWindow extends javax.swing.JFrame {
 		routines_table_sorter.setRowFilter(RowFilter.andFilter(filters));
 	}
 
+    protected void setContextsTableFilter(String[] criteria) {
+		
+		contexts_filter_criteria = criteria;
+		java.util.ArrayList<String> blacklist = Main.getBlackList();
+		
+		List<RowFilter<TableModel, Integer>> filters = new ArrayList<RowFilter<TableModel, Integer>>(4);
+		
+		// Filtering based on blacklist
+		if (Main.getBlackListEnabled() && blacklist.size() > 0) {
+			
+			List<RowFilter<TableModel,Integer>> blacklist_filters = new ArrayList<RowFilter<TableModel,Integer>>();
+			for (int i = 0; i < blacklist.size(); i++) {
+				
+				RowFilter<TableModel, Integer> blacklist_filter = null;
+				try {
+					blacklist_filter = RowFilter.regexFilter(blacklist.get(i).replace(".", "\\."), 0);
+				} catch (java.util.regex.PatternSyntaxException e) {
+					return;
+				}
+				blacklist_filters.add(RowFilter.notFilter(blacklist_filter));
+			}
+			
+			RowFilter<TableModel, Integer> f = RowFilter.andFilter(blacklist_filters);
+			filters.add(f);
+		}
+		
+		// Filtering based on % time
+		if (criteria[0] != null) {
+			
+			List<RowFilter<TableModel,Integer>> timeperc_filters = new ArrayList<RowFilter<TableModel,Integer>>(2);
+			RowFilter<TableModel, Integer> timeperc_equal_filter = null;
+			RowFilter<TableModel, Integer> timeperc_greater_filter = null;
+			try {
+				timeperc_equal_filter = RowFilter.numberFilter(RowFilter.ComparisonType.EQUAL, new Double(Double.parseDouble(criteria[0])), 4);
+				timeperc_greater_filter = RowFilter.numberFilter(RowFilter.ComparisonType.AFTER, new Double(Double.parseDouble(criteria[0])), 4);
+			} catch (java.util.regex.PatternSyntaxException e) {
+				return;
+			}
+			timeperc_filters.add(timeperc_equal_filter);
+			timeperc_filters.add(timeperc_greater_filter);
+			RowFilter<TableModel, Integer> f = javax.swing.RowFilter.orFilter(timeperc_filters);
+			filters.add(f);
+		}
+		
+		// Filtering based on library name
+		if (criteria[1] != null) {
+			
+			List<RowFilter<TableModel,Integer>> lib_filters = new ArrayList<RowFilter<TableModel,Integer>>(1);
+			RowFilter<TableModel, Integer> lib_filter = null;
+			try {
+				lib_filter = javax.swing.RowFilter.regexFilter(criteria[1], 1);
+			} catch (java.util.regex.PatternSyntaxException e) {
+				return;
+			}
+			lib_filters.add(lib_filter);
+			RowFilter<TableModel, Integer> f4 = RowFilter.andFilter(lib_filters);
+			filters.add(f4);
+		}
+		
+		// Filtering based on % of calls
+		if (criteria[2] != null) {
+			
+			List<RowFilter<TableModel,Integer>> callsperc_filters = new ArrayList<RowFilter<TableModel,Integer>>(2);
+			javax.swing.RowFilter<TableModel, Integer> callsperc_equal_filter = null;
+			javax.swing.RowFilter<TableModel, Integer> callsperc_greater_filter = null;
+			try {
+				
+				callsperc_equal_filter = RowFilter.numberFilter(RowFilter.ComparisonType.EQUAL, new Double(Double.parseDouble(criteria[2])), 7);
+				callsperc_greater_filter = RowFilter.numberFilter(RowFilter.ComparisonType.AFTER, new Double(Double.parseDouble(criteria[2])), 7);
+			
+			} catch (java.util.regex.PatternSyntaxException e) {
+				return;
+			}
+			callsperc_filters.add(callsperc_equal_filter);
+			callsperc_filters.add(callsperc_greater_filter);
+			RowFilter<TableModel, Integer> f5 = RowFilter.orFilter(callsperc_filters);
+			filters.add(f5);
+		}
+		
+		// Filtering based on # rms
+		if (criteria[3] != null) {
+			
+			List<RowFilter<TableModel,Integer>> avgratio_filters = new ArrayList<RowFilter<TableModel,Integer>>(2);
+			RowFilter<TableModel, Integer> avgratio_equal_filter = null;
+			RowFilter<TableModel, Integer> avgratio_greater_filter = null;
+			try {
+				
+				avgratio_equal_filter = RowFilter.numberFilter(RowFilter.ComparisonType.EQUAL, new Double(Double.parseDouble(criteria[3])), 3);
+				avgratio_greater_filter = RowFilter.numberFilter(RowFilter.ComparisonType.AFTER, new Double(Double.parseDouble(criteria[3])), 3);
+			
+			} catch (java.util.regex.PatternSyntaxException e) {
+				return;
+			}
+			avgratio_filters.add(avgratio_equal_filter);
+			avgratio_filters.add(avgratio_greater_filter);
+			RowFilter<TableModel, Integer> f6 = RowFilter.orFilter(avgratio_filters);
+			filters.add(f6);
+		}
+        
+        
+        contexts_table_sorter.setRowFilter(RowFilter.andFilter(filters));
+        
+    }
+    
 	protected String[] getRmsTableFilter() {
 		return rms_filter_criteria;
 	}
 
-	private void refresPlotFilter() {
+	private void refreshPlotFilter() {
 		if (CostGraphPanel != null) CostGraphPanel.refreshFilter();
 		if (ratioGraphPanel != null) ratioGraphPanel.refreshFilter();
 		if (freqGraphPanel != null) freqGraphPanel.refreshFilter();
@@ -2482,8 +2861,8 @@ public class MainWindow extends javax.swing.JFrame {
 	protected void setRmsTableFilter(String[] criteria) {
 		
 		this.rms_filter_criteria = criteria;
-		refresPlotFilter();
-		if (criteria == null) sms_table_sorter.setRowFilter(null); // no filters
+		refreshPlotFilter();
+		if (criteria == null) rms_table_sorter.setRowFilter(null); // no filters
 		
 		ArrayList<RowFilter<TableModel, Integer>> filters = new ArrayList<RowFilter<TableModel, Integer>>(3);
 		if (criteria[0] != null) {
@@ -2534,7 +2913,7 @@ public class MainWindow extends javax.swing.JFrame {
 			RowFilter<TableModel, Integer> f = RowFilter.orFilter(freq_filters);
 			filters.add(f);
 		}
-		sms_table_sorter.setRowFilter(javax.swing.RowFilter.andFilter(filters));
+		rms_table_sorter.setRowFilter(javax.swing.RowFilter.andFilter(filters));
 	}
 
 	private void findRoutineByName() {
@@ -3142,6 +3521,7 @@ public class MainWindow extends javax.swing.JFrame {
     }
     
     public void refreshRoutine() {
+        //System.out.println("Refreshing...");
         loadRoutine(this.rtn_info);
     }
     
@@ -3209,6 +3589,7 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton10;
     private javax.swing.JButton jButton11;
+    private javax.swing.JButton jButton12;
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
@@ -3270,7 +3651,6 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel4;
     private javax.swing.JPanel jPanel5;
     private javax.swing.JPanel jPanel6;
-    private javax.swing.JPanel jPanel7;
     private javax.swing.JPanel jPanel8;
     private javax.swing.JPanel jPanel9;
     private javax.swing.JPopupMenu jPopupMenu1;
@@ -3280,6 +3660,7 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JScrollPane jScrollPane5;
+    private javax.swing.JScrollPane jScrollPane6;
     private javax.swing.JSeparator jSeparator1;
     private javax.swing.JToolBar.Separator jSeparator10;
     private javax.swing.JToolBar.Separator jSeparator11;
@@ -3295,9 +3676,11 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JSplitPane jSplitPane2;
     private javax.swing.JSplitPane jSplitPane3;
     private javax.swing.JSplitPane jSplitPane4;
+    private javax.swing.JSplitPane jSplitPane5;
     private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JTable jTable1;
     private javax.swing.JTable jTable2;
+    private javax.swing.JTable jTable3;
     private javax.swing.JTextField jTextField1;
     private javax.swing.JTextField jTextField2;
     private javax.swing.JToggleButton jToggleButton1;
@@ -3320,16 +3703,26 @@ public class MainWindow extends javax.swing.JFrame {
 						freqGraphPanel, MMMGraphPanel,
 						TotalCostGraphPanel, VarGraphPanel,
 						RtnGraphPanel, MccGraphPanel;
-	private javax.swing.table.TableRowSorter<javax.swing.table.TableModel> routines_table_sorter;
-	private javax.swing.table.TableRowSorter<javax.swing.table.TableModel> sms_table_sorter;
-	
+    
+	private TableRowSorter<TableModel> routines_table_sorter = null;
+	private List<RowSorter.SortKey> routines_sort = null;
+    
+    private TableRowSorter<TableModel> rms_table_sorter = null;	
+    private List<RowSorter.SortKey> rms_sort = null;
+    
+    private TableRowSorter<TableModel> contexts_table_sorter = null;
+    private List<javax.swing.RowSorter.SortKey> contexts_sort = null;
+   
 	private RSyntaxTextArea textArea = null;
 	private Object highlight_line = null;
 	
+    private int stack_trace_divider = -1;
+    private int contexts_divider = -1;
+    private String[] contexts_filter_criteria = null;
 	private String[] routines_filter_criteria = null;
 	private String[] rms_filter_criteria = new String[4];
-	private AprofReport report;
+	private AprofReport report = null;
 	private boolean linked_plots = true;
-	private javax.swing.JMenuItem[] recentMenuItems = new javax.swing.JMenuItem[6];
+	private JMenuItem[] recentMenuItems = new JMenuItem[6];
 
 }

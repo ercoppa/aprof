@@ -879,8 +879,6 @@ public class GraphPanel extends javax.swing.JPanel {
 		
 		if (!reset && status == ZOOMED) {
 			
-			if (graph_type == COST_PLOT)
-				System.out.println("Set range x: " + min_x + " " + max_x);
 			domainAxis.setRange(min_x, max_x);
 		
 		} else {
@@ -1027,6 +1025,8 @@ public class GraphPanel extends javax.swing.JPanel {
 
 	public void setSmoothThreshold(int t) {
 		
+        //System.out.println("Set smooth threashold");
+        
 		if (graph_type == RTN_PLOT || rtn_info == null) return;
 		
 		// reset grouping
@@ -1055,6 +1055,8 @@ public class GraphPanel extends javax.swing.JPanel {
 	
 	public void setGroupThreshold(int t) {
 
+        //System.out.println("Set group threashold");
+        
 		if (graph_type == RTN_PLOT || rtn_info == null) return;
 		
 		// Reset smoothing
@@ -1192,6 +1194,8 @@ public class GraphPanel extends javax.swing.JPanel {
 
 	private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
 		
+        //System.out.println("button1");
+        
 		// Save graph image button
 		if (this.rtn_info == null) return;
 		
@@ -1626,9 +1630,11 @@ public class GraphPanel extends javax.swing.JPanel {
 	
 	public void setRoutine(Routine r) {
 		
+        //System.out.println("Set routine");
+        
 		rtn_info = r;
 		zoomResetVisible(false);
-		
+        
 		disableNotification(true);
 		for (int i = 0; i < series.length; i++) series[i].clear();
 		disableNotification(false);
@@ -1724,6 +1730,8 @@ public class GraphPanel extends javax.swing.JPanel {
 	
 	private double getY(Rms te, int slot) {
 		
+        //System.out.println("Set getY");
+        
 		double y = 0;
 		if (te == null) return y;
 		
@@ -1890,10 +1898,12 @@ public class GraphPanel extends javax.swing.JPanel {
 	 * NOTE: avoid use of this method when possible, this method will not "share"
 	 *       any work with other active graphs (e.g. iteration over rms list)
 	 */
-	private void populateChart() {
+	
+    private void populateChart() {
 		
 		//System.out.println("Inside populate chart");
-		
+        //Thread.dumpStack();
+        
 		for (int i = 0; i < series.length; i++) series[i].clear();
 		
 		if (graph_type == RTN_PLOT) {
@@ -2282,6 +2292,8 @@ public class GraphPanel extends javax.swing.JPanel {
 		
 		disableNotification(true);
 		
+        rtn_info = null;
+        
 		for (int i = 0; i < series.length; i++) series[i].clear();
 		if (graph_type == RTN_PLOT) {
 			this.min_x = -1; 
@@ -2290,9 +2302,10 @@ public class GraphPanel extends javax.swing.JPanel {
 			this.min_x = this.min_y = 0;
 		}
 		this.max_x = this.max_y = 10;
-		updateXAxis(false);
-		updateYAxis(false);
 		
+        updateXAxis(false);
+		updateYAxis(false);
+        
 		disableNotification(false);
 		
 		System.gc();

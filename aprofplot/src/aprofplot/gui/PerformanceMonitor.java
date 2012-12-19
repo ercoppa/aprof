@@ -35,14 +35,14 @@ public class PerformanceMonitor implements ChartProgressListener {
 			
 			if (t == null) {
 			
-				 System.out.println("Graph time never initialized [1]");
+				 //System.out.println("Graph time never initialized [1]");
 				 return;
 				 
 			}
 				 
 		} catch(NullPointerException e) {
 			
-			System.out.println("Graph time never initialized [2]");
+			//System.out.println("Graph time never initialized [2]");
 			return;
 			
 		}

@@ -288,16 +288,30 @@ public class SettingsDialog extends javax.swing.JDialog {
 		if (jRadioButton1.isSelected()) Main.storeRtnDisplayMode(Main.DEMANGLED);
 		else Main.storeRtnDisplayMode(Main.DEMANGLED_FULL);
 		
+        int old_display_tcost = Main.getDisplayTotalCost();
+        int old_chart_cost = Main.getChartCost();
+        
         if (jRadioButton5.isSelected()) Main.setDisplayTotalCost(Main.COST_CUMULATIVE);
 		else Main.setDisplayTotalCost(Main.COST_SELF);
         
         if (jRadioButton7.isSelected()) Main.setChartCost(Main.COST_CUMULATIVE);
 		else Main.setChartCost(Main.COST_SELF);
         
-        ((MainWindow)getParent()).refreshRoutineTable();
-        ((MainWindow)getParent()).refreshRmsTable();
-        ((MainWindow)getParent()).refreshRoutine();
+        boolean refresh_rt = false;
         
+        if (old_display_tcost != Main.getDisplayTotalCost()) {
+            ((MainWindow)getParent()).refreshRoutinesTable();
+            refresh_rt = true;
+        }
+        
+        if(old_chart_cost != Main.getChartCost()) {
+            
+            ((MainWindow)getParent()).refreshRoutine();
+            ((MainWindow)getParent()).refreshRmsTable(false);
+            if (!refresh_rt)
+                ((MainWindow)getParent()).refreshRoutinesTable();
+        }
+            
         Main.storeBlacklist(blacklist, jCheckBox1.isSelected());
 		((MainWindow)getParent()).refreshRoutinesTableFilter();
         
