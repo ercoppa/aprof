@@ -12,3 +12,13 @@ An Input-Sensitive profiler produces large amounts of information. As increasing
 == Run aprof-plot ==
 
 See the [BasicUsage#Visualize_profile_reports basic usage page].
+
+== User interface overview ==
+
+== Main menu & toolbar ==
+
+== Charts ==
+
+== Customizing charts ==
+
+== Settings ==
