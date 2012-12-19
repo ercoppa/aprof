@@ -41,7 +41,7 @@ Let's discuss in details all aspects and features of `aprof-plot`.
 || `Open a file...` || [http://aprof.googlecode.com/svn/trunk/wiki_images/Open-icon.png] || Open a report ||
 || `Set source directory` || [http://aprof.googlecode.com/svn/trunk/wiki_images/fs-directory.png] || Set a source code directory  ||
 || `Open recent file` || [http://aprof.googlecode.com/svn/trunk/wiki_images/refresh.png] || Open a recent opened report. The toolbar button load the last opened report. The menu item shows a list with the last five opened report. ||
-|| `` || [http://aprof.googlecode.com/svn/trunk/wiki_images/.png] ||  ||
+|| `Save` || [http://aprof.googlecode.com/svn/trunk/wiki_images/Save-icon.png] || Save the report. This is enabled only if you have set/unset some routine as favorites. ||
 || `` || [http://aprof.googlecode.com/svn/trunk/wiki_images/.png] ||  ||
 || `` || [http://aprof.googlecode.com/svn/trunk/wiki_images/.png] ||  ||
 || `` || [http://aprof.googlecode.com/svn/trunk/wiki_images/.png] ||  ||
