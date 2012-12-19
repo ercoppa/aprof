@@ -1,3 +1,7 @@
+# aprof-plot user manual
+
+= `aprof-plot`: =
+
 == Run aprof-plot ==
 
 See the [BasicUsage#Visualize_profile_reports basic usage page].
