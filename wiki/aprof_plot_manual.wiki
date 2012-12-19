@@ -34,6 +34,10 @@ Let's discuss in details all aspects and features of `aprof-plot`.
 
 == Main menu & toolbar ==
 
+=== `File` ===
+
+|| Menu element || Toolbar  image || Description ||
+
 == Routine table ==
 
 == Routine profile == 
