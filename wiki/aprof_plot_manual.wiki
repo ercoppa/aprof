@@ -34,7 +34,7 @@ Let's discuss in details all aspects and features of `aprof-plot`.
 
 == Main menu & toolbar ==
 
-|| *Menu item* || || *Submenu item* || *Toolbar  image* || *Description* ||
+|| *Menu item* || *Submenu item* || *Toolbar  image* || *Description* ||
 || `File` || `New window` || [http://aprof.googlecode.com/svn/trunk/wiki_images/NewWindow-icon.png] || Open a new window instance of `aprof-plot` ||
 || `Open a file...` || [http://aprof.googlecode.com/svn/trunk/wiki_images/Open-icon.png] || Open a report ||
 || " || `Set source directory` || [http://aprof.googlecode.com/svn/trunk/wiki_images/fs-directory.png] || Set a source code directory  ||
