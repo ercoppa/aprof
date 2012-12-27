@@ -79,7 +79,7 @@ We can see:
   * `Calls %`: percentage of calls for this routine with respect to the sum of calls of all routines.
   * `Favorite`: check/uncheck this routine as favorite.
 
-This list of routines can be filtered based on different criterias. You can choose these criterias from the filter routines dialog. Open it by clicking on the button ([http://aprof.googlecode.com/svn/trunk/wiki_images/Filter-icon.png]) on the corner of the routine table:
+This list of routines can be filtered based on different criterias. You can choose these criterias from the filter routines dialog. Open it by clicking on the button ([http://aprof.googlecode.com/svn/trunk/wiki_images/Filter-icon.png]) on the right corner of the routine table:
 
 [http://aprof.googlecode.com/svn/trunk/wiki_images/aprof-plot-3.png]
 
