@@ -80,7 +80,19 @@ We can see:
   * `Favorite`: check/uncheck this routine as favorite.
 
 This list of routines can be filtered based on different criterias. You can choose these criterias from the filter routines dialog. Open it by clicking on the button ([http://aprof.googlecode.com/svn/trunk/wiki_images/Filter-icon.png]) on the corner of the routine table:
+
 [http://aprof.googlecode.com/svn/trunk/wiki_images/aprof-plot-3.png]
+
+The filter routines dialog:
+
+[http://aprof.googlecode.com/svn/trunk/wiki_images/aprof-plot-4.png]
+
+You can filter routines based on:
+  * `Library`: show routines contained in a specific ELF object.
+  * `Cost %`: show routines with at least a specific percentage of total cost.
+  * `Calls %`: show routines with at least a specific percentage of total calls.
+  * `#RMS`: show routines with at least a certain number of performance tuples.
+By default we show eoutines with at least five performance tuples.
 
 == Routine profile == 
 
