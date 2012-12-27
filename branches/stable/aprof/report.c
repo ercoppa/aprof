@@ -221,6 +221,12 @@ static Function * merge_tuple(HChar * line, Int size,
 		ULong self_max = VG_(strtoull10) ((HChar *)token, NULL);
 		if (self_max == 0) return curr;
 		
+		// sqr self
+		token = VG_(strtok)(NULL, "@");
+		if (token == NULL) return curr;
+		ULong self_sqr = VG_(strtoull10) ((HChar *)token, NULL);
+		if (self_sqr == 0) return curr;
+		
 		/*
 		VG_(printf)("Tuple: %s %llu %llu %llu %llu %llu %llu\n",
 						curr->name, rms, min, max, sum, sqr_sum, occ);
@@ -267,6 +273,7 @@ static Function * merge_tuple(HChar * line, Int size,
 		
 		info_access->cumul_real_time_sum += cumul_real;
 		info_access->self_time_sum += self;
+		info_access->self_sum_sqr += self_sqr;
 		
 		if (info_access->self_time_min > self_min) 
 			info_access->self_time_min = self_min;
@@ -649,7 +656,7 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
 			
 			while (info_access != NULL) {
 				
-				VG_(sprintf)(buffer, "q %lu %lu %llu %llu %llu %llu %llu %llu %llu %llu %llu\n",
+				VG_(sprintf)(buffer, "q %lu %lu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu\n",
 					ht->key, 
 					info_access->key,
 					info_access->min_cumulative_time,
@@ -660,7 +667,8 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
 					info_access->cumul_real_time_sum,
 					info_access->self_time_sum,
 					info_access->self_time_min,
-					info_access->self_time_max);
+					info_access->self_time_max,
+					info_access->self_sum_sqr);
 
 				APROF_(fwrite)(report, buffer, VG_(strlen)(buffer));
 
@@ -680,7 +688,7 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
 		
 		while (info_access != NULL) {
 			
-			VG_(sprintf)(buffer, "p %llu %lu %llu %llu %llu %llu %llu %llu %llu %llu %llu\n", 
+			VG_(sprintf)(buffer, "p %llu %lu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu\n", 
 				rtn_info->routine_id,
 				info_access->key,
 				info_access->min_cumulative_time,
@@ -691,7 +699,8 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
 				info_access->cumul_real_time_sum,
 				info_access->self_time_sum,
                 info_access->self_time_min,
-				info_access->self_time_max);
+				info_access->self_time_max,
+				info_access->self_sum_sqr);
 			
 			APROF_(fwrite)(report, buffer, VG_(strlen)(buffer));
 			

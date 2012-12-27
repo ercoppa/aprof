@@ -378,6 +378,7 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
 	/* self cost */
 	ULong partial_self = partial_cumulative - act->total_children_time;
 	info_access->self_time_sum += partial_self;
+	info_access->self_sum_sqr += (partial_self*partial_self);
 	
 	if (info_access->self_time_max < partial_self) 
 		info_access->self_time_max = partial_self;

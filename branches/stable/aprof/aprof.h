@@ -255,13 +255,14 @@ typedef struct {
     ULong       min_cumulative_time;     // minimum time spent by the routine in calls with this rms
     ULong       max_cumulative_time;     // maximum time spent by the routine in calls with this rms
     ULong       cumulative_time_sum;     // total time spent by the routine in calls with this rms
+    ULong       cumulative_sum_sqr;      // sum of the square of cumulative costs
     ULong       calls_number;            // number of times the routine has been called with this sms
     ULong       cumul_real_time_sum;     // total time spent by the routine in calls with this rms
                                          // without considering recursive call of the same function
     ULong       self_time_sum;           // total self time spent by the routine in calls with this rms
     ULong       self_time_min;           // minimum self time spent by the routine in calls with this rms
     ULong       self_time_max;           // maximum self time spent by the routine in calls with this rms
-    ULong       cumulative_sum_sqr;      // sum of the square of cumulative costs
+    ULong       self_sum_sqr;            // sum of the square of self costs
 
 } RMSInfo;
 
