@@ -1899,6 +1899,7 @@ public class GraphPanel extends javax.swing.JPanel {
 	 *       any work with other active graphs (e.g. iteration over rms list)
 	 */
 	
+    
     private void populateChart() {
 		
 		//System.out.println("Inside populate chart");

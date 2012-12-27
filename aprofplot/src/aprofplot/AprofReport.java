@@ -43,12 +43,12 @@ public class AprofReport {
 		num_class_sms = new long[max_class];
 		tot_calls_class_sms = new long[max_class];
 		max_calls_class_sms = new long[max_class];
-
+  
 		// read report file
 		String str;
 		StringTokenizer tokenizer;
 		BufferedReader in = new BufferedReader(new FileReader(f));
-		
+        
 		while ((str = in.readLine()) != null) {
 			
 			//System.out.println(str);
@@ -189,8 +189,10 @@ public class AprofReport {
 				long max_cost = Long.parseLong(tokenizer.nextToken());
 				double cost_sum = Double.parseDouble(tokenizer.nextToken());
                 
-                if (this.version < 2) tokenizer.nextToken(); // skip sqr cost
-                
+                double cumul_sqr = 0;
+                if (this.version < 2 || this.version > 3) 
+                    cumul_sqr = Double.parseDouble(tokenizer.nextToken());
+                    
                 long occ = Long.parseLong(tokenizer.nextToken());
                 
                 double real = 0;
@@ -207,8 +209,13 @@ public class AprofReport {
                     self_max = Long.parseLong(tokenizer.nextToken());
                 }
                 
+                double self_sqr = 0;
+                if (this.version > 3) 
+                    self_sqr = Double.parseDouble(tokenizer.nextToken());
+                
                 Rms te = new Rms(rms, min_cost, max_cost, cost_sum, 
-                                    real, self, occ, self_min, self_max);
+                                    real, self, occ, self_min, self_max,
+                                    cumul_sqr, self_sqr);
                 
 				RoutineInfo r = null;
 				try {
@@ -233,7 +240,9 @@ public class AprofReport {
 				long max_cost = Long.parseLong(tokenizer.nextToken());
 				double tot_cost = Double.parseDouble(tokenizer.nextToken());
                 
-                if (this.version < 2) tokenizer.nextToken(); // skip sqr cost
+                double cumul_sqr = 0;
+                if (this.version < 2 || this.version > 3) 
+                    cumul_sqr = Double.parseDouble(tokenizer.nextToken());
                 
                 long occ = Long.parseLong(tokenizer.nextToken());
                 
@@ -251,8 +260,13 @@ public class AprofReport {
                     self_max = Long.parseLong(tokenizer.nextToken());
                 }
                 
+                double self_sqr = 0;
+                if (this.version > 3) 
+                    self_sqr = Double.parseDouble(tokenizer.nextToken());
+                
 				Rms te = new Rms(rms, min_cost, max_cost, tot_cost, 
-									real, self, occ, self_min, self_max);
+									real, self, occ, self_min, self_max,
+                                    cumul_sqr, self_sqr);
 				
 				RoutineContext c = null;
 				try {
@@ -277,7 +291,7 @@ public class AprofReport {
 				while (tokenizer.hasMoreTokens()) {
 					name += (tokenizer.nextToken() + " ");
 				}
-				name.trim();
+				name = name.trim();
 				routines.get(index).setFullName(name.substring(1, name.length() - 2));
 				
 				continue;
@@ -311,9 +325,7 @@ public class AprofReport {
 			//throw(new Exception());
 		}
 		in.close();
-		
-		//System.out.println("Readed whole input file");
-		
+				
 		if (hasContexts()) {
 			
 			Iterator it = routines.iterator();
@@ -328,7 +340,7 @@ public class AprofReport {
 		
 		total_contexts = contexts.size(); 
 		
-		for (int i=0; i<routines.size(); i++) {
+		for (int i = 0; i < routines.size(); i++) {
 			
 			long calls = routines.get(i).getTotalCalls();
 			if (routines.get(i).getTotalCumulativeCost() > total_cost)
@@ -347,10 +359,12 @@ public class AprofReport {
 			if (max_calls_class_sms[id] < calls) max_calls_class_sms[id] = calls;
 		}
         
+        /*
         if (total_self_cost != total_cost) {
             System.out.println("Total cost: " + total_cost);
             System.out.println("Total self: " + total_self_cost);
         }
+        */
 
 	}
 

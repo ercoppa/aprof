@@ -1248,7 +1248,7 @@ public class MainWindow extends javax.swing.JFrame {
 				try {
 					setReport(new AprofReport(file), file);
 				} catch (Exception ex) {
-					//System.out.println("Fail to load");
+					System.out.println("Fail to load");
 					System.out.println(ex);
                     jProgressBar1.setVisible(false);
                     jProgressBar1.setEnabled(false);
@@ -1414,10 +1414,7 @@ public class MainWindow extends javax.swing.JFrame {
 		if (this.report != null && this.report.hasContexts())
 			oldReportHasContext = true;
 		*/
-		
-		//System.out.println("Loading[2]: " + file);
-		
-        
+		      
 		this.report = report;
 		Main.addRecentFile(file);
 		refreshRecentFiles();
