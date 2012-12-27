@@ -68,6 +68,11 @@ The routine table gives you different information about all the profiled routine
 
 [http://aprof.googlecode.com/svn/trunk/wiki_images/aprof-plot-2.png]
 
+We can find:
+  * `Routine`: name of the routine
+  * `Lib`: name of the ELF object in which the routine is contained
+  * `Cost (cumul)` or `Cost (self)`: the number of basic blocks executed by all the executions of this routine. It can be a cumulative cost or a self cost, see [this appendix] for the difference. 
+
 [http://aprof.googlecode.com/svn/trunk/wiki_images/aprof-plot-3.png]
 
 == Routine profile == 
@@ -88,3 +93,7 @@ The routine table gives you different information about all the profiled routine
 == Source code viewer ==
 
 == Settings ==
+
+== Appendix ==
+
+=== Cost: cumulative vs self ===
