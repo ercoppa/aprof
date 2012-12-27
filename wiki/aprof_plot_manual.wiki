@@ -73,7 +73,9 @@ We can see:
   * `Lib`: name of the ELF object in which the routine is contained.
   * `Cost (cumul)` or `Cost (self)`: the number of [aprof_manual#Performance_Metric basic blocks] executed by all the executions of this routine. It can be a cumulative cost or a self cost, see _[aprof_plot_manual#Displayed_cost_in_routine_table Displayed cost in routine table]_. 
   * `#RMS`: number of collected performance tuples for this routine. 
-  * `Cost % (cumul)` or `Cost % (self)`: percentage of total cost (self or cumulative, see _[aprof_plot_manual#Displayed_cost_in_routine_table Displayed cost in routine table]_).
+  * `Cost % (cumul)` or `Cost % (self)`: percentage of total cost (self or cumulative, see _[aprof_plot_manual#Displayed_cost_in_routine_table Displayed cost in routine table]_) needed by all executions of this routine.
+  * `Cost plot (cumul)` or `Cost plot (self)`: a preview of the [aprof_plot_manual#Cost_plot cost plot] for this routine (showing maximal self or cumulative costs, see []).
+  * 
 
 [http://aprof.googlecode.com/svn/trunk/wiki_images/aprof-plot-3.png]
 
@@ -98,6 +100,7 @@ We can see:
 
 === Display ===
 ==== Displayed cost in routine table ====
+==== Displayed cost in charts ====
 
 === Routine Blacklist ===
 === Tools ===
