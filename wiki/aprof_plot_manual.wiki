@@ -64,6 +64,12 @@ Let's discuss in details all aspects and features of `aprof-plot`.
 
 == Routine table ==
 
+The routine table gives you different information about all the profiled routines of your application:
+
+[http://aprof.googlecode.com/svn/trunk/wiki_images/aprof-plot-2.png]
+
+[http://aprof.googlecode.com/svn/trunk/wiki_images/aprof-plot-3.png]
+
 == Routine profile == 
 
 == Charts ==
