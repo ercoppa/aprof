@@ -69,10 +69,11 @@ The routine table gives you different information about all the profiled routine
 [http://aprof.googlecode.com/svn/trunk/wiki_images/aprof-plot-2.png]
 
 We can see:
-  * `Routine`: name of the routine
-  * `Lib`: name of the ELF object in which the routine is contained
-  * `Cost (cumul)` or `Cost (self)`: the number of basic blocks executed by all the executions of this routine. It can be a cumulative cost or a self cost, see [ setting > Displayed cost in routine table]. 
-  * ``:
+  * `Routine`: name of the routine.
+  * `Lib`: name of the ELF object in which the routine is contained.
+  * `Cost (cumul)` or `Cost (self)`: the number of [aprof_manual#Performance_Metric basic blocks] executed by all the executions of this routine. It can be a cumulative cost or a self cost, see _[aprof_plot_manual#Displayed_cost_in_routine_table Displayed cost in routine table]_. 
+  * `#RMS`: number of collected performance tuples for this routine. 
+  * `Cost % (cumul)` or `Cost % (self)`: percentage of total cost (self or cumulative, see _[aprof_plot_manual#Displayed_cost_in_routine_table Displayed cost in routine table]_).
 
 [http://aprof.googlecode.com/svn/trunk/wiki_images/aprof-plot-3.png]
 
