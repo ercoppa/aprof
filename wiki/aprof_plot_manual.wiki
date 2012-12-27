@@ -49,14 +49,14 @@ Let's discuss in details all aspects and features of `aprof-plot`.
 || `Edit` || `Settings...` || [http://aprof.googlecode.com/svn/trunk/wiki_images/Settings-icon.png] || Open the [aprof_plot_manual#Settings settings] dialog. ||
 
 || *Menu item* || *Submenu item* || *Toolbar  image* || *Description* ||
-|| `View` || `Cost plot` || http://aprof.googlecode.com/svn/trunk/wiki_images/statistics.png || Enable/disable [aprof_plot_manual#Cost_plot `cost plot`] ||
-|| " || `Min/Avg/Max cost plot` || http://aprof.googlecode.com/svn/trunk/wiki_images/statistics.png || Enable/disable [aprof_plot_manual#Min/Avg/Max_cost_plot `Min/Avg/Max cost plot`] ||
-|| " || `Total cost plot` || http://aprof.googlecode.com/svn/trunk/wiki_images/statistics.png || Enable/disable [aprof_plot_manual#Total_cost_plot `Total cost plot]` ||
-|| " || `Mean cumulative cost plot` || http://aprof.googlecode.com/svn/trunk/wiki_images/statistics.png || Enable/disable [aprof_plot_manual#Mean_cumulative_cost_plot `Mean cumulative cost plot`] ||
-|| " || `Curve bounding cost plot` || http://aprof.googlecode.com/svn/trunk/wiki_images/statistics.png || Enable/disable [aprof_plot_manual#Curve_bounding_plot `Curve bounding cost plot`] ||
-|| " || `Cost variance plot` || http://aprof.googlecode.com/svn/trunk/wiki_images/statistics.png || Enable/disable [aprof_plot_manual#Cost_variance_plot `Cost variance plot`] ||
-|| " || `RMS frequency plot` || http://aprof.googlecode.com/svn/trunk/wiki_images/statistics.png || Enable/disable [aprof_plot_manual#RMS_frequency_plot `RMS frequency plot`] ||
-|| " || `Program statistics plot` || http://aprof.googlecode.com/svn/trunk/wiki_images/statistics.png || Enable/disable [aprof_plot_manual#Program_statistics_plot `Program statistics plot`] ||
+|| `View` || `Cost plot` || http://aprof.googlecode.com/svn/trunk/wiki_images/statistics.png || Enable/disable `[aprof_plot_manual#Cost_plot cost plot]` ||
+|| " || `Min/Avg/Max cost plot` || http://aprof.googlecode.com/svn/trunk/wiki_images/statistics.png || Enable/disable `[aprof_plot_manual#Min/Avg/Max_cost_plot Min/Avg/Max cost plot]` ||
+|| " || `Total cost plot` || http://aprof.googlecode.com/svn/trunk/wiki_images/statistics.png || Enable/disable `[aprof_plot_manual#Total_cost_plot Total cost plot]` ||
+|| " || `Mean cumulative cost plot` || http://aprof.googlecode.com/svn/trunk/wiki_images/statistics.png || Enable/disable `[aprof_plot_manual#Mean_cumulative_cost_plot Mean cumulative cost plot]` ||
+|| " || `Curve bounding cost plot` || http://aprof.googlecode.com/svn/trunk/wiki_images/statistics.png || Enable/disable `[aprof_plot_manual#Curve_bounding_plot Curve bounding cost plot]` ||
+|| " || `Cost variance plot` || http://aprof.googlecode.com/svn/trunk/wiki_images/statistics.png || Enable/disable `[aprof_plot_manual#Cost_variance_plot Cost variance plot]` ||
+|| " || `RMS frequency plot` || http://aprof.googlecode.com/svn/trunk/wiki_images/statistics.png || Enable/disable `[aprof_plot_manual#RMS_frequency_plot RMS frequency plot]` ||
+|| " || `Program statistics plot` || http://aprof.googlecode.com/svn/trunk/wiki_images/statistics.png || Enable/disable `[aprof_plot_manual#Program_statistics_plot Program statistics plot]` ||
 || " || `Source code editor` || http://aprof.googlecode.com/svn/trunk/wiki_images/fs-directory.png || Enable/disable source code editor ||
 
 || *Menu item* || *Submenu item* || *Toolbar  image* || *Description* ||
