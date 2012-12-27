@@ -6,10 +6,12 @@ public class Rms implements Comparable<Rms> {
 	private long min_cost; // cumulative
 	private long max_cost; // cumulative
 	private double total_cost; // cumulative
+    private double total_sqr_sum_cost; // cumulative
     private double total_real_cost;
 	private double total_self;
     private long self_min;
     private long self_max;
+    private double total_self_sqr_sum;
 	private long occ;
 	
 	public static final int MAX_COST = 0;
@@ -25,16 +27,19 @@ public class Rms implements Comparable<Rms> {
 
 	public Rms(long rms, long min_cost, long max_cost, double total_cost, 
                 double total_real_cost, double total_self, long occ,
-                long self_min, long self_max) {
+                long self_min, long self_max, double cumul_sqr,
+                double self_sqr) {
 
 		this.rms = rms;
 		this.min_cost = min_cost;
 		this.max_cost = max_cost;
 		this.total_cost = total_cost;
+        this.total_sqr_sum_cost = cumul_sqr;
         this.total_real_cost = total_real_cost;
 		this.total_self = total_self;
         this.self_min = self_min;
         this.self_max = self_max;
+        this.total_self_sqr_sum = self_sqr;
 		this.occ = occ;
 		
         long cost = 0;
@@ -102,14 +107,21 @@ public class Rms implements Comparable<Rms> {
     }
     
 	public double getSqrTotalCost() {
-		return (getTotalCost()*getTotalCost());
-	}
+        
+		if (Main.getChartCost() == Main.COST_CUMULATIVE)
+            return getTotalCumulativeSqrCost();
+        
+        return getTotalSelfSqrCost();
+    }
 
 	public double getVar() {
 		double variance = ( 
 					( getSqrTotalCost() / getOcc() ) -
 					((getTotalCost() / (double)getOcc()) * (getTotalCost() / (double)getOcc()))
 				);
+        
+        if (variance < 0) return 0;
+        
 		return variance;
 	}
 
@@ -212,7 +224,9 @@ public class Rms implements Comparable<Rms> {
 				this.total_self + te.getTotalSelfCost(),
 				this.occ + te.getOcc(),
                 this.self_min + te.getSelfMinCost(),
-                this.self_max + te.getSelfMaxCost());
+                this.self_max + te.getSelfMaxCost(),
+                this.total_sqr_sum_cost + te.getTotalCumulativeSqrCost(),
+                this.total_sqr_sum_cost + te.getTotalSelfSqrCost());
 	}
 
     public long getCumulativeMinCost() {
@@ -237,5 +251,13 @@ public class Rms implements Comparable<Rms> {
 
     public double getSelfAvgCost() {
         return getTotalSelfCost() / getOcc();
+    }
+
+    public double getTotalCumulativeSqrCost() {
+        return this.total_sqr_sum_cost;
+    }
+
+    public double getTotalSelfSqrCost() {
+        return this.total_self_sqr_sum;
     }
 }
