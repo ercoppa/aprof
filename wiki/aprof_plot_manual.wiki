@@ -47,6 +47,14 @@ Let's discuss in details all aspects and features of `aprof-plot`.
 || `Edit` || `Settings...` || [http://aprof.googlecode.com/svn/trunk/wiki_images/Settings-icon.png] || Open the [aprof_plot_manual#Settings settings] dialog. ||
 || `View` || `Cost plot` || http://aprof.googlecode.com/svn/trunk/wiki_images/statistics.png || Enable/disable `cost plot` ||
 || " || `Min/Avg/Max cost plot` || http://aprof.googlecode.com/svn/trunk/wiki_images/statistics.png || Enable/disable `Min/Avg/Max cost plot` ||
+|| " || Total cost plot` || http://aprof.googlecode.com/svn/trunk/wiki_images/statistics.png || Enable/disable `Min/Avg/Max cost plot` ||
+|| " || `Total cost plot` || http://aprof.googlecode.com/svn/trunk/wiki_images/statistics.png || Enable/disable `Total cost plot` ||
+|| " || `Mean cumulative cost plot` || http://aprof.googlecode.com/svn/trunk/wiki_images/statistics.png || Enable/disable `Mean cumulative cost plot` ||
+|| " || `Curve bounding cost plot` || http://aprof.googlecode.com/svn/trunk/wiki_images/statistics.png || Enable/disable `Curve bounding cost plot` ||
+|| " || `Cost variance plot` || http://aprof.googlecode.com/svn/trunk/wiki_images/statistics.png || Enable/disable `Cost variance plot` ||
+|| " || `RMS frequency plot` || http://aprof.googlecode.com/svn/trunk/wiki_images/statistics.png || Enable/disable `RMS frequency plot` ||
+|| " || `Program statistics plot` || http://aprof.googlecode.com/svn/trunk/wiki_images/statistics.png || Enable/disable `Program statistics plot` ||
+|| " || `Source code editor` || http://aprof.googlecode.com/svn/trunk/wiki_images/fs-directory.png || Enable/disable source code editor ||
 || `Help` || `About` || - || Open a dialog with info about `aprof-plot`. ||
 
 == Routine table ==
