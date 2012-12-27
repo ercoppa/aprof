@@ -185,6 +185,12 @@ static Function * merge_tuple(HChar * line, Int size,
 		ULong sum = VG_(strtoull10) ((HChar *)token, NULL);
 		if (sum == 0) return curr;
 		
+		// sqr sum
+		token = VG_(strtok)(NULL, "@");
+		if (token == NULL) return curr;
+		ULong sqr_sum = VG_(strtoull10) ((HChar *)token, NULL);
+		if (sqr_sum == 0) return curr;
+		
 		// occ
 		token = VG_(strtok)(NULL, "@");
 		if (token == NULL) return curr;
@@ -250,6 +256,7 @@ static Function * merge_tuple(HChar * line, Int size,
 		}*/
 		
 		info_access->cumulative_time_sum += sum;
+		info_access->cumulative_sum_sqr += sqr_sum;
 		info_access->calls_number += occ;
 
 		if (info_access->max_cumulative_time < max) 
@@ -642,12 +649,13 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
 			
 			while (info_access != NULL) {
 				
-				VG_(sprintf)(buffer, "q %lu %lu %llu %llu %llu %llu %llu %llu %llu %llu\n",
+				VG_(sprintf)(buffer, "q %lu %lu %llu %llu %llu %llu %llu %llu %llu %llu %llu\n",
 					ht->key, 
 					info_access->key,
 					info_access->min_cumulative_time,
 					info_access->max_cumulative_time,
-					info_access->cumulative_time_sum,  
+					info_access->cumulative_time_sum, 
+					info_access->cumulative_sum_sqr,  
 					info_access->calls_number,
 					info_access->cumul_real_time_sum,
 					info_access->self_time_sum,
@@ -672,12 +680,13 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
 		
 		while (info_access != NULL) {
 			
-			VG_(sprintf)(buffer, "p %llu %lu %llu %llu %llu %llu %llu %llu %llu %llu\n", 
+			VG_(sprintf)(buffer, "p %llu %lu %llu %llu %llu %llu %llu %llu %llu %llu %llu\n", 
 				rtn_info->routine_id,
 				info_access->key,
 				info_access->min_cumulative_time,
 				info_access->max_cumulative_time,
 				info_access->cumulative_time_sum, 
+				info_access->cumulative_sum_sqr,
 				info_access->calls_number,
 				info_access->cumul_real_time_sum,
 				info_access->self_time_sum,

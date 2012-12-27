@@ -76,7 +76,7 @@
 #define MEM_TRACE           1   // if 0 disable mem instrumentation
 #define DEBUG_ALLOCATION    0   // if 1, check every allocation made by aprof
 #define IGNORE_DL_RUNTIME   0   // if 1, disable analysis for dl_runtime_resolve (and its children)
-#define REPORT_VERSION      3   // see documentation on our site: 1 == 1.1, 2 == 1.2, ...
+#define REPORT_VERSION      4   // see documentation on our site: 1 == 1.1, 2 == 1.2, ...
 #define DISCARD_UNKNOWN     1   // discard info about PLT or unknown function (but this not imply to discard info about its children)
 #define IGNORE_REPEAT_ACC   1   // if 1, ignore repeated accesses to the same address within a BB
 #define REPORT_NAME         3   // if 1 report name is prog_TID.aprof, if 2 is PID_TID_ADDRMULTIPLE.aprof
@@ -261,6 +261,7 @@ typedef struct {
     ULong       self_time_sum;           // total self time spent by the routine in calls with this rms
     ULong       self_time_min;           // minimum self time spent by the routine in calls with this rms
     ULong       self_time_max;           // maximum self time spent by the routine in calls with this rms
+    ULong       cumulative_sum_sqr;      // sum of the square of cumulative costs
 
 } RMSInfo;
 

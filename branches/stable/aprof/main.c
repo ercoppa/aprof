@@ -603,7 +603,7 @@ static void APROF_(print_usage)(void) {
 		"    --merge-report-threads=yes|no  Merge reports of all threads for current process [no]\n"
 		"    --merge-report-runs=yes|no     Merge reports of the current program with reports of previous program runs [no]\n"
 		"                                   reports must be in the current working directory \n"
-		"                                   timestamp (mtime) of the program has to be the same \n"
+//		"                                   timestamp (mtime) of the program has to be the same \n"
 		"                                   this option implies --merge-report-threads=yes \n"
 		#endif
 	);

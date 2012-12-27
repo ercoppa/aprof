@@ -363,6 +363,7 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
 	
 	/* cumulative cost */
 	info_access->cumulative_time_sum += partial_cumulative;
+	info_access->cumulative_sum_sqr += (partial_cumulative*partial_cumulative);
 	
 	if (info_access->max_cumulative_time < partial_cumulative) 
 		info_access->max_cumulative_time = partial_cumulative;
