@@ -74,9 +74,12 @@ We can see:
   * `Cost (cumul)` or `Cost (self)`: the number of [aprof_manual#Performance_Metric basic blocks] executed by all the executions of this routine. It can be a cumulative cost or a self cost, see _[aprof_plot_manual#Displayed_cost_in_routine_table Displayed cost in routine table]_. 
   * `#RMS`: number of collected performance tuples for this routine. 
   * `Cost % (cumul)` or `Cost % (self)`: percentage of total cost (self or cumulative, see _[aprof_plot_manual#Displayed_cost_in_routine_table Displayed cost in routine table]_) needed by all executions of this routine.
-  * `Cost plot (cumul)` or `Cost plot (self)`: a preview of the [aprof_plot_manual#Cost_plot cost plot] for this routine (showing maximal self or cumulative costs, see []).
-  * 
+  * `Cost plot (cumul)` or `Cost plot (self)`: a preview of the [aprof_plot_manual#Cost_plot cost plot] for this routine (showing maximal self or cumulative costs, see _[aprof_plot_manual#Displayed_cost_in_charts Displayed cost in charts]_).
+  * `Calls`: number of calls (executions) of this routine.
+  * `Calls %`: percentage of calls for this routine with respect to the sum of calls of all routines.
+  * `Favorite`: check/uncheck this routine as favorite.
 
+This list of routines can be filtered based on different criterias. You can choose these criterias from the filter routines dialog. Open it by clicking on the button ([http://aprof.googlecode.com/svn/trunk/wiki_images/Filter-icon.png]) on the corner of the routine table:
 [http://aprof.googlecode.com/svn/trunk/wiki_images/aprof-plot-3.png]
 
 == Routine profile == 
