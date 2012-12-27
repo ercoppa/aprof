@@ -63,6 +63,17 @@ Let's discuss in details all aspects and features of `aprof-plot`.
 
 == Charts ==
 
+=== Cost plot ===
+=== Min/Avg/Max cost plot ===
+=== Total cost plot ===
+=== Mean cumulative cost plot ===
+=== Curve bounding plot ===
+=== Cost variance plot ===
+=== RMS frequency plot ===
+=== Program statistics plot ===
+
 == Customizing charts ==
+
+== Source code viewer ==
 
 == Settings ==
