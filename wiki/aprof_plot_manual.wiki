@@ -44,7 +44,11 @@ Let's discuss in details all aspects and features of `aprof-plot`.
 || " || `Export` || - || From this submenu, you can export: <br> - routine profile: all the performance tuples (a routine must be selected in the routine table) <br> - program profile: info about profiled routines <br> - program statistics: several statistics about your application run|| 
 || " || `Merge...` || [http://aprof.googlecode.com/svn/trunk/wiki_images/Merge-icon.png] || Disabled. ||
 || " || `Exit` || - || Close the current window. ||
+
+|| *Menu item* || *Submenu item* || *Toolbar  image* || *Description* ||
 || `Edit` || `Settings...` || [http://aprof.googlecode.com/svn/trunk/wiki_images/Settings-icon.png] || Open the [aprof_plot_manual#Settings settings] dialog. ||
+
+|| *Menu item* || *Submenu item* || *Toolbar  image* || *Description* ||
 || `View` || `Cost plot` || http://aprof.googlecode.com/svn/trunk/wiki_images/statistics.png || Enable/disable `cost plot` ||
 || " || `Min/Avg/Max cost plot` || http://aprof.googlecode.com/svn/trunk/wiki_images/statistics.png || Enable/disable `Min/Avg/Max cost plot` ||
 || " || Total cost plot` || http://aprof.googlecode.com/svn/trunk/wiki_images/statistics.png || Enable/disable `Min/Avg/Max cost plot` ||
@@ -55,6 +59,8 @@ Let's discuss in details all aspects and features of `aprof-plot`.
 || " || `RMS frequency plot` || http://aprof.googlecode.com/svn/trunk/wiki_images/statistics.png || Enable/disable `RMS frequency plot` ||
 || " || `Program statistics plot` || http://aprof.googlecode.com/svn/trunk/wiki_images/statistics.png || Enable/disable `Program statistics plot` ||
 || " || `Source code editor` || http://aprof.googlecode.com/svn/trunk/wiki_images/fs-directory.png || Enable/disable source code editor ||
+
+|| *Menu item* || *Submenu item* || *Toolbar  image* || *Description* ||
 || `Help` || `About` || - || Open a dialog with info about `aprof-plot`. ||
 
 == Routine table ==
