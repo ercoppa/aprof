@@ -45,6 +45,8 @@ Let's discuss in details all aspects and features of `aprof-plot`.
 || " || `Merge...` || [http://aprof.googlecode.com/svn/trunk/wiki_images/Merge-icon.png] || Disabled. ||
 || " || `Exit` || - || Close the current window. ||
 || `Edit` || `Settings...` || [http://aprof.googlecode.com/svn/trunk/wiki_images/Settings-icon.png] || Open the [aprof_plot_manual#Settings settings] dialog. ||
+|| `View` || ||  ||  ||
+|| `Help` || `About` || - || Open a dialog with info about `aprof-plot`. ||
 
 == Routine table ==
 
