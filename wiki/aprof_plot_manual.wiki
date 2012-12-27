@@ -92,7 +92,7 @@ You can filter routines based on:
   * `Cost %`: show routines with at least a specific percentage of total cost.
   * `Calls %`: show routines with at least a specific percentage of total calls.
   * `#RMS`: show routines with at least a certain number of performance tuples.
-By default we show eoutines with at least five performance tuples.
+By default we show routines with at least five performance tuples.
 
 == Routine profile == 
 
