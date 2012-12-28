@@ -338,10 +338,12 @@ static Function * merge_tuple(HChar * line, Int size,
 static Bool merge_report(HChar * report, ThreadData * tdata) {
 	
 	/* open report */
-	SysRes res = VG_(open)((const HChar *)report, VKI_O_RDONLY,
+	HChar * rep = VG_(expand_file_name)("aprof log", report);
+	//VG_(printf)("Opening: %s\n", rep);
+	SysRes res = VG_(open)((const HChar *)rep, VKI_O_RDONLY,
 								VKI_S_IRUSR|VKI_S_IWUSR);
-	int file = (Int) sr_Res(res);
-	AP_ASSERT(file != -1, "Can't read a log file.");
+	Int file = (Int) sr_Res(res);
+	AP_ASSERT(file > 0, "Can't read a log file.");
 	
 	Char buf[4096];
 	HChar line[1024];
@@ -365,14 +367,14 @@ static Bool merge_report(HChar * report, ThreadData * tdata) {
 				line[offset++] = '\0';
 				//VG_(printf)("# %s\n", line);
 				current_routine = merge_tuple(line, offset,
-					current_routine, tdata);
+											current_routine, tdata);
 				
 				/* 
 				 * this means that the report has a different command 
 				 * OR different report version
 				 */
 				if (current_routine == (void *)1) {
-					//VG_(printf)("No merge\n");
+					VG_(printf)("No merge\n");
 					VG_(close)(file);
 					return False;
 				}
@@ -433,8 +435,8 @@ static HChar * report_name(HChar * filename_priv, UInt tid, UInt postfix_c) {
 
 static UInt search_report(HChar ** reports, Bool all_runs) {
 	
-	SysRes r = VG_(open)("./", VKI_O_RDONLY, 
-						VKI_S_IRUSR|VKI_S_IWUSR);
+	SysRes r = VG_(open)(VG_(expand_file_name)("aprof log", "./"),
+						VKI_O_RDONLY, VKI_S_IRUSR|VKI_S_IWUSR);
 	int dir = (Int) sr_Res(r);
 	AP_ASSERT(dir != -1, "Can't open directory.");
 	
@@ -450,9 +452,11 @@ static UInt search_report(HChar ** reports, Bool all_runs) {
 		}
 		
 		Int i = 0;
+		int k = 0;
 		for (i = 0; i < res;) {
 
 			file = (struct vki_dirent *) (buf + i);
+			//VG_(printf)("File: %s - %d\n", file->d_name, file->d_reclen);
 			if (VG_(strcmp)(".aprof", file->d_name + 
 					VG_(strlen)(file->d_name) - 6) == 0) {
 				
@@ -461,8 +465,10 @@ static UInt search_report(HChar ** reports, Bool all_runs) {
 					HChar pid[10] = {0};
 					VG_(sprintf)(pid, "%d", VG_(getpid)()); 
 					if (VG_(strncmp)(file->d_name, pid,
-						VG_(strlen)(pid)) != 0) 
+						VG_(strlen)(pid)) != 0) {
+						i += file->d_reclen;
 						continue;
+					}
 					
 				} 
 				
@@ -471,7 +477,6 @@ static UInt search_report(HChar ** reports, Bool all_runs) {
 			}
 			
 			i += file->d_reclen;
-			
 		}
 	
 	}
@@ -488,6 +493,8 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
 	/* last thread? try to merge... */
 	if (APROF_(running_threads) == 1) {
 		
+		//VG_(printf)("I am the last thread\n");
+		
 		Int n = 0, j = 0;
 		HChar ** reports = VG_(calloc)("report array", sizeof(Char *) * 256, 1);
 		
@@ -502,11 +509,17 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
 			Bool m = merge_report(reports[j], tdata);
 			if (m) {
 				
-				HChar name[1024];
-				VG_(sprintf)(name, "%s_merged", reports[j]);  
-				VG_(rename) (reports[j], name);
+				HChar * old = VG_(expand_file_name)("aprof log", reports[j]);
 				
-				//VG_(unlink) (reports[j]);
+				/*
+				HChar name[1024];
+				VG_(sprintf)(name, "%s_merged", reports[j]);
+				HChar * new = VG_(expand_file_name)("aprof log", name);
+				VG_(rename) (old, new);
+				*/
+				//VG_(printf)("Renaming report %s -> %s\n", reports[j], name);
+				
+				VG_(unlink) (old);
 			}
 		}
 		
