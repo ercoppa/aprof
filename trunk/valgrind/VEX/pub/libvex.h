@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2011 OpenWorks LLP
+   Copyright (C) 2004-2012 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -57,7 +57,8 @@ typedef
       VexArchARM,
       VexArchPPC32,
       VexArchPPC64,
-      VexArchS390X
+      VexArchS390X,
+      VexArchMIPS32
    }
    VexArch;
 
@@ -89,6 +90,7 @@ typedef
 #define VEX_HWCAPS_PPC32_GX    (1<<11) /* Graphics extns
                                           (fres,frsqrte,fsel,stfiwx) */
 #define VEX_HWCAPS_PPC32_VX    (1<<12) /* Vector-scalar floating-point (VSX); implies ISA 2.06 or higher  */
+#define VEX_HWCAPS_PPC32_DFP   (1<<17) /* Decimal Floating Point (DFP) -- e.g., dadd */
 
 /* ppc64: baseline capability is integer and basic FP insns */
 #define VEX_HWCAPS_PPC64_V     (1<<13) /* Altivec (VMX) */
@@ -96,20 +98,13 @@ typedef
 #define VEX_HWCAPS_PPC64_GX    (1<<15) /* Graphics extns
                                           (fres,frsqrte,fsel,stfiwx) */
 #define VEX_HWCAPS_PPC64_VX    (1<<16) /* Vector-scalar floating-point (VSX); implies ISA 2.06 or higher  */
-
-#define VEX_HWCAPS_PPC32_DFP   (1<<17) /* Decimal Floating Point (DFP) -- e.g., dadd */
 #define VEX_HWCAPS_PPC64_DFP   (1<<18) /* Decimal Floating Point (DFP) -- e.g., dadd */
 
 /* s390x: Hardware capability encoding
 
-   Bits    Information
-   [26:31] Machine model
-   [25]    Long displacement facility
-   [24]    Extended-immediate facility
-   [23]    General-instruction-extension facility
-   [22]    Decimal floating point facility
-   [21]    FPR-GR transfer facility
-   [0:20]  Currently unused; reserved for future use
+   Bits [26:31] encode the machine model (see VEX_S390X_MODEL... below)
+   Bits [0:20]  encode specific hardware capabilities
+                (see VEX_HWAPS_S390X_... below)
 */
 
 /* Model numbers must be assigned in chronological order.
@@ -124,7 +119,8 @@ typedef
 #define VEX_S390X_MODEL_Z10_BC   7
 #define VEX_S390X_MODEL_Z196     8
 #define VEX_S390X_MODEL_Z114     9
-#define VEX_S390X_MODEL_UNKNOWN  10     /* always last in list */
+#define VEX_S390X_MODEL_ZEC12    10
+#define VEX_S390X_MODEL_UNKNOWN  11     /* always last in list */
 #define VEX_S390X_MODEL_MASK     0x3F
 
 #define VEX_HWCAPS_S390X_LDISP (1<<6)   /* Long-displacement facility */
@@ -135,6 +131,8 @@ typedef
 #define VEX_HWCAPS_S390X_ETF2  (1<<11)  /* ETF2-enhancement facility */
 #define VEX_HWCAPS_S390X_STFLE (1<<12)  /* STFLE facility */
 #define VEX_HWCAPS_S390X_ETF3  (1<<13)  /* ETF3-enhancement facility */
+#define VEX_HWCAPS_S390X_STCKF (1<<14)  /* STCKF facility */
+#define VEX_HWCAPS_S390X_FPEXT (1<<15)  /* Floating point extension facility */
 
 /* Special value representing all available s390x hwcaps */
 #define VEX_HWCAPS_S390X_ALL   (VEX_HWCAPS_S390X_LDISP | \
@@ -143,6 +141,8 @@ typedef
                                 VEX_HWCAPS_S390X_DFP   | \
                                 VEX_HWCAPS_S390X_FGX   | \
                                 VEX_HWCAPS_S390X_STFLE | \
+                                VEX_HWCAPS_S390X_STCKF | \
+                                VEX_HWCAPS_S390X_FPEXT | \
                                 VEX_HWCAPS_S390X_ETF3  | \
                                 VEX_HWCAPS_S390X_ETF2)
 
@@ -160,20 +160,77 @@ typedef
 /* Get an ARM architecure level from HWCAPS */
 #define VEX_ARM_ARCHLEVEL(x) ((x) & 0x3f)
 
+/* MIPS baseline capability */
+/* Assigned Company values for bits 23:16 of the PRId Register
+   (CP0 register 15, select 0).  As of the MIPS32 and MIPS64 specs from
+   MTI, the PRId register is defined in this (backwards compatible)
+   way:
+
+  +----------------+----------------+----------------+----------------+
+  | Company Options| Company ID     | Processor ID   | Revision       |
+  +----------------+----------------+----------------+----------------+
+   31            24 23            16 15             8 7
+
+*/
+
+#define VEX_PRID_COMP_MIPS      0x00010000
+#define VEX_PRID_COMP_BROADCOM  0x00020000
+
 /* These return statically allocated strings. */
 
 extern const HChar* LibVEX_ppVexArch    ( VexArch );
 extern const HChar* LibVEX_ppVexHwCaps  ( VexArch, UInt );
 
+/* The various kinds of caches */
+typedef enum {
+   DATA_CACHE,
+   INSN_CACHE,
+   UNIFIED_CACHE
+} VexCacheKind;
+
+/* Information about a particular cache */
+typedef struct {
+   VexCacheKind kind;
+   UInt level;         /* level this cache is at, e.g. 1 for L1 cache */
+   UInt sizeB;         /* size of this cache in bytes */
+   UInt line_sizeB;    /* cache line size in bytes */
+   UInt assoc;         /* set associativity */
+   Bool is_trace_cache;  /* False, except for certain Pentium 4 models */
+} VexCache;
+
+/* Convenience macro to initialise a VexCache */
+#define VEX_CACHE_INIT(_kind, _level, _size, _line_size, _assoc)         \
+         ({ (VexCache) { .kind = _kind, .level = _level, .sizeB = _size, \
+               .line_sizeB = _line_size, .assoc = _assoc, \
+               .is_trace_cache = False }; })
+
+/* Information about the cache system as a whole */
+typedef struct {
+   UInt num_levels;
+   UInt num_caches;
+   /* Unordered array of caches for this host. NULL if there are
+      no caches. The following can always be assumed:
+      (1) There is at most one cache of a given kind per cache level.
+      (2) If there exists a unified cache at a particular level then
+          no other cache exists at that level.
+      (3) The existence of a cache at level N > 1 implies the existence of
+          at least one cache at level N-1. */
+   VexCache *caches;
+   Bool icaches_maintain_coherence;
+} VexCacheInfo;
+
 
 /* This struct is a bit of a hack, but is needed to carry misc
    important bits of info about an arch.  Fields which are meaningless
-   or ignored for the platform in question should be set to zero. */
+   or ignored for the platform in question should be set to zero.
+   Nb: if you add fields to the struct make sure to update function
+   LibVEX_default_VexArchInfo. */
 
 typedef
    struct {
-      /* This is the only mandatory field. */
+      /* The following two fields are mandatory. */
       UInt hwcaps;
+      VexCacheInfo hwcache_info;
       /* PPC32/PPC64 only: size of cache line */
       Int ppc_cache_line_szB;
       /* PPC32/PPC64 only: sizes zeroed by the dcbz/dcbzl instructions
@@ -296,6 +353,28 @@ void LibVEX_default_VexAbiInfo ( /*OUT*/VexAbiInfo* vbi );
 /*--- Control of Vex's optimiser (iropt).             ---*/
 /*-------------------------------------------------------*/
 
+
+/* VexRegisterUpdates specifies when to ensure that the guest state is
+   up to date.
+
+   VexRegUpdSpAtMemAccess : all registers are updated at superblock
+   exits, SP is up to date at memory exception points. The SP is described
+   by the arch specific functions guest_<arch>_state_requires_precise_mem_exns.
+
+   VexRegUpdUnwindregsAtMemAccess : registers needed to make a stack trace are
+   up to date at memory exception points.  Typically, these are PC/SP/FP. The
+   minimal registers are described by the arch specific functions
+   guest_<arch>_state_requires_precise_mem_exns.
+
+   VexRegUpdAllregsAtMemAccess : all registers up to date at memory exception
+   points.
+
+   VexRegUpdAllregsAtEachInsn : all registers up to date at each instruction. */
+typedef enum { VexRegUpdSpAtMemAccess,
+               VexRegUpdUnwindregsAtMemAccess,
+               VexRegUpdAllregsAtMemAccess,
+               VexRegUpdAllregsAtEachInsn } VexRegisterUpdates;
+
 /* Control of Vex's optimiser. */
 
 typedef
@@ -305,10 +384,8 @@ typedef
       /* Control aggressiveness of iropt.  0 = no opt, 1 = simple
          opts, 2 (default) = max optimisation. */
       Int iropt_level;
-      /* Ensure all integer registers are up to date at potential
-         memory exception points?  True(default)=yes, False=no, only
-         the guest's stack pointer. */
-      Bool iropt_precise_memory_exns;
+      /* Controls when registers are updated in guest state. */
+      VexRegisterUpdates iropt_register_updates;
       /* How aggressive should iropt be in unrolling loops?  Higher
          numbers make it more enthusiastic about loop unrolling.
          Default=120.  A setting of zero disables unrolling.  */
@@ -563,11 +640,13 @@ typedef
                                IRSB*, 
                                VexGuestLayout*, 
                                VexGuestExtents*,
+                               VexArchInfo*,
                                IRType gWordTy, IRType hWordTy );
       IRSB*   (*instrument2) ( /*callback_opaque*/void*, 
                                IRSB*, 
                                VexGuestLayout*, 
                                VexGuestExtents*,
+                               VexArchInfo*,
                                IRType gWordTy, IRType hWordTy );
 
       IRSB* (*finaltidy) ( IRSB* );
@@ -663,14 +742,12 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* );
 /*--- Patch existing translations                     ---*/
 /*-------------------------------------------------------*/
 
-/* Indicates a host address range for which callers to the functions
-   below must request I-D cache syncing after the call.  ::len == 0 is
-   ambiguous -- it could mean either zero bytes or the entire address
-   space, so we mean the former. */
+/* A host address range that was modified by the functions below. 
+   Callers must request I-cache syncing after the call as appropriate. */
 typedef
    struct {
       HWord start;
-      HWord len;
+      HWord len;     /* always > 0 */
    }
    VexInvalRange;
 
@@ -716,6 +793,34 @@ VexInvalRange LibVEX_PatchProfInc ( VexArch arch_host,
 
 extern void LibVEX_ShowStats ( void );
 
+/*-------------------------------------------------------*/
+/*-- IR injection                                      --*/
+/*-------------------------------------------------------*/
+
+/* IR Injection Control Block */
+
+#define NO_ROUNDING_MODE (~0u)
+
+typedef 
+   struct {
+      IROp  op;        // the operation to perform
+      HWord result;    // address of the result
+      HWord opnd1;     // address of 1st operand
+      HWord opnd2;     // address of 2nd operand
+      HWord opnd3;     // address of 3rd operand
+      HWord opnd4;     // address of 4th operand
+      IRType t_result; // type of result
+      IRType t_opnd1;  // type of 1st operand
+      IRType t_opnd2;  // type of 2nd operand
+      IRType t_opnd3;  // type of 3rd operand
+      IRType t_opnd4;  // type of 4th operand
+      UInt  rounding_mode;
+      UInt  num_operands; // excluding rounding mode, if any
+      Bool  shift_amount_is_immediate;
+   }
+   IRICB;
+
+extern void LibVEX_InitIRI ( const IRICB * );
 
 /*-------------------------------------------------------*/
 /*--- Notes                                           ---*/

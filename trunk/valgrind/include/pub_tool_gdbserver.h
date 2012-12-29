@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2011-2011 Philippe Waroquiers
+   Copyright (C) 2011-2012 Philippe Waroquiers
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -51,8 +51,8 @@
 // Calling VG_(gdbserver) with tid > 0 means to let a debugger attach
 // to the valgrind process. gdbserver will report to gdb that the
 // process stopped in thread tid.
-// tid == 0 indicates to stop gdbserver and report to gdb
-// that the valgrind-ified process has exited.
+// Calling VG_(gdbserver) with tid == 0 indicates to close
+// the connection with GDB (if still open) and stop gdbserver.
 //--------------------------------------------------------------------
 extern void VG_(gdbserver) ( ThreadId tid );
 
@@ -94,7 +94,7 @@ typedef
       write_watchpoint,
       read_watchpoint,
       access_watchpoint } PointKind;
-extern char* VG_(ppPointKind) (PointKind kind);
+extern const HChar* VG_(ppPointKind) (PointKind kind);
 
 
 /* watchpoint support --------------------------------------*/
@@ -160,7 +160,7 @@ typedef
       kwd_report_none,
       kwd_report_all,
       kwd_report_duplicated_matches } kwd_report_error;
-extern Int VG_(keyword_id) (Char* keywords, Char* input_word, 
+extern Int VG_(keyword_id) (HChar* keywords, HChar* input_word, 
                             kwd_report_error report);
 
 /* Extract an address and (optionally) a size from the string
@@ -170,7 +170,7 @@ extern Int VG_(keyword_id) (Char* keywords, Char* input_word,
    user problems via VG_(gdb_printf).  */
 extern void VG_(strtok_get_address_and_size) (Addr* address, 
                                               SizeT* szB, 
-                                              Char **ssaveptr);
+                                              HChar **ssaveptr);
 
 #endif   // __PUB_TOOL_GDBSERVER_H
 

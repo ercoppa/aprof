@@ -1,3 +1,4 @@
+/* -*- Mode: C; indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4 -*-  */
 /*
  * Load, store and modify handlers
  * 
@@ -108,6 +109,12 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type, Addr addr, SizeT size) {
 									act->aid);
         
 		if (old_aid < act->aid && (type == LOAD || type == MODIFY)) {
+			
+			#if 0
+			if (inside_strcmp == 1) {
+				VG_(printf)("Instruction: %#lx : %#lx\n", last_addr, addr);
+			}
+			#endif
 			
 			act->rms++;
 			//VG_(printf)("Incremented RMS\n");

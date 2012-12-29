@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2011 OpenWorks LLP
+   Copyright (C) 2004-2012 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -35,6 +35,10 @@
 
 #ifndef __VEX_HOST_PPC_DEFS_H
 #define __VEX_HOST_PPC_DEFS_H
+
+#include "libvex_basictypes.h"
+#include "libvex.h"                      // VexArch
+#include "host_generic_regs.h"           // HReg
 
 /* Num registers used for function calls */
 #define PPC_N_REGPARMS 8
@@ -1036,9 +1040,9 @@ extern PPCInstr* PPCInstr_DfpI64StoD128  ( PPCFpOp op, HReg dst_hi,
 extern PPCInstr* PPCInstr_DfpRound       ( HReg dst, HReg src, PPCRI* r_rmc );
 extern PPCInstr* PPCInstr_DfpRound128    ( HReg dst_hi, HReg dst_lo, HReg src_hi,
                                            HReg src_lo, PPCRI* r_rmc );
-extern PPCInstr* PPCInstr_DfpQuantize    ( PPCAvFpOp op, HReg dst, HReg srcL,
+extern PPCInstr* PPCInstr_DfpQuantize    ( PPCFpOp op, HReg dst, HReg srcL,
                                            HReg srcR, PPCRI* rmc );
-extern PPCInstr* PPCInstr_DfpQuantize128 ( PPCAvFpOp op, HReg dst_hi,
+extern PPCInstr* PPCInstr_DfpQuantize128 ( PPCFpOp op, HReg dst_hi,
                                            HReg dst_lo,
                                            HReg src_hi,
                                            HReg src_lo, PPCRI* rmc );

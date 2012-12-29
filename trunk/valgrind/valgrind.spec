@@ -1,13 +1,13 @@
 Summary: Valgrind Memory Debugger
 Name: valgrind
-Version: 3.8.0.SVN
+Version: 3.9.0.SVN
 Release: 1
 Epoch: 1
 License: GPL
 URL: http://www.valgrind.org/
 Group: Development/Debuggers
 Packager: Julian Seward <jseward@acm.org>
-Source: valgrind-3.8.0.SVN.tar.bz2
+Source: valgrind-3.9.0.SVN.tar.bz2
 
 Buildroot: %{_tmppath}/%{name}-root
 
@@ -21,7 +21,7 @@ platforms: x86/Linux, AMD64/Linux, PPC32/Linux, PPC64/Linux, x86/MacOSX,
 AMD64/MacOSX.
 
 %prep
-%setup -n valgrind-3.8.0.SVN
+%setup -n valgrind-3.9.0.SVN
 
 %build
 %configure
@@ -36,7 +36,7 @@ mv $RPM_BUILD_ROOT%{_datadir}/doc/valgrind/* docs.installed/
 
 %files
 %defattr(-,root,root)
-%doc AUTHORS COPYING FAQ.txt NEWS README*
+%doc AUTHORS COPYING FAQ.txt NEWS NEWS.old README*
 %doc docs.installed/html/*.html docs.installed/html/images/*.png
 %{_bindir}/*
 %{_includedir}/valgrind

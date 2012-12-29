@@ -8,7 +8,7 @@
    This file is part of MemCheck, a heavyweight Valgrind tool for
    detecting memory errors.
 
-   Copyright (C) 2000-2011 Julian Seward 
+   Copyright (C) 2000-2012 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -62,6 +62,8 @@ static ULong cmalloc_bs_mallocd = 0;
 /*------------------------------------------------------------*/
 /*--- Tracking malloc'd and free'd blocks                  ---*/
 /*------------------------------------------------------------*/
+
+SizeT MC_(Malloc_Redzone_SzB) = -10000000; // If used before set, should BOMB
 
 /* Record malloc'd blocks. */
 VgHashTable MC_(malloc_list) = NULL;
@@ -174,7 +176,7 @@ MC_Chunk* MC_(get_freed_block_bracketting) (Addr a)
       mc = freed_list_start[i];
       while (mc) {
          if (VG_(addr_is_in_block)( a, mc->data, mc->szB,
-                                    MC_MALLOC_REDZONE_SZB ))
+                                    MC_(Malloc_Redzone_SzB) ))
             return mc;
          mc = mc->next;
       }
@@ -220,7 +222,7 @@ void delete_MC_Chunk (MC_Chunk* mc)
 /*------------------------------------------------------------*/
 
 // XXX: should make this a proper error (bug #79311).
-static Bool complain_about_silly_args(SizeT sizeB, Char* fn)
+static Bool complain_about_silly_args(SizeT sizeB, const HChar* fn)
 {
    // Cast to a signed type to catch any unexpectedly negative args.  We're
    // assuming here that the size asked for is not greater than 2^31 bytes
@@ -344,7 +346,9 @@ void* MC_(calloc) ( ThreadId tid, SizeT nmemb, SizeT size1 )
 static
 void die_and_free_mem ( ThreadId tid, MC_Chunk* mc, SizeT rzB )
 {
-   if (MC_(clo_free_fill) != -1) {
+   /* Note: we do not free fill the custom allocs produced
+      by MEMPOOL or by MALLOC/FREELIKE_BLOCK requests. */
+   if (MC_(clo_free_fill) != -1 && MC_AllocCustom != mc->allockind ) {
       tl_assert(MC_(clo_free_fill) >= 0x00 && MC_(clo_free_fill) <= 0xFF);
       VG_(memset)((void*)mc->data, MC_(clo_free_fill), mc->szB);
    }
@@ -385,19 +389,19 @@ void MC_(handle_free) ( ThreadId tid, Addr p, UInt rzB, MC_AllocKind kind )
 void MC_(free) ( ThreadId tid, void* p )
 {
    MC_(handle_free)( 
-      tid, (Addr)p, MC_MALLOC_REDZONE_SZB, MC_AllocMalloc );
+      tid, (Addr)p, MC_(Malloc_Redzone_SzB), MC_AllocMalloc );
 }
 
 void MC_(__builtin_delete) ( ThreadId tid, void* p )
 {
    MC_(handle_free)(
-      tid, (Addr)p, MC_MALLOC_REDZONE_SZB, MC_AllocNew);
+      tid, (Addr)p, MC_(Malloc_Redzone_SzB), MC_AllocNew);
 }
 
 void MC_(__builtin_vec_delete) ( ThreadId tid, void* p )
 {
    MC_(handle_free)(
-      tid, (Addr)p, MC_MALLOC_REDZONE_SZB, MC_AllocNewVec);
+      tid, (Addr)p, MC_(Malloc_Redzone_SzB), MC_AllocNewVec);
 }
 
 void* MC_(realloc) ( ThreadId tid, void* p_old, SizeT new_szB )
@@ -452,10 +456,10 @@ void* MC_(realloc) ( ThreadId tid, void* p_old, SizeT new_szB )
          tl_assert(ec);
 
          /* Retained part is copied, red zones set as normal */
-         MC_(make_mem_noaccess)( a_new-MC_MALLOC_REDZONE_SZB, 
-                                 MC_MALLOC_REDZONE_SZB );
+         MC_(make_mem_noaccess)( a_new-MC_(Malloc_Redzone_SzB), 
+                                 MC_(Malloc_Redzone_SzB) );
          MC_(copy_address_range_state) ( (Addr)p_old, a_new, new_szB );
-         MC_(make_mem_noaccess)        ( a_new+new_szB, MC_MALLOC_REDZONE_SZB );
+         MC_(make_mem_noaccess)        ( a_new+new_szB, MC_(Malloc_Redzone_SzB));
 
          /* Copy from old to new */
          VG_(memcpy)((void*)a_new, p_old, new_szB);
@@ -470,7 +474,7 @@ void* MC_(realloc) ( ThreadId tid, void* p_old, SizeT new_szB )
          /* Nb: we have to allocate a new MC_Chunk for the new memory rather
             than recycling the old one, so that any erroneous accesses to the
             old memory are reported. */
-         die_and_free_mem ( tid, mc, MC_MALLOC_REDZONE_SZB );
+         die_and_free_mem ( tid, mc, MC_(Malloc_Redzone_SzB) );
 
          // Allocate a new chunk.
          mc = create_MC_Chunk( ec, a_new, new_szB, MC_AllocMalloc );
@@ -495,12 +499,12 @@ void* MC_(realloc) ( ThreadId tid, void* p_old, SizeT new_szB )
          tl_assert(VG_(is_plausible_ECU)(ecu));
 
          /* First half kept and copied, second half new, red zones as normal */
-         MC_(make_mem_noaccess)( a_new-MC_MALLOC_REDZONE_SZB, 
-                                 MC_MALLOC_REDZONE_SZB );
+         MC_(make_mem_noaccess)( a_new-MC_(Malloc_Redzone_SzB), 
+                                 MC_(Malloc_Redzone_SzB) );
          MC_(copy_address_range_state) ( (Addr)p_old, a_new, mc->szB );
          MC_(make_mem_undefined_w_otag)( a_new+mc->szB, new_szB-mc->szB,
                                                         ecu | MC_OKIND_HEAP );
-         MC_(make_mem_noaccess)        ( a_new+new_szB, MC_MALLOC_REDZONE_SZB );
+         MC_(make_mem_noaccess)        ( a_new+new_szB, MC_(Malloc_Redzone_SzB) );
 
          /* Possibly fill new area with specified junk */
          if (MC_(clo_malloc_fill) != -1) {
@@ -523,7 +527,7 @@ void* MC_(realloc) ( ThreadId tid, void* p_old, SizeT new_szB )
          /* Nb: we have to allocate a new MC_Chunk for the new memory rather
             than recycling the old one, so that any erroneous accesses to the
             old memory are reported. */
-         die_and_free_mem ( tid, mc, MC_MALLOC_REDZONE_SZB );
+         die_and_free_mem ( tid, mc, MC_(Malloc_Redzone_SzB) );
 
          // Allocate a new chunk.
          mc = create_MC_Chunk( ec, a_new, new_szB, MC_AllocMalloc );
@@ -765,6 +769,14 @@ void MC_(mempool_alloc)(ThreadId tid, Addr pool, Addr addr, SizeT szB)
       if (MP_DETAILED_SANITY_CHECKS) check_mempool_sane(mp);
       MC_(new_block)(tid, addr, szB, /*ignored*/0, mp->is_zeroed,
                      MC_AllocCustom, mp->chunks);
+      if (mp->rzB > 0) {
+         // This is not needed if the user application has properly
+         // marked the superblock noaccess when defining the mempool.
+         // We however still mark the redzones noaccess to still catch
+         // some bugs if user forgot.
+         MC_(make_mem_noaccess) ( addr - mp->rzB, mp->rzB);
+         MC_(make_mem_noaccess) ( addr + szB, mp->rzB);
+      }
       if (MP_DETAILED_SANITY_CHECKS) check_mempool_sane(mp);
    }
 }

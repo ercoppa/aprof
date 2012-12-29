@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2011 OpenWorks LLP
+   Copyright (C) 2004-2012 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -32,7 +32,6 @@
 #define __LIBVEX_PUB_GUEST_ARM_H
 
 #include "libvex_basictypes.h"
-#include "libvex_emwarn.h"
 
 
 /*---------------------------------------------------------------*/
@@ -92,8 +91,8 @@ typedef
       UInt guest_GEFLAG3;
 
       /* Various pseudo-regs mandated by Vex or Valgrind. */
-      /* Emulation warnings */
-      UInt guest_EMWARN;
+      /* Emulation notes */
+      UInt guest_EMNOTE;
 
       /* For clflush: record start and length of area to invalidate */
       UInt guest_TISTART;
@@ -194,8 +193,12 @@ typedef
       */
       UInt guest_ITSTATE;
 
-      /* Padding to make it have an 16-aligned size */
+      /* Padding to make it have an 32-aligned size */
       UInt padding1;
+      UInt padding2;
+      UInt padding3;
+      UInt padding4;
+      UInt padding5;
    }
    VexGuestARMState;
 

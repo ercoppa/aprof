@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2011 OpenWorks LLP
+   Copyright (C) 2004-2012 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -38,6 +38,10 @@
 #ifndef __VEX_GUEST_AMD64_DEFS_H
 #define __VEX_GUEST_AMD64_DEFS_H
 
+#include "libvex_basictypes.h"
+#include "libvex_emnote.h"              // VexEmNote
+#include "libvex_guest_amd64.h"         // VexGuestAMD64State
+#include "guest_generic_bb_to_IR.h"     // DisResult
 
 /*---------------------------------------------------------*/
 /*--- amd64 to IR conversion                            ---*/
@@ -60,7 +64,7 @@ DisResult disInstr_AMD64 ( IRSB*        irbb,
 
 /* Used by the optimiser to specialise calls to helpers. */
 extern
-IRExpr* guest_amd64_spechelper ( HChar*   function_name,
+IRExpr* guest_amd64_spechelper ( const HChar* function_name,
                                  IRExpr** args,
                                  IRStmt** precedingStmts,
                                  Int      n_precedingStmts );
@@ -117,9 +121,9 @@ extern ULong amd64g_check_ldmxcsr ( ULong mxcsr );
 
 extern ULong amd64g_create_mxcsr ( ULong sseround );
 
-extern VexEmWarn amd64g_dirtyhelper_FLDENV  ( VexGuestAMD64State*, HWord );
-extern VexEmWarn amd64g_dirtyhelper_FRSTOR  ( VexGuestAMD64State*, HWord );
-extern VexEmWarn amd64g_dirtyhelper_FRSTORS ( VexGuestAMD64State*, HWord );
+extern VexEmNote amd64g_dirtyhelper_FLDENV  ( VexGuestAMD64State*, HWord );
+extern VexEmNote amd64g_dirtyhelper_FRSTOR  ( VexGuestAMD64State*, HWord );
+extern VexEmNote amd64g_dirtyhelper_FRSTORS ( VexGuestAMD64State*, HWord );
 
 extern void amd64g_dirtyhelper_FSTENV  ( VexGuestAMD64State*, HWord );
 extern void amd64g_dirtyhelper_FNSAVE  ( VexGuestAMD64State*, HWord );
@@ -137,8 +141,6 @@ extern void amd64g_dirtyhelper_FNSAVES ( VexGuestAMD64State*, HWord );
 
 extern ULong amd64g_calculate_mmx_pmaddwd  ( ULong, ULong );
 extern ULong amd64g_calculate_mmx_psadbw   ( ULong, ULong );
-extern ULong amd64g_calculate_mmx_pmovmskb ( ULong );
-extern ULong amd64g_calculate_sse_pmovmskb ( ULong w64hi, ULong w64lo );
 
 extern ULong amd64g_calculate_sse_phminposuw ( ULong sLo, ULong sHi );
 
@@ -160,11 +162,12 @@ extern void  amd64g_dirtyhelper_storeF80le ( ULong/*addr*/, ULong/*data*/ );
 extern void  amd64g_dirtyhelper_CPUID_baseline ( VexGuestAMD64State* st );
 extern void  amd64g_dirtyhelper_CPUID_sse3_and_cx16 ( VexGuestAMD64State* st );
 extern void  amd64g_dirtyhelper_CPUID_sse42_and_cx16 ( VexGuestAMD64State* st );
+extern void  amd64g_dirtyhelper_CPUID_avx_and_cx16 ( VexGuestAMD64State* st );
 
 extern void  amd64g_dirtyhelper_FINIT ( VexGuestAMD64State* );
 
 extern void      amd64g_dirtyhelper_FXSAVE  ( VexGuestAMD64State*, HWord );
-extern VexEmWarn amd64g_dirtyhelper_FXRSTOR ( VexGuestAMD64State*, HWord );
+extern VexEmNote amd64g_dirtyhelper_FXRSTOR ( VexGuestAMD64State*, HWord );
 
 extern ULong amd64g_dirtyhelper_RDTSC ( void );
 
@@ -237,14 +240,14 @@ extern ULong amd64g_dirtyhelper_PCMPxSTRx (
    (will assert otherwise).
 
    gstOffL and gstOffR are the guest state offsets for the two XMM
-   register inputs and/or output.  We never have to deal with the memory
-   case since that is handled by pre-loading the relevant value into the fake
-   XMM16 register.
+   register inputs, gstOffD is the guest state offset for the XMM register
+   output.  We never have to deal with the memory case since that is handled
+   by pre-loading the relevant value into the fake XMM16 register.
 
 */
 extern void amd64g_dirtyhelper_AES ( 
           VexGuestAMD64State* gst,
-          HWord opc4,
+          HWord opc4, HWord gstOffD,
           HWord gstOffL, HWord gstOffR
        );
 
@@ -276,12 +279,12 @@ extern void amd64g_dirtyhelper_AESKEYGENASSIST (
 
 //extern void  amd64g_dirtyhelper_FSAVE ( VexGuestAMD64State*, HWord );
 
-//extern VexEmWarn
+//extern VexEmNote
 //            amd64g_dirtyhelper_FRSTOR ( VexGuestAMD64State*, HWord );
 
 //extern void amd64g_dirtyhelper_FSTENV ( VexGuestAMD64State*, HWord );
 
-//extern VexEmWarn 
+//extern VexEmNote
 //            amd64g_dirtyhelper_FLDENV ( VexGuestAMD64State*, HWord );
 
 

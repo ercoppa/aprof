@@ -32,24 +32,24 @@
 
 #include "aprof.h"
 
-ULong APROF_(time)(void) {
-	
+ULong APROF_(time)(ThreadData * tdata) {
+
 	#if EMPTY_ANALYSIS
 	return 0;
 	#endif
-	
+
 	#if TIME == INSTR
-	return APROF_(current_tdata)->instr;
-	
+	return tdata->instr;
+
 	#elif TIME == RDTSC
 	ULong ret;
 	__asm__ __volatile__("rdtsc": "=A" (ret));
 	return ret;
-	
+
 	#elif TIME == BB_COUNT
-	return APROF_(current_tdata)->bb_c;
+	return tdata->bb_c;
 	#endif
-	
+
 	return 0;
 
 }

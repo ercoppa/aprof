@@ -27,6 +27,7 @@
 #include "pub_core_translate.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_initimg.h"
+#include "pub_core_syswrap.h"      // VG_(show_open_fds)
 
 unsigned long cont_thread;
 unsigned long general_thread;
@@ -38,11 +39,13 @@ int pass_signals[TARGET_SIGNAL_LAST]; /* indexed by gdb signal nr */
 
 /* for a gdbserver integrated in valgrind, resuming the process consists
    in returning the control to valgrind.
+   The guess process resumes its execution.
    Then at the next error or break or ..., valgrind calls gdbserver again.
-   A resume packet must then be built.
-   resume_packet_needed records the fact that the next call to gdbserver
+   A resume reply packet must then be built to inform GDB that the
+   resume request is finished.
+   resume_reply_packet_needed records the fact that the next call to gdbserver
    must send a resume packet to gdb. */
-static Bool resume_packet_needed = False;
+static Bool resume_reply_packet_needed = False;
 
 VG_MINIMAL_JMP_BUF(toplevel);
 
@@ -123,7 +126,7 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
    UWord ret = 0;
    char s[strlen(mon)+1]; /* copy for strtok_r */
    char* wcmd;
-   Char* ssaveptr;
+   HChar* ssaveptr;
    char* endptr;
    int   kwdid;
    int int_value;
@@ -158,11 +161,12 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
 
       VG_(gdb_printf) (
 "general valgrind monitor commands:\n"
-"  help [debug]             : monitor command help. With debug: + debugging commands\n"
+"  help [debug]            : monitor command help. With debug: + debugging commands\n"
 "  v.wait [<ms>]           : sleep <ms> (default 0) then continue\n"
 "  v.info all_errors       : show all errors found so far\n"
 "  v.info last_error       : show last error found\n"
 "  v.info n_errs_found     : show the nr of errors found so far\n"
+"  v.info open_fds         : show open file descriptors (only if --track-fds=yes)\n"
 "  v.kill                  : kill the Valgrind process\n"
 "  v.set gdb_output        : set valgrind output to gdb\n"
 "  v.set log_output        : set valgrind output to log\n"
@@ -237,7 +241,7 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
       wcmd = strtok_r (NULL, " ", &ssaveptr);
       switch (kwdid = VG_(keyword_id) 
               ("all_errors n_errs_found last_error gdbserver_status memory"
-               " scheduler",
+               " scheduler open_fds",
                wcmd, kwd_report_all)) {
       case -2:
       case -1: 
@@ -278,6 +282,15 @@ int handle_gdb_valgrind_command (char* mon, OutputSink* sink_wanted_at_return)
          break;
       case  5: /* scheduler */
          VG_(show_sched_status) ();
+         ret = 1;
+         break;
+      case  6: /* open_fds */
+         if (VG_(clo_track_fds))
+            VG_(show_open_fds) ("");
+         else
+            VG_(gdb_printf)
+               ("Valgrind must be started with --track-fds=yes"
+                " to show open fds\n");
          ret = 1;
          break;
       default:
@@ -530,8 +543,7 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
       }
    }
 
-   if ( ((*the_target->target_xml)() != NULL 
-         || (*the_target->shadow_target_xml)() != NULL)
+   if (valgrind_target_xml(VG_(clo_vgdb_shadow_registers)) != NULL
         && strncmp ("qXfer:features:read:", arg_own_buf, 20) == 0) {
       CORE_ADDR ofs;
       unsigned int len, doc_len;
@@ -547,19 +559,11 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
       }
       
       if (strcmp (annex, "target.xml") == 0) {
-         annex = NULL; // to replace it by the corresponding filename.
-
-         /* If VG_(clo_vgdb_shadow_registers), try to use
-            shadow_target_xml. Fallback to target_xml
-            if not defined. */
-         if (VG_(clo_vgdb_shadow_registers)) {
-            annex = (*the_target->shadow_target_xml)();
-            if (annex != NULL)
-               /* Ensure the shadow registers are initialized. */
-               initialize_shadow_low(True);
+         annex = valgrind_target_xml(VG_(clo_vgdb_shadow_registers));
+         if (annex != NULL && VG_(clo_vgdb_shadow_registers)) {
+            /* Ensure the shadow registers are initialized. */
+            initialize_shadow_low(True);
          }
-         if (annex == NULL)
-            annex = (*the_target->target_xml)();
          if (annex == NULL) {
             strcpy (arg_own_buf, "E00");
             return;
@@ -595,7 +599,7 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
          }
          VG_(lseek) (fd, ofs, VKI_SEEK_SET);
          len_read = VG_(read) (fd, toread, len);
-         *new_packet_len_p = write_qxfer_response (arg_own_buf, toread,
+         *new_packet_len_p = write_qxfer_response (arg_own_buf, (unsigned char *)toread,
                                                    len_read, ofs + len_read < doc_len);
          VG_(close) (fd);
          return;
@@ -667,8 +671,7 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
       if (VG_(client_auxv))
          strcat (arg_own_buf, ";qXfer:auxv:read+");
 
-      if ((*the_target->target_xml)() != NULL
-          || (*the_target->shadow_target_xml)() != NULL) {
+      if (valgrind_target_xml(VG_(clo_vgdb_shadow_registers)) != NULL) {
          strcat (arg_own_buf, ";qXfer:features:read+");
          /* if a new gdb connects to us, we have to reset the register
             set to the normal register sets to allow this new gdb to
@@ -707,21 +710,16 @@ void myresume (int step, int sig)
    struct thread_resume resume_info[2];
    int n = 0;
 
-   if (step || sig || (cont_thread != 0 && cont_thread != -1)) {
-      resume_info[0].thread
-         = ((struct inferior_list_entry *) current_inferior)->id;
+   if (step || sig) {
       resume_info[0].step = step;
       resume_info[0].sig = sig;
-      resume_info[0].leave_stopped = 0;
       n++;
    }
-   resume_info[n].thread = -1;
    resume_info[n].step = 0;
    resume_info[n].sig = 0;
-   resume_info[n].leave_stopped = (cont_thread != 0 && cont_thread != -1);
 
-   resume_packet_needed = True;
-   (*the_target->resume) (resume_info);
+   resume_reply_packet_needed = True;
+   valgrind_resume (resume_info);
 }
 
 /* server_main global variables */
@@ -732,7 +730,7 @@ void gdbserver_init (void)
 {
    dlog(1, "gdbserver_init gdbserver embedded in valgrind: %s\n", version);
    noack_mode = False;
-   initialize_low ();
+   valgrind_initialize_target ();
    // After a fork, gdbserver_init can be called again.
    // We do not have to re-malloc the buffers in such a case.
    if (own_buf == NULL)
@@ -761,7 +759,7 @@ void server_main (void)
    unsigned int len;
    CORE_ADDR mem_addr;
 
-   zignal = mywait (&status);
+   zignal = valgrind_wait (&status);
    if (VG_MINIMAL_SETJMP(toplevel)) {
       dlog(0, "error caused VG_MINIMAL_LONGJMP to server_main\n");
    }
@@ -770,10 +768,19 @@ void server_main (void)
       int packet_len;
       int new_packet_len = -1;
       
-      if (resume_packet_needed) {
-         resume_packet_needed = False;
+      if (resume_reply_packet_needed) {
+         /* Send the resume reply to reply to last GDB resume
+            request. */
+         resume_reply_packet_needed = False;
          prepare_resume_reply (own_buf, status, zignal);
          putpkt (own_buf);
+      }
+
+      /* If we our status is terminal (exit or fatal signal) get out
+         as quickly as we can. We won't be able to handle any request
+         anymore.  */
+      if (status == 'W' || status == 'X') {
+         return;
       }
 
       packet_len = getpkt (own_buf);
@@ -804,7 +811,7 @@ void server_main (void)
          remote_finish (reset_after_error);
          remote_open (VG_(clo_vgdb_prefix));
          myresume (0, 0);
-         resume_packet_needed = False;
+         resume_reply_packet_needed = False;
          return;
       case '!':
          /* We can not use the extended protocol with valgrind,
@@ -890,14 +897,14 @@ void server_main (void)
       }
       case 'm':
          decode_m_packet (&own_buf[1], &mem_addr, &len);
-         if (read_inferior_memory (mem_addr, mem_buf, len) == 0)
+         if (valgrind_read_memory (mem_addr, mem_buf, len) == 0)
             convert_int_to_ascii (mem_buf, own_buf, len);
          else
             write_enn (own_buf);
          break;
       case 'M':
          decode_M_packet (&own_buf[1], &mem_addr, &len, mem_buf);
-         if (write_inferior_memory (mem_addr, mem_buf, len) == 0)
+         if (valgrind_write_memory (mem_addr, mem_buf, len) == 0)
             write_ok (own_buf);
          else
             write_enn (own_buf);
@@ -905,7 +912,7 @@ void server_main (void)
       case 'X':
          if (decode_X_packet (&own_buf[1], packet_len - 1,
                               &mem_addr, &len, mem_buf) < 0
-             || write_inferior_memory (mem_addr, mem_buf, len) != 0)
+             || valgrind_write_memory (mem_addr, mem_buf, len) != 0)
             write_enn (own_buf);
          else
             write_ok (own_buf);
@@ -943,15 +950,13 @@ void server_main (void)
          int zlen = strtol (lenptr + 1, &dataptr, 16);
          char type = own_buf[1];
          
-         if (the_target->insert_watchpoint == NULL
-             || (type < '0' || type > '4')) {
-            /* No watchpoint support or not a watchpoint command;
-               unrecognized either way.  */
+         if (type < '0' || type > '4') {
+            /* Watchpoint command type unrecognized. */
             own_buf[0] = '\0';
          } else {
             int res;
             
-            res = (*the_target->insert_watchpoint) (type, addr, zlen);
+            res = valgrind_insert_watchpoint (type, addr, zlen);
             if (res == 0)
                write_ok (own_buf);
             else if (res == 1)
@@ -969,15 +974,13 @@ void server_main (void)
          int zlen = strtol (lenptr + 1, &dataptr, 16);
          char type = own_buf[1];
          
-         if (the_target->remove_watchpoint == NULL
-             || (type < '0' || type > '4')) {
-            /* No watchpoint support or not a watchpoint command;
-               unrecognized either way.  */
+         if (type < '0' || type > '4') {
+            /* Watchpoint command type unrecognized. */
             own_buf[0] = '\0';
          } else {
             int res;
             
-            res = (*the_target->remove_watchpoint) (type, addr, zlen);
+            res = valgrind_remove_watchpoint (type, addr, zlen);
             if (res == 0)
                write_ok (own_buf);
             else if (res == 1)
@@ -1001,7 +1004,7 @@ void server_main (void)
             break;
          }
 
-         if (mythread_alive (thread_id))
+         if (valgrind_thread_alive (thread_id))
             write_ok (own_buf);
          else
             write_enn (own_buf);
@@ -1055,6 +1058,6 @@ void server_main (void)
    remote_finish (reset_after_error);
    remote_open (VG_(clo_vgdb_prefix)); 
    myresume (0, 0);
-   resume_packet_needed = False;
+   resume_reply_packet_needed = False;
    return;
 }

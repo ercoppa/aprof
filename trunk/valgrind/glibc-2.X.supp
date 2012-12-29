@@ -1,7 +1,7 @@
 
 ##----------------------------------------------------------------------##
 
-# Errors to suppress by default with glibc 2.13.x
+# Errors to suppress by default with glibc 2.15.x
 
 # IMPORTANT: DO NOT EDIT glibc-2.X.supp, as it is as a generated
 # file.  Instead edit glibc-2.X.supp.in.
@@ -39,74 +39,74 @@
 {
    dl-hack3-cond-1
    Memcheck:Cond
-   obj:*/lib*/ld-2.13*.so*
-   obj:*/lib*/ld-2.13*.so*
-   obj:*/lib*/ld-2.13*.so*
+   obj:*/lib*/ld-2.15*.so*
+   obj:*/lib*/ld-2.15*.so*
+   obj:*/lib*/ld-2.15*.so*
 }
 {
    dl-hack3-cond-2
    Memcheck:Cond
-   obj:*/lib*/ld-2.13*.so*
-   obj:*/lib*/ld-2.13*.so*
-   obj:*/lib*/libc-2.13*.so*
+   obj:*/lib*/ld-2.15*.so*
+   obj:*/lib*/ld-2.15*.so*
+   obj:*/lib*/libc-2.15*.so*
 }
 {
    dl-hack3-cond-3
    Memcheck:Cond
-   obj:*/lib*/ld-2.13*.so*
-   obj:*/lib*/libc-2.13*.so*
-   obj:*/lib*/libc-2.13*.so*
+   obj:*/lib*/ld-2.15*.so*
+   obj:*/lib*/libc-2.15*.so*
+   obj:*/lib*/libc-2.15*.so*
 }
 {
    dl-hack3-cond-4
    Memcheck:Cond
-   obj:*/lib*/ld-2.13*.so*
-   obj:*/lib*/ld-2.13*.so*
-   obj:*/lib*/libdl-2.13*.so*
+   obj:*/lib*/ld-2.15*.so*
+   obj:*/lib*/ld-2.15*.so*
+   obj:*/lib*/libdl-2.15*.so*
 }
 
 {
    dl-hack4-64bit-addr-1
    Memcheck:Addr8
-   obj:*/lib*/ld-2.13*.so*
-   obj:*/lib*/ld-2.13*.so*
-   obj:*/lib*/ld-2.13*.so*
+   obj:*/lib*/ld-2.15*.so*
+   obj:*/lib*/ld-2.15*.so*
+   obj:*/lib*/ld-2.15*.so*
 }
 {
    dl-hack4-64bit-addr-2
    Memcheck:Addr8
-   obj:*/lib*/ld-2.13*.so*
-   obj:*/lib*/ld-2.13*.so*
-   obj:*/lib*/libc-2.13*.so*
+   obj:*/lib*/ld-2.15*.so*
+   obj:*/lib*/ld-2.15*.so*
+   obj:*/lib*/libc-2.15*.so*
 }
 {
    dl-hack4-64bit-addr-3
    Memcheck:Addr8
-   obj:*/lib*/ld-2.13*.so*
-   obj:*/lib*/ld-2.13*.so*
-   obj:*/lib*/libdl-2.13*.so*
+   obj:*/lib*/ld-2.15*.so*
+   obj:*/lib*/ld-2.15*.so*
+   obj:*/lib*/libdl-2.15*.so*
 }
 
 {
    dl-hack5-32bit-addr-1
    Memcheck:Addr4
-   obj:*/lib*/ld-2.13*.so
-   obj:*/lib*/ld-2.13*.so
-   obj:*/lib*/ld-2.13*.so
+   obj:*/lib*/ld-2.15*.so
+   obj:*/lib*/ld-2.15*.so
+   obj:*/lib*/ld-2.15*.so
 }
 {
    dl-hack5-32bit-addr-3
    Memcheck:Addr4
-   obj:*/lib*/ld-2.13*.so
-   obj:*/lib*/ld-2.13*.so
-   obj:*/lib*/libdl-2.13*.so*
+   obj:*/lib*/ld-2.15*.so
+   obj:*/lib*/ld-2.15*.so
+   obj:*/lib*/libdl-2.15*.so*
 }
 {
    dl-hack5-32bit-addr-4
    Memcheck:Addr4
-   obj:*/lib*/ld-2.13*.so
-   obj:*/lib*/libdl-2.13*.so*
-   obj:*/lib*/ld-2.13*.so
+   obj:*/lib*/ld-2.15*.so
+   obj:*/lib*/libdl-2.15*.so*
+   obj:*/lib*/ld-2.15*.so
 }
 
 
@@ -124,7 +124,7 @@
    glibc-2.5.x-on-SUSE-10.2-(PPC)-2a
    Memcheck:Cond
    fun:index
-   obj:*ld-2.13.*.so
+   obj:*ld-2.15.*.so
 }
 {
    glibc-2.5.x-on-SuSE-10.2-(PPC)-2b
@@ -136,22 +136,22 @@
    glibc-2.5.5-on-SuSE-10.2-(PPC)-2c
    Memcheck:Addr4
    fun:index
-   obj:*ld-2.13.*.so
+   obj:*ld-2.15.*.so
 }
 {
    glibc-2.3.5-on-SuSE-10.1-(PPC)-3
    Memcheck:Addr4
    fun:*wordcopy_fwd_dest_aligned*
    fun:mem*cpy
-   obj:*lib*2.13.*.so
+   obj:*lib*2.15.*.so
 }
 
 {
-   glibc-2.13-on-SUSE-10.3-(x86)
+   glibc-2.15-on-SUSE-10.3-(x86)
    Memcheck:Addr4
-   obj:*/lib/ld-2.13*.so
-   obj:*/lib/ld-2.13*.so
-   obj:*/lib/ld-2.13*.so
+   obj:*/lib/ld-2.15*.so
+   obj:*/lib/ld-2.15*.so
+   obj:*/lib/ld-2.15*.so
 }
 
 {
@@ -168,9 +168,9 @@
    Memcheck:Param
    socketcall.sendto(msg)
    fun:__sendto_nocancel
-   obj:/*libc-2.13*.so
-   obj:/*libc-2.13*.so
-   obj:/*libc-2.13*.so
+   obj:/*libc-2.15*.so
+   obj:/*libc-2.15*.so
+   obj:/*libc-2.15*.so
 }
 {
    glibc24-64bit-padding-1c
@@ -180,7 +180,7 @@
    fun:__nscd_get_map_ref
    fun:nscd_get*_r
    fun:*nscd*
-   obj:/*libc-2.13*.so
+   obj:/*libc-2.15*.so
 }
 
 
@@ -199,18 +199,18 @@
    Memcheck:Param
    socketcall.sendto(msg)
    fun:send
-   obj:/*libc-2.13*.so
-   obj:/*libc-2.13*.so
-   obj:/*libc-2.13*.so
+   obj:/*libc-2.15*.so
+   obj:/*libc-2.15*.so
+   obj:/*libc-2.15*.so
 }
 {
    X11-64bit-padding-4b
    Memcheck:Param
    socketcall.send(msg)
    fun:send
-   obj:/*libc-2.13*.so
-   obj:/*libc-2.13*.so
-   obj:/*libc-2.13*.so
+   obj:/*libc-2.15*.so
+   obj:/*libc-2.15*.so
+   obj:/*libc-2.15*.so
 }
 
 ##----------------------------------------------------------------------##

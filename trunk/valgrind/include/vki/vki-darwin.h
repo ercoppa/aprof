@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2007-2011 Apple Inc.
+   Copyright (C) 2007-2012 Apple Inc.
       Greg Parker  gparker@apple.com
 
    This program is free software; you can redistribute it and/or
@@ -829,9 +829,12 @@ struct ByteRangeLockPB2
 
 // Libc/pthreads/pthread.c
 
-#define VKI_WQOPS_QUEUE_ADD      1
-#define VKI_WQOPS_QUEUE_REMOVE   2
-#define VKI_WQOPS_THREAD_RETURN  4
+#define VKI_WQOPS_QUEUE_ADD          1
+#define VKI_WQOPS_QUEUE_REMOVE       2
+#define VKI_WQOPS_THREAD_RETURN      4
+#define VKI_WQOPS_THREAD_SETCONC     8
+#define VKI_WQOPS_QUEUE_NEWSPISUPP  16  /* check for newer SPI support */
+#define VKI_WQOPS_QUEUE_REQTHREADS  32  /* request number of threads of a prio */
 
 
 #include <sys/ttycom.h>

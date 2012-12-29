@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2011 OpenWorks LLP
+   Copyright (C) 2004-2012 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -29,12 +29,13 @@
 */
 
 #include "libvex_basictypes.h"
-#include "libvex_emwarn.h"
+#include "libvex_emnote.h"
 #include "libvex_guest_arm.h"
 #include "libvex_ir.h"
 #include "libvex.h"
 
 #include "main_util.h"
+#include "main_globals.h"
 #include "guest_generic_bb_to_IR.h"
 #include "guest_arm_defs.h"
 
@@ -550,7 +551,7 @@ static Bool isU32 ( IRExpr* e, UInt n )
               && e->Iex.Const.con->Ico.U32 == n );
 }
 
-IRExpr* guest_arm_spechelper ( HChar*   function_name,
+IRExpr* guest_arm_spechelper ( const HChar* function_name,
                                IRExpr** args,
                                IRStmt** precedingStmts,
                                Int      n_precedingStmts )
@@ -979,7 +980,7 @@ void LibVEX_GuestARM_initialise ( /*OUT*/VexGuestARMState* vex_state )
    vex_state->guest_GEFLAG2 = 0;
    vex_state->guest_GEFLAG3 = 0;
 
-   vex_state->guest_EMWARN  = 0;
+   vex_state->guest_EMNOTE  = EmNote_NONE;
    vex_state->guest_TISTART = 0;
    vex_state->guest_TILEN   = 0;
    vex_state->guest_NRADDR  = 0;
@@ -1029,6 +1030,10 @@ void LibVEX_GuestARM_initialise ( /*OUT*/VexGuestARMState* vex_state )
    vex_state->guest_ITSTATE = 0;
 
    vex_state->padding1 = 0;
+   vex_state->padding2 = 0;
+   vex_state->padding3 = 0;
+   vex_state->padding4 = 0;
+   vex_state->padding5 = 0;
 }
 
 
@@ -1039,9 +1044,12 @@ void LibVEX_GuestARM_initialise ( /*OUT*/VexGuestARMState* vex_state )
 
 /* Figure out if any part of the guest state contained in minoff
    .. maxoff requires precise memory exceptions.  If in doubt return
-   True (but this is generates significantly slower code).  
+   True (but this generates significantly slower code).  
 
-   We enforce precise exns for guest R13(sp), R15T(pc).
+   We enforce precise exns for guest R13(sp), R15T(pc), R7, R11.
+
+
+   Only R13(sp) is needed in mode VexRegUpdSpAtMemAccess.   
 */
 Bool guest_arm_state_requires_precise_mem_exns ( Int minoff, 
                                                  Int maxoff)
@@ -1053,6 +1061,8 @@ Bool guest_arm_state_requires_precise_mem_exns ( Int minoff,
 
    if (maxoff < sp_min || minoff > sp_max) {
       /* no overlap with sp */
+      if (vex_control.iropt_register_updates == VexRegUpdSpAtMemAccess)
+         return False; // We only need to check stack pointer.
    } else {
       return True;
    }
@@ -1119,7 +1129,7 @@ VexGuestLayout
              = { /* 0 */ ALWAYSDEFD(guest_R15T),
                  /* 1 */ ALWAYSDEFD(guest_CC_OP),
                  /* 2 */ ALWAYSDEFD(guest_CC_NDEP),
-                 /* 3 */ ALWAYSDEFD(guest_EMWARN),
+                 /* 3 */ ALWAYSDEFD(guest_EMNOTE),
                  /* 4 */ ALWAYSDEFD(guest_TISTART),
                  /* 5 */ ALWAYSDEFD(guest_TILEN),
                  /* 6 */ ALWAYSDEFD(guest_NRADDR),

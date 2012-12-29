@@ -39,7 +39,7 @@
 /* this is only the basic set of registers.
    Need to look at what is the exact ppc32 model to support.
 */
-struct reg regs[] = {
+static struct reg regs[] = {
   { "r0", 0, 32 },
   { "r1", 32, 32 },
   { "r2", 64, 32 },
@@ -322,6 +322,16 @@ void transfer_register (ThreadId tid, int abs_regno, void * buf,
    }
 }
 
+static
+char* target_xml (Bool shadow_mode)
+{
+   if (shadow_mode) {
+      return "powerpc-altivec32l-valgrind.xml";
+   } else {
+      return "powerpc-altivec32l.xml";
+   }  
+}
+
 static struct valgrind_target_ops low_target = {
    num_regs,
    regs,
@@ -330,8 +340,7 @@ static struct valgrind_target_ops low_target = {
    get_pc,
    set_pc,
    "ppc32",
-   "powerpc-altivec32l.xml",
-   "powerpc-altivec32l-valgrind.xml"
+   target_xml
 };
 
 void ppc32_init_architecture (struct valgrind_target_ops *target)

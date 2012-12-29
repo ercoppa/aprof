@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright IBM Corp. 2010-2011
+   Copyright IBM Corp. 2010-2012
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -35,7 +35,6 @@
 
 #include "libvex_basictypes.h"            /* Bool */
 #include "libvex.h"                       /* VexArchInfo */
-#include "main_util.h"                    /* needed for host_generic_regs.h */
 #include "host_generic_regs.h"            /* HReg */
 
 /* --------- Registers --------- */
@@ -132,18 +131,18 @@ typedef enum {
    S390_INSN_COMPARE,
    S390_INSN_HELPER_CALL,
    S390_INSN_CAS,    /* compare and swap */
-   S390_INSN_BFP_BINOP, /* Binary floating point 32-bit / 64-bit */
+   S390_INSN_CDAS,   /* compare double and swap */
+   S390_INSN_BFP_BINOP, /* Binary floating point */
    S390_INSN_BFP_UNOP,
    S390_INSN_BFP_TRIOP,
    S390_INSN_BFP_COMPARE,
-   S390_INSN_BFP128_BINOP, /* Binary floating point 128-bit */
-   S390_INSN_BFP128_UNOP,
-   S390_INSN_BFP128_COMPARE,
-   S390_INSN_BFP128_CONVERT_TO,
-   S390_INSN_BFP128_CONVERT_FROM,
+   S390_INSN_BFP_CONVERT,
+   S390_INSN_DFP_BINOP, /* Decimal floating point */
    S390_INSN_MFENCE,
    S390_INSN_GZERO,   /* Assign zero to a guest register */
    S390_INSN_GADD,    /* Add a value to a guest register */
+   S390_INSN_SET_FPC_BFPRM, /* Set the bfp rounding mode in the FPC */
+   S390_INSN_SET_FPC_DFPRM, /* Set the dfp rounding mode in the FPC */
    /* The following 5 insns are mandated by translation chaining */
    S390_INSN_XDIRECT,     /* direct transfer to guest address */
    S390_INSN_XINDIR,      /* indirect transfer to guest address */
@@ -192,32 +191,56 @@ typedef enum {
    S390_BFP_DIV
 } s390_bfp_binop_t;
 
-
 /* The kind of unary BFP operations */
 typedef enum {
    S390_BFP_ABS,
    S390_BFP_NABS,
    S390_BFP_NEG,
-   S390_BFP_SQRT,
+   S390_BFP_SQRT
+} s390_bfp_unop_t;
+
+/* Type conversion operations: to and/or from floating point */
+typedef enum {
    S390_BFP_I32_TO_F32,
    S390_BFP_I32_TO_F64,
    S390_BFP_I32_TO_F128,
    S390_BFP_I64_TO_F32,
    S390_BFP_I64_TO_F64,
    S390_BFP_I64_TO_F128,
+   S390_BFP_U32_TO_F32,
+   S390_BFP_U32_TO_F64,
+   S390_BFP_U32_TO_F128,
+   S390_BFP_U64_TO_F32,
+   S390_BFP_U64_TO_F64,
+   S390_BFP_U64_TO_F128,
    S390_BFP_F32_TO_I32,
    S390_BFP_F32_TO_I64,
+   S390_BFP_F32_TO_U32,
+   S390_BFP_F32_TO_U64,
    S390_BFP_F32_TO_F64,
    S390_BFP_F32_TO_F128,
    S390_BFP_F64_TO_I32,
    S390_BFP_F64_TO_I64,
+   S390_BFP_F64_TO_U32,
+   S390_BFP_F64_TO_U64,
    S390_BFP_F64_TO_F32,
    S390_BFP_F64_TO_F128,
    S390_BFP_F128_TO_I32,
    S390_BFP_F128_TO_I64,
+   S390_BFP_F128_TO_U32,
+   S390_BFP_F128_TO_U64,
    S390_BFP_F128_TO_F32,
    S390_BFP_F128_TO_F64
-} s390_bfp_unop_t;
+} s390_conv_t;
+
+
+/* The kind of binary DFP operations */
+typedef enum {
+   S390_DFP_ADD,
+   S390_DFP_SUB,
+   S390_DFP_MUL,
+   S390_DFP_DIV
+} s390_dfp_binop_t;
 
 
 /* Condition code. The encoding of the enumerators matches the value of
@@ -242,15 +265,66 @@ typedef enum {
 } s390_cc_t;
 
 
-/* Rounding mode as it is encoded in the m3/m4 fields of certain
+/* BFP Rounding mode as it is encoded in the m3 field of certain
    instructions (e.g. CFEBR) */
 typedef enum {
-/* S390_ROUND_NEAREST_AWAY = 1, not supported */
-   S390_ROUND_NEAREST_EVEN = 4,
-   S390_ROUND_ZERO         = 5,
-   S390_ROUND_POSINF       = 6,
-   S390_ROUND_NEGINF       = 7
-} s390_round_t;
+   S390_BFP_ROUND_PER_FPC       = 0,
+   S390_BFP_ROUND_NEAREST_AWAY  = 1,
+   /* 2 is not allowed */
+   S390_BFP_ROUND_PREPARE_SHORT = 3,
+   S390_BFP_ROUND_NEAREST_EVEN  = 4,
+   S390_BFP_ROUND_ZERO          = 5,
+   S390_BFP_ROUND_POSINF        = 6,
+   S390_BFP_ROUND_NEGINF        = 7
+} s390_bfp_round_t;
+
+
+/* BFP Rounding mode as it is encoded in bits [29:31] of the FPC register.
+   Only rounding modes 0..3 are universally supported. Others require
+   additional hardware facilities. */
+typedef enum {
+   S390_FPC_BFP_ROUND_NEAREST_EVEN  = 0,
+   S390_FPC_BFP_ROUND_ZERO          = 1,
+   S390_FPC_BFP_ROUND_POSINF        = 2,
+   S390_FPC_BFP_ROUND_NEGINF        = 3,
+   /* 4,5,6 are not allowed */
+   S390_FPC_BFP_ROUND_PREPARE_SHORT = 7
+} s390_fpc_bfp_round_t;
+
+
+/* DFP Rounding mode as it is encoded in the m3 field of certain
+   instructions (e.g. CGDTR) */
+typedef enum {
+   S390_DFP_ROUND_PER_FPC_0             = 0,
+   S390_DFP_ROUND_NEAREST_TIE_AWAY_0_1  = 1,
+   S390_DFP_ROUND_PER_FPC_2             = 2,
+   S390_DFP_ROUND_PREPARE_SHORT_3       = 3,
+   S390_DFP_ROUND_NEAREST_EVEN_4        = 4,
+   S390_DFP_ROUND_ZERO_5                = 5,
+   S390_DFP_ROUND_POSINF_6              = 6,
+   S390_DFP_ROUND_NEGINF_7              = 7,
+   S390_DFP_ROUND_NEAREST_EVEN_8        = 8,
+   S390_DFP_ROUND_ZERO_9                = 9,
+   S390_DFP_ROUND_POSINF_10             = 10,
+   S390_DFP_ROUND_NEGINF_11             = 11,
+   S390_DFP_ROUND_NEAREST_TIE_AWAY_0_12 = 12,
+   S390_DFP_ROUND_NEAREST_TIE_TOWARD_0  = 13,
+   S390_DFP_ROUND_AWAY_0                = 14,
+   S390_DFP_ROUND_PREPARE_SHORT_15      = 15
+} s390_dfp_round_t;
+
+
+/* DFP Rounding mode as it is encoded in bits [25:27] of the FPC register. */
+typedef enum {
+   S390_FPC_DFP_ROUND_NEAREST_EVEN     = 0,
+   S390_FPC_DFP_ROUND_ZERO             = 1,
+   S390_FPC_DFP_ROUND_POSINF           = 2,
+   S390_FPC_DFP_ROUND_NEGINF           = 3,
+   S390_FPC_DFP_ROUND_NEAREST_AWAY_0   = 4,
+   S390_FPC_DFP_ROUND_NEAREST_TOWARD_0 = 5,
+   S390_FPC_DFP_ROUND_AWAY_ZERO        = 6,
+   S390_FPC_DFP_ROUND_PREPARE_SHORT    = 7
+} s390_fpc_dfp_round_t;
 
 
 /* Invert the condition code */
@@ -263,7 +337,11 @@ s390_cc_invert(s390_cc_t cond)
 
 typedef struct {
    s390_insn_tag tag;
-   UChar size;            /* size of the result in bytes */
+   /* Usually, this is the size of the result of an operation.
+      Exceptions are:
+      - for comparisons it is the size of the operand
+   */
+   UChar size;
    union {
       struct {
          HReg        dst;
@@ -325,11 +403,6 @@ typedef struct {
          s390_opnd_RMI src2;
       } compare;
       struct {
-         HReg          dst;  /* condition code in s390 encoding */
-         HReg          op1;
-         HReg          op2;
-      } bfp_compare;
-      struct {
          s390_opnd_RMI src;
       } test;
       /* Convert the condition code to a boolean value. */
@@ -343,6 +416,16 @@ typedef struct {
          HReg        op3;
          HReg        old_mem;
       } cas;
+      struct {
+         HReg        op1_high;
+         HReg        op1_low;
+         s390_amode *op2;
+         HReg        op3_high;
+         HReg        op3_low;
+         HReg        old_mem_high;
+         HReg        old_mem_low;
+         HReg        scratch;
+      } cdas;
       /* Pseudo-insn for representing a helper call.
          TARGET is the absolute address of the helper function
          NUM_ARGS says how many arguments are being passed.
@@ -350,55 +433,82 @@ typedef struct {
          i.e. in registers r2, r3, r4, r5, and r6, with argument #0 being
          passed in r2 and so forth. */
       struct {
-         s390_cc_t cond;
-         Addr64    target;
-         UInt      num_args;
-         HChar    *name;      /* callee's name (for debugging) */
+         s390_cc_t    cond;
+         Addr64       target;
+         UInt         num_args;
+         HReg         dst;       /* if not INVALID_HREG, put return value here */
+         const HChar *name;      /* callee's name (for debugging) */
       } helper_call;
+
+      /* Floating point instructions (including conversion to/from floating
+         point
+
+         128-bit floating point requires register pairs. As the registers
+         in a register pair cannot be chosen independently it would suffice
+         to store only one register of the pair in order to represent it.
+         We chose not to do that as being explicit about all registers
+         helps with debugging and does not require special handling in 
+         e.g. s390_insn_get_reg_usage, It'd be all too easy to forget about
+         the "other" register in a pair if it is implicit.
+
+         The convention for all fp s390_insn is that the _hi register will
+         be used to store the result / operand of a 32/64-bit operation.
+         The _hi register holds the  8 bytes of HIgher significance of a
+         128-bit value (hence the suffix). However, it is the lower numbered
+         register of a register pair. POP says that the lower numbered
+         register is used to identify the pair in an insn encoding. So,
+         when an insn is emitted, only the _hi registers need to be looked
+         at. Nothing special is needed for 128-bit BFP which is nice.
+      */
+
+      /* There are currently no ternary 128-bit BFP operations. */
       struct {
          s390_bfp_triop_t tag;
-         s390_round_t     rounding_mode;
-         HReg             dst; /* first operand */
-         HReg             op2; /* second operand */
-         HReg             op3; /* third operand */
+         HReg         dst;
+         HReg         op2;
+         HReg         op3;
       } bfp_triop;
       struct {
          s390_bfp_binop_t tag;
-         s390_round_t     rounding_mode;
-         HReg             dst; /* left operand */
-         HReg             op2; /* right operand */
+         HReg         dst_hi; /* 128-bit result high part; 32/64-bit result */
+         HReg         dst_lo; /* 128-bit result low part */
+         HReg         op2_hi; /* 128-bit operand high part; 32/64-bit opnd */
+         HReg         op2_lo; /* 128-bit operand low part */
       } bfp_binop;
       struct {
-         s390_bfp_unop_t tag;
-         s390_round_t    rounding_mode;
-         HReg            dst;  /* result */
-         HReg            op;   /* operand */
+         s390_bfp_unop_t  tag;
+         HReg         dst_hi; /* 128-bit result high part; 32/64-bit result */
+         HReg         dst_lo; /* 128-bit result low part */
+         HReg         op_hi;  /* 128-bit operand high part; 32/64-bit opnd */
+         HReg         op_lo;  /* 128-bit operand low part */
       } bfp_unop;
       struct {
-         s390_bfp_binop_t tag;
-         s390_round_t     rounding_mode;
-         HReg             dst_hi; /* left operand; high part */
-         HReg             dst_lo; /* left operand; low part */
-         HReg             op2_hi; /* right operand; high part */
-         HReg             op2_lo; /* right operand; low part */
-      } bfp128_binop;
-      /* This variant is also used by the BFP128_CONVERT_TO and
-         BFP128_CONVERT_FROM insns. */
+         s390_conv_t  tag;
+         s390_bfp_round_t rounding_mode;
+         HReg         dst_hi; /* 128-bit result high part; 32/64-bit result */
+         HReg         dst_lo; /* 128-bit result low part */
+         HReg         op_hi;  /* 128-bit operand high part; 32/64-bit opnd */
+         HReg         op_lo;  /* 128-bit operand low part */
+      } bfp_convert;
       struct {
-         s390_bfp_unop_t  tag;
-         s390_round_t     rounding_mode;
-         HReg             dst_hi; /* result; high part */
-         HReg             dst_lo; /* result; low part */
-         HReg             op_hi;  /* operand; high part */
-         HReg             op_lo;  /* operand; low part */
-      } bfp128_unop;
+         HReg         dst;     /* condition code in s390 encoding */
+         HReg         op1_hi;  /* 128-bit operand high part; 32/64-bit opnd */
+         HReg         op1_lo;  /* 128-bit operand low part */
+         HReg         op2_hi;  /* 128-bit operand high part; 32/64-bit opnd */
+         HReg         op2_lo;  /* 128-bit operand low part */
+      } bfp_compare;
       struct {
-         HReg             dst;    /* condition code in s390 encoding */
-         HReg             op1_hi; /* left operand; high part */
-         HReg             op1_lo; /* left operand; low part */
-         HReg             op2_hi; /* right operand; high part */
-         HReg             op2_lo; /* right operand; low part */
-      } bfp128_compare;
+         s390_dfp_binop_t tag;
+         HReg         dst_hi; /* 128-bit result high part; 64-bit result */
+         HReg         dst_lo; /* 128-bit result low part */
+         HReg         op2_hi; /* 128-bit operand high part; 64-bit opnd 1 */
+         HReg         op2_lo; /* 128-bit operand low part */
+         HReg         op3_hi; /* 128-bit operand high part; 64-bit opnd 2 */
+         HReg         op3_lo; /* 128-bit operand low part */
+         s390_dfp_round_t rounding_mode;
+      } dfp_binop;
+
+      /* Miscellaneous */
       struct {
          UInt             offset;
       } gzero;
@@ -407,6 +517,12 @@ typedef struct {
          UChar            delta;
          ULong            value;  /* for debugging only */
       } gadd;
+      struct {
+         HReg             mode;
+      } set_fpc_bfprm;
+      struct {
+         HReg             mode;
+      } set_fpc_dfprm;
 
       /* The next 5 entries are generic to support translation chaining */
 
@@ -465,6 +581,9 @@ s390_insn *s390_insn_clz(UChar size, HReg num_bits, HReg clobber,
                          s390_opnd_RMI op);
 s390_insn *s390_insn_cas(UChar size, HReg op1, s390_amode *op2, HReg op3,
                          HReg old);
+s390_insn *s390_insn_cdas(UChar size, HReg op1_high, HReg op1_low,
+                          s390_amode *op2, HReg op3_high, HReg op3_low,
+                          HReg old_high, HReg old_low, HReg scratch);
 s390_insn *s390_insn_unop(UChar size, s390_unop_t tag, HReg dst,
                           s390_opnd_RMI opnd);
 s390_insn *s390_insn_cc2bool(HReg dst, s390_cc_t src);
@@ -472,30 +591,35 @@ s390_insn *s390_insn_test(UChar size, s390_opnd_RMI src);
 s390_insn *s390_insn_compare(UChar size, HReg dst, s390_opnd_RMI opnd,
                              Bool signed_comparison);
 s390_insn *s390_insn_helper_call(s390_cc_t cond, Addr64 target, UInt num_args,
-                                 HChar *name);
-s390_insn *s390_insn_bfp_triop(UChar size, s390_bfp_triop_t, HReg dst, HReg op2,
-                               HReg op3, s390_round_t);
-s390_insn *s390_insn_bfp_binop(UChar size, s390_bfp_binop_t, HReg dst, HReg op2,
-                               s390_round_t);
+                                 const HChar *name, HReg dst);
+s390_insn *s390_insn_bfp_triop(UChar size, s390_bfp_triop_t, HReg dst,
+                               HReg op2, HReg op3);
+s390_insn *s390_insn_bfp_binop(UChar size, s390_bfp_binop_t, HReg dst,
+                               HReg op2);
 s390_insn *s390_insn_bfp_unop(UChar size, s390_bfp_unop_t tag, HReg dst,
-                              HReg op, s390_round_t);
+                              HReg op);
 s390_insn *s390_insn_bfp_compare(UChar size, HReg dst, HReg op1, HReg op2);
+s390_insn *s390_insn_bfp_convert(UChar size, s390_conv_t tag, HReg dst,
+                                 HReg op, s390_bfp_round_t);
 s390_insn *s390_insn_bfp128_binop(UChar size, s390_bfp_binop_t, HReg dst_hi,
-                                  HReg dst_lo, HReg op2_hi, HReg op2_lo,
-                                  s390_round_t);
+                                  HReg dst_lo, HReg op2_hi, HReg op2_lo);
 s390_insn *s390_insn_bfp128_unop(UChar size, s390_bfp_unop_t, HReg dst_hi,
-                                 HReg dst_lo, HReg op_hi, HReg op_lo,
-                                 s390_round_t);
+                                 HReg dst_lo, HReg op_hi, HReg op_lo);
 s390_insn *s390_insn_bfp128_compare(UChar size, HReg dst, HReg op1_hi,
                                     HReg op1_lo, HReg op2_hi, HReg op2_lo);
-s390_insn *s390_insn_bfp128_convert_to(UChar size, s390_bfp_unop_t,
+s390_insn *s390_insn_bfp128_convert_to(UChar size, s390_conv_t,
                                        HReg dst_hi, HReg dst_lo, HReg op);
-s390_insn *s390_insn_bfp128_convert_from(UChar size, s390_bfp_unop_t,
+s390_insn *s390_insn_bfp128_convert_from(UChar size, s390_conv_t,
                                          HReg dst, HReg op_hi, HReg op_lo,
-                                         s390_round_t);
+                                         s390_bfp_round_t);
+s390_insn *s390_insn_dfp_binop(UChar size, s390_dfp_binop_t, HReg dst,
+                               HReg op2, HReg op3,
+                               s390_dfp_round_t rounding_mode);
 s390_insn *s390_insn_mfence(void);
 s390_insn *s390_insn_gzero(UChar size, UInt offset);
 s390_insn *s390_insn_gadd(UChar size, UInt offset, UChar delta, ULong value);
+s390_insn *s390_insn_set_fpc_bfprm(UChar size, HReg mode);
+s390_insn *s390_insn_set_fpc_dfprm(UChar size, HReg mode);
 
 /* Five for translation chaining */
 s390_insn *s390_insn_xdirect(s390_cc_t cond, Addr64 dst, s390_amode *guest_IA,
@@ -566,6 +690,10 @@ extern UInt s390_host_hwcaps;
                       (s390_host_hwcaps & (VEX_HWCAPS_S390X_STFLE))
 #define s390_host_has_etf3 \
                       (s390_host_hwcaps & (VEX_HWCAPS_S390X_ETF3))
+#define s390_host_has_stckf \
+                      (s390_host_hwcaps & (VEX_HWCAPS_S390X_STCKF))
+#define s390_host_has_fpext \
+                      (s390_host_hwcaps & (VEX_HWCAPS_S390X_FPEXT))
 
 #endif /* ndef __VEX_HOST_S390_DEFS_H */
 

@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2011 Julian Seward 
+   Copyright (C) 2000-2012 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -307,6 +307,43 @@ static Int ptrace_setregs(Int pid, VexGuestArchState* vex)
 
    return VG_(ptrace)(VKI_PTRACE_POKEUSR_AREA, pid,  &pa, NULL);
 
+#elif defined(VGP_mips32_linux)
+   struct vki_user_regs_struct regs;
+   VG_(memset)(&regs, 0, sizeof(regs));
+   regs.MIPS_r0     = vex->guest_r0;
+   regs.MIPS_r1     = vex->guest_r1;
+   regs.MIPS_r2     = vex->guest_r2;
+   regs.MIPS_r3     = vex->guest_r3;
+   regs.MIPS_r4     = vex->guest_r4;
+   regs.MIPS_r5     = vex->guest_r5;
+   regs.MIPS_r6     = vex->guest_r6;
+   regs.MIPS_r7     = vex->guest_r7;
+   regs.MIPS_r8     = vex->guest_r8;
+   regs.MIPS_r9     = vex->guest_r9;
+   regs.MIPS_r10     = vex->guest_r10;
+   regs.MIPS_r11     = vex->guest_r11;
+   regs.MIPS_r12     = vex->guest_r12;
+   regs.MIPS_r13     = vex->guest_r13;
+   regs.MIPS_r14     = vex->guest_r14;
+   regs.MIPS_r15     = vex->guest_r15;
+   regs.MIPS_r16     = vex->guest_r16;
+   regs.MIPS_r17     = vex->guest_r17;
+   regs.MIPS_r18     = vex->guest_r18;
+   regs.MIPS_r19     = vex->guest_r19;
+   regs.MIPS_r20     = vex->guest_r20;
+   regs.MIPS_r21     = vex->guest_r21;
+   regs.MIPS_r22     = vex->guest_r22;
+   regs.MIPS_r23     = vex->guest_r23;
+   regs.MIPS_r24     = vex->guest_r24;
+   regs.MIPS_r25     = vex->guest_r25;
+   regs.MIPS_r26     = vex->guest_r26;
+   regs.MIPS_r27     = vex->guest_r27;
+   regs.MIPS_r28     = vex->guest_r28;
+   regs.MIPS_r29     = vex->guest_r29;
+   regs.MIPS_r30     = vex->guest_r30;
+   regs.MIPS_r31     = vex->guest_r31;
+   return VG_(ptrace)(VKI_PTRACE_SETREGS, pid, NULL, &regs);
+
 #else
 #  error Unknown arch
 #endif
@@ -342,11 +379,11 @@ void VG_(start_debugger) ( ThreadId tid )
           VG_(kill)(pid, VKI_SIGSTOP) == 0 &&
           VG_(ptrace)(VKI_PTRACE_DETACH, pid, NULL, 0) == 0)
       {
-         Char pidbuf[15];
-         Char file[50];
-         Char buf[N_BUF];
-         Char *bufptr;
-         Char *cmdptr;
+         HChar pidbuf[15];
+         HChar file[50];
+         HChar buf[N_BUF];
+         HChar *bufptr;
+         const HChar *cmdptr;
          
          VG_(sprintf)(pidbuf, "%d", pid);
          VG_(sprintf)(file, "/proc/%d/fd/%d", pid, VG_(cl_exec_fd));

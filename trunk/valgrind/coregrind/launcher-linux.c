@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2011 Julian Seward 
+   Copyright (C) 2000-2012 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -113,7 +113,7 @@ static const char *find_client(const char *clientname)
 static const char *select_platform(const char *clientname)
 {
    int fd;
-   uint8_t header[4096];
+   char header[4096];
    ssize_t n_bytes;
    const char *platform = NULL;
 
@@ -179,12 +179,24 @@ static const char *select_platform(const char *clientname)
                  ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
                platform = "arm-linux";
             }
+            else
+            if (ehdr->e_machine == EM_MIPS &&
+                (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
+                 ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
+               platform = "mips32-linux";
+            }
          }
          else if (header[EI_DATA] == ELFDATA2MSB) {
             if (ehdr->e_machine == EM_PPC &&
                 (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
                  ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
                platform = "ppc32-linux";
+            }
+            else 
+            if (ehdr->e_machine == EM_MIPS &&
+                (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
+                 ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
+               platform = "mips32-linux";
             }
          }
 
@@ -198,7 +210,7 @@ static const char *select_platform(const char *clientname)
                platform = "amd64-linux";
             }
          } else if (header[EI_DATA] == ELFDATA2MSB) {
-#           if !defined(VGPV_arm_linux_android)
+#           if !defined(VGPV_arm_linux_android) && !defined(VGPV_x86_linux_android)
             if (ehdr->e_machine == EM_PPC64 &&
                 (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
                  ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
@@ -284,7 +296,8 @@ int main(int argc, char** argv, char** envp)
        (0==strcmp(VG_PLATFORM,"ppc32-linux")) ||
        (0==strcmp(VG_PLATFORM,"ppc64-linux")) ||
        (0==strcmp(VG_PLATFORM,"arm-linux"))   ||
-       (0==strcmp(VG_PLATFORM,"s390x-linux")))
+       (0==strcmp(VG_PLATFORM,"s390x-linux")) ||
+       (0==strcmp(VG_PLATFORM,"mips32-linux")))
       default_platform = VG_PLATFORM;
    else
       barf("Unknown VG_PLATFORM '%s'", VG_PLATFORM);

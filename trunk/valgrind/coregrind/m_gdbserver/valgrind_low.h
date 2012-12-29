@@ -2,7 +2,7 @@
    needed for interfacing the Valgrind gdbserver with the Valgrind
    guest.
 
-   Copyright (C) 2011
+   Copyright (C) 2011, 2012
    Free Software Foundation, Inc.
 
    This file has been inspired from a file that is part of GDB.
@@ -54,32 +54,18 @@ struct valgrind_target_ops
       or NULL not to answer.  */
    const char *arch_string;
    
-   /* Description of the set of registers.
+   /* Returns the target xml description of the set of registers.
       For some architectures (e.g. arm), it is mandatory
       to give a description of the registers, otherwise
       gdb does not understand the reply to the 'g' packet
-      (which is used to get the registers). */
-   const char *target_xml;
+      (which is used to get the registers).
+      If shadow_mode, returns a target xml description
+      including the two shadow registers sets.
+      This is mandatory to use the option --vgdb-shadow-registers=yes. 
+      Returns NULL if there is no target xml file*/
+   char* (*target_xml) (Bool shadow_mode);
 
-   /* Same as target_xml, but describes also the two shadow
-      registers set.
-      This is mandatory to use the option --vgdb-shadow-registers=yes. */
-   const char *shadow_target_xml;
 };
-
-
-/* convert from CORE_ADDR to void* */
-extern void* C2v(CORE_ADDR addr);
-
-/* builds an image of bin according to byte order of the architecture 
-   Useful for register and int image */
-extern char* heximage (char *buf, char *bin, int count);
-
-/* returns a pointer to the architecture state corresponding to
-   the provided register set: 0 => normal guest registers,
-                              1 => shadow1
-                              2 => shadow2 */
-VexGuestArchState* get_arch (int set, ThreadState* tst);
 
 extern void x86_init_architecture (struct valgrind_target_ops *target);
 extern void amd64_init_architecture (struct valgrind_target_ops *target);
@@ -87,5 +73,6 @@ extern void arm_init_architecture (struct valgrind_target_ops *target);
 extern void ppc32_init_architecture (struct valgrind_target_ops *target);
 extern void ppc64_init_architecture (struct valgrind_target_ops *target);
 extern void s390x_init_architecture (struct valgrind_target_ops *target);
+extern void mips32_init_architecture (struct valgrind_target_ops *target);
 
 #endif

@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2011 Julian Seward
+   Copyright (C) 2000-2012 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -63,7 +63,7 @@ extern Bool VG_(clo_trace_malloc);
    default: VG_MIN_MALLOC_SZB */
 extern UInt VG_(clo_alignment);
 
-extern Bool VG_(replacement_malloc_process_cmd_line_option) ( Char* arg );
+extern Bool VG_(replacement_malloc_process_cmd_line_option) ( const HChar* arg );
 
 #endif   // __PUB_TOOL_REPLACEMALLOC_H
 

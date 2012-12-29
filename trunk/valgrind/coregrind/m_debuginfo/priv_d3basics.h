@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2008-2011 OpenWorks LLP and others; see below
+   Copyright (C) 2008-2012 OpenWorks LLP and others; see below
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
@@ -199,7 +199,11 @@ typedef enum
     DW_FORM_sec_offset = 0x17,
     DW_FORM_exprloc = 0x18,
     DW_FORM_flag_present = 0x19,
-    DW_FORM_ref_sig8 = 0x20
+    DW_FORM_ref_sig8 = 0x20,
+    /* Extensions for DWZ multifile.
+       See http://www.dwarfstd.org/ShowIssue.php?issue=120604.1&type=open .  */
+    DW_FORM_GNU_ref_alt = 0x1f20,
+    DW_FORM_GNU_strp_alt = 0x1f21
   }
   DW_FORM;
 

@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2011 Julian Seward
+   Copyright (C) 2000-2012 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -98,7 +98,7 @@ extern Bool VG_(am_is_valid_for_client_or_free_or_resvn)
 extern ULong VG_(am_get_anonsize_total)( void );
 
 /* Show the segment array on the debug log, at given loglevel. */
-extern void VG_(am_show_nsegments) ( Int logLevel, HChar* who );
+extern void VG_(am_show_nsegments) ( Int logLevel, const HChar* who );
 
 /* Get the filename corresponding to this segment, if known and if it
    has one.  The returned name's storage cannot be assumed to be
@@ -343,7 +343,8 @@ extern Bool VG_(am_relocate_nooverlap_client)( /*OUT*/Bool* need_discard,
 // stacks.  The address space manager provides and suitably
 // protects such stacks.
 
-#if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
+#if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux) \
+    || defined(VGP_mips32_linux)
 # define VG_STACK_GUARD_SZB  65536  // 1 or 16 pages
 # define VG_STACK_ACTIVE_SZB (4096 * 256) // 1Mb
 #else

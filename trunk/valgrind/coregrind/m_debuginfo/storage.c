@@ -9,7 +9,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2011 Julian Seward 
+   Copyright (C) 2000-2012 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -75,7 +75,7 @@ void ML_(symerr) ( struct _DebugInfo* di, Bool serious, HChar* msg )
          VG_(message)(Vg_DebugMsg, 
                       "When reading debug info from %s:\n",
                       (di && di->fsm.filename) ? di->fsm.filename
-                                               : (UChar*)"???");
+                                               : "???");
       }
       VG_(message)(Vg_DebugMsg, "%s\n", msg);
 
@@ -91,7 +91,7 @@ void ML_(symerr) ( struct _DebugInfo* di, Bool serious, HChar* msg )
 /* Print a symbol. */
 void ML_(ppSym) ( Int idx, DiSym* sym )
 {
-   UChar** sec_names = sym->sec_names;
+   HChar** sec_names = sym->sec_names;
    vg_assert(sym->pri_name);
    if (sec_names)
       vg_assert(sec_names);
@@ -189,7 +189,7 @@ void ML_(ppDiCfSI) ( XArray* /* of CfiExpr */ exprs, DiCfSI* si )
    VG_(printf)(" R7=");
    SHOW_HOW(si->r7_how, si->r7_off);
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64)
-#  elif defined(VGA_s390x)
+#  elif defined(VGA_s390x) || defined(VGA_mips32)
    VG_(printf)(" SP=");
    SHOW_HOW(si->sp_how, si->sp_off);
    VG_(printf)(" FP=");
@@ -215,11 +215,11 @@ void ML_(ppDiCfSI) ( XArray* /* of CfiExpr */ exprs, DiCfSI* si )
    a chunking memory allocator rather than reallocating, so the
    pointers are stable.
 */
-UChar* ML_(addStr) ( struct _DebugInfo* di, UChar* str, Int len )
+HChar* ML_(addStr) ( struct _DebugInfo* di, HChar* str, Int len )
 {
    struct strchunk *chunk;
    Int    space_needed;
-   UChar* p;
+   HChar* p;
 
    if (len == -1) {
       len = VG_(strlen)(str);
@@ -337,8 +337,8 @@ static void shrinkLocTab ( struct _DebugInfo* di )
 /* Top-level place to call to add a source-location mapping entry.
 */
 void ML_(addLineInfo) ( struct _DebugInfo* di,
-                        UChar*   filename,
-                        UChar*   dirname, /* NULL == directory is unknown */
+                        const HChar* filename,
+                        const HChar* dirname, /* NULL == directory is unknown */
                         Addr     this,
                         Addr     next,
                         Int      lineno,
@@ -347,14 +347,14 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
 {
    static const Bool debug = False;
    DiLoc loc;
-   Int size = next - this;
+   UWord size = next - this;
 
    /* Ignore zero-sized locs */
    if (this == next) return;
 
    if (debug)
       VG_(printf)( "  src %s %s line %d %#lx-%#lx\n",
-                   dirname ? dirname : (UChar*)"(unknown)",
+                   dirname ? dirname : "(unknown)",
                    filename, lineno, this, next );
 
    /* Maximum sanity checking.  Some versions of GNU as do a shabby
@@ -377,23 +377,30 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
        if (0)
        VG_(message)(Vg_DebugMsg, 
                     "warning: line info address range too large "
-                    "at entry %d: %d\n", entry, size);
+                    "at entry %d: %lu\n", entry, size);
        size = 1;
    }
+
+   /* At this point, we know that the original value for |size|, viz
+      |next - this|, will only still be used in the case where
+      |this| <u |next|, so it can't have underflowed.  Considering
+      that and the three checks that follow it, the following must
+      hold. */
+   vg_assert(size >= 1);
+   vg_assert(size <= MAX_LOC_SIZE);
 
    /* Rule out ones which are completely outside the r-x mapped area.
       See "Comment_Regarding_Text_Range_Checks" elsewhere in this file
       for background and rationale. */
    vg_assert(di->fsm.have_rx_map && di->fsm.have_rw_map);
-   if (next-1 < di->fsm.rx_map_avma
-       || this >= di->fsm.rx_map_avma + di->fsm.rx_map_size ) {
+   if (ML_(find_rx_mapping)(di, this, this + size - 1) == NULL) {
        if (0)
           VG_(message)(Vg_DebugMsg, 
                        "warning: ignoring line info entry falling "
                        "outside current DebugInfo: %#lx %#lx %#lx %#lx\n",
                        di->text_avma, 
                        di->text_avma + di->text_size, 
-                       this, next-1);
+                       this, this + size - 1);
        return;
    }
 
@@ -421,7 +428,7 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
    loc.dirname   = dirname;
 
    if (0) VG_(message)(Vg_DebugMsg, 
-		       "addLoc: addr %#lx, size %d, line %d, file %s\n",
+		       "addLoc: addr %#lx, size %lu, line %d, file %s\n",
 		       this,size,lineno,filename);
 
    addLoc ( di, &loc );
@@ -436,6 +443,8 @@ void ML_(addDiCfSI) ( struct _DebugInfo* di, DiCfSI* cfsi_orig )
    UInt    new_sz, i;
    DiCfSI* new_tab;
    SSizeT  delta;
+   struct _DebugInfoMapping* map;
+   struct _DebugInfoMapping* map2;
 
    /* copy the original, so we can mess with it */
    DiCfSI cfsi = *cfsi_orig;
@@ -456,27 +465,30 @@ void ML_(addDiCfSI) ( struct _DebugInfo* di, DiCfSI* cfsi_orig )
    vg_assert(cfsi.len < 5000000);
 
    vg_assert(di->fsm.have_rx_map && di->fsm.have_rw_map);
-   /* If we have an empty r-x mapping (is that possible?) then the
-      DiCfSI can't possibly fall inside it.  In which case skip. */
-   if (di->fsm.rx_map_size == 0)
-      return;
+   /* Find mapping where at least one end of the CFSI falls into. */
+   map  = ML_(find_rx_mapping)(di, cfsi.base, cfsi.base);
+   map2 = ML_(find_rx_mapping)(di, cfsi.base + cfsi.len - 1,
+                                   cfsi.base + cfsi.len - 1);
+   if (map == NULL)
+      map = map2;
+   else if (map2 == NULL)
+      map2 = map;
 
-   /* Rule out ones which are completely outside the r-x mapped area.
+   /* Rule out ones which are completely outside the r-x mapped area
+      (or which span across different areas).
       See "Comment_Regarding_Text_Range_Checks" elsewhere in this file
       for background and rationale. */
-   if (cfsi.base + cfsi.len - 1 < di->fsm.rx_map_avma
-       || cfsi.base >= di->fsm.rx_map_avma + di->fsm.rx_map_size) {
+   if (map == NULL || map != map2) {
       static Int complaints = 10;
       if (VG_(clo_trace_cfi) || complaints > 0) {
          complaints--;
          if (VG_(clo_verbosity) > 1) {
             VG_(message)(
                Vg_DebugMsg,
-               "warning: DiCfSI %#lx .. %#lx outside segment %#lx .. %#lx\n",
+               "warning: DiCfSI %#lx .. %#lx outside mapped rw segments (%s)\n",
                cfsi.base, 
                cfsi.base + cfsi.len - 1,
-               di->text_avma,
-               di->text_avma + di->text_size - 1 
+               di->soname
             );
          }
          if (VG_(clo_trace_cfi)) 
@@ -493,27 +505,27 @@ void ML_(addDiCfSI) ( struct _DebugInfo* di, DiCfSI* cfsi_orig )
       will fail.  See
       "Comment_on_IMPORTANT_CFSI_REPRESENTATIONAL_INVARIANTS" in
       priv_storage.h for background. */
-   if (cfsi.base < di->fsm.rx_map_avma) {
+   if (cfsi.base < map->avma) {
       /* Lower end is outside the mapped area.  Hence upper end must
          be inside it. */
       if (0) VG_(printf)("XXX truncate lower\n");
-      vg_assert(cfsi.base + cfsi.len - 1 >= di->fsm.rx_map_avma);
-      delta = (SSizeT)(di->fsm.rx_map_avma - cfsi.base);
+      vg_assert(cfsi.base + cfsi.len - 1 >= map->avma);
+      delta = (SSizeT)(map->avma - cfsi.base);
       vg_assert(delta > 0);
       vg_assert(delta < (SSizeT)cfsi.len);
       cfsi.base += delta;
       cfsi.len -= delta;
    }
    else
-   if (cfsi.base + cfsi.len - 1 > di->fsm.rx_map_avma
-                                  + di->fsm.rx_map_size - 1) {
+   if (cfsi.base + cfsi.len - 1 > map->avma + map->size - 1) {
       /* Upper end is outside the mapped area.  Hence lower end must be
          inside it. */
       if (0) VG_(printf)("XXX truncate upper\n");
-      vg_assert(cfsi.base <= di->fsm.rx_map_avma + di->fsm.rx_map_size - 1);
+      vg_assert(cfsi.base <= map->avma + map->size - 1);
       delta = (SSizeT)( (cfsi.base + cfsi.len - 1) 
-                        - (di->fsm.rx_map_avma + di->fsm.rx_map_size - 1) );
-      vg_assert(delta > 0); vg_assert(delta < (SSizeT)cfsi.len);
+                        - (map->avma + map->size - 1) );
+      vg_assert(delta > 0);
+      vg_assert(delta < (SSizeT)cfsi.len);
       cfsi.len -= delta;
    }
 
@@ -526,9 +538,9 @@ void ML_(addDiCfSI) ( struct _DebugInfo* di, DiCfSI* cfsi_orig )
    vg_assert(cfsi.len > 0);
 
    /* Similar logic applies for the next two assertions. */
-   vg_assert(cfsi.base >= di->fsm.rx_map_avma);
+   vg_assert(cfsi.base >= map->avma);
    vg_assert(cfsi.base + cfsi.len - 1
-             <= di->fsm.rx_map_avma + di->fsm.rx_map_size - 1);
+             <= map->avma + map->size - 1);
 
    if (di->cfsi_used == di->cfsi_size) {
       new_sz = 2 * di->cfsi_size;
@@ -573,7 +585,16 @@ Int ML_(CfiExpr_Const)( XArray* dst, UWord con )
    e.Cex.Const.con = con;
    return (Int)VG_(addToXA)( dst, &e );
 }
-Int ML_(CfiExpr_Binop)( XArray* dst, CfiOp op, Int ixL, Int ixR )
+Int ML_(CfiExpr_Unop)( XArray* dst, CfiUnop op, Int ix )
+{
+   CfiExpr e;
+   VG_(memset)( &e, 0, sizeof(e) );
+   e.tag = Cex_Unop;
+   e.Cex.Unop.op  = op;
+   e.Cex.Unop.ix = ix;
+   return (Int)VG_(addToXA)( dst, &e );
+}
+Int ML_(CfiExpr_Binop)( XArray* dst, CfiBinop op, Int ixL, Int ixR )
 {
    CfiExpr e;
    VG_(memset)( &e, 0, sizeof(e) );
@@ -600,22 +621,32 @@ Int ML_(CfiExpr_DwReg)( XArray* dst, Int reg )
    return (Int)VG_(addToXA)( dst, &e );
 }
 
-static void ppCfiOp ( CfiOp op ) 
+static void ppCfiUnop ( CfiUnop op ) 
 {
    switch (op) {
-      case Cop_Add: VG_(printf)("+"); break;
-      case Cop_Sub: VG_(printf)("-"); break;
-      case Cop_And: VG_(printf)("&"); break;
-      case Cop_Mul: VG_(printf)("*"); break;
-      case Cop_Shl: VG_(printf)("<<"); break;
-      case Cop_Shr: VG_(printf)(">>"); break;
-      case Cop_Eq: VG_(printf)("=="); break;
-      case Cop_Ge: VG_(printf)(">="); break;
-      case Cop_Gt: VG_(printf)(">"); break;
-      case Cop_Le: VG_(printf)("<="); break;
-      case Cop_Lt: VG_(printf)("<"); break;
-      case Cop_Ne: VG_(printf)("!="); break;
-      default:      vg_assert(0);
+      case Cunop_Abs: VG_(printf)("abs"); break;
+      case Cunop_Neg: VG_(printf)("-"); break;
+      case Cunop_Not: VG_(printf)("~"); break;
+      default:        vg_assert(0);
+   }
+}
+
+static void ppCfiBinop ( CfiBinop op ) 
+{
+   switch (op) {
+      case Cbinop_Add: VG_(printf)("+"); break;
+      case Cbinop_Sub: VG_(printf)("-"); break;
+      case Cbinop_And: VG_(printf)("&"); break;
+      case Cbinop_Mul: VG_(printf)("*"); break;
+      case Cbinop_Shl: VG_(printf)("<<"); break;
+      case Cbinop_Shr: VG_(printf)(">>"); break;
+      case Cbinop_Eq:  VG_(printf)("=="); break;
+      case Cbinop_Ge:  VG_(printf)(">="); break;
+      case Cbinop_Gt:  VG_(printf)(">"); break;
+      case Cbinop_Le:  VG_(printf)("<="); break;
+      case Cbinop_Lt:  VG_(printf)("<"); break;
+      case Cbinop_Ne:  VG_(printf)("!="); break;
+      default:         vg_assert(0);
    }
 }
 
@@ -629,6 +660,8 @@ static void ppCfiReg ( CfiReg reg )
       case Creg_ARM_R12: VG_(printf)("R12"); break;
       case Creg_ARM_R15: VG_(printf)("R15"); break;
       case Creg_ARM_R14: VG_(printf)("R14"); break;
+      case Creg_MIPS_RA: VG_(printf)("RA"); break;
+      case Creg_S390_R14: VG_(printf)("R14"); break;
       default: vg_assert(0);
    }
 }
@@ -650,11 +683,17 @@ void ML_(ppCfiExpr)( XArray* src, Int ix )
       case Cex_Const: 
          VG_(printf)("0x%lx", e->Cex.Const.con); 
          break;
+      case Cex_Unop: 
+         ppCfiUnop(e->Cex.Unop.op);
+         VG_(printf)("(");
+         ML_(ppCfiExpr)(src, e->Cex.Unop.ix);
+         VG_(printf)(")");
+         break;
       case Cex_Binop: 
          VG_(printf)("(");
          ML_(ppCfiExpr)(src, e->Cex.Binop.ixL);
          VG_(printf)(")");
-         ppCfiOp(e->Cex.Binop.op);
+         ppCfiBinop(e->Cex.Binop.op);
          VG_(printf)("(");
          ML_(ppCfiExpr)(src, e->Cex.Binop.ixR);
          VG_(printf)(")");
@@ -857,11 +896,11 @@ void ML_(addVar)( struct _DebugInfo* di,
                   Int    level,
                   Addr   aMin,
                   Addr   aMax,
-                  UChar* name, /* in di's .strchunks */
+                  HChar* name, /* in di's .strchunks */
                   UWord  typeR, /* a cuOff */
                   GExpr* gexpr,
                   GExpr* fbGX,
-                  UChar* fileName, /* where decl'd - may be NULL.
+                  HChar* fileName, /* where decl'd - may be NULL.
                                       in di's .strchunks */
                   Int    lineNo, /* where decl'd - may be zero */
                   Bool   show )
@@ -917,16 +956,12 @@ void ML_(addVar)( struct _DebugInfo* di,
       and it is re-checked at the start of
       ML_(read_elf_debug_info). */
    vg_assert(di->fsm.have_rx_map && di->fsm.have_rw_map);
-   if (level > 0
-       && (aMax < di->fsm.rx_map_avma
-           || aMin >= di->fsm.rx_map_avma + di->fsm.rx_map_size)) {
+   if (level > 0 && ML_(find_rx_mapping)(di, aMin, aMax) == NULL) {
       if (VG_(clo_verbosity) >= 0) {
          VG_(message)(Vg_DebugMsg, 
             "warning: addVar: in range %#lx .. %#lx outside "
-            "segment %#lx .. %#lx (%s)\n",
-            aMin, aMax,
-            di->text_avma, di->text_avma + di->text_size -1,
-            name
+            "all rx mapped areas (%s)\n",
+            aMin, aMax, name
          );
       }
       return;
@@ -1139,12 +1174,12 @@ static Int compare_DiSym ( void* va, void* vb )
  */
 static
 Bool preferName ( struct _DebugInfo* di,
-                  UChar* a_name, UChar* b_name,
+                  HChar* a_name, HChar* b_name,
                   Addr sym_avma/*exposition only*/ )
 {
    Word cmp;
    Word vlena, vlenb;		/* length without version */
-   const UChar *vpa, *vpb;
+   const HChar *vpa, *vpb;
 
    Bool preferA = False;
    Bool preferB = False;
@@ -1198,7 +1233,7 @@ Bool preferName ( struct _DebugInfo* di,
    {
       Bool blankA = True;
       Bool blankB = True;
-      Char *s;
+      HChar *s;
       s = a_name;
       while (*s) {
          if (!VG_(isspace)(*s++)) {
@@ -1282,8 +1317,8 @@ void add_DiSym_names_to_from ( DebugInfo* di, DiSym* to, DiSym* from )
    vg_assert(from->pri_name);
    /* Figure out how many names there will be in the new combined
       secondary vector. */
-   UChar** to_sec   = to->sec_names;
-   UChar** from_sec = from->sec_names;
+   HChar** to_sec   = to->sec_names;
+   HChar** from_sec = from->sec_names;
    Word n_new_sec = 1;
    if (from_sec) {
       while (*from_sec) {
@@ -1301,8 +1336,8 @@ void add_DiSym_names_to_from ( DebugInfo* di, DiSym* to, DiSym* from )
       TRACE_SYMTAB("merge: -> %ld\n", n_new_sec);
    /* Create the new sec and copy stuff into it, putting the new
       entries at the end. */
-   UChar** new_sec = ML_(dinfo_zalloc)( "di.storage.aDntf.1",
-                                        (n_new_sec+1) * sizeof(UChar*) );
+   HChar** new_sec = ML_(dinfo_zalloc)( "di.storage.aDntf.1",
+                                        (n_new_sec+1) * sizeof(HChar*) );
    from_sec = from->sec_names;
    to_sec   = to->sec_names;
    Word i = 0;
@@ -1333,7 +1368,7 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
 {
    Word  i, j, n_truncated;
    Addr  sta1, sta2, end1, end2, toc1, toc2;
-   UChar *pri1, *pri2, **sec1, **sec2;
+   HChar *pri1, *pri2, **sec1, **sec2;
    Bool  ist1, ist2, isf1, isf2;
 
 #  define SWAP(ty,aa,bb) \
@@ -1368,8 +1403,7 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
          vg_assert(w < r);
          if (   di->symtab[w].addr      == di->symtab[r].addr
              && di->symtab[w].size      == di->symtab[r].size
-             && !!di->symtab[w].isText  == !!di->symtab[r].isText
-             && !!di->symtab[w].isIFunc == !!di->symtab[r].isIFunc) {
+             && !!di->symtab[w].isText  == !!di->symtab[r].isText) {
             /* merge the two into one */
             n_merged++;
             /* Add r names to w if r has secondary names 
@@ -1379,6 +1413,8 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
                                      di->symtab[w].pri_name))) {
                add_DiSym_names_to_from(di, &di->symtab[w], &di->symtab[r]);
             }
+            /* mark w as an IFunc if either w or r are */
+            di->symtab[w].isIFunc = di->symtab[w].isIFunc || di->symtab[r].isIFunc;
             /* and use ::pri_names to indicate this slot is no longer in use */
             di->symtab[r].pri_name = NULL;
             if (di->symtab[r].sec_names) {
@@ -1456,7 +1492,7 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
          if (end1 > end2) { 
             sta1 = end2 + 1;
             SWAP(Addr,sta1,sta2); SWAP(Addr,end1,end2); SWAP(Addr,toc1,toc2);
-            SWAP(UChar*,pri1,pri2); SWAP(UChar**,sec1,sec2);
+            SWAP(HChar*,pri1,pri2); SWAP(HChar**,sec1,sec2);
             SWAP(Bool,ist1,ist2); SWAP(Bool,isf1,isf2);
          } else 
          if (end1 < end2) {
@@ -1525,7 +1561,7 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
       show the user. */
    for (i = 0; i < ((Word)di->symtab_used)-1; i++) {
       DiSym*  sym = &di->symtab[i];
-      UChar** sec = sym->sec_names;
+      HChar** sec = sym->sec_names;
       if (!sec)
          continue;
       /* Slow but simple.  Copy all the cands into a temp array,
@@ -1533,8 +1569,8 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
       Word n_tmp = 1;
       while (*sec) { n_tmp++; sec++; }
       j = 0;
-      UChar** tmp = ML_(dinfo_zalloc)( "di.storage.cS.1",
-                                       (n_tmp+1) * sizeof(UChar*) );
+      HChar** tmp = ML_(dinfo_zalloc)( "di.storage.cS.1",
+                                       (n_tmp+1) * sizeof(HChar*) );
       tmp[j++] = sym->pri_name;
       sec = sym->sec_names;
       while (*sec) { tmp[j++] = *sec; sec++; }
@@ -1552,7 +1588,7 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
       vg_assert(best >= 0 && best < n_tmp);
       /* Copy back */
       sym->pri_name = tmp[best];
-      UChar** cursor = sym->sec_names;
+      HChar** cursor = sym->sec_names;
       for (j = 0; j < n_tmp; j++) {
          if (j == best)
             continue;
@@ -1856,7 +1892,7 @@ Word ML_(search_one_cfitab) ( struct _DebugInfo* di, Addr ptr )
 
 Word ML_(search_one_fpotab) ( struct _DebugInfo* di, Addr ptr )
 {
-   Addr const addr = ptr - di->fsm.rx_map_avma;
+   Addr const addr = ptr - di->fpo_base_avma;
    Addr a_mid_lo, a_mid_hi;
    Word mid, size,
         lo = 0,

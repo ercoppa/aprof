@@ -35,7 +35,7 @@
 // last modification time of the current program
 static ULong APROF_(binary_time) = 0;
 
-static Char * put_delim(Char * str, Int size) {
+static HChar * put_delim(HChar * str, Int size) {
 	
 	Int skip = 0;
 	Int i = 0;
@@ -54,17 +54,17 @@ static Char * put_delim(Char * str, Int size) {
 	return str;
 }
 
-static Function * merge_tuple(Char * line, Int size, 
+#if CCT == 0
+static Function * merge_tuple(HChar * line, Int size, 
 							Function * curr, ThreadData * tdata) {
 	
 	if (size <= 0) return curr;
 	line = put_delim(line, size);
 	
-	Char * token = VG_(strtok)(line, "@");
+	HChar * token = VG_(strtok)(line, "@");
 	if (token == NULL) return curr;
 	
 	/* FixMe check exec mtime */
-	
 	
 	if (token[0] == 'r') {
 		
@@ -73,19 +73,19 @@ static Function * merge_tuple(Char * line, Int size,
 		if (token == NULL) return curr;
 		token[VG_(strlen)(token) - 1] = '\0'; // remove last "
 		token++; // skip first "
-		Char * name = VG_(strdup)("fn_name", token);
+		HChar * name = VG_(strdup)("fn_name", token);
 		
 		// object name
 		token = VG_(strtok)(NULL, "@");
 		if (token == NULL) return curr;
 		token[VG_(strlen)(token) - 1] = '\0'; // remove last "
 		token++; // skip first "
-		Char * obj_name = VG_(strdup)("obj_name", token);
+		HChar * obj_name = VG_(strdup)("obj_name", token);
 		
 		// Search function
-		UInt hash = APROF_(str_hash)(name);
+		UInt hash = APROF_(str_hash)((Char *)name);
 		curr = HT_lookup(APROF_(fn_ht), hash);
-		while (curr != NULL && VG_(strcmp)(curr->name, name) != 0) {
+		while (curr != NULL && VG_(strcmp)((HChar *)curr->name, (HChar *)name) != 0) {
 			curr = curr->next;
 		}
 		
@@ -109,9 +109,9 @@ static Function * merge_tuple(Char * line, Int size,
 		
 		if (curr->obj == NULL) { // new object
 			
-			UInt hash_obj = APROF_(str_hash)(obj_name);
+			UInt hash_obj = APROF_(str_hash)((Char *)obj_name);
 			Object * obj = HT_lookup(APROF_(obj_ht), hash_obj);
-			while (obj != NULL && VG_(strcmp)(obj->name, obj_name) != 0) {
+			while (obj != NULL && VG_(strcmp)((HChar *)obj->name, (HChar *)obj_name) != 0) {
 				obj = obj->next;
 			}
 			
@@ -131,6 +131,13 @@ static Function * merge_tuple(Char * line, Int size,
 			
 		}
 		
+		RoutineInfo * rtn_info = HT_lookup(tdata->routine_hash_table, (UWord)curr);
+		if (rtn_info == NULL) {
+			
+			rtn_info = APROF_(new_routine_info)(tdata, curr, (UWord) curr);
+		
+		} 
+
 	} else if (token[0] == 'd') { 
 		
 		if (curr == NULL || curr->mangled != NULL) 
@@ -144,9 +151,9 @@ static Function * merge_tuple(Char * line, Int size,
 		if (token == NULL) return curr;
 		
 		// function mangled name
-		token[VG_(strlen)(token) - 1] = '\0'; // remove last "
+		token[VG_(strlen)((HChar *)token) - 1] = '\0'; // remove last "
 		token++; // skip first "
-		curr->mangled = VG_(strdup)("mangled", token);
+		curr->mangled = VG_(strdup)("mangled", (HChar *)token);
 	
 	} else if (token[0] == 'p') {
 		
@@ -157,38 +164,68 @@ static Function * merge_tuple(Char * line, Int size,
 		// RMS
 		token = VG_(strtok)(NULL, "@");
 		if (token == NULL) return curr;
-		ULong rms = VG_(strtoull10) (token, NULL);
+		ULong rms = VG_(strtoull10) ((HChar *)token, NULL);
 		if (rms == 0) return curr;
 		
 		// min
 		token = VG_(strtok)(NULL, "@");
 		if (token == NULL) return curr;
-		ULong min = VG_(strtoull10) (token, NULL);
+		ULong min = VG_(strtoull10) ((HChar *)token, NULL);
 		if (min == 0) return curr;
 		
 		// max
 		token = VG_(strtok)(NULL, "@");
 		if (token == NULL) return curr;
-		ULong max = VG_(strtoull10) (token, NULL);
+		ULong max = VG_(strtoull10) ((HChar *)token, NULL);
 		if (max == 0) return curr;
 		
 		// sum
 		token = VG_(strtok)(NULL, "@");
 		if (token == NULL) return curr;
-		ULong sum = VG_(strtoull10) (token, NULL);
+		ULong sum = VG_(strtoull10) ((HChar *)token, NULL);
 		if (sum == 0) return curr;
 		
-		// sqr_sum
+		// sqr sum
 		token = VG_(strtok)(NULL, "@");
 		if (token == NULL) return curr;
-		ULong sqr_sum = VG_(strtoull10) (token, NULL);
+		ULong sqr_sum = VG_(strtoull10) ((HChar *)token, NULL);
 		if (sqr_sum == 0) return curr;
 		
 		// occ
 		token = VG_(strtok)(NULL, "@");
 		if (token == NULL) return curr;
-		ULong occ = VG_(strtoull10) (token, NULL);
+		ULong occ = VG_(strtoull10) ((HChar *)token, NULL);
 		if (occ == 0) return curr;
+		
+		// cumul_real
+		token = VG_(strtok)(NULL, "@");
+		if (token == NULL) return curr;
+		ULong cumul_real = VG_(strtoull10) ((HChar *)token, NULL);
+		if (cumul_real == 0) return curr;
+		
+		// self_total
+		token = VG_(strtok)(NULL, "@");
+		if (token == NULL) return curr;
+		ULong self = VG_(strtoull10) ((HChar *)token, NULL);
+		if (self == 0) return curr;
+		
+		// self_min
+		token = VG_(strtok)(NULL, "@");
+		if (token == NULL) return curr;
+		ULong self_min = VG_(strtoull10) ((HChar *)token, NULL);
+		if (self_min == 0) return curr;
+		
+		// self_max
+		token = VG_(strtok)(NULL, "@");
+		if (token == NULL) return curr;
+		ULong self_max = VG_(strtoull10) ((HChar *)token, NULL);
+		if (self_max == 0) return curr;
+		
+		// sqr self
+		token = VG_(strtok)(NULL, "@");
+		if (token == NULL) return curr;
+		ULong self_sqr = VG_(strtoull10) ((HChar *)token, NULL);
+		if (self_sqr == 0) return curr;
 		
 		/*
 		VG_(printf)("Tuple: %s %llu %llu %llu %llu %llu %llu\n",
@@ -225,14 +262,25 @@ static Function * merge_tuple(Char * line, Int size,
 		}*/
 		
 		info_access->cumulative_time_sum += sum;
+		info_access->cumulative_sum_sqr += sqr_sum;
 		info_access->calls_number += occ;
-		info_access->cumulative_time_sqr_sum += sqr_sum;
-		
+
 		if (info_access->max_cumulative_time < max) 
 			info_access->max_cumulative_time = max;
 	
 		if (info_access->min_cumulative_time > min) 
 			info_access->min_cumulative_time = min;
+		
+		info_access->cumul_real_time_sum += cumul_real;
+		info_access->self_time_sum += self;
+		info_access->self_sum_sqr += self_sqr;
+		
+		if (info_access->self_time_min > self_min) 
+			info_access->self_time_min = self_min;
+	
+		if (info_access->self_time_max < self_max) 
+			info_access->self_time_max = self_max;
+		
 		/*
 		VG_(printf)("Current tuple: %s %lu %llu %llu %llu %llu %llu\n",
 						curr->name, info_access->key, 
@@ -242,48 +290,63 @@ static Function * merge_tuple(Char * line, Int size,
 						info_access->cumulative_time_sqr_sum, 
 						info_access->calls_number);
 		*/
-		
+
 	} else if (token[0] == 'a') {
 		
 		token = VG_(strtok)(NULL, "@");
 		Char app[1024] = {0};
 		while (token != NULL) {
 			//VG_(printf)("token: %s\n", token);
-			VG_(strcat)(app, token);
-			VG_(strcat)(app, " ");
+			VG_(strcat)((HChar *)app, (HChar *)token);
+			VG_(strcat)((HChar *)app, " ");
 			token = VG_(strtok)(NULL, "@");
 		}
-		if (VG_(strlen)(app) > 0)
-			app[VG_(strlen)(app) -1] = '\0';
+		if (VG_(strlen)((HChar *)app) > 0)
+			app[VG_(strlen)((HChar *)app) -1] = '\0';
 		
 		//VG_(printf)("Command is #%s# versus #%s#\n", app, (Char *) VG_(args_the_exename));
-		if (VG_(strcmp)(app, (Char *) VG_(args_the_exename)) != 0) 
+		if (VG_(strcmp)((HChar *)app, (HChar *) VG_(args_the_exename)) != 0) 
 			return (void *)1; /* special value */
 	
-	} else if (token[0] == 'a') {
+	} else if (token[0] == 'k') {
 		
 		token = VG_(strtok)(NULL, "@");
 		if (token == NULL) return curr;
-		ULong sum = VG_(strtoull10) (token, NULL);
+		ULong sum = VG_(strtoull10) ((HChar *)token, NULL);
 		if (sum == 0) return curr;
 		
 		tdata->other_metric += sum;
+		
+	} else if (token[0] == 'v') {
+		
+		token = VG_(strtok)(NULL, "@");
+		if (token == NULL) return curr;
+		ULong ver = VG_(strtoull10) ((HChar *)token, NULL);
+		if (ver != REPORT_VERSION) 
+			return (void *)1; /* special value */
+		
+	} else if (token[0] == 'q') {
+		
+		// Merge of report with CCT is not supported
+		return (void *)1; /* special value */
 		
 	}
 	
 	return curr;
 }
 
-static Bool merge_report(Char * report, ThreadData * tdata) {
+static Bool merge_report(HChar * report, ThreadData * tdata) {
 	
 	/* open report */
-	SysRes res = VG_(open)(report, VKI_O_RDONLY,
+	HChar * rep = VG_(expand_file_name)("aprof log", report);
+	//VG_(printf)("Opening: %s\n", rep);
+	SysRes res = VG_(open)((const HChar *)rep, VKI_O_RDONLY,
 								VKI_S_IRUSR|VKI_S_IWUSR);
-	int file = (Int) sr_Res(res);
-	AP_ASSERT(file != -1, "Can't read a log file.");
+	Int file = (Int) sr_Res(res);
+	AP_ASSERT(file > 0, "Can't read a log file.");
 	
 	Char buf[4096];
-	Char line[1024];
+	HChar line[1024];
 	Int offset = 0;
 	Function * current_routine = NULL;
 	
@@ -304,11 +367,14 @@ static Bool merge_report(Char * report, ThreadData * tdata) {
 				line[offset++] = '\0';
 				//VG_(printf)("# %s\n", line);
 				current_routine = merge_tuple(line, offset,
-						current_routine, tdata);
+											current_routine, tdata);
 				
-				/* this means that the report has a different command */
+				/* 
+				 * this means that the report has a different command 
+				 * OR different report version
+				 */
 				if (current_routine == (void *)1) {
-					//VG_(printf)("No merge\n");
+					VG_(printf)("No merge\n");
 					VG_(close)(file);
 					return False;
 				}
@@ -320,7 +386,7 @@ static Bool merge_report(Char * report, ThreadData * tdata) {
 			AP_ASSERT(offset < 1024, "Line too long");
 		}
 		
-	} 
+	}	
 	
 	line[offset++] = '\0';
 	//VG_(printf)("# %s\n", line);
@@ -329,41 +395,48 @@ static Bool merge_report(Char * report, ThreadData * tdata) {
 	VG_(close)(file);
 	return True;
 } 
+#endif
 
-static Char * report_name(Char * filename_priv, Int tid) {
+static HChar * report_name(HChar * filename_priv, UInt tid, UInt postfix_c) {
 
 	#if REPORT_NAME == 1
 	
 	if ((APROF_(merge_report_runs) || APROF_(merge_report_threads)) 
 		&& APROF_(running_threads) > 1) {
 		
-		VG_(sprintf)(filename_priv, "%d_%u_%d.aprof", VG_(getpid)(), 
+		VG_(sprintf)(filename_priv, "%d_%u_%d", VG_(getpid)(), 
 									tid - 1, APROF_(addr_multiple));
 		
 	} else {
 	
 		if (tid > 1)
-			VG_(sprintf)(filename_priv, "%s_%u.aprof", 
+			VG_(sprintf)(filename_priv, "%s_%u", 
 					VG_(basename)(prog_name), tid - 1);
 		else
-			VG_(sprintf)(filename_priv, "%s.aprof", 
+			VG_(sprintf)(filename_priv, "%s", 
 				VG_(basename)(prog_name));
 	}
 	
-	#elif REPORT_NAME == 2
-	VG_(sprintf)(filename_priv, "%d_%u_%d.aprof", VG_(getpid)(), 
+	#elif REPORT_NAME >= 2
+	VG_(sprintf)(filename_priv, "%d_%u_%d", VG_(getpid)(), 
 									tid - 1, APROF_(addr_multiple));
 	#endif
+
+	char postfix[128];
+	if (postfix_c > 0) VG_(sprintf)(postfix, "_%u.aprof", postfix_c);
+	else VG_(sprintf)(postfix, ".aprof");
+	
+	VG_(strcat)(filename_priv, postfix);
 
 	return filename_priv;
 
 }
 
 
-static UInt search_report(Char ** reports, Bool all_runs) {
+static UInt search_report(HChar ** reports, Bool all_runs) {
 	
-	SysRes r = VG_(open)("./", VKI_O_RDONLY, 
-						VKI_S_IRUSR|VKI_S_IWUSR);
+	SysRes r = VG_(open)(VG_(expand_file_name)("aprof log", "./"),
+						VKI_O_RDONLY, VKI_S_IRUSR|VKI_S_IWUSR);
 	int dir = (Int) sr_Res(r);
 	AP_ASSERT(dir != -1, "Can't open directory.");
 	
@@ -379,28 +452,31 @@ static UInt search_report(Char ** reports, Bool all_runs) {
 		}
 		
 		Int i = 0;
+		int k = 0;
 		for (i = 0; i < res;) {
 
 			file = (struct vki_dirent *) (buf + i);
+			//VG_(printf)("File: %s - %d\n", file->d_name, file->d_reclen);
 			if (VG_(strcmp)(".aprof", file->d_name + 
 					VG_(strlen)(file->d_name) - 6) == 0) {
 				
 				if (!all_runs) {
 					
-					Char pid[10] = {0};
+					HChar pid[10] = {0};
 					VG_(sprintf)(pid, "%d", VG_(getpid)()); 
 					if (VG_(strncmp)(file->d_name, pid,
-						VG_(strlen)(pid)) != 0) 
+						VG_(strlen)(pid)) != 0) {
+						i += file->d_reclen;
 						continue;
+					}
 					
 				} 
 				
-				reports[n++] = VG_(strdup)("report", file->d_name);
+				reports[n++] = VG_(strdup)("report", (HChar *)file->d_name);
 				//VG_(printf)("File %s - %d\n", file->d_name, file->d_reclen);
 			}
 			
 			i += file->d_reclen;
-			
 		}
 	
 	}
@@ -410,14 +486,17 @@ static UInt search_report(Char ** reports, Bool all_runs) {
 
 void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
 	
-	Char filename_priv[1024] = {0};
-	Char * prog_name = (Char *) VG_(args_the_exename);
+	HChar filename_priv[1024] = {0};
+	HChar * prog_name = (HChar *) VG_(args_the_exename);
 	
+	#if CCT == 0
 	/* last thread? try to merge... */
 	if (APROF_(running_threads) == 1) {
 		
+		//VG_(printf)("I am the last thread\n");
+		
 		Int n = 0, j = 0;
-		Char ** reports = VG_(calloc)("report array", sizeof(Char *) * 256, 1);
+		HChar ** reports = VG_(calloc)("report array", sizeof(Char *) * 256, 1);
 		
 		if (APROF_(merge_report_runs))
 			n = search_report(reports, True);
@@ -430,17 +509,24 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
 			Bool m = merge_report(reports[j], tdata);
 			if (m) {
 				
-				Char name[1024];
-				VG_(sprintf)(name, "%s_merged", reports[j]);  
-				VG_(rename) (reports[j], name);
+				HChar * old = VG_(expand_file_name)("aprof log", reports[j]);
 				
-				//VG_(unlink) (reports[j]);
+				/*
+				HChar name[1024];
+				VG_(sprintf)(name, "%s_merged", reports[j]);
+				HChar * new = VG_(expand_file_name)("aprof log", name);
+				VG_(rename) (old, new);
+				*/
+				//VG_(printf)("Renaming report %s -> %s\n", reports[j], name);
+				
+				VG_(unlink) (old);
 			}
 		}
 		
 		VG_(free)(reports);
 	
 	}
+	#endif
 	
 	/*
 	 * This does not work because we don't have the real path
@@ -455,12 +541,26 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
 	*/
 	
 	/* Add path to log filename */
-	Char * filename = VG_(expand_file_name)("aprof log", 
-			report_name(filename_priv, tid));
+	HChar * filename = VG_(expand_file_name)("aprof log", 
+							report_name(filename_priv, tid, 0));
 
     // open report file
 	FILE * report = APROF_(fopen)(filename);
+	UInt attempt = 0;
+	while (report == NULL && attempt < 32) {
+		
+		filename = VG_(expand_file_name)("aprof log", 
+			report_name(filename_priv, tid, attempt));
+		
+		report = APROF_(fopen)(filename);
+		
+		attempt++;
+	}
+
+	if (report == NULL) VG_(printf)("File: %s", filename);
 	AP_ASSERT(report != NULL, "Can't create report file");
+	
+	//VG_(printf)("Writing report TID=%u file=%s\n", tid, filename);
 
 	char buffer[10000];
 
@@ -569,14 +669,19 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
 			
 			while (info_access != NULL) {
 				
-				VG_(sprintf)(buffer, "q %lu %lu %u %u %llu %llu %llu\n",
+				VG_(sprintf)(buffer, "q %lu %lu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu\n",
 					ht->key, 
 					info_access->key,
 					info_access->min_cumulative_time,
 					info_access->max_cumulative_time,
 					info_access->cumulative_time_sum, 
-					info_access->cumulative_time_sqr_sum, 
-					info_access->calls_number);
+					info_access->cumulative_sum_sqr,  
+					info_access->calls_number,
+					info_access->cumul_real_time_sum,
+					info_access->self_time_sum,
+					info_access->self_time_min,
+					info_access->self_time_max,
+					info_access->self_sum_sqr);
 
 				APROF_(fwrite)(report, buffer, VG_(strlen)(buffer));
 
@@ -596,14 +701,19 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
 		
 		while (info_access != NULL) {
 			
-			VG_(sprintf)(buffer, "p %llu %lu %llu %llu %llu %llu %llu\n", 
+			VG_(sprintf)(buffer, "p %llu %lu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu\n", 
 				rtn_info->routine_id,
 				info_access->key,
 				info_access->min_cumulative_time,
 				info_access->max_cumulative_time,
 				info_access->cumulative_time_sum, 
-				info_access->cumulative_time_sqr_sum, 
-				info_access->calls_number);
+				info_access->cumulative_sum_sqr,
+				info_access->calls_number,
+				info_access->cumul_real_time_sum,
+				info_access->self_time_sum,
+                info_access->self_time_min,
+				info_access->self_time_max,
+				info_access->self_sum_sqr);
 			
 			APROF_(fwrite)(report, buffer, VG_(strlen)(buffer));
 			
@@ -629,6 +739,19 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
 	
 	#if CCT
 	APROF_(print_report_CCT)(report, tdata->root, 0);
+	#endif
+	
+	#if CCT_GRAPHIC
+	VG_(sprintf)(filename_priv, "%s_%u.graph", VG_(basename)(prog_name), tid - 1);
+	filename = VG_(expand_file_name)("aprof log", filename_priv);
+	FILE * cct_rep = APROF_(fopen)(filename);
+	AP_ASSERT(cct_rep != NULL, "Can't create CCT report file");
+	VG_(sprintf)(buffer, "digraph G {\n");
+	APROF_(fwrite)(cct_rep, buffer, VG_(strlen)(buffer));
+	APROF_(print_cct_graph)(cct_rep, tdata->root, 0, NULL);
+	VG_(sprintf)(buffer, "}\n");
+	APROF_(fwrite)(cct_rep, buffer, VG_(strlen)(buffer));
+	APROF_(fclose)(cct_rep);
 	#endif
 
 	// close report file

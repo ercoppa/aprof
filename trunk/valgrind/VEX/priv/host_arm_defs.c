@@ -7,11 +7,11 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2011 OpenWorks LLP
+   Copyright (C) 2004-2012 OpenWorks LLP
       info@open-works.net
 
    NEON support is
-   Copyright (C) 2010-2011 Samsung Electronics
+   Copyright (C) 2010-2012 Samsung Electronics
    contributed by Dmitry Zhurikhin <zhur@ispras.ru>
               and Kirill Batuzov <batuzovk@ispras.ru>
 
@@ -3222,7 +3222,7 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
             //case Ijk_EmWarn:      trcval = VEX_TRC_JMP_EMWARN;      break;
             //case Ijk_MapFail:     trcval = VEX_TRC_JMP_MAPFAIL;     break;
             case Ijk_NoDecode:    trcval = VEX_TRC_JMP_NODECODE;    break;
-            //case Ijk_TInval:      trcval = VEX_TRC_JMP_TINVAL;      break;
+            case Ijk_TInval:      trcval = VEX_TRC_JMP_TINVAL;      break;
             case Ijk_NoRedir:     trcval = VEX_TRC_JMP_NOREDIR;     break;
             //case Ijk_SigTRAP:     trcval = VEX_TRC_JMP_SIGTRAP;     break;
             //case Ijk_SigSEGV:     trcval = VEX_TRC_JMP_SIGSEGV;     break;

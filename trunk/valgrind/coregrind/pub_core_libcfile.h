@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2011 Julian Seward
+   Copyright (C) 2000-2012 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -56,7 +56,7 @@ extern Bool VG_(is_dir) ( const HChar* f );
    none specified. */
 #define VG_CLO_DEFAULT_LOGPORT 1500
 
-extern Int VG_(connect_via_socket)( UChar* str );
+extern Int VG_(connect_via_socket)( const HChar* str );
 
 extern UInt   VG_(htonl) ( UInt x );
 extern UInt   VG_(ntohl) ( UInt x );
@@ -65,7 +65,7 @@ extern UShort VG_(ntohs) ( UShort x );
 
 extern Int VG_(socket) ( Int domain, Int type, Int protocol );
 
-extern Int VG_(write_socket)( Int sd, void *msg, Int count );
+extern Int VG_(write_socket)( Int sd, const void *msg, Int count );
 extern Int VG_(getsockname) ( Int sd, struct vki_sockaddr *name, Int *namelen );
 extern Int VG_(getpeername) ( Int sd, struct vki_sockaddr *name, Int *namelen );
 extern Int VG_(getsockopt)  ( Int sd, Int level, Int optname, 

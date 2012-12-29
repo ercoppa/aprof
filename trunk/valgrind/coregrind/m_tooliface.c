@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2011 Nicholas Nethercote
+   Copyright (C) 2000-2012 Nicholas Nethercote
       njn@valgrind.org
 
    This program is free software; you can redistribute it and/or
@@ -41,7 +41,8 @@ VgToolInterface VG_(tdict);
 void VG_(basic_tool_funcs)(
    void(*post_clo_init)(void),
    IRSB*(*instrument)(VgCallbackClosure*, IRSB*, 
-                      VexGuestLayout*, VexGuestExtents*, IRType, IRType),
+                      VexGuestLayout*, VexGuestExtents*, VexArchInfo*,
+                      IRType, IRType),
    void(*fini)(Int)
 )
 {
@@ -71,11 +72,11 @@ VgDetails VG_(details) = {
       VG_(details).detail = detail;                 \
    }
 
-DETAILS(Char*, name)
-DETAILS(Char*, version)
-DETAILS(Char*, description)
-DETAILS(Char*, copyright_author)
-DETAILS(Char*, bug_reports_to)
+DETAILS(const HChar*, name)
+DETAILS(const HChar*, version)
+DETAILS(const HChar*, description)
+DETAILS(const HChar*, copyright_author)
+DETAILS(const HChar*, bug_reports_to)
 DETAILS(UInt,  avg_translation_sizeB)
 
 
@@ -98,7 +99,7 @@ VgNeeds VG_(needs) = {
 };
 
 /* static */
-Bool VG_(sanity_check_needs)(Char** failmsg)
+Bool VG_(sanity_check_needs)(const HChar** failmsg)
 {
    Bool any_new_mem_stack_N, any_new_mem_stack_N_w_ECU;
    Bool any_new_mem_stack_w_conflicting_otags;
@@ -229,11 +230,11 @@ void VG_(needs_tool_errors)(
    void (*pp)         (Error*),
    Bool show_TIDs,
    UInt (*update)     (Error*),
-   Bool (*recog)      (Char*, Supp*),
-   Bool (*read_extra) (Int, Char**, SizeT*, Supp*),
+   Bool (*recog)      (const HChar*, Supp*),
+   Bool (*read_extra) (Int, HChar**, SizeT*, Supp*),
    Bool (*matches)    (Error*, Supp*),
-   Char* (*name)      (Error*),
-   Bool (*get_xtra_si)(Error*,/*OUT*/Char*,Int)
+   const HChar* (*name) (Error*),
+   Bool (*get_xtra_si)(Error*,/*OUT*/HChar*,Int)
 )
 {
    VG_(needs).tool_errors = True;
@@ -250,7 +251,7 @@ void VG_(needs_tool_errors)(
 }
 
 void VG_(needs_command_line_options)(
-   Bool (*process)(Char*),
+   Bool (*process)(const HChar*),
    void (*usage)(void),
    void (*debug_usage)(void)
 )
@@ -394,13 +395,13 @@ DEF0(track_die_mem_stack,         Addr, SizeT)
 
 DEF0(track_ban_mem_stack,         Addr, SizeT)
 
-DEF0(track_pre_mem_read,          CorePart, ThreadId, Char*, Addr, SizeT)
-DEF0(track_pre_mem_read_asciiz,   CorePart, ThreadId, Char*, Addr)
-DEF0(track_pre_mem_write,         CorePart, ThreadId, Char*, Addr, SizeT)
+DEF0(track_pre_mem_read,          CorePart, ThreadId, const HChar*, Addr, SizeT)
+DEF0(track_pre_mem_read_asciiz,   CorePart, ThreadId, const HChar*, Addr)
+DEF0(track_pre_mem_write,         CorePart, ThreadId, const HChar*, Addr, SizeT)
 DEF0(track_post_mem_write,        CorePart, ThreadId, Addr, SizeT)
 
-DEF0(track_pre_reg_read,          CorePart, ThreadId, Char*, PtrdiffT, SizeT)
-DEF0(track_post_reg_write,        CorePart, ThreadId,        PtrdiffT, SizeT)
+DEF0(track_pre_reg_read,          CorePart, ThreadId, const HChar*, PtrdiffT, SizeT)
+DEF0(track_post_reg_write,        CorePart, ThreadId,               PtrdiffT, SizeT)
 
 DEF0(track_post_reg_write_clientcall_return, ThreadId, PtrdiffT, SizeT, Addr)
 

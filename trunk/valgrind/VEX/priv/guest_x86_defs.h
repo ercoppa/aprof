@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2011 OpenWorks LLP
+   Copyright (C) 2004-2012 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -38,6 +38,10 @@
 #ifndef __VEX_GUEST_X86_DEFS_H
 #define __VEX_GUEST_X86_DEFS_H
 
+#include "libvex_basictypes.h"
+#include "libvex_guest_x86.h"           // VexGuestX86State
+#include "libvex_emnote.h"              // VexEmNote
+#include "guest_generic_bb_to_IR.h"     // DisResult
 
 /*---------------------------------------------------------*/
 /*--- x86 to IR conversion                              ---*/
@@ -60,7 +64,7 @@ DisResult disInstr_X86 ( IRSB*        irbb,
 
 /* Used by the optimiser to specialise calls to helpers. */
 extern
-IRExpr* guest_x86_spechelper ( HChar*   function_name,
+IRExpr* guest_x86_spechelper ( const HChar* function_name,
                                IRExpr** args,
                                IRStmt** precedingStmts,
                                Int      n_precedingStmts );
@@ -130,8 +134,6 @@ ULong x86g_use_seg_selector ( HWord ldt, HWord gdt,
 
 extern ULong x86g_calculate_mmx_pmaddwd  ( ULong, ULong );
 extern ULong x86g_calculate_mmx_psadbw   ( ULong, ULong );
-extern UInt  x86g_calculate_mmx_pmovmskb ( ULong );
-extern UInt  x86g_calculate_sse_pmovmskb ( ULong w64hi, ULong w64lo );
 
 
 /* --- DIRTY HELPERS --- */
@@ -159,13 +161,13 @@ extern void x86g_dirtyhelper_OUT ( UInt portno, UInt data,
 extern void x86g_dirtyhelper_SxDT ( void* address,
                                     UInt op /* 0 or 1 */ );
 
-extern VexEmWarn
+extern VexEmNote
             x86g_dirtyhelper_FXRSTOR ( VexGuestX86State*, HWord );
 
-extern VexEmWarn
+extern VexEmNote
             x86g_dirtyhelper_FRSTOR ( VexGuestX86State*, HWord );
 
-extern VexEmWarn 
+extern VexEmNote 
             x86g_dirtyhelper_FLDENV ( VexGuestX86State*, HWord );
 
 

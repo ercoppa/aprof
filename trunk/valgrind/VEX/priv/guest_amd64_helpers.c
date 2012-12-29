@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2011 OpenWorks LLP
+   Copyright (C) 2004-2012 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -34,12 +34,13 @@
 */
 
 #include "libvex_basictypes.h"
-#include "libvex_emwarn.h"
+#include "libvex_emnote.h"
 #include "libvex_guest_amd64.h"
 #include "libvex_ir.h"
 #include "libvex.h"
 
 #include "main_util.h"
+#include "main_globals.h"
 #include "guest_generic_bb_to_IR.h"
 #include "guest_amd64_defs.h"
 #include "guest_generic_x87.h"
@@ -513,7 +514,7 @@ static UInt n_calc_cond = 0;
 static void showCounts ( void )
 {
    Int op, co;
-   Char ch;
+   HChar ch;
    vex_printf("\nTotal calls: calc_all=%u   calc_cond=%u   calc_c=%u\n",
               n_calc_all, n_calc_cond, n_calc_c);
 
@@ -869,7 +870,7 @@ static Bool isU64 ( IRExpr* e, ULong n )
                   && e->Iex.Const.con->Ico.U64 == n );
 }
 
-IRExpr* guest_amd64_spechelper ( HChar* function_name,
+IRExpr* guest_amd64_spechelper ( const HChar* function_name,
                                  IRExpr** args,
                                  IRStmt** precedingStmts,
                                  Int      n_precedingStmts )
@@ -1530,7 +1531,7 @@ ULong amd64g_calculate_FXAM ( ULong tag, ULong dbl )
    appears to differ from the former only in that the 8 FP registers
    themselves are not transferred into the guest state. */
 static
-VexEmWarn do_put_x87 ( Bool moveRegs,
+VexEmNote do_put_x87 ( Bool moveRegs,
                        /*IN*/UChar* x87_state,
                        /*OUT*/VexGuestAMD64State* vex_state )
 {
@@ -1543,7 +1544,7 @@ VexEmWarn do_put_x87 ( Bool moveRegs,
    UInt       tagw    = x87->env[FP_ENV_TAG];
    UInt       fpucw   = x87->env[FP_ENV_CTRL];
    UInt       c3210   = x87->env[FP_ENV_STAT] & 0x4700;
-   VexEmWarn  ew;
+   VexEmNote  ew;
    UInt       fpround;
    ULong      pair;
 
@@ -1579,7 +1580,7 @@ VexEmWarn do_put_x87 ( Bool moveRegs,
       emulation warnings. */
    pair    = amd64g_check_fldcw ( (ULong)fpucw );
    fpround = (UInt)pair & 0xFFFFFFFFULL;
-   ew      = (VexEmWarn)(pair >> 32);
+   ew      = (VexEmNote)(pair >> 32);
    
    vex_state->guest_FPROUND = fpround & 3;
 
@@ -1723,22 +1724,22 @@ void amd64g_dirtyhelper_FXSAVE ( VexGuestAMD64State* gst, HWord addr )
            _dst[2] = _src[2]; _dst[3] = _src[3]; }   \
       while (0)
 
-   COPY_U128( xmm[0],  gst->guest_XMM0 );
-   COPY_U128( xmm[1],  gst->guest_XMM1 );
-   COPY_U128( xmm[2],  gst->guest_XMM2 );
-   COPY_U128( xmm[3],  gst->guest_XMM3 );
-   COPY_U128( xmm[4],  gst->guest_XMM4 );
-   COPY_U128( xmm[5],  gst->guest_XMM5 );
-   COPY_U128( xmm[6],  gst->guest_XMM6 );
-   COPY_U128( xmm[7],  gst->guest_XMM7 );
-   COPY_U128( xmm[8],  gst->guest_XMM8 );
-   COPY_U128( xmm[9],  gst->guest_XMM9 );
-   COPY_U128( xmm[10], gst->guest_XMM10 );
-   COPY_U128( xmm[11], gst->guest_XMM11 );
-   COPY_U128( xmm[12], gst->guest_XMM12 );
-   COPY_U128( xmm[13], gst->guest_XMM13 );
-   COPY_U128( xmm[14], gst->guest_XMM14 );
-   COPY_U128( xmm[15], gst->guest_XMM15 );
+   COPY_U128( xmm[0],  gst->guest_YMM0 );
+   COPY_U128( xmm[1],  gst->guest_YMM1 );
+   COPY_U128( xmm[2],  gst->guest_YMM2 );
+   COPY_U128( xmm[3],  gst->guest_YMM3 );
+   COPY_U128( xmm[4],  gst->guest_YMM4 );
+   COPY_U128( xmm[5],  gst->guest_YMM5 );
+   COPY_U128( xmm[6],  gst->guest_YMM6 );
+   COPY_U128( xmm[7],  gst->guest_YMM7 );
+   COPY_U128( xmm[8],  gst->guest_YMM8 );
+   COPY_U128( xmm[9],  gst->guest_YMM9 );
+   COPY_U128( xmm[10], gst->guest_YMM10 );
+   COPY_U128( xmm[11], gst->guest_YMM11 );
+   COPY_U128( xmm[12], gst->guest_YMM12 );
+   COPY_U128( xmm[13], gst->guest_YMM13 );
+   COPY_U128( xmm[14], gst->guest_YMM14 );
+   COPY_U128( xmm[15], gst->guest_YMM15 );
 
 #  undef COPY_U128
 }
@@ -1746,11 +1747,11 @@ void amd64g_dirtyhelper_FXSAVE ( VexGuestAMD64State* gst, HWord addr )
 
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (writes guest state, reads guest mem) */
-VexEmWarn amd64g_dirtyhelper_FXRSTOR ( VexGuestAMD64State* gst, HWord addr )
+VexEmNote amd64g_dirtyhelper_FXRSTOR ( VexGuestAMD64State* gst, HWord addr )
 {
    Fpu_State tmp;
-   VexEmWarn warnX87 = EmWarn_NONE;
-   VexEmWarn warnXMM = EmWarn_NONE;
+   VexEmNote warnX87 = EmNote_NONE;
+   VexEmNote warnXMM = EmNote_NONE;
    UShort*   addrS   = (UShort*)addr;
    UChar*    addrC   = (UChar*)addr;
    U128*     xmm     = (U128*)(addr + 160);
@@ -1766,22 +1767,22 @@ VexEmWarn amd64g_dirtyhelper_FXRSTOR ( VexGuestAMD64State* gst, HWord addr )
            _dst[2] = _src[2]; _dst[3] = _src[3]; }   \
       while (0)
 
-   COPY_U128( gst->guest_XMM0, xmm[0] );
-   COPY_U128( gst->guest_XMM1, xmm[1] );
-   COPY_U128( gst->guest_XMM2, xmm[2] );
-   COPY_U128( gst->guest_XMM3, xmm[3] );
-   COPY_U128( gst->guest_XMM4, xmm[4] );
-   COPY_U128( gst->guest_XMM5, xmm[5] );
-   COPY_U128( gst->guest_XMM6, xmm[6] );
-   COPY_U128( gst->guest_XMM7, xmm[7] );
-   COPY_U128( gst->guest_XMM8, xmm[8] );
-   COPY_U128( gst->guest_XMM9, xmm[9] );
-   COPY_U128( gst->guest_XMM10, xmm[10] );
-   COPY_U128( gst->guest_XMM11, xmm[11] );
-   COPY_U128( gst->guest_XMM12, xmm[12] );
-   COPY_U128( gst->guest_XMM13, xmm[13] );
-   COPY_U128( gst->guest_XMM14, xmm[14] );
-   COPY_U128( gst->guest_XMM15, xmm[15] );
+   COPY_U128( gst->guest_YMM0, xmm[0] );
+   COPY_U128( gst->guest_YMM1, xmm[1] );
+   COPY_U128( gst->guest_YMM2, xmm[2] );
+   COPY_U128( gst->guest_YMM3, xmm[3] );
+   COPY_U128( gst->guest_YMM4, xmm[4] );
+   COPY_U128( gst->guest_YMM5, xmm[5] );
+   COPY_U128( gst->guest_YMM6, xmm[6] );
+   COPY_U128( gst->guest_YMM7, xmm[7] );
+   COPY_U128( gst->guest_YMM8, xmm[8] );
+   COPY_U128( gst->guest_YMM9, xmm[9] );
+   COPY_U128( gst->guest_YMM10, xmm[10] );
+   COPY_U128( gst->guest_YMM11, xmm[11] );
+   COPY_U128( gst->guest_YMM12, xmm[12] );
+   COPY_U128( gst->guest_YMM13, xmm[13] );
+   COPY_U128( gst->guest_YMM14, xmm[14] );
+   COPY_U128( gst->guest_YMM15, xmm[15] );
 
 #  undef COPY_U128
 
@@ -1819,13 +1820,13 @@ VexEmWarn amd64g_dirtyhelper_FXRSTOR ( VexGuestAMD64State* gst, HWord addr )
                 | ((((UInt)addrS[13]) & 0xFFFF) << 16);
      ULong w64 = amd64g_check_ldmxcsr( (ULong)w32 );
 
-     warnXMM = (VexEmWarn)(w64 >> 32);
+     warnXMM = (VexEmNote)(w64 >> 32);
 
      gst->guest_SSEROUND = w64 & 0xFFFFFFFFULL;
    }
 
    /* Prefer an X87 emwarn over an XMM one, if both exist. */
-   if (warnX87 != EmWarn_NONE)
+   if (warnX87 != EmNote_NONE)
       return warnX87;
    else
       return warnXMM;
@@ -1877,7 +1878,7 @@ ULong amd64g_check_ldmxcsr ( ULong mxcsr )
    ULong rmode = (mxcsr >> 13) & 3;
 
    /* Detect any required emulation warnings. */
-   VexEmWarn ew = EmWarn_NONE;
+   VexEmNote ew = EmNote_NONE;
 
    if ((mxcsr & 0x1F80) != 0x1F80) {
       /* unmasked exceptions! */
@@ -1921,7 +1922,7 @@ ULong amd64g_check_fldcw ( ULong fpucw )
    ULong rmode = (fpucw >> 10) & 3;
 
    /* Detect any required emulation warnings. */
-   VexEmWarn ew = EmWarn_NONE;
+   VexEmNote ew = EmNote_NONE;
 
    if ((fpucw & 0x3F) != 0x3F) {
       /* unmasked exceptions! */
@@ -1951,7 +1952,7 @@ ULong amd64g_create_fpucw ( ULong fpround )
    Reads 28 bytes at x87_state[0 .. 27]. */
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER */
-VexEmWarn amd64g_dirtyhelper_FLDENV ( /*OUT*/VexGuestAMD64State* vex_state,
+VexEmNote amd64g_dirtyhelper_FLDENV ( /*OUT*/VexGuestAMD64State* vex_state,
                                       /*IN*/HWord x87_state)
 {
    return do_put_x87( False, (UChar*)x87_state, vex_state );
@@ -2057,7 +2058,7 @@ void amd64g_dirtyhelper_FNSAVES ( /*IN*/VexGuestAMD64State* vex_state,
    Reads 108 bytes at x87_state[0 .. 107]. */
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER */
-VexEmWarn amd64g_dirtyhelper_FRSTOR ( /*OUT*/VexGuestAMD64State* vex_state,
+VexEmNote amd64g_dirtyhelper_FRSTOR ( /*OUT*/VexGuestAMD64State* vex_state,
                                       /*IN*/HWord x87_state)
 {
    return do_put_x87( True, (UChar*)x87_state, vex_state );
@@ -2068,7 +2069,7 @@ VexEmWarn amd64g_dirtyhelper_FRSTOR ( /*OUT*/VexGuestAMD64State* vex_state,
    Reads 94 bytes at x87_state[0 .. 93]. */
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER */
-VexEmWarn amd64g_dirtyhelper_FRSTORS ( /*OUT*/VexGuestAMD64State* vex_state,
+VexEmNote amd64g_dirtyhelper_FRSTORS ( /*OUT*/VexGuestAMD64State* vex_state,
                                        /*IN*/HWord x87_state)
 {
    Int           stno, preg;
@@ -2080,7 +2081,7 @@ VexEmWarn amd64g_dirtyhelper_FRSTORS ( /*OUT*/VexGuestAMD64State* vex_state,
    UInt          tagw    = x87->env[FPS_ENV_TAG];
    UInt          fpucw   = x87->env[FPS_ENV_CTRL];
    UInt          c3210   = x87->env[FPS_ENV_STAT] & 0x4700;
-   VexEmWarn     ew;
+   VexEmNote     ew;
    UInt          fpround;
    ULong         pair;
 
@@ -2114,7 +2115,7 @@ VexEmWarn amd64g_dirtyhelper_FRSTORS ( /*OUT*/VexGuestAMD64State* vex_state,
       emulation warnings. */
    pair    = amd64g_check_fldcw ( (ULong)fpucw );
    fpround = (UInt)pair & 0xFFFFFFFFULL;
-   ew      = (VexEmWarn)(pair >> 32);
+   ew      = (VexEmNote)(pair >> 32);
    
    vex_state->guest_FPROUND = fpround & 3;
 
@@ -2480,6 +2481,168 @@ void amd64g_dirtyhelper_CPUID_sse42_and_cx16 ( VexGuestAMD64State* st )
 }
 
 
+/* Claim to be the following CPU (4 x ...), which is AVX and cx16
+   capable.
+
+   vendor_id       : GenuineIntel
+   cpu family      : 6
+   model           : 42
+   model name      : Intel(R) Core(TM) i5-2300 CPU @ 2.80GHz
+   stepping        : 7
+   cpu MHz         : 1600.000
+   cache size      : 6144 KB
+   physical id     : 0
+   siblings        : 4
+   core id         : 3
+   cpu cores       : 4
+   apicid          : 6
+   initial apicid  : 6
+   fpu             : yes
+   fpu_exception   : yes
+   cpuid level     : 13
+   wp              : yes
+   flags           : fpu vme de pse tsc msr pae mce cx8 apic sep
+                     mtrr pge mca cmov pat pse36 clflush dts acpi
+                     mmx fxsr sse sse2 ss ht tm pbe syscall nx rdtscp
+                     lm constant_tsc arch_perfmon pebs bts rep_good
+                     nopl xtopology nonstop_tsc aperfmperf pni pclmulqdq
+                     dtes64 monitor ds_cpl vmx est tm2 ssse3 cx16
+                     xtpr pdcm sse4_1 sse4_2 popcnt aes xsave avx 
+                     lahf_lm ida arat epb xsaveopt pln pts dts
+                     tpr_shadow vnmi flexpriority ept vpid
+
+   bogomips        : 5768.94
+   clflush size    : 64
+   cache_alignment : 64
+   address sizes   : 36 bits physical, 48 bits virtual
+   power management:
+*/
+void amd64g_dirtyhelper_CPUID_avx_and_cx16 ( VexGuestAMD64State* st )
+{
+#  define SET_ABCD(_a,_b,_c,_d)                \
+      do { st->guest_RAX = (ULong)(_a);        \
+           st->guest_RBX = (ULong)(_b);        \
+           st->guest_RCX = (ULong)(_c);        \
+           st->guest_RDX = (ULong)(_d);        \
+      } while (0)
+
+   UInt old_eax = (UInt)st->guest_RAX;
+   UInt old_ecx = (UInt)st->guest_RCX;
+
+   switch (old_eax) {
+      case 0x00000000:
+         SET_ABCD(0x0000000d, 0x756e6547, 0x6c65746e, 0x49656e69);
+         break;
+      case 0x00000001:
+         SET_ABCD(0x000206a7, 0x00100800, 0x1f9ae3bf, 0xbfebfbff);
+         break;
+      case 0x00000002:
+         SET_ABCD(0x76035a01, 0x00f0b0ff, 0x00000000, 0x00ca0000);
+         break;
+      case 0x00000003:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x00000004:
+         switch (old_ecx) {
+            case 0x00000000: SET_ABCD(0x1c004121, 0x01c0003f,
+                                      0x0000003f, 0x00000000); break;
+            case 0x00000001: SET_ABCD(0x1c004122, 0x01c0003f,
+                                      0x0000003f, 0x00000000); break;
+            case 0x00000002: SET_ABCD(0x1c004143, 0x01c0003f,
+                                      0x000001ff, 0x00000000); break;
+            case 0x00000003: SET_ABCD(0x1c03c163, 0x02c0003f,
+                                      0x00001fff, 0x00000006); break;
+            default:         SET_ABCD(0x00000000, 0x00000000,
+                                      0x00000000, 0x00000000); break;
+         }
+         break;
+      case 0x00000005:
+         SET_ABCD(0x00000040, 0x00000040, 0x00000003, 0x00001120);
+         break;
+      case 0x00000006:
+         SET_ABCD(0x00000077, 0x00000002, 0x00000009, 0x00000000);
+         break;
+      case 0x00000007:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x00000008:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x00000009:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x0000000a:
+         SET_ABCD(0x07300803, 0x00000000, 0x00000000, 0x00000603);
+         break;
+      case 0x0000000b:
+         switch (old_ecx) {
+            case 0x00000000:
+               SET_ABCD(0x00000001, 0x00000001,
+                        0x00000100, 0x00000000); break;
+            case 0x00000001:
+               SET_ABCD(0x00000004, 0x00000004,
+                        0x00000201, 0x00000000); break;
+            default:
+               SET_ABCD(0x00000000, 0x00000000,
+                        old_ecx,    0x00000000); break;
+         }
+         break;
+      case 0x0000000c:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x0000000d:
+         switch (old_ecx) {
+            case 0x00000000: SET_ABCD(0x00000007, 0x00000340,
+                                      0x00000340, 0x00000000); break;
+            case 0x00000001: SET_ABCD(0x00000001, 0x00000000,
+                                      0x00000000, 0x00000000); break;
+            case 0x00000002: SET_ABCD(0x00000100, 0x00000240,
+                                      0x00000000, 0x00000000); break;
+            default:         SET_ABCD(0x00000000, 0x00000000,
+                                      0x00000000, 0x00000000); break;
+         }
+         break;
+      case 0x0000000e:
+         SET_ABCD(0x00000007, 0x00000340, 0x00000340, 0x00000000);
+         break;
+      case 0x0000000f:
+         SET_ABCD(0x00000007, 0x00000340, 0x00000340, 0x00000000);
+         break;
+      case 0x80000000:
+         SET_ABCD(0x80000008, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x80000001:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000001, 0x28100800);
+         break;
+      case 0x80000002:
+         SET_ABCD(0x20202020, 0x20202020, 0x65746e49, 0x2952286c);
+         break;
+      case 0x80000003:
+         SET_ABCD(0x726f4320, 0x4d542865, 0x35692029, 0x3033322d);
+         break;
+      case 0x80000004:
+         SET_ABCD(0x50432030, 0x20402055, 0x30382e32, 0x007a4847);
+         break;
+      case 0x80000005:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      case 0x80000006:
+         SET_ABCD(0x00000000, 0x00000000, 0x01006040, 0x00000000);
+         break;
+      case 0x80000007:
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000100);
+         break;
+      case 0x80000008:
+         SET_ABCD(0x00003024, 0x00000000, 0x00000000, 0x00000000);
+         break;
+      default:
+         SET_ABCD(0x00000007, 0x00000340, 0x00000340, 0x00000000);
+         break;
+   }
+#  undef SET_ABCD
+}
+
+
 ULong amd64g_calculate_RCR ( ULong arg, 
                              ULong rot_amt, 
                              ULong rflags_in, 
@@ -2835,21 +2998,6 @@ ULong amd64g_calculate_mmx_pmaddwd ( ULong xx, ULong yy )
 }
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
-ULong amd64g_calculate_mmx_pmovmskb ( ULong xx )
-{
-   ULong r = 0;
-   if (xx & (1ULL << (64-1))) r |= (1<<7);
-   if (xx & (1ULL << (56-1))) r |= (1<<6);
-   if (xx & (1ULL << (48-1))) r |= (1<<5);
-   if (xx & (1ULL << (40-1))) r |= (1<<4);
-   if (xx & (1ULL << (32-1))) r |= (1<<3);
-   if (xx & (1ULL << (24-1))) r |= (1<<2);
-   if (xx & (1ULL << (16-1))) r |= (1<<1);
-   if (xx & (1ULL << ( 8-1))) r |= (1<<0);
-   return r;
-}
-
-/* CALLED FROM GENERATED CODE: CLEAN HELPER */
 ULong amd64g_calculate_mmx_psadbw ( ULong xx, ULong yy )
 {
    UInt t = 0;
@@ -2863,14 +3011,6 @@ ULong amd64g_calculate_mmx_psadbw ( ULong xx, ULong yy )
    t += (UInt)abdU8( sel8x8_0(xx), sel8x8_0(yy) );
    t &= 0xFFFF;
    return (ULong)t;
-}
-
-/* CALLED FROM GENERATED CODE: CLEAN HELPER */
-ULong amd64g_calculate_sse_pmovmskb ( ULong w64hi, ULong w64lo )
-{
-   ULong rHi8 = amd64g_calculate_mmx_pmovmskb ( w64hi );
-   ULong rLo8 = amd64g_calculate_mmx_pmovmskb ( w64lo );
-   return ((rHi8 & 0xFF) << 8) | (rLo8 & 0xFF);
 }
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
@@ -3129,11 +3269,10 @@ ULong amd64g_dirtyhelper_PCMPxSTRx (
    // In all cases, the new OSZACP value is the lowest 16 of
    // the return value.
    if (isxSTRM) {
-      /* gst->guest_XMM0 = resV; */ // gcc don't like that
-      gst->guest_XMM0[0] = resV.w32[0];
-      gst->guest_XMM0[1] = resV.w32[1];
-      gst->guest_XMM0[2] = resV.w32[2];
-      gst->guest_XMM0[3] = resV.w32[3];
+      gst->guest_YMM0[0] = resV.w32[0];
+      gst->guest_YMM0[1] = resV.w32[1];
+      gst->guest_YMM0[2] = resV.w32[2];
+      gst->guest_YMM0[3] = resV.w32[3];
       return resOSZACP & 0x8D5;
    } else {
       UInt newECX = resV.w32[0] & 0xFFFF;
@@ -3385,38 +3524,42 @@ static void InvMixColumns (V128* v)
 /* For description, see definition in guest_amd64_defs.h */
 void amd64g_dirtyhelper_AES ( 
           VexGuestAMD64State* gst,
-          HWord opc4,
+          HWord opc4, HWord gstOffD,
           HWord gstOffL, HWord gstOffR
        )
 {
    // where the args are
+   V128* argD = (V128*)( ((UChar*)gst) + gstOffD );
    V128* argL = (V128*)( ((UChar*)gst) + gstOffL );
    V128* argR = (V128*)( ((UChar*)gst) + gstOffR );
+   V128  r;
 
    switch (opc4) {
       case 0xDC: /* AESENC */
       case 0xDD: /* AESENCLAST */
-         ShiftRows (argR);
-         SubBytes  (argR);
+         r = *argR;
+         ShiftRows (&r);
+         SubBytes  (&r);
          if (opc4 == 0xDC)
-            MixColumns (argR);
-         argR->w64[0] = argR->w64[0] ^ argL->w64[0];
-         argR->w64[1] = argR->w64[1] ^ argL->w64[1];
+            MixColumns (&r);
+         argD->w64[0] = r.w64[0] ^ argL->w64[0];
+         argD->w64[1] = r.w64[1] ^ argL->w64[1];
          break;
 
       case 0xDE: /* AESDEC */
       case 0xDF: /* AESDECLAST */
-         InvShiftRows (argR);
-         InvSubBytes (argR);
+         r = *argR;
+         InvShiftRows (&r);
+         InvSubBytes (&r);
          if (opc4 == 0xDE)
-            InvMixColumns (argR);
-         argR->w64[0] = argR->w64[0] ^ argL->w64[0];
-         argR->w64[1] = argR->w64[1] ^ argL->w64[1];
+            InvMixColumns (&r);
+         argD->w64[0] = r.w64[0] ^ argL->w64[0];
+         argD->w64[1] = r.w64[1] ^ argL->w64[1];
          break;
 
       case 0xDB: /* AESIMC */
-         *argR = *argL;
-         InvMixColumns (argR);
+         *argD = *argL;
+         InvMixColumns (argD);
          break;
       default: vassert(0);
    }
@@ -3507,31 +3650,33 @@ void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state )
    /* Initialise the simulated FPU */
    amd64g_dirtyhelper_FINIT( vex_state );
 
-   /* Initialise the SSE state. */
-#  define SSEZERO(_xmm) _xmm[0]=_xmm[1]=_xmm[2]=_xmm[3] = 0;
-
+   /* Initialise the AVX state. */
+#  define AVXZERO(_ymm) \
+      do { _ymm[0]=_ymm[1]=_ymm[2]=_ymm[3] = 0; \
+           _ymm[4]=_ymm[5]=_ymm[6]=_ymm[7] = 0; \
+      } while (0)
    vex_state->guest_SSEROUND = (ULong)Irrm_NEAREST;
-   SSEZERO(vex_state->guest_XMM0);
-   SSEZERO(vex_state->guest_XMM1);
-   SSEZERO(vex_state->guest_XMM2);
-   SSEZERO(vex_state->guest_XMM3);
-   SSEZERO(vex_state->guest_XMM4);
-   SSEZERO(vex_state->guest_XMM5);
-   SSEZERO(vex_state->guest_XMM6);
-   SSEZERO(vex_state->guest_XMM7);
-   SSEZERO(vex_state->guest_XMM8);
-   SSEZERO(vex_state->guest_XMM9);
-   SSEZERO(vex_state->guest_XMM10);
-   SSEZERO(vex_state->guest_XMM11);
-   SSEZERO(vex_state->guest_XMM12);
-   SSEZERO(vex_state->guest_XMM13);
-   SSEZERO(vex_state->guest_XMM14);
-   SSEZERO(vex_state->guest_XMM15);
-   SSEZERO(vex_state->guest_XMM16);
+   AVXZERO(vex_state->guest_YMM0);
+   AVXZERO(vex_state->guest_YMM1);
+   AVXZERO(vex_state->guest_YMM2);
+   AVXZERO(vex_state->guest_YMM3);
+   AVXZERO(vex_state->guest_YMM4);
+   AVXZERO(vex_state->guest_YMM5);
+   AVXZERO(vex_state->guest_YMM6);
+   AVXZERO(vex_state->guest_YMM7);
+   AVXZERO(vex_state->guest_YMM8);
+   AVXZERO(vex_state->guest_YMM9);
+   AVXZERO(vex_state->guest_YMM10);
+   AVXZERO(vex_state->guest_YMM11);
+   AVXZERO(vex_state->guest_YMM12);
+   AVXZERO(vex_state->guest_YMM13);
+   AVXZERO(vex_state->guest_YMM14);
+   AVXZERO(vex_state->guest_YMM15);
+   AVXZERO(vex_state->guest_YMM16);
 
-#  undef SSEZERO
+#  undef AVXZERO
 
-   vex_state->guest_EMWARN = EmWarn_NONE;
+   vex_state->guest_EMNOTE = EmNote_NONE;
 
    /* These should not ever be either read or written, but we
       initialise them anyway. */
@@ -3549,11 +3694,13 @@ void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state )
 
 /* Figure out if any part of the guest state contained in minoff
    .. maxoff requires precise memory exceptions.  If in doubt return
-   True (but this is generates significantly slower code).  
+   True (but this generates significantly slower code).  
 
    By default we enforce precise exns for guest %RSP, %RBP and %RIP
    only.  These are the minimum needed to extract correct stack
    backtraces from amd64 code.
+
+   Only %RSP is needed in mode VexRegUpdSpAtMemAccess.   
 */
 Bool guest_amd64_state_requires_precise_mem_exns ( Int minoff,
                                                    Int maxoff)
@@ -3565,14 +3712,16 @@ Bool guest_amd64_state_requires_precise_mem_exns ( Int minoff,
    Int rip_min = offsetof(VexGuestAMD64State, guest_RIP);
    Int rip_max = rip_min + 8 - 1;
 
-   if (maxoff < rbp_min || minoff > rbp_max) {
-      /* no overlap with rbp */
+   if (maxoff < rsp_min || minoff > rsp_max) {
+      /* no overlap with rsp */
+      if (vex_control.iropt_register_updates == VexRegUpdSpAtMemAccess)
+         return False; // We only need to check stack pointer.
    } else {
       return True;
    }
 
-   if (maxoff < rsp_min || minoff > rsp_max) {
-      /* no overlap with rsp */
+   if (maxoff < rbp_min || minoff > rbp_max) {
+      /* no overlap with rbp */
    } else {
       return True;
    }
@@ -3635,7 +3784,7 @@ VexGuestLayout
                  // /* */ ALWAYSDEFD(guest_SS),
                  // /* */ ALWAYSDEFD(guest_LDT),
                  // /* */ ALWAYSDEFD(guest_GDT),
-                 /* 10 */ ALWAYSDEFD(guest_EMWARN),
+                 /* 10 */ ALWAYSDEFD(guest_EMNOTE),
                  /* 11 */ ALWAYSDEFD(guest_SSEROUND),
                  /* 12 */ ALWAYSDEFD(guest_TISTART),
                  /* 13 */ ALWAYSDEFD(guest_TILEN),

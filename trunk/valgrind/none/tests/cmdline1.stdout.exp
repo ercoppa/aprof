@@ -50,7 +50,9 @@ usage: valgrind [options] prog-and-args
                               [use current 'ulimit' value]
 
   user options for Valgrind tools that replace malloc:
-    --alignment=<number>      set minimum alignment of heap allocations [...]
+    --alignment=<number>      set minimum alignment of heap allocations [not used by this tool]
+    --redzone-size=<number>   set minimum size of redzones added before/after
+                              heap blocks (in bytes). [not used by this tool]
 
   uncommon user options for all Valgrind tools:
     --fullpath-after=         (with nothing after the '=')
@@ -80,15 +82,20 @@ usage: valgrind [options] prog-and-args
     --require-text-symbol=:sonamepattern:symbolpattern    abort run if the
                               stated shared object doesn't have the stated
                               text symbol.  Patterns can contain ? and *.
+    --soname-synonyms=syn1=pattern1,syn2=pattern2,... synonym soname
+              specify patterns for function wrapping or replacement.
+              To use a non-libc malloc library that is
+                  in the main exe:  --soname-synonyms=somalloc=NONE
+                  in libxyzzy.so:   --soname-synonyms=somalloc=libxyzzy.so
 
   user options for Nulgrind:
     (none)
 
   Extra options read from ~/.valgrindrc, $VALGRIND_OPTS, ./.valgrindrc
 
-  Nulgrind is Copyright (C) 2002-2011, and GNU GPL'd, by Nicholas Nethercote.
-  Valgrind is Copyright (C) 2000-2011, and GNU GPL'd, by Julian Seward et al.
-  LibVEX is Copyright (C) 2004-2011, and GNU GPL'd, by OpenWorks LLP et al.
+  Nulgrind is Copyright (C) 2002-2012, and GNU GPL'd, by Nicholas Nethercote.
+  Valgrind is Copyright (C) 2000-2012, and GNU GPL'd, by Julian Seward et al.
+  LibVEX is Copyright (C) 2004-2012, and GNU GPL'd, by OpenWorks LLP et al.
 
   Bug reports, feedback, admiration, abuse, etc, to: www.valgrind.org.
 

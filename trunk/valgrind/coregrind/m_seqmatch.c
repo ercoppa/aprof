@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2008-2011 OpenWorks Ltd
+   Copyright (C) 2008-2012 OpenWorks Ltd
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
@@ -45,7 +45,8 @@ Bool VG_(generic_match) (
         void* input, SizeT szbInput, UWord nInput, UWord ixInput,
         Bool (*pIsStar)(void*),
         Bool (*pIsQuery)(void*),
-        Bool (*pattEQinp)(void*,void*)
+        Bool (*pattEQinp)(void*,void*,void*,UWord),
+        void* inputCompleter
      )
 {
    /* This is the spec, written in my favourite formal specification
@@ -77,8 +78,8 @@ Bool VG_(generic_match) (
    /* No specific need to set NULL when !have{Patt,Input}, but guards
       against inadvertantly dereferencing an out of range pointer to
       the pattern or input arrays. */
-   currPatt  = havePatt  ? ((Char*)patt) + szbPatt * ixPatt    : NULL;
-   currInput = haveInput ? ((Char*)input) + szbInput * ixInput : NULL;
+   currPatt  = havePatt  ? ((HChar*)patt) + szbPatt * ixPatt    : NULL;
+   currInput = haveInput ? ((HChar*)input) + szbInput * ixInput : NULL;
 
    // Deal with the complex case first: wildcards.  Do frugal
    // matching.  When encountering a '*', first skip no characters
@@ -102,7 +103,8 @@ Bool VG_(generic_match) (
          if (VG_(generic_match)( matchAll,
                                  patt, szbPatt, nPatt,  ixPatt+1,
                                  input,szbInput,nInput, ixInput+0,
-                                 pIsStar,pIsQuery,pattEQinp) ) {
+                                 pIsStar,pIsQuery,pattEQinp,
+                                 inputCompleter) ) {
             return True;
          }
          // but we can tail-recurse for the second call
@@ -129,7 +131,7 @@ Bool VG_(generic_match) (
    //
    // ma (p:ps)   (i:is) = p == i && ma ps is
    if (havePatt && haveInput) {
-      if (!pattEQinp(currPatt,currInput)) return False;
+      if (!pattEQinp(currPatt,currInput,inputCompleter,ixInput)) return False;
       ixPatt++; ixInput++; goto tailcall;
    }
 
@@ -161,21 +163,23 @@ Bool VG_(generic_match) (
 /* And a parameterization of the above, to make it do
    string matching.
 */
-static Bool charIsStar  ( void* pV ) { return *(Char*)pV == '*'; }
-static Bool charIsQuery ( void* pV ) { return *(Char*)pV == '?'; }
-static Bool char_p_EQ_i ( void* pV, void* cV ) {
-   Char p = *(Char*)pV;
-   Char c = *(Char*)cV;
+static Bool charIsStar  ( void* pV ) { return *(HChar*)pV == '*'; }
+static Bool charIsQuery ( void* pV ) { return *(HChar*)pV == '?'; }
+static Bool char_p_EQ_i ( void* pV, void* cV,
+                          void* null_completer, UWord ixcV ) {
+   HChar p = *(HChar*)pV;
+   HChar c = *(HChar*)cV;
    vg_assert(p != '*' && p != '?');
    return p == c;
 }
-Bool VG_(string_match) ( const Char* patt, const Char* input )
+Bool VG_(string_match) ( const HChar* patt, const HChar* input )
 {
    return VG_(generic_match)(
              True/* match-all */,
-             (void*)patt,  sizeof(UChar), VG_(strlen)(patt), 0,
-             (void*)input, sizeof(UChar), VG_(strlen)(input), 0,
-             charIsStar, charIsQuery, char_p_EQ_i
+             (void*)patt,  sizeof(HChar), VG_(strlen)(patt), 0,
+             (void*)input, sizeof(HChar), VG_(strlen)(input), 0,
+             charIsStar, charIsQuery, char_p_EQ_i,
+             NULL
           );
 }
 

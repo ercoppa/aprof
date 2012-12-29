@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2011 Julian Seward
+   Copyright (C) 2000-2012 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -69,7 +69,7 @@ extern VgVgdb VG_(clo_vgdb);
 /* if > 0, checks every VG_(clo_vgdb_poll) BBS if vgdb wants to be served. */
 extern Int VG_(clo_vgdb_poll);
 /* prefix for the named pipes (FIFOs) used by vgdb/gdb to communicate with valgrind */
-extern HChar* VG_(clo_vgdb_prefix);
+extern const HChar* VG_(clo_vgdb_prefix);
 /* if True, gdbserver in valgrind will expose a target description containing
    shadow registers */
 extern Bool  VG_(clo_vgdb_shadow_registers);
@@ -77,7 +77,7 @@ extern Bool  VG_(clo_vgdb_shadow_registers);
 /* Enquire about whether to attach to a debugger at errors?   default: NO */
 extern Bool  VG_(clo_db_attach);
 /* The debugger command?  default: whatever gdb ./configure found */
-extern Char* VG_(clo_db_command);
+extern const HChar* VG_(clo_db_command);
 /* Generating a suppression for each error?   default: 0 (NO)
    Other values: 1 (yes, but ask user), 2 (yes, don't ask user) */
 extern Int   VG_(clo_gen_suppressions);
@@ -86,14 +86,18 @@ extern Int   VG_(clo_sanity_level);
 /* Automatically attempt to demangle C++ names?  default: YES */
 extern Bool  VG_(clo_demangle);
 /* Simulate child processes? default: NO */
+/* Soname synonyms : a string containing a list of pairs
+   xxxxx=yyyyy separated by commas.
+   E.g. --soname-synonyms=somalloc=libtcmalloc*.so*,solibtruc=NONE */
+extern const HChar* VG_(clo_soname_synonyms);
 extern Bool  VG_(clo_trace_children);
 /* String containing comma-separated patterns for executable names
    that should not be traced into even when --trace-children=yes */
-extern HChar* VG_(clo_trace_children_skip);
+extern const HChar* VG_(clo_trace_children_skip);
 /* The same as VG_(clo_trace_children), except that these patterns are
    tested against the arguments for child processes, rather than the
    executable name. */
-extern HChar* VG_(clo_trace_children_skip_by_arg);
+extern const HChar* VG_(clo_trace_children_skip_by_arg);
 /* After a fork, the child's output can become confusingly
    intermingled with the parent's output.  This is especially
    problematic when VG_(clo_xml) is True.  Setting
@@ -104,8 +108,8 @@ extern Bool  VG_(clo_child_silent_after_fork);
 
 /* If the user specified --log-file=STR and/or --xml-file=STR, these
    hold STR after expansion of the %p and %q templates. */
-extern Char* VG_(clo_log_fname_expanded);
-extern Char* VG_(clo_xml_fname_expanded);
+extern HChar* VG_(clo_log_fname_expanded);
+extern HChar* VG_(clo_xml_fname_expanded);
 
 /* Add timestamps to log messages?  default: NO */
 extern Bool  VG_(clo_time_stamp);
@@ -116,18 +120,20 @@ extern Int   VG_(clo_input_fd);
 /* The number of suppression files specified. */
 extern Int   VG_(clo_n_suppressions);
 /* The names of the suppression files. */
-extern Char* VG_(clo_suppressions)[VG_CLO_MAX_SFILES];
+extern const HChar* VG_(clo_suppressions)[VG_CLO_MAX_SFILES];
 
 /* An array of strings harvested from --fullpath-after= flags. */
 extern Int   VG_(clo_n_fullpath_after);
-extern Char* VG_(clo_fullpath_after)[VG_CLO_MAX_FULLPATH_AFTER];
+extern const HChar* VG_(clo_fullpath_after)[VG_CLO_MAX_FULLPATH_AFTER];
 
 /* DEBUG: print generated code?  default: 00000000 ( == NO ) */
 extern UChar VG_(clo_trace_flags);
 /* DEBUG: do bb profiling?  default: 00000000 ( == NO ) */
 extern UChar VG_(clo_profile_flags);
-/* DEBUG: if tracing codegen, be quiet until after this bb ( 0 ) */
+/* DEBUG: if tracing codegen, be quiet until after this bb */
 extern Int   VG_(clo_trace_notbelow);
+/* DEBUG: if tracing codegen, be quiet after this bb  */
+extern Int   VG_(clo_trace_notabove);
 /* DEBUG: print system calls?  default: NO */
 extern Bool  VG_(clo_trace_syscalls);
 /* DEBUG: print signal details?  default: NO */
@@ -135,7 +141,7 @@ extern Bool  VG_(clo_trace_signals);
 /* DEBUG: print symtab details?  default: NO */
 extern Bool  VG_(clo_trace_symtab);
 /* DEBUG: restrict symtab etc details to object name pattern.  Default: "*" */
-extern HChar* VG_(clo_trace_symtab_patt);
+extern const HChar* VG_(clo_trace_symtab_patt);
 /* DEBUG: print call-frame-info details?  default: NO */
 extern Bool  VG_(clo_trace_cfi);
 /* DEBUG:  mimic /usr/bin/readelf --syms?  default: NO */
@@ -153,17 +159,29 @@ extern enum FairSchedType VG_(clo_fair_sched);
 extern Bool  VG_(clo_trace_sched);
 /* DEBUG: do heap profiling?  default: NO */
 extern Bool  VG_(clo_profile_heap);
+#define MAX_REDZONE_SZB 128
+// Maximum for the default values for core arenas and for client
+// arena given by the tool.
+// 128 is no special figure, just something not too big
+#define MAX_CLO_REDZONE_SZB 4096
+// We allow the user to increase the redzone size to 4Kb :
+// This allows "off by one" in an array of pages to be detected.
+#define CORE_REDZONE_DEFAULT_SZB 4
+extern Int VG_(clo_core_redzone_size);
+// VG_(clo_redzone_size) has default value -1, indicating to keep
+// the tool provided value.
+extern Int VG_(clo_redzone_size);
 /* DEBUG: display gory details for the k'th most popular error.
    default: Infinity. */
 extern Int   VG_(clo_dump_error);
 /* Engage miscellaneous weird hacks needed for some progs. */
-extern Char* VG_(clo_sim_hints);
+extern const HChar* VG_(clo_sim_hints);
 /* Show symbols in the form 'name+offset' ?  Default: NO */
 extern Bool VG_(clo_sym_offsets);
 /* Read DWARF3 variable info even if tool doesn't ask for it? */
 extern Bool VG_(clo_read_var_info);
 /* Which prefix to strip from full source file paths, if any. */
-extern Char* VG_(clo_prefix_to_strip);
+extern const HChar* VG_(clo_prefix_to_strip);
 
 /* An array of strings harvested from --require-text-symbol= 
    flags.
@@ -196,7 +214,7 @@ extern Char* VG_(clo_prefix_to_strip);
    the entire flag in quotes to stop shells messing up the * and ?
    wildcards. */
 extern Int    VG_(clo_n_req_tsyms);
-extern HChar* VG_(clo_req_tsyms)[VG_CLO_MAX_REQ_TSYMS];
+extern const HChar* VG_(clo_req_tsyms)[VG_CLO_MAX_REQ_TSYMS];
 
 /* Track open file descriptors? */
 extern Bool  VG_(clo_track_fds);
@@ -242,7 +260,7 @@ extern VgSmc VG_(clo_smc_check);
 
 /* String containing comma-separated names of minor kernel variants,
    so they can be properly handled by m_syswrap. */
-extern HChar* VG_(clo_kernel_variant);
+extern const HChar* VG_(clo_kernel_variant);
 
 /* Darwin-specific: automatically run /usr/bin/dsymutil to update
    .dSYM directories as necessary? */

@@ -39,7 +39,7 @@ use strict;
 #----------------------------------------------------------------------------
 
 # Version number
-my $version = "3.8.0.SVN";
+my $version = "3.9.0.SVN";
 
 # Usage message.
 my $usage = <<END

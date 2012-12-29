@@ -10,12 +10,12 @@ TOOLS =		memcheck \
 		lackey \
 		none \
 		helgrind \
-		drd \
-		aprof
+		drd
 
 EXP_TOOLS = 	exp-sgcheck \
 		exp-bbv \
-		exp-dhat
+		exp-dhat \
+		aprof
 
 # Put docs last because building the HTML is slow and we want to get
 # everything else working before we try it.
@@ -29,6 +29,7 @@ SUBDIRS = \
 	tests \
 	perf \
 	gdbserver_tests \
+	memcheck/tests/vbit-test \
 	auxprogs \
 	mpi \
 	docs
@@ -44,7 +45,7 @@ SUPP_FILES = \
 	exp-sgcheck.supp \
 	darwin9.supp darwin9-drd.supp \
 	darwin10.supp darwin10-drd.supp \
-	darwin11.supp \
+	darwin11.supp darwin12.supp \
 	bionic.supp
 DEFAULT_SUPP_FILES = @DEFAULT_SUPP@
 
@@ -100,9 +101,13 @@ EXTRA_DIST = \
 	README_MISSING_SYSCALL_OR_IOCTL \
 	README.s390 \
 	README.android \
+	README.android_emulator \
+	README.mips \
+	NEWS.old \
 	valgrind.pc.in \
 	valgrind.spec.in \
-	valgrind.spec
+	valgrind.spec \
+	autogen.sh
 
 dist_noinst_SCRIPTS = \
 	vg-in-place

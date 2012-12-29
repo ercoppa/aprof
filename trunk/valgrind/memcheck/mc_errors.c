@@ -8,7 +8,7 @@
    This file is part of MemCheck, a heavyweight Valgrind tool for
    detecting memory errors.
 
-   Copyright (C) 2000-2011 Julian Seward 
+   Copyright (C) 2000-2012 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -99,7 +99,7 @@ struct _AddrInfo {
       // blocks.
       struct {
          BlockKind   block_kind;
-         Char*       block_desc;    // "block", "mempool" or user-defined
+         const HChar* block_desc;    // "block", "mempool" or user-defined
          SizeT       block_szB;
          PtrdiffT    rwoffset;
          ExeContext* lastchange;
@@ -108,7 +108,7 @@ struct _AddrInfo {
       // In a global .data symbol.  This holds the first 127 chars of
       // the variable's name (zero terminated), plus a (memory) offset.
       struct {
-         Char     name[128];
+         HChar    name[128];
          PtrdiffT offset;
       } DataSym;
 
@@ -121,7 +121,7 @@ struct _AddrInfo {
       // Could only narrow it down to be the PLT/GOT/etc of a given
       // object.  Better than nothing, perhaps.
       struct {
-         Char       objname[128];
+         HChar      objname[128];
          VgSectKind kind;
       } SectKind;
 
@@ -270,7 +270,7 @@ void MC_(before_pp_Error) ( Error* err ) {
 /* Do a printf-style operation on either the XML or normal output
    channel, depending on the setting of VG_(clo_xml).
 */
-static void emit_WRK ( HChar* format, va_list vargs )
+static void emit_WRK ( const HChar* format, va_list vargs )
 {
    if (VG_(clo_xml)) {
       VG_(vprintf_xml)(format, vargs);
@@ -278,15 +278,15 @@ static void emit_WRK ( HChar* format, va_list vargs )
       VG_(vmessage)(Vg_UserMsg, format, vargs);
    }
 }
-static void emit ( HChar* format, ... ) PRINTF_CHECK(1, 2);
-static void emit ( HChar* format, ... )
+static void emit ( const HChar* format, ... ) PRINTF_CHECK(1, 2);
+static void emit ( const HChar* format, ... )
 {
    va_list vargs;
    va_start(vargs, format);
    emit_WRK(format, vargs);
    va_end(vargs);
 }
-static void emiN ( HChar* format, ... ) /* NO FORMAT CHECK */
+static void emiN ( const HChar* format, ... ) /* NO FORMAT CHECK */
 {
    va_list vargs;
    va_start(vargs, format);
@@ -322,7 +322,7 @@ static void mc_pp_AddrInfo ( Addr a, AddrInfo* ai, Bool maybe_gcc )
          SizeT    block_szB = ai->Addr.Block.block_szB;
          PtrdiffT rwoffset  = ai->Addr.Block.rwoffset;
          SizeT    delta;
-         const    Char* relative;
+         const    HChar* relative;
 
          if (rwoffset < 0) {
             delta    = (SizeT)(-rwoffset);
@@ -412,7 +412,7 @@ static const HChar* xml_leak_kind ( Reachedness lossmode )
 
 static void mc_pp_origin ( ExeContext* ec, UInt okind )
 {
-   HChar* src = NULL;
+   const HChar* src = NULL;
    tl_assert(ec);
 
    switch (okind) {
@@ -433,9 +433,9 @@ static void mc_pp_origin ( ExeContext* ec, UInt okind )
    }
 }
 
-char * MC_(snprintf_delta) (char * buf, Int size, 
-                            SizeT current_val, SizeT old_val, 
-                            LeakCheckDeltaMode delta_mode)
+HChar * MC_(snprintf_delta) (HChar * buf, Int size, 
+                             SizeT current_val, SizeT old_val, 
+                             LeakCheckDeltaMode delta_mode)
 {
    if (delta_mode == LCD_Any)
       buf[0] = '\0';
@@ -452,10 +452,10 @@ static void pp_LossRecord(UInt n_this_record, UInt n_total_records,
 {
    // char arrays to produce the indication of increase/decrease in case
    // of delta_mode != LCD_Any
-   char        d_bytes[20];
-   char        d_direct_bytes[20];
-   char        d_indirect_bytes[20];
-   char        d_num_blocks[20];
+   HChar d_bytes[20];
+   HChar d_direct_bytes[20];
+   HChar d_indirect_bytes[20];
+   HChar d_num_blocks[20];
 
    MC_(snprintf_delta) (d_bytes, 20, 
                         lr->szB + lr->indirect_szB, 
@@ -890,12 +890,12 @@ void MC_(record_cond_error) ( ThreadId tid, UInt otag )
 /* --- Called from non-generated code --- */
 
 /* This is for memory errors in signal-related memory. */
-void MC_(record_core_mem_error) ( ThreadId tid, Char* msg )
+void MC_(record_core_mem_error) ( ThreadId tid, const HChar* msg )
 {
    VG_(maybe_record_error)( tid, Err_CoreMem, /*addr*/0, msg, /*extra*/NULL );
 }
 
-void MC_(record_regparam_error) ( ThreadId tid, Char* msg, UInt otag )
+void MC_(record_regparam_error) ( ThreadId tid, const HChar* msg, UInt otag )
 {
    MC_Error extra;
    tl_assert(VG_INVALID_THREADID != tid);
@@ -907,7 +907,7 @@ void MC_(record_regparam_error) ( ThreadId tid, Char* msg, UInt otag )
 }
 
 void MC_(record_memparam_error) ( ThreadId tid, Addr a, 
-                                  Bool isAddrErr, Char* msg, UInt otag )
+                                  Bool isAddrErr, const HChar* msg, UInt otag )
 {
    MC_Error extra;
    tl_assert(VG_INVALID_THREADID != tid);
@@ -963,7 +963,7 @@ void MC_(record_illegal_mempool_error) ( ThreadId tid, Addr a )
    VG_(maybe_record_error)( tid, Err_IllegalMempool, a, /*s*/NULL, &extra );
 }
 
-void MC_(record_overlap_error) ( ThreadId tid, Char* function,
+void MC_(record_overlap_error) ( ThreadId tid, const HChar* function,
                                  Addr src, Addr dst, SizeT szB )
 {
    MC_Error extra;
@@ -1025,7 +1025,7 @@ Bool MC_(eq_Error) ( VgRes res, Error* e1, Error* e2 )
    
    switch (VG_(get_error_kind)(e1)) {
       case Err_CoreMem: {
-         Char *e1s, *e2s;
+         const HChar *e1s, *e2s;
          e1s = VG_(get_error_string)(e1);
          e2s = VG_(get_error_string)(e2);
          if (e1s == e2s)                   return True;
@@ -1082,7 +1082,7 @@ static
 Bool addr_is_in_MC_Chunk_default_REDZONE_SZB(MC_Chunk* mc, Addr a)
 {
    return VG_(addr_is_in_block)( a, mc->data, mc->szB,
-                                 MC_MALLOC_REDZONE_SZB );
+                                 MC_(Malloc_Redzone_SzB) );
 }
 static
 Bool addr_is_in_MC_Chunk_with_REDZONE_SZB(MC_Chunk* mc, Addr a, SizeT rzB)
@@ -1411,7 +1411,7 @@ typedef
    } 
    MC_SuppKind;
 
-Bool MC_(is_recognised_suppression) ( Char* name, Supp* su )
+Bool MC_(is_recognised_suppression) ( const HChar* name, Supp* su )
 {
    SuppKind skind;
 
@@ -1442,7 +1442,7 @@ Bool MC_(is_recognised_suppression) ( Char* name, Supp* su )
    return True;
 }
 
-Bool MC_(read_extra_suppression_info) ( Int fd, Char** bufpp,
+Bool MC_(read_extra_suppression_info) ( Int fd, HChar** bufpp,
                                         SizeT* nBufp, Supp *su )
 {
    Bool eof;
@@ -1518,7 +1518,7 @@ Bool MC_(error_matches_suppression) ( Error* err, Supp* su )
    }
 }
 
-Char* MC_(get_error_name) ( Error* err )
+const HChar* MC_(get_error_name) ( Error* err )
 {
    switch (VG_(get_error_kind)(err)) {
    case Err_RegParam:       return "Param";
@@ -1559,13 +1559,13 @@ Char* MC_(get_error_name) ( Error* err )
 }
 
 Bool MC_(get_extra_suppression_info) ( Error* err,
-                                       /*OUT*/Char* buf, Int nBuf )
+                                       /*OUT*/HChar* buf, Int nBuf )
 {
    ErrorKind ekind = VG_(get_error_kind )(err);
    tl_assert(buf);
    tl_assert(nBuf >= 16); // stay sane
    if (Err_RegParam == ekind || Err_MemParam == ekind) {
-      Char* errstr = VG_(get_error_string)(err);
+      const HChar* errstr = VG_(get_error_string)(err);
       tl_assert(errstr);
       VG_(snprintf)(buf, nBuf-1, "%s", errstr);
       return True;
