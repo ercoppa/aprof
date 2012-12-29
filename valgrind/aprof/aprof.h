@@ -10,7 +10,8 @@
 
    Copyright (C) 2011-2012, Emilio Coppa (ercoppa@gmail.com),
                             Camil Demetrescu,
-                            Irene Finocchi
+                            Irene Finocchi,
+                            Romolo Marotta
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -57,42 +58,80 @@
 #define APROF_(str) VGAPPEND(vgAprof_,str)
 
 /* Behaviour macro */
-#define EMPTY_ANALYSIS      0   // if 1, analysis routines are empty (useful in combination with EVENTCOUNT)
-#define DEBUG               0   // Enable some sanity checks
-#define VERBOSE             0   // 0 disabled, 1 function + thread, 2 function + thread + load/store/modify,
+#define EMPTY_ANALYSIS      0   // if 1, analysis routines are empty 
+                                // (useful in combination with EVENTCOUNT)
+
+#define DEBUG               1   // Enable some sanity checks
+
+#define OVERFLOW_DEBUG      0   // debug overflow timestamps in shadow memory
+                                // if 0 disabled
+                                // if 1 print checks on console
+                                // if 2 generate report file
+                                // if 3 like 1 & 2
+
+#define VERBOSE             0   // 0 disabled, 1 function + thread, 2 
+                                // function + thread + load/store/modify,
                                 // 4 very verbose function tracing
-#define EVENTCOUNT          0   // 0 disabled, 1 memory accesses, 2 functions, 3 mem+fn
-#define CCT                 0   // if 1, keep a calling context tree for each thread to include context information in reports
-#define COSTANT_MEM_ACCESS  1   // if 1, memory access with size >1 are managed as size==1
+
+#define EVENTCOUNT          0   // 0 disabled, 1 memory accesses, 
+                                // 2 functions, 3 mem+fn
+                                
+#define CCT                 0   // if 1, keep a calling context tree for
+                                // each thread to include context 
+                                // information in reports
+                                
+#define COSTANT_MEM_ACCESS  1   // if 1, memory access with size >1 are 
+                                //  managed as size==1
+                                
+                                // Performance metric:
 #define NO_TIME             0   // No time 
 #define INSTR               1   // Count guest intel instruction 
 #define RDTSC               2   // rdtsc intel instruction timestamp
 #define BB_COUNT            3   // count BB executed
-#define TIME                BB_COUNT
+#define TIME                BB_COUNT 
 
-#define TRACE_FUNCTION      1   // if 1, aprof trace functions by itself, otherwise it supposes
-                                // that the program is instrumentated by GCC
+#define TRACE_FUNCTION      1   // if 1, aprof traces functions by itself, 
+                                // otherwise the program must be 
+                                // instrumentated by GCC
                                 // with -finstrument-functions
+                                
 #define MEM_TRACE           1   // if 0 disable mem instrumentation
+#define SYSCALL_WRAPPING    1   // if 1, I/O syscall are wrapped in 
+                                // order to catch external I/O
+
 #define DEBUG_ALLOCATION    0   // if 1, check every allocation made by aprof
-#define IGNORE_DL_RUNTIME   0   // if 1, disable analysis for dl_runtime_resolve (and its children)
-#define REPORT_VERSION      4   // see documentation on our site: 1 == 1.1, 2 == 1.2, ...
-#define DISCARD_UNKNOWN     1   // discard info about PLT or unknown function (but this not imply to discard info about its children)
-#define IGNORE_REPEAT_ACC   1   // if 1, ignore repeated accesses to the same address within a BB
-#define REPORT_NAME         3   // if 1 report name is prog_TID.aprof, if 2 is PID_TID_ADDRMULTIPLE.aprof
-#define CCT_GRAPHIC         0   // output CCT as dot language in an external file (file.graph); EXPERIMENTAL
+#define IGNORE_DL_RUNTIME   0   // if 1, disable analysis for dl_
+                                // runtime_resolve (and its children)
+
+#define REPORT_VERSION      4   // see documentation on our site: 
+                                // 1 == 1.1, 2 == 1.2, ...
+                                
+#define DISCARD_UNKNOWN     1   // discard info about PLT or unknown 
+                                // function (but this does not imply to
+                                // discard info about its children)
+                                
+#define IGNORE_REPEAT_ACC   1   // if 1, ignore repeated accesses to 
+                                // the same address within a BB
+                                
+#define REPORT_NAME         2   // if 1 report name is prog_TID.aprof, 
+                                // if 2 is PID_TID_ADDRMULTIPLE.aprof
+                                
+#define CCT_GRAPHIC         0   // output CCT as dot language in an 
+                                // external file (file.graph); EXPERIMENTAL
 
 /* shadow memory  */
 
-#define CHECK_OVERFLOW      0   // On 64bit machine, we map only 2048GB...
+#define CHECK_OVERFLOW      1   // On 64bit machine, we map only 2048GB...
 
 /*
- * We need to search an aid in the shadow stack...
+ * We need to search an activation ts in the shadow stack...
  */
 #define LINEAR              1   // Linear search (backward into stack)
 #define BINARY              2   // Binary search
-#define STATS               3   // Compute some stats about searching into the stack when doing liner search
-#define BACKLOG             4   // Backwarding with exponential jump, then binary search
+#define STATS               3   // Compute some stats about searching 
+                                // into the stack when doing liner search
+#define BACKLOG             4   // Backwarding with exponential jump, 
+                                // then binary search
 #define SUF2_SEARCH         LINEAR 
 
 /* Some constants */
@@ -170,7 +209,8 @@ typedef struct Function {
     char *       mangled;               // name of routine (mangled)
     
     #if DISCARD_UNKNOWN
-    Bool         discard_info;          // discard SMS/cost for this function (but not for its children!)
+    Bool         discard_info;          // discard SMS/cost for this 
+                                        // function (but not for its children!)
     #endif
 
 } Function;
@@ -252,16 +292,27 @@ typedef struct {
 
     UWord       key;                     // rms value for this record
     void *      next;                    // HT node value
-    ULong       min_cumulative_time;     // minimum time spent by the routine in calls with this rms
-    ULong       max_cumulative_time;     // maximum time spent by the routine in calls with this rms
-    ULong       cumulative_time_sum;     // total time spent by the routine in calls with this rms
+    ULong       min_cumulative_time;     // minimum time spent by the 
+                                         // routine in calls with this rms
+                                         
+    ULong       max_cumulative_time;     // maximum time spent by the 
+                                         // routine in calls with this rms
+                                         
+    ULong       cumulative_time_sum;     // total time spent by the 
+                                         // routine in calls with this rms
     ULong       cumulative_sum_sqr;      // sum of the square of cumulative costs
-    ULong       calls_number;            // number of times the routine has been called with this sms
-    ULong       cumul_real_time_sum;     // total time spent by the routine in calls with this rms
-                                         // without considering recursive call of the same function
-    ULong       self_time_sum;           // total self time spent by the routine in calls with this rms
-    ULong       self_time_min;           // minimum self time spent by the routine in calls with this rms
-    ULong       self_time_max;           // maximum self time spent by the routine in calls with this rms
+    ULong       calls_number;            // number of times the routine 
+                                         // has been called with this rms
+    ULong       cumul_real_time_sum;     // total time spent by the routine 
+                                         // in calls with this rms
+                                         // without considering recursive 
+                                         // call of the same function
+    ULong       self_time_sum;           // total self time spent by the 
+                                         // routine in calls with this rms
+    ULong       self_time_min;           // minimum self time spent by 
+                                         // the routine in calls with this rms
+    ULong       self_time_max;           // maximum self time spent by the 
+                                         // routine in calls with this rms
     ULong       self_sum_sqr;            // sum of the square of self costs
 
 } RMSInfo;
@@ -271,17 +322,25 @@ typedef struct {
 
     ULong          entry_time;           // time stamp at activation entry
     ULong          total_children_time;  // total time spent in children
-    UInt           rms;                  // RMS of activation (always not negative when an activation ends)
-    RoutineInfo *  rtn_info;             // pointer to info record of activated routine
-    UInt           aid;                  // Activation ID
+    UInt           rms;                  // RMS of activation (always not 
+                                         // negative when an activation ends)
+    RoutineInfo *  rtn_info;             // pointer to info record of 
+                                         // activated routine
+    UInt           aid;                  // Activation ID Activation ID 
+                                         // (value of the global counter
+                                         // when this act started)
     
     #if CCT
-    CCTNode *      node;                 // pointer to the CCT node associated with the call
+    CCTNode *      node;                 // pointer to the CCT node 
+                                         // associated with the call
     #endif
     
     #if TRACE_FUNCTION
     UWord           sp;                  // Stack pointer when entered this function
-    UWord           ret_addr;            // Expected BB addr of BB executed after a return of a called function (only meaningful if the function is called with Ijk_Call)
+    UWord           ret_addr;            // Expected BB addr of BB executed 
+                                         // after a return of a called 
+                                         // function (only meaningful if 
+                                         // the function is called with Ijk_Call)
     Bool            skip;                // if True, disable analysis 
     #endif
 
@@ -295,13 +354,14 @@ typedef struct ThreadData {
     int             stack_depth;         // stack depth
     Activation *    stack;               // activation stack
     UInt            max_stack_size;      // max stack size
-    ULong           next_routine_id;     // the routine_id that will be assigned to the next routine_info
-    UInt            next_aid;            // Activation aid that will be assigned to the next Activation
+    ULong           next_routine_id;     // the routine_id that will be 
+                                         // assigned to the next routine_info
     ULong           other_metric;        // needed when merging reports
     
     #if CCT
     CCTNode *       root;                // root of the CCT
-    ULong           next_context_id;     // the context_id that will be assigned to the next CCT node
+    ULong           next_context_id;     // the context_id that will 
+                                         // be assigned to the next CCT node
     #endif
     
     #if TIME == INSTR
@@ -314,8 +374,10 @@ typedef struct ThreadData {
     
         
     #if SUF2_SEARCH == STATS
-    ULong            avg_depth;          // Sum of stack depth when doing all get_activation_by_aid
-    ULong            avg_iteration;      // Sum of iterations when doing backwarding in all get_activation_by_aid
+    ULong            avg_depth;          // Sum of stack depth when 
+                                         // doing all get_activation_by_aid
+    ULong            avg_iteration;      // Sum of iterations when doing 
+                                         // backwarding in all get_activation_by_aid
     ULong            ops;                // # calls of get_activation_by_aid
     #endif
     
@@ -365,16 +427,10 @@ extern Bool APROF_(merge_report_runs);
 /* memory events (events.c) */
 extern Int APROF_(events_used);
 
-#if 0
-extern unsigned int inside_strcmp;
-extern UWord last_addr;
-#endif
-
-
 /* Info about thread currently running (thread.c) */
 extern ThreadId APROF_(current_TID);
 extern ThreadData * APROF_(current_tdata); 
-extern UInt APROF_(running_threads); /* # running threads */;
+extern UInt APROF_(running_threads); /* # running threads */
 
 /* Basic block info HT and last BB exit type (callstack.c) */
 #if TRACE_FUNCTION
@@ -385,6 +441,13 @@ extern jump_t APROF_(last_exit);
 /* HTs about ELF objects and functions (callstack.c) */
 extern HashTable * APROF_(obj_ht);
 extern HashTable * APROF_(fn_ht);
+
+/* 
+ * Global shadow memory and a global counter 
+ * used for checking latest "version" of an input (memory.c)
+ */
+extern LookupTable * APROF_(global_shadow_memory);
+extern UInt APROF_(global_counter);
 
 /* Functions */
 
@@ -398,6 +461,7 @@ void APROF_(fclose)(FILE * f);
 void APROF_(switch_thread)(ThreadId tid, ULong blocks_dispatched);
 void APROF_(thread_exit)(ThreadId tid);
 void APROF_(kill_threads)(void);
+UInt APROF_(overflow_handler)(void);
 
 /* report functions (report.c) */
 void APROF_(generate_report)(ThreadData * tdata, ThreadId tid);
@@ -464,8 +528,16 @@ void APROF_(print_alloc)(void);
 /* internal debug info of valgrind */
 Bool VG_(get_fnname_no_cxx_demangle) (Addr a, Char* buf, Int nbuf);
 
+/* Syscall wrappers (syscall.c) */
+void APROF_(pre_syscall)(ThreadId tid, UInt syscallno, UWord* args, 
+                         UInt nArgs);
+void APROF_(post_syscall)(ThreadId tid, UInt syscallno, UWord* args, 
+                          UInt nArgs, SysRes res);
+
+
 #if CCT_GRAPHIC
-void APROF_(print_cct_graph)(FILE * f, CCTNode* root, UInt parent_id, char * parent_name);
+void APROF_(print_cct_graph)(FILE * f, CCTNode* root, UInt parent_id, 
+                               char * parent_name);
 #endif
 
 #endif
