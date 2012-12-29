@@ -1,0 +1,22 @@
+# experiment on AS-AS networks (D-PUP + D-RRL + S-DIJ + S-UP)
+t
+e
+fig7d
+l
+0
+0
+100
+10
+s
+m
+------
+g
+d
+../data/real/internet/AS_500.dim
+m
+s
+314
+100
+c
+------
+q
