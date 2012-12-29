@@ -1,5 +1,5 @@
 /*
- * Simulated stack. aprof can traces function in two ways:
+ * Simulated stack. aprof can trace functions in two ways:
  * - with an internal tracing mechanism (same approach of callgrind)
  * - through the help of GCC instrumentation (-finstrument-functions)
  *   more info at http://code.google.com/p/aprof/wiki/AprofOnARM_PPC
@@ -703,14 +703,14 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
                 
             }
             
-            //#if DEBUG
+            #if DEBUG
             if (f != NULL) {
                 obj_name = di ?    (char *) VG_(DebugInfo_get_filename)(di) : NULL;
                 if (obj_name != NULL)
                     AP_ASSERT(VG_(strcmp)(obj_name, f->obj->name) == 0, 
                         "Same function in different obj");
             }
-            //#endif
+            #endif
             
             if (last_bb != NULL && obj != last_bb->fn->obj)
                 different_obj = True;
