@@ -1,1 +1,0 @@
-../../../none/tests/ppc32/test_dfp2.c
