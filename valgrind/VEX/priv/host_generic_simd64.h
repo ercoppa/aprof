@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2011 OpenWorks LLP
+   Copyright (C) 2004-2012 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -123,6 +123,8 @@ extern ULong h_generic_calc_Max8Ux8  ( ULong, ULong );
 extern ULong h_generic_calc_Min16Sx4 ( ULong, ULong );
 extern ULong h_generic_calc_Min8Ux8  ( ULong, ULong );
 
+extern UInt  h_generic_calc_GetMSBs8x8 ( ULong );
+
 /* 32-bit SIMD HELPERS */
 
 extern UInt h_generic_calc_Add16x2   ( UInt, UInt );
@@ -153,8 +155,17 @@ extern UInt h_generic_calc_QSub8Sx4 ( UInt, UInt );
 
 extern UInt h_generic_calc_Sad8Ux4  ( UInt, UInt );
 
+extern UInt h_generic_calc_QAdd32S  ( UInt, UInt );
+extern UInt h_generic_calc_QSub32S  ( UInt, UInt );
+
 extern UInt h_generic_calc_CmpNEZ16x2 ( UInt );
 extern UInt h_generic_calc_CmpNEZ8x4  ( UInt );
+
+extern ULong h_DPBtoBCD ( ULong dpb );
+extern ULong h_BCDtoDPB ( ULong bcd );
+
+ULong dpb_to_bcd(ULong chunk);  // helper for h_DPBtoBCD
+ULong bcd_to_dpb(ULong chunk);  // helper for h_BCDtoDPB
 
 #endif /* ndef __VEX_HOST_GENERIC_SIMD64_H */
 

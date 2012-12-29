@@ -54,7 +54,7 @@ static UInt myrandom( void )
   return seed;
 }
 
-static void* allocate_node(HChar* cc, SizeT szB)
+static void* allocate_node(const HChar* cc, SizeT szB)
 { return malloc(szB); }
 
 static void free_node(void* p)
@@ -69,9 +69,9 @@ static void free_node(void* p)
 // case a Word), in which case the element is also the key.
 
 __attribute__((unused))
-static Char *wordToStr(void *p)
+static HChar *wordToStr(void *p)
 {
-   static char buf[32];
+   static HChar buf[32];
    sprintf(buf, "%ld", *(Word*)p);
    return buf;
 }
@@ -265,7 +265,7 @@ void example1b(void)
    // Try some operations on an empty OSet to ensure they don't screw up.
    vg_assert( ! VG_(OSetWord_Contains)(oset, v) );
    vg_assert( ! VG_(OSetWord_Remove)(oset, v) );
-   vg_assert( ! VG_(OSetWord_Next)(oset, &v) );
+   vg_assert( ! VG_(OSetWord_Next)(oset, (UWord *)&v) );
    vg_assert( 0 == VG_(OSetWord_Size)(oset) );
 
    // Create some elements, with gaps (they're all even) but no dups,
@@ -316,15 +316,15 @@ void example1b(void)
    n = 0;
    prev = -1;
    VG_(OSetWord_ResetIter)(oset);
-   while ( VG_(OSetWord_Next)(oset, &v) ) {
+   while ( VG_(OSetWord_Next)(oset, (UWord *)&v) ) {
       Word curr = v;
       assert(prev < curr); 
       prev = curr;
       n++;
    }
    assert(NN == n);
-   vg_assert( ! VG_(OSetWord_Next)(oset, &v) );
-   vg_assert( ! VG_(OSetWord_Next)(oset, &v) );
+   vg_assert( ! VG_(OSetWord_Next)(oset, (UWord *)&v) );
+   vg_assert( ! VG_(OSetWord_Next)(oset, (UWord *)&v) );
 
    // Check that we can remove half of the elements.
    for (i = 0; i < NN; i += 2) {
@@ -352,7 +352,7 @@ void example1b(void)
    // Try some more operations on the empty OSet to ensure they don't screw up.
    vg_assert( ! VG_(OSetWord_Contains)(oset, v) );
    vg_assert( ! VG_(OSetWord_Remove)(oset, v) );
-   vg_assert( ! VG_(OSetWord_Next)(oset, &v) );
+   vg_assert( ! VG_(OSetWord_Next)(oset, (UWord *)&v) );
    vg_assert( 0 == VG_(OSetWord_Size)(oset) );
 
    // Re-insert remaining elements, to give OSetWord_Destroy something to
@@ -387,9 +387,9 @@ typedef struct {
 Block;
 
 __attribute__((unused))
-static Char *blockToStr(void *p)
+static HChar *blockToStr(void *p)
 {
-   static char buf[32];
+   static HChar buf[32];
    Block* b = (Block*)p;
    sprintf(buf, "<(%d) %lu..%lu (%d)>", b->b1, b->first, b->last, b->b2);
    return buf;

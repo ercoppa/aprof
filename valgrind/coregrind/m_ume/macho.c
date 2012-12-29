@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2005-2011 Apple Inc.
+   Copyright (C) 2005-2012 Apple Inc.
       Greg Parker  gparker@apple.com
 
    This program is free software; you can redistribute it and/or
@@ -68,7 +68,7 @@
 #endif
 
 
-static void print(const char *str)
+static void print(const HChar *str)
 {
    VG_(printf)("%s", str);
 }
@@ -76,28 +76,38 @@ static void print(const char *str)
 static void check_mmap(SysRes res, Addr base, SizeT len, HChar* who)
 {
    if (sr_isError(res)) {
-      VG_(printf)("valgrind: mmap(0x%llx, %lld) failed in UME (%s).\n", 
+      VG_(printf)("valgrind: mmap-FIXED(0x%llx, %lld) failed in UME (%s).\n", 
                   (ULong)base, (Long)len, who);
       VG_(exit)(1);
    }
 }
 
+#if DARWIN_VERS == DARWIN_10_8
+static void check_mmap_float(SysRes res, SizeT len, HChar* who)
+{
+   if (sr_isError(res)) {
+      VG_(printf)("valgrind: mmap-FLOAT(size=%lld) failed in UME (%s).\n", 
+                  (Long)len, who);
+      VG_(exit)(1);
+   }
+}
+#endif
 
 static int 
 load_thin_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype, 
-               const char *filename, 
+               const HChar *filename, 
                vki_uint8_t **out_stack_start, vki_uint8_t **out_stack_end, 
                vki_uint8_t **out_text, vki_uint8_t **out_entry, vki_uint8_t **out_linker_entry);
 
 static int 
 load_fat_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype, 
-              const char *filename, 
+              const HChar *filename, 
               vki_uint8_t **out_stack_start, vki_uint8_t **out_stack_end, 
               vki_uint8_t **out_text, vki_uint8_t **out_entry, vki_uint8_t **out_linker_entry);
 
 static int 
 load_mach_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype, 
-               const char *filename, 
+               const HChar *filename, 
                vki_uint8_t **out_stack_start, vki_uint8_t **out_stack_end, 
                vki_uint8_t **out_text, vki_uint8_t **out_entry, vki_uint8_t **out_linker_entry);
 
@@ -108,7 +118,7 @@ load_mach_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
    The dylinker's entry point is returned in *out_linker_entry.
  */
 static int 
-open_dylinker(const char *filename, vki_uint8_t **out_linker_entry)
+open_dylinker(const HChar *filename, vki_uint8_t **out_linker_entry)
 {
    struct vg_stat sb;
    vki_size_t filesize;
@@ -370,6 +380,46 @@ load_unixthread(vki_uint8_t **out_stack_start, vki_uint8_t **out_stack_end,
 }
 
 
+/* Allocates a stack mapping at a V-chosen address.  Pertains to
+   LC_MAIN commands, which seem to have appeared in OSX 10.8.
+
+   This is a really nasty hack -- allocates 64M+stack size, then
+   deallocates the 64M, to guarantee that the stack is at least 64M
+   above zero. */
+#if DARWIN_VERS == DARWIN_10_8
+static int
+handle_lcmain ( vki_uint8_t **out_stack_start,
+                vki_uint8_t **out_stack_end,
+                vki_size_t requested_size )
+{
+   if (requested_size == 0) {
+      requested_size = default_stack_size();
+   }
+   requested_size = VG_PGROUNDUP(requested_size);
+
+   const vki_size_t HACK = 64 * 1024 * 1024;
+   requested_size += HACK;
+
+   SysRes res = VG_(am_mmap_anon_float_client)(requested_size,
+                   VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC);
+   check_mmap_float(res, requested_size, "handle_lcmain");
+   vg_assert(!sr_isError(res));
+   *out_stack_start = (vki_uint8_t*)sr_Res(res);
+   *out_stack_end   = *out_stack_start + requested_size;
+
+   Bool need_discard = False;
+   res = VG_(am_munmap_client)(&need_discard, (Addr)*out_stack_start, HACK);
+   if (sr_isError(res)) return -1;
+   vg_assert(!need_discard); // True == wtf?
+
+   *out_stack_start += HACK;
+
+   return 0;
+}
+#endif /* DARWIN_VERS == DARWIN_10_8 */
+
+
+
 /* 
    Processes an LC_LOAD_DYLINKER command. 
    Returns 0 on success, -1 on any error.
@@ -379,14 +429,14 @@ load_unixthread(vki_uint8_t **out_stack_start, vki_uint8_t **out_stack_end,
 static int 
 load_dylinker(vki_uint8_t **linker_entry, struct dylinker_command *dycmd)
 {
-   const char *name;
+   const HChar *name;
 
    if (dycmd->name.offset >= dycmd->cmdsize) {
       print("bad executable (invalid dylinker command)\n");
       return -1;
    }
 
-   name = dycmd->name.offset + (char *)dycmd;
+   name = dycmd->name.offset + (HChar *)dycmd;
     
    // GrP fixme assumes name is terminated somewhere
    return open_dylinker(name, linker_entry);
@@ -428,10 +478,11 @@ load_thread(vki_uint8_t **out_entry, struct thread_command *threadcmd)
 */
 static int 
 load_thin_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype, 
-               const char *filename, 
+               const HChar *filename, 
                vki_uint8_t **out_stack_start, vki_uint8_t **out_stack_end, 
                vki_uint8_t **out_text, vki_uint8_t **out_entry, vki_uint8_t **out_linker_entry)
 {
+   VG_(debugLog)(1, "ume", "load_thin_file: begin:   %s\n", filename);
    struct MACH_HEADER mh;
    vki_uint8_t *headers;
    vki_uint8_t *headers_end;
@@ -487,7 +538,7 @@ load_thin_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
       print("couldn't read load commands from executable\n");
       return -1;
    }
-   headers_end = headers + size;
+   headers_end = headers + len;
 
    
    // Map some segments into client memory:
@@ -506,6 +557,23 @@ load_thin_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
       }
 
       switch (lc->cmd) {
+
+#if   DARWIN_VERS == DARWIN_10_8
+      case LC_MAIN: { /* New in 10.8 */
+         struct entry_point_command* epcmd
+            = (struct entry_point_command*)lc;
+         if (stack_start || stack_end) {
+            print("bad executable (multiple indications of stack)");
+            return -1;
+         }
+         err = handle_lcmain ( &stack_start, &stack_end, epcmd->stacksize );
+         if (err) return -1;
+         VG_(debugLog)(2, "ume", "lc_main: created stack %p-%p\n",
+	               stack_start, stack_end);
+         break;
+      }
+#     endif
+
       case LC_SEGMENT_CMD:
          if (lc->cmdsize < sizeof(struct SEGMENT_COMMAND)) {
             print("bad executable (invalid load commands)\n");
@@ -582,7 +650,7 @@ load_thin_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
       // a text segment
       // an entry point (static or linker)
       if (!stack_end || !stack_start) {
-         print("bad executable (no stack)\n");
+         VG_(printf)("bad executable %s (no stack)\n", filename);
          return -1;
       }
       if (!text) {
@@ -609,6 +677,7 @@ load_thin_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
    if (out_entry) *out_entry = entry;
    if (out_linker_entry) *out_linker_entry = linker_entry;
    
+   VG_(debugLog)(1, "ume", "load_thin_file: success: %s\n", filename);
    return 0;
 }
 
@@ -618,7 +687,7 @@ load_thin_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
 */
 static int 
 load_fat_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype, 
-             const char *filename, 
+             const HChar *filename, 
              vki_uint8_t **out_stack_start, vki_uint8_t **out_stack_end, 
              vki_uint8_t **out_text, vki_uint8_t **out_entry, vki_uint8_t **out_linker_entry)
 {
@@ -697,7 +766,7 @@ load_fat_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
 */
 static int 
 load_mach_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype, 
-              const char *filename, 
+              const HChar *filename, 
               vki_uint8_t **out_stack_start, vki_uint8_t **out_stack_end, 
               vki_uint8_t **out_text, vki_uint8_t **out_entry, vki_uint8_t **out_linker_entry)
 {
@@ -732,9 +801,9 @@ load_mach_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
 }
 
 
-Bool VG_(match_macho)(Char *hdr, Int len)
+Bool VG_(match_macho)(const void *hdr, Int len)
 {
-   vki_uint32_t *magic = (vki_uint32_t *)hdr;
+   const vki_uint32_t *magic = hdr;
 
    // GrP fixme check more carefully for matching fat arch?
 

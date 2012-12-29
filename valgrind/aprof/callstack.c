@@ -398,7 +398,7 @@ static Bool check_code(UWord obj_start, UWord obj_size,
  *
  * We stop if the ELF object name does not seem to be the runtime linker
  */
-static Bool search_runtime_resolve(char * obj_name, UWord obj_start,
+static Bool search_runtime_resolve(HChar * obj_name, UWord obj_start,
 										UWord obj_size)
 {
 #if defined(VGP_x86_linux)
@@ -613,7 +613,7 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
 		bb->obj_section = VG_(DebugInfo_sect_kind)(NULL, 0, target);
 		
 		/* Function name buffer */
-		char * fn = VG_(calloc)("fn_name", NAME_SIZE, 1);
+		HChar * fn = VG_(calloc)("fn_name", NAME_SIZE, 1);
 		#if DEBUG
 		AP_ASSERT(fn != NULL, "function name not allocable");
 		#endif
@@ -649,7 +649,7 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
 		UInt hash = 0;
 		if (info_fn) {
 			
-			hash = APROF_(str_hash)(fn);
+			hash = APROF_(str_hash)((Char *)fn);
 			f = HT_lookup(APROF_(fn_ht), hash);
 			
 			while (f != NULL && VG_(strcmp)(f->name, fn) != 0) {
@@ -673,7 +673,7 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
 			UInt hash_obj = 0;
 			if (obj_name != NULL) {
 				
-				hash_obj = APROF_(str_hash)(obj_name);
+				hash_obj = APROF_(str_hash)((Char *)obj_name);
 				obj = HT_lookup(APROF_(obj_ht), hash_obj);
 				
 				while (obj != NULL && VG_(strcmp)(obj->name, obj_name) != 0) {
@@ -703,6 +703,14 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
 				
 			}
 			
+			//#if DEBUG
+			if (f != NULL) {
+				obj_name = di ?	(char *) VG_(DebugInfo_get_filename)(di) : NULL;
+				if (obj_name != NULL)
+					AP_ASSERT(VG_(strcmp)(obj_name, f->obj->name) == 0, 
+						"Same function in different obj");
+			}
+			//#endif
 			
 			if (last_bb != NULL && obj != last_bb->fn->obj)
 				different_obj = True;
@@ -762,7 +770,7 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
 		if (info_fn && f == NULL) {
 			
 			/* Maybe we have renamed the function...*/
-			UInt hash_2 = APROF_(str_hash)(fn);
+			UInt hash_2 = APROF_(str_hash)((Char *)fn);
 			if (hash != hash_2) {
 				
 				hash = hash_2;
@@ -800,12 +808,12 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
 				if (unknown) f->discard_info = True;
 				#endif
 				
-				char * mangled = VG_(calloc)("mangled", NAME_SIZE, 1);
+				HChar * mangled = VG_(calloc)("mangled", NAME_SIZE, 1);
 				#if DEBUG
 				AP_ASSERT(mangled != NULL, "mangled name not allocable");
 				#endif
 				
-				if(	VG_(get_fnname_no_cxx_demangle)(bb->key, mangled, NAME_SIZE)) {
+				if(	VG_(get_fnname_no_cxx_demangle)(bb->key, (Char *)mangled, NAME_SIZE)) {
 					if (VG_(strcmp)(mangled, "(below main)") == 0) {
 						VG_(sprintf)(mangled, "below_main");
 					}
@@ -1120,6 +1128,19 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
 	/* Reset exit of current BB */
 	APROF_(last_exit) = BBOTHER;
 
+}
+
+void APROF_(unwind_stack)(ThreadData * tdata) {
+	
+	while (tdata->stack_depth > 0)  {
+
+		Activation * current = APROF_(get_activation)(tdata, tdata->stack_depth);
+		APROF_(function_exit)(tdata, current);
+		tdata->stack_depth--;
+		current--;
+
+	}
+	
 }
 
 #else

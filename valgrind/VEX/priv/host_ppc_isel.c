@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2011 OpenWorks LLP
+   Copyright (C) 2004-2012 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -42,6 +42,7 @@
 #include "main_util.h"
 #include "main_globals.h"
 #include "host_generic_regs.h"
+#include "host_generic_simd64.h"
 #include "host_ppc_defs.h"
 
 /* GPR register class for ppc32/64 */
@@ -1497,8 +1498,8 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          return r_dst;
       }
 
-      if ((e->Iex.Binop.op == Iop_CmpF64) |
-          (e->Iex.Binop.op == Iop_CmpD64) |
+      if ((e->Iex.Binop.op == Iop_CmpF64) ||
+          (e->Iex.Binop.op == Iop_CmpD64) ||
           (e->Iex.Binop.op == Iop_CmpD128)) {
          HReg fr_srcL;
          HReg fr_srcL_lo;
@@ -1849,6 +1850,7 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       }
 
       case Iop_Left8:
+      case Iop_Left16:
       case Iop_Left32: 
       case Iop_Left64: {
          HReg r_src, r_dst;
@@ -2002,8 +2004,57 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             add_to_sp( env, 16 );       // Reset SP
             return r_dst;
          } 
-
          break;
+
+      case Iop_BCDtoDPB: {
+         PPCCondCode cc;
+         UInt        argiregs;
+         HReg        argregs[1];
+         HReg        r_dst  = newVRegI(env);
+         Int         argreg;
+         HWord*      fdescr;
+
+         argiregs = 0;
+         argreg = 0;
+         argregs[0] = hregPPC_GPR3(mode64);
+
+         argiregs |= (1 << (argreg+3));
+         addInstr(env, mk_iMOVds_RR( argregs[argreg++],
+                                     iselWordExpr_R(env, e->Iex.Unop.arg) ) );
+
+         cc = mk_PPCCondCode( Pct_ALWAYS, Pcf_NONE );
+
+         fdescr = (HWord*)h_BCDtoDPB;
+         addInstr(env, PPCInstr_Call( cc, (Addr64)(fdescr[0]), argiregs ) );
+
+         addInstr(env, mk_iMOVds_RR(r_dst, argregs[0]));
+         return r_dst;
+      }
+
+      case Iop_DPBtoBCD: {
+         PPCCondCode cc;
+         UInt        argiregs;
+         HReg        argregs[1];
+         HReg        r_dst  = newVRegI(env);
+         Int         argreg;
+         HWord*      fdescr;
+
+         argiregs = 0;
+         argreg = 0;
+         argregs[0] = hregPPC_GPR3(mode64);
+
+         argiregs |= (1 << (argreg+3));
+         addInstr(env, mk_iMOVds_RR( argregs[argreg++],
+                                     iselWordExpr_R(env, e->Iex.Unop.arg) ) );
+
+         cc = mk_PPCCondCode( Pct_ALWAYS, Pcf_NONE );
+
+         fdescr = (HWord*)h_DPBtoBCD;
+         addInstr(env, PPCInstr_Call( cc, (Addr64)(fdescr[0]), argiregs ) );
+
+         addInstr(env, mk_iMOVds_RR(r_dst, argregs[0]));
+         return r_dst;
+      }
 
       default: 
          break;
@@ -2571,7 +2622,7 @@ static PPCCondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
                                     7/*cr*/, tmp,PPCRH_Imm(False,0)));
          return mk_PPCCondCode( Pct_FALSE, Pcf_7EQ );
       } else {  // mode64
-         HReg r_src = iselWordExpr_R(env, e->Iex.Binop.arg1);
+         HReg r_src = iselWordExpr_R(env, e->Iex.Unop.arg);
          addInstr(env, PPCInstr_Cmp(False/*sign*/, False/*64bit cmp*/,
                                     7/*cr*/, r_src,PPCRH_Imm(False,0)));
          return mk_PPCCondCode( Pct_FALSE, Pcf_7EQ );
@@ -3154,10 +3205,10 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
       }
 
       case Iop_ReinterpD64asI64: {
-	  HReg fr_src  = iselDfp64Expr(env, e->Iex.Unop.arg);
-	  PPCAMode *am_addr0, *am_addr1;
-	  HReg r_dstLo = newVRegI(env);
-	  HReg r_dstHi = newVRegI(env);
+         HReg fr_src  = iselDfp64Expr(env, e->Iex.Unop.arg);
+         PPCAMode *am_addr0, *am_addr1;
+         HReg r_dstLo = newVRegI(env);
+         HReg r_dstHi = newVRegI(env);
 
 
          sub_from_sp( env, 16 );     // Move SP down 16 bytes
@@ -3167,7 +3218,7 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
          // store as D64
          addInstr(env, PPCInstr_FpLdSt( False/*store*/, 8,
                                         fr_src, am_addr0 ));
-         
+
          // load hi,lo as Ity_I32's
          addInstr(env, PPCInstr_Load( 4, r_dstHi,
                                       am_addr0, False/*mode32*/ ));
@@ -3175,9 +3226,86 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
                                       am_addr1, False/*mode32*/ ));
          *rHi = r_dstHi;
          *rLo = r_dstLo;
-         
+
          add_to_sp( env, 16 );       // Reset SP
 
+         return;
+      }
+
+      case Iop_BCDtoDPB: {
+         PPCCondCode cc;
+         UInt        argiregs;
+         HReg        argregs[2];
+         Int         argreg;
+         HReg        tLo = newVRegI(env);
+         HReg        tHi = newVRegI(env);
+         HReg        tmpHi;
+         HReg        tmpLo;
+         ULong       target;
+         Bool        mode64 = env->mode64;
+
+         argregs[0] = hregPPC_GPR3(mode64);
+         argregs[1] = hregPPC_GPR4(mode64);
+
+         argiregs = 0;
+         argreg = 0;
+
+         iselInt64Expr( &tmpHi, &tmpLo, env, e->Iex.Unop.arg );
+
+         argiregs |= ( 1 << (argreg+3 ) );
+         addInstr( env, mk_iMOVds_RR( argregs[argreg++], tmpHi ) );
+
+         argiregs |= ( 1 << (argreg+3 ) );
+         addInstr( env, mk_iMOVds_RR( argregs[argreg], tmpLo ) );
+
+         cc = mk_PPCCondCode( Pct_ALWAYS, Pcf_NONE );
+         target = toUInt( Ptr_to_ULong(h_BCDtoDPB ) );
+
+         addInstr( env, PPCInstr_Call( cc, (Addr64)target, argiregs ) );
+         addInstr( env, mk_iMOVds_RR( tHi, argregs[argreg-1] ) );
+         addInstr( env, mk_iMOVds_RR( tLo, argregs[argreg] ) );
+
+         *rHi = tHi;
+         *rLo = tLo;
+         return;
+      }
+
+      case Iop_DPBtoBCD: {
+         PPCCondCode cc;
+         UInt        argiregs;
+         HReg        argregs[2];
+         Int         argreg;
+         HReg        tLo = newVRegI(env);
+         HReg        tHi = newVRegI(env);
+         HReg        tmpHi;
+         HReg        tmpLo;
+         ULong       target;
+         Bool        mode64 = env->mode64;
+
+         argregs[0] = hregPPC_GPR3(mode64);
+         argregs[1] = hregPPC_GPR4(mode64);
+
+         argiregs = 0;
+         argreg = 0;
+
+         iselInt64Expr(&tmpHi, &tmpLo, env, e->Iex.Unop.arg);
+
+         argiregs |= (1 << (argreg+3));
+         addInstr(env, mk_iMOVds_RR( argregs[argreg++], tmpHi ));
+
+         argiregs |= (1 << (argreg+3));
+         addInstr(env, mk_iMOVds_RR( argregs[argreg], tmpLo));
+
+         cc = mk_PPCCondCode( Pct_ALWAYS, Pcf_NONE );
+
+         target = toUInt( Ptr_to_ULong( h_DPBtoBCD ) );
+
+         addInstr(env, PPCInstr_Call( cc, (Addr64)target, argiregs ) );
+         addInstr(env, mk_iMOVds_RR(tHi, argregs[argreg-1]));
+         addInstr(env, mk_iMOVds_RR(tLo, argregs[argreg]));
+
+         *rHi = tHi;
+         *rLo = tLo;
          return;
       }
 
@@ -3445,7 +3573,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
    /* --------- OPS --------- */
    if (e->tag == Iex_Qop) {
       PPCFpOp fpop = Pfp_INVALID;
-      switch (e->Iex.Qop.op) {
+      switch (e->Iex.Qop.details->op) {
          case Iop_MAddF64:    fpop = Pfp_MADDD; break;
          case Iop_MAddF64r32: fpop = Pfp_MADDS; break;
          case Iop_MSubF64:    fpop = Pfp_MSUBD; break;
@@ -3454,10 +3582,10 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       }
       if (fpop != Pfp_INVALID) {
          HReg r_dst  = newVRegF(env);
-         HReg r_srcML  = iselDblExpr(env, e->Iex.Qop.arg2);
-         HReg r_srcMR  = iselDblExpr(env, e->Iex.Qop.arg3);
-         HReg r_srcAcc = iselDblExpr(env, e->Iex.Qop.arg4);
-         set_FPU_rounding_mode( env, e->Iex.Qop.arg1 );
+         HReg r_srcML  = iselDblExpr(env, e->Iex.Qop.details->arg2);
+         HReg r_srcMR  = iselDblExpr(env, e->Iex.Qop.details->arg3);
+         HReg r_srcAcc = iselDblExpr(env, e->Iex.Qop.details->arg4);
+         set_FPU_rounding_mode( env, e->Iex.Qop.details->arg1 );
          addInstr(env, PPCInstr_FpMulAcc(fpop, r_dst, 
                                                r_srcML, r_srcMR, r_srcAcc));
          return r_dst;
@@ -3465,8 +3593,9 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
    }
 
    if (e->tag == Iex_Triop) {
+      IRTriop *triop = e->Iex.Triop.details;
       PPCFpOp fpop = Pfp_INVALID;
-      switch (e->Iex.Triop.op) {
+      switch (triop->op) {
          case Iop_AddF64:    fpop = Pfp_ADDD; break;
          case Iop_SubF64:    fpop = Pfp_SUBD; break;
          case Iop_MulF64:    fpop = Pfp_MULD; break;
@@ -3479,22 +3608,22 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       }
       if (fpop != Pfp_INVALID) {
          HReg r_dst  = newVRegF(env);
-         HReg r_srcL = iselDblExpr(env, e->Iex.Triop.arg2);
-         HReg r_srcR = iselDblExpr(env, e->Iex.Triop.arg3);
-         set_FPU_rounding_mode( env, e->Iex.Triop.arg1 );
+         HReg r_srcL = iselDblExpr(env, triop->arg2);
+         HReg r_srcR = iselDblExpr(env, triop->arg3);
+         set_FPU_rounding_mode( env, triop->arg1 );
          addInstr(env, PPCInstr_FpBinary(fpop, r_dst, r_srcL, r_srcR));
          return r_dst;
       }
-      switch (e->Iex.Triop.op) {
+      switch (triop->op) {
       case Iop_QuantizeD64:          fpop = Pfp_DQUA;  break;
       case Iop_SignificanceRoundD64: fpop = Pfp_RRDTR; break;
       default: break;
       }
       if (fpop != Pfp_INVALID) {
          HReg r_dst = newVRegF(env);
-         HReg r_srcL = iselDblExpr(env, e->Iex.Triop.arg2);
-         HReg r_srcR = iselDblExpr(env, e->Iex.Triop.arg3);
-         PPCRI* rmc  = iselWordExpr_RI(env, e->Iex.Triop.arg1);
+         HReg r_srcL = iselDblExpr(env, triop->arg2);
+         HReg r_srcR = iselDblExpr(env, triop->arg3);
+         PPCRI* rmc  = iselWordExpr_RI(env, triop->arg1);
 
          // will set TE and RMC when issuing instruction
          addInstr(env, PPCInstr_DfpQuantize(fpop, r_dst, r_srcL, r_srcR, rmc));
@@ -3834,7 +3963,7 @@ static HReg iselDfp64Expr_wrk(ISelEnv* env, IRExpr* e)
       }
 
       switch (e->Iex.Binop.op) {
-      /* shift instructions F64, I32 -> F64 */
+      /* shift instructions D64, I32 -> D64 */
       case Iop_ShlD64: fpop = Pfp_DSCLI; break;
       case Iop_ShrD64: fpop = Pfp_DSCRI; break;
       default: break;
@@ -3842,6 +3971,9 @@ static HReg iselDfp64Expr_wrk(ISelEnv* env, IRExpr* e)
       if (fpop != Pfp_INVALID) {
          HReg fr_src = iselDfp64Expr(env, e->Iex.Binop.arg1);
          PPCRI* shift = iselWordExpr_RI(env, e->Iex.Binop.arg2);
+
+         /* shift value must be an immediate value */
+         vassert(shift->tag == Pri_Imm);
 
          addInstr(env, PPCInstr_DfpShift(fpop, fr_dst, fr_src, shift));
          return fr_dst;
@@ -3862,9 +3994,10 @@ static HReg iselDfp64Expr_wrk(ISelEnv* env, IRExpr* e)
    }
 
    if (e->tag == Iex_Triop) {
+      IRTriop *triop = e->Iex.Triop.details;
       PPCFpOp fpop = Pfp_INVALID;
 
-      switch (e->Iex.Triop.op) {
+      switch (triop->op) {
       case Iop_AddD64:
          fpop = Pfp_DFPADD;
          break;
@@ -3882,24 +4015,24 @@ static HReg iselDfp64Expr_wrk(ISelEnv* env, IRExpr* e)
       }
       if (fpop != Pfp_INVALID) {
          HReg r_dst = newVRegF( env );
-         HReg r_srcL = iselDfp64Expr( env, e->Iex.Triop.arg2 );
-         HReg r_srcR = iselDfp64Expr( env, e->Iex.Triop.arg3 );
+         HReg r_srcL = iselDfp64Expr( env, triop->arg2 );
+         HReg r_srcR = iselDfp64Expr( env, triop->arg3 );
 
-         set_FPU_DFP_rounding_mode( env, e->Iex.Triop.arg1 );
+         set_FPU_DFP_rounding_mode( env, triop->arg1 );
          addInstr( env, PPCInstr_Dfp64Binary( fpop, r_dst, r_srcL, r_srcR ) );
          return r_dst;
       }
 
-      switch (e->Iex.Triop.op) {
+      switch (triop->op) {
       case Iop_QuantizeD64:          fpop = Pfp_DQUA;  break;
       case Iop_SignificanceRoundD64: fpop = Pfp_RRDTR; break;
       default: break;
       }
       if (fpop != Pfp_INVALID) {
          HReg r_dst = newVRegF(env);
-         HReg r_srcL = iselDfp64Expr(env, e->Iex.Triop.arg2);
-         HReg r_srcR = iselDfp64Expr(env, e->Iex.Triop.arg3);
-         PPCRI* rmc  = iselWordExpr_RI(env, e->Iex.Triop.arg1);
+         HReg r_srcL = iselDfp64Expr(env, triop->arg2);
+         HReg r_srcR = iselDfp64Expr(env, triop->arg3);
+         PPCRI* rmc  = iselWordExpr_RI(env, triop->arg1);
 
          addInstr(env, PPCInstr_DfpQuantize(fpop, r_dst, r_srcL, r_srcR,
                                             rmc));
@@ -4041,8 +4174,9 @@ static void iselDfp128Expr_wrk(HReg* rHi, HReg *rLo, ISelEnv* env, IRExpr* e)
    }
 
    if (e->tag == Iex_Triop) {
+      IRTriop *triop = e->Iex.Triop.details;
       PPCFpOp fpop = Pfp_INVALID;
-      switch (e->Iex.Triop.op) {
+      switch (triop->op) {
       case Iop_AddD128:
          fpop = Pfp_DFPADDQ;
          break;
@@ -4066,9 +4200,9 @@ static void iselDfp128Expr_wrk(HReg* rHi, HReg *rLo, ISelEnv* env, IRExpr* e)
          HReg r_srcRLo = newVRegV( env );
 
          /* dst will be used to pass in the left operand and get the result. */
-         iselDfp128Expr( &r_dstHi, &r_dstLo, env, e->Iex.Triop.arg2 );
-         iselDfp128Expr( &r_srcRHi, &r_srcRLo, env, e->Iex.Triop.arg3 );
-         set_FPU_rounding_mode( env, e->Iex.Triop.arg1 );
+         iselDfp128Expr( &r_dstHi, &r_dstLo, env, triop->arg2 );
+         iselDfp128Expr( &r_srcRHi, &r_srcRLo, env, triop->arg3 );
+         set_FPU_rounding_mode( env, triop->arg1 );
          addInstr( env,
                    PPCInstr_Dfp128Binary( fpop, r_dstHi, r_dstLo,
                                           r_srcRHi, r_srcRLo ) );
@@ -4076,7 +4210,7 @@ static void iselDfp128Expr_wrk(HReg* rHi, HReg *rLo, ISelEnv* env, IRExpr* e)
          *rLo = r_dstLo;
          return;
       }
-      switch (e->Iex.Triop.op) {
+      switch (triop->op) {
       case Iop_QuantizeD128:          fpop = Pfp_DQUAQ;  break;
       case Iop_SignificanceRoundD128: fpop = Pfp_DRRNDQ; break;
       default: break;
@@ -4086,11 +4220,11 @@ static void iselDfp128Expr_wrk(HReg* rHi, HReg *rLo, ISelEnv* env, IRExpr* e)
          HReg r_dstLo = newVRegF(env);
          HReg r_srcHi = newVRegF(env);
          HReg r_srcLo = newVRegF(env);
-         PPCRI* rmc = iselWordExpr_RI(env, e->Iex.Binop.arg1);
+         PPCRI* rmc = iselWordExpr_RI(env, triop->arg1);
 
          /* dst will be used to pass in the left operand and get the result */
-         iselDfp128Expr(&r_dstHi, &r_dstLo, env, e->Iex.Triop.arg2);
-         iselDfp128Expr(&r_srcHi, &r_srcLo, env, e->Iex.Triop.arg3);
+         iselDfp128Expr(&r_dstHi, &r_dstLo, env, triop->arg2);
+         iselDfp128Expr(&r_srcHi, &r_srcLo, env, triop->arg3);
 
          // will set RMC when issuing instruction
          addInstr(env, PPCInstr_DfpQuantize128(fpop, r_dstHi, r_dstLo,
@@ -4247,7 +4381,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_Dup8x16:
       case Iop_Dup16x8:
       case Iop_Dup32x4:
-         return mk_AvDuplicateRI(env, e->Iex.Binop.arg1);
+         return mk_AvDuplicateRI(env, e->Iex.Unop.arg);
 
       default:
          break;
@@ -4666,19 +4800,21 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       
    /* --------- Indexed PUT --------- */
    case Ist_PutI: {
+      IRPutI *puti = stmt->Ist.PutI.details;
+
       PPCAMode* dst_am
          = genGuestArrayOffset(
-              env, stmt->Ist.PutI.descr, 
-                   stmt->Ist.PutI.ix, stmt->Ist.PutI.bias );
-      IRType ty = typeOfIRExpr(env->type_env, stmt->Ist.PutI.data);
+              env, puti->descr, 
+                   puti->ix, puti->bias );
+      IRType ty = typeOfIRExpr(env->type_env, puti->data);
       if (mode64 && ty == Ity_I64) {
-         HReg r_src = iselWordExpr_R(env, stmt->Ist.PutI.data);
+         HReg r_src = iselWordExpr_R(env, puti->data);
          addInstr(env, PPCInstr_Store( toUChar(8),
                                        dst_am, r_src, mode64 ));
          return;
       }
       if ((!mode64) && ty == Ity_I32) {
-         HReg r_src = iselWordExpr_R(env, stmt->Ist.PutI.data);
+         HReg r_src = iselWordExpr_R(env, puti->data);
          addInstr(env, PPCInstr_Store( toUChar(4),
                                        dst_am, r_src, mode64 ));
          return;

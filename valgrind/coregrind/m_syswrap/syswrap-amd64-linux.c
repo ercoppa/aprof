@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2011 Nicholas Nethercote
+   Copyright (C) 2000-2012 Nicholas Nethercote
       njn@valgrind.org
 
    This program is free software; you can redistribute it and/or
@@ -399,21 +399,35 @@ PRE(sys_clone)
    ULong cloneflags;
 
    PRINT("sys_clone ( %lx, %#lx, %#lx, %#lx, %#lx )",ARG1,ARG2,ARG3,ARG4,ARG5);
-   PRE_REG_READ5(int, "clone",
+   PRE_REG_READ2(int, "clone",
                  unsigned long, flags,
-                 void *, child_stack,
-                 int *, parent_tidptr,
-                 int *, child_tidptr,
-                 void *, tlsaddr);
+                 void *, child_stack);
 
    if (ARG1 & VKI_CLONE_PARENT_SETTID) {
+      if (VG_(tdict).track_pre_reg_read) {
+         PRA3("clone", int *, parent_tidptr);
+      }
       PRE_MEM_WRITE("clone(parent_tidptr)", ARG3, sizeof(Int));
       if (!VG_(am_is_valid_for_client)(ARG3, sizeof(Int), VKI_PROT_WRITE)) {
          SET_STATUS_Failure( VKI_EFAULT );
          return;
       }
    }
+   if (ARG1 & VKI_CLONE_SETTLS) {
+      if (VG_(tdict).track_pre_reg_read) {
+         PRA4("clone", vki_modify_ldt_t *, tlsinfo);
+      }
+      PRE_MEM_READ("clone(tlsinfo)", ARG4, sizeof(vki_modify_ldt_t));
+      if (!VG_(am_is_valid_for_client)(ARG4, sizeof(vki_modify_ldt_t), 
+                                             VKI_PROT_READ)) {
+         SET_STATUS_Failure( VKI_EFAULT );
+         return;
+      }
+   }
    if (ARG1 & (VKI_CLONE_CHILD_SETTID | VKI_CLONE_CHILD_CLEARTID)) {
+      if (VG_(tdict).track_pre_reg_read) {
+         PRA5("clone", int *, child_tidptr);
+      }
       PRE_MEM_WRITE("clone(child_tidptr)", ARG4, sizeof(Int));
       if (!VG_(am_is_valid_for_client)(ARG4, sizeof(Int), VKI_PROT_WRITE)) {
          SET_STATUS_Failure( VKI_EFAULT );
@@ -603,6 +617,12 @@ PRE(sys_ptrace)
    case VKI_PTRACE_SETSIGINFO:
       PRE_MEM_READ( "ptrace(setsiginfo)", ARG4, sizeof(vki_siginfo_t));
       break;
+   case VKI_PTRACE_GETREGSET:
+      ML_(linux_PRE_getregset)(tid, ARG3, ARG4);
+      break;
+   case VKI_PTRACE_SETREGSET:
+      ML_(linux_PRE_setregset)(tid, ARG3, ARG4);
+      break;
    default:
       break;
    }
@@ -630,6 +650,9 @@ POST(sys_ptrace)
        * siginfo_t are valid depending on the type of signal.
        */
       POST_MEM_WRITE( ARG4, sizeof(vki_siginfo_t));
+      break;
+   case VKI_PTRACE_GETREGSET:
+      ML_(linux_POST_getregset)(tid, ARG3, ARG4);
       break;
    default:
       break;
@@ -1386,9 +1409,9 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_get_robust_list,	 sys_get_robust_list),  // 274
 
    LINX_(__NR_splice,            sys_splice),           // 275
-//   LINX_(__NR_tee,               sys_ni_syscall),       // 276
+   LINX_(__NR_tee,               sys_tee),              // 276
    LINX_(__NR_sync_file_range,   sys_sync_file_range),  // 277
-//   LINX_(__NR_vmsplice,          sys_ni_syscall),       // 278
+   LINXY(__NR_vmsplice,          sys_vmsplice),         // 278
    LINXY(__NR_move_pages,        sys_move_pages),       // 279
 
    LINX_(__NR_utimensat,         sys_utimensat),        // 280

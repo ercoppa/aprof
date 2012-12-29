@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2011 OpenWorks LLP
+   Copyright (C) 2004-2012 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -148,6 +148,7 @@
       87DB (xchgl %ebx,%ebx)   %EDX = client_request ( %EAX )
       87C9 (xchgl %ecx,%ecx)   %EAX = guest_NRADDR
       87D2 (xchgl %edx,%edx)   call-noredir *%EAX
+      87FF (xchgl %edi,%edi)   IR injection
 
    Any other bytes following the 12-byte preamble are illegal and
    constitute a failure in instruction decoding.  This all assumes
@@ -276,7 +277,7 @@ static IRSB* irsb;
 #define OFFB_XMM6      offsetof(VexGuestX86State,guest_XMM6)
 #define OFFB_XMM7      offsetof(VexGuestX86State,guest_XMM7)
 
-#define OFFB_EMWARN    offsetof(VexGuestX86State,guest_EMWARN)
+#define OFFB_EMNOTE    offsetof(VexGuestX86State,guest_EMNOTE)
 
 #define OFFB_TISTART   offsetof(VexGuestX86State,guest_TISTART)
 #define OFFB_TILEN     offsetof(VexGuestX86State,guest_TILEN)
@@ -715,6 +716,7 @@ static IROp mkSizedOp ( IRType ty, IROp op8 )
            || op8 == Iop_Shl8 || op8 == Iop_Shr8 || op8 == Iop_Sar8
            || op8 == Iop_CmpEQ8 || op8 == Iop_CmpNE8
            || op8 == Iop_CasCmpNE8
+           || op8 == Iop_ExpCmpNE8
            || op8 == Iop_Not8);
    adj = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
    return adj + op8;
@@ -3445,7 +3447,7 @@ static IRTemp gen_LZCNT ( IRType ty, IRTemp src )
 static void put_emwarn ( IRExpr* e /* :: Ity_I32 */ )
 {
    vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_I32);
-   stmt( IRStmt_Put( OFFB_EMWARN, e ) );
+   stmt( IRStmt_Put( OFFB_EMNOTE, e ) );
 }
 
 /* --- Produce an IRExpr* denoting a 64-bit QNaN. --- */
@@ -3522,7 +3524,7 @@ static void put_ST_TAG ( Int i, IRExpr* value )
    IRRegArray* descr;
    vassert(typeOfIRExpr(irsb->tyenv, value) == Ity_I8);
    descr = mkIRRegArray( OFFB_FPTAGS, Ity_I8, 8 );
-   stmt( IRStmt_PutI( descr, get_ftop(), i, value ) );
+   stmt( IRStmt_PutI( mkIRPutI(descr, get_ftop(), i, value) ) );
 }
 
 /* Given i, generate an expression yielding 'ST_TAG(i)'.  This will be
@@ -3546,7 +3548,7 @@ static void put_ST_UNCHECKED ( Int i, IRExpr* value )
    IRRegArray* descr;
    vassert(typeOfIRExpr(irsb->tyenv, value) == Ity_F64);
    descr = mkIRRegArray( OFFB_FPREGS, Ity_F64, 8 );
-   stmt( IRStmt_PutI( descr, get_ftop(), i, value ) );
+   stmt( IRStmt_PutI( mkIRPutI(descr, get_ftop(), i, value) ) );
    /* Mark the register as in-use. */
    put_ST_TAG(i, mkU8(1));
 }
@@ -3937,7 +3939,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
 
             case 4: { /* FLDENV m28 */
                /* Uses dirty helper: 
-                     VexEmWarn x86g_do_FLDENV ( VexGuestX86State*, HWord ) */
+                     VexEmNote x86g_do_FLDENV ( VexGuestX86State*, HWord ) */
                IRTemp   ew = newTemp(Ity_I32);
                IRDirty* d  = unsafeIRDirty_0_N ( 
                                 0/*regparms*/, 
@@ -3954,6 +3956,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
 
                /* declare we're writing guest state */
                d->nFxState = 4;
+               vex_bzero(&d->fxState, sizeof(d->fxState));
 
                d->fxState[0].fx     = Ifx_Write;
                d->fxState[0].offset = OFFB_FTOP;
@@ -4049,6 +4052,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
 
                /* declare we're reading guest state */
                d->nFxState = 4;
+               vex_bzero(&d->fxState, sizeof(d->fxState));
 
                d->fxState[0].fx     = Ifx_Read;
                d->fxState[0].offset = OFFB_FTOP;
@@ -4738,6 +4742,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
 
                /* declare we're writing guest state */
                d->nFxState = 5;
+               vex_bzero(&d->fxState, sizeof(d->fxState));
 
                d->fxState[0].fx     = Ifx_Write;
                d->fxState[0].offset = OFFB_FTOP;
@@ -4925,7 +4930,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
 
             case 4: { /* FRSTOR m108 */
                /* Uses dirty helper: 
-                     VexEmWarn x86g_do_FRSTOR ( VexGuestX86State*, Addr32 ) */
+                     VexEmNote x86g_do_FRSTOR ( VexGuestX86State*, Addr32 ) */
                IRTemp   ew = newTemp(Ity_I32);
                IRDirty* d  = unsafeIRDirty_0_N ( 
                                 0/*regparms*/, 
@@ -4942,6 +4947,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
 
                /* declare we're writing guest state */
                d->nFxState = 5;
+               vex_bzero(&d->fxState, sizeof(d->fxState));
 
                d->fxState[0].fx     = Ifx_Write;
                d->fxState[0].offset = OFFB_FTOP;
@@ -5000,6 +5006,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
 
                /* declare we're reading guest state */
                d->nFxState = 5;
+               vex_bzero(&d->fxState, sizeof(d->fxState));
 
                d->fxState[0].fx     = Ifx_Read;
                d->fxState[0].offset = OFFB_FTOP;
@@ -5406,7 +5413,7 @@ static void do_MMX_preamble ( void )
    IRExpr*     tag1  = mkU8(1);
    put_ftop(zero);
    for (i = 0; i < 8; i++)
-      stmt( IRStmt_PutI( descr, zero, i, tag1 ) );
+      stmt( IRStmt_PutI( mkIRPutI(descr, zero, i, tag1) ) );
 }
 
 static void do_EMMS_preamble ( void )
@@ -5417,7 +5424,7 @@ static void do_EMMS_preamble ( void )
    IRExpr*     tag0  = mkU8(0);
    put_ftop(zero);
    for (i = 0; i < 8; i++)
-      stmt( IRStmt_PutI( descr, zero, i, tag0 ) );
+      stmt( IRStmt_PutI( mkIRPutI(descr, zero, i, tag0) ) );
 }
 
 
@@ -6379,10 +6386,14 @@ UInt dis_bs_E_G ( UChar sorb, Int sz, Int delta, Bool fwds )
        ( isReg ? nameIReg(sz, eregOfRM(modrm)) : dis_buf ), 
        nameIReg(sz, gregOfRM(modrm)));
 
-   /* Generate an 8-bit expression which is zero iff the 
-      original is zero, and nonzero otherwise */
+   /* Generate an 8-bit expression which is zero iff the original is
+      zero, and nonzero otherwise.  Ask for a CmpNE version which, if
+      instrumented by Memcheck, is instrumented expensively, since
+      this may be used on the output of a preceding movmskb insn,
+      which has been known to be partially defined, and in need of
+      careful handling. */
    assign( src8,
-           unop(Iop_1Uto8, binop(mkSizedOp(ty,Iop_CmpNE8),
+           unop(Iop_1Uto8, binop(mkSizedOp(ty,Iop_ExpCmpNE8),
                            mkexpr(src), mkU(ty,0))) );
 
    /* Flags: Z is 1 iff source value is zero.  All others 
@@ -7866,6 +7877,38 @@ static Bool can_be_used_with_LOCK_prefix ( UChar* opc )
    return False;
 }
 
+static IRTemp math_BSWAP ( IRTemp t1, IRType ty )
+{
+   IRTemp t2 = newTemp(ty);
+   if (ty == Ity_I32) {
+      assign( t2,
+         binop(
+            Iop_Or32,
+            binop(Iop_Shl32, mkexpr(t1), mkU8(24)),
+            binop(
+               Iop_Or32,
+               binop(Iop_And32, binop(Iop_Shl32, mkexpr(t1), mkU8(8)),
+                                mkU32(0x00FF0000)),
+               binop(Iop_Or32,
+                     binop(Iop_And32, binop(Iop_Shr32, mkexpr(t1), mkU8(8)),
+                                      mkU32(0x0000FF00)),
+                     binop(Iop_And32, binop(Iop_Shr32, mkexpr(t1), mkU8(24)),
+                                      mkU32(0x000000FF) )
+            )))
+      );
+      return t2;
+   }
+   if (ty == Ity_I16) {
+      assign(t2, 
+             binop(Iop_Or16,
+                   binop(Iop_Shl16, mkexpr(t1), mkU8(8)),
+                   binop(Iop_Shr16, mkexpr(t1), mkU8(8)) ));
+      return t2;
+   }
+   vassert(0);
+   /*NOTREACHED*/
+   return IRTemp_INVALID;
+}
 
 /*------------------------------------------------------------*/
 /*--- Disassemble a single instruction                     ---*/
@@ -7978,6 +8021,26 @@ DisResult disInstr_X86_WRK (
             storeLE( mkexpr(t2), mkU32(guest_EIP_bbstart+delta));
             jmp_treg(&dres, Ijk_NoRedir, t1);
             vassert(dres.whatNext == Dis_StopHere);
+            goto decode_success;
+         }
+         else
+         if (code[12] == 0x87 && code[13] == 0xFF /* xchgl %edi,%edi */) {
+            /* IR injection */
+            DIP("IR injection\n");
+            vex_inject_ir(irsb, Iend_LE);
+
+            // Invalidate the current insn. The reason is that the IRop we're
+            // injecting here can change. In which case the translation has to
+            // be redone. For ease of handling, we simply invalidate all the
+            // time.
+            stmt(IRStmt_Put(OFFB_TISTART, mkU32(guest_EIP_curr_instr)));
+            stmt(IRStmt_Put(OFFB_TILEN,   mkU32(14)));
+   
+            delta += 14;
+
+            stmt( IRStmt_Put( OFFB_EIP, mkU32(guest_EIP_bbstart + delta) ) );
+            dres.whatNext    = Dis_StopHere;
+            dres.jk_StopHere = Ijk_TInval;
             goto decode_success;
          }
          /* We don't know what it is. */
@@ -8138,10 +8201,11 @@ DisResult disInstr_X86_WRK (
       /* declare we're writing memory */
       d->mFx   = Ifx_Write;
       d->mAddr = mkexpr(addr);
-      d->mSize = 512;
+      d->mSize = 464; /* according to recent Intel docs */
 
       /* declare we're reading guest state */
       d->nFxState = 7;
+      vex_bzero(&d->fxState, sizeof(d->fxState));
 
       d->fxState[0].fx     = Ifx_Read;
       d->fxState[0].offset = OFFB_FTOP;
@@ -8197,9 +8261,9 @@ DisResult disInstr_X86_WRK (
       DIP("fxrstor %s\n", dis_buf);
 
       /* Uses dirty helper: 
-            VexEmWarn x86g_do_FXRSTOR ( VexGuestX86State*, UInt )
+            VexEmNote x86g_do_FXRSTOR ( VexGuestX86State*, UInt )
          NOTE:
-            the VexEmWarn value is simply ignored (unlike for FRSTOR)
+            the VexEmNote value is simply ignored (unlike for FRSTOR)
       */
       d = unsafeIRDirty_0_N ( 
              0/*regparms*/, 
@@ -8212,10 +8276,11 @@ DisResult disInstr_X86_WRK (
       /* declare we're reading memory */
       d->mFx   = Ifx_Read;
       d->mAddr = mkexpr(addr);
-      d->mSize = 512;
+      d->mSize = 464; /* according to recent Intel docs */
 
       /* declare we're writing guest state */
       d->nFxState = 7;
+      vex_bzero(&d->fxState, sizeof(d->fxState));
 
       d->fxState[0].fx     = Ifx_Write;
       d->fxState[0].offset = OFFB_FTOP;
@@ -8991,7 +9056,7 @@ DisResult disInstr_X86_WRK (
 
    /* ***--- this is an MMX class insn introduced in SSE1 ---*** */
    /* 0F D7 = PMOVMSKB -- extract sign bits from each of 8 lanes in
-      mmx(G), turn them into a byte, and put zero-extend of it in
+      mmx(E), turn them into a byte, and put zero-extend of it in
       ireg(G). */
    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0xD7) {
       modrm = insn[2];
@@ -9000,11 +9065,7 @@ DisResult disInstr_X86_WRK (
          t0 = newTemp(Ity_I64);
          t1 = newTemp(Ity_I32);
          assign(t0, getMMXReg(eregOfRM(modrm)));
-         assign(t1, mkIRExprCCall(
-                       Ity_I32, 0/*regparms*/, 
-                       "x86g_calculate_mmx_pmovmskb",
-                       &x86g_calculate_mmx_pmovmskb,
-                       mkIRExprVec_1(mkexpr(t0))));
+         assign(t1, unop(Iop_8Uto32, unop(Iop_GetMSBs8x8, mkexpr(t0))));
          putIReg(4, gregOfRM(modrm), mkexpr(t1));
          DIP("pmovmskb %s,%s\n", nameMMXReg(eregOfRM(modrm)),
                                  nameIReg(4,gregOfRM(modrm)));
@@ -10843,11 +10904,9 @@ DisResult disInstr_X86_WRK (
       goto decode_success;
    }
 
-   /* 66 0F D7 = PMOVMSKB -- extract sign bits from each of 16 lanes in
-      xmm(G), turn them into a byte, and put zero-extend of it in
-      ireg(G).  Doing this directly is just too cumbersome; give up
-      therefore and call a helper. */
-   /* UInt x86g_calculate_sse_pmovmskb ( ULong w64hi, ULong w64lo ); */
+   /* 66 0F D7 = PMOVMSKB -- extract sign bits from each of 16 lanes
+      in xmm(E), turn them into a byte, and put zero-extend of it in
+      ireg(G). */
    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xD7) {
       modrm = insn[2];
       if (epartIsReg(modrm)) {
@@ -10856,11 +10915,11 @@ DisResult disInstr_X86_WRK (
          assign(t0, getXMMRegLane64(eregOfRM(modrm), 0));
          assign(t1, getXMMRegLane64(eregOfRM(modrm), 1));
          t5 = newTemp(Ity_I32);
-         assign(t5, mkIRExprCCall(
-                       Ity_I32, 0/*regparms*/, 
-                       "x86g_calculate_sse_pmovmskb",
-                       &x86g_calculate_sse_pmovmskb,
-                       mkIRExprVec_2( mkexpr(t1), mkexpr(t0) )));
+         assign(t5,
+                unop(Iop_16Uto32,
+                     binop(Iop_8HLto16,
+                           unop(Iop_GetMSBs8x8, mkexpr(t1)),
+                           unop(Iop_GetMSBs8x8, mkexpr(t0)))));
          putIReg(4, gregOfRM(modrm), mkexpr(t5));
          DIP("pmovmskb %s,%s\n", nameXMMReg(eregOfRM(modrm)),
                                  nameIReg(4,gregOfRM(modrm)));
@@ -12616,6 +12675,33 @@ DisResult disInstr_X86_WRK (
       );
       goto decode_success;
    }
+   
+   /* 0F 38 F0 = MOVBE m16/32(E), r16/32(G) */
+   /* 0F 38 F1 = MOVBE r16/32(G), m16/32(E) */
+   if ((sz == 2 || sz == 4)
+       && insn[0] == 0x0F && insn[1] == 0x38
+       && (insn[2] == 0xF0 || insn[2] == 0xF1)
+       && !epartIsReg(insn[3])) {
+
+      modrm = insn[3];
+      addr = disAMode(&alen, sorb, delta + 3, dis_buf);
+      delta += 3 + alen;
+      ty = szToITy(sz);
+      IRTemp src = newTemp(ty);
+
+      if (insn[2] == 0xF0) { /* LOAD */
+         assign(src, loadLE(ty, mkexpr(addr)));
+         IRTemp dst = math_BSWAP(src, ty);
+         putIReg(sz, gregOfRM(modrm), mkexpr(dst));
+         DIP("movbe %s,%s\n", dis_buf, nameIReg(sz, gregOfRM(modrm)));
+      } else { /* STORE */
+         assign(src, getIReg(sz, gregOfRM(modrm)));
+         IRTemp dst = math_BSWAP(src, ty);
+         storeLE(mkexpr(addr), mkexpr(dst));
+         DIP("movbe %s,%s\n", nameIReg(sz, gregOfRM(modrm)), dis_buf);
+      }
+      goto decode_success;
+   }
 
    /* ---------------------------------------------------- */
    /* --- end of the SSSE3 decoder.                    --- */
@@ -14014,12 +14100,28 @@ DisResult disInstr_X86_WRK (
       for the rest, it means REP) */
    case 0xF3: { 
       Addr32 eip_orig = guest_EIP_bbstart + delta_start;
-      if (sorb != 0) goto decode_failure;
       abyte = getIByte(delta); delta++;
 
       if (abyte == 0x66) { sz = 2; abyte = getIByte(delta); delta++; }
 
+      if (sorb != 0 && abyte != 0x0F) goto decode_failure;
+
       switch (abyte) {
+      case 0x0F:
+         switch (getIByte(delta)) {
+         /* On older CPUs, TZCNT behaves the same as BSF.  */
+         case 0xBC: /* REP BSF Gv,Ev */
+            delta = dis_bs_E_G ( sorb, sz, delta + 1, True );
+            break;
+         /* On older CPUs, LZCNT behaves the same as BSR.  */
+         case 0xBD: /* REP BSR Gv,Ev */
+            delta = dis_bs_E_G ( sorb, sz, delta + 1, False );
+            break;
+         default:
+            goto decode_failure;
+         }
+         break;
+
       case 0xA4: sz = 1;   /* REP MOVS<sz> */
       case 0xA5:
          dis_REP_op ( &dres, X86CondAlways, dis_MOVS, sz, eip_orig, 
@@ -14414,24 +14516,11 @@ DisResult disInstr_X86_WRK (
       case 0xCE:
       case 0xCF: /* BSWAP %edi */
          /* AFAICS from the Intel docs, this only exists at size 4. */
-         vassert(sz == 4);
+         if (sz != 4) goto decode_failure;
+         
          t1 = newTemp(Ity_I32);
-         t2 = newTemp(Ity_I32);
          assign( t1, getIReg(4, opc-0xC8) );
-
-         assign( t2,
-            binop(Iop_Or32,
-               binop(Iop_Shl32, mkexpr(t1), mkU8(24)),
-            binop(Iop_Or32,
-               binop(Iop_And32, binop(Iop_Shl32, mkexpr(t1), mkU8(8)), 
-                                mkU32(0x00FF0000)),
-            binop(Iop_Or32,
-               binop(Iop_And32, binop(Iop_Shr32, mkexpr(t1), mkU8(8)),
-                                mkU32(0x0000FF00)),
-               binop(Iop_And32, binop(Iop_Shr32, mkexpr(t1), mkU8(24)),
-                                mkU32(0x000000FF) )
-            )))
-         );
+         t2 = math_BSWAP(t1, Ity_I32);
 
          putIReg(4, opc-0xC8, mkexpr(t2));
          DIP("bswapl %s\n", nameIReg(4, opc-0xC8));
@@ -14608,6 +14697,7 @@ DisResult disInstr_X86_WRK (
          /* declare guest state effects */
          d->needsBBP = True;
          d->nFxState = 4;
+         vex_bzero(&d->fxState, sizeof(d->fxState));
          d->fxState[0].fx     = Ifx_Modify;
          d->fxState[0].offset = OFFB_EAX;
          d->fxState[0].size   = 4;

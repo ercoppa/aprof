@@ -8,11 +8,11 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2011 Julian Seward
+   Copyright (C) 2000-2012 Julian Seward
       jseward@acm.org
-   Copyright (C) 2005-2011 Nicholas Nethercote
+   Copyright (C) 2005-2012 Nicholas Nethercote
       njn@valgrind.org
-   Copyright (C) 2006-2011 OpenWorks LLP
+   Copyright (C) 2006-2012 OpenWorks LLP
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
@@ -52,6 +52,11 @@
 #else
 #  error Unknown Plat/OS
 #endif
+
+#if defined(VGP_amd64_linux) || defined(VGP_x86_linux)
+#  include "vki/vki-xen.h"
+#endif
+
 
 #endif // __PUB_TOOL_VKI_H
 

@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2011 Julian Seward
+   Copyright (C) 2000-2012 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -246,7 +246,7 @@
 #elif defined(VGO_darwin) && (DARWIN_VERS <= DARWIN_10_6)
 #  define  VG_Z_LIBC_SONAME  libSystemZdZaZddylib    // libSystem.*.dylib
 
-#elif defined(VGO_darwin) && (DARWIN_VERS == DARWIN_10_7)
+#elif defined(VGO_darwin) && (DARWIN_VERS >= DARWIN_10_7)
 #  define  VG_Z_LIBC_SONAME  libsystemZucZaZddylib   // libsystem_c*.dylib
 
 #else
@@ -299,6 +299,11 @@
 
 #endif
 
+
+// Prefix for synonym soname synonym handling
+#define VG_SO_SYN(name)       VgSoSyn##name
+#define VG_SO_SYN_PREFIX     "VgSoSyn"
+#define VG_SO_SYN_PREFIX_LEN 7
 
 #endif   // __PUB_TOOL_REDIR_H
 

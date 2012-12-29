@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2011-2011 Philippe Waroquiers
+   Copyright (C) 2011-2012 Philippe Waroquiers
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -33,12 +33,15 @@
 #include "pub_core_libcproc.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_mallocfree.h"
+#include "pub_tool_libcsetjmp.h"
+#include "pub_core_threadstate.h"
 #include "pub_core_gdbserver.h"
 #include "pub_core_options.h"
 #include "pub_core_libcsetjmp.h"
 #include "pub_core_threadstate.h"
 #include "pub_core_transtab.h"
 #include "pub_tool_hashtable.h"
+#include "pub_tool_xarray.h"
 #include "pub_core_libcassert.h"
 #include "pub_tool_libcbase.h"
 #include "pub_core_libcsignal.h"
@@ -57,7 +60,7 @@ VG_REGPARM(1)
 void VG_(helperc_CallDebugger) ( HWord iaddr );
 VG_REGPARM(1)
 void VG_(helperc_invalidate_if_not_gdbserved) ( Addr addr );
-static void invalidate_current_ip (ThreadId tid, char *who);
+static void invalidate_current_ip (ThreadId tid, const HChar *who);
 
 /* reasons of call to call_gdbserver. */
 typedef
@@ -67,10 +70,11 @@ typedef
       core_reason,    // gdbserver invocation by core (e.g. error encountered)
       break_reason,   // break encountered
       watch_reason,   // watchpoint detected by tool
-      signal_reason}  // signal encountered
+      signal_reason,  // signal encountered
+      exit_reason}    // process terminated
     CallReason;
 
-static char* ppCallReason(CallReason reason)
+static const HChar* ppCallReason(CallReason reason)
 {
    switch (reason) {
    case init_reason:    return "init_reason";
@@ -79,6 +83,7 @@ static char* ppCallReason(CallReason reason)
    case break_reason:   return "break_reason";
    case watch_reason:   return "watch_reason";
    case signal_reason:  return "signal_reason";
+   case exit_reason:    return "exit_reason";
    default: vg_assert (0);
    }
 }
@@ -130,22 +135,16 @@ static Addr ignore_this_break_once = 0;
 
 static void call_gdbserver ( ThreadId tid , CallReason reason);
 
-/* convert from CORE_ADDR to void* */
-static
-void* C2v(CORE_ADDR addr)
-{
-   return (void*) addr;
-}
-
 /* Describes the address addr (for debugging/printing purposes).
    Last two results are kept. A third call will replace the
    oldest result. */
-static char* sym (Addr addr, Bool is_code)
+static HChar* sym (Addr addr, Bool is_code)
 {
-   static char buf[2][200];
+   static HChar buf[2][200];
    static int w = 0;
    PtrdiffT offset;
    if (w == 2) w = 0;
+   buf[w][0] = '\0';
    if (is_code) {
       VG_(describe_IP) (addr, buf[w], 200);
    } else {
@@ -158,6 +157,18 @@ static char* sym (Addr addr, Bool is_code)
    gdbserver_exited is incremented when gdbserver is asked to exit */
 static int gdbserver_called = 0;
 static int gdbserver_exited = 0;
+
+/* alloc and free functions for xarray and similar. */
+static void* gs_alloc (const HChar* cc, SizeT sz)
+{
+   void* res = VG_(arena_malloc)(VG_AR_CORE, cc, sz);
+   vg_assert (res);
+   return res;
+}
+static void gs_free (void* ptr)
+{
+   VG_(arena_free)(VG_AR_CORE, ptr);
+}
 
 typedef
    enum {
@@ -198,7 +209,7 @@ static Addr HT_addr ( Addr addr )
 #endif
 }
 
-static void add_gs_address (Addr addr, GS_Kind kind, char* from)
+static void add_gs_address (Addr addr, GS_Kind kind, const HChar* from)
 {
    GS_Address *p;
 
@@ -212,7 +223,7 @@ static void add_gs_address (Addr addr, GS_Kind kind, char* from)
    VG_(discard_translations) (addr, 2, from);
 }
 
-static void remove_gs_address (GS_Address* g, char* from)
+static void remove_gs_address (GS_Address* g, const HChar* from)
 {
    VG_(HT_remove) (gs_addresses, g->addr);
    // See add_gs_address for the explanation for the range 2 below.
@@ -220,7 +231,7 @@ static void remove_gs_address (GS_Address* g, char* from)
    VG_(arena_free) (VG_AR_CORE, g);
 }
 
-char* VG_(ppPointKind) (PointKind kind)
+const HChar* VG_(ppPointKind) (PointKind kind)
 {
    switch(kind) {
    case software_breakpoint: return "software_breakpoint";
@@ -228,21 +239,52 @@ char* VG_(ppPointKind) (PointKind kind)
    case write_watchpoint:    return "write_watchpoint";
    case read_watchpoint:     return "read_watchpoint";
    case access_watchpoint:   return "access_watchpoint";
-   default: vg_assert(0);
+   default:                  return "???wrong PointKind";
    }
 }
 
 typedef
    struct _GS_Watch {
-      struct _GS_Watch* next;
       Addr    addr;
       SizeT   len;
       PointKind kind;
    }
    GS_Watch;
 
-/* gs_watches contains a list of all addresses+len that are being watched. */
-static VgHashTable gs_watches = NULL;
+/* gs_watches contains a list of all addresses+len+kind that are being
+   watched. */
+static XArray* gs_watches = NULL;
+
+static inline GS_Watch* index_gs_watches(Word i)
+{
+   return *(GS_Watch **) VG_(indexXA) (gs_watches, i);
+}
+
+/* Returns the GS_Watch matching addr/len/kind and sets *g_ix to its
+   position in gs_watches.
+   If no matching GS_Watch is found, returns NULL and sets g_ix to -1. */
+static GS_Watch* lookup_gs_watch (Addr addr, SizeT len, PointKind kind,
+                                  Word* g_ix)
+{
+   const Word n_elems = VG_(sizeXA) (gs_watches);
+   Word i;
+   GS_Watch *g;
+
+   /* Linear search. If we have many watches, this might be optimised
+      by having the array sorted and using VG_(lookupXA) */
+   for (i = 0; i < n_elems; i++) {
+      g = index_gs_watches(i);
+      if (g->addr == addr && g->len == len && g->kind == kind) {
+         // Found.
+         *g_ix = i;
+         return g;
+      }
+   }
+
+   // Not found.
+   *g_ix = -1;
+   return NULL;
+}
 
 
 /* protocol spec tells the below must be idempotent. */
@@ -297,6 +339,7 @@ Bool VG_(gdbserver_point) (PointKind kind, Bool insert,
 {
    Bool res;
    GS_Watch *g;
+   Word g_ix;
    Bool is_code = kind == software_breakpoint || kind == hardware_breakpoint;
 
    dlog(1, "%s %s at addr %p %s\n",
@@ -321,7 +364,10 @@ Bool VG_(gdbserver_point) (PointKind kind, Bool insert,
    if (!res) 
       return False; /* error or unsupported */
 
-   g = VG_(HT_lookup) (gs_watches, (UWord)addr);
+   // Protocol says insert/remove must be idempotent.
+   // So, we just ignore double insert or (supposed) double delete.
+
+   g = lookup_gs_watch (addr, len, kind, &g_ix);
    if (insert) {
       if (g == NULL) {
          g = VG_(arena_malloc)(VG_AR_CORE, "gdbserver_point watchpoint",
@@ -329,26 +375,37 @@ Bool VG_(gdbserver_point) (PointKind kind, Bool insert,
          g->addr = addr;
          g->len  = len;
          g->kind = kind;
-         VG_(HT_add_node)(gs_watches, g);
+         VG_(addToXA)(gs_watches, &g);
       } else {
-         g->kind = kind;
+         dlog(1, 
+              "VG_(gdbserver_point) addr %p len %d kind %s already inserted\n",
+               C2v(addr), len, VG_(ppPointKind) (kind));
       }
    } else {
-      vg_assert (g != NULL);
-      VG_(HT_remove) (gs_watches, g->addr);
-      VG_(arena_free) (VG_AR_CORE, g);
+      if (g != NULL) {
+         VG_(removeIndexXA) (gs_watches, g_ix);
+         VG_(arena_free) (VG_AR_CORE, g);
+      } else {
+         dlog(1, 
+              "VG_(gdbserver_point) addr %p len %d kind %s already deleted?\n",
+              C2v(addr), len, VG_(ppPointKind) (kind));
+      }
    }  
    return True;
 }
 
 Bool VG_(is_watched)(PointKind kind, Addr addr, Int szB)
 {
+   Word n_elems;
    GS_Watch* g;
+   Word i;
    Bool watched = False;
    const ThreadId tid = VG_(running_tid);
 
    if (!gdbserver_called)
       return False;
+
+   n_elems = VG_(sizeXA) (gs_watches);
 
    Addr to = addr + szB; // semi-open interval [addr, to[
 
@@ -357,8 +414,9 @@ Bool VG_(is_watched)(PointKind kind, Addr addr, Int szB)
               || kind == write_watchpoint);
    dlog(1, "tid %d VG_(is_watched) %s addr %p szB %d\n",
         tid, VG_(ppPointKind) (kind), C2v(addr), szB);
-   VG_(HT_ResetIter) (gs_watches);
-   while ((g = VG_(HT_Next) (gs_watches))) {
+
+   for (i = 0; i < n_elems; i++) {
+      g = index_gs_watches(i);
       switch (g->kind) {
       case software_breakpoint:
       case hardware_breakpoint:
@@ -480,36 +538,39 @@ static void clear_gdbserved_addresses(Bool clear_only_jumps)
    VG_(free) (ag);
 }
 
-// Clear watched addressed in gs_watches
+// Clear watched addressed in gs_watches, delete gs_watches.
 static void clear_watched_addresses(void)
 {
-   GS_Watch** ag;
-   UInt n_elems;
-   int i;
+   GS_Watch* g;
+   const Word n_elems = VG_(sizeXA) (gs_watches);
+   Word i;
 
    dlog(1,
-        "clear_watched_addresses: scanning hash table nodes %d\n", 
-        VG_(HT_count_nodes) (gs_watches));
-   ag = (GS_Watch**) VG_(HT_to_array) (gs_watches, &n_elems);
+        "clear_watched_addresses: %ld elements\n", 
+        n_elems);
+   
    for (i = 0; i < n_elems; i++) {
-      if (!VG_(gdbserver_point) (ag[i]->kind,
+      g = index_gs_watches(i);
+      if (!VG_(gdbserver_point) (g->kind,
                                  /* insert */ False,
-                                 ag[i]->addr,
-                                 ag[i]->len)) {
+                                 g->addr,
+                                 g->len)) {
          vg_assert (0);
       }
    }
-   VG_(free) (ag);
+
+   VG_(deleteXA) (gs_watches);
+   gs_watches = NULL;
 }
 
-static void invalidate_if_jump_not_yet_gdbserved (Addr addr, char* from)
+static void invalidate_if_jump_not_yet_gdbserved (Addr addr, const HChar* from)
 {
    if (VG_(HT_lookup) (gs_addresses, (UWord)HT_addr(addr)))
       return;
    add_gs_address (addr, GS_jump, from);
 }
 
-static void invalidate_current_ip (ThreadId tid, char *who)
+static void invalidate_current_ip (ThreadId tid, const HChar *who)
 {
    invalidate_if_jump_not_yet_gdbserved (VG_(get_IP) (tid), who);
 }
@@ -553,8 +614,6 @@ static void gdbserver_cleanup_in_child_after_fork(ThreadId me)
       VG_(HT_destruct) (gs_addresses, VG_(free));
       gs_addresses = NULL;
       clear_watched_addresses();
-      VG_(HT_destruct) (gs_watches, VG_(free));
-      gs_watches = NULL;
    } else {
       vg_assert (gs_addresses == NULL);
       vg_assert (gs_watches == NULL);
@@ -586,6 +645,14 @@ static void call_gdbserver ( ThreadId tid , CallReason reason)
         VG_(getpid) (), tid, VG_(name_of_ThreadStatus)(tst->status),
         tst->sched_jmpbuf_valid);
 
+   /* If we are about to die, then just run server_main() once to get
+      the resume reply out and return immediately because most of the state
+      of this tid and process is about to be torn down. */
+   if (reason == exit_reason) {
+      server_main();
+      return;
+   }
+
    vg_assert(VG_(is_valid_tid)(tid));
    saved_pc = VG_(get_IP) (tid);
 
@@ -599,7 +666,10 @@ static void call_gdbserver ( ThreadId tid , CallReason reason)
       vg_assert (gs_addresses == NULL);
       vg_assert (gs_watches == NULL);
       gs_addresses = VG_(HT_construct)( "gdbserved_addresses" );
-      gs_watches = VG_(HT_construct)( "gdbserved_watches" );
+      gs_watches = VG_(newXA)(gs_alloc,
+                              "gdbserved_watches",
+                              gs_free,
+                              sizeof(GS_Watch*));
       VG_(atfork)(NULL, NULL, gdbserver_cleanup_in_child_after_fork);
    }
    vg_assert (gs_addresses != NULL);
@@ -875,6 +945,34 @@ Bool VG_(gdbserver_report_signal) (Int vki_sigNo, ThreadId tid)
    }
 }
 
+void VG_(gdbserver_exit) (ThreadId tid, VgSchedReturnCode tids_schedretcode)
+{
+   dlog(1, "VG core calling VG_(gdbserver_exit) tid %d will exit\n", tid);
+   if (remote_connected()) {
+      /* Make sure vgdb knows we are about to die and why. */
+      switch(tids_schedretcode) {
+      case VgSrc_None:
+         vg_assert (0);
+      case VgSrc_ExitThread:
+      case VgSrc_ExitProcess:
+         gdbserver_process_exit_encountered ('W', VG_(threads)[tid].os_state.exitcode);
+         call_gdbserver (tid, exit_reason);
+         break;
+      case VgSrc_FatalSig:
+         gdbserver_process_exit_encountered ('X', VG_(threads)[tid].os_state.fatalsig);
+         call_gdbserver (tid, exit_reason);
+         break;
+      default:
+         vg_assert(0);
+      }
+   } else {
+      dlog(1, "not connected\n");
+   }
+
+   /* Tear down the connection if it still exists. */
+   VG_(gdbserver) (0);
+}
+
 // Check if single_stepping or if there is a break requested at iaddr. 
 // If yes, call debugger
 VG_REGPARM(1)
@@ -947,7 +1045,7 @@ static void VG_(add_stmt_call_invalidate_if_not_gdbserved)
 {
    
    void*    fn;
-   HChar*   nm;
+   const HChar*   nm;
    IRExpr** args;
    Int      nargs;
    IRDirty* di;
@@ -986,7 +1084,7 @@ static void VG_(add_stmt_call_gdbserver)
       IRSB* irsb)                 /* irsb block to which call is added */
 {
    void*    fn;
-   HChar*   nm;
+   const HChar*   nm;
    IRExpr** args;
    Int      nargs;
    IRDirty* di;
@@ -1029,12 +1127,16 @@ static void VG_(add_stmt_call_gdbserver)
       gdb interactions. */
    
    di->nFxState = 2;
-   di->fxState[0].fx     = Ifx_Read;
-   di->fxState[0].offset = layout->offset_SP;
-   di->fxState[0].size   = layout->sizeof_SP;
-   di->fxState[1].fx     = Ifx_Modify;
-   di->fxState[1].offset = layout->offset_IP;
-   di->fxState[1].size   = layout->sizeof_IP;
+   di->fxState[0].fx        = Ifx_Read;
+   di->fxState[0].offset    = layout->offset_SP;
+   di->fxState[0].size      = layout->sizeof_SP;
+   di->fxState[0].nRepeats  = 0;
+   di->fxState[0].repeatLen = 0;
+   di->fxState[1].fx        = Ifx_Modify;
+   di->fxState[1].offset    = layout->offset_IP;
+   di->fxState[1].size      = layout->sizeof_IP;
+   di->fxState[1].nRepeats  = 0;
+   di->fxState[1].repeatLen = 0;
 
    addStmtToIRSB(irsb, IRStmt_Dirty(di));
 
@@ -1131,7 +1233,7 @@ IRSB* VG_(instrument_for_gdbserver_if_needed)
 }
 
 struct mon_out_buf {
-   char buf[DATASIZ+1];
+   HChar buf[DATASIZ+1];
    int next;
    UInt ret;
 };
@@ -1167,14 +1269,14 @@ UInt VG_(gdb_printf) ( const HChar *format, ... )
    return b.ret;
 }
 
-Int VG_(keyword_id) (Char* keywords, Char* input_word, kwd_report_error report)
+Int VG_(keyword_id) (HChar* keywords, HChar* input_word, kwd_report_error report)
 {
    const Int il = (input_word == NULL ? 0 : VG_(strlen) (input_word));
-   Char  iw[il+1];
-   Char  kwds[VG_(strlen)(keywords)+1];
-   Char  *kwdssaveptr;
+   HChar  iw[il+1];
+   HChar  kwds[VG_(strlen)(keywords)+1];
+   HChar  *kwdssaveptr;
 
-   Char* kw; /* current keyword, its length, its position */
+   HChar* kw; /* current keyword, its length, its position */
    Int   kwl;
    Int   kpos = -1;
 
@@ -1197,7 +1299,7 @@ Int VG_(keyword_id) (Char* keywords, Char* input_word, kwd_report_error report)
       VG_(strcpy) (kwds, keywords);
       if (pass == 1)
          VG_(gdb_printf) ("%s can match", 
-                          (il == 0 ? "<empty string>" : (char *) iw));
+                          (il == 0 ? "<empty string>" : iw));
       for (kw = VG_(strtok_r) (kwds, " ", &kwdssaveptr); 
            kw != NULL; 
            kw = VG_(strtok_r) (NULL, " ", &kwdssaveptr)) {
@@ -1256,7 +1358,7 @@ Int VG_(keyword_id) (Char* keywords, Char* input_word, kwd_report_error report)
 }
 
 /* True if string can be a 0x number */
-static Bool is_zero_x (Char *s)
+static Bool is_zero_x (const HChar *s)
 {
    if (strlen (s) >= 3 && s[0] == '0' && s[1] == 'x')
       return True;
@@ -1265,7 +1367,7 @@ static Bool is_zero_x (Char *s)
 }
 
 /* True if string can be a 0b number */
-static Bool is_zero_b (Char *s)
+static Bool is_zero_b (const HChar *s)
 {
    if (strlen (s) >= 3 && s[0] == '0' && s[1] == 'b')
       return True;
@@ -1275,12 +1377,12 @@ static Bool is_zero_b (Char *s)
 
 void VG_(strtok_get_address_and_size) (Addr* address, 
                                        SizeT* szB, 
-                                       Char **ssaveptr)
+                                       HChar **ssaveptr)
 {
-   Char* wa;
-   Char* ws;
-   Char* endptr;
-   UChar *ppc;
+   HChar* wa;
+   HChar* ws;
+   HChar* endptr;
+   const HChar *ppc;
 
    wa = VG_(strtok_r) (NULL, " ", ssaveptr);
    ppc = wa;
@@ -1297,7 +1399,7 @@ void VG_(strtok_get_address_and_size) (Addr* address,
       *szB = VG_(strtoull16) (ws, &endptr);
    } else if (is_zero_b (ws)) {
       Int j;
-      Char *parsews = ws;
+      HChar *parsews = ws;
       Int n_bits = VG_(strlen) (ws) - 2;
       *szB = 0;
       ws = NULL; // assume the below loop gives a correct nr.
@@ -1329,7 +1431,7 @@ void VG_(gdbserver_status_output)(void)
    const int nr_gdbserved_addresses 
       = (gs_addresses == NULL ? -1 : VG_(HT_count_nodes) (gs_addresses));
    const int nr_watchpoints
-      = (gs_watches == NULL ? -1 : VG_(HT_count_nodes) (gs_watches));
+      = (gs_watches == NULL ? -1 : (int) VG_(sizeXA) (gs_watches));
    remote_utils_output_status();
    VG_(umsg)
       ("nr of calls to gdbserver: %d\n"

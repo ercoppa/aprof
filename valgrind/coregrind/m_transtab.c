@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2011 Julian Seward 
+   Copyright (C) 2000-2012 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -422,7 +422,7 @@ static ULong n_disc_osize = 0;
 /*--- Misc                                                  ---*/
 /*-------------------------------------------------------------*/
 
-static void* ttaux_malloc ( HChar* tag, SizeT n )
+static void* ttaux_malloc ( const HChar* tag, SizeT n )
 {
    return VG_(arena_malloc)(VG_AR_TTAUX, tag, n);
 }
@@ -805,7 +805,7 @@ static void unchain_one ( VexArch vex_arch,
    TTEntry* tte
       = index_tte(ie->from_sNo, ie->from_tteNo);
    UChar* place_to_patch
-      = ((HChar*)tte->tcptr) + ie->from_offs;
+      = ((UChar*)tte->tcptr) + ie->from_offs;
    UChar* disp_cp_chain_me
       = VG_(fnptr_to_fnentry)(
            ie->to_fastEP ? &VG_(disp_cp_chain_me_to_fastEP)
@@ -1815,7 +1815,7 @@ Bool delete_translations_in_sector ( /*MOD*/Sector* sec, UInt secNo,
 
 
 void VG_(discard_translations) ( Addr64 guest_start, ULong range,
-                                 HChar* who )
+                                 const HChar* who )
 {
    Sector* sec;
    Int     sno, ec;

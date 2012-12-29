@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2011 OpenWorks LLP
+   Copyright (C) 2004-2012 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -34,13 +34,14 @@
 */
 
 #include "libvex_basictypes.h"
-#include "libvex_emwarn.h"
+#include "libvex_emnote.h"
 #include "libvex_guest_ppc32.h"
 #include "libvex_guest_ppc64.h"
 #include "libvex_ir.h"
 #include "libvex.h"
 
 #include "main_util.h"
+#include "main_globals.h"
 #include "guest_generic_bb_to_IR.h"
 #include "guest_ppc_defs.h"
 
@@ -187,7 +188,7 @@ void ppc64g_dirtyhelper_LVS ( VexGuestPPC64State* gst,
 
 /* Helper-function specialiser. */
 
-IRExpr* guest_ppc32_spechelper ( HChar* function_name,
+IRExpr* guest_ppc32_spechelper ( const HChar* function_name,
                                  IRExpr** args,
                                  IRStmt** precedingStmts,
                                  Int      n_precedingStmts )
@@ -195,7 +196,7 @@ IRExpr* guest_ppc32_spechelper ( HChar* function_name,
    return NULL;
 }
 
-IRExpr* guest_ppc64_spechelper ( HChar* function_name,
+IRExpr* guest_ppc64_spechelper ( const HChar* function_name,
                                  IRExpr** args,
                                  IRStmt** precedingStmts,
                                  Int      n_precedingStmts )
@@ -495,7 +496,7 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
 
    vex_state->guest_VSCR = 0x0;  // Non-Java mode = 0
 
-   vex_state->guest_EMWARN = EmWarn_NONE;
+   vex_state->guest_EMNOTE = EmNote_NONE;
 
    vex_state->guest_TISTART = 0;
    vex_state->guest_TILEN   = 0;
@@ -659,7 +660,7 @@ void LibVEX_GuestPPC64_initialise ( /*OUT*/VexGuestPPC64State* vex_state )
 
    vex_state->guest_VSCR = 0x0;  // Non-Java mode = 0
 
-   vex_state->guest_EMWARN = EmWarn_NONE;
+   vex_state->guest_EMNOTE = EmNote_NONE;
 
    vex_state->padding = 0;
 
@@ -677,6 +678,8 @@ void LibVEX_GuestPPC64_initialise ( /*OUT*/VexGuestPPC64State* vex_state )
    vex_state->guest_SPRG3_RO = 0;
 
    vex_state->padding2 = 0;
+   vex_state->padding3 = 0;
+   vex_state->padding4 = 0;
 }
 
 
@@ -694,6 +697,8 @@ void LibVEX_GuestPPC64_initialise ( /*OUT*/VexGuestPPC64State* vex_state )
    minimum needed to extract correct stack backtraces from ppc
    code. [[NB: not sure if keeping LR up to date is actually
    necessary.]]
+
+   Only R1 is needed in mode VexRegUpdSpAtMemAccess.   
 */
 Bool guest_ppc32_state_requires_precise_mem_exns ( Int minoff, 
                                                    Int maxoff )
@@ -705,14 +710,16 @@ Bool guest_ppc32_state_requires_precise_mem_exns ( Int minoff,
    Int cia_min = offsetof(VexGuestPPC32State, guest_CIA);
    Int cia_max = cia_min + 4 - 1;
 
-   if (maxoff < lr_min || minoff > lr_max) {
-      /* no overlap with LR */
+   if (maxoff < r1_min || minoff > r1_max) {
+      /* no overlap with R1 */
+      if (vex_control.iropt_register_updates == VexRegUpdSpAtMemAccess)
+         return False; // We only need to check stack pointer.
    } else {
       return True;
    }
 
-   if (maxoff < r1_min || minoff > r1_max) {
-      /* no overlap with R1 */
+   if (maxoff < lr_min || minoff > lr_max) {
+      /* no overlap with LR */
    } else {
       return True;
    }
@@ -742,14 +749,16 @@ Bool guest_ppc64_state_requires_precise_mem_exns ( Int minoff,
    Int cia_min = offsetof(VexGuestPPC64State, guest_CIA);
    Int cia_max = cia_min + 8 - 1;
 
-   if (maxoff < lr_min || minoff > lr_max) {
-      /* no overlap with LR */
+   if (maxoff < r1_min || minoff > r1_max) {
+      /* no overlap with R1 */
+      if (vex_control.iropt_register_updates == VexRegUpdSpAtMemAccess)
+         return False; // We only need to check stack pointer.
    } else {
       return True;
    }
 
-   if (maxoff < r1_min || minoff > r1_max) {
-      /* no overlap with R1 */
+   if (maxoff < lr_min || minoff > lr_max) {
+      /* no overlap with LR */
    } else {
       return True;
    }
@@ -798,7 +807,7 @@ VexGuestLayout
 
           .alwaysDefd 
 	  = { /*  0 */ ALWAYSDEFD32(guest_CIA),
-	      /*  1 */ ALWAYSDEFD32(guest_EMWARN),
+	      /*  1 */ ALWAYSDEFD32(guest_EMNOTE),
 	      /*  2 */ ALWAYSDEFD32(guest_TISTART),
 	      /*  3 */ ALWAYSDEFD32(guest_TILEN),
 	      /*  4 */ ALWAYSDEFD32(guest_VSCR),
@@ -839,7 +848,7 @@ VexGuestLayout
 
           .alwaysDefd 
 	  = { /*  0 */ ALWAYSDEFD64(guest_CIA),
-	      /*  1 */ ALWAYSDEFD64(guest_EMWARN),
+	      /*  1 */ ALWAYSDEFD64(guest_EMNOTE),
 	      /*  2 */ ALWAYSDEFD64(guest_TISTART),
 	      /*  3 */ ALWAYSDEFD64(guest_TILEN),
 	      /*  4 */ ALWAYSDEFD64(guest_VSCR),

@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2011 OpenWorks LLP
+   Copyright (C) 2004-2012 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -798,6 +798,7 @@ Bool compute_PCMPxSTRx ( /*OUT*/V128* resV,
       case 0x00:
       case 0x02: case 0x08: case 0x0A: case 0x0C: case 0x12:
       case 0x1A: case 0x38: case 0x3A: case 0x44: case 0x4A:
+      case 0x46:
          break;
       default:
          return False;
@@ -895,9 +896,6 @@ Bool compute_PCMPxSTRx ( /*OUT*/V128* resV,
       UInt   validL  = ~(zmaskL | -zmaskL);  // not(left(zmaskL))
       UInt   validR  = ~(zmaskR | -zmaskR);  // not(left(zmaskR))
       for (hi = 0; hi < 16; hi++) {
-         if ((validL & (1 << hi)) == 0)
-            // run off the end of the haystack
-            break;
          UInt m = 1;
          for (ni = 0; ni < 16; ni++) {
             if ((validR & (1 << ni)) == 0) break;
@@ -906,6 +904,9 @@ Bool compute_PCMPxSTRx ( /*OUT*/V128* resV,
             if (argL[i] != argR[ni]) { m = 0; break; }
          }
          boolRes |= (m << hi);
+         if ((validL & (1 << hi)) == 0)
+            // run off the end of the haystack
+            break;
       }
 
       // boolRes is "pre-invalidated"
@@ -931,6 +932,46 @@ Bool compute_PCMPxSTRx ( /*OUT*/V128* resV,
       UInt   ri, si;
       UChar* argL    = (UChar*)argLV;
       UChar* argR    = (UChar*)argRV;
+      UInt   boolRes = 0;
+      UInt   validL  = ~(zmaskL | -zmaskL);  // not(left(zmaskL))
+      UInt   validR  = ~(zmaskR | -zmaskR);  // not(left(zmaskR))
+      for (si = 0; si < 16; si++) {
+         if ((validL & (1 << si)) == 0)
+            // run off the end of the string
+            break;
+         UInt m = 0;
+         for (ri = 0; ri < 16; ri += 2) {
+            if ((validR & (3 << ri)) != (3 << ri)) break;
+            if (argR[ri] <= argL[si] && argL[si] <= argR[ri+1]) { 
+               m = 1; break;
+            }
+         }
+         boolRes |= (m << si);
+      }
+
+      // boolRes is "pre-invalidated"
+      UInt intRes1 = boolRes & 0xFFFF;
+
+      // generate I-format output
+      compute_PCMPxSTRx_gen_output(
+         resV, resOSZACP,
+         intRes1, zmaskL, zmaskR, validL, pol, idx, isxSTRM
+      );
+
+      return True;
+   }
+
+   /*----------------------------------------*/
+   /*-- ranges, signed byte data           --*/
+   /*----------------------------------------*/
+
+   if (agg == 1/*ranges*/
+       && fmt == 2/*sb*/) {
+
+      /* argL: string,  argR: range-pairs */
+      UInt   ri, si;
+      Char*  argL    = (Char*)argLV;
+      Char*  argR    = (Char*)argRV;
       UInt   boolRes = 0;
       UInt   validL  = ~(zmaskL | -zmaskL);  // not(left(zmaskL))
       UInt   validR  = ~(zmaskR | -zmaskR);  // not(left(zmaskR))
@@ -1105,9 +1146,6 @@ Bool compute_PCMPxSTRx_wide ( /*OUT*/V128* resV,
       UInt    validL  = ~(zmaskL | -zmaskL);  // not(left(zmaskL))
       UInt    validR  = ~(zmaskR | -zmaskR);  // not(left(zmaskR))
       for (hi = 0; hi < 8; hi++) {
-         if ((validL & (1 << hi)) == 0)
-            // run off the end of the haystack
-            break;
          UInt m = 1;
          for (ni = 0; ni < 8; ni++) {
             if ((validR & (1 << ni)) == 0) break;
@@ -1116,6 +1154,9 @@ Bool compute_PCMPxSTRx_wide ( /*OUT*/V128* resV,
             if (argL[i] != argR[ni]) { m = 0; break; }
          }
          boolRes |= (m << hi);
+         if ((validL & (1 << hi)) == 0)
+            // run off the end of the haystack
+            break;
       }
 
       // boolRes is "pre-invalidated"

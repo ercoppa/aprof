@@ -7,7 +7,7 @@
    This file is part of Ptrcheck, a Valgrind tool for checking pointer
    use in programs.
 
-   Copyright (C) 2003-2011 Nicholas Nethercote
+   Copyright (C) 2003-2012 Nicholas Nethercote
       njn@valgrind.org
 
    This program is free software; you can redistribute it and/or
@@ -49,12 +49,12 @@
    char* VG_REPLACE_FUNCTION_ZU(soname,fnname)( const char* s, int c ); \
    char* VG_REPLACE_FUNCTION_ZU(soname,fnname)( const char* s, int c ) \
    { \
-      UChar  ch   = (UChar)((UInt)c); \
-      UChar* p    = (UChar*)s; \
-      UChar* last = NULL; \
+      HChar ch = (HChar)c;   \
+      const HChar* p = s;       \
+      const HChar* last = NULL; \
       while (True) { \
          if (*p == ch) last = p; \
-         if (*p == 0) return last; \
+         if (*p == 0) return (HChar *)last;     \
          p++; \
       } \
    }
@@ -75,10 +75,10 @@ STRRCHR(VG_Z_DYLD,          rindex)
    char* VG_REPLACE_FUNCTION_ZU(soname,fnname) ( const char* s, int c ); \
    char* VG_REPLACE_FUNCTION_ZU(soname,fnname) ( const char* s, int c ) \
    { \
-      UChar  ch = (UChar)((UInt)c); \
-      UChar* p  = (UChar*)s; \
+      HChar  ch = (HChar)c ; \
+      const HChar* p  = s;   \
       while (True) { \
-         if (*p == ch) return p; \
+         if (*p == ch) return (HChar *)p; \
          if (*p == 0) return NULL; \
          p++; \
       } \
@@ -137,7 +137,7 @@ STRLEN(VG_Z_LD_SO_1,              strlen)
    char* VG_REPLACE_FUNCTION_ZU(soname, fnname) ( char* dst, const char* src ); \
    char* VG_REPLACE_FUNCTION_ZU(soname, fnname) ( char* dst, const char* src ) \
    { \
-      Char* dst_orig = dst; \
+      HChar* dst_orig = dst; \
       \
       while (*src) *dst++ = *src++; \
       *dst = 0; \
@@ -187,17 +187,17 @@ STRNCMP(VG_Z_DYLD,        strncmp)
    int VG_REPLACE_FUNCTION_ZU(soname,fnname) \
           ( const char* s1, const char* s2 ) \
    { \
-      register unsigned char c1; \
-      register unsigned char c2; \
+      register UChar c1; \
+      register UChar c2; \
       while (True) { \
-         c1 = *(unsigned char *)s1; \
-         c2 = *(unsigned char *)s2; \
+         c1 = *(UChar *)s1; \
+         c2 = *(UChar *)s2; \
          if (c1 != c2) break; \
          if (c1 == 0) break; \
          s1++; s2++; \
       } \
-      if ((unsigned char)c1 < (unsigned char)c2) return -1; \
-      if ((unsigned char)c1 > (unsigned char)c2) return 1; \
+      if ((UChar)c1 < (UChar)c2) return -1; \
+      if ((UChar)c1 > (UChar)c2) return 1; \
       return 0; \
    }
 
@@ -229,44 +229,72 @@ MEMCHR(VG_Z_DYLD,        memchr)
 
 #define MEMCPY(soname, fnname) \
    void* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
-            ( void *dst, const void *src, SizeT sz ); \
+            ( void *dst, const void *src, SizeT len ); \
    void* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
-            ( void *dest, const void *src, SizeT sz ) \
+            ( void *dst, const void *src, SizeT len ) \
    { \
-   const UChar*  s  = (const UChar*)src; \
-         UChar*  d  =       (UChar*)dest; \
-   const UWord*  sW = (const UWord*)src; \
-         UWord*  dW =       (UWord*)dest; \
-   const UWord   al = sizeof(UWord)-1; \
-   \
-   if (0 == (((UWord)dW) & al) && 0 == (((UWord)sW) & al)) { \
-      while (sz >= 4 * sizeof(UWord)) { \
-         dW[0] = sW[0]; \
-         dW[1] = sW[1]; \
-         dW[2] = sW[2]; \
-         dW[3] = sW[3]; \
-         sz -= 4 * sizeof(UWord); \
-         dW += 4; \
-         sW += 4; \
+      const Addr WS = sizeof(UWord); /* 8 or 4 */ \
+      const Addr WM = WS - 1;        /* 7 or 3 */ \
+      \
+      if (len > 0) { \
+         if (dst < src) { \
+         \
+            /* Copying backwards. */ \
+            SizeT n = len; \
+            Addr  d = (Addr)dst; \
+            Addr  s = (Addr)src; \
+            \
+            if (((s^d) & WM) == 0) { \
+               /* s and d have same UWord alignment. */ \
+               /* Pull up to a UWord boundary. */ \
+               while ((s & WM) != 0 && n >= 1) \
+                  { *(UChar*)d = *(UChar*)s; s += 1; d += 1; n -= 1; } \
+               /* Copy UWords. */ \
+               while (n >= WS) \
+                  { *(UWord*)d = *(UWord*)s; s += WS; d += WS; n -= WS; } \
+               if (n == 0) \
+                  return dst; \
+            } \
+            if (((s|d) & 1) == 0) { \
+               /* Both are 16-aligned; copy what we can thusly. */ \
+               while (n >= 2) \
+                  { *(UShort*)d = *(UShort*)s; s += 2; d += 2; n -= 2; } \
+            } \
+            /* Copy leftovers, or everything if misaligned. */ \
+            while (n >= 1) \
+               { *(UChar*)d = *(UChar*)s; s += 1; d += 1; n -= 1; } \
+         \
+         } else if (dst > src) { \
+         \
+            SizeT n = len; \
+            Addr  d = ((Addr)dst) + n; \
+            Addr  s = ((Addr)src) + n; \
+            \
+            /* Copying forwards. */ \
+            if (((s^d) & WM) == 0) { \
+               /* s and d have same UWord alignment. */ \
+               /* Back down to a UWord boundary. */ \
+               while ((s & WM) != 0 && n >= 1) \
+                  { s -= 1; d -= 1; *(UChar*)d = *(UChar*)s; n -= 1; } \
+               /* Copy UWords. */ \
+               while (n >= WS) \
+                  { s -= WS; d -= WS; *(UWord*)d = *(UWord*)s; n -= WS; } \
+               if (n == 0) \
+                  return dst; \
+            } \
+            if (((s|d) & 1) == 0) { \
+               /* Both are 16-aligned; copy what we can thusly. */ \
+               while (n >= 2) \
+                  { s -= 2; d -= 2; *(UShort*)d = *(UShort*)s; n -= 2; } \
+            } \
+            /* Copy leftovers, or everything if misaligned. */ \
+            while (n >= 1) \
+               { s -= 1; d -= 1; *(UChar*)d = *(UChar*)s; n -= 1; } \
+            \
+         } \
       } \
-      if (sz == 0) \
-         return dest; \
-      while (sz >= 1 * sizeof(UWord)) { \
-         dW[0] = sW[0]; \
-         sz -= 1 * sizeof(UWord); \
-         dW += 1; \
-         sW += 1; \
-      } \
-      if (sz == 0) \
-         return dest; \
-      s = (const UChar*)sW; \
-      d = (UChar*)dW; \
-   } \
-   \
-   while (sz--) \
-      *d++ = *s++; \
-   \
-   return dest; \
+      \
+      return dst; \
    }
 
 MEMCPY(VG_Z_LIBC_SONAME, memcpy)
@@ -297,13 +325,13 @@ STPCPY(VG_Z_LD_LINUX_X86_64_SO_2, stpcpy)
 
 /* Find the first occurrence of C in S.  */
 #define GLIBC232_RAWMEMCHR(soname, fnname) \
-   char* VG_REPLACE_FUNCTION_ZU(soname,fnname) (const char* s, int c_in); \
-   char* VG_REPLACE_FUNCTION_ZU(soname,fnname) (const char* s, int c_in) \
+   void* VG_REPLACE_FUNCTION_ZU(soname,fnname) (const void* s, int c_in); \
+   void* VG_REPLACE_FUNCTION_ZU(soname,fnname) (const void* s, int c_in) \
    { \
-      unsigned char  c        = (unsigned char) c_in; \
-      unsigned char* char_ptr = (unsigned char *)s; \
+      UChar c = (UChar)c_in; \
+      const UChar* char_ptr = s; \
       while (1) { \
-         if (*char_ptr == c) return char_ptr; \
+        if (*char_ptr == c) return (void *)char_ptr;    \
          char_ptr++; \
       } \
    }
@@ -315,26 +343,26 @@ GLIBC232_RAWMEMCHR(VG_Z_LIBC_SONAME, __GI___rawmemchr)
 
 
 #define STRSTR(soname, fnname) \
-   void* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
-         (void* haystack, void* needle); \
-   void* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
-         (void* haystack, void* needle) \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+         (const char* haystack, const char* needle); \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+         (const char* haystack, const char* needle) \
    { \
-      UChar* h = (UChar*)haystack; \
-      UChar* n = (UChar*)needle; \
+      const HChar* h = haystack; \
+      const HChar* n = needle; \
       \
       /* find the length of n, not including terminating zero */ \
       UWord nlen = 0; \
       while (n[nlen]) nlen++; \
       \
       /* if n is the empty string, match immediately. */ \
-      if (nlen == 0) return h; \
+      if (nlen == 0) return (HChar *)h;                  \
       \
       /* assert(nlen >= 1); */ \
-      UChar n0 = n[0]; \
+      HChar n0 = n[0]; \
       \
       while (1) { \
-         UChar hh = *h; \
+         const HChar hh = *h; \
          if (hh == 0) return NULL; \
          if (hh != n0) { h++; continue; } \
          \
@@ -345,7 +373,7 @@ GLIBC232_RAWMEMCHR(VG_Z_LIBC_SONAME, __GI___rawmemchr)
          } \
          /* assert(i >= 0 && i <= nlen); */ \
          if (i == nlen) \
-            return h; \
+           return (HChar *)h;                   \
          \
          h++; \
       } \
@@ -357,13 +385,13 @@ STRSTR(VG_Z_LIBC_SONAME,          strstr)
 
 
 #define STRPBRK(soname, fnname) \
-   void* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
-         (void* sV, void* acceptV); \
-   void* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
-         (void* sV, void* acceptV) \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+         (const char* sV, const char* acceptV); \
+   char* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
+         (const char* sV, const char* acceptV) \
    { \
-      UChar* s = (UChar*)sV; \
-      UChar* accept = (UChar*)acceptV; \
+      const HChar* s = sV; \
+      const HChar* accept = acceptV; \
       \
       /*  find the length of 'accept', not including terminating zero */ \
       UWord nacc = 0; \
@@ -375,12 +403,12 @@ STRSTR(VG_Z_LIBC_SONAME,          strstr)
       /* assert(nacc >= 1); */ \
       while (1) { \
          UWord i; \
-         UChar sc = *s; \
+         HChar sc = *s; \
          if (sc == 0) \
             break; \
          for (i = 0; i < nacc; i++) { \
             if (sc == accept[i]) \
-               return s; \
+              return (HChar *)s; \
          } \
          s++; \
       } \

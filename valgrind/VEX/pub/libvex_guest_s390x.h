@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright IBM Corp. 2010-2011
+   Copyright IBM Corp. 2010-2012
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -32,7 +32,6 @@
 #define __LIBVEX_PUB_GUEST_S390X_H
 
 #include "libvex_basictypes.h"
-#include "libvex_emwarn.h"
 
 /*------------------------------------------------------------*/
 /*--- Vex's representation of the s390 CPU state.          ---*/
@@ -141,19 +140,19 @@ typedef struct {
       libvex_ir.h */
    /*  408 */  ULong guest_IP_AT_SYSCALL;
 
-   /* Emulation warnings; see comments in libvex_emwarn.h */
-   /*  416 */  UInt guest_EMWARN;
+   /* Emulation notes; see comments in libvex_emnote.h */
+   /*  416 */  UInt guest_EMNOTE;
 
    /* For translation chaining */
    /*  420 */  UInt  host_EvC_COUNTER;
    /*  424 */  ULong host_EvC_FAILADDR;
 
 /*------------------------------------------------------------*/
-/*--- Force alignment to 16 bytes                          ---*/
+/*--- Force alignment to 32 bytes                          ---*/
 /*------------------------------------------------------------*/
-   /* No padding needed */
+   /*  432 */  UChar padding[16];
 
-   /*  432 */  /* This is the size of the guest state */
+   /*  448 */  /* This is the size of the guest state */
 } VexGuestS390XState;
 
 

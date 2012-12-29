@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2011 OpenWorks LLP
+   Copyright (C) 2004-2012 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -61,6 +61,9 @@ typedef    signed long long int   Long;
 
 /* Always 128 bits. */
 typedef  UInt  U128[4];
+
+/* Always 256 bits. */
+typedef  UInt  U256[8];
 
 /* A union for doing 128-bit vector primitives conveniently. */
 typedef
@@ -169,6 +172,10 @@ typedef  unsigned long HWord;
 
 #elif defined(__s390x__)
 #   define VEX_HOST_WORDSIZE 8
+#   define VEX_REGPARM(_n) /* */
+
+#elif defined(__mips__)
+#   define VEX_HOST_WORDSIZE 4
 #   define VEX_REGPARM(_n) /* */
 
 #else

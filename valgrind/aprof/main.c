@@ -98,17 +98,42 @@ static Bool APROF_(do_access)(IRExpr * e) {
 
 #endif
 
+#if 0
+unsigned int inside_strcmp = 0;
+UWord last_addr = 0;
+
+VG_REGPARM(1) void APROF_(IMark_handler)(UWord addr);
+VG_REGPARM(1) void APROF_(IMark_handler)(UWord addr) {
+	
+	DebugInfo * di = VG_(find_DebugInfo)(addr);
+	PtrdiffT offset = di ? VG_(DebugInfo_get_text_bias)(di):0;
+	last_addr = addr - offset;
+	
+	#if 0
+	if (inside_strcmp == 1) {
+		
+		VG_(printf)("Instruction: %#lx\n", addr - offset);
+	
+	}
+	#endif
+}
+#endif
+
 static
 IRSB* APROF_(instrument) (  VgCallbackClosure* closure, 
 					IRSB* sbIn,
 					VexGuestLayout* layout, 
 					VexGuestExtents* vge,
+					VexArchInfo* archinfo_host,
 					IRType gWordTy, IRType hWordTy ) {
 
 	Int        i;
 	IRSB*      sbOut;
 	IRTypeEnv* tyenv = sbIn->tyenv;
 	APROF_(events_used) = 0;
+
+	if (gWordTy != hWordTy) /* We don't currently support this case. */
+		VG_(tool_panic)("host/guest word size mismatch");
 
 	#if MEM_TRACE && IGNORE_REPEAT_ACC
 	APROF_(addr_accessed_size) = INIT_SIZE_ADDR_ACC;
@@ -119,9 +144,6 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
 	#if TRACE_FUNCTION
 	UInt instr_offset = 0;
 	#endif
-
-	if (gWordTy != hWordTy) /* We don't currently support this case. */
-		VG_(tool_panic)("host/guest word size mismatch");
 
 	/* Set up SB */
 	sbOut = deepCopyIRSBExceptStmts(sbIn);
@@ -158,7 +180,7 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
 	#endif
    
 	#if MEM_TRACE && IGNORE_REPEAT_ACC
-	Char * helperNameA;
+	HChar * helperNameA;
 	void * helperAddrA;
 	IRExpr * * argvA;
 	IRDirty * diA;
@@ -190,7 +212,15 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
 			}
 
 			case Ist_IMark: {
-
+				
+				#if 0
+				IRExpr  * imark = mkIRExpr_HWord ( (HWord) (Addr) st->Ist.IMark.addr );
+				diA = unsafeIRDirty_0_N( 1, "IMark",
+								VG_(fnptr_to_fnentry)( &APROF_(IMark_handler) ),
+								mkIRExprVec_1( imark ) );
+				addStmtToIRSB( sbOut, IRStmt_Dirty(diA) );
+				#endif
+				
 				#if TIME == INSTR
 				di = unsafeIRDirty_0_N( 0, "add_one_guest_instr",
 										VG_(fnptr_to_fnentry)( &APROF_(add_one_guest_instr) ), 
@@ -527,6 +557,8 @@ static void APROF_(fini)(Int exitcode) {
 	APROF_(print_alloc)();
 	#endif
 	
+	APROF_(kill_threads)();
+	
 	#if TRACE_FUNCTION 
 	HT_destruct(APROF_(bb_ht));
 	#endif
@@ -541,10 +573,12 @@ static void APROF_(fini)(Int exitcode) {
  * is received wrt shadow stack 
  */
 static void APROF_(signal)(ThreadId tid, Int sigNo, Bool alt_stack) {
+	#if 0
 	AP_ASSERT(0, "There is a signal");
+	#endif
 }
 
-static Bool APROF_(cmd_line)(Char* argv) {
+static Bool APROF_(cmd_line)(const HChar* argv) {
 	
 	int value = 0;
 	
@@ -569,7 +603,7 @@ static void APROF_(print_usage)(void) {
 		"    --merge-report-threads=yes|no  Merge reports of all threads for current process [no]\n"
 		"    --merge-report-runs=yes|no     Merge reports of the current program with reports of previous program runs [no]\n"
 		"                                   reports must be in the current working directory \n"
-		"                                   timestamp (mtime) of the program has to be the same \n"
+//		"                                   timestamp (mtime) of the program has to be the same \n"
 		"                                   this option implies --merge-report-threads=yes \n"
 		#endif
 	);
@@ -596,7 +630,9 @@ static void APROF_(pre_clo_init)(void) {
 											NULL
 										);
 	
-	VG_(needs_client_requests)		(APROF_(client_request));
+	#if !TRACE_FUNCTION
+	VG_(needs_client_requests)		(APROF_(trace_function));
+	#endif
 	
 	VG_(track_start_client_code)	(APROF_(switch_thread));
 	VG_(track_pre_thread_ll_exit)	(APROF_(thread_exit));

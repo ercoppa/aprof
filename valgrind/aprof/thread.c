@@ -105,6 +105,12 @@ static ThreadData * APROF_(thread_start)(ThreadId tid){
 	AP_ASSERT(tdata->root != NULL, "Can't allocate CCT root node");
 	#endif
 
+	#if CCT_GRAPHIC
+	char * n = VG_(calloc)("nome root", 32, 1);
+	n = "ROOT";
+	tdata->root->name = n;
+	#endif
+
 	#if DEBUG_ALLOCATION
 	APROF_(add_alloc)(CCTS);
 	#endif
@@ -125,10 +131,10 @@ static ThreadData * APROF_(thread_start)(ThreadId tid){
 }
 
 void APROF_(thread_exit)(ThreadId tid){
-	
+
 	APROF_(current_TID) = VG_INVALID_THREADID;
 	APROF_(current_tdata) = NULL;
-	
+
 	#if VERBOSE
 	VG_(printf)("Exit thread %d\n", tid);
 	#endif
@@ -185,6 +191,10 @@ void APROF_(thread_exit)(ThreadId tid){
 		
 		fn = HT_Next(fn_ht);
 	}
+	#endif
+	
+	#if TRACE_FUNCTION
+	APROF_(unwind_stack)(tdata);
 	#endif
 	
 	APROF_(generate_report)(tdata, tid);
@@ -248,6 +258,20 @@ void APROF_(switch_thread)(ThreadId tid, ULong blocks_dispatched) {
 	/* restore exit value of the current thread */
 	APROF_(last_exit) = APROF_(current_tdata)->last_exit;
 	#endif
+}
+
+void APROF_(kill_threads)(void) {
+	
+	ThreadData * t = NULL;
+	int i = 0;
+	while (i < VG_N_THREADS) {
+		
+		if (threads[i] != NULL)
+			APROF_(thread_exit)(i+1);
+		
+		i++;
+	}
+	
 }
 
 

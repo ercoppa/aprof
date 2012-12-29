@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2011 OpenWorks LLP
+   Copyright (C) 2004-2012 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -36,6 +36,9 @@
 #ifndef __VEX_GUEST_GENERIC_BB_TO_IR_H
 #define __VEX_GUEST_GENERIC_BB_TO_IR_H
 
+#include "libvex_basictypes.h"
+#include "libvex_ir.h"              // IRJumpKind
+#include "libvex.h"                 // VexArch
 
 /* This defines stuff needed by the guest insn disassemblers.
    It's a bit circular; is imported by

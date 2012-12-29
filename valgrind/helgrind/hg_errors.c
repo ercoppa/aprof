@@ -8,7 +8,7 @@
    This file is part of Helgrind, a Valgrind tool for detecting errors
    in threaded programs.
 
-   Copyright (C) 2007-2011 OpenWorks Ltd
+   Copyright (C) 2007-2012 OpenWorks Ltd
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
@@ -66,7 +66,7 @@ static Word string_table_cmp ( UWord s1, UWord s2 ) {
    return (Word)VG_(strcmp)( (HChar*)s1, (HChar*)s2 );
 }
 
-static HChar* string_table_strdup ( HChar* str ) {
+static HChar* string_table_strdup ( const HChar* str ) {
    HChar* copy = NULL;
    HG_(stats__string_table_queries)++;
    if (!str)
@@ -77,14 +77,14 @@ static HChar* string_table_strdup ( HChar* str ) {
       tl_assert(string_table);
    }
    if (VG_(lookupFM)( string_table,
-                      NULL, (Word*)&copy, (Word)str )) {
+                      NULL, (UWord*)&copy, (UWord)str )) {
       tl_assert(copy);
       if (0) VG_(printf)("string_table_strdup: %p -> %p\n", str, copy );
       return copy;
    } else {
       copy = HG_(strdup)("hg.sts.2", str);
       tl_assert(copy);
-      VG_(addToFM)( string_table, (Word)copy, (Word)copy );
+      VG_(addToFM)( string_table, (UWord)copy, (UWord)copy );
       return copy;
    }
 }
@@ -165,7 +165,7 @@ static Lock* mk_LockP_from_LockN ( Lock* lkn,
                                    HG_(free), lock_unique_cmp );
       tl_assert(map_LockN_to_P);
    }
-   if (!VG_(lookupFM)( map_LockN_to_P, NULL, (Word*)&lkp, (Word)lkn)) {
+   if (!VG_(lookupFM)( map_LockN_to_P, NULL, (UWord*)&lkp, (UWord)lkn)) {
       lkp = HG_(zalloc)( "hg.mLPfLN.2", sizeof(Lock) );
       *lkp = *lkn;
       lkp->admin_next = NULL;
@@ -178,7 +178,7 @@ static Lock* mk_LockP_from_LockN ( Lock* lkn,
       lkp->heldBy = NULL;
       lkp->acquired_at = NULL;
       lkp->hbso = NULL;
-      VG_(addToFM)( map_LockN_to_P, (Word)lkp, (Word)lkp );
+      VG_(addToFM)( map_LockN_to_P, (UWord)lkp, (UWord)lkp );
    }
    tl_assert( HG_(is_sane_LockP)(lkp) );
    return lkp;
@@ -739,7 +739,7 @@ Bool HG_(eq_Error) ( VgRes not_used, Error* e1, Error* e2 )
 /* Do a printf-style operation on either the XML or normal output
    channel, depending on the setting of VG_(clo_xml).
 */
-static void emit_WRK ( HChar* format, va_list vargs )
+static void emit_WRK ( const HChar* format, va_list vargs )
 {
    if (VG_(clo_xml)) {
       VG_(vprintf_xml)(format, vargs);
@@ -747,8 +747,8 @@ static void emit_WRK ( HChar* format, va_list vargs )
       VG_(vmessage)(Vg_UserMsg, format, vargs);
    }
 }
-static void emit ( HChar* format, ... ) PRINTF_CHECK(1, 2);
-static void emit ( HChar* format, ... )
+static void emit ( const HChar* format, ... ) PRINTF_CHECK(1, 2);
+static void emit ( const HChar* format, ... )
 {
    va_list vargs;
    va_start(vargs, format);
@@ -1182,7 +1182,7 @@ void HG_(pp_Error) ( Error* err )
 
    case XE_Race: {
       Addr      err_ga;
-      HChar*    what;
+      const HChar* what;
       Int       szB;
       what      = xe->XE.Race.isWrite ? "write" : "read";
       szB       = xe->XE.Race.szB;
@@ -1333,7 +1333,7 @@ void HG_(pp_Error) ( Error* err )
    } /* switch (VG_(get_error_kind)(err)) */
 }
 
-Char* HG_(get_error_name) ( Error* err )
+const HChar* HG_(get_error_name) ( Error* err )
 {
    switch (VG_(get_error_kind)(err)) {
       case XE_Race:           return "Race";
@@ -1347,7 +1347,7 @@ Char* HG_(get_error_name) ( Error* err )
    }
 }
 
-Bool HG_(recognised_suppression) ( Char* name, Supp *su )
+Bool HG_(recognised_suppression) ( const HChar* name, Supp *su )
 {
 #  define TRY(_name,_xskind)                   \
       if (0 == VG_(strcmp)(name, (_name))) {   \
@@ -1366,7 +1366,7 @@ Bool HG_(recognised_suppression) ( Char* name, Supp *su )
 #  undef TRY
 }
 
-Bool HG_(read_extra_suppression_info) ( Int fd, Char** bufpp, SizeT* nBufp,
+Bool HG_(read_extra_suppression_info) ( Int fd, HChar** bufpp, SizeT* nBufp,
                                         Supp* su )
 {
    /* do nothing -- no extra suppression info present.  Return True to
@@ -1390,7 +1390,7 @@ Bool HG_(error_matches_suppression) ( Error* err, Supp* su )
 }
 
 Bool HG_(get_extra_suppression_info) ( Error* err,
-                                       /*OUT*/Char* buf, Int nBuf )
+                                       /*OUT*/HChar* buf, Int nBuf )
 {
    /* Do nothing */
    return False;

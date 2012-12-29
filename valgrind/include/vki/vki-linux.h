@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2011 Julian Seward 
+   Copyright (C) 2000-2012 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -91,6 +91,8 @@
 #  include "vki-posixtypes-arm-linux.h"
 #elif defined(VGA_s390x)
 #  include "vki-posixtypes-s390x-linux.h"
+#elif defined(VGA_mips32)
+#  include "vki-posixtypes-mips32-linux.h"
 #else
 #  error Unknown platform
 #endif
@@ -211,6 +213,8 @@ typedef unsigned int	        vki_uint;
 #  include "vki-arm-linux.h"
 #elif defined(VGA_s390x)
 #  include "vki-s390x-linux.h"
+#elif defined(VGA_mips32)
+#  include "vki-mips32-linux.h"
 #else
 #  error Unknown platform
 #endif
@@ -220,11 +224,13 @@ typedef unsigned int	        vki_uint;
 //----------------------------------------------------------------------
 
 typedef		__vki_s32	vki_int32_t;
+typedef		__vki_s16	vki_int16_t;
 typedef		__vki_s64	vki_int64_t;
 
 typedef		__vki_u8	vki_uint8_t;
 typedef		__vki_u16	vki_uint16_t;
 typedef		__vki_u32	vki_uint32_t;
+typedef		__vki_u64	vki_uint64_t;
 
 typedef		__vki_u16	__vki_le16;
 
@@ -383,6 +389,8 @@ struct vki_sched_param {
 // From linux-2.6.8.1/include/asm-generic/siginfo.h
 //----------------------------------------------------------------------
 
+// Some archs, such as MIPS, have non-standard vki_siginfo.
+#ifndef HAVE_ARCH_SIGINFO_T
 typedef union vki_sigval {
 	int sival_int;
 	void __user *sival_ptr;
@@ -462,6 +470,7 @@ typedef struct vki_siginfo {
 		} _sigpoll;
 	} _sifields;
 } vki_siginfo_t;
+#endif
 
 #define __VKI_SI_FAULT	0
 
@@ -1615,6 +1624,8 @@ typedef struct {
 #define VKI_SIOCGIFMAP		0x8970	/* Get device parameters	*/
 #define VKI_SIOCSIFMAP		0x8971	/* Set device parameters	*/
 
+#define VKI_SIOCSHWTSTAMP	0x89B0	/* Set hardware time stamping */
+
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/ppdev.h
 //----------------------------------------------------------------------
@@ -1700,6 +1711,7 @@ struct vki_ppdev_frob_struct {
 #define VKI_BLKBSZGET  _VKI_IOR(0x12,112,vki_size_t)
 #define VKI_BLKBSZSET  _VKI_IOW(0x12,113,vki_size_t)
 #define VKI_BLKGETSIZE64 _VKI_IOR(0x12,114,vki_size_t) /* return device size in bytes (u64 *arg) */
+#define VKI_BLKPBSZGET _VKI_IO(0x12,123)
 
 #define VKI_FIBMAP	_VKI_IO(0x00,1)	/* bmap access */
 #define VKI_FIGETBSZ    _VKI_IO(0x00,2)	/* get the block size used for bmap */
@@ -1783,29 +1795,30 @@ struct vki_scsi_idlun {
 // From linux-2.6.8.1/include/linux/cdrom.h
 //----------------------------------------------------------------------
 
-#define VKI_CDROMPLAYMSF	0x5303 /* Play Audio MSF (struct cdrom_msf) */
-#define VKI_CDROMREADTOCHDR	0x5305 /* Read TOC header 
-                                           (struct cdrom_tochdr) */
-#define VKI_CDROMREADTOCENTRY	0x5306 /* Read TOC entry 
-                                           (struct cdrom_tocentry) */
-#define VKI_CDROMSUBCHNL	0x530b /* Read subchannel data 
-                                           (struct cdrom_subchnl) */
-#define VKI_CDROMREADMODE2	0x530c /* Read CDROM mode 2 data (2336 Bytes) 
-                                           (struct cdrom_read) */
-#define VKI_CDROMREADAUDIO	0x530e /* (struct cdrom_read_audio) */
-#define VKI_CDROMMULTISESSION	0x5310 /* Obtain the start-of-last-session 
-                                           address of multi session disks 
-                                           (struct cdrom_multisession) */
-#define VKI_CDROM_GET_MCN	0x5311 /* Obtain the "Universal Product Code" 
-                                           if available (struct cdrom_mcn) */
-#define VKI_CDROMVOLREAD	0x5313 /* Get the drive's volume setting
-                                          (struct cdrom_volctrl) */
-#define VKI_CDROMREADRAW	0x5314	/* read data in raw mode (2352 Bytes)
-                                           (struct cdrom_read) */
-#define VKI_CDROM_CLEAR_OPTIONS	0x5321  /* Clear behavior options */
-#define VKI_CDROM_DRIVE_STATUS	0x5326  /* Get tray position, etc. */
+#define VKI_CDROMPLAYMSF		0x5303 /* Play Audio MSF (struct cdrom_msf) */
+#define VKI_CDROMREADTOCHDR		0x5305 /* Read TOC header 
+                                	           (struct cdrom_tochdr) */
+#define VKI_CDROMREADTOCENTRY		0x5306 /* Read TOC entry 
+                                	           (struct cdrom_tocentry) */
+#define VKI_CDROMSUBCHNL		0x530b /* Read subchannel data 
+                                	           (struct cdrom_subchnl) */
+#define VKI_CDROMREADMODE2		0x530c /* Read CDROM mode 2 data (2336 Bytes) 
+                                	           (struct cdrom_read) */
+#define VKI_CDROMREADAUDIO		0x530e /* (struct cdrom_read_audio) */
+#define VKI_CDROMMULTISESSION		0x5310 /* Obtain the start-of-last-session 
+                                	           address of multi session disks 
+                                	           (struct cdrom_multisession) */
+#define VKI_CDROM_GET_MCN		0x5311 /* Obtain the "Universal Product Code" 
+                                	           if available (struct cdrom_mcn) */
+#define VKI_CDROMVOLREAD		0x5313 /* Get the drive's volume setting
+                                	          (struct cdrom_volctrl) */
+#define VKI_CDROMREADRAW		0x5314	/* read data in raw mode (2352 Bytes)
+                                	           (struct cdrom_read) */
+#define VKI_CDROM_CLEAR_OPTIONS		0x5321  /* Clear behavior options */
+#define VKI_CDROM_DRIVE_STATUS		0x5326  /* Get tray position, etc. */
+#define VKI_CDROM_GET_CAPABILITY	0x5331	/* get capabilities */
 
-#define VKI_CDROM_SEND_PACKET	0x5393	/* send a packet to the drive */
+#define VKI_CDROM_SEND_PACKET		0x5393	/* send a packet to the drive */
 
 struct vki_cdrom_msf0		
 {
@@ -2239,6 +2252,8 @@ typedef __vki_kernel_uid32_t vki_qid_t; /* Type in which we store ids in memory 
 #define VKI_PTRACE_GETEVENTMSG	0x4201
 #define VKI_PTRACE_GETSIGINFO	0x4202
 #define VKI_PTRACE_SETSIGINFO	0x4203
+#define VKI_PTRACE_GETREGSET	0x4204
+#define VKI_PTRACE_SETREGSET	0x4205
 
 //----------------------------------------------------------------------
 // From linux-2.6.14/include/sound/asound.h
@@ -2834,7 +2849,7 @@ struct vki_getcpu_cache {
 // From kernel/common/include/linux/ashmem.h
 //----------------------------------------------------------------------
 
-#if defined(VGPV_arm_linux_android)
+#if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
 
 #define VKI_ASHMEM_NAME_LEN 256
 
@@ -2889,7 +2904,7 @@ struct vki_binder_version {
 #define VKI_BINDER_THREAD_EXIT _VKI_IOW('b', 8, int)
 #define VKI_BINDER_VERSION _VKI_IOWR('b', 9, struct vki_binder_version)
 
-#endif /* defined(VGPV_arm_linux_android) */
+#endif /* defined(VGPV_*_linux_android) */
 
 //----------------------------------------------------------------------
 // From linux-3.0.4/include/net/bluetooth/bluetooth.h
@@ -2945,6 +2960,103 @@ struct vki_hci_inquiry_req {
    __vki_u8  length;
    __vki_u8  num_rsp;
 };
+
+//----------------------------------------------------------------------
+// From linux-3.4/include/linux/kvm.h
+//----------------------------------------------------------------------
+#define KVMIO 0xAE
+
+#define VKI_KVM_GET_API_VERSION       _VKI_IO(KVMIO,   0x00)
+#define VKI_KVM_CREATE_VM             _VKI_IO(KVMIO,   0x01) /* returns a VM fd */
+#define VKI_KVM_CHECK_EXTENSION       _VKI_IO(KVMIO,   0x03)
+#define VKI_KVM_GET_VCPU_MMAP_SIZE    _VKI_IO(KVMIO,   0x04) /* in bytes */
+#define VKI_KVM_S390_ENABLE_SIE       _VKI_IO(KVMIO,   0x06)
+#define VKI_KVM_CREATE_VCPU           _VKI_IO(KVMIO,   0x41)
+#define VKI_KVM_SET_NR_MMU_PAGES      _VKI_IO(KVMIO,   0x44)
+#define VKI_KVM_GET_NR_MMU_PAGES      _VKI_IO(KVMIO,   0x45)
+#define VKI_KVM_SET_TSS_ADDR          _VKI_IO(KVMIO,   0x47)
+#define VKI_KVM_CREATE_IRQCHIP        _VKI_IO(KVMIO,   0x60)
+#define VKI_KVM_CREATE_PIT            _VKI_IO(KVMIO,   0x64)
+#define VKI_KVM_REINJECT_CONTROL      _VKI_IO(KVMIO,   0x71)
+#define VKI_KVM_SET_BOOT_CPU_ID       _VKI_IO(KVMIO,   0x78)
+#define VKI_KVM_SET_TSC_KHZ           _VKI_IO(KVMIO,  0xa2)
+#define VKI_KVM_GET_TSC_KHZ           _VKI_IO(KVMIO,  0xa3)
+#define VKI_KVM_RUN                   _VKI_IO(KVMIO,   0x80)
+#define VKI_KVM_S390_INITIAL_RESET    _VKI_IO(KVMIO,   0x97)
+#define VKI_KVM_NMI                   _VKI_IO(KVMIO,   0x9a)
+
+//----------------------------------------------------------------------
+// From linux-2.6/include/linux/net_stamp.h
+//----------------------------------------------------------------------
+
+struct vki_hwtstamp_config {
+	int flags;
+	int tx_type;
+	int rx_filter;
+};
+
+//----------------------------------------------------------------------
+// From linux-2.6.12-rc2/include/linux/uinput.h
+//----------------------------------------------------------------------
+
+#define VKI_UINPUT_IOCTL_BASE       'U'
+#define VKI_UI_DEV_CREATE		_VKI_IO(VKI_UINPUT_IOCTL_BASE, 1)
+#define VKI_UI_DEV_DESTROY		_VKI_IO(VKI_UINPUT_IOCTL_BASE, 2)
+
+#define VKI_UI_SET_EVBIT		_VKI_IOW(VKI_UINPUT_IOCTL_BASE, 100, int)
+#define VKI_UI_SET_KEYBIT		_VKI_IOW(VKI_UINPUT_IOCTL_BASE, 101, int)
+#define VKI_UI_SET_RELBIT		_VKI_IOW(VKI_UINPUT_IOCTL_BASE, 102, int)
+#define VKI_UI_SET_ABSBIT		_VKI_IOW(VKI_UINPUT_IOCTL_BASE, 103, int)
+#define VKI_UI_SET_MSCBIT		_VKI_IOW(VKI_UINPUT_IOCTL_BASE, 104, int)
+#define VKI_UI_SET_LEDBIT		_VKI_IOW(VKI_UINPUT_IOCTL_BASE, 105, int)
+#define VKI_UI_SET_SNDBIT		_VKI_IOW(VKI_UINPUT_IOCTL_BASE, 106, int)
+#define VKI_UI_SET_FFBIT		_VKI_IOW(VKI_UINPUT_IOCTL_BASE, 107, int)
+#define VKI_UI_SET_SWBIT		_VKI_IOW(VKI_UINPUT_IOCTL_BASE, 109, int)
+#define VKI_UI_SET_PROPBIT		_VKI_IOW(VKI_UINPUT_IOCTL_BASE, 110, int)
+
+//----------------------------------------------------------------------
+// Xen privcmd IOCTL
+//----------------------------------------------------------------------
+
+typedef unsigned long __vki_xen_pfn_t;
+
+struct vki_xen_privcmd_hypercall {
+       __vki_u64 op;
+       __vki_u64 arg[5];
+};
+
+struct vki_xen_privcmd_mmap_entry {
+        __vki_u64 va;
+        __vki_u64 mfn;
+        __vki_u64 npages;
+};
+
+struct vki_xen_privcmd_mmap {
+        int num;
+        __vki_u16 dom; /* target domain */
+        struct vki_xen_privcmd_mmap_entry *entry;
+};
+
+struct vki_xen_privcmd_mmapbatch {
+        int num;     /* number of pages to populate */
+        __vki_u16 dom; /* target domain */
+        __vki_u64 addr;  /* virtual address */
+        __vki_xen_pfn_t *arr; /* array of mfns - top nibble set on err */
+};
+
+struct vki_xen_privcmd_mmapbatch_v2 {
+        unsigned int num; /* number of pages to populate */
+        __vki_u16 dom;      /* target domain */
+        __vki_u64 addr;       /* virtual address */
+        const __vki_xen_pfn_t *arr; /* array of mfns */
+        int __user *err;  /* array of error codes */
+};
+
+#define VKI_XEN_IOCTL_PRIVCMD_HYPERCALL    _VKI_IOC(_VKI_IOC_NONE, 'P', 0, sizeof(struct vki_xen_privcmd_hypercall))
+#define VKI_XEN_IOCTL_PRIVCMD_MMAP         _VKI_IOC(_VKI_IOC_NONE, 'P', 2, sizeof(struct vki_xen_privcmd_mmap))
+
+#define VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH    _VKI_IOC(_VKI_IOC_NONE, 'P', 3, sizeof(struct vki_xen_privcmd_mmapbatch))
+#define VKI_XEN_IOCTL_PRIVCMD_MMAPBATCH_V2 _VKI_IOC(_VKI_IOC_NONE, 'P', 4, sizeof(struct vki_xen_privcmd_mmapbatch_v2))
 
 #endif // __VKI_LINUX_H
 

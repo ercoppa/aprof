@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2011 Julian Seward
+   Copyright (C) 2000-2012 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -78,7 +78,7 @@ extern Bool VG_(search_transtab) ( /*OUT*/AddrH* res_hcode,
                                    Bool          upd_cache );
 
 extern void VG_(discard_translations) ( Addr64 start, ULong range,
-                                        HChar* who );
+                                        const HChar* who );
 
 extern void VG_(print_tt_tc_stats) ( void );
 

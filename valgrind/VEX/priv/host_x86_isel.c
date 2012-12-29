@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2011 OpenWorks LLP
+   Copyright (C) 2004-2012 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -789,14 +789,15 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 
    /* --------- TERNARY OP --------- */
    case Iex_Triop: {
+      IRTriop *triop = e->Iex.Triop.details;
       /* C3210 flags following FPU partial remainder (fprem), both
          IEEE compliant (PREM1) and non-IEEE compliant (PREM). */
-      if (e->Iex.Triop.op == Iop_PRemC3210F64
-          || e->Iex.Triop.op == Iop_PRem1C3210F64) {
+      if (triop->op == Iop_PRemC3210F64
+          || triop->op == Iop_PRem1C3210F64) {
          HReg junk = newVRegF(env);
          HReg dst  = newVRegI(env);
-         HReg srcL = iselDblExpr(env, e->Iex.Triop.arg2);
-         HReg srcR = iselDblExpr(env, e->Iex.Triop.arg3);
+         HReg srcL = iselDblExpr(env, triop->arg2);
+         HReg srcR = iselDblExpr(env, triop->arg3);
          /* XXXROUNDINGFIXME */
          /* set roundingmode here */
          addInstr(env, X86Instr_FpBinary(
@@ -1291,6 +1292,23 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_32to16:
             /* These are no-ops. */
             return iselIntExpr_R(env, e->Iex.Unop.arg);
+
+         case Iop_GetMSBs8x8: {
+            /* Note: the following assumes the helper is of
+               signature
+                  UInt fn ( ULong ), and is not a regparm fn.
+            */
+            HReg  xLo, xHi;
+            HReg  dst = newVRegI(env);
+            HWord fn = (HWord)h_generic_calc_GetMSBs8x8;
+            iselInt64Expr(&xHi, &xLo, env, e->Iex.Unop.arg);
+            addInstr(env, X86Instr_Push(X86RMI_Reg(xHi)));
+            addInstr(env, X86Instr_Push(X86RMI_Reg(xLo)));
+            addInstr(env, X86Instr_Call( Xcc_ALWAYS, (UInt)fn, 0 ));
+            add_to_esp(env, 2*4);
+            addInstr(env, mk_iMOVsd_RR(hregX86_EAX(), dst));
+            return dst;
+         }
 
          default: 
             break;
@@ -1839,7 +1857,8 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
        && (e->Iex.Binop.op == Iop_CmpEQ16
            || e->Iex.Binop.op == Iop_CmpNE16
            || e->Iex.Binop.op == Iop_CasCmpEQ16
-           || e->Iex.Binop.op == Iop_CasCmpNE16)) {
+           || e->Iex.Binop.op == Iop_CasCmpNE16
+           || e->Iex.Binop.op == Iop_ExpCmpNE16)) {
       HReg    r1   = iselIntExpr_R(env, e->Iex.Binop.arg1);
       X86RMI* rmi2 = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
       HReg    r    = newVRegI(env);
@@ -1847,9 +1866,12 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       addInstr(env, X86Instr_Alu32R(Xalu_XOR,rmi2,r));
       addInstr(env, X86Instr_Test32(0xFFFF,X86RM_Reg(r)));
       switch (e->Iex.Binop.op) {
-         case Iop_CmpEQ16: case Iop_CasCmpEQ16: return Xcc_Z;
-         case Iop_CmpNE16: case Iop_CasCmpNE16: return Xcc_NZ;
-         default: vpanic("iselCondCode(x86): CmpXX16");
+         case Iop_CmpEQ16: case Iop_CasCmpEQ16:
+            return Xcc_Z;
+         case Iop_CmpNE16: case Iop_CasCmpNE16: case Iop_ExpCmpNE16:
+            return Xcc_NZ;
+         default:
+            vpanic("iselCondCode(x86): CmpXX16");
       }
    }
 
@@ -1881,13 +1903,15 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
            || e->Iex.Binop.op == Iop_CmpLE32S
            || e->Iex.Binop.op == Iop_CmpLE32U
            || e->Iex.Binop.op == Iop_CasCmpEQ32
-           || e->Iex.Binop.op == Iop_CasCmpNE32)) {
+           || e->Iex.Binop.op == Iop_CasCmpNE32
+           || e->Iex.Binop.op == Iop_ExpCmpNE32)) {
       HReg    r1   = iselIntExpr_R(env, e->Iex.Binop.arg1);
       X86RMI* rmi2 = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
       addInstr(env, X86Instr_Alu32R(Xalu_CMP,rmi2,r1));
       switch (e->Iex.Binop.op) {
          case Iop_CmpEQ32: case Iop_CasCmpEQ32: return Xcc_Z;
-         case Iop_CmpNE32: case Iop_CasCmpNE32: return Xcc_NZ;
+         case Iop_CmpNE32:
+         case Iop_CasCmpNE32: case Iop_ExpCmpNE32: return Xcc_NZ;
          case Iop_CmpLT32S: return Xcc_L;
          case Iop_CmpLT32U: return Xcc_B;
          case Iop_CmpLE32S: return Xcc_LE;
@@ -2958,7 +2982,8 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
 
    if (e->tag == Iex_Triop) {
       X86FpOp fpop = Xfp_INVALID;
-      switch (e->Iex.Triop.op) {
+      IRTriop *triop = e->Iex.Triop.details;
+      switch (triop->op) {
          case Iop_AddF64:    fpop = Xfp_ADD; break;
          case Iop_SubF64:    fpop = Xfp_SUB; break;
          case Iop_MulF64:    fpop = Xfp_MUL; break;
@@ -2973,8 +2998,8 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       }
       if (fpop != Xfp_INVALID) {
          HReg res  = newVRegF(env);
-         HReg srcL = iselDblExpr(env, e->Iex.Triop.arg2);
-         HReg srcR = iselDblExpr(env, e->Iex.Triop.arg3);
+         HReg srcL = iselDblExpr(env, triop->arg2);
+         HReg srcR = iselDblExpr(env, triop->arg3);
          /* XXXROUNDINGFIXME */
          /* set roundingmode here */
          addInstr(env, X86Instr_FpBinary(fpop,srcL,srcR,res));
@@ -3830,31 +3855,33 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
    /* --------- Indexed PUT --------- */
    case Ist_PutI: {
+      IRPutI *puti = stmt->Ist.PutI.details;
+
       X86AMode* am 
          = genGuestArrayOffset(
-              env, stmt->Ist.PutI.descr, 
-                   stmt->Ist.PutI.ix, stmt->Ist.PutI.bias );
+              env, puti->descr, 
+                   puti->ix, puti->bias );
 
-      IRType ty = typeOfIRExpr(env->type_env, stmt->Ist.PutI.data);
+      IRType ty = typeOfIRExpr(env->type_env, puti->data);
       if (ty == Ity_F64) {
-         HReg val = iselDblExpr(env, stmt->Ist.PutI.data);
+         HReg val = iselDblExpr(env, puti->data);
          addInstr(env, X86Instr_FpLdSt( False/*store*/, 8, val, am ));
          return;
       }
       if (ty == Ity_I8) {
-         HReg r = iselIntExpr_R(env, stmt->Ist.PutI.data);
+         HReg r = iselIntExpr_R(env, puti->data);
          addInstr(env, X86Instr_Store( 1, r, am ));
          return;
       }
       if (ty == Ity_I32) {
-         HReg r = iselIntExpr_R(env, stmt->Ist.PutI.data);
+         HReg r = iselIntExpr_R(env, puti->data);
          addInstr(env, X86Instr_Alu32M( Xalu_MOV, X86RI_Reg(r), am ));
          return;
       }
       if (ty == Ity_I64) {
          HReg rHi, rLo;
          X86AMode* am4 = advance4(am);
-         iselInt64Expr(&rHi, &rLo, env, stmt->Ist.PutI.data);
+         iselInt64Expr(&rHi, &rLo, env, puti->data);
          addInstr(env, X86Instr_Alu32M( Xalu_MOV, X86RI_Reg(rLo), am ));
          addInstr(env, X86Instr_Alu32M( Xalu_MOV, X86RI_Reg(rHi), am4 ));
          return;

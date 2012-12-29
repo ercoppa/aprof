@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2011 OpenWorks LLP
+   Copyright (C) 2004-2012 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -93,6 +93,7 @@
       7C421378 (or 2,2,2)   %R3 = guest_NRADDR
       7C631B78 (or 3,3,3)   branch-and-link-to-noredir %R11
       7C842378 (or 4,4,4)   %R3 = guest_NRADDR_GPR2
+      7CA52B78 (or 5,5,5)   IR injection
 
    Any other bytes following the 16-byte preamble are illegal and
    constitute a failure in instruction decoding.  This all assumes
@@ -127,6 +128,7 @@
 #include "libvex_basictypes.h"
 #include "libvex_ir.h"
 #include "libvex.h"
+#include "libvex_emnote.h"
 #include "libvex_guest_ppc32.h"
 #include "libvex_guest_ppc64.h"
 
@@ -225,7 +227,7 @@ static void* fnptr_to_fnentry( VexAbiInfo* vbi, void* f )
 #define OFFB_DFPROUND    offsetofPPCGuestState(guest_DFPROUND)
 #define OFFB_VRSAVE      offsetofPPCGuestState(guest_VRSAVE)
 #define OFFB_VSCR        offsetofPPCGuestState(guest_VSCR)
-#define OFFB_EMWARN      offsetofPPCGuestState(guest_EMWARN)
+#define OFFB_EMNOTE      offsetofPPCGuestState(guest_EMNOTE)
 #define OFFB_TISTART     offsetofPPCGuestState(guest_TISTART)
 #define OFFB_TILEN       offsetofPPCGuestState(guest_TILEN)
 #define OFFB_NRADDR      offsetofPPCGuestState(guest_NRADDR)
@@ -1337,9 +1339,9 @@ static Int guestCR0offset ( UInt cr )
 /* Generate an IR sequence to do a popcount operation on the supplied
    IRTemp, and return a new IRTemp holding the result.  'ty' may be
    Ity_I32 or Ity_I64 only. */
-static IRTemp gen_POPCOUNT ( IRType ty, IRTemp src )
+static IRTemp gen_POPCOUNT ( IRType ty, IRTemp src, Bool byte_count )
 {
-   Int i, shift[6];
+   Int i, shift[6], max;
    IRTemp mask[6];
    IRTemp old = IRTemp_INVALID;
    IRTemp nyu = IRTemp_INVALID;
@@ -1347,6 +1349,14 @@ static IRTemp gen_POPCOUNT ( IRType ty, IRTemp src )
    vassert(ty == Ity_I64 || ty == Ity_I32);
 
    if (ty == Ity_I32) {
+      if (byte_count)
+         /* Return the population count across each byte not across the entire
+          * 32-bit value.  Stop after third iteration.
+          */
+         max = 3;
+      else
+         max = 5;
+
       for (i = 0; i < 5; i++) {
          mask[i]  = newTemp(ty);
          shift[i] = 1 << i;
@@ -1357,7 +1367,7 @@ static IRTemp gen_POPCOUNT ( IRType ty, IRTemp src )
       assign(mask[3], mkU32(0x00FF00FF));
       assign(mask[4], mkU32(0x0000FFFF));
       old = src;
-      for (i = 0; i < 5; i++) {
+      for (i = 0; i < max; i++) {
          nyu = newTemp(ty);
          assign(nyu,
                 binop(Iop_Add32,
@@ -1372,6 +1382,14 @@ static IRTemp gen_POPCOUNT ( IRType ty, IRTemp src )
       return nyu;
    }
 // else, ty == Ity_I64
+   if (byte_count)
+      /* Return the population count across each byte not across the entire
+       * 64-bit value.  Stop after third iteration.
+       */
+      max = 3;
+   else
+      max = 6;
+
    for (i = 0; i < 6; i++) {
       mask[i] = newTemp( Ity_I64 );
       shift[i] = 1 << i;
@@ -1383,7 +1401,7 @@ static IRTemp gen_POPCOUNT ( IRType ty, IRTemp src )
    assign( mask[4], mkU64( 0x0000FFFF0000FFFFULL ) );
    assign( mask[5], mkU64( 0x00000000FFFFFFFFULL ) );
    old = src;
-   for (i = 0; i < 6; i++) {
+   for (i = 0; i < max; i++) {
       nyu = newTemp( Ity_I64 );
       assign( nyu,
               binop( Iop_Add64,
@@ -2637,7 +2655,7 @@ static void putGST ( PPC_GST reg, IRExpr* src )
       
    case PPC_GST_EMWARN:
       vassert( ty_src == Ity_I32 );
-      stmt( IRStmt_Put( OFFB_EMWARN,src) );
+      stmt( IRStmt_Put( OFFB_EMNOTE,src) );
       break;
       
    case PPC_GST_TISTART: 
@@ -2683,12 +2701,12 @@ static void putGST_masked ( PPC_GST reg, IRExpr* src, ULong mask )
                                                  >> 32 ) ) ) ) );
       }
 
-      /* Give EmWarn for attempted writes to:
+      /* Give EmNote for attempted writes to:
          - Exception Controls
          - Non-IEEE Mode
       */
       if (mask & 0xFC) {  // Exception Control, Non-IEE mode
-         VexEmWarn ew = EmWarn_PPCexns;
+         VexEmNote ew = EmWarn_PPCexns;
 
          /* If any of the src::exception_control bits are actually set,
             side-exit to the next insn, reporting the warning,
@@ -2696,7 +2714,7 @@ static void putGST_masked ( PPC_GST reg, IRExpr* src, ULong mask )
          putGST( PPC_GST_EMWARN, mkU32(ew) );
          stmt( 
             IRStmt_Exit(
-               binop(Iop_CmpNE32, mkU32(ew), mkU32(EmWarn_NONE)),
+               binop(Iop_CmpNE32, mkU32(ew), mkU32(EmNote_NONE)),
                Ijk_EmWarn,
                mkSzConst( ty, nextInsnAddr()), OFFB_CIA ));
       }
@@ -3984,7 +4002,7 @@ static Bool dis_int_logic ( UInt theInstr )
       case 0x1FA: // popcntd (population count doubleword
       {
     	  DIP("popcntd r%u,r%u\n", rA_addr, rS_addr);
-        IRTemp result = gen_POPCOUNT(ty, rS);
+    	  IRTemp result = gen_POPCOUNT(ty, rS, False);
     	  putIReg( rA_addr, mkexpr(result) );
     	  return True;
       }
@@ -3997,11 +4015,31 @@ static Bool dis_int_logic ( UInt theInstr )
             IRTemp argHi = newTemp(Ity_I32);
             assign(argLo, unop(Iop_64to32, mkexpr(rS)));
             assign(argHi, unop(Iop_64HIto32, mkexpr(rS)));
-            resultLo = gen_POPCOUNT(Ity_I32, argLo);
-            resultHi = gen_POPCOUNT(Ity_I32, argHi);
+            resultLo = gen_POPCOUNT(Ity_I32, argLo, False);
+            resultHi = gen_POPCOUNT(Ity_I32, argHi, False);
             putIReg( rA_addr, binop(Iop_32HLto64, mkexpr(resultHi), mkexpr(resultLo)));
          } else {
-            IRTemp result = gen_POPCOUNT(ty, rS);
+            IRTemp result = gen_POPCOUNT(ty, rS, False);
+            putIReg( rA_addr, mkexpr(result) );
+         }
+         return True;
+      }
+      case 0x7A: // popcntb (Population Count Byte)
+      {
+         DIP("popcntb r%u,r%u\n", rA_addr, rS_addr);
+
+         if (mode64) {
+            IRTemp resultHi, resultLo;
+            IRTemp argLo = newTemp(Ity_I32);
+            IRTemp argHi = newTemp(Ity_I32);
+            assign(argLo, unop(Iop_64to32, mkexpr(rS)));
+            assign(argHi, unop(Iop_64HIto32, mkexpr(rS)));
+            resultLo = gen_POPCOUNT(Ity_I32, argLo, True);
+            resultHi = gen_POPCOUNT(Ity_I32, argHi, True);
+            putIReg( rA_addr, binop(Iop_32HLto64, mkexpr(resultHi),
+                                    mkexpr(resultLo)));
+         } else {
+            IRTemp result = gen_POPCOUNT(ty, rS, True);
             putIReg( rA_addr, mkexpr(result) );
          }
          return True;
@@ -6802,6 +6840,91 @@ static IRExpr* /* :: Ity_I32 */ get_IR_roundingmode_DFP( void )
                         mkU32( 2 ) ) );
 }
 
+#define NANmaskSingle   0x7F800000
+#define NANmaskDouble   0x7FF00000
+
+static IRExpr * Check_NaN( IRExpr * value, IRExpr * Hi32Mask )
+{
+   IRTemp exp_zero  = newTemp(Ity_I8);
+   IRTemp frac_mask = newTemp(Ity_I32);
+   IRTemp frac_not_zero = newTemp(Ity_I8);
+
+   /* Check if the result is QNAN or SNAN and not +infinity or -infinity.
+    * The input value is always 64-bits, for single precision values, the
+    * lower 32 bits must be zero.
+    *
+    * Single Pricision 
+    *  [62:54] exponent field is equal to 0xFF for NAN and Infinity.
+    *  [53:32] fraction field is zero for Infinity and non-zero for NAN
+    *  [31:0]  unused for single precision representation
+    *
+    * Double Pricision 
+    *  [62:51] exponent field is equal to 0xFF for NAN and Infinity.
+    *  [50:0]  fraction field is zero for Infinity and non-zero for NAN
+    *
+    * Returned result is a U32 value of 0xFFFFFFFF for NaN and 0 otherwise.
+    */
+   assign( frac_mask, unop( Iop_Not32,
+                            binop( Iop_Or32,
+                                   mkU32( 0x80000000ULL ), Hi32Mask) ) );
+
+   assign( exp_zero,
+           unop( Iop_1Sto8,
+                 binop( Iop_CmpEQ32,
+                        binop( Iop_And32,
+                               unop( Iop_64HIto32,
+                                     unop( Iop_ReinterpF64asI64,
+                                           value ) ),
+                               Hi32Mask ),
+                        Hi32Mask ) ) );
+   assign( frac_not_zero,
+           binop( Iop_Or8,
+                  unop( Iop_1Sto8,
+                        binop( Iop_CmpNE32,
+                               binop( Iop_And32,
+                                      unop( Iop_64HIto32,
+                                            unop( Iop_ReinterpF64asI64,
+                                                  value ) ),
+                                      mkexpr( frac_mask ) ),
+                               mkU32( 0x0 ) ) ),
+                  unop( Iop_1Sto8,
+                        binop( Iop_CmpNE32,
+                               binop( Iop_And32,
+                                      unop( Iop_64to32,
+                                            unop( Iop_ReinterpF64asI64,
+                                                  value ) ),
+                                      mkU32( 0xFFFFFFFF ) ),
+                               mkU32( 0x0 ) ) ) ) );
+   return unop( Iop_8Sto32,
+                binop( Iop_And8,
+                       mkexpr( exp_zero ),
+                       mkexpr( frac_not_zero ) ) );
+}
+
+static IRExpr * Complement_non_NaN( IRExpr * value, IRExpr * nan_mask )
+{
+   /* This function will only complement the 64-bit floating point value if it
+    * is not Nan.  NaN is not a signed value.  Need to do computations using
+    * 32-bit operands to ensure it will run in 32-bit mode.
+    */
+   return  binop( Iop_32HLto64,
+                  binop( Iop_Or32,
+                         binop( Iop_And32,
+                                nan_mask,
+                                unop( Iop_64HIto32,
+                                      unop( Iop_ReinterpF64asI64,
+                                            value ) ) ),
+                         binop( Iop_And32,
+                                unop( Iop_Not32,
+                                      nan_mask ),
+                                unop( Iop_64HIto32,
+                                      unop( Iop_ReinterpF64asI64,
+                                            unop( Iop_NegF64,
+                                                  value ) ) ) ) ),
+                  unop( Iop_64to32,
+                        unop( Iop_ReinterpF64asI64, value ) ) );
+}
+
 /*------------------------------------------------------------*/
 /*--- Floating Point Instruction Translation               ---*/
 /*------------------------------------------------------------*/
@@ -7333,6 +7456,9 @@ static Bool dis_fp_multadd ( UInt theInstr )
    IRTemp  frB = newTemp(Ity_F64);
    IRTemp  frC = newTemp(Ity_F64);
    IRTemp  rmt = newTemp(Ity_I32);
+   IRTemp  tmp = newTemp(Ity_F64);
+   IRTemp  sign_tmp = newTemp(Ity_I64);
+   IRTemp  nan_mask = newTemp(Ity_I32);
    IRExpr* rm;
 
    /* By default, we will examine the results of the operation and set
@@ -7382,19 +7508,25 @@ static Bool dis_fp_multadd ( UInt theInstr )
          break;
 
       case 0x1E: // fnmsubs (Float Neg Mult-Subtr Single, PPC32 p420)
-         DIP("fnmsubs%s fr%u,fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
-             frD_addr, frA_addr, frC_addr, frB_addr);
-         assign( frD, unop( Iop_NegF64,
-                      qop( Iop_MSubF64r32, rm,
-                           mkexpr(frA), mkexpr(frC), mkexpr(frB) )));
-         break;
-
       case 0x1F: // fnmadds (Floating Negative Multiply-Add Single, PPC32 p418)
-         DIP("fnmadds%s fr%u,fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
-             frD_addr, frA_addr, frC_addr, frB_addr);
-         assign( frD, unop( Iop_NegF64,
-                      qop( Iop_MAddF64r32, rm,
-                           mkexpr(frA), mkexpr(frC), mkexpr(frB) )));
+
+         if (opc2 == 0x1E) {
+            DIP("fnmsubs%s fr%u,fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
+                     frD_addr, frA_addr, frC_addr, frB_addr);
+            assign( tmp, qop( Iop_MSubF64r32, rm,
+                              mkexpr(frA), mkexpr(frC), mkexpr(frB) ) );
+         } else {
+            DIP("fnmadds%s fr%u,fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
+                     frD_addr, frA_addr, frC_addr, frB_addr);
+            assign( tmp, qop( Iop_MAddF64r32, rm,
+                              mkexpr(frA), mkexpr(frC), mkexpr(frB) ) );
+         }
+
+         assign( nan_mask, Check_NaN( mkexpr( tmp ),
+                                      mkU32( NANmaskSingle ) ) );
+         assign( sign_tmp, Complement_non_NaN( mkexpr( tmp ),
+                                               mkexpr( nan_mask ) ) );
+         assign( frD, unop( Iop_ReinterpI64asF64, mkexpr( sign_tmp ) ) ); 
          break;
 
       default:
@@ -7420,19 +7552,25 @@ static Bool dis_fp_multadd ( UInt theInstr )
          break;
 
       case 0x1E: // fnmsub (Float Neg Mult-Subtr (Dbl Precision), PPC32 p419)
-         DIP("fnmsub%s fr%u,fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
-             frD_addr, frA_addr, frC_addr, frB_addr);
-         assign( frD, unop( Iop_NegF64,
-                      qop( Iop_MSubF64, rm,
-                           mkexpr(frA), mkexpr(frC), mkexpr(frB) )));
-         break;
-
       case 0x1F: // fnmadd (Float Neg Mult-Add (Dbl Precision), PPC32 p417)
-         DIP("fnmadd%s fr%u,fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
-             frD_addr, frA_addr, frC_addr, frB_addr);
-         assign( frD, unop( Iop_NegF64,
-                      qop( Iop_MAddF64, rm,
-                           mkexpr(frA), mkexpr(frC), mkexpr(frB) )));
+
+         if (opc2 == 0x1E) {
+            DIP("fnmsub%s fr%u,fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
+                     frD_addr, frA_addr, frC_addr, frB_addr);
+            assign( tmp, qop( Iop_MSubF64, rm,
+                              mkexpr(frA), mkexpr(frC), mkexpr(frB) ) );
+         } else {
+            DIP("fnmadd%s fr%u,fr%u,fr%u,fr%u\n", flag_rC ? ".":"",
+                     frD_addr, frA_addr, frC_addr, frB_addr);
+            assign( tmp, qop( Iop_MAddF64, rm,
+                              mkexpr(frA), mkexpr(frC), mkexpr(frB) ));
+         }
+
+         assign( nan_mask, Check_NaN( mkexpr( tmp ),
+                                      mkU32( NANmaskDouble ) ) );
+         assign( sign_tmp, Complement_non_NaN( mkexpr( tmp ),
+                                               mkexpr( nan_mask ) ) );
+         assign( frD, unop( Iop_ReinterpI64asF64, mkexpr( sign_tmp ) ) ); 
          break;
 
       default:
@@ -8513,7 +8651,9 @@ static Bool dis_fp_scr ( UInt theInstr, Bool GX_level )
 /*------------------------------------------------------------*/
 #define DFP_LONG  1
 #define DFP_EXTND 2
+#define DFP_LONG_BIAS   398
 #define DFP_LONG_ENCODED_FIELD_MASK  0x1F00
+#define DFP_EXTND_BIAS  6176
 #define DFP_EXTND_ENCODED_FIELD_MASK 0x1F000
 #define DFP_LONG_EXP_MSK   0XFF
 #define DFP_EXTND_EXP_MSK  0XFFF
@@ -8522,28 +8662,111 @@ static Bool dis_fp_scr ( UInt theInstr, Bool GX_level )
 #define DFP_LONG_GFIELD_RT_SHIFT  (63 - 13 - 32) // adj for upper 32-bits 
 #define DFP_G_FIELD_EXTND_MASK    0x7FFFC000  // upper 32-bits only
 #define DFP_EXTND_GFIELD_RT_SHIFT (63 - 17 - 32) //adj for upper 32 bits
-
 #define DFP_T_FIELD_LONG_MASK     0x3FFFF  // mask for upper 32-bits
 #define DFP_T_FIELD_EXTND_MASK    0x03FFFF // mask for upper 32-bits
-
 #define DFP_LONG_EXP_MAX          369      // biased max
 #define DFP_LONG_EXP_MIN          0        // biased min
 #define DFP_EXTND_EXP_MAX         6111     // biased max
 #define DFP_EXTND_EXP_MIN         0        // biased min
+#define DFP_LONG_MAX_SIG_DIGITS   16
+#define DFP_EXTND_MAX_SIG_DIGITS  34
+#define MAX_DIGITS_IN_STRING      8
+
 
 #define  AND(x, y) binop( Iop_And32, x, y )
-#define   OR(x, y) binop( Iop_Or32,  x, y )
 #define AND4(w, x, y, z) AND( AND( w, x ), AND( y, z ) )
+#define   OR(x, y) binop( Iop_Or32,  x, y )
 #define  OR3(x, y, z)    OR( x, OR( y, z ) )
 #define  OR4(w, x, y, z) OR( OR( w, x ), OR( y, z ) )
+#define  NOT(x) unop( Iop_1Uto32, unop( Iop_Not1, unop( Iop_32to1,  mkexpr( x ) ) ) )
+
 #define  SHL(value, by) binop( Iop_Shl32, value, mkU8( by ) )
+#define  SHR(value, by) binop( Iop_Shr32, value, mkU8( by ) )
+
 #define BITS5(_b4,_b3,_b2,_b1,_b0) \
    (((_b4) << 4) | ((_b3) << 3) | ((_b2) << 2) | \
     ((_b1) << 1) | ((_b0) << 0))
 
-static void Get_lmd(IRTemp * lmd, IRExpr * gfield_0_4 )
+static IRExpr * Gfield_encoding( IRExpr * lmexp, IRExpr * lmd32 )
 {
+   IRTemp lmd_07_mask   = newTemp( Ity_I32 );
+   IRTemp lmd_8_mask    = newTemp( Ity_I32 );
+   IRTemp lmd_9_mask    = newTemp( Ity_I32 );
+   IRTemp lmexp_00_mask = newTemp( Ity_I32 );
+   IRTemp lmexp_01_mask = newTemp( Ity_I32 );
+   IRTemp lmexp_10_mask = newTemp( Ity_I32 );
+   IRTemp lmd_07_val    = newTemp( Ity_I32 );
+   IRTemp lmd_8_val     = newTemp( Ity_I32 );
+   IRTemp lmd_9_val     = newTemp( Ity_I32 );
 
+   /* The encodig is as follows:
+    * lmd - left most digit
+    * lme - left most 2-bits of the exponent
+    *
+    *    lmd
+    *   0 - 7    (lmexp << 3) | lmd
+    *     8      0b11000 (24 decimal) if lme=0b00;
+    *            0b11010 (26 decimal) if lme=0b01;
+    *            0b11100 (28 decimal) if lme=0b10;
+    *     9      0b11001 (25 decimal) if lme=0b00;
+    *            0b11011 (27 decimal) if lme=0b01;
+    *            0b11101 (29 decimal) if lme=0b10;
+    */
+
+   /* Generate the masks for each condition */
+   assign( lmd_07_mask,
+           unop( Iop_1Sto32, binop( Iop_CmpLE32U, lmd32, mkU32( 7 ) ) ) );
+   assign( lmd_8_mask,
+           unop( Iop_1Sto32, binop( Iop_CmpEQ32, lmd32, mkU32( 8 ) ) ) );
+   assign( lmd_9_mask,
+           unop( Iop_1Sto32, binop( Iop_CmpEQ32, lmd32, mkU32( 9 ) ) ) );
+   assign( lmexp_00_mask,
+           unop( Iop_1Sto32, binop( Iop_CmpEQ32, lmexp, mkU32( 0 ) ) ) );
+   assign( lmexp_01_mask,
+           unop( Iop_1Sto32, binop( Iop_CmpEQ32, lmexp, mkU32( 1 ) ) ) );
+   assign( lmexp_10_mask,
+           unop( Iop_1Sto32, binop( Iop_CmpEQ32, lmexp, mkU32( 2 ) ) ) );
+
+   /* Generate the values for each LMD condition, assuming the condition
+    * is TRUE.
+    */
+   assign( lmd_07_val,
+           binop( Iop_Or32, binop( Iop_Shl32, lmexp, mkU8( 3 ) ), lmd32 ) );
+   assign( lmd_8_val,
+           binop( Iop_Or32,
+                  binop( Iop_Or32,
+                         binop( Iop_And32,
+                                mkexpr( lmexp_00_mask ),
+                                mkU32( 24 ) ),
+                         binop( Iop_And32,
+                                mkexpr( lmexp_01_mask ),
+                                mkU32( 26 ) ) ),
+                  binop( Iop_And32, mkexpr( lmexp_10_mask ), mkU32( 28 ) ) ) );
+   assign( lmd_9_val,
+           binop( Iop_Or32,
+                  binop( Iop_Or32,
+                         binop( Iop_And32,
+                                mkexpr( lmexp_00_mask ),
+                                mkU32( 25 ) ),
+                         binop( Iop_And32,
+                                mkexpr( lmexp_01_mask ),
+                                mkU32( 27 ) ) ),
+                  binop( Iop_And32, mkexpr( lmexp_10_mask ), mkU32( 29 ) ) ) );
+
+   /* generate the result from the possible LMD values */
+   return binop( Iop_Or32,
+                 binop( Iop_Or32,
+                        binop( Iop_And32,
+                               mkexpr( lmd_07_mask ),
+                               mkexpr( lmd_07_val ) ),
+                        binop( Iop_And32,
+                               mkexpr( lmd_8_mask ),
+                               mkexpr( lmd_8_val ) ) ),
+                 binop( Iop_And32, mkexpr( lmd_9_mask ), mkexpr( lmd_9_val ) ) );
+}
+
+static void Get_lmd( IRTemp * lmd, IRExpr * gfield_0_4 )
+{
    /* Extract the exponent and the left most digit of the mantissa
     * from the G field bits [0:4].
     */
@@ -8618,11 +8841,450 @@ static void Get_lmd(IRTemp * lmd, IRExpr * gfield_0_4 )
                      ) ) );
 }
 
+#define DIGIT1_SHR 4    // shift digit 1 to bottom 4 bits
+#define DIGIT2_SHR 8    // shift digit 2 to bottom 4 bits
+#define DIGIT3_SHR 12
+#define DIGIT4_SHR 16
+#define DIGIT5_SHR 20
+#define DIGIT6_SHR 24
+#define DIGIT7_SHR 28
+
+static IRExpr * bcd_digit_inval( IRExpr * bcd_u, IRExpr * bcd_l )
+{
+   /* 60-bit BCD string stored in two 32-bit values.  Check that each,
+    * digit is a valid BCD number, i.e. less then 9.
+    */
+   IRTemp valid = newTemp( Ity_I32 );
+
+   assign( valid,
+           AND4( AND4 ( unop( Iop_1Sto32,
+                              binop( Iop_CmpLE32U,
+                                     binop( Iop_And32,
+                                            bcd_l,
+                                            mkU32 ( 0xF ) ),
+                                      mkU32( 0x9 ) ) ),
+                        unop( Iop_1Sto32,
+                              binop( Iop_CmpLE32U,
+                                     binop( Iop_And32,
+                                            binop( Iop_Shr32,
+                                                   bcd_l,
+                                                   mkU8 ( DIGIT1_SHR ) ),
+                                             mkU32 ( 0xF ) ),
+                                      mkU32( 0x9 ) ) ),
+                        unop( Iop_1Sto32,
+                              binop( Iop_CmpLE32U,
+                                     binop( Iop_And32,
+                                            binop( Iop_Shr32,
+                                                   bcd_l,
+                                                   mkU8 ( DIGIT2_SHR ) ),
+                                            mkU32 ( 0xF ) ),
+                                      mkU32( 0x9 ) ) ),
+                        unop( Iop_1Sto32,
+                              binop( Iop_CmpLE32U,
+                                     binop( Iop_And32,
+                                            binop( Iop_Shr32,
+                                                   bcd_l,
+                                                   mkU8 ( DIGIT3_SHR ) ),
+                                             mkU32 ( 0xF ) ),
+                                      mkU32( 0x9 ) ) ) ),
+                 AND4 ( unop( Iop_1Sto32,
+                              binop( Iop_CmpLE32U,
+                                     binop( Iop_And32,
+                                            binop( Iop_Shr32,
+                                                   bcd_l,
+                                                   mkU8 ( DIGIT4_SHR ) ),
+                                            mkU32 ( 0xF ) ),
+                                     mkU32( 0x9 ) ) ),
+                        unop( Iop_1Sto32,
+                              binop( Iop_CmpLE32U,
+                                     binop( Iop_And32,
+                                            binop( Iop_Shr32,
+                                                   bcd_l,
+                                                   mkU8 ( DIGIT5_SHR ) ),
+                                            mkU32 ( 0xF ) ),
+                                     mkU32( 0x9 ) ) ),
+                        unop( Iop_1Sto32,
+                              binop( Iop_CmpLE32U,
+                                     binop( Iop_And32,
+                                            binop( Iop_Shr32,
+                                                   bcd_l,
+                                                   mkU8 ( DIGIT6_SHR ) ),
+                                            mkU32 ( 0xF ) ),
+                                     mkU32( 0x9 ) ) ),
+                        unop( Iop_1Sto32,
+                              binop( Iop_CmpLE32U,
+                                     binop( Iop_And32,
+                                            binop( Iop_Shr32,
+                                                   bcd_l,
+                                                   mkU8 ( DIGIT7_SHR ) ),
+                                            mkU32 ( 0xF ) ),
+                                     mkU32( 0x9 ) ) ) ),
+                 AND4( unop( Iop_1Sto32,
+                             binop( Iop_CmpLE32U,
+                                    binop( Iop_And32,
+                                           bcd_u,
+                                           mkU32 ( 0xF ) ),
+                                    mkU32( 0x9 ) ) ),
+                       unop( Iop_1Sto32,
+                             binop( Iop_CmpLE32U,
+                                    binop( Iop_And32,
+                                           binop( Iop_Shr32,
+                                                  bcd_u,
+                                                  mkU8 ( DIGIT1_SHR ) ),
+                                           mkU32 ( 0xF ) ),
+                                    mkU32( 0x9 ) ) ),
+                       unop( Iop_1Sto32,
+                             binop( Iop_CmpLE32U,
+                                    binop( Iop_And32,
+                                           binop( Iop_Shr32,
+                                                  bcd_u,
+                                                  mkU8 ( DIGIT2_SHR ) ),
+                                           mkU32 ( 0xF ) ),
+                                    mkU32( 0x9 ) ) ),
+                       unop( Iop_1Sto32,
+                             binop( Iop_CmpLE32U,
+                                    binop( Iop_And32,
+                                           binop( Iop_Shr32,
+                                                  bcd_u,
+                                                  mkU8 ( DIGIT3_SHR ) ),
+                                           mkU32 ( 0xF ) ),
+                                    mkU32( 0x9 ) ) ) ),
+                 AND4( unop( Iop_1Sto32,
+                             binop( Iop_CmpLE32U,
+                                    binop( Iop_And32,
+                                           binop( Iop_Shr32,
+                                                  bcd_u,
+                                                  mkU8 ( DIGIT4_SHR ) ),
+                                           mkU32 ( 0xF ) ),
+                                    mkU32( 0x9 ) ) ),
+                       unop( Iop_1Sto32,
+                             binop( Iop_CmpLE32U,
+                                    binop( Iop_And32,
+                                           binop( Iop_Shr32,
+                                                  bcd_u,
+                                                  mkU8 ( DIGIT5_SHR ) ),
+                                           mkU32 ( 0xF ) ),
+                                    mkU32( 0x9 ) ) ),
+                       unop( Iop_1Sto32,
+                             binop( Iop_CmpLE32U,
+                                    binop( Iop_And32,
+                                           binop( Iop_Shr32,
+                                                  bcd_u,
+                                                  mkU8 ( DIGIT6_SHR ) ),
+                                           mkU32 ( 0xF ) ),
+                                    mkU32( 0x9 ) ) ),
+                       unop( Iop_1Sto32,
+                             binop( Iop_CmpLE32U,
+                                    binop( Iop_And32,
+                                           binop( Iop_Shr32,
+                                                  bcd_u,
+                                                  mkU8 ( DIGIT7_SHR ) ),
+                                           mkU32 ( 0xF ) ),
+                                    mkU32( 0x9 ) ) ) ) ) );
+           
+   return unop( Iop_Not32, mkexpr( valid ) );
+}
+#undef DIGIT1_SHR
+#undef DIGIT2_SHR
+#undef DIGIT3_SHR
+#undef DIGIT4_SHR
+#undef DIGIT5_SHR
+#undef DIGIT6_SHR
+#undef DIGIT7_SHR
+
+static IRExpr * Generate_neg_sign_mask( IRExpr * sign )
+{
+   return binop( Iop_Or32,
+                 unop( Iop_1Sto32, binop( Iop_CmpEQ32, sign, mkU32( 0xB ) ) ),
+                 unop( Iop_1Sto32, binop( Iop_CmpEQ32, sign, mkU32( 0xD ) ) )
+               );
+}
+
+static IRExpr * Generate_pos_sign_mask( IRExpr * sign )
+{
+   return binop( Iop_Or32,
+                 binop( Iop_Or32,
+                        unop( Iop_1Sto32,
+                              binop( Iop_CmpEQ32, sign, mkU32( 0xA ) ) ),
+                        unop( Iop_1Sto32,
+                              binop( Iop_CmpEQ32, sign, mkU32( 0xC ) ) ) ),
+                 binop( Iop_Or32,
+                        unop( Iop_1Sto32,
+                              binop( Iop_CmpEQ32, sign, mkU32( 0xE ) ) ),
+                        unop( Iop_1Sto32,
+                              binop( Iop_CmpEQ32, sign, mkU32( 0xF ) ) ) ) );
+}
+
+static IRExpr * Generate_sign_bit( IRExpr * pos_sign_mask,
+                                   IRExpr * neg_sign_mask )
+{
+   return binop( Iop_Or32,
+                 binop( Iop_And32, neg_sign_mask, mkU32( 0x80000000 ) ),
+                 binop( Iop_And32, pos_sign_mask, mkU32( 0x00000000 ) ) );
+}
+
+static IRExpr * Generate_inv_mask( IRExpr * invalid_bcd_mask,
+                                   IRExpr * pos_sign_mask,
+                                   IRExpr * neg_sign_mask )
+/* first argument is all 1's if the BCD string had an invalid digit in it. */
+{
+   return binop( Iop_Or32,
+                 invalid_bcd_mask,
+                 unop( Iop_1Sto32,
+                       binop( Iop_CmpEQ32,
+                              binop( Iop_Or32, pos_sign_mask, neg_sign_mask ),
+                              mkU32( 0x0 ) ) ) );
+}
+
+static void Generate_132_bit_bcd_string( IRExpr * frBI64_hi, IRExpr * frBI64_lo,
+                                         IRTemp * top_12_l, IRTemp * mid_60_u,
+                                         IRTemp * mid_60_l, IRTemp * low_60_u,
+                                         IRTemp * low_60_l)
+{
+   IRTemp tmplow60 = newTemp( Ity_I64 );
+   IRTemp tmpmid60 = newTemp( Ity_I64 );
+   IRTemp tmptop12 = newTemp( Ity_I64 );
+   IRTemp low_50   = newTemp( Ity_I64 );
+   IRTemp mid_50   = newTemp( Ity_I64 );
+   IRTemp top_10   = newTemp( Ity_I64 );
+   IRTemp top_12_u = newTemp( Ity_I32 ); // only needed for a dummy arg
+
+   /* Convert the 110-bit densely packed BCD string to a 128-bit BCD string */
+
+   /* low_50[49:0] = ((frBI64_lo[49:32]  << 14) | frBI64_lo[31:0]) */
+   assign( low_50,
+           binop( Iop_32HLto64,
+                  binop( Iop_And32,
+                         unop( Iop_64HIto32, frBI64_lo ),
+                         mkU32( 0x3FFFF ) ),
+                         unop( Iop_64to32, frBI64_lo ) ) );
+
+   /* Convert the 50 bit densely packed BCD string to a 60 bit
+    * BCD string.
+    */
+   assign( tmplow60, unop( Iop_DPBtoBCD, mkexpr( low_50 ) ) );
+   assign( *low_60_u, unop( Iop_64HIto32, mkexpr( tmplow60 ) ) );
+   assign( *low_60_l, unop( Iop_64to32, mkexpr( tmplow60 ) ) );
+
+   /* mid_50[49:0] =  ((frBI64_hi[35:32] << 14) | frBI64_hi[31:18]) |
+    *                 ((frBI64_hi[17:0]  << 14) | frBI64_lo[63:50])
+    */
+   assign( mid_50,
+           binop( Iop_32HLto64,
+                  binop( Iop_Or32,
+                         binop( Iop_Shl32,
+                                binop( Iop_And32,
+                                       unop( Iop_64HIto32, frBI64_hi ),
+                                       mkU32( 0xF ) ),
+                                mkU8( 14 ) ),
+                         binop( Iop_Shr32,
+                                unop( Iop_64to32, frBI64_hi ),
+                                mkU8( 18 ) ) ),
+                  binop( Iop_Or32,
+                         binop( Iop_Shl32,
+                                unop( Iop_64to32, frBI64_hi ),
+                                mkU8( 14 ) ),
+                         binop( Iop_Shr32,
+                                unop( Iop_64HIto32, frBI64_lo ),
+                                mkU8( 18 ) ) ) ) );
+
+   /* Convert the 50 bit densely packed BCD string to a 60 bit
+    * BCD string.
+    */
+   assign( tmpmid60, unop( Iop_DPBtoBCD, mkexpr( mid_50 ) ) );
+   assign( *mid_60_u, unop( Iop_64HIto32, mkexpr( tmpmid60 ) ) );
+   assign( *mid_60_l, unop( Iop_64to32, mkexpr( tmpmid60 ) ) );
+
+   /* top_10[49:0] = frBI64_hi[45:36]) |  */
+   assign( top_10,
+           binop( Iop_32HLto64,
+                  mkU32( 0 ),
+                  binop( Iop_And32,
+                         binop( Iop_Shr32,
+                                unop( Iop_64HIto32, frBI64_hi ),
+                                mkU8( 4 ) ),
+                         mkU32( 0x3FF ) ) ) );
+
+   /* Convert the 10 bit densely packed BCD string to a 12 bit
+    * BCD string.
+    */
+   assign( tmptop12, unop( Iop_DPBtoBCD, mkexpr( top_10 ) ) );
+   assign( top_12_u, unop( Iop_64HIto32, mkexpr( tmptop12 ) ) );
+   assign( *top_12_l, unop( Iop_64to32, mkexpr( tmptop12 ) ) );
+}
+
+static void Count_zeros( int start, IRExpr * init_cnt, IRExpr * init_flag,
+                         IRTemp * final_cnt, IRTemp * final_flag,
+                         IRExpr * string )
+{
+   IRTemp cnt[MAX_DIGITS_IN_STRING + 1];IRTemp flag[MAX_DIGITS_IN_STRING+1];
+   int digits = MAX_DIGITS_IN_STRING;
+   int i;
+
+   cnt[start-1] = newTemp( Ity_I8 );
+   flag[start-1] = newTemp( Ity_I8 );
+   assign( cnt[start-1], init_cnt);
+   assign( flag[start-1], init_flag);
+
+   for ( i = start; i <= digits; i++) {
+      cnt[i] = newTemp( Ity_I8 );
+      flag[i] = newTemp( Ity_I8 );
+      assign( cnt[i],
+              binop( Iop_Add8,
+                     mkexpr( cnt[i-1] ),
+                     binop(Iop_And8,
+                           unop( Iop_1Uto8,
+                                 binop(Iop_CmpEQ32,
+                                       binop(Iop_And32,
+                                             string,
+                                             mkU32( 0xF <<
+                                                    ( ( digits - i ) * 4) ) ),
+                                       mkU32( 0 ) ) ),
+                           binop( Iop_Xor8, /* complement flag */
+                                  mkexpr( flag[i - 1] ),
+                                  mkU8( 0xFF ) ) ) ) );
+
+      /* set flag to 1 if digit was not a zero */
+      assign( flag[i],
+              binop(Iop_Or8,
+                    unop( Iop_1Sto8,
+                          binop(Iop_CmpNE32,
+                                binop(Iop_And32,
+                                      string,
+                                      mkU32( 0xF <<
+                                             ( (digits - i) * 4) ) ),
+                                mkU32( 0 ) ) ),
+                    mkexpr( flag[i - 1] ) ) );
+   }
+
+   *final_cnt = cnt[digits];
+   *final_flag = flag[digits];
+}
+
+static IRExpr * Count_leading_zeros_60( IRExpr * lmd, IRExpr * upper_28,
+                                        IRExpr * low_32 )
+{
+   IRTemp num_lmd    = newTemp( Ity_I8 );
+   IRTemp num_upper  = newTemp( Ity_I8 );
+   IRTemp num_low    = newTemp( Ity_I8 );
+   IRTemp lmd_flag   = newTemp( Ity_I8 );
+   IRTemp upper_flag = newTemp( Ity_I8 );
+   IRTemp low_flag   = newTemp( Ity_I8 );
+
+   assign( num_lmd, unop( Iop_1Uto8, binop( Iop_CmpEQ32, lmd, mkU32( 0 ) ) ) );
+   assign( lmd_flag, unop( Iop_Not8, mkexpr( num_lmd ) ) );
+
+   Count_zeros( 2,
+                mkexpr( num_lmd ),
+                mkexpr( lmd_flag ),
+                &num_upper,
+                &upper_flag,
+                upper_28 );
+
+   Count_zeros( 1,
+                mkexpr( num_upper ),
+                mkexpr( upper_flag ),
+                &num_low,
+                &low_flag,
+                low_32 );
+
+   return mkexpr( num_low );
+}
+
+static IRExpr * Count_leading_zeros_128( IRExpr * lmd, IRExpr * top_12_l,
+                                         IRExpr * mid_60_u, IRExpr * mid_60_l,
+                                         IRExpr * low_60_u, IRExpr * low_60_l)
+{
+   IRTemp num_lmd   = newTemp( Ity_I8 );
+   IRTemp num_top   = newTemp( Ity_I8 );
+   IRTemp num_mid_u = newTemp( Ity_I8 );
+   IRTemp num_mid_l = newTemp( Ity_I8 );
+   IRTemp num_low_u = newTemp( Ity_I8 );
+   IRTemp num_low_l = newTemp( Ity_I8 );
+
+   IRTemp lmd_flag   = newTemp( Ity_I8 );
+   IRTemp top_flag   = newTemp( Ity_I8 );
+   IRTemp mid_u_flag = newTemp( Ity_I8 );
+   IRTemp mid_l_flag = newTemp( Ity_I8 );
+   IRTemp low_u_flag = newTemp( Ity_I8 );
+   IRTemp low_l_flag = newTemp( Ity_I8 );
+
+   /* Check the LMD, digit 16, to see if it is zero. */
+   assign( num_lmd, unop( Iop_1Uto8, binop( Iop_CmpEQ32, lmd, mkU32( 0 ) ) ) );
+
+   assign( lmd_flag, unop( Iop_Not8, mkexpr( num_lmd ) ) );
+
+   Count_zeros( 6,
+                mkexpr( num_lmd ),
+                mkexpr( lmd_flag ),
+                &num_top,
+                &top_flag,
+                top_12_l );
+
+   Count_zeros( 1,
+                mkexpr( num_top ),
+                mkexpr( top_flag ),
+                &num_mid_u,
+                &mid_u_flag,
+                binop( Iop_Or32,
+                       binop( Iop_Shl32, mid_60_u, mkU8( 2 ) ),
+                       binop( Iop_Shr32, mid_60_l, mkU8( 30 ) ) ) );
+
+   Count_zeros( 2,
+                mkexpr( num_mid_u ),
+                mkexpr( mid_u_flag ),
+                &num_mid_l,
+                &mid_l_flag,
+                mid_60_l );
+
+   Count_zeros( 1,
+                mkexpr( num_mid_l ),
+                mkexpr( mid_l_flag ),
+                &num_low_u,
+                &low_u_flag,
+                binop( Iop_Or32,
+                       binop( Iop_Shl32, low_60_u, mkU8( 2 ) ),
+                       binop( Iop_Shr32, low_60_l, mkU8( 30 ) ) ) );
+
+   Count_zeros( 2,
+                mkexpr( num_low_u ),
+                mkexpr( low_u_flag ),
+                &num_low_l,
+                &low_l_flag,
+                low_60_l );
+
+   return mkexpr( num_low_l );
+}
+
+static IRExpr * Check_unordered(IRExpr * val)
+{
+   IRTemp gfield0to5 = newTemp( Ity_I32 );
+
+   /* Extract G[0:4] */
+   assign( gfield0to5,
+           binop( Iop_And32,
+                  binop( Iop_Shr32, unop( Iop_64HIto32, val ), mkU8( 26 ) ),
+                  mkU32( 0x1F ) ) );
+
+   /* Check for unordered, return all 1'x if true */
+   return binop( Iop_Or32, /* QNaN check */
+                 unop( Iop_1Sto32,
+                       binop( Iop_CmpEQ32,
+                              mkexpr( gfield0to5 ),
+                              mkU32( 0x1E ) ) ),
+                              unop( Iop_1Sto32, /* SNaN check */
+                                    binop( Iop_CmpEQ32,
+                                           mkexpr( gfield0to5 ),
+                                           mkU32( 0x1F ) ) ) );
+}
+
 #undef AND
-#undef OR
 #undef AND4
+#undef OR
 #undef OR3
 #undef OR4
+#undef NOT
+#undef SHR
 #undef SHL
 #undef BITS5
 
@@ -9925,7 +10587,7 @@ static Bool dis_dfp_class_test ( UInt theInstr )
                                           unop( Iop_1Sto32,
                                                 binop( Iop_CmpNE32,
                                                        mkexpr( lmd ),
-						       mkU32( 0 ) ) ) ),
+                                                       mkU32( 0 ) ) ) ),
                                   mkU32( 0x1 ) ),
                            mkU8( 1 ) ) );
 
@@ -9991,6 +10653,867 @@ static Bool dis_dfp_class_test ( UInt theInstr )
    return True;
 }
 
+static Bool dis_dfp_bcd(UInt theInstr) {
+   UInt opc2        = ifieldOPClo10( theInstr );
+   ULong sp         = IFIELD(theInstr, 19, 2);
+   ULong s          = IFIELD(theInstr, 20, 1);
+   UChar frT_addr   = ifieldRegDS( theInstr );
+   UChar frB_addr   = ifieldRegB( theInstr );
+   IRTemp frB       = newTemp( Ity_D64 );
+   IRTemp frBI64    = newTemp( Ity_I64 );
+   IRTemp result    = newTemp( Ity_I64 );
+   IRTemp resultD64 = newTemp( Ity_D64 );
+   IRTemp bcd64     = newTemp( Ity_I64 );
+   IRTemp bcd_u     = newTemp( Ity_I32 );
+   IRTemp bcd_l     = newTemp( Ity_I32 );
+   IRTemp dbcd_u    = newTemp( Ity_I32 );
+   IRTemp dbcd_l    = newTemp( Ity_I32 );
+   IRTemp lmd       = newTemp( Ity_I32 );
+
+   assign( frB, getDReg( frB_addr ) );
+   assign( frBI64, unop( Iop_ReinterpD64asI64, mkexpr( frB ) ) );
+
+   switch ( opc2 ) {
+   case 0x142: // ddedpd   DFP Decode DPD to BCD
+      DIP( "ddedpd %llu,r%u,r%u\n", sp, frT_addr, frB_addr );
+
+         assign( bcd64, unop( Iop_DPBtoBCD, mkexpr( frBI64 ) ) );
+         assign( bcd_u, unop( Iop_64HIto32, mkexpr( bcd64 ) ) );
+         assign( bcd_l, unop( Iop_64to32, mkexpr( bcd64 ) ) );
+
+      if ( ( sp == 0 ) || ( sp == 1 ) ) {
+         /* Unsigned BCD string */
+         Get_lmd( &lmd,
+                  binop( Iop_Shr32,
+                         unop( Iop_64HIto32, mkexpr( frBI64 ) ),
+                         mkU8( 31 - 5 ) ) ); // G-field[0:4]
+
+         assign( result,
+                 binop( Iop_32HLto64,
+                        binop( Iop_Or32,
+                               binop( Iop_Shl32, mkexpr( lmd ), mkU8( 28 ) ),
+                               mkexpr( bcd_u ) ),
+                        mkexpr( bcd_l ) ) );
+
+      } else {
+         /* Signed BCD string, the cases for sp 2 and 3 only differ in how
+          * the positive and negative values are encoded in the least
+          * significant bits.
+          */
+         IRTemp sign = newTemp( Ity_I32 );
+
+         if (sp == 2) {
+            /* Positive sign = 0xC, negative sign = 0xD */
+
+            assign( sign,
+                    binop( Iop_Or32,
+                           binop( Iop_Shr32,
+                                  unop( Iop_64HIto32, mkexpr( frBI64 ) ),
+                                  mkU8( 31 ) ),
+                           mkU32( 0xC ) ) );
+
+         } else if ( sp == 3 ) {
+            /* Positive sign = 0xF, negative sign = 0xD */
+            IRTemp tmp32 = newTemp( Ity_I32 );
+
+            /* Complement sign bit then OR into bit position 1 */
+            assign( tmp32,
+                    binop( Iop_Xor32,
+                           binop( Iop_Shr32,
+                                  unop( Iop_64HIto32, mkexpr( frBI64 ) ),
+                                  mkU8( 30 ) ),
+                           mkU32( 0x2 ) ) );
+
+            assign( sign, binop( Iop_Or32, mkexpr( tmp32 ), mkU32( 0xD ) ) );
+
+         } else {
+            vpanic( "The impossible happened: dis_dfp_bcd(ppc), undefined SP field" );
+         }
+
+         /* Put sign in bottom 4 bits, move most significant 4-bits from
+          * bcd_l to bcd_u.
+          */
+         assign( result,
+                 binop( Iop_32HLto64,
+                        binop( Iop_Or32,
+                               binop( Iop_Shr32,
+                                      mkexpr( bcd_l ),
+                                      mkU8( 28 ) ),
+                               binop( Iop_Shl32,
+                                      mkexpr( bcd_u ),
+                                      mkU8( 4 ) ) ),
+                        binop( Iop_Or32,
+                                      mkexpr( sign ),
+                               binop( Iop_Shl32,
+                                      mkexpr( bcd_l ),
+                                      mkU8( 4 ) ) ) ) );
+      }
+
+      putDReg( frT_addr, unop( Iop_ReinterpI64asD64, mkexpr( result ) ) );
+      break;
+
+   case 0x342: // denbcd   DFP Encode BCD to DPD
+   {
+      IRTemp valid_mask   = newTemp( Ity_I32 );
+      IRTemp invalid_mask = newTemp( Ity_I32 );
+      IRTemp without_lmd  = newTemp( Ity_I64 );
+      IRTemp tmp64        = newTemp( Ity_I64 );
+      IRTemp dbcd64       = newTemp( Ity_I64 );
+      IRTemp left_exp     = newTemp( Ity_I32 );
+      IRTemp g0_4         = newTemp( Ity_I32 );
+
+      DIP( "denbcd %llu,r%u,r%u\n", s, frT_addr, frB_addr );
+
+      if ( s == 0 ) {
+         /* Unsigned BCD string */
+         assign( dbcd64, unop( Iop_BCDtoDPB, mkexpr(frBI64 ) ) );
+         assign( dbcd_u, unop( Iop_64HIto32, mkexpr( dbcd64 ) ) );
+         assign( dbcd_l, unop( Iop_64to32, mkexpr( dbcd64 ) ) );
+
+         assign( lmd,
+                 binop( Iop_Shr32,
+                        binop( Iop_And32,
+                               unop( Iop_64HIto32, mkexpr( frBI64 ) ),
+                               mkU32( 0xF0000000 ) ),
+                        mkU8( 28 ) ) );
+
+         assign( invalid_mask,
+                 bcd_digit_inval( unop( Iop_64HIto32, mkexpr( frBI64 ) ),
+                                  unop( Iop_64to32, mkexpr( frBI64 ) ) ) );
+         assign( valid_mask, unop( Iop_Not32, mkexpr( invalid_mask ) ) );
+
+         assign( without_lmd,
+                 unop( Iop_ReinterpD64asI64,
+                       binop( Iop_InsertExpD64,
+                              unop( Iop_ReinterpI64asD64,
+                                    mkU64( DFP_LONG_BIAS ) ),
+                              unop( Iop_ReinterpI64asD64,
+                                    binop( Iop_32HLto64,
+                                           mkexpr( dbcd_u ),
+                                           mkexpr( dbcd_l ) ) ) ) ) );
+         assign( left_exp,
+                 binop( Iop_Shr32,
+                        binop( Iop_And32,
+                               unop( Iop_64HIto32, mkexpr( without_lmd ) ),
+                               mkU32( 0x60000000 ) ),
+                        mkU8( 29 ) ) );
+
+         assign( g0_4,
+                 binop( Iop_Shl32,
+                        Gfield_encoding( mkexpr( left_exp ), mkexpr( lmd ) ),
+                        mkU8( 26 ) ) );
+
+         assign( tmp64,
+                 binop( Iop_32HLto64,
+                        binop( Iop_Or32,
+                               binop( Iop_And32,
+                                      unop( Iop_64HIto32,
+                                            mkexpr( without_lmd ) ),
+                                      mkU32( 0x83FFFFFF ) ),
+                               mkexpr( g0_4 ) ),
+                        unop( Iop_64to32, mkexpr( without_lmd ) ) ) );
+
+      } else if ( s == 1 ) {
+         IRTemp sign = newTemp( Ity_I32 );
+         IRTemp sign_bit = newTemp( Ity_I32 );
+         IRTemp pos_sign_mask = newTemp( Ity_I32 );
+         IRTemp neg_sign_mask = newTemp( Ity_I32 );
+         IRTemp tmp = newTemp( Ity_I64 );
+
+         /* Signed BCD string, least significant 4 bits are sign bits
+          * positive sign = 0xC, negative sign = 0xD
+          */
+         assign( tmp, unop( Iop_BCDtoDPB,
+                            binop( Iop_32HLto64,
+                                   binop( Iop_Shr32,
+                                          unop( Iop_64HIto32,
+                                                mkexpr( frBI64 ) ),
+                                                mkU8( 4 ) ),
+                                   binop( Iop_Or32,
+                                          binop( Iop_Shr32,
+                                                 unop( Iop_64to32,
+                                                       mkexpr( frBI64 ) ),
+                                                  mkU8( 4 ) ),
+                                          binop( Iop_Shl32,
+                                                 unop( Iop_64HIto32,
+                                                       mkexpr( frBI64 ) ),
+                                                       mkU8( 28 ) ) ) ) ) );
+
+         assign( dbcd_u, unop( Iop_64HIto32, mkexpr( tmp ) ) );
+         assign( dbcd_l, unop( Iop_64to32, mkexpr( tmp ) ) );
+
+         /* Get the sign of the BCD string. */
+         assign( sign,
+                 binop( Iop_And32,
+                        unop( Iop_64to32, mkexpr( frBI64 ) ),
+                        mkU32( 0xF ) ) );
+
+         assign( neg_sign_mask, Generate_neg_sign_mask( mkexpr( sign ) ) );
+         assign( pos_sign_mask, Generate_pos_sign_mask( mkexpr( sign ) ) );
+         assign( sign_bit,
+                 Generate_sign_bit( mkexpr( pos_sign_mask ),
+                                    mkexpr( neg_sign_mask ) ) );
+
+         /* Check for invalid sign and BCD digit.  Don't check the bottom
+          * four bits of bcd_l as that is the sign value.
+          */
+         assign( invalid_mask,
+                 Generate_inv_mask(
+                                   bcd_digit_inval( unop( Iop_64HIto32,
+                                                          mkexpr( frBI64 ) ),
+                                                    binop( Iop_Shr32,
+                                                           unop( Iop_64to32,
+                                                                 mkexpr( frBI64 ) ),
+                                                           mkU8( 4 ) ) ),
+                                   mkexpr( pos_sign_mask ),
+                                   mkexpr( neg_sign_mask ) ) );
+
+         assign( valid_mask, unop( Iop_Not32, mkexpr( invalid_mask ) ) );
+
+         /* Generate the result assuming the sign value was valid. */
+         assign( tmp64,
+                 unop( Iop_ReinterpD64asI64,
+                       binop( Iop_InsertExpD64,
+                              unop( Iop_ReinterpI64asD64,
+                                    mkU64( DFP_LONG_BIAS ) ),
+                              unop( Iop_ReinterpI64asD64,
+                                    binop( Iop_32HLto64,
+                                           binop( Iop_Or32,
+                                                  mkexpr( dbcd_u ),
+                                                  mkexpr( sign_bit ) ),
+                                           mkexpr( dbcd_l ) ) ) ) ) );
+      }
+
+      /* Generate the value to store depending on the validity of the
+       * sign value and the validity of the BCD digits.
+       */
+      assign( resultD64,
+              unop( Iop_ReinterpI64asD64,
+                    binop( Iop_32HLto64,
+                           binop( Iop_Or32,
+                                  binop( Iop_And32,
+                                         mkexpr( valid_mask ),
+                                         unop( Iop_64HIto32,
+                                               mkexpr( tmp64 ) ) ),
+                                  binop( Iop_And32,
+                                         mkU32( 0x7C000000 ),
+                                         mkexpr( invalid_mask ) ) ),
+                           binop( Iop_Or32,
+                                  binop( Iop_And32,
+                                         mkexpr( valid_mask ),
+                                         unop( Iop_64to32, mkexpr( tmp64 ) ) ),
+                                  binop( Iop_And32,
+                                         mkU32( 0x0 ),
+                                         mkexpr( invalid_mask ) ) ) ) ) );
+      putDReg( frT_addr, mkexpr( resultD64 ) );
+   }
+   break;
+   default:
+      vpanic( "ERROR: dis_dfp_bcd(ppc), undefined opc2 case " );
+      return False;
+   }
+   return True;
+}
+
+static Bool dis_dfp_bcdq( UInt theInstr )
+{
+   UInt opc2        = ifieldOPClo10( theInstr );
+   ULong sp         = IFIELD(theInstr, 19, 2);
+   ULong s          = IFIELD(theInstr, 20, 1);
+   IRTemp frB_hi    = newTemp( Ity_D64 );
+   IRTemp frB_lo    = newTemp( Ity_D64 );
+   IRTemp frBI64_hi = newTemp( Ity_I64 );
+   IRTemp frBI64_lo = newTemp( Ity_I64 );
+   UChar frT_addr   = ifieldRegDS( theInstr );
+   UChar frB_addr   = ifieldRegB( theInstr );
+
+   IRTemp lmd       = newTemp( Ity_I32 );
+   IRTemp result_hi = newTemp( Ity_I64 );
+   IRTemp result_lo = newTemp( Ity_I64 );
+
+   assign( frB_hi, getDReg( frB_addr ) );
+   assign( frB_lo, getDReg( frB_addr + 1 ) );
+   assign( frBI64_hi, unop( Iop_ReinterpD64asI64, mkexpr( frB_hi ) ) );
+   assign( frBI64_lo, unop( Iop_ReinterpD64asI64, mkexpr( frB_lo ) ) );
+
+   switch ( opc2 ) {
+   case 0x142: // ddedpdq   DFP Decode DPD to BCD
+   {
+      IRTemp low_60_u = newTemp( Ity_I32 );
+      IRTemp low_60_l = newTemp( Ity_I32 );
+      IRTemp mid_60_u = newTemp( Ity_I32 );
+      IRTemp mid_60_l = newTemp( Ity_I32 );
+      IRTemp top_12_l = newTemp( Ity_I32 );
+
+      DIP( "ddedpdq %llu,r%u,r%u\n", sp, frT_addr, frB_addr );
+
+      /* Note, instruction only stores the lower 32 BCD digits in
+       * the result
+       */
+      Generate_132_bit_bcd_string( mkexpr( frBI64_hi ),
+                                   mkexpr( frBI64_lo ),
+                                   &top_12_l,
+                                   &mid_60_u,
+                                   &mid_60_l,
+                                   &low_60_u,
+                                   &low_60_l );
+
+      if ( ( sp == 0 ) || ( sp == 1 ) ) {
+         /* Unsigned BCD string */
+         assign( result_hi,
+                 binop( Iop_32HLto64,
+                        binop( Iop_Or32,
+                               binop( Iop_Shl32,
+                                      mkexpr( top_12_l ),
+                                      mkU8( 24 ) ),
+                               binop( Iop_Shr32,
+                                      mkexpr( mid_60_u ),
+                                      mkU8( 4 ) ) ),
+                        binop( Iop_Or32,
+                               binop( Iop_Shl32,
+                                      mkexpr( mid_60_u ),
+                                      mkU8( 28 ) ),
+                               binop( Iop_Shr32,
+                                      mkexpr( mid_60_l ),
+                                      mkU8( 4 ) ) ) ) );
+
+         assign( result_lo,
+                 binop( Iop_32HLto64,
+                        binop( Iop_Or32,
+                               binop( Iop_Shl32,
+                                      mkexpr( mid_60_l ),
+                                      mkU8( 28 ) ),
+                               mkexpr( low_60_u ) ),
+                        mkexpr( low_60_l ) ) );
+
+      } else {
+         /* Signed BCD string, the cases for sp 2 and 3 only differ in how
+          * the positive and negative values are encoded in the least
+          * significant bits.
+          */
+         IRTemp sign = newTemp( Ity_I32 );
+
+         if ( sp == 2 ) {
+            /* Positive sign = 0xC, negative sign = 0xD */
+            assign( sign,
+                    binop( Iop_Or32,
+                           binop( Iop_Shr32,
+                                  unop( Iop_64HIto32, mkexpr( frBI64_hi ) ),
+                                  mkU8( 31 ) ),
+                           mkU32( 0xC ) ) );
+
+         } else if ( sp == 3 ) {
+            IRTemp tmp32 = newTemp( Ity_I32 );
+
+            /* Positive sign = 0xF, negative sign = 0xD.
+             * Need to complement sign bit then OR into bit position 1.
+             */
+            assign( tmp32,
+                    binop( Iop_Xor32,
+                           binop( Iop_Shr32,
+                                  unop( Iop_64HIto32, mkexpr( frBI64_hi ) ),
+                                  mkU8( 30 ) ),
+                           mkU32( 0x2 ) ) );
+
+            assign( sign, binop( Iop_Or32, mkexpr( tmp32 ), mkU32( 0xD ) ) );
+
+         } else {
+            vpanic( "The impossible happened: dis_dfp_bcd(ppc), undefined SP field" );
+         }
+
+         assign( result_hi,
+                 binop( Iop_32HLto64,
+                        binop( Iop_Or32,
+                               binop( Iop_Shl32,
+                                      mkexpr( top_12_l ),
+                                      mkU8( 28 ) ),
+                               mkexpr( mid_60_u ) ),
+                        mkexpr( mid_60_l ) ) );
+
+         assign( result_lo,
+                 binop( Iop_32HLto64,
+                        binop( Iop_Or32,
+                               binop( Iop_Shl32,
+                                      mkexpr( low_60_u ),
+                                      mkU8( 4 ) ),
+                               binop( Iop_Shr32,
+                                      mkexpr( low_60_l ),
+                                      mkU8( 28 ) ) ),
+                        binop( Iop_Or32,
+                               binop( Iop_Shl32,
+                                      mkexpr( low_60_l ),
+                                      mkU8( 4 ) ),
+                               mkexpr( sign ) ) ) );
+      }
+
+      putDReg( frT_addr, unop( Iop_ReinterpI64asD64, mkexpr( result_hi ) ) );
+      putDReg( frT_addr + 1,
+               unop( Iop_ReinterpI64asD64, mkexpr( result_lo ) ) );
+   }
+   break;
+   case 0x342: // denbcdq   DFP Encode BCD to DPD
+   {
+      IRTemp valid_mask      = newTemp( Ity_I32 );
+      IRTemp invalid_mask    = newTemp( Ity_I32 );
+      IRTemp result128       = newTemp( Ity_D128 );
+      IRTemp dfp_significand = newTemp( Ity_D128 );
+      IRTemp tmp_hi          = newTemp( Ity_I64 );
+      IRTemp tmp_lo          = newTemp( Ity_I64 );
+      IRTemp dbcd_top_l      = newTemp( Ity_I32 );
+      IRTemp dbcd_mid_u      = newTemp( Ity_I32 );
+      IRTemp dbcd_mid_l      = newTemp( Ity_I32 );
+      IRTemp dbcd_low_u      = newTemp( Ity_I32 );
+      IRTemp dbcd_low_l      = newTemp( Ity_I32 );
+      IRTemp bcd_top_8       = newTemp( Ity_I64 );
+      IRTemp bcd_mid_60      = newTemp( Ity_I64 );
+      IRTemp bcd_low_60      = newTemp( Ity_I64 );
+      IRTemp sign_bit        = newTemp( Ity_I32 );
+      IRTemp tmptop10        = newTemp( Ity_I64 );
+      IRTemp tmpmid50        = newTemp( Ity_I64 );
+      IRTemp tmplow50        = newTemp( Ity_I64 );
+      IRTemp inval_bcd_digit_mask = newTemp( Ity_I32 );
+
+      DIP( "denbcd %llu,r%u,r%u\n", s, frT_addr, frB_addr );
+
+      if ( s == 0 ) {
+         /* Unsigned BCD string */
+         assign( sign_bit, mkU32( 0 ) ); // set to zero for unsigned string
+
+         assign( bcd_top_8,
+                 binop( Iop_32HLto64,
+                        mkU32( 0 ),
+                        binop( Iop_And32,
+                               binop( Iop_Shr32,
+                                      unop( Iop_64HIto32,
+                                            mkexpr( frBI64_hi ) ),
+                                      mkU8( 24 ) ),
+                               mkU32( 0xFF ) ) ) );
+         assign( bcd_mid_60,
+                 binop( Iop_32HLto64,
+                        binop( Iop_Or32,
+                               binop( Iop_Shr32,
+                                      unop( Iop_64to32,
+                                            mkexpr( frBI64_hi ) ),
+                                      mkU8( 28 ) ),
+                               binop( Iop_Shl32,
+                                      unop( Iop_64HIto32,
+                                            mkexpr( frBI64_hi ) ),
+                                      mkU8( 4 ) ) ),
+                        binop( Iop_Or32,
+                               binop( Iop_Shl32,
+                                      unop( Iop_64to32,
+                                            mkexpr( frBI64_hi ) ),
+                                      mkU8( 4 ) ),
+                               binop( Iop_Shr32,
+                                      unop( Iop_64HIto32,
+                                            mkexpr( frBI64_lo ) ),
+                                      mkU8( 28 ) ) ) ) );
+
+         /* Note, the various helper functions ignores top 4-bits */
+         assign( bcd_low_60, mkexpr( frBI64_lo ) );
+
+         assign( tmptop10, unop( Iop_BCDtoDPB, mkexpr( bcd_top_8 ) ) );
+         assign( dbcd_top_l, unop( Iop_64to32, mkexpr( tmptop10 ) ) );
+
+         assign( tmpmid50, unop( Iop_BCDtoDPB, mkexpr( bcd_mid_60 ) ) );
+         assign( dbcd_mid_u, unop( Iop_64HIto32, mkexpr( tmpmid50 ) ) );
+         assign( dbcd_mid_l, unop( Iop_64to32, mkexpr( tmpmid50 ) ) );
+
+         assign( tmplow50, unop( Iop_BCDtoDPB, mkexpr( bcd_low_60 ) ) );
+         assign( dbcd_low_u, unop( Iop_64HIto32, mkexpr( tmplow50 ) ) );
+         assign( dbcd_low_l, unop( Iop_64to32, mkexpr( tmplow50 ) ) );
+
+         /* The entire BCD string fits in lower 110-bits.  The LMD = 0,
+          * value is not part of the final result. Only the right most
+          * BCD digits are stored.
+          */
+         assign( lmd, mkU32( 0 ) );
+
+         assign( invalid_mask,
+                 binop( Iop_Or32,
+                        bcd_digit_inval( mkU32( 0 ),
+                                         unop( Iop_64to32,
+                                               mkexpr( bcd_top_8 ) ) ),
+                        binop( Iop_Or32,
+                               bcd_digit_inval( unop( Iop_64HIto32,
+                                                      mkexpr( bcd_mid_60 ) ),
+                                                unop( Iop_64to32,
+                                                      mkexpr( bcd_mid_60 ) ) ),
+                               bcd_digit_inval( unop( Iop_64HIto32,
+                                                      mkexpr( bcd_low_60 ) ),
+                                                unop( Iop_64to32,
+                                                      mkexpr( bcd_low_60 ) )
+                                                ) ) ) );
+
+      } else if ( s == 1 ) {
+         IRTemp sign          = newTemp( Ity_I32 );
+         IRTemp zero          = newTemp( Ity_I32 );
+         IRTemp pos_sign_mask = newTemp( Ity_I32 );
+         IRTemp neg_sign_mask = newTemp( Ity_I32 );
+
+         /* The sign of the BCD string is stored in lower 4 bits */
+         assign( sign,
+                 binop( Iop_And32,
+                        unop( Iop_64to32, mkexpr( frBI64_lo ) ),
+                        mkU32( 0xF ) ) );
+         assign( neg_sign_mask, Generate_neg_sign_mask( mkexpr( sign ) ) );
+         assign( pos_sign_mask, Generate_pos_sign_mask( mkexpr( sign ) ) );
+         assign( sign_bit,
+                 Generate_sign_bit( mkexpr( pos_sign_mask ),
+                                    mkexpr( neg_sign_mask ) ) );
+
+         /* Generate the value assuminig the sign and BCD digits are vaild */
+         assign( bcd_top_8,
+                 binop( Iop_32HLto64,
+                        mkU32( 0x0 ),
+                        binop( Iop_Shr32,
+                               unop( Iop_64HIto32, mkexpr( frBI64_hi ) ),
+                               mkU8( 28 ) ) ) );
+
+         /* The various helper routines ignore the upper 4-bits */
+         assign( bcd_mid_60, mkexpr( frBI64_hi ) );
+
+         /* Remove bottom four sign bits */
+         assign( bcd_low_60,
+                 binop( Iop_32HLto64,
+                        binop( Iop_Shr32,
+                               unop( Iop_64HIto32,
+                                     mkexpr( frBI64_lo ) ),
+                               mkU8( 4 ) ),
+                               binop( Iop_Or32,
+                                      binop( Iop_Shl32,
+                                             unop( Iop_64HIto32,
+                                                   mkexpr( frBI64_lo ) ),
+                                             mkU8( 28 ) ),
+                                      binop( Iop_Shr32,
+                                             unop( Iop_64to32,
+                                                   mkexpr( frBI64_lo ) ),
+                                             mkU8( 4 ) ) ) ) );
+         assign( tmptop10, unop( Iop_BCDtoDPB, mkexpr(bcd_top_8 ) ) );
+         assign( dbcd_top_l, unop( Iop_64to32, mkexpr( tmptop10 ) ) );
+
+         assign( tmpmid50, unop( Iop_BCDtoDPB, mkexpr(bcd_mid_60 ) ) );
+         assign( dbcd_mid_u, unop( Iop_64HIto32, mkexpr( tmpmid50 ) ) );
+         assign( dbcd_mid_l, unop( Iop_64to32, mkexpr( tmpmid50 ) ) );
+
+         assign( tmplow50, unop( Iop_BCDtoDPB, mkexpr( bcd_low_60 ) ) );
+         assign( dbcd_low_u, unop( Iop_64HIto32, mkexpr( tmplow50 ) ) );
+         assign( dbcd_low_l, unop( Iop_64to32, mkexpr( tmplow50 ) ) );
+
+         /* The entire BCD string fits in lower 110-bits.  The LMD value
+          * is not stored in the final result for the DFP Long instruction.
+          */
+         assign( lmd, mkU32( 0 ) );
+
+         /* Check for invalid sign and invalid BCD digit.  Don't check the
+          *  bottom four bits of frBI64_lo as that is the sign value.
+          */
+         assign( zero, mkU32( 0 ) );
+         assign( inval_bcd_digit_mask,
+                 binop( Iop_Or32,
+                        bcd_digit_inval( mkexpr( zero ),
+                                         unop( Iop_64to32,
+                                               mkexpr( bcd_top_8 ) ) ),
+                        binop( Iop_Or32,
+                               bcd_digit_inval( unop( Iop_64HIto32,
+                                                     mkexpr( bcd_mid_60 ) ),
+                                               unop( Iop_64to32,
+                                                     mkexpr( bcd_mid_60 ) ) ),
+                               bcd_digit_inval( unop( Iop_64HIto32,
+                                                     mkexpr( frBI64_lo ) ),
+                                               binop( Iop_Shr32,
+                                                      unop( Iop_64to32,
+                                                            mkexpr( frBI64_lo ) ),
+                                                        mkU8( 4 ) ) ) ) ) );
+         assign( invalid_mask,
+                 Generate_inv_mask( mkexpr( inval_bcd_digit_mask ),
+                                    mkexpr( pos_sign_mask ),
+                                    mkexpr( neg_sign_mask ) ) );
+
+      }
+
+      assign( valid_mask, unop( Iop_Not32, mkexpr( invalid_mask ) ) );
+
+      /* Calculate the value of the result assuming sign and BCD digits
+       * are all valid.
+       */
+      assign( dfp_significand,
+              binop( Iop_D64HLtoD128,
+                     unop( Iop_ReinterpI64asD64,
+                           binop( Iop_32HLto64,
+                                  binop( Iop_Or32,
+                                         mkexpr( sign_bit ),
+                                         mkexpr( dbcd_top_l ) ),
+                                  binop( Iop_Or32,
+                                         binop( Iop_Shl32,
+                                                mkexpr( dbcd_mid_u ),
+                                                mkU8( 18 ) ),
+                                         binop( Iop_Shr32,
+                                                mkexpr( dbcd_mid_l ),
+                                                mkU8( 14 ) ) ) ) ),
+                     unop( Iop_ReinterpI64asD64,
+                           binop( Iop_32HLto64,
+                                  binop( Iop_Or32,
+                                         mkexpr( dbcd_low_u ),
+                                         binop( Iop_Shl32,
+                                                mkexpr( dbcd_mid_l ),
+                                                mkU8( 18 ) ) ),
+                                  mkexpr( dbcd_low_l ) ) ) ) );
+
+      /* Break the result back down to 32-bit chunks and replace chunks.
+       * If there was an invalid BCD digit or invalid sign value, replace
+       * the calculated result with the invalid bit string.
+       */
+      assign( result128,
+              binop( Iop_InsertExpD128,
+                     unop( Iop_ReinterpI64asD64, mkU64( DFP_EXTND_BIAS ) ),
+                     mkexpr( dfp_significand ) ) );
+
+      assign( tmp_hi,
+              unop( Iop_ReinterpD64asI64,
+                    unop( Iop_D128HItoD64, mkexpr( result128 ) ) ) );
+
+      assign( tmp_lo,
+              unop( Iop_ReinterpD64asI64,
+                    unop( Iop_D128LOtoD64, mkexpr( result128 ) ) ) );
+
+      assign( result_hi,
+              binop( Iop_32HLto64,
+                     binop( Iop_Or32,
+                            binop( Iop_And32,
+                                   mkexpr( valid_mask ),
+                                   unop( Iop_64HIto32, mkexpr( tmp_hi ) ) ),
+                            binop( Iop_And32,
+                                   mkU32( 0x7C000000 ),
+                                   mkexpr( invalid_mask ) ) ),
+                     binop( Iop_Or32,
+                            binop( Iop_And32,
+                                   mkexpr( valid_mask ),
+                                   unop( Iop_64to32, mkexpr( tmp_hi ) ) ),
+                            binop( Iop_And32,
+                                   mkU32( 0x0 ),
+                                   mkexpr( invalid_mask ) ) ) ) );
+
+      assign( result_lo,
+              binop( Iop_32HLto64,
+                     binop( Iop_Or32,
+                            binop( Iop_And32,
+                                   mkexpr( valid_mask ),
+                                   unop( Iop_64HIto32, mkexpr( tmp_lo ) ) ),
+                            binop( Iop_And32,
+                                   mkU32( 0x0 ),
+                                   mkexpr( invalid_mask ) ) ),
+                     binop( Iop_Or32,
+                            binop( Iop_And32,
+                                   mkexpr( valid_mask ),
+                                   unop( Iop_64to32, mkexpr( tmp_lo ) ) ),
+                            binop( Iop_And32,
+                                   mkU32( 0x0 ),
+                                   mkexpr( invalid_mask ) ) ) ) );
+
+      putDReg( frT_addr, unop( Iop_ReinterpI64asD64, mkexpr( result_hi ) ) );
+      putDReg( frT_addr + 1,
+               unop( Iop_ReinterpI64asD64, mkexpr( result_lo ) ) );
+
+   }
+   break;
+   default:
+      vpanic( "ERROR: dis_dfp_bcdq(ppc), undefined opc2 case " );
+      break;
+   }
+   return True;
+}
+
+static Bool dis_dfp_significant_digits( UInt theInstr )
+{
+   UChar frA_addr = ifieldRegA( theInstr );
+   UChar frB_addr = ifieldRegB( theInstr );
+   IRTemp frA     = newTemp( Ity_D64 );
+   UInt opc1      = ifieldOPC( theInstr );
+   IRTemp B_sig   = newTemp( Ity_I8 );
+   IRTemp K       = newTemp( Ity_I8 );
+   IRTemp lmd_B   = newTemp( Ity_I32 );
+   IRTemp field   = newTemp( Ity_I32 );
+   UChar crfD     = toUChar( IFIELD( theInstr, 23, 3 ) ); // AKA BF
+   IRTemp Unordered_true     = newTemp( Ity_I32 );
+   IRTemp Eq_true_mask       = newTemp( Ity_I32 );
+   IRTemp Lt_true_mask       = newTemp( Ity_I32 );
+   IRTemp Gt_true_mask       = newTemp( Ity_I32 );
+   IRTemp KisZero_true_mask  = newTemp( Ity_I32 );
+   IRTemp KisZero_false_mask = newTemp( Ity_I32 );
+
+   /* Get the reference singificance stored in frA */
+   assign( frA, getDReg( frA_addr ) );
+
+   /* Convert from 64 bit to 8 bits in two steps.  The Iop_64to8 is not 
+    * supported in 32-bit mode.
+    */
+   assign( K, unop( Iop_32to8,
+                    binop( Iop_And32,
+                           unop( Iop_64to32,
+                                 unop( Iop_ReinterpD64asI64,
+                                       mkexpr( frA ) ) ),
+                           mkU32( 0x3F ) ) ) );
+
+   switch ( opc1 ) {
+   case 0x3b: // dtstsf   DFP Test Significance
+   {
+      IRTemp frB     = newTemp( Ity_D64 );
+      IRTemp frBI64  = newTemp( Ity_I64 );
+      IRTemp B_bcd_u = newTemp( Ity_I32 );
+      IRTemp B_bcd_l = newTemp( Ity_I32 );
+      IRTemp tmp64   = newTemp( Ity_I64 );
+
+      DIP( "dtstsf %u,r%u,r%u\n", crfD, frA_addr, frB_addr );
+
+      assign( frB, getDReg( frB_addr ) );
+      assign( frBI64, unop( Iop_ReinterpD64asI64, mkexpr( frB ) ) );
+
+      /* Get the BCD string for the value stored in a series of I32 values.
+       * Count the number of leading zeros.  Subtract the number of leading
+       * zeros from 16 (maximum number of significant digits in DFP
+       * Long).
+       */
+      Get_lmd( &lmd_B,
+               binop( Iop_Shr32,
+                      unop( Iop_64HIto32, mkexpr( frBI64 ) ),
+                      mkU8( 31 - 5 ) ) ); // G-field[0:4]
+
+      assign( tmp64, unop( Iop_DPBtoBCD, mkexpr( frBI64 ) ) );
+      assign( B_bcd_u, unop( Iop_64HIto32, mkexpr( tmp64 ) ) );
+      assign( B_bcd_l, unop( Iop_64to32, mkexpr( tmp64 ) ) );
+
+      assign( B_sig,
+              binop( Iop_Sub8,
+                     mkU8( DFP_LONG_MAX_SIG_DIGITS ),
+                     Count_leading_zeros_60( mkexpr( lmd_B ),
+                                             mkexpr( B_bcd_u ),
+                                             mkexpr( B_bcd_l ) ) ) );
+      assign( Unordered_true, Check_unordered( mkexpr( frBI64 ) ) );
+   }
+   break;
+   case 0x3F: // dtstsfq     DFP Test Significance
+   {
+      IRTemp frB_hi     = newTemp( Ity_D64 );
+      IRTemp frB_lo     = newTemp( Ity_D64 );
+      IRTemp frBI64_hi  = newTemp( Ity_I64 );
+      IRTemp frBI64_lo  = newTemp( Ity_I64 );
+      IRTemp B_low_60_u = newTemp( Ity_I32 );
+      IRTemp B_low_60_l = newTemp( Ity_I32 );
+      IRTemp B_mid_60_u = newTemp( Ity_I32 );
+      IRTemp B_mid_60_l = newTemp( Ity_I32 );
+      IRTemp B_top_12_l = newTemp( Ity_I32 );
+
+      DIP( "dtstsfq %u,r%u,r%u\n", crfD, frA_addr, frB_addr );
+
+      assign( frB_hi, getDReg( frB_addr ) );
+      assign( frB_lo, getDReg( frB_addr + 1 ) );
+
+      assign( frBI64_hi, unop( Iop_ReinterpD64asI64, mkexpr( frB_hi ) ) );
+      assign( frBI64_lo, unop( Iop_ReinterpD64asI64, mkexpr( frB_lo ) ) );
+
+      /* Get the BCD string for the value stored in a series of I32 values.
+       * Count the number of leading zeros.  Subtract the number of leading
+       * zeros from 32 (maximum number of significant digits in DFP
+       * extended).
+       */
+      Get_lmd( &lmd_B,
+               binop( Iop_Shr32,
+                      unop( Iop_64HIto32, mkexpr( frBI64_hi ) ),
+                      mkU8( 31 - 5 ) ) ); // G-field[0:4]
+
+      Generate_132_bit_bcd_string( mkexpr( frBI64_hi ),
+                                   mkexpr( frBI64_lo ),
+                                   &B_top_12_l,
+                                   &B_mid_60_u,
+                                   &B_mid_60_l,
+                                   &B_low_60_u,
+                                   &B_low_60_l );
+
+      assign( B_sig,
+              binop( Iop_Sub8,
+                     mkU8( DFP_EXTND_MAX_SIG_DIGITS ),
+                     Count_leading_zeros_128( mkexpr( lmd_B ),
+                                              mkexpr( B_top_12_l ),
+                                              mkexpr( B_mid_60_u ),
+                                              mkexpr( B_mid_60_l ),
+                                              mkexpr( B_low_60_u ),
+                                              mkexpr( B_low_60_l ) ) ) );
+
+      assign( Unordered_true, Check_unordered( mkexpr( frBI64_hi ) ) );
+   }
+   break;
+   }
+
+   /* Compare (16 - cnt[0]) against K and set the condition code field
+    * accordingly.
+    *
+    * The field layout is as follows:
+    *
+    * bit[3:0]    Description
+    *    3     K != 0 and K < Number of significant digits if FRB
+    *    2     K != 0 and K > Number of significant digits if FRB OR K = 0
+    *    1     K != 0 and K = Number of significant digits if FRB
+    *    0     K ? Number of significant digits if FRB
+    */
+   assign( Eq_true_mask,
+           unop( Iop_1Sto32,
+                 binop( Iop_CmpEQ32,
+                        unop( Iop_8Uto32, mkexpr( K ) ),
+                        unop( Iop_8Uto32, mkexpr( B_sig ) ) ) ) );
+   assign( Lt_true_mask,
+           unop( Iop_1Sto32,
+                 binop( Iop_CmpLT32U,
+                        unop( Iop_8Uto32, mkexpr( K ) ),
+                        unop( Iop_8Uto32, mkexpr( B_sig ) ) ) ) );
+   assign( Gt_true_mask,
+           unop( Iop_1Sto32,
+                 binop( Iop_CmpLT32U,
+                        unop( Iop_8Uto32, mkexpr( B_sig ) ),
+                        unop( Iop_8Uto32, mkexpr( K ) ) ) ) );
+
+   assign( KisZero_true_mask,
+           unop( Iop_1Sto32,
+                 binop( Iop_CmpEQ32,
+                        unop( Iop_8Uto32, mkexpr( K ) ),
+                        mkU32( 0 ) ) ) );
+   assign( KisZero_false_mask,
+           unop( Iop_1Sto32,
+                 binop( Iop_CmpNE32,
+                        unop( Iop_8Uto32, mkexpr( K ) ),
+                        mkU32( 0 ) ) ) );
+
+   assign( field,
+           binop( Iop_Or32,
+                  binop( Iop_And32,
+                         mkexpr( KisZero_false_mask ),
+                         binop( Iop_Or32,
+                                binop( Iop_And32,
+                                       mkexpr( Lt_true_mask ),
+                                       mkU32( 0x8 ) ),
+                                binop( Iop_Or32,
+                                       binop( Iop_And32,
+                                              mkexpr( Gt_true_mask ),
+                                              mkU32( 0x4 ) ),
+                                       binop( Iop_And32,
+                                              mkexpr( Eq_true_mask ),
+                                              mkU32( 0x2 ) ) ) ) ),
+                  binop( Iop_And32,
+                         mkexpr( KisZero_true_mask ),
+                         mkU32( 0x4 ) ) ) );
+
+   putGST_field( PPC_GST_CR,
+                 binop( Iop_Or32,
+                        binop( Iop_And32,
+                               mkexpr( Unordered_true ),
+                               mkU32( 0x1 ) ),
+                        binop( Iop_And32,
+                               unop( Iop_Not32, mkexpr( Unordered_true ) ),
+                               mkexpr( field ) ) ),
+                 crfD );
+
+   return True;
+}
 
 /*------------------------------------------------------------*/
 /*--- AltiVec Instruction Translation                      ---*/
@@ -10566,7 +12089,7 @@ dis_vxv_dp_arith ( UInt theInstr, UInt opc2 )
       case 0x1A0: // xvsubdp (VSX Vector Subtract Double-Precision)
       {
          IROp mOp;
-         Char * oper_name;
+         HChar * oper_name;
          switch (opc2) {
             case 0x1E0:
                mOp = Iop_DivF64;
@@ -10635,7 +12158,7 @@ dis_vxv_dp_arith ( UInt theInstr, UInt opc2 )
           */
          Bool negate;
          IROp mOp = Iop_INVALID;
-         Char * oper_name = NULL;
+         HChar * oper_name = NULL;
          Bool mdp = False;
 
          switch (opc2) {
@@ -10897,7 +12420,7 @@ dis_vxv_sp_arith ( UInt theInstr, UInt opc2 )
          IRTemp t3, t2, t1, t0;
          Bool msp = False;
          Bool negate;
-         Char * oper_name = NULL;
+         HChar * oper_name = NULL;
          IROp mOp = Iop_INVALID;
          switch (opc2) {
             case 0x104: case 0x124:
@@ -11288,7 +12811,7 @@ static IRExpr * get_max_min_fp(IRTemp frA_I64, IRTemp frB_I64, Bool isMin)
 /*
  * Helper function for vector/scalar double precision fp round to integer instructions.
  */
-static IRExpr * _do_vsx_fp_roundToInt(IRTemp frB_I64, UInt opc2, UChar * insn_suffix)
+static IRExpr * _do_vsx_fp_roundToInt(IRTemp frB_I64, UInt opc2, HChar * insn_suffix)
 {
 
    /* The same rules apply for x{s|v}rdpi{m|p|c|z} as for floating point round operations (fri{m|n|p|z}). */
@@ -11748,7 +13271,7 @@ dis_vxv_misc ( UInt theInstr, UInt opc2 )
          IRTemp frBLo_I64 = newTemp(Ity_I64);
          IRExpr * frD_fp_roundHi = NULL;
          IRExpr * frD_fp_roundLo = NULL;
-         UChar * insn_suffix = NULL;
+         HChar * insn_suffix = NULL;
 
          assign( frBHi_I64, unop( Iop_V128HIto64, getVSReg( XB ) ) );
          frD_fp_roundHi = _do_vsx_fp_roundToInt(frBHi_I64, opc2, insn_suffix);
@@ -11768,7 +13291,7 @@ dis_vxv_misc ( UInt theInstr, UInt opc2 )
       case 0x152: // xvrspip (VSX Vector Round to SinglePrecision Integer using round toward +Infinity)
       case 0x132: // xvrspiz (VSX Vector Round to SinglePrecision Integer using round toward Zero)
       {
-         UChar * insn_suffix = NULL;
+         HChar * insn_suffix = NULL;
          IROp op;
          if (opc2 != 0x156) {
             // Use pre-defined IRop's for vrfi{m|n|p|z}
@@ -11921,6 +13444,8 @@ dis_vxs_arith ( UInt theInstr, UInt opc2 )
           * of fnmadd and use pretty much the same code. However, that code has a bug in the
           * way it blindly negates the signbit, even if the floating point result is a NaN.
           * So, the TODO is to fix fnmadd (which I'll do in a different patch).
+          * FIXED 7/1/2012: carll fnmadd and fnmsubs fixed to not negate sign
+          * bit for NaN result.
           */
          Bool mdp = opc2 == 0x2A4;
          IRTemp frT = newTemp(Ity_F64);
@@ -12355,7 +13880,7 @@ dis_vxs_misc( UInt theInstr, UInt opc2 )
       {
          IRTemp frB_I64 = newTemp(Ity_I64);
          IRExpr * frD_fp_round = NULL;
-         UChar * insn_suffix = NULL;
+         HChar * insn_suffix = NULL;
 
          assign(frB_I64, unop(Iop_V128HIto64, mkexpr( vB )));
          frD_fp_round = _do_vsx_fp_roundToInt(frB_I64, opc2, insn_suffix);
@@ -12693,7 +14218,7 @@ dis_vx_permute_misc( UInt theInstr, UInt opc2 )
       case 0x48: // xxmrghw (VSX Merge High Word)
       case 0xc8: // xxmrglw (VSX Merge Low Word)
       {
-         char type = (opc2 == 0x48) ? 'h' : 'l';
+         HChar type = (opc2 == 0x48) ? 'h' : 'l';
          IROp word_op = (opc2 == 0x48) ? Iop_V128HIto64 : Iop_V128to64;
          IRTemp a64 = newTemp(Ity_I64);
          IRTemp ahi32 = newTemp(Ity_I32);
@@ -12801,6 +14326,7 @@ static Bool dis_av_load ( VexAbiInfo* vbi, UInt theInstr )
       /* declare guest state effects */
       d->needsBBP = True;
       d->nFxState = 1;
+      vex_bzero(&d->fxState, sizeof(d->fxState));
       d->fxState[0].fx     = Ifx_Write;
       d->fxState[0].offset = vD_off;
       d->fxState[0].size   = sizeof(U128);
@@ -12834,6 +14360,7 @@ static Bool dis_av_load ( VexAbiInfo* vbi, UInt theInstr )
       /* declare guest state effects */
       d->needsBBP = True;
       d->nFxState = 1;
+      vex_bzero(&d->fxState, sizeof(d->fxState));
       d->fxState[0].fx     = Ifx_Write;
       d->fxState[0].offset = vD_off;
       d->fxState[0].size   = sizeof(U128);
@@ -14746,7 +16273,7 @@ static Bool dis_av_fp_convert ( UInt theInstr )
 
 struct vsx_insn {
    UInt opcode;
-   Char * name;
+   HChar * name;
 };
 
 //  ATTENTION:  Keep this array sorted on the opcocde!!!
@@ -15064,6 +16591,28 @@ DisResult disInstr_PPC_WRK (
             putIReg(3, IRExpr_Get( OFFB_NRADDR_GPR2, ty ));
             goto decode_success;
          }
+         else
+         if (getUIntBigendianly(code+16) == 0x7CA52B78 /* or 5,5,5 */) {
+            DIP("IR injection\n");
+
+            vex_inject_ir(irsb, Iend_BE);
+
+            delta += 20;
+            dres.len = 20;
+
+            // Invalidate the current insn. The reason is that the IRop we're
+            // injecting here can change. In which case the translation has to
+            // be redone. For ease of handling, we simply invalidate all the
+            // time.
+
+            stmt(IRStmt_Put(OFFB_TISTART, mkSzImm(ty, guest_CIA_curr_instr)));
+            stmt(IRStmt_Put(OFFB_TILEN,   mkSzImm(ty, 20)));
+   
+            putGST( PPC_GST_CIA, mkSzImm( ty, guest_CIA_bbstart + delta ));
+            dres.whatNext    = Dis_StopHere;
+            dres.jk_StopHere = Ijk_TInval;
+            goto decode_success;
+         }
          /* We don't know what it is.  Set opc1/opc2 so decode_failure
             can print the insn following the Special-insn preamble. */
          theInstr = getUIntBigendianly(code+16);
@@ -15104,6 +16653,7 @@ DisResult disInstr_PPC_WRK (
 
    /* 64bit Integer Rotate Instructions */
    case 0x1E: // rldcl, rldcr, rldic, rldicl, rldicr, rldimi
+      if (!mode64) goto decode_failure;
       if (dis_int_rot( theInstr )) goto decode_success;
       goto decode_failure;
 
@@ -15138,7 +16688,12 @@ DisResult disInstr_PPC_WRK (
       goto decode_failure;
 
    /* Trap Instructions */
-   case 0x02: case 0x03: // tdi, twi
+   case 0x02:    // tdi
+      if (!mode64) goto decode_failure;
+      if (dis_trapi(theInstr, &dres)) goto decode_success;
+      goto decode_failure;
+
+   case 0x03:   // twi
       if (dis_trapi(theInstr, &dres)) goto decode_success;
       goto decode_failure;
 
@@ -15199,6 +16754,19 @@ DisResult disInstr_PPC_WRK (
             if (!allow_VX)
                goto decode_failure;
             if (dis_dfp_fmt_conv( theInstr ))
+               goto decode_success;
+            goto decode_failure;
+         case 0x2A2: // dtstsf - DFP number of significant digits
+            if (!allow_DFP)
+               goto decode_failure;
+            if (dis_dfp_significant_digits(theInstr))
+               goto decode_success;
+            goto decode_failure;
+         case 0x142: // ddedpd   DFP Decode DPD to BCD
+         case 0x342: // denbcd   DFP Encode BCD to DPD
+            if (!allow_DFP)
+               goto decode_failure;
+            if (dis_dfp_bcd(theInstr))
                goto decode_success;
             goto decode_failure;
          case 0x162:  // dxex - Extract exponent 
@@ -15505,6 +17073,21 @@ DisResult disInstr_PPC_WRK (
             goto decode_success;
          goto decode_failure;
 
+      case 0x2A2: // dtstsfq - DFP number of significant digits
+         if (!allow_DFP)
+            goto decode_failure;
+         if (dis_dfp_significant_digits(theInstr))
+            goto decode_success;
+         goto decode_failure;
+
+      case 0x142: // ddedpdq   DFP Decode DPD to BCD
+      case 0x342: // denbcdq   DFP Encode BCD to DPD
+         if (!allow_DFP)
+            goto decode_failure;
+         if (dis_dfp_bcdq(theInstr))
+            goto decode_success;
+         goto decode_failure;
+
       /* Floating Point Compare Instructions */         
       case 0x000: // fcmpu
       case 0x020: // fcmpo
@@ -15711,7 +17294,12 @@ DisResult disInstr_PPC_WRK (
          goto decode_failure;
 
          /* 64bit Integer Parity Instructions */
-      case 0xba: case 0x9a: // prtyd, prtyw
+      case 0xba: // prtyd
+         if (!mode64) goto decode_failure;
+         if (dis_int_parity( theInstr )) goto decode_success;
+         goto decode_failure;
+
+      case 0x9a: // prtyw
          if (dis_int_parity( theInstr )) goto decode_success;
          goto decode_failure;
 
@@ -15756,9 +17344,13 @@ DisResult disInstr_PPC_WRK (
          goto decode_failure;
 
       /* Integer Load and Store with Byte Reverse Instructions */
-      case 0x316: case 0x216: case 0x396: // lhbrx, lwbrx, sthbrx
-      case 0x296: case 0x214:             // stwbrx, ldbrx
-      case 0x294:                         // stdbrx
+      case 0x214: case 0x294: // ldbrx, stdbrx
+         if (!mode64) goto decode_failure;
+         if (dis_int_ldst_rev( theInstr )) goto decode_success;
+         goto decode_failure;
+
+      case 0x216: case 0x316: case 0x296:    // lwbrx, lhbrx, stwbrx
+      case 0x396:                            // sthbrx
          if (dis_int_ldst_rev( theInstr )) goto decode_success;
          goto decode_failure;
          
@@ -15808,7 +17400,12 @@ DisResult disInstr_PPC_WRK (
 //zz          goto decode_failure;
 
       /* Trap Instructions */
-      case 0x004: case 0x044:             // tw,   td
+      case 0x004:             // tw
+         if (dis_trap(theInstr, &dres)) goto decode_success;
+         goto decode_failure;
+
+      case 0x044:             // td
+         if (!mode64) goto decode_failure;
          if (dis_trap(theInstr, &dres)) goto decode_success;
          goto decode_failure;
 
@@ -15897,10 +17494,12 @@ DisResult disInstr_PPC_WRK (
       /* Miscellaneous ISA 2.06 instructions */
       case 0x1FA: // popcntd
       case 0x17A: // popcntw
+      case 0x7A:  // popcntb
     	  if (dis_int_logic( theInstr )) goto decode_success;
     	  goto decode_failure;
 
       case 0x0FC: // bpermd
+         if (!mode64) goto decode_failure;
          if (dis_int_logic( theInstr )) goto decode_success;
          goto decode_failure;
 

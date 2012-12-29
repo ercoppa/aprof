@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2005-2011 Apple Inc.
+   Copyright (C) 2005-2012 Apple Inc.
       Greg Parker  gparker@apple.com
 
    This program is free software; you can redistribute it and/or
@@ -409,7 +409,7 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
          idea why. */
 #     if DARWIN_VERS <= DARWIN_10_6
       UWord magic_delta = 0;
-#     elif DARWIN_VERS == DARWIN_10_7
+#     elif DARWIN_VERS >= DARWIN_10_7
       UWord magic_delta = 0x48;
 #     endif
 

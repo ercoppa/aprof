@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2011 Julian Seward 
+   Copyright (C) 2000-2012 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -516,6 +516,25 @@ typedef struct SigQueue {
         (srP)->misc.S390X.r_lr = (uc)->uc_mcontext.regs.gprs[14];  \
       }
 
+#elif defined(VGP_mips32_linux)
+#  define VG_UCONTEXT_INSTR_PTR(uc)   ((UWord)(((uc)->uc_mcontext.sc_pc)))
+#  define VG_UCONTEXT_STACK_PTR(uc)   ((UWord)((uc)->uc_mcontext.sc_regs[29]))
+#  define VG_UCONTEXT_FRAME_PTR(uc)       ((uc)->uc_mcontext.sc_regs[30])
+#  define VG_UCONTEXT_SYSCALL_NUM(uc)     ((uc)->uc_mcontext.sc_regs[2])
+#  define VG_UCONTEXT_SYSCALL_SYSRES(uc)                         \
+      /* Convert the value in uc_mcontext.rax into a SysRes. */  \
+      VG_(mk_SysRes_mips32_linux)( (uc)->uc_mcontext.sc_regs[2], \
+                                   (uc)->uc_mcontext.sc_regs[3], \
+                                   (uc)->uc_mcontext.sc_regs[7]) 
+ 
+#  define VG_UCONTEXT_TO_UnwindStartRegs(srP, uc)              \
+      { (srP)->r_pc = (uc)->uc_mcontext.sc_pc;                 \
+        (srP)->r_sp = (uc)->uc_mcontext.sc_regs[29];           \
+        (srP)->misc.MIPS32.r30 = (uc)->uc_mcontext.sc_regs[30]; \
+        (srP)->misc.MIPS32.r31 = (uc)->uc_mcontext.sc_regs[31]; \
+        (srP)->misc.MIPS32.r28 = (uc)->uc_mcontext.sc_regs[28]; \
+      }
+
 
 #else 
 #  error Unknown platform
@@ -849,6 +868,14 @@ extern void my_sigreturn(void);
    " svc " #name "\n" \
    ".previous\n"
 
+#elif defined(VGP_mips32_linux)
+#  define _MY_SIGRETURN(name) \
+   ".text\n" \
+   "my_sigreturn:\n" \
+   "	li	$2, " #name "\n" /* apparently $2 is v0 */ \
+   "	syscall\n" \
+   ".previous\n"
+
 #else
 #  error Unknown platform
 #endif
@@ -891,7 +918,8 @@ static void handle_SCSS_change ( Bool force_update )
       ksa.ksa_handler = skss.skss_per_sig[sig].skss_handler;
       ksa.sa_flags    = skss.skss_per_sig[sig].skss_flags;
 #     if !defined(VGP_ppc32_linux) && \
-         !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin)
+         !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin) && \
+         !defined(VGP_mips32_linux)
       ksa.sa_restorer = my_sigreturn;
 #     endif
       /* Re above ifdef (also the assertion below), PaulM says:
@@ -924,7 +952,8 @@ static void handle_SCSS_change ( Bool force_update )
          vg_assert(ksa_old.sa_flags 
                    == skss_old.skss_per_sig[sig].skss_flags);
 #        if !defined(VGP_ppc32_linux) && \
-            !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin)
+            !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin) && \
+            !defined(VGP_mips32_linux)
          vg_assert(ksa_old.sa_restorer 
                    == my_sigreturn);
 #        endif
@@ -1305,9 +1334,9 @@ void push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo,
 }
 
 
-const Char *VG_(signame)(Int sigNo)
+const HChar *VG_(signame)(Int sigNo)
 {
-   static Char buf[20];
+   static HChar buf[20];
 
    switch(sigNo) {
       case VKI_SIGHUP:    return "SIGHUP";
@@ -1533,7 +1562,7 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
 
       /* Be helpful - decode some more details about this fault */
       if (is_signal_from_kernel(tid, sigNo, info->si_code)) {
-	 const Char *event = NULL;
+	 const HChar *event = NULL;
 	 Bool haveaddr = True;
 
 	 switch(sigNo) {
@@ -1609,10 +1638,45 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
          obviously stupid place (not mapped readable) that would
          likely cause a segfault. */
       if (VG_(is_valid_tid)(tid)) {
+         Word first_ip_delta = 0;
+#if defined(VGO_linux)
+         /* Make sure that the address stored in the stack pointer is 
+            located in a mapped page. That is not necessarily so. E.g.
+            consider the scenario where the stack pointer was decreased
+            and now has a value that is just below the end of a page that has
+            not been mapped yet. In that case VG_(am_is_valid_for_client)
+            will consider the address of the stack pointer invalid and that 
+            would cause a back-trace of depth 1 to be printed, instead of a
+            full back-trace. */
+         if (tid == 1) {           // main thread
+            Addr esp  = VG_(get_SP)(tid);
+            Addr base = VG_PGROUNDDN(esp - VG_STACK_REDZONE_SZB);
+            if (VG_(extend_stack)(base, VG_(threads)[tid].client_stack_szB)) {
+               if (VG_(clo_trace_signals))
+                  VG_(dmsg)("       -> extended stack base to %#lx\n",
+                            VG_PGROUNDDN(esp));
+            }
+         }
+#endif
+#if defined(VGA_s390x)
+         if (sigNo == VKI_SIGILL) {
+            /* The guest instruction address has been adjusted earlier to
+               point to the insn following the one that could not be decoded.
+               When printing the back-trace here we need to undo that
+               adjustment so the first line in the back-trace reports the
+               correct address. */
+            Addr  addr = (Addr)info->VKI_SIGINFO_si_addr;
+            UChar byte = ((UChar *)addr)[0];
+            Int   insn_length = ((((byte >> 6) + 1) >> 1) + 1) << 1;
+
+            first_ip_delta = -insn_length;
+         }
+#endif
          ExeContext* ec = VG_(am_is_valid_for_client)
                              (VG_(get_SP)(tid), sizeof(Addr), VKI_PROT_READ)
-                        ? VG_(record_ExeContext)( tid, 0/*first_ip_delta*/ )
-                      : VG_(record_depth_1_ExeContext)( tid );
+                        ? VG_(record_ExeContext)( tid, first_ip_delta )
+                      : VG_(record_depth_1_ExeContext)( tid,
+                                                        first_ip_delta );
          vg_assert(ec);
          VG_(pp_ExeContext)( ec );
       }
@@ -1875,6 +1939,32 @@ void VG_(synth_sigtrap)(ThreadId tid)
    }
    else
       resume_scheduler(tid);
+}
+
+// Synthesise a SIGFPE.
+void VG_(synth_sigfpe)(ThreadId tid, UInt code)
+{
+// Only tested on mips32
+#if !defined(VGA_mips32)
+   vg_assert(0);
+#else
+   vki_siginfo_t info;
+   struct vki_ucontext uc;
+
+   vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
+
+   VG_(memset)(&info, 0, sizeof(info));
+   VG_(memset)(&uc,   0, sizeof(uc));
+   info.si_signo = VKI_SIGFPE;
+   info.si_code = code;
+
+   if (VG_(gdbserver_report_signal) (VKI_SIGFPE, tid)) {
+      resume_scheduler(tid);
+      deliver_signal(tid, &info, &uc);
+   }
+   else
+      resume_scheduler(tid);
+#endif
 }
 
 /* Make a signal pending for a thread, for later delivery.

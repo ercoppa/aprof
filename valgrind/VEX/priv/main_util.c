@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2011 OpenWorks LLP
+   Copyright (C) 2004-2012 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -220,7 +220,7 @@ void vex_assert_fail ( const HChar* expr,
 }
 
 __attribute__ ((noreturn))
-void vpanic ( HChar* str )
+void vpanic ( const HChar* str )
 {
    vex_printf("\nvex: the `impossible' happened:\n   %s\n", str);
    (*vex_failure_exit)();
@@ -252,6 +252,15 @@ Bool vex_streq ( const HChar* s1, const HChar* s2 )
       s1++;
       s2++;
    }
+}
+
+void vex_bzero ( void* sV, UInt n )
+{
+   UInt i;
+   UChar* s = (UChar*)sV;
+   /* No laughing, please.  Just don't call this too often.  Thank you
+      for your attention. */
+   for (i = 0; i < n; i++) s[i] = 0;
 }
 
 
@@ -307,7 +316,7 @@ void convert_int ( /*OUT*/HChar* buf, Long n0,
    printf. */
 static
 UInt vprintf_wrk ( void(*sink)(HChar),
-                   HChar* format,
+                   const HChar* format,
                    va_list ap )
 {
 #  define PUT(_ch)  \
@@ -322,7 +331,7 @@ UInt vprintf_wrk ( void(*sink)(HChar),
       do { HChar* _qq = _str; for (; *_qq; _qq++) PUT(*_qq); } \
       while (0)
 
-   HChar* saved_format;
+   const HChar* saved_format;
    Bool   longlong, ljustify;
    HChar  padchar;
    Int    fwidth, nout, len1, len2, len3;
@@ -485,7 +494,7 @@ static void add_to_myprintf_buf ( HChar c )
    }
 }
 
-UInt vex_printf ( HChar* format, ... )
+UInt vex_printf ( const HChar* format, ... )
 {
    UInt ret;
    va_list vargs;
@@ -514,7 +523,7 @@ static void add_to_vg_sprintf_buf ( HChar c )
    *vg_sprintf_ptr++ = c;
 }
 
-UInt vex_sprintf ( HChar* buf, HChar *format, ... )
+UInt vex_sprintf ( HChar* buf, const HChar *format, ... )
 {
    Int ret;
    va_list vargs;

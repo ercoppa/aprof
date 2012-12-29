@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2011 Julian Seward 
+   Copyright (C) 2000-2012 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -119,6 +119,9 @@ static inline void my_exit ( int x )
 #  if defined(VGPV_arm_linux_android)
    __asm__ __volatile__(".word 0xFFFFFFFF");
    while (1) {}
+#  elif defined(VGPV_x86_linux_android)
+   __asm__ __volatile__("ud2");
+   while (1) {}
 #  else
    extern __attribute__ ((__noreturn__)) void _exit(int status);
    _exit(x);
@@ -128,7 +131,7 @@ static inline void my_exit ( int x )
 /* Same problem with getpagesize. */
 static inline int my_getpagesize ( void )
 {
-#  if defined(VGPV_arm_linux_android)
+#  if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
    return 4096; /* kludge - link failure on Android, for some reason */
 #  else
    extern int getpagesize (void);
@@ -256,15 +259,22 @@ static void init(void);
 
 // Each of these lines generates a replacement function:
 //     (from_so, from_fn,  v's replacement)
+// For some lines, we will also define a replacement function
+// whose only purpose is to be a soname synonym place holder
+// that can be replaced using --soname-synonyms.
+#define SO_SYN_MALLOC VG_SO_SYN(somalloc)
 
 // malloc
 #if defined(VGO_linux)
  ALLOC_or_NULL(VG_Z_LIBSTDCXX_SONAME, malloc,      malloc);
  ALLOC_or_NULL(VG_Z_LIBC_SONAME,      malloc,      malloc);
+ ALLOC_or_NULL(SO_SYN_MALLOC,         malloc,      malloc);
 
 #elif defined(VGO_darwin)
  ALLOC_or_NULL(VG_Z_LIBC_SONAME,      malloc,      malloc);
- ZONEALLOC_or_NULL(VG_Z_LIBC_SONAME, malloc_zone_malloc, malloc);
+ ALLOC_or_NULL(SO_SYN_MALLOC,         malloc,      malloc);
+ ZONEALLOC_or_NULL(VG_Z_LIBC_SONAME,  malloc_zone_malloc, malloc);
+ ZONEALLOC_or_NULL(SO_SYN_MALLOC,     malloc_zone_malloc, malloc);
 
 #endif
 
@@ -281,11 +291,13 @@ static void init(void);
  #if VG_WORDSIZE == 4
   ALLOC_or_BOMB(VG_Z_LIBSTDCXX_SONAME, _Znwj,          __builtin_new);
   ALLOC_or_BOMB(VG_Z_LIBC_SONAME,      _Znwj,          __builtin_new);
+  ALLOC_or_BOMB(SO_SYN_MALLOC,         _Znwj,          __builtin_new);
  #endif
  // operator new(unsigned long), GNU mangling
  #if VG_WORDSIZE == 8
   ALLOC_or_BOMB(VG_Z_LIBSTDCXX_SONAME, _Znwm,          __builtin_new);
   ALLOC_or_BOMB(VG_Z_LIBC_SONAME,      _Znwm,          __builtin_new);
+  ALLOC_or_BOMB(SO_SYN_MALLOC,         _Znwm,          __builtin_new);
  #endif
 
 #elif defined(VGO_darwin)
@@ -310,11 +322,13 @@ static void init(void);
  #if VG_WORDSIZE == 4
   ALLOC_or_NULL(VG_Z_LIBSTDCXX_SONAME, _ZnwjRKSt9nothrow_t,  __builtin_new);
   ALLOC_or_NULL(VG_Z_LIBC_SONAME,      _ZnwjRKSt9nothrow_t,  __builtin_new);
+  ALLOC_or_NULL(SO_SYN_MALLOC,         _ZnwjRKSt9nothrow_t,  __builtin_new);
  #endif
  // operator new(unsigned long, std::nothrow_t const&), GNU mangling
  #if VG_WORDSIZE == 8
   ALLOC_or_NULL(VG_Z_LIBSTDCXX_SONAME, _ZnwmRKSt9nothrow_t,  __builtin_new);
   ALLOC_or_NULL(VG_Z_LIBC_SONAME,      _ZnwmRKSt9nothrow_t,  __builtin_new);
+  ALLOC_or_NULL(SO_SYN_MALLOC,         _ZnwmRKSt9nothrow_t,  __builtin_new);
  #endif
 
 #elif defined(VGO_darwin)
@@ -342,11 +356,13 @@ static void init(void);
  #if VG_WORDSIZE == 4
   ALLOC_or_BOMB(VG_Z_LIBSTDCXX_SONAME, _Znaj,             __builtin_vec_new );
   ALLOC_or_BOMB(VG_Z_LIBC_SONAME,      _Znaj,             __builtin_vec_new );
+  ALLOC_or_BOMB(SO_SYN_MALLOC,         _Znaj,             __builtin_vec_new );
  #endif
  // operator new[](unsigned long), GNU mangling
  #if VG_WORDSIZE == 8
   ALLOC_or_BOMB(VG_Z_LIBSTDCXX_SONAME, _Znam,             __builtin_vec_new );
   ALLOC_or_BOMB(VG_Z_LIBC_SONAME,      _Znam,             __builtin_vec_new );
+  ALLOC_or_BOMB(SO_SYN_MALLOC,         _Znam,             __builtin_vec_new );
  #endif
 
 #elif defined(VGO_darwin)
@@ -371,11 +387,13 @@ static void init(void);
  #if VG_WORDSIZE == 4
   ALLOC_or_NULL(VG_Z_LIBSTDCXX_SONAME, _ZnajRKSt9nothrow_t, __builtin_vec_new );
   ALLOC_or_NULL(VG_Z_LIBC_SONAME,      _ZnajRKSt9nothrow_t, __builtin_vec_new );
+  ALLOC_or_NULL(SO_SYN_MALLOC,         _ZnajRKSt9nothrow_t, __builtin_vec_new );
  #endif
  // operator new[](unsigned long, std::nothrow_t const&), GNU mangling
  #if VG_WORDSIZE == 8
   ALLOC_or_NULL(VG_Z_LIBSTDCXX_SONAME, _ZnamRKSt9nothrow_t, __builtin_vec_new );
   ALLOC_or_NULL(VG_Z_LIBC_SONAME,      _ZnamRKSt9nothrow_t, __builtin_vec_new );
+  ALLOC_or_NULL(SO_SYN_MALLOC,         _ZnamRKSt9nothrow_t, __builtin_vec_new );
  #endif
 
 #elif defined(VGO_darwin)
@@ -422,13 +440,17 @@ static void init(void);
       (void)VALGRIND_NON_SIMD_CALL1( info.tl_##vg_replacement, p ); \
    }
 
+
 #if defined(VGO_linux)
  FREE(VG_Z_LIBSTDCXX_SONAME,  free,                 free );
  FREE(VG_Z_LIBC_SONAME,       free,                 free );
+ FREE(SO_SYN_MALLOC,          free,                 free );
 
 #elif defined(VGO_darwin)
  FREE(VG_Z_LIBC_SONAME,       free,                 free );
+ FREE(SO_SYN_MALLOC,          free,                 free );
  ZONEFREE(VG_Z_LIBC_SONAME,   malloc_zone_free,     free );
+ ZONEFREE(SO_SYN_MALLOC,      malloc_zone_free,     free );
 
 #endif
 
@@ -439,6 +461,7 @@ static void init(void);
 #if defined(VGO_linux)
  FREE(VG_Z_LIBSTDCXX_SONAME,  cfree,                free );
  FREE(VG_Z_LIBC_SONAME,       cfree,                free );
+ FREE(SO_SYN_MALLOC,          cfree,                free );
 
 #elif defined(VGO_darwin)
  //FREE(VG_Z_LIBSTDCXX_SONAME,  cfree,                free );
@@ -456,6 +479,7 @@ static void init(void);
  // operator delete(void*), GNU mangling
  FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPv,               __builtin_delete );
  FREE(VG_Z_LIBC_SONAME,       _ZdlPv,               __builtin_delete );
+ FREE(SO_SYN_MALLOC,          _ZdlPv,               __builtin_delete );
 
 #elif defined(VGO_darwin)
  // operator delete(void*), GNU mangling
@@ -471,6 +495,7 @@ static void init(void);
  // operator delete(void*, std::nothrow_t const&), GNU mangling
  FREE(VG_Z_LIBSTDCXX_SONAME, _ZdlPvRKSt9nothrow_t,  __builtin_delete );
  FREE(VG_Z_LIBC_SONAME,      _ZdlPvRKSt9nothrow_t,  __builtin_delete );
+ FREE(SO_SYN_MALLOC,         _ZdlPvRKSt9nothrow_t,  __builtin_delete );
 
 #elif defined(VGO_darwin)
  // operator delete(void*, std::nothrow_t const&), GNU mangling
@@ -489,6 +514,7 @@ static void init(void);
  // operator delete[](void*), GNU mangling
  FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPv,               __builtin_vec_delete );
  FREE(VG_Z_LIBC_SONAME,       _ZdaPv,               __builtin_vec_delete );
+ FREE(SO_SYN_MALLOC,          _ZdaPv,               __builtin_vec_delete );
 
 #elif defined(VGO_darwin)
  // operator delete[](void*), not mangled (for gcc 2.96)
@@ -507,6 +533,7 @@ static void init(void);
  // operator delete[](void*, std::nothrow_t const&), GNU mangling
  FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
  FREE(VG_Z_LIBC_SONAME,       _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
+ FREE(SO_SYN_MALLOC,          _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
 
 #elif defined(VGO_darwin)
  // operator delete[](void*, std::nothrow_t const&), GNU mangling
@@ -564,10 +591,13 @@ static void init(void);
 
 #if defined(VGO_linux)
  CALLOC(VG_Z_LIBC_SONAME, calloc);
+ CALLOC(SO_SYN_MALLOC,    calloc);
 
 #elif defined(VGO_darwin)
  CALLOC(VG_Z_LIBC_SONAME, calloc);
+ CALLOC(SO_SYN_MALLOC,    calloc);
  ZONECALLOC(VG_Z_LIBC_SONAME, malloc_zone_calloc);
+ ZONECALLOC(SO_SYN_MALLOC,    malloc_zone_calloc);
 
 #endif
 
@@ -630,10 +660,13 @@ static void init(void);
 
 #if defined(VGO_linux)
  REALLOC(VG_Z_LIBC_SONAME, realloc);
+ REALLOC(SO_SYN_MALLOC,    realloc);
 
 #elif defined(VGO_darwin)
  REALLOC(VG_Z_LIBC_SONAME, realloc);
+ REALLOC(SO_SYN_MALLOC,    realloc);
  ZONEREALLOC(VG_Z_LIBC_SONAME, malloc_zone_realloc);
+ ZONEREALLOC(SO_SYN_MALLOC,    malloc_zone_realloc);
 
 #endif
 
@@ -692,10 +725,13 @@ static void init(void);
 
 #if defined(VGO_linux)
  MEMALIGN(VG_Z_LIBC_SONAME, memalign);
+ MEMALIGN(SO_SYN_MALLOC,    memalign);
 
 #elif defined(VGO_darwin)
  MEMALIGN(VG_Z_LIBC_SONAME, memalign);
+ MEMALIGN(SO_SYN_MALLOC,    memalign);
  ZONEMEMALIGN(VG_Z_LIBC_SONAME, malloc_zone_memalign);
+ ZONEMEMALIGN(SO_SYN_MALLOC,    malloc_zone_memalign);
 
 #endif
 
@@ -730,10 +766,13 @@ static void init(void);
 
 #if defined(VGO_linux)
  VALLOC(VG_Z_LIBC_SONAME, valloc);
+ VALLOC(SO_SYN_MALLOC, valloc);
 
 #elif defined(VGO_darwin)
  VALLOC(VG_Z_LIBC_SONAME, valloc);
+ VALLOC(SO_SYN_MALLOC, valloc);
  ZONEVALLOC(VG_Z_LIBC_SONAME, malloc_zone_valloc);
+ ZONEVALLOC(SO_SYN_MALLOC,    malloc_zone_valloc);
 
 #endif
 
@@ -754,6 +793,7 @@ static void init(void);
 
 #if defined(VGO_linux)
  MALLOPT(VG_Z_LIBC_SONAME, mallopt);
+ MALLOPT(SO_SYN_MALLOC,    mallopt);
 
 #elif defined(VGO_darwin)
  //MALLOPT(VG_Z_LIBC_SONAME, mallopt);
@@ -796,6 +836,7 @@ static void init(void);
 
 #if defined(VGO_linux)
  MALLOC_TRIM(VG_Z_LIBC_SONAME, malloc_trim);
+ MALLOC_TRIM(SO_SYN_MALLOC,    malloc_trim);
 
 #elif defined(VGO_darwin)
  //MALLOC_TRIM(VG_Z_LIBC_SONAME, malloc_trim);
@@ -833,6 +874,7 @@ static void init(void);
 
 #if defined(VGO_linux)
  POSIX_MEMALIGN(VG_Z_LIBC_SONAME, posix_memalign);
+ POSIX_MEMALIGN(SO_SYN_MALLOC,    posix_memalign);
 
 #elif defined(VGO_darwin)
  //POSIX_MEMALIGN(VG_Z_LIBC_SONAME, posix_memalign);
@@ -862,14 +904,18 @@ static void init(void);
 
 #if defined(VGO_linux)
  MALLOC_USABLE_SIZE(VG_Z_LIBC_SONAME, malloc_usable_size);
+ MALLOC_USABLE_SIZE(SO_SYN_MALLOC,    malloc_usable_size);
  MALLOC_USABLE_SIZE(VG_Z_LIBC_SONAME, malloc_size);
-# if defined(VGPV_arm_linux_android)
+ MALLOC_USABLE_SIZE(SO_SYN_MALLOC,    malloc_size);
+# if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
   MALLOC_USABLE_SIZE(VG_Z_LIBC_SONAME, dlmalloc_usable_size);
+  MALLOC_USABLE_SIZE(SO_SYN_MALLOC,    dlmalloc_usable_size);
 # endif
 
 #elif defined(VGO_darwin)
  //MALLOC_USABLE_SIZE(VG_Z_LIBC_SONAME, malloc_usable_size);
  MALLOC_USABLE_SIZE(VG_Z_LIBC_SONAME, malloc_size);
+ MALLOC_USABLE_SIZE(SO_SYN_MALLOC,    malloc_size);
 
 #endif
 
@@ -916,6 +962,7 @@ static void panic(const char *str)
 
 #if defined(VGO_linux)
  MALLOC_STATS(VG_Z_LIBC_SONAME, malloc_stats);
+ MALLOC_STATS(SO_SYN_MALLOC,    malloc_stats);
 
 #elif defined(VGO_darwin)
  //MALLOC_STATS(VG_Z_LIBC_SONAME, malloc_stats);
@@ -942,6 +989,7 @@ static void panic(const char *str)
 
 #if defined(VGO_linux)
  MALLINFO(VG_Z_LIBC_SONAME, mallinfo);
+ MALLINFO(SO_SYN_MALLOC,    mallinfo);
 
 #elif defined(VGO_darwin)
  //MALLINFO(VG_Z_LIBC_SONAME, mallinfo);
@@ -996,6 +1044,7 @@ static vki_malloc_zone_t vg_default_zone = {
    }
 
 DEFAULT_ZONE(VG_Z_LIBC_SONAME, malloc_default_zone);
+DEFAULT_ZONE(SO_SYN_MALLOC,    malloc_default_zone);
 
 
 #define ZONE_FROM_PTR(soname, fnname) \
@@ -1007,6 +1056,7 @@ DEFAULT_ZONE(VG_Z_LIBC_SONAME, malloc_default_zone);
    }
 
 ZONE_FROM_PTR(VG_Z_LIBC_SONAME, malloc_zone_from_ptr);
+ZONE_FROM_PTR(SO_SYN_MALLOC,    malloc_zone_from_ptr);
 
 
 // GrP fixme bypass libc's use of zone->introspect->check

@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright IBM Corp. 2010-2011
+   Copyright IBM Corp. 2010-2012
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -63,18 +63,15 @@
 /* Where client code will save the link register before calling a helper. */
 #define S390_OFFSET_SAVED_LR 160+72
 
-/* Location of saved guest state pointer */
-#define S390_OFFSET_SAVED_GSP 160+64
-
-/* Size of frame allocated by VG_(run_innerloop)
+/* Size of frame allocated by VG_(disp_run_translations)
    Need size for
        8 FPRs
-     + 3 GPRs (SAVED_GSP, SAVED_LR, and SAVED_R2)
+     + 2 GPRs (SAVED_LR, and SAVED_R2)
      + 2 FPCs (SAVED_FPC_C and SAVED_FPC_V).
 
    Additionally, we need a standard frame for helper functions being called
    from client code. (See figure 1-16 in zSeries ABI) */
-#define S390_INNERLOOP_FRAME_SIZE ((8+3+2)*8 + 160)
+#define S390_INNERLOOP_FRAME_SIZE ((8+2+2)*8 + 160)
 
 
 /*--------------------------------------------------------------*/

@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2008-2011 OpenWorks LLP
+   Copyright (C) 2008-2012 OpenWorks LLP
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
@@ -180,6 +180,8 @@ HChar* ML_(pp_DW_FORM) ( DW_FORM form )
       case DW_FORM_exprloc:   return "DW_FORM_exprloc";
       case DW_FORM_flag_present:return "DW_FORM_flag_present";
       case DW_FORM_ref_sig8:  return "DW_FORM_ref_sig8";
+      case DW_FORM_GNU_ref_alt:return "DW_FORM_GNU_ref_alt";
+      case DW_FORM_GNU_strp_alt:return "DW_FORM_GNU_strp_alt";
    }
    return "DW_FORM_???";
 }
@@ -410,6 +412,9 @@ static Bool get_Dwarf_Reg( /*OUT*/Addr* a, Word regno, RegSummary* regs )
 #  elif defined(VGP_s390x_linux)
    if (regno == 15) { *a = regs->sp; return True; }
    if (regno == 11) { *a = regs->fp; return True; }
+#  elif defined(VGP_mips32_linux)
+   if (regno == 29) { *a = regs->sp; return True; }
+   if (regno == 30) { *a = regs->fp; return True; }
 #  else
 #    error "Unknown platform"
 #  endif

@@ -8,7 +8,7 @@
 ##------------------------------------------------------------##
 
 # Process this file with autoconf to produce a configure script.
-AC_INIT([Valgrind],[3.8.0.SVN],[valgrind-users@lists.sourceforge.net])
+AC_INIT([Valgrind],[3.9.0.SVN],[valgrind-users@lists.sourceforge.net])
 AC_CONFIG_SRCDIR(coregrind/m_main.c)
 AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE([foreign])
@@ -110,20 +110,22 @@ AC_MSG_CHECKING([for a supported version of gcc])
 # OS/X 10.6: i686-apple-darwin10-gcc-4.2.1 (GCC) 4.2.1 (Apple Inc. build 5666) (dot 3)
 # OS/X 10.7: i686-apple-darwin11-llvm-gcc-4.2 (GCC) 4.2.1 (Based on Apple Inc. build 5658) (LLVM build 2335.15.00)
 # Clang: clang version 2.9 (tags/RELEASE_29/final)
+# Apple clang: Apple clang version 3.1 (tags/Apple/clang-318.0.58) (based on LLVM 3.1svn)
+# FreeBSD clang: FreeBSD clang version 3.1 (branches/release_31 156863) 20120523
 #
 [
-  gcc_version=`${CC} -dumpversion 2>/dev/null`
-  if test "x$gcc_version" = x; then
-    gcc_version=`${CC} --version \
-               | $SED -n -e 's/[^ ]*gcc[^ ]* ([^)]*) \([0-9.]*\).*$/\1/p' \
-                         -e 's/[^ ]*clang version \([0-9.]*\).*$/\1/p'`
-  fi
-]
-
-is_clang="notclang"
-if test "x`${CC} --version | head -n 1 | $SED 's/\(clang\) version.*/\1/'`" = "xclang" ; then
-   is_clang="clang"
+if test "x`${CC} --version | $SED -n -e 's/.*\(clang\) version.*/\1/p'`" = "xclang" ; then
+    is_clang="clang"
+    # Don't use -dumpversion with clang: it will always produce "4.2.1".
+    gcc_version=`${CC} --version | $SED -n -e 's/.*clang version \([0-9.]*\).*$/\1/p'`
+else
+    is_clang="notclang"
+    gcc_version=`${CC} -dumpversion 2>/dev/null`
+    if test "x$gcc_version" = x; then
+	gcc_version=`${CC} --version | $SED -n -e 's/[^ ]*gcc[^ ]* ([^)]*) \([0-9.]*\).*$/\1/p'`
+    fi
 fi
+]
 
 case "${is_clang}-${gcc_version}" in
      notclang-3.*)
@@ -132,7 +134,7 @@ case "${is_clang}-${gcc_version}" in
      notclang-4.*)
 	AC_MSG_RESULT([ok (${gcc_version})])
 	;;
-     clang-2.9)
+     clang-2.9|clang-3.*|clang-4.*)
 	AC_MSG_RESULT([ok (clang-${gcc_version})])
 	;;
      *)
@@ -187,6 +189,21 @@ case "${host_cpu}" in
      armv7*)
 	AC_MSG_RESULT([ok (${host_cpu})])
 	ARCH_MAX="arm"
+	;;
+
+     mips)
+	AC_MSG_RESULT([ok (${host_cpu})])
+	ARCH_MAX="mips32"
+	;;
+
+     mipsel)
+	AC_MSG_RESULT([ok (${host_cpu})])
+	ARCH_MAX="mips32"
+	;;
+
+     mipsisa32r2)
+	AC_MSG_RESULT([ok (${host_cpu})])
+	ARCH_MAX="mips32"
 	;;
 
      *) 
@@ -270,6 +287,7 @@ case "${host_os}" in
         AC_DEFINE([DARWIN_10_5], 100500, [DARWIN_VERS value for Mac OS X 10.5])
         AC_DEFINE([DARWIN_10_6], 100600, [DARWIN_VERS value for Mac OS X 10.6])
         AC_DEFINE([DARWIN_10_7], 100700, [DARWIN_VERS value for Mac OS X 10.7])
+        AC_DEFINE([DARWIN_10_8], 100800, [DARWIN_VERS value for Mac OS X 10.8])
 
 	AC_MSG_CHECKING([for the kernel version])
 	kernel=`uname -r`
@@ -306,8 +324,13 @@ case "${host_os}" in
 	     11.*)
 		  AC_MSG_RESULT([Darwin 11.x (${kernel}) / Mac OS X 10.7 Lion])
 		  AC_DEFINE([DARWIN_VERS], DARWIN_10_7, [Darwin / Mac OS X version])
-                  # FIXME: change these to xx11.supp
 		  DEFAULT_SUPP="darwin11.supp ${DEFAULT_SUPP}"
+		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
+		  ;;
+	     12.*)
+		  AC_MSG_RESULT([Darwin 12.x (${kernel}) / Mac OS X 10.8 Mountain Lion])
+		  AC_DEFINE([DARWIN_VERS], DARWIN_10_8, [Darwin / Mac OS X version])
+		  DEFAULT_SUPP="darwin12.supp ${DEFAULT_SUPP}"
 		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
 		  ;;
              *) 
@@ -535,6 +558,17 @@ case "$ARCH_MAX-$VGCONF_OS" in
         valt_load_address_sec_inner="0xUNSET"
         AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
         ;;
+     mips32-linux) 
+        VGCONF_ARCH_PRI="mips32"
+        VGCONF_PLATFORM_PRI_CAPS="MIPS32_LINUX"
+        VGCONF_PLATFORM_SEC_CAPS=""
+        valt_load_address_pri_norml="0x38000000"
+        valt_load_address_pri_inner="0x28000000"
+        valt_load_address_sec_norml="0xUNSET"
+        valt_load_address_sec_inner="0xUNSET"
+        AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
+        AC_MSG_RESULT([ok (${host_cpu}-${host_os})])
+        ;;
     *)
         VGCONF_ARCH_PRI="unknown"
         VGCONF_ARCH_SEC="unknown"
@@ -570,6 +604,8 @@ AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_ARM,
                test x$VGCONF_PLATFORM_PRI_CAPS = xARM_LINUX )
 AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_S390X,
                test x$VGCONF_PLATFORM_PRI_CAPS = xS390X_LINUX )
+AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_MIPS32,
+               test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX )
 
 # Set up VGCONF_PLATFORMS_INCLUDE_<platform>.  Either one or two of these
 # become defined.
@@ -588,6 +624,8 @@ AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_ARM_LINUX,
 AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_S390X_LINUX,
                test x$VGCONF_PLATFORM_PRI_CAPS = xS390X_LINUX \
                  -o x$VGCONF_PLATFORM_SEC_CAPS = xS390X_LINUX)
+AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_MIPS32_LINUX,
+               test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX)
 
 AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_X86_DARWIN,   
                test x$VGCONF_PLATFORM_PRI_CAPS = xX86_DARWIN \
@@ -605,7 +643,8 @@ AM_CONDITIONAL(VGCONF_OS_IS_LINUX,
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_LINUX \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_LINUX \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xARM_LINUX \
-                 -o x$VGCONF_PLATFORM_PRI_CAPS = xS390X_LINUX)
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xS390X_LINUX \
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX)
 AM_CONDITIONAL(VGCONF_OS_IS_DARWIN,
                test x$VGCONF_PLATFORM_PRI_CAPS = xX86_DARWIN \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_DARWIN)
@@ -616,6 +655,19 @@ AM_CONDITIONAL(VGCONF_OS_IS_DARWIN,
 AM_CONDITIONAL(VGCONF_HAVE_PLATFORM_SEC,
                test x$VGCONF_PLATFORM_SEC_CAPS != x)
 
+dnl automake-1.10 does not have AM_COND_IF (added in 1.11), so we supply a
+dnl fallback definition
+dnl The macro is courtesy of Dave Hart:
+dnl   https://lists.gnu.org/archive/html/automake/2010-12/msg00045.html
+m4_ifndef([AM_COND_IF], [AC_DEFUN([AM_COND_IF], [
+if test -z "$$1_TRUE"; then :
+  m4_n([$2])[]dnl
+m4_ifval([$3],
+[else
+  $3
+])dnl
+fi[]dnl
+])])
 
 #----------------------------------------------------------------------------
 # Inner Valgrind?
@@ -637,6 +689,62 @@ if test "$vg_cv_inner" = yes; then
 else
     VALT_LOAD_ADDRESS_PRI=$valt_load_address_pri_norml
     VALT_LOAD_ADDRESS_SEC=$valt_load_address_sec_norml
+fi
+
+
+#----------------------------------------------------------------------------
+# Define MIPS_PAGE_SHIFT (--with-pagesize)
+#----------------------------------------------------------------------------
+AC_ARG_WITH(pagesize,
+   [  --with-pagesize=        override detected page size (4, 16 or 64)],
+   [psize=$withval],
+   [psize=0]
+)
+ 
+if test "$psize" = "0"; then
+    psizer=`getconf PAGESIZE`
+    let "psize=${psizer}/1024"
+fi
+
+if test "$psize" = "4"; then
+    AC_DEFINE([MIPS_PAGE_SHIFT], 12, [configured page size 4k])
+elif test "$psize" = "16"; then
+    AC_DEFINE([MIPS_PAGE_SHIFT], 14, [configured page size 16k])
+elif test "$psize" = "64"; then
+    AC_DEFINE([MIPS_PAGE_SHIFT], 16, [configured page size 64k])
+else
+   AC_DEFINE([MIPS_PAGE_SHIFT], 12, [configured default page size 4k])
+fi
+AC_MSG_RESULT([checking for Pagesize... ${psize}k])
+
+#----------------------------------------------------------------------------
+# Define shm_align for MIPS (--shared-memory-alignment)
+#----------------------------------------------------------------------------
+AC_ARG_WITH(alignment,
+   [  --with-alignment=       shared memory alignment for MIPS],
+   [align=$withval],
+   [align=-1]
+)
+
+mod=`expr $align % 1024`
+
+let "psz=psize*1024*2"
+
+if test "$align" = "-1"; then
+    AC_DEFINE([SHM_ALIGNMENT], 2*(1UL << MIPS_PAGE_SHIFT), 
+              [configured memory alignment 2*PAGE_SIZE])
+    AC_MSG_RESULT([checking for shared memory alignment... 2*PAGE_SIZE])
+elif test "$mod" = "0"; then
+    if test $align -lt $psz;
+    then
+        AC_MSG_ERROR([Alignment must be >= PAGE_SIZE])
+    else
+        AC_DEFINE_UNQUOTED([SHM_ALIGNMENT], ${align}, 
+                  [configured memory alignment 2*PAGE_SIZE])
+        AC_MSG_RESULT([checking for shared memory alignment... ${align}])     
+    fi
+else
+    AC_MSG_ERROR([Alignment % 1024 must be zero])
 fi
 
 
@@ -791,6 +899,13 @@ case "${GLIBC_VERSION}" in
 	DEFAULT_SUPP="glibc-2.34567-NPTL-helgrind.supp ${DEFAULT_SUPP}"
 	DEFAULT_SUPP="glibc-2.X-drd.supp ${DEFAULT_SUPP}"
 	;;
+     2.16)
+	AC_MSG_RESULT(2.16 family)
+	AC_DEFINE([GLIBC_2_16], 1, [Define to 1 if you're using glibc 2.16.x])
+	DEFAULT_SUPP="glibc-2.X.supp ${DEFAULT_SUPP}"
+	DEFAULT_SUPP="glibc-2.34567-NPTL-helgrind.supp ${DEFAULT_SUPP}"
+	DEFAULT_SUPP="glibc-2.X-drd.supp ${DEFAULT_SUPP}"
+	;;
      darwin)
 	AC_MSG_RESULT(Darwin)
 	AC_DEFINE([DARWIN_LIBC], 1, [Define to 1 if you're using Darwin])
@@ -804,7 +919,7 @@ case "${GLIBC_VERSION}" in
 
      *)
 	AC_MSG_RESULT([unsupported version ${GLIBC_VERSION}])
-	AC_MSG_ERROR([Valgrind requires glibc version 2.2 - 2.15])
+	AC_MSG_ERROR([Valgrind requires glibc version 2.2 - 2.16])
 	AC_MSG_ERROR([or Darwin libc])
 	;;
 esac
@@ -829,10 +944,10 @@ DEFAULT_SUPP="exp-sgcheck.supp ${DEFAULT_SUPP}"
 
 # Normally the PLAT = (ARCH, OS) characterisation of the platform is enough.
 # But there are times where we need a bit more control.  The motivating
-# and currently only case is Android: this is almost identical to arm-linux,
-# but not quite.  So this introduces the concept of platform variant tags,
-# which get passed in the compile as -DVGPV_<arch>_<os>_<variant> along
-# with the main -DVGP_<arch>_<os> definition.
+# and currently only case is Android: this is almost identical to
+# {x86,arm}-linux, but not quite.  So this introduces the concept of platform
+# variant tags, which get passed in the compile as -DVGPV_<arch>_<os>_<variant>
+# along with the main -DVGP_<arch>_<os> definition.
 #
 # In almost all cases, the <variant> bit is "vanilla".  But for Android
 # it is "android" instead.
@@ -845,15 +960,14 @@ DEFAULT_SUPP="exp-sgcheck.supp ${DEFAULT_SUPP}"
 #
 #   -DVGP_arm_linux -DVGPV_arm_linux_android
 #
-# The setup of the platform variant is pushed relatively far down this
-# file in order that we can inspect any of the variables set above.
+# Same for x86. The setup of the platform variant is pushed relatively far
+# down this file in order that we can inspect any of the variables set above.
 
 # In the normal case ..
 VGCONF_PLATVARIANT="vanilla"
 
-# Android on ARM ?
-if test "$VGCONF_ARCH_PRI-$VGCONF_OS" = "arm-linux" \
-        -a "$GLIBC_VERSION" = "bionic";
+# Android ?
+if test "$GLIBC_VERSION" = "bionic";
 then
    VGCONF_PLATVARIANT="android"
 fi
@@ -1070,11 +1184,13 @@ CFLAGS=$safe_CFLAGS
 
 AM_CONDITIONAL(HAS_VSX, test x$ac_have_vsx = xyes)
 
+
 AC_MSG_CHECKING([that assembler knows DFP])
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 ]], [[
   __asm__ __volatile__("dadd 1, 2, 3");
+  __asm__ __volatile__("dcffix 1, 2");
 ]])], [
 ac_asm_have_dfp=yes
 AC_MSG_RESULT([yes])
@@ -1083,12 +1199,14 @@ ac_asm_have_dfp=no
 AC_MSG_RESULT([no])
 ])
 
+
 AC_MSG_CHECKING([that compiler knows -mhard-dfp switch])
 safe_CFLAGS=$CFLAGS
 CFLAGS="-mhard-dfp"
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 ]], [[
   __asm__ __volatile__("dadd 1, 2, 3");
+  __asm__ __volatile__("dcffix 1, 2");
 ]])], [
 ac_gcc_have_dfp=yes
 AC_MSG_RESULT([yes])
@@ -1100,6 +1218,22 @@ AC_MSG_RESULT([no])
 CFLAGS=$safe_CFLAGS
 
 AM_CONDITIONAL(HAS_DFP, test x$ac_asm_have_dfp = xyes -a x$ac_gcc_have_dfp = xyes)
+
+
+AC_MSG_CHECKING([that compiler knows DFP datatypes])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+]], [[
+  _Decimal64 x = 0.0DD;
+]])], [
+ac_gcc_have_dfp_type=yes
+AC_MSG_RESULT([yes])
+], [
+ac_gcc_have_dfp_type=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(BUILD_DFP_TESTS, test x$ac_gcc_have_dfp_type = xyes)
+
 
 # Check for pthread_create@GLIBC2.0
 AC_MSG_CHECKING([for pthread_create@GLIBC2.0()])
@@ -1280,9 +1414,7 @@ AC_MSG_RESULT([no])
 ])
 CFLAGS=$safe_CFLAGS
 
-if test x$no_pointer_sign = xyes; then
-  CFLAGS="$CFLAGS -Wno-pointer-sign"
-fi
+AM_CONDITIONAL(HAS_POINTER_SIGN_WARNING, test x$no_pointer_sign = xyes)
 
 
 # does this compiler support -Wno-empty-body ?
@@ -1579,6 +1711,31 @@ AC_MSG_RESULT([no])
 AM_CONDITIONAL(BUILD_PCLMULQDQ_TESTS, test x$ac_have_as_pclmulqdq = xyes)
 
 
+# does the x86/amd64 assembler understand the VPCLMULQDQ instruction?
+# Note, this doesn't generate a C-level symbol.  It generates a
+# automake-level symbol (BUILD_VPCLMULQDQ_TESTS), used in test Makefile.am's
+AC_MSG_CHECKING([if x86/amd64 assembler supports 'vpclmulqdq'])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  do {
+      /*
+       * Carry-less multiplication of xmm1 with xmm2 and store the result in
+       * xmm3. The immediate is used to determine which quadwords of xmm1 and
+       * xmm2 should be used.
+       */
+   __asm__ __volatile__(
+      "vpclmulqdq \$0,%%xmm1,%%xmm2,%%xmm3" : : : );
+  } while (0)
+]])], [
+ac_have_as_vpclmulqdq=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_as_vpclmulqdq=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(BUILD_VPCLMULQDQ_TESTS, test x$ac_have_as_vpclmulqdq = xyes)
+
+
 # does the x86/amd64 assembler understand the LZCNT instruction?
 # Note, this doesn't generate a C-level symbol.  It generates a
 # automake-level symbol (BUILD_LZCNT_TESTS), used in test Makefile.am's
@@ -1586,7 +1743,7 @@ AC_MSG_CHECKING([if x86/amd64 assembler supports 'lzcnt'])
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   do { 		 
-      __asm__ __volatile__("lzcnt %rax,%rax");
+      __asm__ __volatile__("lzcnt %%rax,%%rax" : : : "rax");
   } while (0)
 ]])], [
   ac_have_as_lzcnt=yes
@@ -1609,7 +1766,9 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
    __asm__ __volatile__(
       "crc32q %%r15,%%r15" : : : "r15" );
    __asm__ __volatile__(
-      "pblendvb (%rcx), %xmm11"); }
+      "pblendvb (%%rcx), %%xmm11" : : : "memory", "xmm11"); 
+   __asm__ __volatile__(
+      "aesdec %%xmm2, %%xmm1" : : : "xmm2", "xmm1"); }
   while (0)
 ]])], [
 ac_have_as_sse42=yes
@@ -1620,6 +1779,81 @@ AC_MSG_RESULT([no])
 ])
 
 AM_CONDITIONAL(BUILD_SSE42_TESTS, test x$ac_have_as_sse42 = xyes)
+
+
+# does the x86/amd64 assembler understand AVX instructions?
+# Note, this doesn't generate a C-level symbol.  It generates a
+# automake-level symbol (BUILD_AVX_TESTS), used in test Makefile.am's
+AC_MSG_CHECKING([if x86/amd64 assembler speaks AVX])
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  do { long long int x; 
+   __asm__ __volatile__(
+      "vmovupd (%%rsp), %%ymm7" : : : "xmm7" );
+   __asm__ __volatile__(
+      "vaddpd %%ymm6,%%ymm7,%%ymm8" : : : "xmm6","xmm7","xmm8"); }
+  while (0)
+]])], [
+ac_have_as_avx=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_as_avx=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(BUILD_AVX_TESTS, test x$ac_have_as_avx = xyes)
+
+
+# does the x86/amd64 assembler understand MOVBE?
+# Note, this doesn't generate a C-level symbol.  It generates a
+# automake-level symbol (BUILD_MOVBE_TESTS), used in test Makefile.am's
+AC_MSG_CHECKING([if x86/amd64 assembler knows the MOVBE insn])
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  do { long long int x; 
+   __asm__ __volatile__(
+      "movbe (%%rsp), %%r15" : : : "memory", "r15" ); }
+  while (0)
+]])], [
+ac_have_as_movbe=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_as_movbe=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(BUILD_MOVBE_TESTS, test x$ac_have_as_movbe = xyes)
+
+
+# Does the C compiler support the "ifunc" attribute
+# Note, this doesn't generate a C-level symbol.  It generates a
+# automake-level symbol (BUILD_IFUNC_TESTS), used in test Makefile.am's
+AC_MSG_CHECKING([if gcc supports the ifunc attribute])
+
+AC_LINK_IFELSE([AC_LANG_SOURCE([[
+static void mytest(void) {}
+
+static void (*resolve_test(void))(void)
+{
+    return (void (*)(void))&mytest;
+}
+
+void test(void) __attribute__((ifunc("resolve_test")));
+
+int main()
+{
+    test();
+    return 0;
+}
+]])], [
+ac_have_ifunc_attr=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_ifunc_attr=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(BUILD_IFUNC_TESTS, test x$ac_have_ifunc_attr = xyes)
 
 
 # XXX JRS 2010 Oct 13: what is this for?  For sure, we don't need this
@@ -1763,18 +1997,25 @@ MPI_CC="mpicc"
 mflag_primary=
 if test x$VGCONF_PLATFORM_PRI_CAPS = xX86_LINUX \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_LINUX \
-     -o x$VGCONF_PLATFORM_PRI_CAPS = xARM_LINUX ; then
+     -o x$VGCONF_PLATFORM_PRI_CAPS = xARM_LINUX \
+     -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX ; then
   mflag_primary=$FLAG_M32
 elif test x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_LINUX \
        -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_LINUX \
        -o x$VGCONF_PLATFORM_PRI_CAPS = xS390X_LINUX ; then
   mflag_primary=$FLAG_M64
+elif test x$VGCONF_PLATFORM_PRI_CAPS = xX86_DARWIN ; then
+  mflag_primary="$FLAG_M32 -arch i386"
+elif test x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_DARWIN ; then
+  mflag_primary="$FLAG_M64 -arch x86_64"
 fi
 
 mflag_secondary=
 if test x$VGCONF_PLATFORM_SEC_CAPS = xX86_LINUX \
      -o x$VGCONF_PLATFORM_SEC_CAPS = xPPC32_LINUX ; then
   mflag_secondary=$FLAG_M32
+elif test x$VGCONF_PLATFORM_SEC_CAPS = xX86_DARWIN ; then
+  mflag_secondary="$FLAG_M32 -arch i386"
 fi
 
 
@@ -1784,19 +2025,39 @@ AC_ARG_WITH(mpicc,
 )
 AC_SUBST(MPI_CC)
 
+## We AM_COND_IF here instead of automake "if" in mpi/Makefile.am so that we can
+## use these values in the check for a functioning mpicc.
+##
+## We leave the MPI_FLAG_M3264_ logic in mpi/Makefile.am and assume that
+## mflag_primary/mflag_secondary are sufficient approximations of that behavior
+AM_COND_IF([VGCONF_OS_IS_LINUX],
+           [CFLAGS_MPI="-g -O -fno-omit-frame-pointer -Wall -fpic"
+            LDFLAGS_MPI="-fpic -shared"])
+AM_COND_IF([VGCONF_OS_IS_DARWIN],
+           [CFLAGS_MPI="-g -O -fno-omit-frame-pointer -Wall -dynamic"
+            LDFLAGS_MPI="-dynamic -dynamiclib -all_load"])
+
+AC_SUBST([CFLAGS_MPI])
+AC_SUBST([LDFLAGS_MPI])
+
+
 ## See if MPI_CC works for the primary target
 ##
 AC_MSG_CHECKING([primary target for usable MPI2-compliant C compiler and mpi.h])
 saved_CC=$CC
 saved_CFLAGS=$CFLAGS
 CC=$MPI_CC
-CFLAGS=$mflag_primary
+CFLAGS="$CFLAGS_MPI $mflag_primary"
+saved_LDFLAGS="$LDFLAGS"
+LDFLAGS="$LDFLAGS_MPI $mflag_primary"
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <mpi.h>
 #include <stdio.h>
 ]], [[
+  int ni, na, nd, comb;
   int r = MPI_Init(NULL,NULL);
-  r |= MPI_Type_get_contents( MPI_INT, 0,0,0, NULL,NULL,NULL );
+  r |= MPI_Type_get_envelope( MPI_INT, &ni, &na, &nd, &comb );
+  r |= MPI_Finalize();
   return r; 
 ]])], [
 ac_have_mpi2_pri=yes
@@ -1807,6 +2068,7 @@ AC_MSG_RESULT([no])
 ])
 CC=$saved_CC
 CFLAGS=$saved_CFLAGS
+LDFLAGS="$saved_LDFLAGS"
 AM_CONDITIONAL(BUILD_MPIWRAP_PRI, test x$ac_have_mpi2_pri = xyes)
 
 ## See if MPI_CC works for the secondary target.  Complication: what if
@@ -1817,18 +2079,22 @@ AM_CONDITIONAL(BUILD_MPIWRAP_PRI, test x$ac_have_mpi2_pri = xyes)
 AC_MSG_CHECKING([secondary target for usable MPI2-compliant C compiler and mpi.h])
 saved_CC=$CC
 saved_CFLAGS=$CFLAGS
+saved_LDFLAGS="$LDFLAGS"
+LDFLAGS="$LDFLAGS_MPI $mflag_secondary"
 if test x$VGCONF_PLATFORM_SEC_CAPS = x ; then
   CC="$MPI_CC this will surely fail"
 else
   CC=$MPI_CC
 fi
-CFLAGS=$mflag_secondary
+CFLAGS="$CFLAGS_MPI $mflag_secondary"
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <mpi.h>
 #include <stdio.h>
 ]], [[
+  int ni, na, nd, comb;
   int r = MPI_Init(NULL,NULL);
-  r |= MPI_Type_get_contents( MPI_INT, 0,0,0, NULL,NULL,NULL );
+  r |= MPI_Type_get_envelope( MPI_INT, &ni, &na, &nd, &comb );
+  r |= MPI_Finalize();
   return r; 
 ]])], [
 ac_have_mpi2_sec=yes
@@ -1839,6 +2105,7 @@ AC_MSG_RESULT([no])
 ])
 CC=$saved_CC
 CFLAGS=$saved_CFLAGS
+LDFLAGS="$saved_LDFLAGS"
 AM_CONDITIONAL(BUILD_MPIWRAP_SEC, test x$ac_have_mpi2_sec = xyes)
 
 
@@ -2151,6 +2418,8 @@ AC_CONFIG_FILES([
    memcheck/tests/x86-linux/Makefile
    memcheck/tests/ppc32/Makefile
    memcheck/tests/ppc64/Makefile
+   memcheck/tests/s390x/Makefile
+   memcheck/tests/vbit-test/Makefile
    cachegrind/Makefile
    cachegrind/tests/Makefile
    cachegrind/tests/x86/Makefile
@@ -2175,6 +2444,7 @@ AC_CONFIG_FILES([
    none/tests/x86/Makefile
    none/tests/arm/Makefile
    none/tests/s390x/Makefile
+   none/tests/mips32/Makefile
    none/tests/linux/Makefile
    none/tests/darwin/Makefile
    none/tests/x86-linux/Makefile

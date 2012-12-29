@@ -7,10 +7,10 @@
    This file is part of Callgrind, a Valgrind tool for call graph
    profiling programs.
 
-   Copyright (C) 2003-2011, Josef Weidendorfer (Josef.Weidendorfer@gmx.de)
+   Copyright (C) 2003-2012, Josef Weidendorfer (Josef.Weidendorfer@gmx.de)
 
    This tool is derived from and contains code from Cachegrind
-   Copyright (C) 2002-2011 Nicholas Nethercote (njn@valgrind.org)
+   Copyright (C) 2002-2012 Nicholas Nethercote (njn@valgrind.org)
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -66,7 +66,7 @@ typedef struct {
 
 /* Cache state */
 typedef struct {
-   char*        name;
+   const HChar* name;
    int          size;                   /* bytes */
    int          assoc;
    int          line_size;              /* bytes */
@@ -76,7 +76,7 @@ typedef struct {
    int          line_size_bits;
    int          tag_shift;
    UWord        tag_mask;
-   char         desc_line[128];
+   HChar        desc_line[128];
    UWord*       tags;
 
   /* for cache use */
@@ -227,18 +227,23 @@ static void print_cache(cache_t2* c)
 
 
 /*------------------------------------------------------------*/
-/*--- Write Through Cache Simulation                       ---*/
+/*--- Simple Cache Simulation                              ---*/
 /*------------------------------------------------------------*/
 
 /*
- * Simple model: L1 & LL Write Through
- * Does not distinguish among read and write references
+ * Model: single inclusive, 2-level cache hierarchy (L1/LL)
+ *        with write-allocate
+ *
+ * For simple cache hit/miss counts, we do not have to
+ * maintain the dirty state of lines (no need to distinguish
+ * read/write references), and the resulting counts are the
+ * same for write-through and write-back caches.
  *
  * Simulator functions:
  *  CacheModelResult cachesim_I1_ref(Addr a, UChar size)
  *  CacheModelResult cachesim_D1_ref(Addr a, UChar size)
  */
-
+__attribute__((always_inline))
 static __inline__
 CacheResult cachesim_setref(cache_t2* c, UInt set_no, UWord tag)
 {
@@ -274,28 +279,34 @@ CacheResult cachesim_setref(cache_t2* c, UInt set_no, UWord tag)
     return Miss;
 }
 
-static CacheResult cachesim_ref(cache_t2* c, Addr a, UChar size)
+__attribute__((always_inline))
+static __inline__
+CacheResult cachesim_ref(cache_t2* c, Addr a, UChar size)
 {
-    UInt  set1 = ( a         >> c->line_size_bits) & (c->sets_min_1);
-    UInt  set2 = ((a+size-1) >> c->line_size_bits) & (c->sets_min_1);
-    UWord tag  = a >> c->tag_shift;
+    UWord block1 =  a         >> c->line_size_bits;
+    UWord block2 = (a+size-1) >> c->line_size_bits;
+    UInt  set1   = block1 & c->sets_min_1;
+    /* the tag does not need to include bits specifying the set,
+     * but it can, and this saves instructions */
+    UWord tag1   = block1;
 
     /* Access entirely within line. */
-    if (set1 == set2) 
-	return cachesim_setref(c, set1, tag);
+    if (block1 == block2)
+	return cachesim_setref(c, set1, tag1);
 
     /* Access straddles two lines. */
-    /* Nb: this is a fast way of doing ((set1+1) % c->sets) */
-    else if (((set1 + 1) & (c->sets_min_1)) == set2) {
-	UWord tag2  = (a+size-1) >> c->tag_shift;
+    else if (block1 + 1 == block2) {
+        UInt  set2 = block2 & c->sets_min_1;
+        UWord tag2 = block2;
 
 	/* the call updates cache structures as side effect */
-	CacheResult res1 =  cachesim_setref(c, set1, tag);
+	CacheResult res1 =  cachesim_setref(c, set1, tag1);
 	CacheResult res2 =  cachesim_setref(c, set2, tag2);
 	return ((res1 == Miss) || (res2 == Miss)) ? Miss : Hit;
 
    } else {
-       VG_(printf)("addr: %lx  size: %u  sets: %d %d", a, size, set1, set2);
+       VG_(printf)("addr: %lx  size: %u  blocks: %ld %ld",
+		   a, size, block1, block2);
        VG_(tool_panic)("item straddles more than two cache sets");
    }
    return Hit;
@@ -338,6 +349,7 @@ CacheModelResult cachesim_D1_ref(Addr a, UChar size)
  * this cache line (CACHELINE_DIRTY = 1). By OR'ing the reference
  * type (Read/Write), the line gets dirty on a write.
  */
+__attribute__((always_inline))
 static __inline__
 CacheResult cachesim_setref_wb(cache_t2* c, RefType ref, UInt set_no, UWord tag)
 {
@@ -376,7 +388,7 @@ CacheResult cachesim_setref_wb(cache_t2* c, RefType ref, UInt set_no, UWord tag)
     return (tmp_tag & CACHELINE_DIRTY) ? MissDirty : Miss;
 }
 
-
+__attribute__((always_inline))
 static __inline__
 CacheResult cachesim_ref_wb(cache_t2* c, RefType ref, Addr a, UChar size)
 {
@@ -1034,7 +1046,7 @@ void inc_costs(CacheModelResult r, ULong* c1, ULong* c2)
 }
 
 static
-Char* cacheRes(CacheModelResult r)
+const HChar* cacheRes(CacheModelResult r)
 {
     switch(r) {
     case L1_Hit:    return "L1 Hit ";
@@ -1307,6 +1319,28 @@ static void cachesim_post_clo_init(void)
   D1.name = "D1";
   LL.name = "LL";
 
+  // min_line_size is used to make sure that we never feed
+  // accesses to the simulator straddling more than two
+  // cache lines at any cache level
+  CLG_(min_line_size) = (I1c.line_size < D1c.line_size)
+                           ? I1c.line_size : D1c.line_size;
+  CLG_(min_line_size) = (LLc.line_size < CLG_(min_line_size))
+                           ? LLc.line_size : CLG_(min_line_size);
+
+  Int largest_load_or_store_size
+     = VG_(machine_get_size_of_largest_guest_register)();
+  if (CLG_(min_line_size) < largest_load_or_store_size) {
+     /* We can't continue, because the cache simulation might
+        straddle more than 2 lines, and it will assert.  So let's
+        just stop before we start. */
+     VG_(umsg)("Callgrind: cannot continue: the minimum line size (%d)\n",
+               (Int)CLG_(min_line_size));
+     VG_(umsg)("  must be equal to or larger than the maximum register size (%d)\n",
+               largest_load_or_store_size );
+     VG_(umsg)("  but it is not.  Exiting now.\n");
+     VG_(exit)(1);
+  }
+
   cachesim_initcache(I1c, &I1);
   cachesim_initcache(D1c, &D1);
   cachesim_initcache(LLc, &LL);
@@ -1396,7 +1430,7 @@ void cachesim_clear(void)
 }
 
 
-static void cachesim_getdesc(Char* buf)
+static void cachesim_getdesc(HChar* buf)
 {
   Int p;
   p = VG_(sprintf)(buf, "\ndesc: I1 cache: %s\n", I1.desc_line);
@@ -1423,7 +1457,7 @@ void cachesim_print_opts(void)
  *
  * Called from CLG_(process_cmd_line_option)() in clo.c
  */
-static Bool cachesim_parse_opt(Char* arg)
+static Bool cachesim_parse_opt(const HChar* arg)
 {
    if      VG_BOOL_CLO(arg, "--simulate-wb",      clo_simulate_writeback) {}
    else if VG_BOOL_CLO(arg, "--simulate-hwpref",  clo_simulate_hwpref)    {}
@@ -1450,7 +1484,7 @@ static Bool cachesim_parse_opt(Char* arg)
 /* Adds commas to ULong, right justifying in a field field_width wide, returns
  * the string in buf. */
 static
-Int commify(ULong n, int field_width, char* buf)
+Int commify(ULong n, int field_width, HChar* buf)
 {
    int len, n_commas, i, j, new_len, space;
 
@@ -1480,7 +1514,7 @@ Int commify(ULong n, int field_width, char* buf)
 }
 
 static
-void percentify(Int n, Int ex, Int field_width, char buf[]) 
+void percentify(Int n, Int ex, Int field_width, HChar buf[]) 
 {
    int i, len, space;
     
@@ -1501,7 +1535,7 @@ void cachesim_printstat(Int l1, Int l2, Int l3)
   FullCost total = CLG_(total_cost), D_total = 0;
   ULong LL_total_m, LL_total_mr, LL_total_mw,
     LL_total, LL_total_r, LL_total_w;
-  char buf1[RESULTS_BUF_LEN], 
+  HChar buf1[RESULTS_BUF_LEN], 
     buf2[RESULTS_BUF_LEN], 
     buf3[RESULTS_BUF_LEN];
   Int p;
@@ -1774,4 +1808,3 @@ struct cachesim_if CLG_(cachesim) = {
 /*--------------------------------------------------------------------*/
 /*--- end                                                 ct_sim.c ---*/
 /*--------------------------------------------------------------------*/
-

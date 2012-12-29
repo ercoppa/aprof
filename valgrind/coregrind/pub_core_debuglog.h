@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2011 Julian Seward
+   Copyright (C) 2000-2012 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -56,7 +56,7 @@
 
 /* Module startup. */
 extern 
-void VG_(debugLog_startup) ( Int level, HChar* who );
+void VG_(debugLog_startup) ( Int level, const HChar* who );
 
 
 /* Whether %ps should escape XML metacharacters. */

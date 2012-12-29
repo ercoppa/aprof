@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2011 OpenWorks LLP
+   Copyright (C) 2004-2012 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -37,7 +37,6 @@
 #define __LIBVEX_PUB_GUEST_PPC64_H
 
 #include "libvex_basictypes.h"
-#include "libvex_emwarn.h"
 
 /*
     volatile ==  caller-saved (not preserved across function calls)
@@ -246,8 +245,8 @@ typedef
       /* Vector Status and Control Register */
       /* 1332 */ UInt guest_VSCR;
 
-      /* Emulation warnings */
-      /* 1336 */ UInt guest_EMWARN;
+      /* Emulation notes */
+      /* 1336 */ UInt guest_EMNOTE;
 
       /* gcc adds 4 bytes padding here: pre-empt it. */
       /* 1340 */ UInt  padding;
@@ -280,8 +279,11 @@ typedef
          threading on AIX. */
       /* 1648 */ ULong guest_SPRG3_RO;
 
+      /* offsets in comments are wrong ..*/
       /* Padding to make it have an 16-aligned size */
       /* 1656 */ ULong padding2;
+      /* 16XX */ ULong padding3;
+      /* 16XX */ ULong padding4;
    }
    VexGuestPPC64State;
 

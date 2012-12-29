@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2006-2011 OpenWorks LLP
+   Copyright (C) 2006-2012 OpenWorks LLP
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
@@ -69,7 +69,7 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo );
 
 struct _IICreateImageInfo {
    /* ------ Mandatory fields ------ */
-   HChar*  toolname;
+   const HChar*  toolname;
    Addr    sp_at_startup;
    Addr    clstack_top;
    /* ------ Per-OS fields ------ */

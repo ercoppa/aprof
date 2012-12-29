@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2011 Julian Seward
+   Copyright (C) 2000-2012 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -38,7 +38,7 @@
 // address space.
 extern
 Bool ML_(valid_client_addr)(Addr start, SizeT size, ThreadId tid,
-                            const Char *syscallname);
+                            const HChar *syscallname);
 
 /* Handy small function to help stop wrappers from segfaulting when
    presented with bogus client addresses.  Is not used for generating
@@ -50,7 +50,8 @@ extern Bool ML_(client_signal_OK)(Int sigNo);
 
 // Return true if we're allowed to use or create this fd.
 extern
-Bool ML_(fd_allowed)(Int fd, const Char *syscallname, ThreadId tid, Bool isNewFD);
+Bool ML_(fd_allowed)(Int fd, const HChar *syscallname, ThreadId tid,
+                     Bool isNewFD);
 
 extern void ML_(record_fd_open_named)          (ThreadId tid, Int fd);
 extern void ML_(record_fd_open_nameless)       (ThreadId tid, Int fd);
@@ -74,10 +75,10 @@ ML_(notify_core_and_tool_of_mprotect) ( Addr a, SizeT len, Int prot );
 
 extern void
 ML_(buf_and_len_pre_check) ( ThreadId tid, Addr buf_p, Addr buflen_p,
-                             Char* buf_s, Char* buflen_s );
+                             const HChar* buf_s, const HChar* buflen_s );
 extern void
 ML_(buf_and_len_post_check) ( ThreadId tid, SysRes res,
-                              Addr buf_p, Addr buflen_p, Char* s );
+                              Addr buf_p, Addr buflen_p, const HChar* s );
 
 /* PRE and POST for unknown ioctls based on ioctl request encoding */
 extern 
@@ -190,7 +191,6 @@ DECL_TEMPLATE(generic, sys_old_getrlimit);         // SVr4, 4.3BSD L?
 DECL_TEMPLATE(generic, sys_statfs);                // * L?
 DECL_TEMPLATE(generic, sys_fstatfs);               // * L?
 DECL_TEMPLATE(generic, sys_iopl);                  // (x86/amd64) L
-DECL_TEMPLATE(generic, sys_ipc);                   // (x86) L
 DECL_TEMPLATE(generic, sys_newuname);              // * P
 DECL_TEMPLATE(generic, sys_pread64);               // * (Unix98?)
 DECL_TEMPLATE(generic, sys_pwrite64);              // * (Unix98?)
@@ -209,7 +209,7 @@ DECL_TEMPLATE(generic, sys_fstatfs64);             // * (?)
 
 /* ---------------------------------------------------------------------
    Wrappers for sockets and ipc-ery.  These are split into standalone
-   procedures because x86-linux hides them inside multiplexors
+   procedures because some platforms hides them inside multiplexors
    (sys_socketcall and sys_ipc).
    ------------------------------------------------------------------ */
 
@@ -235,9 +235,12 @@ extern void   ML_(generic_PRE_sys_getsockname)  ( TId, UW, UW, UW );
 extern void   ML_(generic_POST_sys_getsockname) ( TId, SR, UW, UW, UW );
 extern void   ML_(generic_PRE_sys_getpeername)  ( TId, UW, UW, UW );
 extern void   ML_(generic_POST_sys_getpeername) ( TId, SR, UW, UW, UW );
-extern void   ML_(generic_PRE_sys_sendmsg)      ( TId, Char *, struct vki_msghdr * );
-extern void   ML_(generic_PRE_sys_recvmsg)      ( TId, Char *, struct vki_msghdr * );
-extern void   ML_(generic_POST_sys_recvmsg)     ( TId, Char *, struct vki_msghdr *, UInt );
+extern void   ML_(generic_PRE_sys_sendmsg)      ( TId, const HChar *,
+                                                  struct vki_msghdr * );
+extern void   ML_(generic_PRE_sys_recvmsg)      ( TId, const HChar *,
+                                                  struct vki_msghdr * );
+extern void   ML_(generic_POST_sys_recvmsg)     ( TId, const HChar *,
+                                                  struct vki_msghdr *, UInt );
 
 extern void   ML_(generic_PRE_sys_semop)        ( TId, UW, UW, UW );
 extern void   ML_(generic_PRE_sys_semtimedop)   ( TId, UW, UW, UW, UW );

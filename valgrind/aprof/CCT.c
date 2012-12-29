@@ -51,7 +51,7 @@ CCTNode * APROF_(parent_CCT)(ThreadData * tdata) {
 	CCTNode * node = APROF_(get_activation)(tdata, depth - 1)->node;
 	while (node == NULL) {
 		depth--;
-		if (depth == 0) return tdata->root;
+		if (depth <= 1) return tdata->root;
 		node = APROF_(get_activation)(tdata, depth - 1)->node;
 	}
 	return node;
@@ -110,6 +110,55 @@ void APROF_(print_report_CCT)(FILE * f, CCTNode* root, UInt parent_id) {
 			APROF_(print_report_CCT)(f, theNodePtr, root->context_id);
 }
 
+
+#if CCT_GRAPHIC
+
+static void APROF_(clean_name)(char * name){
+	
+	//int corr = 0;
+	while(*name != '\0') {
+		
+		if (
+			*name == ':' || *name == '<' || *name == '(' || *name == ')'
+			|| *name == ')' || *name == '[' || *name == ']' || *name == ' '
+			|| *name == '.' || *name == '*' || *name == '&' || *name == ','
+			) {
+			*name = '_';
+			//corr++;
+		}
+		name++;
+	}
+	
+	//if (corr > 0) VG_(printf)("%s", name);
+}
+
+#define SKIP 1
+char function_skip[] = {"dl_start"};
+
+void APROF_(print_cct_graph)(FILE * f, CCTNode* root, UInt parent_id, char * parent_name) {
+	
+	// skip empty subtrees
+	if (root == NULL) return;
+
+	char msg[2048];
+
+	if (parent_name != NULL){
+		
+		//APROF_(clean_name)(root->name);
+		VG_(sprintf)(msg, "\"%s\"->\"%s%llu\";\n", parent_name, root->name, root->context_id);
+		APROF_(fwrite)(f, msg, VG_(strlen(msg)));
+
+	}
+	VG_(sprintf)(msg, "%s%llu", root->name, root->context_id);
+
+	// call recursively function on children
+	CCTNode* theNodePtr;
+	for (theNodePtr = root->firstChild;
+			theNodePtr != NULL;
+			theNodePtr = theNodePtr->nextSibling)
+					APROF_(print_cct_graph)(f, theNodePtr, root->context_id, msg);
+}
+#endif
 
 /*
  * Print a CCT

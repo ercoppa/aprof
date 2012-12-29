@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2011 Julian Seward
+   Copyright (C) 2000-2012 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -41,7 +41,7 @@
 extern Int VG_(max_signal);
 
 /* Returns the name of the vki signal sigNo */
-extern const Char *VG_(signame)(Int sigNo);
+extern const HChar *VG_(signame)(Int sigNo);
 
 /* Use high signals because native pthreads wants to use low */
 #define VG_SIGVGKILL       (VG_(max_signal)-0)
@@ -77,6 +77,7 @@ extern void VG_(synth_fault_perms)  (ThreadId tid, Addr addr);
 extern void VG_(synth_sigill)       (ThreadId tid, Addr addr);
 extern void VG_(synth_sigtrap)      (ThreadId tid);
 extern void VG_(synth_sigbus)       (ThreadId tid);
+extern void VG_(synth_sigfpe)       (ThreadId tid, UInt code);
 
 /* Extend the stack to cover addr, if possible */
 extern Bool VG_(extend_stack)(Addr addr, UInt maxsize);

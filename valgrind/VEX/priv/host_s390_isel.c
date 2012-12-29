@@ -8,7 +8,8 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright IBM Corp. 2010-2011
+   Copyright IBM Corp. 2010-2012
+   Copyright (C) 2012-2012  Florian Krohm   (britzel@acm.org)
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -112,6 +113,9 @@ typedef struct {
    UInt         vreg_ctr;
    UInt         hwcaps;
 
+   IRExpr      *previous_bfp_rounding_mode;
+   IRExpr      *previous_dfp_rounding_mode;
+
    ULong        old_value[NUM_TRACKED_REGS];
 
    /* The next two are for translation chaining */
@@ -131,6 +135,7 @@ static s390_opnd_RMI s390_isel_int_expr_RMI(ISelEnv *, IRExpr *);
 static void          s390_isel_int128_expr(HReg *, HReg *, ISelEnv *, IRExpr *);
 static HReg          s390_isel_float_expr(ISelEnv *, IRExpr *);
 static void          s390_isel_float128_expr(HReg *, HReg *, ISelEnv *, IRExpr *);
+static HReg          s390_isel_dfp_expr(ISelEnv *, IRExpr *);
 
 
 static Int
@@ -156,7 +161,7 @@ get_guest_reg(Int offset)
       /* counter is used both as 4-byte and as 8-byte entity */
    case S390X_GUEST_OFFSET(guest_counter)+1 ... S390X_GUEST_OFFSET(guest_counter)+3:
    case S390X_GUEST_OFFSET(guest_counter)+5 ... S390X_GUEST_OFFSET(guest_counter)+7:
-      vassert("partial update of this guest state register is not allowed");
+      vpanic("partial update of this guest state register is not allowed");
       break;
 
    default: break;
@@ -236,7 +241,7 @@ newVRegF(ISelEnv *env)
 
 /* Construct a non-virtual general purpose register */
 static __inline__ HReg
-make_gpr(ISelEnv *env, UInt regno)
+make_gpr(UInt regno)
 {
    return mkHReg(regno, HRcInt64, False /* virtual */ );
 }
@@ -425,14 +430,32 @@ s390_expr_is_const_zero(IRExpr *expr)
 
 /* Call a helper (clean or dirty)
    Arguments must satisfy the following conditions:
+
    (a) they are expressions yielding an integer result
    (b) there can be no more than S390_NUM_GPRPARMS arguments
-       guard is a Ity_Bit expression indicating whether or not the
-       call happens.  If guard==NULL, the call is unconditional.
+
+   guard is a Ity_Bit expression indicating whether or not the
+   call happens.  If guard == NULL, the call is unconditional.
+
+   Calling the helper function proceeds as follows:
+
+   (1) The helper arguments are evaluated and their value stored in
+       virtual registers.
+   (2) The condition code is evaluated
+   (3) The argument values are copied from the virtual registers to the
+       registers mandated by the ABI.
+   (4) Call the helper function.
+
+   This is not the most efficient way as step 3 generates register-to-register
+   moves. But it is the least fragile way as the only hidden dependency here
+   is that register-to-register moves (step 3) must not clobber the condition
+   code. Other schemes (e.g. VEX r2326) that attempt to avoid the register-
+   to-register add more such dependencies. Not good. Besides, it's the job
+   of the register allocator to throw out those reg-to-reg moves.
 */
 static void
 doHelperCall(ISelEnv *env, Bool passBBP, IRExpr *guard,
-             IRCallee *callee, IRExpr **args)
+             IRCallee *callee, IRExpr **args, HReg dst)
 {
    UInt n_args, i, argreg, size;
    ULong target;
@@ -447,7 +470,25 @@ doHelperCall(ISelEnv *env, Bool passBBP, IRExpr *guard,
       vpanic("doHelperCall: too many arguments");
    }
 
-   /* This is the "slow scheme". fixs390: implement the fast one */
+   /* All arguments must have Ity_I64. For two reasons:
+      (1) We do not handle floating point arguments.
+      (2) The ABI requires that integer values are sign- or zero-extended
+           to 64 bit.
+   */
+   Int arg_errors = 0;
+   for (i = 0; i < n_args; ++i) {
+      IRType type = typeOfIRExpr(env->type_env, args[i]);
+      if (type != Ity_I64) {
+         ++arg_errors;
+         vex_printf("calling %s: argument #%d has type ", callee->name, i);
+         ppIRType(type);
+         vex_printf("; Ity_I64 is required\n");
+      }
+   }
+
+   if (arg_errors)
+      vpanic("cannot continue due to errors in argument passing");
+
    argreg = 0;
 
    /* If we need the guest state pointer put it in a temporary arg reg */
@@ -476,11 +517,12 @@ doHelperCall(ISelEnv *env, Bool passBBP, IRExpr *guard,
       }
    }
 
-   /* Move the args to the final register */
+   /* Move the args to the final register. It is paramount, that the
+      code to move the registers does not clobber the condition code ! */
    for (i = 0; i < argreg; i++) {
       HReg finalreg;
 
-      finalreg = mkHReg(s390_gprno_from_arg_index(i), HRcInt64, False);
+      finalreg = make_gpr(s390_gprno_from_arg_index(i));
       size = sizeofIRType(Ity_I64);
       addInstr(env, s390_insn_move(size, finalreg, tmpregs[i]));
    }
@@ -489,30 +531,200 @@ doHelperCall(ISelEnv *env, Bool passBBP, IRExpr *guard,
 
    /* Finally, the call itself. */
    addInstr(env, s390_insn_helper_call(cc, (Addr64)target, n_args,
-                                       callee->name));
+                                       callee->name, dst));
 }
 
 
-/* Given an expression representing a rounding mode using IRRoundingMode
-   encoding convert it to an s390_round_t value.  */
-static s390_round_t
-decode_rounding_mode(IRExpr *rounding_expr)
+/*---------------------------------------------------------*/
+/*--- BFP helper functions                              ---*/
+/*---------------------------------------------------------*/
+
+/* Set the BFP rounding mode in the FPC. This function is called for
+   all non-conversion BFP instructions as those will always get the
+   rounding mode from the FPC. */
+static void 
+set_bfp_rounding_mode_in_fpc(ISelEnv *env, IRExpr *irrm)
 {
-   if (rounding_expr->tag == Iex_Const &&
-       rounding_expr->Iex.Const.con->tag == Ico_U32) {
-      IRRoundingMode mode = rounding_expr->Iex.Const.con->Ico.U32;
+   vassert(typeOfIRExpr(env->type_env, irrm) == Ity_I32);
+
+   /* Do we need to do anything? */
+   if (env->previous_bfp_rounding_mode &&
+       env->previous_bfp_rounding_mode->tag == Iex_RdTmp &&
+       irrm->tag == Iex_RdTmp &&
+       env->previous_bfp_rounding_mode->Iex.RdTmp.tmp == irrm->Iex.RdTmp.tmp) {
+      /* No - new mode is identical to previous mode.  */
+      return;
+   }
+
+   /* No luck - we better set it, and remember what we set it to. */
+   env->previous_bfp_rounding_mode = irrm;
+
+   /* The incoming rounding mode is in VEX IR encoding. Need to change
+      to s390.
+
+      rounding mode | s390 | IR
+      -------------------------
+      to nearest    |  00  | 00
+      to zero       |  01  | 11
+      to +infinity  |  10  | 10
+      to -infinity  |  11  | 01
+
+      So: s390 = (4 - IR) & 3
+   */
+   HReg ir = s390_isel_int_expr(env, irrm);
+
+   HReg mode = newVRegI(env);
+
+   addInstr(env, s390_insn_load_immediate(4, mode, 4));
+   addInstr(env, s390_insn_alu(4, S390_ALU_SUB, mode, s390_opnd_reg(ir)));
+   addInstr(env, s390_insn_alu(4, S390_ALU_AND, mode, s390_opnd_imm(3)));
+
+   addInstr(env, s390_insn_set_fpc_bfprm(4, mode));
+}
+
+
+/* This function is invoked for insns that support a specification of
+   a rounding mode in the insn itself. In that case there is no need to
+   stick the rounding mode into the FPC -- a good thing. However, the
+   rounding mode must be known. */
+static s390_bfp_round_t
+get_bfp_rounding_mode(ISelEnv *env, IRExpr *irrm)
+{
+   if (irrm->tag == Iex_Const) {          /* rounding mode is known */
+      vassert(irrm->Iex.Const.con->tag == Ico_U32);
+      IRRoundingMode mode = irrm->Iex.Const.con->Ico.U32;
 
       switch (mode) {
-      case Irrm_NEAREST:       return S390_ROUND_NEAREST_EVEN;
-      case Irrm_ZERO:          return S390_ROUND_ZERO;
-      case Irrm_PosINF:        return S390_ROUND_POSINF;
-      case Irrm_NegINF:        return S390_ROUND_NEGINF;
+      case Irrm_NEAREST:  return S390_BFP_ROUND_NEAREST_EVEN;
+      case Irrm_ZERO:     return S390_BFP_ROUND_ZERO;
+      case Irrm_PosINF:   return S390_BFP_ROUND_POSINF;
+      case Irrm_NegINF:   return S390_BFP_ROUND_NEGINF;
+      default:
+         vpanic("get_bfp_rounding_mode");
       }
    }
 
-   vpanic("decode_rounding_mode");
+   set_bfp_rounding_mode_in_fpc(env, irrm);
+   return S390_BFP_ROUND_PER_FPC;
 }
 
+
+/*---------------------------------------------------------*/
+/*--- DFP helper functions                              ---*/
+/*---------------------------------------------------------*/
+
+/* Set the DFP rounding mode in the FPC. This function is called for
+   all non-conversion DFP instructions as those will always get the
+   rounding mode from the FPC. */
+static void
+set_dfp_rounding_mode_in_fpc(ISelEnv *env, IRExpr *irrm)
+{
+   vassert(typeOfIRExpr(env->type_env, irrm) == Ity_I32);
+
+   /* Do we need to do anything? */
+   if (env->previous_dfp_rounding_mode &&
+       env->previous_dfp_rounding_mode->tag == Iex_RdTmp &&
+       irrm->tag == Iex_RdTmp &&
+       env->previous_dfp_rounding_mode->Iex.RdTmp.tmp == irrm->Iex.RdTmp.tmp) {
+      /* No - new mode is identical to previous mode.  */
+      return;
+   }
+
+   /* No luck - we better set it, and remember what we set it to. */
+   env->previous_dfp_rounding_mode = irrm;
+
+   /* The incoming rounding mode is in VEX IR encoding. Need to change
+      to s390.
+
+      rounding mode                     | S390 |  IR
+      -----------------------------------------------
+      to nearest, ties to even          | 000  | 000
+      to zero                           | 001  | 011
+      to +infinity                      | 010  | 010
+      to -infinity                      | 011  | 001
+      to nearest, ties away from 0      | 100  | 100
+      to nearest, ties toward 0         | 101  | 111
+      to away from 0                    | 110  | 110
+      to prepare for shorter precision  | 111  | 101
+
+      So: s390 = (IR ^ ((IR << 1) & 2))
+   */
+   HReg ir = s390_isel_int_expr(env, irrm);
+
+   HReg mode = newVRegI(env);
+
+   addInstr(env, s390_insn_move(4, mode, ir));
+   addInstr(env, s390_insn_alu(4, S390_ALU_LSH, mode, s390_opnd_imm(1)));
+   addInstr(env, s390_insn_alu(4, S390_ALU_AND, mode, s390_opnd_imm(2)));
+   addInstr(env, s390_insn_alu(4, S390_ALU_XOR, mode, s390_opnd_reg(ir)));
+
+   addInstr(env, s390_insn_set_fpc_dfprm(4, mode));
+}
+
+
+/* This function is invoked for insns that support a specification of
+   a rounding mode in the insn itself. In that case there is no need to
+   stick the rounding mode into the FPC -- a good thing. However, the
+   rounding mode must be known.
+   The IR to s390 encoding is chosen in the range 0:7 except
+   S390_DFP_ROUND_NEAREST_TIE_TOWARD_0 and
+   S390_DFP_ROUND_AWAY_0 which have no choice within the range.
+   Since the s390 dfp rounding mode encoding in 8:15 is not used, the
+   quantum excpetion is not suppressed and this is fine as valgrind does
+   not model this exception.
+
+   Translation table of
+   s390 DFP rounding mode to IRRoundingMode to s390 DFP rounding mode
+
+   s390(S390_DFP_ROUND_)  |  IR(Irrm_DFP_)       |  s390(S390_DFP_ROUND_)
+   --------------------------------------------------------------------
+   NEAREST_TIE_AWAY_0_1   |  NEAREST_TIE_AWAY_0  |  NEAREST_TIE_AWAY_0_1
+   NEAREST_TIE_AWAY_0_12  |     "                |     "
+   PREPARE_SHORT_3        |  PREPARE_SHORTER     |  PREPARE_SHORT_3
+   PREPARE_SHORT_15       |     "                |     "
+   NEAREST_EVEN_4         |  NEAREST             |  NEAREST_EVEN_4
+   NEAREST_EVEN_8         |     "                |     "
+   ZERO_5                 |  ZERO                |  ZERO_5
+   ZERO_9                 |     "                |     "
+   POSINF_6               |  PosINF              |  POSINF_6
+   POSINF_10              |     "                |     "
+   NEGINF_7               |  NegINF              |  NEGINF_7
+   NEGINF_11              |     "                |     "
+   NEAREST_TIE_TOWARD_0   |  NEAREST_TIE_TOWARD_0|  NEAREST_TIE_TOWARD_0
+   AWAY_0                 |  AWAY_FROM_ZERO      |  AWAY_0
+*/
+static s390_dfp_round_t
+get_dfp_rounding_mode(ISelEnv *env, IRExpr *irrm)
+{
+   if (irrm->tag == Iex_Const) {          /* rounding mode is known */
+      vassert(irrm->Iex.Const.con->tag == Ico_U32);
+      IRRoundingMode mode = irrm->Iex.Const.con->Ico.U32;
+
+      switch (mode) {
+      case Irrm_DFP_NEAREST:
+         return S390_DFP_ROUND_NEAREST_EVEN_4;
+      case Irrm_DFP_NegINF:
+         return S390_DFP_ROUND_NEGINF_7;
+      case Irrm_DFP_PosINF:
+         return S390_DFP_ROUND_POSINF_6;
+      case Irrm_DFP_ZERO:
+         return S390_DFP_ROUND_ZERO_5;
+      case Irrm_DFP_NEAREST_TIE_AWAY_0:
+         return S390_DFP_ROUND_NEAREST_TIE_AWAY_0_1;
+      case Irrm_DFP_PREPARE_SHORTER:
+          return S390_DFP_ROUND_PREPARE_SHORT_3;
+      case Irrm_DFP_AWAY_FROM_ZERO:
+         return S390_DFP_ROUND_AWAY_0;
+      case Irrm_DFP_NEAREST_TIE_TOWARD_0:
+         return S390_DFP_ROUND_NEAREST_TIE_TOWARD_0;
+      default:
+         vpanic("get_dfp_rounding_mode");
+      }
+   }
+
+   set_dfp_rounding_mode_in_fpc(env, irrm);
+   return S390_DFP_ROUND_PER_FPC_0;
+}
 
 /* CC_S390 holds the condition code in s390 encoding. Convert it to
    VEX encoding
@@ -620,8 +832,8 @@ s390_isel_int128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
          op2 = s390_isel_int_expr_RMI(env, arg2);   /* Process 2nd operand */
 
          /* We use non-virtual registers r10 and r11 as pair */
-         r10  = make_gpr(env, 10);
-         r11  = make_gpr(env, 11);
+         r10  = make_gpr(10);
+         r11  = make_gpr(11);
 
          /* Move 1st operand into r11 and */
          addInstr(env, s390_insn_move(8, r11, h1));
@@ -653,8 +865,8 @@ s390_isel_int128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
             op2  = s390_isel_int_expr_RMI(env, arg2);   /* Process 2nd operand */
 
             /* We use non-virtual registers r10 and r11 as pair */
-            r10  = make_gpr(env, 10);
-            r11  = make_gpr(env, 11);
+            r10  = make_gpr(10);
+            r11  = make_gpr(11);
 
             /* Move the first operand to r11 */
             addInstr(env, s390_insn_move(8, r11, h1));
@@ -679,8 +891,8 @@ s390_isel_int128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
          op2  = s390_isel_int_expr_RMI(env, arg2);   /* Process 2nd operand */
 
          /* We use non-virtual registers r10 and r11 as pair */
-         r10  = make_gpr(env, 10);
-         r11  = make_gpr(env, 11);
+         r10  = make_gpr(10);
+         r11  = make_gpr(11);
 
          /* Move high 64 bits of the 1st operand into r10 and
             the low 64 bits into r11. */
@@ -748,7 +960,7 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
 {
    IRType ty = typeOfIRExpr(env->type_env, expr);
    UChar size;
-   s390_bfp_unop_t bfpop;
+   s390_conv_t conv;
 
    vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32 || ty == Ity_I64);
 
@@ -809,8 +1021,8 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
             op2  = s390_isel_int_expr_RMI(env, arg2);   /* Process 2nd operand */
 
             /* We use non-virtual registers r10 and r11 as pair */
-            r10  = make_gpr(env, 10);
-            r11  = make_gpr(env, 11);
+            r10  = make_gpr(10);
+            r11  = make_gpr(11);
 
             /* Move the first operand to r11 */
             addInstr(env, s390_insn_move(arg_size, r11, h1));
@@ -846,8 +1058,8 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
             op2  = s390_isel_int_expr_RMI(env, arg2);   /* Process 2nd operand */
 
             /* We use non-virtual registers r10 and r11 as pair */
-            r10  = make_gpr(env, 10);
-            r11  = make_gpr(env, 11);
+            r10  = make_gpr(10);
+            r11  = make_gpr(11);
 
             /* Split the first operand and put the high 32 bits into r10 and
                the low 32 bits into r11. */
@@ -874,26 +1086,33 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
             return res;
          }
 
-      case Iop_F32toI32S:  bfpop = S390_BFP_F32_TO_I32;  goto do_convert;
-      case Iop_F32toI64S:  bfpop = S390_BFP_F32_TO_I64;  goto do_convert;
-      case Iop_F64toI32S:  bfpop = S390_BFP_F64_TO_I32;  goto do_convert;
-      case Iop_F64toI64S:  bfpop = S390_BFP_F64_TO_I64;  goto do_convert;
-      case Iop_F128toI32S: bfpop = S390_BFP_F128_TO_I32; goto do_convert_128;
-      case Iop_F128toI64S: bfpop = S390_BFP_F128_TO_I64; goto do_convert_128;
+      case Iop_F32toI32S:  conv = S390_BFP_F32_TO_I32;  goto do_convert;
+      case Iop_F32toI64S:  conv = S390_BFP_F32_TO_I64;  goto do_convert;
+      case Iop_F32toI32U:  conv = S390_BFP_F32_TO_U32;  goto do_convert;
+      case Iop_F32toI64U:  conv = S390_BFP_F32_TO_U64;  goto do_convert;
+      case Iop_F64toI32S:  conv = S390_BFP_F64_TO_I32;  goto do_convert;
+      case Iop_F64toI64S:  conv = S390_BFP_F64_TO_I64;  goto do_convert;
+      case Iop_F64toI32U:  conv = S390_BFP_F64_TO_U32;  goto do_convert;
+      case Iop_F64toI64U:  conv = S390_BFP_F64_TO_U64;  goto do_convert;
+      case Iop_F128toI32S: conv = S390_BFP_F128_TO_I32; goto do_convert_128;
+      case Iop_F128toI64S: conv = S390_BFP_F128_TO_I64; goto do_convert_128;
+      case Iop_F128toI32U: conv = S390_BFP_F128_TO_U32; goto do_convert_128;
+      case Iop_F128toI64U: conv = S390_BFP_F128_TO_U64; goto do_convert_128;
 
       do_convert: {
-         s390_round_t rounding_mode;
+         s390_bfp_round_t rounding_mode;
 
          res  = newVRegI(env);
          h1   = s390_isel_float_expr(env, arg2);   /* Process operand */
 
-         rounding_mode = decode_rounding_mode(arg1);
-         addInstr(env, s390_insn_bfp_unop(size, bfpop, res, h1, rounding_mode));
+         rounding_mode = get_bfp_rounding_mode(env, arg1);
+         addInstr(env, s390_insn_bfp_convert(size, conv, res, h1,
+                                             rounding_mode));
          return res;
       }
 
       do_convert_128: {
-         s390_round_t rounding_mode;
+         s390_bfp_round_t rounding_mode;
          HReg op_hi, op_lo, f13, f15;
 
          res = newVRegI(env);
@@ -907,8 +1126,8 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
          addInstr(env, s390_insn_move(8, f13, op_hi));
          addInstr(env, s390_insn_move(8, f15, op_lo));
 
-         rounding_mode = decode_rounding_mode(arg1);
-         addInstr(env, s390_insn_bfp128_convert_from(size, bfpop, res, f13, f15,
+         rounding_mode = get_bfp_rounding_mode(env, arg1);
+         addInstr(env, s390_insn_bfp128_convert_from(size, conv, res, f13, f15,
                                                      rounding_mode));
          return res;
       }
@@ -1068,7 +1287,28 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
       h1   = s390_isel_int_expr(env, arg1);       /* Process 1st operand */
       op2  = s390_isel_int_expr_RMI(env, arg2);   /* Process 2nd operand */
       res  = newVRegI(env);
-      addInstr(env, s390_insn_move(size, res, h1));
+
+      /* As right shifts of one/two byte opreands are implemented using a
+         4-byte shift op, we first need to zero/sign-extend the shiftee. */
+      switch (expr->Iex.Binop.op) {
+      case Iop_Shr8:
+         insn = s390_insn_unop(4, S390_ZERO_EXTEND_8, res, s390_opnd_reg(h1));
+         break;
+      case Iop_Shr16:
+         insn = s390_insn_unop(4, S390_ZERO_EXTEND_16, res, s390_opnd_reg(h1));
+         break;
+      case Iop_Sar8:
+         insn = s390_insn_unop(4, S390_SIGN_EXTEND_8, res, s390_opnd_reg(h1));
+         break;
+      case Iop_Sar16:
+         insn = s390_insn_unop(4, S390_SIGN_EXTEND_16, res, s390_opnd_reg(h1));
+         break;
+      default:
+         insn = s390_insn_move(size, res, h1);
+         break;
+      }
+      addInstr(env, insn);
+
       insn = s390_insn_alu(size, opkind, res, op2);
 
       addInstr(env, insn);
@@ -1126,8 +1366,15 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
          switch (unop) {
          case Iop_1Uto8:
          case Iop_1Uto32:
+            /* Zero extend */
+            mask.variant.imm = 1;
+            addInstr(env, s390_insn_alu(4, S390_ALU_AND,  dst, mask));
+            break;
+
          case Iop_1Uto64:
-            /* Nothing to do */
+            /* Zero extend */
+            mask.variant.imm = 1;
+            addInstr(env, s390_insn_alu(8, S390_ALU_AND,  dst, mask));
             break;
 
          case Iop_1Sto8:
@@ -1267,8 +1514,8 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
             set aside a pair of non-virtual registers. The result (number of
             left-most zero bits) will be in r10. The value in r11 is unspecified
             and must not be used. */
-         r10  = make_gpr(env, 10);
-         r11  = make_gpr(env, 11);
+         r10  = make_gpr(10);
+         r11  = make_gpr(11);
 
          addInstr(env, s390_insn_clz(8, r10, r11, opnd));
          addInstr(env, s390_insn_move(8, dst, r10));
@@ -1307,12 +1554,7 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
       HReg dst = newVRegI(env);
 
       doHelperCall(env, False, NULL, expr->Iex.CCall.cee,
-                   expr->Iex.CCall.args);
-
-      /* Move the returned value into the return register */
-      addInstr(env, s390_insn_move(sizeofIRType(expr->Iex.CCall.retty), dst,
-                                   mkHReg(S390_REGNO_RETURN_VALUE,
-                                          HRcInt64, False)));
+                   expr->Iex.CCall.args, dst);
       return dst;
    }
 
@@ -1504,11 +1746,11 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
 
       /* --------- TERNARY OP --------- */
    case Iex_Triop: {
-      IROp    op    = expr->Iex.Triop.op;
-      IRExpr *left  = expr->Iex.Triop.arg2;
-      IRExpr *right = expr->Iex.Triop.arg3;
+      IRTriop *triop = expr->Iex.Triop.details;
+      IROp    op     = triop->op;
+      IRExpr *left   = triop->arg2;
+      IRExpr *right  = triop->arg3;
       s390_bfp_binop_t bfpop;
-      s390_round_t rounding_mode;
       HReg op1_hi, op1_lo, op2_hi, op2_lo, f12, f13, f14, f15;
 
       s390_isel_float128_expr(&op1_hi, &op1_lo, env, left);  /* 1st operand */
@@ -1537,9 +1779,8 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
          goto irreducible;
       }
 
-      rounding_mode = decode_rounding_mode(expr->Iex.Triop.arg1);
-      addInstr(env, s390_insn_bfp128_binop(16, bfpop, f12, f14, f13,
-                                           f15, rounding_mode));
+      set_bfp_rounding_mode_in_fpc(env, triop->arg1);
+      addInstr(env, s390_insn_bfp128_binop(16, bfpop, f12, f14, f13, f15));
 
       /* Move result to virtual destination register */
       *dst_hi = newVRegF(env);
@@ -1553,8 +1794,6 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
       /* --------- BINARY OP --------- */
    case Iex_Binop: {
       HReg op_hi, op_lo, f12, f13, f14, f15;
-      s390_bfp_unop_t bfpop;
-      s390_round_t rounding_mode;
 
       /* We use non-virtual registers as pairs (f13, f15) and (f12, f14)) */
       f12 = make_fpr(12);
@@ -1570,11 +1809,9 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
          addInstr(env, s390_insn_move(8, f13, op_hi));
          addInstr(env, s390_insn_move(8, f15, op_lo));
 
-         bfpop = S390_BFP_SQRT;
-         rounding_mode = decode_rounding_mode(expr->Iex.Binop.arg1);
-
-         addInstr(env, s390_insn_bfp128_unop(16, bfpop, f12, f14, f13, f15,
-                                             rounding_mode));
+         set_bfp_rounding_mode_in_fpc(env, expr->Iex.Binop.arg1);
+         addInstr(env, s390_insn_bfp128_unop(16, S390_BFP_SQRT, f12, f14,
+                                             f13, f15));
 
          /* Move result to virtual destination registers */
          *dst_hi = newVRegF(env);
@@ -1595,9 +1832,9 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
 
       /* --------- UNARY OP --------- */
    case Iex_Unop: {
-      IRExpr *left = expr->Iex.Binop.arg1;
+      IRExpr *left = expr->Iex.Unop.arg;
       s390_bfp_unop_t bfpop;
-      s390_round_t rounding_mode;
+      s390_conv_t conv;
       HReg op_hi, op_lo, op, f12, f13, f14, f15;
 
       /* We use non-virtual registers as pairs (f13, f15) and (f12, f14)) */
@@ -1606,13 +1843,22 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
       f14 = make_fpr(14);
       f15 = make_fpr(15);
 
-      switch (expr->Iex.Binop.op) {
-      case Iop_NegF128:       bfpop = S390_BFP_NEG;          goto float128_opnd;
-      case Iop_AbsF128:       bfpop = S390_BFP_ABS;          goto float128_opnd;
-      case Iop_I32StoF128:    bfpop = S390_BFP_I32_TO_F128;  goto convert_int;
-      case Iop_I64StoF128:    bfpop = S390_BFP_I64_TO_F128;  goto convert_int;
-      case Iop_F32toF128:     bfpop = S390_BFP_F32_TO_F128;  goto convert_float;
-      case Iop_F64toF128:     bfpop = S390_BFP_F64_TO_F128;  goto convert_float;
+      switch (expr->Iex.Unop.op) {
+      case Iop_NegF128:
+         if (left->tag == Iex_Unop &&
+             (left->Iex.Unop.op == Iop_AbsF32 ||
+              left->Iex.Unop.op == Iop_AbsF64))
+            bfpop = S390_BFP_NABS;
+         else
+            bfpop = S390_BFP_NEG;
+         goto float128_opnd;
+      case Iop_AbsF128:     bfpop = S390_BFP_ABS;         goto float128_opnd;
+      case Iop_I32StoF128:  conv = S390_BFP_I32_TO_F128;  goto convert_int;
+      case Iop_I64StoF128:  conv = S390_BFP_I64_TO_F128;  goto convert_int;
+      case Iop_I32UtoF128:  conv = S390_BFP_U32_TO_F128;  goto convert_int;
+      case Iop_I64UtoF128:  conv = S390_BFP_U64_TO_F128;  goto convert_int;
+      case Iop_F32toF128:   conv = S390_BFP_F32_TO_F128;  goto convert_float;
+      case Iop_F64toF128:   conv = S390_BFP_F64_TO_F128;  goto convert_float;
       default:
          goto irreducible;
       }
@@ -1624,21 +1870,17 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
       addInstr(env, s390_insn_move(8, f13, op_hi));
       addInstr(env, s390_insn_move(8, f15, op_lo));
 
-      rounding_mode = S390_ROUND_NEAREST_EVEN;  /* will not be used later on */
-      addInstr(env, s390_insn_bfp128_unop(16, bfpop, f12, f14, f13, f15,
-                                          rounding_mode));
+      addInstr(env, s390_insn_bfp128_unop(16, bfpop, f12, f14, f13, f15));
       goto move_dst;
 
    convert_float:
       op  = s390_isel_float_expr(env, left);
-      addInstr(env, s390_insn_bfp128_convert_to(16, bfpop, f12, f14,
-                                                op));
+      addInstr(env, s390_insn_bfp128_convert_to(16, conv, f12, f14, op));
       goto move_dst;
 
    convert_int:
       op  = s390_isel_int_expr(env, left);
-      addInstr(env, s390_insn_bfp128_convert_to(16, bfpop, f12, f14,
-                                                op));
+      addInstr(env, s390_insn_bfp128_convert_to(16, conv, f12, f14, op));
       goto move_dst;
 
    move_dst:
@@ -1745,15 +1987,14 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
    case Iex_Qop: {
       HReg op1, op2, op3, dst;
       s390_bfp_triop_t bfpop;
-      s390_round_t rounding_mode;
 
-      op1 = s390_isel_float_expr(env, expr->Iex.Qop.arg2);
-      op2 = s390_isel_float_expr(env, expr->Iex.Qop.arg3);
-      op3 = s390_isel_float_expr(env, expr->Iex.Qop.arg4);
+      op3 = s390_isel_float_expr(env, expr->Iex.Qop.details->arg2);
+      op2 = s390_isel_float_expr(env, expr->Iex.Qop.details->arg3);
+      op1 = s390_isel_float_expr(env, expr->Iex.Qop.details->arg4);
       dst = newVRegF(env);
       addInstr(env, s390_insn_move(size, dst, op1));
 
-      switch (expr->Iex.Qop.op) {
+      switch (expr->Iex.Qop.details->op) {
       case Iop_MAddF32:
       case Iop_MAddF64:  bfpop = S390_BFP_MADD; break;
       case Iop_MSubF32:
@@ -1763,19 +2004,18 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
          goto irreducible;
       }
 
-      rounding_mode = decode_rounding_mode(expr->Iex.Qop.arg1);
-      addInstr(env, s390_insn_bfp_triop(size, bfpop, dst, op2, op3,
-                                        rounding_mode));
+      set_bfp_rounding_mode_in_fpc(env, expr->Iex.Qop.details->arg1);
+      addInstr(env, s390_insn_bfp_triop(size, bfpop, dst, op2, op3));
       return dst;
    }
 
       /* --------- TERNARY OP --------- */
    case Iex_Triop: {
-      IROp    op    = expr->Iex.Triop.op;
-      IRExpr *left  = expr->Iex.Triop.arg2;
-      IRExpr *right = expr->Iex.Triop.arg3;
+      IRTriop *triop = expr->Iex.Triop.details;
+      IROp    op     = triop->op;
+      IRExpr *left   = triop->arg2;
+      IRExpr *right  = triop->arg3;
       s390_bfp_binop_t bfpop;
-      s390_round_t rounding_mode;
       HReg h1, op2, dst;
 
       h1   = s390_isel_float_expr(env, left);  /* Process 1st operand */
@@ -1796,55 +2036,75 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
          goto irreducible;
       }
 
-      rounding_mode = decode_rounding_mode(expr->Iex.Triop.arg1);
-      addInstr(env, s390_insn_bfp_binop(size, bfpop, dst, op2, rounding_mode));
+      set_bfp_rounding_mode_in_fpc(env, triop->arg1);
+      addInstr(env, s390_insn_bfp_binop(size, bfpop, dst, op2));
       return dst;
    }
 
       /* --------- BINARY OP --------- */
    case Iex_Binop: {
       IROp    op   = expr->Iex.Binop.op;
+      IRExpr *irrm = expr->Iex.Binop.arg1;
       IRExpr *left = expr->Iex.Binop.arg2;
       HReg h1, dst;
-      s390_bfp_unop_t bfpop;
-      s390_round_t rounding_mode;
-      Int integer_operand;
-
-      integer_operand = 1;
+      s390_conv_t  conv;
 
       switch (op) {
       case Iop_SqrtF32:
       case Iop_SqrtF64:
-         bfpop = S390_BFP_SQRT;
-         integer_operand = 0;
-         break;
+         h1  = s390_isel_float_expr(env, left);
+         dst = newVRegF(env);
+         set_bfp_rounding_mode_in_fpc(env, irrm);
+         addInstr(env, s390_insn_bfp_unop(size, S390_BFP_SQRT, dst, h1));
+         return dst;
 
-      case Iop_F64toF32:
-         bfpop = S390_BFP_F64_TO_F32;
-         integer_operand = 0;
-         break;
+      case Iop_F64toF32:  conv = S390_BFP_F64_TO_F32; goto convert_float;
+      case Iop_I32StoF32: conv = S390_BFP_I32_TO_F32; goto convert_int;
+      case Iop_I32UtoF32: conv = S390_BFP_U32_TO_F32; goto convert_int;
+      case Iop_I64StoF32: conv = S390_BFP_I64_TO_F32; goto convert_int;
+      case Iop_I64StoF64: conv = S390_BFP_I64_TO_F64; goto convert_int;
+      case Iop_I64UtoF32: conv = S390_BFP_U64_TO_F32; goto convert_int;
+      case Iop_I64UtoF64: conv = S390_BFP_U64_TO_F64; goto convert_int;
 
-      case Iop_I32StoF32: bfpop = S390_BFP_I32_TO_F32; break;
-      case Iop_I64StoF32: bfpop = S390_BFP_I64_TO_F32; break;
-      case Iop_I64StoF64: bfpop = S390_BFP_I64_TO_F64; break;
+      convert_float:
+         h1 = s390_isel_float_expr(env, left);
+         goto convert;
+
+      convert_int:
+         h1 = s390_isel_int_expr(env, left);
+         goto convert;
+
+      convert: {
+         s390_bfp_round_t rounding_mode;
+         /* convert-from-fixed and load-rounded have a rounding mode field
+            when the floating point extension facility is installed. */
+         dst = newVRegF(env);
+         if (s390_host_has_fpext) {
+            rounding_mode = get_bfp_rounding_mode(env, irrm);
+         } else {
+            set_bfp_rounding_mode_in_fpc(env, irrm);
+            rounding_mode = S390_BFP_ROUND_PER_FPC;
+         }
+         addInstr(env, s390_insn_bfp_convert(size, conv, dst, h1,
+                                             rounding_mode));
+         return dst;
+      }
+         
       default:
          goto irreducible;
 
       case Iop_F128toF64:
       case Iop_F128toF32: {
-         HReg op_hi, op_lo, f12, f13, f14, f15;
+         HReg op_hi, op_lo, f13, f15;
+         s390_bfp_round_t rounding_mode;
 
-         bfpop = op == Iop_F128toF32 ? S390_BFP_F128_TO_F32
-            : S390_BFP_F128_TO_F64;
+         conv = op == Iop_F128toF32 ? S390_BFP_F128_TO_F32
+                                    : S390_BFP_F128_TO_F64;
 
-         rounding_mode = decode_rounding_mode(expr->Iex.Binop.arg1);
+         s390_isel_float128_expr(&op_hi, &op_lo, env, left);
 
-         s390_isel_float128_expr(&op_hi, &op_lo, env, expr->Iex.Binop.arg2);
-
-         /* We use non-virtual registers as pairs (f13, f15) and (f12, f14)) */
-         f12 = make_fpr(12);
+         /* We use non-virtual registers as pairs (f13, f15) */
          f13 = make_fpr(13);
-         f14 = make_fpr(14);
          f15 = make_fpr(15);
 
          /* operand --> (f13, f15) */
@@ -1852,26 +2112,19 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
          addInstr(env, s390_insn_move(8, f15, op_lo));
 
          dst = newVRegF(env);
-         addInstr(env, s390_insn_bfp128_unop(16, bfpop, f12, f14, f13, f15,
-                                             rounding_mode));
-
-         /* Move result to virtual destination registers */
-         addInstr(env, s390_insn_move(8, dst, f12));
+         /* load-rounded has a rounding mode field when the floating point
+            extension facility is installed. */
+         if (s390_host_has_fpext) {
+            rounding_mode = get_bfp_rounding_mode(env, irrm);
+         } else {
+            set_bfp_rounding_mode_in_fpc(env, irrm);
+            rounding_mode = S390_BFP_ROUND_PER_FPC;
+         }
+         addInstr(env, s390_insn_bfp128_convert_from(size, conv, dst, f13, f15,
+                                                     rounding_mode));
          return dst;
       }
       }
-
-      /* Process operand */
-      if (integer_operand) {
-         h1  = s390_isel_int_expr(env, left);
-      } else {
-         h1  = s390_isel_float_expr(env, left);
-      }
-
-      dst = newVRegF(env);
-      rounding_mode = decode_rounding_mode(expr->Iex.Binop.arg1);
-      addInstr(env, s390_insn_bfp_unop(size, bfpop, dst, h1, rounding_mode));
-      return dst;
    }
 
       /* --------- UNARY OP --------- */
@@ -1879,7 +2132,7 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
       IROp    op   = expr->Iex.Unop.op;
       IRExpr *left = expr->Iex.Unop.arg;
       s390_bfp_unop_t bfpop;
-      s390_round_t rounding_mode;
+      s390_conv_t conv;
       HReg h1, dst;
 
       if (op == Iop_F128HItoF64 || op == Iop_F128LOtoF64) {
@@ -1901,31 +2154,46 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
       case Iop_NegF32:
       case Iop_NegF64:
          if (left->tag == Iex_Unop &&
-             (left->Iex.Unop.op == Iop_AbsF32 || left->Iex.Unop.op == Iop_AbsF64))
+             (left->Iex.Unop.op == Iop_AbsF32 ||
+              left->Iex.Unop.op == Iop_AbsF64))
             bfpop = S390_BFP_NABS;
          else
             bfpop = S390_BFP_NEG;
          break;
 
       case Iop_AbsF32:
-      case Iop_AbsF64:        bfpop = S390_BFP_ABS;  break;
-      case Iop_I32StoF64:     bfpop = S390_BFP_I32_TO_F64;  break;
-      case Iop_F32toF64:      bfpop = S390_BFP_F32_TO_F64;  break;
+      case Iop_AbsF64:
+         bfpop = S390_BFP_ABS;
+         break;
+
+      case Iop_I32StoF64:  conv = S390_BFP_I32_TO_F64;  goto convert_int1;
+      case Iop_I32UtoF64:  conv = S390_BFP_U32_TO_F64;  goto convert_int1;
+      case Iop_F32toF64:   conv = S390_BFP_F32_TO_F64;  goto convert_float1;
+
+      convert_float1:
+         h1 = s390_isel_float_expr(env, left);
+         goto convert1;
+
+      convert_int1:
+         h1 = s390_isel_int_expr(env, left);
+         goto convert1;
+
+      convert1:
+         dst = newVRegF(env);
+         /* No rounding mode is needed for these conversions. Just stick
+            one in. It won't be used later on. */
+         addInstr(env, s390_insn_bfp_convert(size, conv, dst, h1,
+                                             S390_BFP_ROUND_NEAREST_EVEN));
+         return dst;
+
       default:
          goto irreducible;
       }
 
       /* Process operand */
-      if (op == Iop_I32StoF64)
-         h1 = s390_isel_int_expr(env, left);
-      else if (bfpop == S390_BFP_NABS)
-         h1 = s390_isel_float_expr(env, left->Iex.Unop.arg);
-      else
-         h1 = s390_isel_float_expr(env, left);
-
+      h1  = s390_isel_float_expr(env, left);
       dst = newVRegF(env);
-      rounding_mode = S390_ROUND_NEAREST_EVEN;  /* will not be used later on */
-      addInstr(env, s390_insn_bfp_unop(size, bfpop, dst, h1, rounding_mode));
+      addInstr(env, s390_insn_bfp_unop(size, bfpop, dst, h1));
       return dst;
    }
 
@@ -1944,6 +2212,107 @@ static HReg
 s390_isel_float_expr(ISelEnv *env, IRExpr *expr)
 {
    HReg dst = s390_isel_float_expr_wrk(env, expr);
+
+   /* Sanity checks ... */
+   vassert(hregClass(dst) == HRcFlt64);
+   vassert(hregIsVirtual(dst));
+
+   return dst;
+}
+
+
+/*---------------------------------------------------------*/
+/*--- ISEL: Decimal point expressions (64 bit)          ---*/
+/*---------------------------------------------------------*/
+
+static HReg
+s390_isel_dfp_expr_wrk(ISelEnv *env, IRExpr *expr)
+{
+   IRType ty = typeOfIRExpr(env->type_env, expr);
+   UChar size;
+
+   vassert(ty == Ity_D64);
+
+   size = sizeofIRType(ty);
+
+   switch (expr->tag) {
+   case Iex_RdTmp:
+      /* Return the virtual register that holds the temporary. */
+      return lookupIRTemp(env, expr->Iex.RdTmp.tmp);
+
+      /* --------- LOAD --------- */
+   case Iex_Load: {
+      HReg        dst = newVRegF(env);
+      s390_amode *am  = s390_isel_amode(env, expr->Iex.Load.addr);
+
+      if (expr->Iex.Load.end != Iend_BE)
+         goto irreducible;
+
+      addInstr(env, s390_insn_load(size, dst, am));
+
+      return dst;
+   }
+
+      /* --------- GET --------- */
+   case Iex_Get: {
+      HReg dst = newVRegF(env);
+      s390_amode *am = s390_amode_for_guest_state(expr->Iex.Get.offset);
+
+      addInstr(env, s390_insn_load(size, dst, am));
+
+      return dst;
+   }
+
+      /* --------- TERNARY OP --------- */
+   case Iex_Triop: {
+      IRTriop *triop = expr->Iex.Triop.details;
+      IROp    op     = triop->op;
+      IRExpr *irrm   = triop->arg1;
+      IRExpr *left   = triop->arg2;
+      IRExpr *right  = triop->arg3;
+      s390_dfp_round_t rounding_mode;
+      s390_dfp_binop_t dfpop;
+      HReg op2, op3, dst;
+
+      op2  = s390_isel_dfp_expr(env, left);  /* Process 1st operand */
+      op3  = s390_isel_dfp_expr(env, right); /* Process 2nd operand */
+      dst  = newVRegF(env);
+      switch (op) {
+      case Iop_AddD64:  dfpop = S390_DFP_ADD; break;
+      case Iop_SubD64:  dfpop = S390_DFP_SUB; break;
+      case Iop_MulD64:  dfpop = S390_DFP_MUL; break;
+      case Iop_DivD64:  dfpop = S390_DFP_DIV; break;
+      default:
+         goto irreducible;
+      }
+      /* DFP binary ops have insns with rounding mode field
+         when the floating point extension facility is installed. */
+      if (s390_host_has_fpext) {
+         rounding_mode = get_dfp_rounding_mode(env, irrm);
+      } else {
+         set_dfp_rounding_mode_in_fpc(env, irrm);
+         rounding_mode = S390_DFP_ROUND_PER_FPC_0;
+      }
+
+      addInstr(env,
+               s390_insn_dfp_binop(size, dfpop, dst, op2, op3, rounding_mode));
+      return dst;
+   }
+
+   default:
+      goto irreducible;
+   }
+
+   /* We get here if no pattern matched. */
+ irreducible:
+   ppIRExpr(expr);
+   vpanic("s390_isel_dfp_expr: cannot reduce tree");
+}
+
+static HReg
+s390_isel_dfp_expr(ISelEnv *env, IRExpr *expr)
+{
+   HReg dst = s390_isel_dfp_expr_wrk(env, expr);
 
    /* Sanity checks ... */
    vassert(hregClass(dst) == HRcFlt64);
@@ -2000,10 +2369,12 @@ s390_isel_cc(ISelEnv *env, IRExpr *cond)
          /* Iop_32/64to1  select the LSB from their operand */
       case Iop_32to1:
       case Iop_64to1: {
-         HReg dst = s390_isel_int_expr(env, arg);
+         HReg dst = newVRegI(env);
+         HReg h1  = s390_isel_int_expr(env, arg);
 
          size = sizeofIRType(typeOfIRExpr(env->type_env, arg));
 
+         addInstr(env, s390_insn_move(size, dst, h1));
          addInstr(env, s390_insn_alu(size, S390_ALU_AND, dst, s390_opnd_imm(1)));
          addInstr(env, s390_insn_test(size, s390_opnd_reg(dst)));
          return S390_CC_NE;
@@ -2254,10 +2625,11 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
          goto not_special;
       }
 
-      /* OK. Necessary conditions are satisfied. */
+      /* We can only handle Ity_I64, but the CC_DEPS field can have floats */
+      if (tyd != Ity_I64)
+         goto not_special;
 
-      /* Get the old value and update it */
-      vassert(tyd == Ity_I64);
+      /* OK. Necessary conditions are satisfied. */
 
       old_value = env->old_value[guest_reg];
       new_value = stmt->Ist.Put.data->Iex.Const.con->Ico.U64;
@@ -2296,8 +2668,8 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
       /* If the high word is the same it is sufficient to load the low word.
          Use R0 as a scratch reg. */
       if ((old_value >> 32) == (new_value >> 32)) {
-         HReg r0  = make_gpr(env, 0);
-         HReg gsp = make_gpr(env, S390_REGNO_GUEST_STATE_POINTER);
+         HReg r0  = make_gpr(0);
+         HReg gsp = make_gpr(S390_REGNO_GUEST_STATE_POINTER);
          s390_amode *gam;
 
          gam = s390_amode_b12(offset + 4, gsp);
@@ -2328,6 +2700,10 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
       case Ity_F128:
          /* Does not occur. See function put_fpr_pair. */
          vpanic("Ist_Put with F128 data");
+
+      case Ity_D64:
+         src = s390_isel_dfp_expr(env, stmt->Ist.Put.data);
+         break;
 
       default:
          goto stmt_fail;
@@ -2387,6 +2763,11 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
          return;
       }
 
+      case Ity_D64:
+         src = s390_isel_dfp_expr(env, stmt->Ist.WrTmp.data);
+         dst = lookupIRTemp(env, tmp);
+         break;
+
       default:
          goto stmt_fail;
       }
@@ -2400,11 +2781,15 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
       IRType   retty;
       IRDirty* d = stmt->Ist.Dirty.details;
       Bool     passBBP;
+      HReg dst;
       Int i;
 
       /* Invalidate tracked values of those guest state registers that are
          modified by this helper. */
       for (i = 0; i < d->nFxState; ++i) {
+         /* JRS 1 June 2012: AFAICS, s390 guest doesn't use 'repeat'
+            descriptors in guest state effect descriptions.  Hence: */
+         vassert(d->fxState[i].nRepeats == 0 && d->fxState[i].repeatLen == 0);
          if ((d->fxState[i].fx == Ifx_Write || d->fxState[i].fx == Ifx_Modify)) {
             Int guest_reg = get_guest_reg(d->fxState[i].offset);
             if (guest_reg != GUEST_UNKNOWN)
@@ -2417,21 +2802,19 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
 
       passBBP = toBool(d->nFxState > 0 && d->needsBBP);
 
-      doHelperCall(env, passBBP, d->guard, d->cee, d->args);
-
-      /* Now figure out what to do with the returned value, if any. */
-      if (d->tmp == IRTemp_INVALID)
-         /* No return value.  Nothing to do. */
+      if (d->tmp == IRTemp_INVALID) {
+         /* No return value. */
+         dst = INVALID_HREG;
+         doHelperCall(env, passBBP, d->guard, d->cee, d->args, dst);
          return;
+      }
 
       retty = typeOfIRTemp(env->type_env, d->tmp);
       if (retty == Ity_I64 || retty == Ity_I32
           || retty == Ity_I16 || retty == Ity_I8) {
-         /* Move the returned value into the return register */
-         HReg dst = lookupIRTemp(env, d->tmp);
-         addInstr(env, s390_insn_move(sizeofIRType(retty), dst,
-                                      mkHReg(S390_REGNO_RETURN_VALUE,
-                                             HRcInt64, False)));
+         /* Move the returned value to the destination register */
+         dst = lookupIRTemp(env, d->tmp);
+         doHelperCall(env, passBBP, d->guard, d->cee, d->args, dst);
          return;
       }
       break;
@@ -2452,7 +2835,45 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
          }
          return;
       } else {
-         vpanic("compare double and swap not implemented\n");
+         IRCAS *cas = stmt->Ist.CAS.details;
+         s390_amode *op2 = s390_isel_amode(env,  cas->addr);
+         HReg r8, r9, r10, r11, r1;
+         HReg op3_high = s390_isel_int_expr(env, cas->dataHi);  /* new value */
+         HReg op3_low  = s390_isel_int_expr(env, cas->dataLo);  /* new value */
+         HReg op1_high = s390_isel_int_expr(env, cas->expdHi);  /* expected value */
+         HReg op1_low  = s390_isel_int_expr(env, cas->expdLo);  /* expected value */
+         HReg old_low  = lookupIRTemp(env, cas->oldLo);
+         HReg old_high = lookupIRTemp(env, cas->oldHi);
+
+         /* Use non-virtual registers r8 and r9 as pair for op1
+            and move op1 there */
+         r8 = make_gpr(8);
+         r9 = make_gpr(9);
+         addInstr(env, s390_insn_move(8, r8, op1_high));
+         addInstr(env, s390_insn_move(8, r9, op1_low));
+
+         /* Use non-virtual registers r10 and r11 as pair for op3
+            and move op3 there */
+         r10 = make_gpr(10);
+         r11 = make_gpr(11);
+         addInstr(env, s390_insn_move(8, r10, op3_high));
+         addInstr(env, s390_insn_move(8, r11, op3_low));
+
+         /* Register r1 is used as a scratch register */
+         r1 = make_gpr(1);
+
+         if (typeOfIRTemp(env->type_env, cas->oldLo) == Ity_I32) {
+            addInstr(env, s390_insn_cdas(4, r8, r9, op2, r10, r11,
+                                         old_high, old_low, r1));
+         } else {
+            addInstr(env, s390_insn_cdas(8, r8, r9, op2, r10, r11,
+                                         old_high, old_low, r1));
+         }
+         addInstr(env, s390_insn_move(8, op1_high, r8));
+         addInstr(env, s390_insn_move(8, op1_low,  r9));
+         addInstr(env, s390_insn_move(8, op3_high, r10));
+         addInstr(env, s390_insn_move(8, op3_low,  r11));
+         return;
       }
       break;
 
@@ -2491,6 +2912,8 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
 
       /* Case: assisted transfer to arbitrary address */
       switch (stmt->Ist.Exit.jk) {
+      case Ijk_EmFail:
+      case Ijk_EmWarn:
       case Ijk_NoDecode:
       case Ijk_TInval:
       case Ijk_Sys_syscall:
@@ -2604,6 +3027,8 @@ iselNext(ISelEnv *env, IRExpr *next, IRJumpKind jk, int offsIP)
 
    /* Case: some other kind of transfer to any address */
    switch (jk) {
+   case Ijk_EmFail:
+   case Ijk_EmWarn:
    case Ijk_NoDecode:
    case Ijk_TInval:
    case Ijk_Sys_syscall:
@@ -2675,6 +3100,9 @@ iselSB_S390(IRSB *bb, VexArch arch_host, VexArchInfo *archinfo_host,
    env->vregmap   = LibVEX_Alloc(env->n_vregmap * sizeof(HReg));
    env->vregmapHI = LibVEX_Alloc(env->n_vregmap * sizeof(HReg));
 
+   env->previous_bfp_rounding_mode = NULL;
+   env->previous_dfp_rounding_mode = NULL;
+
    /* and finally ... */
    env->hwcaps    = hwcaps_host;
 
@@ -2705,6 +3133,7 @@ iselSB_S390(IRSB *bb, VexArch arch_host, VexArchInfo *archinfo_host,
 
       case Ity_F32:
       case Ity_F64:
+      case Ity_D64:
          hreg = mkHReg(j++, HRcFlt64, True);
          break;
 

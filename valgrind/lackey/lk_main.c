@@ -7,7 +7,7 @@
    This file is part of Lackey, an example Valgrind tool that does
    some simple program measurement and tracing.
 
-   Copyright (C) 2002-2011 Nicholas Nethercote
+   Copyright (C) 2002-2012 Nicholas Nethercote
       njn@valgrind.org
 
    This program is free software; you can redistribute it and/or
@@ -192,9 +192,9 @@ static Bool clo_trace_sbs       = False;
 /* The name of the function of which the number of calls (under
  * --basic-counts=yes) is to be counted, with default. Override with command
  * line option --fnname. */
-static Char* clo_fnname = "main";
+static const HChar* clo_fnname = "main";
 
-static Bool lk_process_cmd_line_option(Char* arg)
+static Bool lk_process_cmd_line_option(const HChar* arg)
 {
    if VG_STR_CLO(arg, "--fnname", clo_fnname) {}
    else if VG_BOOL_CLO(arg, "--basic-counts",      clo_basic_counts) {}
@@ -301,7 +301,7 @@ typedef enum { OpLoad=0, OpStore=1, OpAlu=2 } Op;
 
 /* --- Types --- */
 
-#define N_TYPES 10
+#define N_TYPES 11
 
 static Int type2index ( IRType ty )
 {
@@ -316,11 +316,12 @@ static Int type2index ( IRType ty )
       case Ity_F64:     return 7;
       case Ity_F128:    return 8;
       case Ity_V128:    return 9;
+      case Ity_V256:    return 10;
       default: tl_assert(0);
    }
 }
 
-static HChar* nameOfTypeIndex ( Int i )
+static const HChar* nameOfTypeIndex ( Int i )
 {
    switch (i) {
       case 0: return "I1";   break;
@@ -333,6 +334,7 @@ static HChar* nameOfTypeIndex ( Int i )
       case 7: return "F64";  break;
       case 8: return "F128";  break;
       case 9: return "V128"; break;
+      case 10: return "V256"; break;
       default: tl_assert(0);
    }
 }
@@ -465,7 +467,7 @@ static VG_REGPARM(2) void trace_modify(Addr addr, SizeT size)
 static void flushEvents(IRSB* sb)
 {
    Int        i;
-   Char*      helperName;
+   const HChar* helperName;
    void*      helperAddr;
    IRExpr**   argv;
    IRDirty*   di;
@@ -603,12 +605,13 @@ IRSB* lk_instrument ( VgCallbackClosure* closure,
                       IRSB* sbIn, 
                       VexGuestLayout* layout, 
                       VexGuestExtents* vge,
+                      VexArchInfo* archinfo_host,
                       IRType gWordTy, IRType hWordTy )
 {
    IRDirty*   di;
    Int        i;
    IRSB*      sbOut;
-   Char       fnname[100];
+   HChar      fnname[100];
    IRType     type;
    IRTypeEnv* tyenv = sbIn->tyenv;
    Addr       iaddr = 0, dst;
@@ -908,7 +911,7 @@ IRSB* lk_instrument ( VgCallbackClosure* closure,
 
 static void lk_fini(Int exitcode)
 {
-   char percentify_buf[5]; /* Two digits, '%' and 0. */
+   HChar percentify_buf[5]; /* Two digits, '%' and 0. */
    const int percentify_size = sizeof(percentify_buf) - 1;
    const int percentify_decs = 0;
    
@@ -967,7 +970,7 @@ static void lk_pre_clo_init(void)
    VG_(details_version)         (NULL);
    VG_(details_description)     ("an example Valgrind tool");
    VG_(details_copyright_author)(
-      "Copyright (C) 2002-2011, and GNU GPL'd, by Nicholas Nethercote.");
+      "Copyright (C) 2002-2012, and GNU GPL'd, by Nicholas Nethercote.");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
    VG_(details_avg_translation_sizeB) ( 200 );
 

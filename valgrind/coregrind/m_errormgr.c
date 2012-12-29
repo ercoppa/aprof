@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2011 Julian Seward 
+   Copyright (C) 2000-2012 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -139,7 +139,7 @@ struct _Error {
    ExeContext* where;      // Initialised by core
    ErrorKind ekind;        // Used by ALL.  Must be in the range (0..)
    Addr addr;              // Used frequently
-   Char* string;           // Used frequently
+   const HChar* string;    // Used frequently
    void* extra;            // For any tool-specific extras
 };
 
@@ -159,7 +159,7 @@ Addr VG_(get_error_address) ( Error* err )
    return err->addr;
 }
 
-Char* VG_(get_error_string) ( Error* err )
+const HChar* VG_(get_error_string) ( Error* err )
 {
    return err->string;
 }
@@ -211,7 +211,9 @@ typedef
 typedef
    struct {
       SuppLocTy ty;
-      Char*     name; /* NULL for NoName and DotDotDot */
+      Bool      name_is_simple_str; /* True if name is a string without
+                                       '?' and '*' wildcard characters. */
+      HChar*    name; /* NULL for NoName and DotDotDot */
    }
    SuppLoc;
 
@@ -222,7 +224,7 @@ typedef
 struct _Supp {
    struct _Supp* next;
    Int count;     // The number of times this error has been suppressed.
-   Char* sname;   // The name by which the suppression is referred to.
+   HChar* sname;  // The name by which the suppression is referred to.
 
    // Length of 'callers'
    Int n_callers;
@@ -232,7 +234,7 @@ struct _Supp {
 
    /* The tool-specific part */
    SuppKind skind;   // What kind of suppression.  Must use the range (0..).
-   Char* string;     // String -- use is optional.  NULL by default.
+   HChar* string;    // String -- use is optional.  NULL by default.
    void* extra;      // Anything else -- use is optional.  NULL by default.
 };
 
@@ -241,7 +243,7 @@ SuppKind VG_(get_supp_kind) ( Supp* su )
    return su->skind;
 }
 
-Char* VG_(get_supp_string) ( Supp* su )
+HChar* VG_(get_supp_string) ( Supp* su )
 {
    return su->string;
 }
@@ -257,7 +259,7 @@ void VG_(set_supp_kind)   ( Supp* su, SuppKind skind )
    su->skind = skind;
 }
 
-void VG_(set_supp_string) ( Supp* su, Char* string )
+void VG_(set_supp_string) ( Supp* su, HChar* string )
 {
    su->string = string;
 }
@@ -315,7 +317,7 @@ static Bool eq_Error ( VgRes res, Error* e1, Error* e2 )
 
 static void printSuppForIp_XML(UInt n, Addr ip, void* uu_opaque)
 {
-   static UChar buf[ERRTXT_LEN];
+   static HChar buf[ERRTXT_LEN];
    if ( VG_(get_fnname_no_cxx_demangle) (ip, buf,  ERRTXT_LEN) ) {
       VG_(printf_xml)("    <sframe> <fun>%pS</fun> </sframe>\n", buf);
    } else
@@ -328,7 +330,7 @@ static void printSuppForIp_XML(UInt n, Addr ip, void* uu_opaque)
 
 static void printSuppForIp_nonXML(UInt n, Addr ip, void* textV)
 {
-   static UChar buf[ERRTXT_LEN];
+   static HChar buf[ERRTXT_LEN];
    XArray* /* of HChar */ text = (XArray*)textV;
    if ( VG_(get_fnname_no_cxx_demangle) (ip, buf,  ERRTXT_LEN) ) {
       VG_(xaprintf)(text, "   fun:%s\n", buf);
@@ -344,9 +346,9 @@ static void printSuppForIp_nonXML(UInt n, Addr ip, void* textV)
 */
 static void gen_suppression(Error* err)
 {
-   Char        xtra[256]; /* assumed big enough (is overrun-safe) */
+   HChar       xtra[256]; /* assumed big enough (is overrun-safe) */
    Bool        anyXtra;
-   Char*       name;
+   const HChar* name;
    ExeContext* ec;
    XArray* /* HChar */ text;
 
@@ -443,9 +445,9 @@ static void gen_suppression(Error* err)
 /* Figure out if we want to perform a given action for this error,
    possibly by asking the user.
 */
-Bool VG_(is_action_requested) ( Char* action, Bool* clo )
+Bool VG_(is_action_requested) ( const HChar* action, Bool* clo )
 {
-   Char ch, ch2;
+   HChar ch, ch2;
    Int res;
 
    /* First off, we shouldn't be asking the user anything if
@@ -616,7 +618,7 @@ static void pp_Error ( Error* err, Bool allow_db_attach, Bool xml )
 /* Construct an error */
 static
 void construct_error ( Error* err, ThreadId tid, ErrorKind ekind, Addr a,
-                       Char* s, void* extra, ExeContext* where )
+                       const HChar* s, void* extra, ExeContext* where )
 {
    /* DO NOT MAKE unique_counter NON-STATIC */
    static UInt unique_counter = 0;
@@ -650,7 +652,7 @@ void construct_error ( Error* err, ThreadId tid, ErrorKind ekind, Addr a,
    All detected errors are notified here; this routine decides if/when the
    user should see the error. */
 void VG_(maybe_record_error) ( ThreadId tid, 
-                               ErrorKind ekind, Addr a, Char* s, void* extra )
+                               ErrorKind ekind, Addr a, const HChar* s, void* extra )
 {
           Error  err;
           Error* p;
@@ -822,7 +824,7 @@ void VG_(maybe_record_error) ( ThreadId tid,
    suppressed.  Bool 'print_error' dictates whether to print the error. 
    Bool 'count_error' dictates whether to count the error in n_errs_found.
 */
-Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, Char* s,
+Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, const HChar* s,
                          void* extra, ExeContext* where, Bool print_error,
                          Bool allow_db_attach, Bool count_error )
 {
@@ -1032,10 +1034,10 @@ void VG_(show_error_counts_as_XML) ( void )
 /* Get the next char from fd into *out_buf.  Returns 1 if success,
    0 if eof or < 0 if error. */
 
-static Int get_char ( Int fd, Char* out_buf )
+static Int get_char ( Int fd, HChar* out_buf )
 {
    Int r;
-   static Char buf[256];
+   static HChar buf[256];
    static Int buf_size = 0;
    static Int buf_used = 0;
    vg_assert(buf_size >= 0 && buf_size <= 256);
@@ -1056,11 +1058,11 @@ static Int get_char ( Int fd, Char* out_buf )
    return 1;
 }
 
-Bool VG_(get_line) ( Int fd, Char** bufpp, SizeT* nBufp, Int* lineno )
+Bool VG_(get_line) ( Int fd, HChar** bufpp, SizeT* nBufp, Int* lineno )
 {
-   Char* buf  = *bufpp;
+   HChar* buf  = *bufpp;
    SizeT nBuf = *nBufp;
-   Char  ch;
+   HChar  ch;
    Int   n, i;
    while (True) {
       /* First, read until a non-blank char appears. */
@@ -1103,6 +1105,17 @@ Bool VG_(get_line) ( Int fd, Char** bufpp, SizeT* nBufp, Int* lineno )
 }
 
 
+/* True if s contains no wildcard (?, *) characters. */
+static Bool is_simple_str (const HChar *s)
+{
+   while (*s) {
+      if (*s == '?' || *s == '*')
+         return False;
+      s++;
+   }
+   return True;
+}
+
 /* buf contains the raw name of a caller, supposedly either
        fun:some_function_name   or
        obj:some_object_name     or
@@ -1112,22 +1125,25 @@ Bool VG_(get_line) ( Int fd, Char** bufpp, SizeT* nBufp, Int* lineno )
    after the descriptor (fun: or obj:) part.
    Returns False if failed.
 */
-static Bool setLocationTy ( SuppLoc* p, Char *buf )
+static Bool setLocationTy ( SuppLoc* p, HChar *buf )
 {
    if (VG_(strncmp)(buf, "fun:", 4) == 0) {
       p->name = VG_(arena_strdup)(VG_AR_CORE,
                                   "errormgr.sLTy.1", buf+4);
+      p->name_is_simple_str = is_simple_str (p->name);
       p->ty = FunName;
       return True;
    }
    if (VG_(strncmp)(buf, "obj:", 4) == 0) {
       p->name = VG_(arena_strdup)(VG_AR_CORE,
                                   "errormgr.sLTy.2", buf+4);
+      p->name_is_simple_str = is_simple_str (p->name);
       p->ty = ObjName;
       return True;
    }
    if (VG_(strcmp)(buf, "...") == 0) {
       p->name = NULL;
+      p->name_is_simple_str = False;
       p->ty = DotDotDot;
       return True;
    }
@@ -1138,10 +1154,10 @@ static Bool setLocationTy ( SuppLoc* p, Char *buf )
 
 
 /* Look for "tool" in a string like "tool1,tool2,tool3" */
-static Bool tool_name_present(Char *name, Char *names)
+static Bool tool_name_present(const HChar *name, HChar *names)
 {
    Bool  found;
-   Char *s = NULL;   /* Shut gcc up */
+   HChar *s = NULL;   /* Shut gcc up */
    Int   len = VG_(strlen)(name);
 
    found = (NULL != (s = VG_(strstr)(names, name)) &&
@@ -1156,16 +1172,16 @@ static Bool tool_name_present(Char *name, Char *names)
    and place them in the suppressions list.  If there's any difficulty
    doing this, just give up -- there's no point in trying to recover.  
 */
-static void load_one_suppressions_file ( Char* filename )
+static void load_one_suppressions_file ( const HChar* filename )
 {
    SysRes sres;
    Int    fd, i, j, lineno = 0;
    Bool   eof;
    SizeT  nBuf = 200;
-   Char*  buf = VG_(malloc)("errormgr.losf.1", nBuf);
-   Char*  tool_names;
-   Char*  supp_name;
-   Char*  err_str = NULL;
+   HChar* buf = VG_(malloc)("errormgr.losf.1", nBuf);
+   HChar* tool_names;
+   HChar* supp_name;
+   const HChar* err_str = NULL;
    SuppLoc tmp_callers[VG_MAX_SUPP_CALLERS];
 
    // Check it's not a directory.
@@ -1198,6 +1214,7 @@ static void load_one_suppressions_file ( Char* filename )
       // Initialise temporary reading-in buffer.
       for (i = 0; i < VG_MAX_SUPP_CALLERS; i++) {
          tmp_callers[i].ty   = NoName;
+         tmp_callers[i].name_is_simple_str = False;
          tmp_callers[i].name = NULL;
       }
 
@@ -1384,13 +1401,117 @@ static Bool supploc_IsQuery ( void* supplocV )
    return False; /* there's no '?' equivalent in the supp syntax */
 }
 
-static Bool supp_pattEQinp ( void* supplocV, void* addrV )
+/* IPtoFunOrObjCompleter is a lazy completer of the IPs
+   needed to match an error with the suppression patterns.
+   The matching between an IP and a suppression pattern is done either
+   with the IP function name or with the IP object name.
+   First time the fun or obj name is needed for an IP member
+   of a stack trace, it will be computed and stored in names.
+   The IPtoFunOrObjCompleter type is designed to minimise the nr of
+   allocations and the nr of debuginfo search. */
+typedef
+   struct {
+      StackTrace ips; // stack trace we are lazily completing.
+      UWord n_ips; // nr of elements in ips.
+
+      Int* fun_offsets;
+      // fun_offsets[i] is the offset in names where the
+      // function name for ips[i] is located.
+      // An offset -1 means the function name is not yet completed.
+      Int* obj_offsets;
+      // Similarly, obj_offsets[i] gives the offset for the
+      // object name for ips[i] (-1 meaning object name not yet completed).
+
+      // All function names and object names will be concatenated
+      // in names. names is reallocated on demand.
+      HChar *names;
+      Int   names_szB;  // size of names.
+      Int   names_free; // offset first free HChar in names.
+   }
+   IPtoFunOrObjCompleter;
+
+// free the memory in ip2fo.
+static void clearIPtoFunOrObjCompleter
+  (IPtoFunOrObjCompleter* ip2fo)
+{
+   if (ip2fo->fun_offsets) VG_(free)(ip2fo->fun_offsets);
+   if (ip2fo->obj_offsets) VG_(free)(ip2fo->obj_offsets);
+   if (ip2fo->names)       VG_(free)(ip2fo->names);
+}
+
+/* foComplete returns the function name or object name for IP.
+   If needFun, returns the function name for IP
+   else returns the object name for IP.
+   The function name or object name will be computed and added in
+   names if not yet done.
+   IP must be equal to focompl->ipc[ixIP]. */
+static HChar* foComplete(IPtoFunOrObjCompleter* ip2fo,
+                         Addr IP, Int ixIP, Bool needFun)
+{
+   vg_assert (ixIP < ip2fo->n_ips);
+   vg_assert (IP == ip2fo->ips[ixIP]);
+
+   // ptr to the offset array for function offsets (if needFun)
+   // or object offsets (if !needFun).
+   Int** offsets;
+   if (needFun)
+      offsets = &ip2fo->fun_offsets;
+   else
+      offsets = &ip2fo->obj_offsets;
+
+   // Allocate offsets if not yet done.
+   if (!*offsets) {
+      Int i;
+      *offsets =
+         VG_(malloc)("foComplete",
+                     ip2fo->n_ips * sizeof(Int));
+      for (i = 0; i < ip2fo->n_ips; i++)
+         (*offsets)[i] = -1;
+   }
+
+   // Complete Fun name or Obj name for IP if not yet done.
+   if ((*offsets)[ixIP] == -1) {
+      /* Ensure we have ERRTXT_LEN characters available in names */
+      if (ip2fo->names_szB 
+            < ip2fo->names_free + ERRTXT_LEN) {
+         ip2fo->names 
+            = VG_(realloc)("foc_names",
+                           ip2fo->names,
+                           ip2fo->names_szB + ERRTXT_LEN);
+         ip2fo->names_szB += ERRTXT_LEN;
+      }
+      HChar* caller_name = ip2fo->names + ip2fo->names_free;
+      (*offsets)[ixIP] = ip2fo->names_free;
+      if (needFun) {
+         /* Get the function name into 'caller_name', or "???"
+            if unknown. */
+         // Nb: C++-mangled names are used in suppressions.  Do, though,
+         // Z-demangle them, since otherwise it's possible to wind
+         // up comparing "malloc" in the suppression against
+         // "_vgrZU_libcZdsoZa_malloc" in the backtrace, and the
+         // two of them need to be made to match.
+         if (!VG_(get_fnname_no_cxx_demangle)(IP, caller_name, ERRTXT_LEN))
+            VG_(strcpy)(caller_name, "???");
+      } else {
+         /* Get the object name into 'caller_name', or "???"
+            if unknown. */
+         if (!VG_(get_objname)(IP, caller_name, ERRTXT_LEN))
+            VG_(strcpy)(caller_name, "???");
+      }
+      ip2fo->names_free += VG_(strlen)(caller_name) + 1;
+   }
+
+   return ip2fo->names + (*offsets)[ixIP];
+}
+
+static Bool supp_pattEQinp ( void* supplocV, void* addrV,
+                             void* inputCompleter, UWord ixAddrV )
 {
    SuppLoc* supploc = (SuppLoc*)supplocV; /* PATTERN */
    Addr     ip      = *(Addr*)addrV; /* INPUT */
-
-   Char caller_name[ERRTXT_LEN];
-   caller_name[0] = 0;
+   IPtoFunOrObjCompleter* ip2fo 
+      = (IPtoFunOrObjCompleter*)inputCompleter;
+   HChar* funobj_name; // Fun or Obj name.
 
    /* So, does this IP address match this suppression-line? */
    switch (supploc->ty) {
@@ -1402,43 +1523,33 @@ static Bool supp_pattEQinp ( void* supplocV, void* addrV )
             this can't happen. */
          vg_assert(0);
       case ObjName:
-         /* Get the object name into 'caller_name', or "???"
-            if unknown. */
-         if (!VG_(get_objname)(ip, caller_name, ERRTXT_LEN))
-            VG_(strcpy)(caller_name, "???");
+         funobj_name = foComplete(ip2fo, ip, ixAddrV, False /*needFun*/);
          break; 
-      case FunName: 
-         /* Get the function name into 'caller_name', or "???"
-            if unknown. */
-         // Nb: C++-mangled names are used in suppressions.  Do, though,
-         // Z-demangle them, since otherwise it's possible to wind
-         // up comparing "malloc" in the suppression against
-         // "_vgrZU_libcZdsoZa_malloc" in the backtrace, and the
-         // two of them need to be made to match.
-         if (!VG_(get_fnname_no_cxx_demangle)(ip, caller_name, ERRTXT_LEN))
-            VG_(strcpy)(caller_name, "???");
+      case FunName:
+         funobj_name = foComplete(ip2fo, ip, ixAddrV, True /*needFun*/);
          break;
       default:
         vg_assert(0);
    }
 
-   /* So now we have the function or object name in caller_name, and
+   /* So now we have the function or object name in funobj_name, and
       the pattern (at the character level) to match against is in
       supploc->name.  Hence (and leading to a re-entrant call of
-      VG_(generic_match)): */
-   return VG_(string_match)(supploc->name, caller_name);
+      VG_(generic_match) if there is a wildcard character): */
+   if (supploc->name_is_simple_str)
+      return VG_(strcmp) (supploc->name, funobj_name) == 0;
+   else
+      return VG_(string_match)(supploc->name, funobj_name);
 }
 
 /////////////////////////////////////////////////////
 
-static Bool supp_matches_callers(Error* err, Supp* su)
+static Bool supp_matches_callers(IPtoFunOrObjCompleter* ip2fo, Supp* su)
 {
    /* Unwrap the args and set up the correct parameterisation of
       VG_(generic_match), using supploc_IsStar, supploc_IsQuery and
       supp_pattEQinp. */
-   /* note, StackTrace === Addr* */
-   StackTrace ips      = VG_(get_ExeContext_StackTrace)(err->where);
-   UWord      n_ips    = VG_(get_ExeContext_n_ips)(err->where);
+   /* note, StackTrace ip2fo->ips === Addr* */
    SuppLoc*   supps    = su->callers;
    UWord      n_supps  = su->n_callers;
    UWord      szbPatt  = sizeof(SuppLoc);
@@ -1448,8 +1559,9 @@ static Bool supp_matches_callers(Error* err, Supp* su)
       VG_(generic_match)(
          matchAll,
          /*PATT*/supps, szbPatt, n_supps, 0/*initial Ix*/,
-         /*INPUT*/ips, szbInput, n_ips,  0/*initial Ix*/,
-         supploc_IsStar, supploc_IsQuery, supp_pattEQinp
+         /*INPUT*/ip2fo->ips, szbInput, ip2fo->n_ips,  0/*initial Ix*/,
+         supploc_IsStar, supploc_IsQuery, supp_pattEQinp,
+         ip2fo
       );
 }
 
@@ -1486,14 +1598,38 @@ static Supp* is_suppressible_error ( Error* err )
    Supp* su;
    Supp* su_prev;
 
+   IPtoFunOrObjCompleter ip2fo;
+   /* Conceptually, ip2fo contains an array of function names and an array of
+      object names, corresponding to the array of IP of err->where.
+      These names are just computed 'on demand' (so once maximum),
+      then stored (efficiently, avoiding too many allocs) in ip2fo to be re-usable
+      for the matching of the same IP with the next suppression pattern. 
+
+      VG_(generic_match) gets this 'IP to Fun or Obj name completer' as one
+      of its arguments. It will then pass it to the function
+      supp_pattEQinp which will then lazily complete the IP function name or
+      object name inside ip2fo. Next time the fun or obj name for the same
+      IP is needed (i.e. for the matching with the next suppr pattern), then
+      the fun or obj name will not be searched again in the debug info. */
+
    /* stats gathering */
    em_supplist_searches++;
+
+   /* Prepare the lazy input completer. */
+   ip2fo.ips = VG_(get_ExeContext_StackTrace)(err->where);
+   ip2fo.n_ips = VG_(get_ExeContext_n_ips)(err->where);
+   ip2fo.fun_offsets = NULL;
+   ip2fo.obj_offsets = NULL;
+   ip2fo.names = NULL;
+   ip2fo.names_szB = 0;
+   ip2fo.names_free = 0;
 
    /* See if the error context matches any suppression. */
    su_prev = NULL;
    for (su = suppressions; su != NULL; su = su->next) {
       em_supplist_cmps++;
-      if (supp_matches_error(su, err) && supp_matches_callers(err, su)) {
+      if (supp_matches_error(su, err) 
+          && supp_matches_callers(&ip2fo, su)) {
          /* got a match.  Move this entry to the head of the list
             in the hope of making future searches cheaper. */
          if (su_prev) {
@@ -1502,10 +1638,12 @@ static Supp* is_suppressible_error ( Error* err )
             su->next = suppressions;
             suppressions = su;
          }
+         clearIPtoFunOrObjCompleter(&ip2fo);
          return su;
       }
       su_prev = su;
    }
+   clearIPtoFunOrObjCompleter(&ip2fo);
    return NULL;      /* no matches */
 }
 
