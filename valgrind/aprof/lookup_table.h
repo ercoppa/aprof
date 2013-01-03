@@ -6,7 +6,7 @@
  * timestamp is a 32bit counter containing the value of the last
  * activation of a function that has accessed the memory cell.
  * 
- * In order to decrease the size of the shodow memory, we
+ * In order to decrease the size of the shadow memory, we
  * can "aggregate" one or more (ADDR_MULTIPLE) addresses in a single
  * timestamp.
  * 
@@ -23,7 +23,8 @@
 
    Copyright (C) 2011-2012, Emilio Coppa (ercoppa@gmail.com),
                             Camil Demetrescu,
-                            Irene Finocchi
+                            Irene Finocchi,
+                            Romolo Marotta
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -59,7 +60,7 @@
  * intermediate level table (only 64bit machines)
  */
 typedef struct ILT {
-	UInt * table[ILT_SIZE];
+    UInt * table[ILT_SIZE];
 } ILT;
 
 #endif
@@ -68,11 +69,11 @@ typedef struct ILT {
  * First level of the lookup table
  */
 typedef struct LookupTable {
-	#ifdef __i386__
-	UInt * table[LK_SIZE];
-	#else
-	ILT * table[LK_SIZE];
-	#endif
+    #ifdef __i386__
+    UInt * table[LK_SIZE];
+    #else
+    ILT * table[LK_SIZE];
+    #endif
 } LookupTable;
 
 /*
@@ -96,7 +97,10 @@ UInt LK_insert(LookupTable * lt, UWord key, UInt value);
  */
 UInt LK_lookup(LookupTable * lt, UWord key);
 
-/*
+/* 
+ * Re-assign timestamps of global shadow memory (compress
+ * valid range).
+ * 
  * After some time, the timestamp counter can overflow. So we
  * "compress" the lookup table: 
  * 
@@ -116,8 +120,23 @@ UInt LK_lookup(LookupTable * lt, UWord key);
  *           An old timestamp is replaced with the the position (in the 
  *           array) of the bigger timestamp that is equal or smaller  
  * 
- * arr_rid contains the valid timestamps for the current shodow stack
+ * arr_rid contains the valid timestamps for the current shadow stack
  */
-void LK_compress(LookupTable * lt, UInt * arr_rid, UInt size_arr);
+void LK_compress_global(LookupTable * lt, UInt * arr_rid, UInt size_arr);
+
+/*
+ * Compress all local (thread) shadow memories. We re-assign all
+ * the timestamps in order to compress the valid ts range.
+ * 
+ * array:  list of valid timestamps
+ * size:   size of the previous array
+ * memsha: all the thread shadow memories
+ */
+void LK_compress_all_local(UInt * array, UInt size, LookupTable ** memsha);
+
+/*
+ * Binary search in an array...
+ */
+UInt binary_search(UInt * array, UInt init, UInt size, UInt ts);
 
 #endif
