@@ -1,5 +1,5 @@
 /*
- * aprof global header
+ * syscall handlers
  * 
  * Last changed: $Date: 2012-12-29 12:47:44 +0100 (Sat, 29 Dec 2012) $
  * Revision:     $Rev: 715 $
@@ -8,7 +8,7 @@
 /*
    This file is part of aprof, an input sensitive profiler.
 
-   Copyright (C) 2011-2012, Emilio Coppa (ercoppa@gmail.com),
+   Copyright (C) 2011-2013, Emilio Coppa (ercoppa@gmail.com),
                             Camil Demetrescu,
                             Irene Finocchi,
                             Romolo Marotta
@@ -32,3 +32,207 @@
 */
 
 #include "aprof.h"
+
+#if SYSCALL_WRAPPING == 1
+  
+void APROF_(post_syscall)(ThreadId tid, UInt syscallno, 
+                            UWord * args, UInt nArgs, SysRes res) {
+
+    #if defined(VGO_linux)
+    if(res._isError) return;
+    #elif defined(VGO_darwin)
+    if(res._mode == SysRes_UNIX_ERR) return;
+    #endif
+
+    SizeT size = (SizeT) sr_Res(res);
+    
+    if(    
+        syscallno == __NR_read 
+
+        #if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
+        || syscallno == __NR_recv 
+        #endif
+
+        #if !defined(VGP_x86_linux) && !defined(VGP_s390x_linux)
+        || syscallno == __NR_recvfrom
+        #endif
+
+        #if defined(VGP_x86_darwin) || defined(VGP_amd64_darwin)
+        || syscallno == __NR_pread
+        #else
+        || syscallno == __NR_pread64  
+        #endif
+
+        ){
+
+            APROF_(global_counter)++;
+            if(APROF_(global_counter) == 0)
+                APROF_(global_counter) = APROF_(overflow_handler)();
+            
+            Addr addr = args[1];
+            APROF_(fix_access_size)(&addr, &size);
+            
+            UInt i = 0;
+            for (i = 0; i < size; i++) {
+                
+                APROF_(trace_access)(   STORE, 
+                                        addr+(i*APROF_(addr_multiple)), 
+                                        APROF_(addr_multiple), True);
+            }
+
+    } else if (
+    
+            syscallno == __NR_readv
+            #if !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin)
+            || syscallno == __NR_preadv
+            #endif
+            
+            ){
+            
+            APROF_(global_counter)++;
+            if(APROF_(global_counter) == 0)
+                APROF_(global_counter) = APROF_(overflow_handler)();
+            
+            struct vki_iovec * base = (struct  vki_iovec *) args[1];
+            UWord iovcnt = args[2];
+            UWord i;
+            SizeT iov_len;
+            for(i = 0; i < iovcnt; i++){
+                
+                if(size == 0) break;
+
+                Addr tadd = (Addr) base[i].iov_base;
+                if(base[i].iov_len <= size)                    
+                    iov_len = base[i].iov_len;
+                else
+                    iov_len = size;
+                                        
+                size -= iov_len;                     
+                
+                APROF_(fix_access_size)(&addr, &iov_len);
+            
+                UInt i = 0;
+                for (i = 0; i < iov_len; i++) {
+                    
+                    APROF_(trace_access)(   STORE, 
+                                            addr+(i*APROF_(addr_multiple)), 
+                                            APROF_(addr_multiple), True);
+                }
+                
+            }
+
+    } else if (
+                syscallno == __NR_write
+
+                #if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux)
+                || syscallno== __NR_send
+                #endif
+
+                #if !defined(VGP_x86_linux) && !defined(VGP_s390x_linux)
+                || syscallno== __NR_sendto
+                #endif
+
+                #if defined(VGP_x86_darwin) || defined(VGP_amd64_darwin)
+                || syscallno== __NR_pwrite
+                #else
+                || syscallno== __NR_pwrite64  
+                #endif
+
+                ){
+        
+        Addr addr = args[1];
+
+        APROF_(fix_access_size)(&addr, &size);
+            
+        UInt i = 0;
+        for (i = 0; i < size; i++) {
+            
+            APROF_(trace_access)(   LOAD, 
+                                    addr+(i*APROF_(addr_multiple)), 
+                                    APROF_(addr_multiple), False);
+        }
+
+    } else if (
+                syscallno == __NR_writev
+                #if !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin)
+                || syscallno == __NR_pwritev
+                #endif
+                ){
+                
+        struct iovec* base = (struct iovec*)args[1];
+        UWord iovcnt = args[2];
+        UWord i;
+        SizeT iov_len;
+        for(i = 0; i < iovcnt; i++){
+            
+            if(size == 0) break;
+
+            Addr tadd = base[i].iov_base;
+            if(base[i].iov_len <= size)                    
+                iov_len = base[i].iov_len;
+            else
+                iov_len = size;
+                                    
+            size -= iov_len;                     
+            
+            APROF_(fix_access_size)(&addr, &iov_len);
+            
+            UInt i = 0;
+            for (i = 0; i < iov_len; i++) {
+                
+                APROF_(trace_access)(   LOAD, 
+                                        addr+(i*APROF_(addr_multiple)), 
+                                        APROF_(addr_multiple), False);
+            }
+            
+        }
+    
+    }else if(
+                syscallno== __NR_msgrcv
+                #if !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin)
+                //|| syscallno== __NR_pwritev
+                #endif
+                ){
+                    
+        APROF_(global_counter)++;
+        if(APROF_(global_counter) == 0)
+            APROF_(global_counter) = APROF_(overflow_handler)();
+        
+        Addr addr = args[1];
+        size = size + sizeof(long int);
+        APROF_(fix_access_size)(&addr, &size);
+            
+        UInt i = 0;
+        for (i = 0; i < size; i++) {
+            
+            APROF_(trace_access)(   LOAD, 
+                                    addr+(i*APROF_(addr_multiple)), 
+                                    APROF_(addr_multiple), True);
+        }
+
+    } else if (
+    
+                syscallno == __NR_msgsnd
+                #if !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin)
+                //|| syscallno== __NR_pwritev
+                #endif
+                ){
+                                
+        Addr addr = args[1];
+        SizeT s = args[2];
+        
+        size = s + sizeof(long int);
+        APROF_(fix_access_size)(&addr, &size);
+            
+        UInt i = 0;
+        for (i = 0; i < size; i++) {
+            
+            APROF_(trace_access)(   LOAD, 
+                                    addr+(i*APROF_(addr_multiple)), 
+                                    APROF_(addr_multiple), False);
+        }
+    
+    }
+}
+
+#endif

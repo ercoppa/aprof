@@ -49,6 +49,7 @@
 #include "pub_tool_libcfile.h"
 #include "pub_tool_threadstate.h"
 #include "pub_tool_xarray.h"
+#include "pub_tool_vkiscnums.h"
 #include "valgrind.h"
 #include "pub_tool_mallocfree.h"
 #include "hashtable/hashtable.h"
@@ -468,6 +469,7 @@ void APROF_(print_report_CCT)(FILE * f, CCTNode * root, UInt parent_id);
 #endif
 
 /* Memory access handler (memory.c) */
+void APROF_(fix_access_size)(Addr * addr, SizeT * size);
 VG_REGPARM(3) void APROF_(trace_access)(UWord type, Addr addr, SizeT size);
 
 /* Function entry/exit handlers (function.c) */

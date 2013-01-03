@@ -601,7 +601,7 @@ static void APROF_(pre_clo_init)(void) {
     
     #if SYSCALL_WRAPPING == 1
     VG_(needs_syscall_wrapper)      (
-                                        APROF_(pre_syscall), 
+                                        NULL, 
                                         APROF_(post_syscall)
                                     );
     #endif
