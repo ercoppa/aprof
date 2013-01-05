@@ -606,7 +606,7 @@ static void APROF_(pre_clo_init)(void) {
                                     );
     #endif
     
-    VG_(track_start_client_code)    (APROF_(switch_thread));
+    VG_(track_start_client_code)    (APROF_(thread_switch));
     VG_(track_pre_thread_ll_exit)   (APROF_(thread_exit));
     //VG_(track_pre_deliver_signal)   (APROF_(signal));
     

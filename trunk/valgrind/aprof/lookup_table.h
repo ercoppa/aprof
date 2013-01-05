@@ -97,42 +97,15 @@ UInt LK_insert(LookupTable * lt, UWord key, UInt value);
  */
 UInt LK_lookup(LookupTable * lt, UWord key);
 
-/* 
- * Re-assign timestamps of global shadow memory (compress
- * valid range).
- * 
- * After some time, the timestamp counter can overflow. So we
- * "compress" the lookup table: 
- * 
- *      e.g. if our shadow memory contains:
- *           
- *              (addrA, 18) (addrB, 20) (addrC, 40) (addrC, 25)
- * 
- *           and our shadow stack contains activations with the
- *           the following timestamps:
- * 
- *               15, 19, 39
- * 
- *           we replace the timestamps in this way:
- *              
- *              (addrA, 1) (addrB, 2) (addrC, 3) (addrC, 2)
- * 
- *           An old timestamp is replaced with the the position (in the 
- *           array) of the bigger timestamp that is equal or smaller  
- * 
- * arr_rid contains the valid timestamps for the current shadow stack
- */
-void LK_compress_global(LookupTable * lt, UInt * arr_rid, UInt size_arr);
-
 /*
- * Compress all local (thread) shadow memories. We re-assign all
+ * Compress all shadow memories. We re-assign all
  * the timestamps in order to compress the valid ts range.
  * 
  * array:  list of valid timestamps
  * size:   size of the previous array
  * memsha: all the thread shadow memories
  */
-void LK_compress_all_local(UInt * array, UInt size, LookupTable ** memsha);
+void LK_compress(UInt * array, UInt size, LookupTable ** memsha);
 
 /*
  * Binary search in an array...
