@@ -457,7 +457,6 @@ static UInt search_report(HChar ** reports, Bool all_runs) {
         }
         
         Int i = 0;
-        int k = 0;
         for (i = 0; i < res;) {
 
             file = (struct vki_dirent *) (buf + i);

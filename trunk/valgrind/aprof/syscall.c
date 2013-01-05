@@ -101,7 +101,7 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
                 
                 if(size == 0) break;
 
-                Addr tadd = (Addr) base[i].iov_base;
+                Addr addr = (Addr) base[i].iov_base;
                 if(base[i].iov_len <= size)                    
                     iov_len = base[i].iov_len;
                 else
@@ -111,11 +111,11 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
                 
                 APROF_(fix_access_size)(&addr, &iov_len);
             
-                UInt i = 0;
-                for (i = 0; i < iov_len; i++) {
+                UInt k = 0;
+                for (k = 0; k < iov_len; k++) {
                     
                     APROF_(trace_access)(   STORE, 
-                                            addr+(i*APROF_(addr_multiple)), 
+                                            addr+(k*APROF_(addr_multiple)), 
                                             APROF_(addr_multiple), True);
                 }
                 
@@ -159,7 +159,7 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
                 #endif
                 ){
                 
-        struct iovec* base = (struct iovec*)args[1];
+        struct vki_iovec * base = (struct vki_iovec *) args[1];
         UWord iovcnt = args[2];
         UWord i;
         SizeT iov_len;
@@ -167,7 +167,7 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
             
             if(size == 0) break;
 
-            Addr tadd = base[i].iov_base;
+            Addr addr = (Addr) base[i].iov_base;
             if(base[i].iov_len <= size)                    
                 iov_len = base[i].iov_len;
             else
@@ -177,22 +177,29 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
             
             APROF_(fix_access_size)(&addr, &iov_len);
             
-            UInt i = 0;
-            for (i = 0; i < iov_len; i++) {
+            UInt k = 0;
+            for (k = 0; k < iov_len; k++) {
                 
                 APROF_(trace_access)(   LOAD, 
-                                        addr+(i*APROF_(addr_multiple)), 
+                                        addr+(k*APROF_(addr_multiple)), 
                                         APROF_(addr_multiple), False);
             }
             
         }
     
-    }else if(
-                syscallno== __NR_msgrcv
-                #if !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin)
-                //|| syscallno== __NR_pwritev
-                #endif
-                ){
+    } else if (
+            
+            #if !defined(VGP_x86_linux)
+            syscallno == __NR_msgrcv
+            #else
+            False
+            #endif
+            
+            #if !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin)
+            //|| syscallno== __NR_pwritev
+            #endif
+            
+            ){
                     
         APROF_(global_counter)++;
         if(APROF_(global_counter) == 0)
@@ -211,11 +218,16 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
         }
 
     } else if (
-    
+                #if !defined(VGP_x86_linux)
                 syscallno == __NR_msgsnd
+                #else
+                False
+                #endif
+                
                 #if !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin)
                 //|| syscallno== __NR_pwritev
                 #endif
+                
                 ){
                                 
         Addr addr = args[1];
@@ -233,6 +245,7 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
         }
     
     }
+  
 }
 
 #endif
