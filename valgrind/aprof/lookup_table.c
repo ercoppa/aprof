@@ -281,7 +281,7 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
                          */
                         local_chunk[k] = 0;
 
-                    } else if(app_tab[k] == global_chunk[k]) {
+                    } else if(local_chunk[k] == global_chunk[k]) {
                     
                         /* thread t wrote this value */
                         local_chunk[k] = ts;
