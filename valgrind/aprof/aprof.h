@@ -453,7 +453,7 @@ void APROF_(fwrite)(FILE * f, char * buffer, unsigned int size);
 void APROF_(fclose)(FILE * f);
 
 /* handlers of thread events (thread.c) */
-void APROF_(switch_thread)(ThreadId tid, ULong blocks_dispatched);
+void APROF_(thread_switch)(ThreadId tid, ULong blocks_dispatched);
 void APROF_(thread_exit)(ThreadId tid);
 void APROF_(kill_threads)(void);
 UInt APROF_(overflow_handler)(void);
