@@ -232,6 +232,20 @@ static Function * merge_tuple(HChar * line, Int size,
         ULong self_sqr = VG_(strtoull10) ((HChar *)token, NULL);
         if (self_sqr == 0) return curr;
         
+        #if INPUT_METRIC == RVMS
+        // ratio_sum
+        token = VG_(strtok)(NULL, "@");
+        if (token == NULL) return curr;
+        Double ratio = VG_(strtod) ((HChar *)token, NULL);
+        if (ratio == 0) return curr;
+        
+        // ratio sum sqr
+        token = VG_(strtok)(NULL, "@");
+        if (token == NULL) return curr;
+        Double ratio_sqr = VG_(strtod) ((HChar *)token, NULL);
+        if (ratio_sqr == 0) return curr;
+        #endif
+        
         /*
         VG_(printf)("Tuple: %s %llu %llu %llu %llu %llu %llu\n",
                         curr->name, rms, min, max, sum, sqr_sum, occ);
@@ -285,6 +299,11 @@ static Function * merge_tuple(HChar * line, Int size,
     
         if (info_access->self_time_max < self_max) 
             info_access->self_time_max = self_max;
+        
+        #if INPUT_METRIC == RVMS
+        info_access->ratio_input_sum += ratio;
+        info_access->ratio_input_sum_sqr += ratio_sqr;
+        #endif
         
         /*
         VG_(printf)("Current tuple: %s %lu %llu %llu %llu %llu %llu\n",
@@ -673,19 +692,30 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
             
             while (info_access != NULL) {
                 
-                VG_(sprintf)(buffer, "q %lu %lu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu\n",
-                    ht->key, 
-                    info_access->key,
-                    info_access->min_cumulative_time,
-                    info_access->max_cumulative_time,
-                    info_access->cumulative_time_sum, 
-                    info_access->cumulative_sum_sqr,  
-                    info_access->calls_number,
-                    info_access->cumul_real_time_sum,
-                    info_access->self_time_sum,
-                    info_access->self_time_min,
-                    info_access->self_time_max,
-                    info_access->self_sum_sqr);
+                VG_(sprintf)(buffer, 
+                                #if INPUT_METRIC == RVMS
+                                "q %lu %lu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %.2f %.2f\n",
+                                #else
+                                "q %lu %lu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu\n",
+                                #endif
+                                ht->key, 
+                                info_access->key,
+                                info_access->min_cumulative_time,
+                                info_access->max_cumulative_time,
+                                info_access->cumulative_time_sum, 
+                                info_access->cumulative_sum_sqr,  
+                                info_access->calls_number,
+                                info_access->cumul_real_time_sum,
+                                info_access->self_time_sum,
+                                info_access->self_time_min,
+                                info_access->self_time_max,
+                                info_access->self_sum_sqr
+                                #if INPUT_METRIC == RVMS
+                                ,
+                                info_access->ratio_input_sum,
+                                info_access->ratio_input_sum_sqr
+                                #endif
+                            );
 
                 APROF_(fwrite)(report, buffer, VG_(strlen)(buffer));
 
@@ -705,19 +735,30 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
         
         while (info_access != NULL) {
             
-            VG_(sprintf)(buffer, "p %llu %lu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu\n", 
-                rtn_info->routine_id,
-                info_access->key,
-                info_access->min_cumulative_time,
-                info_access->max_cumulative_time,
-                info_access->cumulative_time_sum, 
-                info_access->cumulative_sum_sqr,
-                info_access->calls_number,
-                info_access->cumul_real_time_sum,
-                info_access->self_time_sum,
-                info_access->self_time_min,
-                info_access->self_time_max,
-                info_access->self_sum_sqr);
+            VG_(sprintf)(buffer,
+                            #if INPUT_METRIC == RVMS
+                            "p %llu %lu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %.2f %.2f\n", 
+                            #else
+                            "p %llu %lu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu\n",
+                            #endif
+                            rtn_info->routine_id,
+                            info_access->key,
+                            info_access->min_cumulative_time,
+                            info_access->max_cumulative_time,
+                            info_access->cumulative_time_sum, 
+                            info_access->cumulative_sum_sqr,
+                            info_access->calls_number,
+                            info_access->cumul_real_time_sum,
+                            info_access->self_time_sum,
+                            info_access->self_time_min,
+                            info_access->self_time_max,
+                            info_access->self_sum_sqr
+                            #if INPUT_METRIC == RVMS
+                            ,
+                            info_access->ratio_input_sum,
+                            info_access->ratio_input_sum_sqr
+                            #endif
+                            );
             
             APROF_(fwrite)(report, buffer, VG_(strlen)(buffer));
             

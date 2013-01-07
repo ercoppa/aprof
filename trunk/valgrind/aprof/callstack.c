@@ -11,9 +11,10 @@
 /*
    This file is part of aprof, an input sensitive profiler.
 
-   Copyright (C) 2011-2012, Emilio Coppa (ercoppa@gmail.com),
+   Copyright (C) 2011-2013, Emilio Coppa (ercoppa@gmail.com),
                             Camil Demetrescu,
-                            Irene Finocchi
+                            Irene Finocchi,
+                            Romolo Marotta
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as

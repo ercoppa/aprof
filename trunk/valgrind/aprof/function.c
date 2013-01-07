@@ -8,7 +8,7 @@
 /*
    This file is part of aprof, an input sensitive profiler.
 
-   Copyright (C) 2011-2012, Emilio Coppa (ercoppa@gmail.com),
+   Copyright (C) 2011-2013, Emilio Coppa (ercoppa@gmail.com),
                             Camil Demetrescu,
                             Irene Finocchi,
                             Romolo Marotta
@@ -66,14 +66,6 @@ RoutineInfo * APROF_(new_routine_info)(ThreadData * tdata,
     rtn_info->key = target;
     rtn_info->fn = fn;
     
-    /*
-    rtn_info->total_self_time = 0;
-    rtn_info->total_cumulative_time = 0;
-    rtn_info->calls = 0;
-    rtn_info->recursive = 0;
-    rtn_info->recursion_pending = 0;
-    */
-    
     #if DISCARD_UNKNOWN
     if (!rtn_info->fn->discard_info) {
     #endif
@@ -90,7 +82,7 @@ RoutineInfo * APROF_(new_routine_info)(ThreadData * tdata,
     #endif
     
     #if DEBUG_ALLOCATION
-     APROF_(add_alloc)(HT);
+    APROF_(add_alloc)(HT);
     #endif
     
     #else
@@ -157,11 +149,20 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
     act->entry_time          = start;
     act->rms                 = 0;
     act->total_children_time = 0;
-    act->aid                 = ++APROF_(global_counter);
     
-    /* check & fix timestamp overflow */
-    if (act->aid == 0) 
+    #if INPUT_METRIC == RVMS
+    
+    act->aid                 = ++APROF_(global_counter);
+    if (act->aid == 0)  // check & fix timestamp overflow
         act->aid = APROF_(global_counter) = APROF_(overflow_handler)();
+    
+    #else
+    
+    act->aid                 = ++tdata->next_aid;
+    if (act->aid == 0)  // check & fix timestamp overflow
+        act->aid = tdata->next_aid = APROF_(overflow_handler)();
+    
+    #endif
     
     #if DISCARD_UNKNOWN
     if (!rtn_info->fn->discard_info) {
@@ -260,7 +261,6 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
     
     if (rms_map == NULL) {
         
-        
         rms_map = HT_construct(NULL);
         #if DEBUG
         AP_ASSERT(rms_map != NULL, "sms_map not allocable");
@@ -279,12 +279,20 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
 
     } else {
         
+        #if INPUT_METRIC == RMS
         info_access = HT_lookup(rms_map, act->rms);
-    
+        #else
+        info_access = HT_lookup(rms_map, act->rvms);
+        #endif
+        
     }
     #else
     
+    #if INPUT_METRIC == RMS
     info_access = HT_lookup(rtn_info->rms_map, act->rms);
+    #else
+    info_access = HT_lookup(rtn_info->rms_map, act->rvms);
+    #endif
     
     #endif
     
@@ -305,7 +313,12 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
         info_access->min_cumulative_time = (ULong)-1;
         info_access->self_time_min = (ULong)-1;
         
+        #if INPUT_METRIC == RMS
         info_access->key = act->rms;
+        #else
+        info_access->key = act->rvms;
+        #endif
+        
         #if CCT
         HT_add_node(rms_map, info_access->key, info_access);
         
@@ -353,6 +366,12 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
     if (info_access->self_time_min > partial_self) 
         info_access->self_time_min = partial_self;
     
+    #if INPUT_METRIC == RVMS
+    Double ratio = ((Double) act->rms) / ((Double) act->rvms);
+    info_access->ratio_input_sum += ratio;
+    info_access->ratio_input_sum_sqr += (ratio * ratio);
+    #endif
+    
     #if DEBUG
     AP_ASSERT(info_access->max_cumulative_time >= 
         info_access->min_cumulative_time, "Min max mismatch");
@@ -366,7 +385,6 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
     #endif
     
     rtn_info->recursion_pending--;
-    
 
     // merge accesses of current activation with those of the parent activation
     if (tdata->stack_depth > 1) {
@@ -382,6 +400,10 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
         #endif
         
             parent_activation->rms                 += act->rms;
+            #if INPUT_METRIC == RVMS
+            parent_activation->rvms                 += act->rvms;
+            #endif
+            
             parent_activation->total_children_time += partial_cumulative;
         
         #if TRACE_FUNCTION && IGNORE_DL_RUNTIME

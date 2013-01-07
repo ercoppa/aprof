@@ -71,7 +71,7 @@
 #define EVENTCOUNT          0   // 0 disabled, 1 memory accesses, 
                                 // 2 functions, 3 mem+fn
                                 
-#define CCT                 0   // if 1, keep a calling context tree for
+#define CCT                 1   // if 1, keep a calling context tree for
                                 // each thread to include context 
                                 // information in reports
                                 
@@ -84,6 +84,11 @@
 #define RDTSC               2   // rdtsc intel instruction timestamp
 #define BB_COUNT            3   // count BB executed
 #define TIME                BB_COUNT 
+                            
+                                 // Input estimation metric:
+#define RMS                 1    // Read Memory Size
+#define RVMS                2    // Read Versioned Memory Size
+#define INPUT_METRIC        RVMS
 
 #define TRACE_FUNCTION      1   // if 1, aprof traces functions by itself, 
                                 // otherwise the program must be 
@@ -98,7 +103,7 @@
 #define IGNORE_DL_RUNTIME   0   // if 1, disable analysis for dl_
                                 // runtime_resolve (and its children)
 
-#define REPORT_VERSION      4   // see documentation on our site: 
+#define REPORT_VERSION      5   // see documentation on our site: 
                                 // 1 == 1.1, 2 == 1.2, ...
                                 
 #define DISCARD_UNKNOWN     1   // discard info about PLT or unknown 
@@ -310,6 +315,11 @@ typedef struct {
                                          // routine in calls with this rms
     ULong       self_sum_sqr;            // sum of the square of self costs
 
+    #if INPUT_METRIC == RVMS
+    Double      ratio_input_sum;          // sum of ratios RMS/RVMS
+    Double      ratio_input_sum_sqr;      // sum of squares of ratios RMS/RVMS
+    #endif
+
 } RMSInfo;
 
 // info about an activation of a routine
@@ -317,8 +327,12 @@ typedef struct {
 
     ULong          entry_time;           // time stamp at activation entry
     ULong          total_children_time;  // total time spent in children
-    UInt           rms;                  // RMS of activation (always not 
-                                         // negative when an activation ends)
+    UInt           rms;                  // RMS of activation 
+    
+    #if INPUT_METRIC == RVMS             
+    UInt           rvms;                 // RVMS of activation
+    #endif
+    
     RoutineInfo *  rtn_info;             // pointer to info record of 
                                          // activated routine
     UInt           aid;                  // Activation ID Activation ID 
@@ -346,12 +360,17 @@ typedef struct ThreadData {
 
     LookupTable *   accesses;            // stack of sets of addresses
     HashTable *     routine_hash_table;  // table of all encountered routines
-    int             stack_depth;         // stack depth
+    UInt            stack_depth;         // stack depth
     Activation *    stack;               // activation stack
     UInt            max_stack_size;      // max stack size
     ULong           next_routine_id;     // the routine_id that will be 
                                          // assigned to the next routine_info
     ULong           other_metric;        // needed when merging reports
+    
+    #if INPUT_METRIC == RMS
+    UInt            next_aid;            // Activation ID that will be assigned 
+                                         // to the next Activation
+    #endif
     
     #if CCT
     CCTNode *       root;                // root of the CCT
@@ -441,8 +460,10 @@ extern HashTable * APROF_(fn_ht);
  * Global shadow memory and a global counter 
  * used for checking latest "version" of an input (memory.c)
  */
+#if INPUT_METRIC == RVMS 
 extern LookupTable * APROF_(global_shadow_memory);
 extern UInt APROF_(global_counter);
+#endif
 
 /* Functions */
 
@@ -526,11 +547,12 @@ void APROF_(print_alloc)(void);
 Bool VG_(get_fnname_no_cxx_demangle) (Addr a, Char* buf, Int nbuf);
 
 /* Syscall wrappers (syscall.c) */
-void APROF_(pre_syscall)(ThreadId tid, UInt syscallno, UWord* args, 
+#if INPUT_METRIC == RVMS && SYSCALL_WRAPPING == 1
+void APROF_(pre_syscall)(ThreadId tid, UInt syscallno, UWord * args, 
                          UInt nArgs);
-void APROF_(post_syscall)(ThreadId tid, UInt syscallno, UWord* args, 
+void APROF_(post_syscall)(ThreadId tid, UInt syscallno, UWord * args, 
                           UInt nArgs, SysRes res);
-
+#endif
 
 #if CCT_GRAPHIC
 void APROF_(print_cct_graph)(FILE * f, CCTNode* root, UInt parent_id, 

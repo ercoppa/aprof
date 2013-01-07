@@ -511,7 +511,9 @@ static void APROF_(post_clo_init)(void) {
     APROF_(add_alloc)(HT);
     #endif
     
+    #if INPUT_METRIC == RVMS
     APROF_(global_shadow_memory) = LK_create();
+    #endif
 }
 
 /* aprof finalization */
@@ -530,9 +532,12 @@ static void APROF_(fini)(Int exitcode) {
     HT_destruct(APROF_(fn_ht));
     HT_destruct(APROF_(obj_ht));
     
+    #if INPUT_METRIC == RVMS
     LK_destroy(APROF_(global_shadow_memory));
+    #endif
 }
 
+#if 0
 /*
  * I don't have yet tested what happens when a singnal
  * is received wrt shadow stack 
@@ -542,6 +547,7 @@ static void APROF_(signal)(ThreadId tid, Int sigNo, Bool alt_stack) {
     AP_ASSERT(0, "There is a signal");
 
 }
+#endif
 
 static Bool APROF_(cmd_line)(const HChar* argv) {
     
@@ -599,9 +605,9 @@ static void APROF_(pre_clo_init)(void) {
     VG_(needs_client_requests)      (APROF_(trace_function));
     #endif
     
-    #if SYSCALL_WRAPPING == 1
+    #if SYSCALL_WRAPPING == 1 && INPUT_METRIC == RVMS
     VG_(needs_syscall_wrapper)      (
-                                        NULL, 
+                                        APROF_(pre_syscall), 
                                         APROF_(post_syscall)
                                     );
     #endif

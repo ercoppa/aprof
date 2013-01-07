@@ -41,6 +41,7 @@
  */
 UInt APROF_(addr_multiple) = 4;
 
+#if INPUT_METRIC == RVMS
 /* 
  * Global shadow memory used for checking latest "version" of an input.
  * If a routine writes a memory cell, we update the associated timestamp
@@ -54,6 +55,7 @@ LookupTable * APROF_(global_shadow_memory) = NULL;
  * - a thread switch
  */
 UInt APROF_(global_counter) = 0;
+#endif
 
 void APROF_(fix_access_size)(Addr * addr, SizeT * size) {
 
@@ -117,6 +119,8 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
     #endif
         
         Activation * act = APROF_(get_activation)(tdata, tdata->stack_depth);
+        
+        #if INPUT_METRIC == RVMS
         
         UInt ts;
         UInt old_ts;
@@ -184,22 +188,46 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
         }
 
         if(old_ts < wts){
-            act->rms++;
+            act->rvms++;
         }
         
         else if (old_ts < act->aid) {
             
             act->rms++;
-            //VG_(printf)("Incremented RMS\n");
+            act->rvms++;
             if (old_ts > 0 && old_ts >= APROF_(get_activation)(tdata, 1)->aid) {
                 
+                APROF_(get_activation_by_aid)(tdata, old_ts)->rvms--;
                 APROF_(get_activation_by_aid)(tdata, old_ts)->rms--;
-                //VG_(printf)("Decremented SMS of ancestor %s\n", 
-                //    APROF_(get_activation_by_aid)(tdata, old_ts)->rtn_info->fn->name);
-            
+         
             }
 
         }
+        
+        #else
+        
+        UInt old_aid = LK_insert( tdata->accesses,
+                                    
+                                    #if !COSTANT_MEM_ACCESS
+                                    addr+(i*APROF_(addr_multiple)),
+                                    #else
+                                    addr,
+                                    #endif
+                                    
+                                    act->aid);
+        
+        if (old_aid < act->aid && (type == LOAD || type == MODIFY)) {
+            
+            act->rms++;
+            if (old_aid > 0 && old_aid >= APROF_(get_activation)(tdata, 1)->aid) {
+                
+                APROF_(get_activation_by_aid)(tdata, old_aid)->rms--;
+
+            }
+
+        }
+        
+        #endif
         
     #if !COSTANT_MEM_ACCESS
     }

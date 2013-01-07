@@ -95,6 +95,10 @@ static ThreadData * APROF_(thread_start)(ThreadId tid){
     
     tdata->accesses = LK_create();
     
+    #if INPUT_METRIC == RMS
+    tdata->next_aid = 0;
+    #endif
+    
     #if CCT
     
     // allocate dummy CCT root
@@ -177,20 +181,6 @@ void APROF_(thread_exit)(ThreadId tid){
     return;
     #endif
     
-    #if 0
-    /* Some functions are not transformed in routines: */
-    HT_ResetIter(fn_ht);
-    Function * fn = HT_Next(fn_ht);
-    while(fn != NULL) {
-        
-        RoutineInfo * rtn = HT_lookup(tdata->routine_hash_table, (UWord) fn);
-        if (rtn == NULL) 
-        VG_(printf)("Function %s is not a routine for this thread\n", fn->name);
-        
-        fn = HT_Next(fn_ht);
-    }
-    #endif
-    
     #if TRACE_FUNCTION
     APROF_(unwind_stack)(tdata);
     #endif
@@ -230,9 +220,11 @@ void APROF_(thread_switch)(ThreadId tid, ULong blocks_dispatched) {
      
     if (tid == APROF_(current_TID)) return;
     
+    #if INPUT_METRIC == RVMS
     ++APROF_(global_counter);
     if(APROF_(global_counter) == 0)
         APROF_(global_counter) = APROF_(overflow_handler)();
+    #endif
     
     #if TRACE_FUNCTION
     /* save last exit of the previous thread */
@@ -275,6 +267,7 @@ void APROF_(kill_threads)(void) {
     
 }
 
+#if INPUT_METRIC == RVMS
 /*
  * global_counter is 32 bit integer so it can overflow. To overcome this
  * issue we compress our set of valid timestamps (e.g., after an overflow).
@@ -398,6 +391,28 @@ UInt APROF_(overflow_handler)(void) {
     
     return sum + 1;
 }
+#else
+UInt APROF_(overflow_handler)(void) {
 
+    ThreadData * tdata = APROF_(current_tdata);
+    #if DEBUG
+    AP_ASSERT(tdata != NULL, "Invalid tdata");
+    #endif
 
+    /* Collect all valid aid */
+    UInt * arr_aid = VG_(calloc)("arr rid", tdata->stack_depth - 1, sizeof(UInt));
+    int j = 0;
+    for (j = 0; j < tdata->stack_depth - 1; j++) {
+    
+        Activation * act_c = APROF_(get_activation)(tdata, j + 1);
+        arr_aid[j] = act_c->aid;
+        act_c->aid = j + 1;
+    
+    }
+    LK_compress_rms(tdata->accesses, arr_aid, tdata->stack_depth -1);
+    VG_(free)(arr_aid);
 
+    return tdata->stack_depth;
+
+}
+#endif
