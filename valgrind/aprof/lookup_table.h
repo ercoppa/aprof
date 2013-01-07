@@ -97,6 +97,7 @@ UInt LK_insert(LookupTable * lt, UWord key, UInt value);
  */
 UInt LK_lookup(LookupTable * lt, UWord key);
 
+
 /*
  * Compress all shadow memories. We re-assign all
  * the timestamps in order to compress the valid ts range.
@@ -106,10 +107,12 @@ UInt LK_lookup(LookupTable * lt, UWord key);
  * memsha: all the thread shadow memories
  */
 void LK_compress(UInt * array, UInt size, LookupTable ** memsha);
+void LK_compress_rms(LookupTable * uf, UInt * arr_rid, UInt size_arr);
 
 /*
  * Binary search in an array...
  */
 UInt binary_search(UInt * array, UInt init, UInt size, UInt ts);
+
 
 #endif

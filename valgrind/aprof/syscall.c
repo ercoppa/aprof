@@ -33,7 +33,10 @@
 
 #include "aprof.h"
 
-#if SYSCALL_WRAPPING == 1
+#if SYSCALL_WRAPPING == 1 && INPUT_METRIC == RVMS
+  
+void APROF_(pre_syscall)(ThreadId tid, UInt syscallno, 
+                            UWord * args, UInt nArgs) {}
   
 void APROF_(post_syscall)(ThreadId tid, UInt syscallno, 
                             UWord * args, UInt nArgs, SysRes res) {

@@ -223,6 +223,7 @@ UInt LK_lookup(LookupTable * suf, UWord addr) {
     return 0;
 }
 
+#if INPUT_METRIC == RVMS
 void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
     
     UInt count_thread = APROF_(running_threads);
@@ -334,3 +335,65 @@ UInt binary_search(UInt * array, UInt init, UInt size, UInt ts){
     return l;
 
 }
+
+#else
+
+void LK_compress_rms(LookupTable * uf, UInt * arr_rid, UInt size_arr) {
+    
+    UInt i = 0;
+    while (i < LK_SIZE) {
+        
+        #ifndef __i386__
+        UInt q = 0;
+        
+        if (uf->table[i] != NULL) {
+        
+            while (q < ILT_SIZE) {
+                
+                UInt * table = uf->table[i]->table[q]; 
+        #else
+                UInt * table = uf->table[i];
+        #endif
+                
+                if (table != NULL) {
+
+                    UInt j = 0;
+                    UInt rid = 0;
+                    for (j = 0; j < APROF_(flt_size); j++){
+                        
+                        rid = table[j];
+                        if (rid == 0) continue;
+                        int k = 0;
+                        for (k = size_arr - 1; k >= 0; k--) {
+                            
+                            if (arr_rid[k] <= rid) {
+                                table[j] = k + 1;
+                                break;
+                            }
+                            
+                        }
+                        
+                        /* 
+                         * This means that this address was accessed by 
+                         * an activation no more in stack, and all its
+                         * ancestors are dead (for example we are dealing
+                         * with an aid of a setup libc function
+                         * invoked before main() )
+                         */
+                        if (k < 0) table[j] = 0;
+
+                    }
+
+                }
+        #ifndef __i386__
+            q++;
+            }
+        }
+        #endif
+        i++;
+    }
+
+}
+
+#endif
+
