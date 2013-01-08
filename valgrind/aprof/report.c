@@ -236,13 +236,13 @@ static Function * merge_tuple(HChar * line, Int size,
         // ratio_sum
         token = VG_(strtok)(NULL, "@");
         if (token == NULL) return curr;
-        Double ratio = VG_(strtod) ((HChar *)token, NULL);
+        ULong ratio = VG_(strtoull10) ((HChar *)token, NULL);
         if (ratio == 0) return curr;
         
         // ratio sum sqr
         token = VG_(strtok)(NULL, "@");
         if (token == NULL) return curr;
-        Double ratio_sqr = VG_(strtod) ((HChar *)token, NULL);
+        ULong ratio_sqr = VG_(strtoull10) ((HChar *)token, NULL);
         if (ratio_sqr == 0) return curr;
         #endif
         
@@ -301,8 +301,8 @@ static Function * merge_tuple(HChar * line, Int size,
             info_access->self_time_max = self_max;
         
         #if INPUT_METRIC == RVMS
-        info_access->ratio_input_sum += ratio;
-        info_access->ratio_input_sum_sqr += ratio_sqr;
+        info_access->rms_input_sum += ratio;
+        info_access->rms_input_sum_sqr += ratio_sqr;
         #endif
         
         /*
@@ -694,7 +694,7 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
                 
                 VG_(sprintf)(buffer, 
                                 #if INPUT_METRIC == RVMS
-                                "q %lu %lu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %.2f %.2f\n",
+                                "q %lu %lu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu\n",
                                 #else
                                 "q %lu %lu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu\n",
                                 #endif
@@ -712,8 +712,8 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
                                 info_access->self_sum_sqr
                                 #if INPUT_METRIC == RVMS
                                 ,
-                                info_access->ratio_input_sum,
-                                info_access->ratio_input_sum_sqr
+                                info_access->rms_input_sum,
+                                info_access->rms_input_sum_sqr
                                 #endif
                             );
 
@@ -737,7 +737,7 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
             
             VG_(sprintf)(buffer,
                             #if INPUT_METRIC == RVMS
-                            "p %llu %lu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %.2f %.2f\n", 
+                            "p %llu %lu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu\n", 
                             #else
                             "p %llu %lu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu\n",
                             #endif
@@ -755,8 +755,8 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
                             info_access->self_sum_sqr
                             #if INPUT_METRIC == RVMS
                             ,
-                            info_access->ratio_input_sum,
-                            info_access->ratio_input_sum_sqr
+                            info_access->rms_input_sum,
+                            info_access->rms_input_sum_sqr
                             #endif
                             );
             

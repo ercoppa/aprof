@@ -228,10 +228,13 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
     
     UInt count_thread = APROF_(running_threads);
     UInt i = 0;
-    UInt j = 0;
     UInt k = 0;
     UInt ts = 0;
     UInt t = 0;
+    
+    #ifndef __i386__ 
+    UInt j = 0;
+    #endif
     
     // scan global shadow memory (GSM)
     for(i = 0; i < LK_SIZE; i++){
