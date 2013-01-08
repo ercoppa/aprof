@@ -152,6 +152,7 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
     
     #if INPUT_METRIC == RVMS
     
+    act->rvms                = 0;
     act->aid                 = ++APROF_(global_counter);
     if (act->aid == 0)  // check & fix timestamp overflow
         act->aid = APROF_(global_counter) = APROF_(overflow_handler)();
@@ -367,9 +368,8 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
         info_access->self_time_min = partial_self;
     
     #if INPUT_METRIC == RVMS
-    Double ratio = ((Double) act->rms) / ((Double) act->rvms);
-    info_access->ratio_input_sum += ratio;
-    info_access->ratio_input_sum_sqr += (ratio * ratio);
+    info_access->rms_input_sum += act->rms;
+    info_access->rms_input_sum_sqr += (act->rms * act->rms);
     #endif
     
     #if DEBUG

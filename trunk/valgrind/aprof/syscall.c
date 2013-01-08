@@ -33,6 +33,23 @@
 
 #include "aprof.h"
 
+inline void APROF_(fix_access_size)(Addr * addr, SizeT * size) {
+
+    if (APROF_(addr_multiple) > 1) {
+        
+        UInt diff = (*addr) & (APROF_(addr_multiple)-1);
+        (*addr) -= diff;
+        if ((*size) + diff < APROF_(addr_multiple)) 
+            (*size) = 1;
+        else if ((((*size) + diff) % APROF_(addr_multiple)) == 0)
+            (*size) = ((*size) + diff) / APROF_(addr_multiple);
+        else
+            (*size) = 1 + (((*size) + diff) / APROF_(addr_multiple));
+    
+    }
+    
+}
+
 #if SYSCALL_WRAPPING == 1 && INPUT_METRIC == RVMS
   
 void APROF_(pre_syscall)(ThreadId tid, UInt syscallno, 

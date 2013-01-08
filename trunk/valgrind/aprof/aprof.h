@@ -71,7 +71,7 @@
 #define EVENTCOUNT          0   // 0 disabled, 1 memory accesses, 
                                 // 2 functions, 3 mem+fn
                                 
-#define CCT                 1   // if 1, keep a calling context tree for
+#define CCT                 0   // if 1, keep a calling context tree for
                                 // each thread to include context 
                                 // information in reports
                                 
@@ -316,8 +316,8 @@ typedef struct {
     ULong       self_sum_sqr;            // sum of the square of self costs
 
     #if INPUT_METRIC == RVMS
-    Double      ratio_input_sum;          // sum of ratios RMS/RVMS
-    Double      ratio_input_sum_sqr;      // sum of squares of ratios RMS/RVMS
+    ULong       rms_input_sum;            // sum of ratios RMS/RVMS
+    ULong       rms_input_sum_sqr;        // sum of squares of ratios RMS/RVMS
     #endif
 
 } RMSInfo;
@@ -490,7 +490,6 @@ void APROF_(print_report_CCT)(FILE * f, CCTNode * root, UInt parent_id);
 #endif
 
 /* Memory access handler (memory.c) */
-void APROF_(fix_access_size)(Addr * addr, SizeT * size);
 VG_REGPARM(3) void APROF_(trace_access)(UWord type, 
                             Addr addr, SizeT size, Bool kernel_access);
 
@@ -547,6 +546,7 @@ void APROF_(print_alloc)(void);
 Bool VG_(get_fnname_no_cxx_demangle) (Addr a, Char* buf, Int nbuf);
 
 /* Syscall wrappers (syscall.c) */
+inline void APROF_(fix_access_size)(Addr * addr, SizeT * size);
 #if INPUT_METRIC == RVMS && SYSCALL_WRAPPING == 1
 void APROF_(pre_syscall)(ThreadId tid, UInt syscallno, UWord * args, 
                          UInt nArgs);
