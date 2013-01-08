@@ -1,6 +1,7 @@
 include $(top_srcdir)/Makefile.tool.am
 
 EXTRA_DIST = docs/va-manual.xml
+CFLAGS += -Werror -Winline
 
 #----------------------------------------------------------------------------
 # aprof-<platform>
