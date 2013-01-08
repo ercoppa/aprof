@@ -90,6 +90,7 @@ AM_CFLAGS_BASE = \
 	-Wpointer-arith \
 	-Wstrict-prototypes \
 	-Wmissing-declarations \
+	-Winline \
 	@FLAG_W_NO_FORMAT_ZERO_LENGTH@ \
 	-fno-strict-aliasing \
 	-fno-builtin
