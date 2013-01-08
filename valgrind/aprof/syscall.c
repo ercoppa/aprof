@@ -33,23 +33,6 @@
 
 #include "aprof.h"
 
-inline void APROF_(fix_access_size)(Addr * addr, SizeT * size) {
-
-    if (APROF_(addr_multiple) > 1) {
-        
-        UInt diff = (*addr) & (APROF_(addr_multiple)-1);
-        (*addr) -= diff;
-        if ((*size) + diff < APROF_(addr_multiple)) 
-            (*size) = 1;
-        else if ((((*size) + diff) % APROF_(addr_multiple)) == 0)
-            (*size) = ((*size) + diff) / APROF_(addr_multiple);
-        else
-            (*size) = 1 + (((*size) + diff) / APROF_(addr_multiple));
-    
-    }
-    
-}
-
 #if SYSCALL_WRAPPING == 1 && INPUT_METRIC == RVMS
   
 void APROF_(pre_syscall)(ThreadId tid, UInt syscallno, 
@@ -64,7 +47,7 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
     if(res._mode == SysRes_UNIX_ERR) return;
     #endif
 
-    SizeT size = (SizeT) sr_Res(res);
+    Int size = (Int) sr_Res(res);
     
     if(    
         syscallno == __NR_read 
@@ -84,20 +67,22 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
         #endif
 
         ){
-
+            
+            Addr addr = args[1];
+            APROF_(fix_access_size)(addr, size);
+            
             APROF_(global_counter)++;
             if(APROF_(global_counter) == 0)
                 APROF_(global_counter) = APROF_(overflow_handler)();
             
-            Addr addr = args[1];
-            APROF_(fix_access_size)(&addr, &size);
-            
-            UInt i = 0;
-            for (i = 0; i < size; i++) {
+            while(size > 0) {
                 
                 APROF_(trace_access)(   STORE, 
-                                        addr+(i*APROF_(addr_multiple)), 
+                                        addr, 
                                         APROF_(addr_multiple), True);
+                
+                size -= APROF_(addr_multiple);
+                addr += APROF_(addr_multiple);
             }
 
     } else if (
@@ -109,14 +94,15 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
             
             ){
             
+            struct vki_iovec * base = (struct  vki_iovec *) args[1];
+            UWord iovcnt = args[2];
+            UWord i;
+            Int iov_len;
+            
             APROF_(global_counter)++;
             if(APROF_(global_counter) == 0)
                 APROF_(global_counter) = APROF_(overflow_handler)();
             
-            struct vki_iovec * base = (struct  vki_iovec *) args[1];
-            UWord iovcnt = args[2];
-            UWord i;
-            SizeT iov_len;
             for(i = 0; i < iovcnt; i++){
                 
                 if(size == 0) break;
@@ -129,14 +115,16 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
                                         
                 size -= iov_len;                     
                 
-                APROF_(fix_access_size)(&addr, &iov_len);
+                APROF_(fix_access_size)(addr, iov_len);
             
-                UInt k = 0;
-                for (k = 0; k < iov_len; k++) {
+                while(iov_len > 0) {
                     
                     APROF_(trace_access)(   STORE, 
-                                            addr+(k*APROF_(addr_multiple)), 
+                                            addr, 
                                             APROF_(addr_multiple), True);
+                    
+                    iov_len -= APROF_(addr_multiple);
+                    addr += APROF_(addr_multiple);
                 }
                 
             }
@@ -162,14 +150,15 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
         
         Addr addr = args[1];
 
-        APROF_(fix_access_size)(&addr, &size);
-            
-        UInt i = 0;
-        for (i = 0; i < size; i++) {
+        APROF_(fix_access_size)(addr, size);
+        while (size > 0) {
             
             APROF_(trace_access)(   LOAD, 
-                                    addr+(i*APROF_(addr_multiple)), 
+                                    addr, 
                                     APROF_(addr_multiple), False);
+                                    
+            size -= APROF_(addr_multiple);
+            addr += APROF_(addr_multiple);
         }
 
     } else if (
@@ -182,7 +171,7 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
         struct vki_iovec * base = (struct vki_iovec *) args[1];
         UWord iovcnt = args[2];
         UWord i;
-        SizeT iov_len;
+        Int iov_len;
         for(i = 0; i < iovcnt; i++){
             
             if(size == 0) break;
@@ -195,14 +184,16 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
                                     
             size -= iov_len;                     
             
-            APROF_(fix_access_size)(&addr, &iov_len);
+            APROF_(fix_access_size)(addr, iov_len);
             
-            UInt k = 0;
-            for (k = 0; k < iov_len; k++) {
+            while (iov_len > 0) {
                 
                 APROF_(trace_access)(   LOAD, 
-                                        addr+(k*APROF_(addr_multiple)), 
+                                        addr, 
                                         APROF_(addr_multiple), False);
+                
+                iov_len -= APROF_(addr_multiple);
+                addr += APROF_(addr_multiple);
             }
             
         }
@@ -220,21 +211,23 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
             #endif
             
             ){
-                    
+        
+        Addr addr = args[1];
+        size = size + sizeof(long int);
+        APROF_(fix_access_size)(addr, size);
+        
         APROF_(global_counter)++;
         if(APROF_(global_counter) == 0)
             APROF_(global_counter) = APROF_(overflow_handler)();
         
-        Addr addr = args[1];
-        size = size + sizeof(long int);
-        APROF_(fix_access_size)(&addr, &size);
+        while(size > 0) {
             
-        UInt i = 0;
-        for (i = 0; i < size; i++) {
-            
-            APROF_(trace_access)(   LOAD, 
-                                    addr+(i*APROF_(addr_multiple)), 
+            APROF_(trace_access)(   STORE, 
+                                    addr, 
                                     APROF_(addr_multiple), True);
+            
+            size -= APROF_(addr_multiple);
+            addr += APROF_(addr_multiple);
         }
 
     } else if (
@@ -254,14 +247,16 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
         SizeT s = args[2];
         
         size = s + sizeof(long int);
-        APROF_(fix_access_size)(&addr, &size);
+        APROF_(fix_access_size)(addr, size);
             
-        UInt i = 0;
-        for (i = 0; i < size; i++) {
+        while(size > 0) {
             
             APROF_(trace_access)(   LOAD, 
-                                    addr+(i*APROF_(addr_multiple)), 
+                                    addr, 
                                     APROF_(addr_multiple), False);
+            
+            size -= APROF_(addr_multiple);
+            addr += APROF_(addr_multiple);
         }
     
     }

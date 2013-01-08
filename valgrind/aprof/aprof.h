@@ -546,13 +546,20 @@ void APROF_(print_alloc)(void);
 Bool VG_(get_fnname_no_cxx_demangle) (Addr a, Char* buf, Int nbuf);
 
 /* Syscall wrappers (syscall.c) */
-inline void APROF_(fix_access_size)(Addr * addr, SizeT * size);
 #if INPUT_METRIC == RVMS && SYSCALL_WRAPPING == 1
 void APROF_(pre_syscall)(ThreadId tid, UInt syscallno, UWord * args, 
                          UInt nArgs);
 void APROF_(post_syscall)(ThreadId tid, UInt syscallno, UWord * args, 
                           UInt nArgs, SysRes res);
 #endif
+
+
+#define vgAprof_fix_access_size(a, s) \
+                    do{ \
+                        UInt diff = (a) & (APROF_(addr_multiple)-1); \
+                        (a) -= diff; \
+                        (s) += diff; \
+                    } while(0);
 
 #if CCT_GRAPHIC
 void APROF_(print_cct_graph)(FILE * f, CCTNode* root, UInt parent_id, 

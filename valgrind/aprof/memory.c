@@ -93,12 +93,12 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
     #if COSTANT_MEM_ACCESS
     addr = addr & ~(APROF_(addr_multiple)-1);
     #else
-    APROF_(fix_access_size)(&addr, &size);
+    Int size_fix = size;
+    APROF_(fix_access_size)(addr, size_fix);
     #endif
     
     #if !COSTANT_MEM_ACCESS
-    UInt i = 0;
-    for (i = 0; i < size; i++) {
+    while (size_fix > 0) {
     #endif
         
         Activation * act = APROF_(get_activation)(tdata, tdata->stack_depth);
@@ -117,13 +117,7 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
             
             ts = APROF_(global_counter);
             
-            wts = LK_insert(APROF_(global_shadow_memory), 
-                            #if !COSTANT_MEM_ACCESS
-                            addr+(i*APROF_(addr_multiple)),
-                            #else
-                            addr,
-                            #endif
-                            ts);
+            wts = LK_insert(APROF_(global_shadow_memory), addr, ts);
 
             if (kernel_access) 
                 #if !COSTANT_MEM_ACCESS
@@ -141,26 +135,14 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
              */
             
             ts = APROF_(global_counter);
-            wts = LK_lookup(APROF_(global_shadow_memory),
-                            #if !COSTANT_MEM_ACCESS
-                            addr+(i*APROF_(addr_multiple)));
-                            #else
-                            addr);
-                            #endif
+            wts = LK_lookup(APROF_(global_shadow_memory), addr);
 
         }
 
         /*
          * Update the timestamp in the private shadow memory.
          */
-        old_ts = LK_insert(tdata->accesses,
-                            #if !COSTANT_MEM_ACCESS
-                            addr+(i*APROF_(addr_multiple)),
-                            #else
-                            addr,
-                            #endif
-                            ts);
-        
+        old_ts = LK_insert(tdata->accesses, addr, ts);
 
         if(type == STORE) {
             #if COSTANT_MEM_ACCESS
@@ -189,15 +171,7 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
         
         #else
         
-        UInt old_aid = LK_insert( tdata->accesses,
-                                    
-                                    #if !COSTANT_MEM_ACCESS
-                                    addr+(i*APROF_(addr_multiple)),
-                                    #else
-                                    addr,
-                                    #endif
-                                    
-                                    act->aid);
+        UInt old_aid = LK_insert( tdata->accesses, addr, act->aid);
         
         if (old_aid < act->aid && (type == LOAD || type == MODIFY)) {
             
@@ -211,8 +185,12 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
         }
         
         #endif
-        
+    
     #if !COSTANT_MEM_ACCESS
+    
+        size_fix -= APROF_(addr_multiple);
+        addr += APROF_(addr_multiple);
+        
     }
     #endif
     
