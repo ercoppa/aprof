@@ -62,7 +62,7 @@
 #define EMPTY_ANALYSIS      0   // if 1, analysis routines are empty 
                                 // (useful in combination with EVENTCOUNT)
 
-#define DEBUG               1   // Enable some sanity checks
+#define DEBUG               0   // Enable some sanity checks
 
 #define VERBOSE             0   // 0 disabled, 1 function + thread, 2 
                                 // function + thread + load/store/modify,
@@ -149,11 +149,11 @@
 #endif
 
 /* Failure/error function */
-#define AP_ASSERT(cond, msg)    { if (!(cond)) { \
+#define AP_ASSERT(cond, msg)    do{ if (!(cond)) { \
                                     VG_(printf)("%s\n", (msg)); \
                                     tl_assert(cond); \
                                     } \
-                                }
+                                } while(0);
 
 /* Data structures */
 

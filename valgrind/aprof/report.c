@@ -366,6 +366,7 @@ static Bool merge_report(HChar * report, ThreadData * tdata) {
     //VG_(printf)("Opening: %s\n", rep);
     SysRes res = VG_(open)((const HChar *)rep, VKI_O_RDONLY,
                                 VKI_S_IRUSR|VKI_S_IWUSR);
+    VG_(free)(rep);
     Int file = (Int) sr_Res(res);
     AP_ASSERT(file > 0, "Can't read a log file.");
     
@@ -459,9 +460,10 @@ static HChar * report_name(HChar * filename_priv, UInt tid, UInt postfix_c) {
 
 static UInt search_report(HChar ** reports, Bool all_runs) {
     
-    SysRes r = VG_(open)(VG_(expand_file_name)("aprof log", "./"),
-                        VKI_O_RDONLY, VKI_S_IRUSR|VKI_S_IWUSR);
-    int dir = (Int) sr_Res(r);
+    HChar * directory = VG_(expand_file_name)("aprof log", "./");
+    SysRes r = VG_(open)(directory, VKI_O_RDONLY, VKI_S_IRUSR|VKI_S_IWUSR);
+    VG_(free)(directory);
+    Int dir = (Int) sr_Res(r);
     AP_ASSERT(dir != -1, "Can't open directory.");
     
     struct vki_dirent * file;
@@ -543,6 +545,7 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
                 //VG_(printf)("Renaming report %s -> %s\n", reports[j], name);
                 
                 VG_(unlink) (old);
+                VG_(free)(old);
             }
         }
         
@@ -571,7 +574,8 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
     FILE * report = APROF_(fopen)(filename);
     UInt attempt = 0;
     while (report == NULL && attempt < 32) {
-        
+
+        VG_(free)(filename);
         filename = VG_(expand_file_name)("aprof log", 
             report_name(filename_priv, tid, attempt));
         
@@ -580,7 +584,7 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
         attempt++;
     }
 
-    if (report == NULL) VG_(printf)("File: %s", filename);
+    VG_(free)(filename);
     AP_ASSERT(report != NULL, "Can't create report file");
     
     //VG_(printf)("Writing report TID=%u file=%s\n", tid, filename);
@@ -797,6 +801,7 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
     VG_(sprintf)(buffer, "}\n");
     APROF_(fwrite)(cct_rep, buffer, VG_(strlen)(buffer));
     APROF_(fclose)(cct_rep);
+    VG_(free)(filename);
     #endif
 
     // close report file
