@@ -588,7 +588,7 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
     tdata->bb_c++;
     #endif
     
-    /* Previoud BB executed */
+    /* Previous BB executed */
     BB * last_bb = tdata->last_bb;
     enum jump_t exit = NONE;
     if (last_bb != NULL) {
@@ -909,7 +909,7 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
     /* Current activation */
     Activation * current = NULL;
     if (tdata->stack_depth > 0) {
-        current = APROF_(get_activation)(tdata, tdata->stack_depth);
+        current = APROF_(get_activation_noresize)(tdata, tdata->stack_depth);
         #if DEBUG
         AP_ASSERT(current != NULL, "Invalid activation");
         #endif
@@ -1027,7 +1027,7 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
                 AP_ASSERT(tdata->stack_depth > 0, "Stack depth not possible");
                 #endif
                 tdata->stack_depth--;
-                current = APROF_(get_activation)(tdata, tdata->stack_depth);
+                current = APROF_(get_activation_noresize)(tdata, tdata->stack_depth);
                 
             }
             
@@ -1116,7 +1116,7 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
     
     #if 0
     if (tdata->stack_depth > 0) {
-        Activation * acta = APROF_(get_activation)(tdata, tdata->stack_depth);
+        Activation * acta = APROF_(get_activation_noresize)(tdata, tdata->stack_depth);
         if (acta->rtn_info->fn != bb->fn)
             VG_(printf)("Skipped function %s\n", bb->fn->name);
     } else
@@ -1135,7 +1135,7 @@ void APROF_(unwind_stack)(ThreadData * tdata) {
     
     while (tdata->stack_depth > 0)  {
 
-        Activation * current = APROF_(get_activation)(tdata, tdata->stack_depth);
+        Activation * current = APROF_(get_activation_noresize)(tdata, tdata->stack_depth);
         APROF_(function_exit)(tdata, current);
         tdata->stack_depth--;
         current--;

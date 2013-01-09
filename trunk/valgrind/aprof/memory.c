@@ -101,7 +101,7 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
     while (size_fix > 0) {
     #endif
         
-        Activation * act = APROF_(get_activation)(tdata, tdata->stack_depth);
+        Activation * act = APROF_(get_activation_noresize)(tdata, tdata->stack_depth);
         
         #if INPUT_METRIC == RVMS
         
@@ -160,11 +160,12 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
             
             act->rms++;
             act->rvms++;
-            if (old_ts > 0 && old_ts >= APROF_(get_activation)(tdata, 1)->aid) {
+            if (old_ts > 0 && old_ts >= APROF_(get_activation_noresize)(tdata, 1)->aid) {
                 
-                APROF_(get_activation_by_aid)(tdata, old_ts)->rvms--;
-                APROF_(get_activation_by_aid)(tdata, old_ts)->rms--;
-         
+                act = APROF_(get_activation_by_aid)(tdata, old_ts);
+                act->rvms--;
+                act->rms--;
+            
             }
 
         }
@@ -176,7 +177,7 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
         if (old_aid < act->aid && (type == LOAD || type == MODIFY)) {
             
             act->rms++;
-            if (old_aid > 0 && old_aid >= APROF_(get_activation)(tdata, 1)->aid) {
+            if (old_aid > 0 && old_aid >= APROF_(get_activation_noresize)(tdata, 1)->aid) {
                 
                 APROF_(get_activation_by_aid)(tdata, old_aid)->rms--;
 

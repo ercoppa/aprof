@@ -177,17 +177,17 @@ UInt LK_insert(LookupTable * suf, UWord addr, UInt ts) {
     
     }
     
+    UInt * value;
+    
     #ifdef __i386__
-    UInt old = suf->table[i][j];
+    value = &(suf->table[i][j]);
     #else
-    UInt old = suf->table[i]->table[k][j];
+    value = &(suf->table[i]->table[k][j]);
     #endif
-    if (old < ts) /* avoid a write if possible... */
-    #ifdef __i386__
-        suf->table[i][j] = ts;
-    #else
-        suf->table[i]->table[k][j] = ts;
-    #endif
+    
+    UInt old = *value;
+    //if (old < ts) /* avoid a write if possible... */
+        *value = ts;
     
     return old;
 

@@ -389,7 +389,7 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
     // merge accesses of current activation with those of the parent activation
     if (tdata->stack_depth > 1) {
 
-        Activation * parent_activation = APROF_(get_activation)(
+        Activation * parent_activation = APROF_(get_activation_noresize)(
                                         tdata, tdata->stack_depth - 1);
         #if DEBUG
         AP_ASSERT(parent_activation != NULL, "Invalid parent activation");

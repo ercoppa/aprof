@@ -223,9 +223,10 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
                     IRExpr * a = data->Iex.Load.addr;
                     if (APROF_(do_access)(a)) {
                         helperNameA = "trace_load";
-                        argvA = mkIRExprVec_3(    mkIRExpr_HWord(LOAD),
+                        argvA = mkIRExprVec_4(  mkIRExpr_HWord(LOAD),
                                                 a, 
-                                                mkIRExpr_HWord( sizeofIRType(data->Iex.Load.ty) )
+                                                mkIRExpr_HWord( sizeofIRType(data->Iex.Load.ty) ),
+                                                False
                                             );
                         helperAddrA = APROF_(trace_access);
                         diA = unsafeIRDirty_0_N( 3, helperNameA, 
@@ -253,9 +254,10 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
                 IRExpr * a = st->Ist.Store.addr;
                 if (APROF_(do_access)(a)) {
                     helperNameA = "trace_store";
-                    argvA = mkIRExprVec_3(    mkIRExpr_HWord(STORE),
+                    argvA = mkIRExprVec_4(    mkIRExpr_HWord(STORE),
                                             a, 
-                                            mkIRExpr_HWord( sizeofIRType(typeOfIRExpr(tyenv, data)) )
+                                            mkIRExpr_HWord( sizeofIRType(typeOfIRExpr(tyenv, data)) ),
+                                            False
                                         );
                     helperAddrA = APROF_(trace_access);
                     diA = unsafeIRDirty_0_N( 3, helperNameA, 
@@ -290,9 +292,10 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
                     if (d->mFx == Ifx_Read || d->mFx == Ifx_Modify) {
                         if (APROF_(do_access)(a)) {
                             helperNameA = "trace_load";
-                            argvA = mkIRExprVec_3(    mkIRExpr_HWord(LOAD),
+                            argvA = mkIRExprVec_4(    mkIRExpr_HWord(LOAD),
                                                         a, 
-                                                        mkIRExpr_HWord( dsize )
+                                                        mkIRExpr_HWord( dsize ),
+                                                        False
                                                     );
                             helperAddrA = APROF_(trace_access);
                             diA = unsafeIRDirty_0_N( 3, helperNameA, 
@@ -304,9 +307,10 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
                     else if (d->mFx == Ifx_Write) {
                         if (APROF_(do_access)(a)) {
                             helperNameA = "trace_store";
-                            argvA = mkIRExprVec_3(    mkIRExpr_HWord(STORE),
+                            argvA = mkIRExprVec_4(    mkIRExpr_HWord(STORE),
                                                         a, 
-                                                        mkIRExpr_HWord( dsize )
+                                                        mkIRExpr_HWord( dsize ),
+                                                        False
                                                     );
                             helperAddrA = APROF_(trace_access);
                             diA = unsafeIRDirty_0_N( 3, helperNameA, 
@@ -355,9 +359,10 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
                 IRExpr * a = cas->addr;
                 if (APROF_(do_access)(a)) {
                     helperNameA = "trace_load";
-                    argvA = mkIRExprVec_3(    mkIRExpr_HWord(LOAD),
+                    argvA = mkIRExprVec_4(  mkIRExpr_HWord(LOAD),
                                             a, 
-                                            mkIRExpr_HWord( dataSize )
+                                            mkIRExpr_HWord( dataSize ),
+                                            False
                                         );
                     helperAddrA = APROF_(trace_access);
                     diA = unsafeIRDirty_0_N( 3, helperNameA, 
@@ -388,9 +393,10 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
                     IRExpr * a = st->Ist.LLSC.addr;
                     if (APROF_(do_access)(a)) {
                         helperNameA = "trace_load";
-                        argvA = mkIRExprVec_3(    mkIRExpr_HWord(LOAD),
+                        argvA = mkIRExprVec_4(  mkIRExpr_HWord(LOAD),
                                                 a, 
-                                                mkIRExpr_HWord( sizeofIRType(dataTy) )
+                                                mkIRExpr_HWord( sizeofIRType(dataTy) ),
+                                                False
                                             );
                         helperAddrA = APROF_(trace_access);
                         diA = unsafeIRDirty_0_N( 3, helperNameA, 
@@ -409,9 +415,10 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
                     IRExpr * a = st->Ist.LLSC.addr;
                     if (APROF_(do_access)(a)) {
                         helperNameA = "trace_store";
-                        argvA = mkIRExprVec_3(    mkIRExpr_HWord(STORE),
+                        argvA = mkIRExprVec_4(  mkIRExpr_HWord(STORE),
                                                 a, 
-                                                mkIRExpr_HWord( sizeofIRType(dataTy) )
+                                                mkIRExpr_HWord( sizeofIRType(dataTy) ),
+                                                False
                                             );
                         helperAddrA = APROF_(trace_access);
                         diA = unsafeIRDirty_0_N( 3, helperNameA, 
