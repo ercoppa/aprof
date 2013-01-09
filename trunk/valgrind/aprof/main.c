@@ -529,7 +529,26 @@ static void APROF_(fini)(Int exitcode) {
     HT_destruct(APROF_(bb_ht));
     #endif
     
+    // destroy function objs
+    HT_ResetIter(APROF_(fn_ht));
+    Function * f = HT_RemoveNext(APROF_(fn_ht));
+    while (f != NULL) {
+        VG_(free)(f->name);
+        VG_(free)(f->mangled);
+        VG_(free)(f);
+        f = HT_RemoveNext(APROF_(fn_ht));
+    }
     HT_destruct(APROF_(fn_ht));
+    
+    // destroy ELF objects
+    HT_ResetIter(APROF_(obj_ht));
+    Object * o = HT_RemoveNext(APROF_(obj_ht));
+    while (o != NULL) {
+        VG_(free)(o->name);
+        //VG_(free)(o->file);
+        VG_(free)(o);
+        o = HT_RemoveNext(APROF_(obj_ht));
+    }
     HT_destruct(APROF_(obj_ht));
     
     #if INPUT_METRIC == RVMS
