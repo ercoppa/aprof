@@ -60,7 +60,7 @@ UInt APROF_(global_counter) = 0;
 VG_REGPARM(3) void APROF_(trace_access)(UWord type, 
                                         Addr addr, 
                                         SizeT size,
-                                        Bool kernel_access) {
+                                        UWord kernel_access) {
     
     ThreadData * tdata = APROF_(current_tdata);
     #if DEBUG
@@ -105,7 +105,7 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
         
         #if INPUT_METRIC == RVMS
         
-        UInt ts;
+        UInt ts = APROF_(global_counter);
         UInt old_ts;
         UInt wts;
         
@@ -115,16 +115,15 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
          */
          if (type == STORE || type == MODIFY) {
             
-            ts = APROF_(global_counter);
-            
             wts = LK_insert(APROF_(global_shadow_memory), addr, ts);
 
-            if (kernel_access) 
+            if (kernel_access) {
                 #if !COSTANT_MEM_ACCESS
                 continue;
                 #else
                 return;
                 #endif
+            }
 
         } else { 
             
@@ -133,8 +132,6 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
              * memory cell? Get timestamp of the memory cell in
              * the global shadow memory.
              */
-            
-            ts = APROF_(global_counter);
             wts = LK_lookup(APROF_(global_shadow_memory), addr);
 
         }
@@ -155,7 +152,7 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
         if(old_ts < wts){
             act->rvms++;
         }
-        
+ 
         else if (old_ts < act->aid) {
             
             act->rms++;

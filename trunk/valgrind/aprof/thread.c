@@ -289,6 +289,8 @@ void APROF_(kill_threads)(void) {
  */
 UInt APROF_(overflow_handler)(void) {
 
+    AP_ASSERT(0, "Overflow!");
+
     UInt sum = 0; // # valid timestamps
     UInt count_thread = APROF_(running_threads);
 

@@ -401,7 +401,7 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
         
             parent_activation->rms                 += act->rms;
             #if INPUT_METRIC == RVMS
-            parent_activation->rvms                 += act->rvms;
+            parent_activation->rvms                += act->rvms;
             #endif
             
             parent_activation->total_children_time += partial_cumulative;
