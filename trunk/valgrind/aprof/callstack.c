@@ -338,7 +338,7 @@ BB * APROF_(get_BB)(UWord target) {
  */
 __attribute__((unused))    // Possibly;  depends on the platform.
 static Bool check_code(UWord obj_start, UWord obj_size, 
-                        unsigned char code[], struct pattern* pat)
+                        UChar code[], struct pattern* pat)
 {
     Bool found;
     Addr addr, end;
@@ -403,7 +403,7 @@ static Bool search_runtime_resolve(HChar * obj_name, UWord obj_start,
                                         UWord obj_size)
 {
 #if defined(VGP_x86_linux)
-    static unsigned char code[] = {
+    static UChar code[] = {
     /* 0*/ 0x50, 0x51, 0x52, 0x8b, 0x54, 0x24, 0x10, 0x8b,
     /* 8*/ 0x44, 0x24, 0x0c, 0xe8, 0x70, 0x01, 0x00, 0x00,
     /*16*/ 0x5a, 0x59, 0x87, 0x04, 0x24, 0xc2, 0x08, 0x00 };
@@ -412,7 +412,7 @@ static Bool search_runtime_resolve(HChar * obj_name, UWord obj_start,
     "x86-def", 24, {{ 0,12 }, { 16,8 }, { 24,0}} };
 
     /* Pattern for glibc-2.8 on OpenSuse11.0 */
-    static unsigned char code_28[] = {
+    static UChar code_28[] = {
     /* 0*/ 0x50, 0x51, 0x52, 0x8b, 0x54, 0x24, 0x10, 0x8b,
     /* 8*/ 0x44, 0x24, 0x0c, 0xe8, 0x70, 0x01, 0x00, 0x00,
     /*16*/ 0x5a, 0x8b, 0x0c, 0x24, 0x89, 0x04, 0x24, 0x8b,
@@ -427,7 +427,7 @@ static Bool search_runtime_resolve(HChar * obj_name, UWord obj_start,
 #endif
 
 #if defined(VGP_ppc32_linux)
-    static unsigned char code[] = {
+    static UChar code[] = {
     /* 0*/ 0x94, 0x21, 0xff, 0xc0, 0x90, 0x01, 0x00, 0x0c,
     /* 8*/ 0x90, 0x61, 0x00, 0x10, 0x90, 0x81, 0x00, 0x14,
     /*16*/ 0x7d, 0x83, 0x63, 0x78, 0x90, 0xa1, 0x00, 0x18,
@@ -453,7 +453,7 @@ static Bool search_runtime_resolve(HChar * obj_name, UWord obj_start,
 #endif
 
 #if defined(VGP_amd64_linux)
-    static unsigned char code[] = {
+    static UChar code[] = {
     /* 0*/ 0x48, 0x83, 0xec, 0x38, 0x48, 0x89, 0x04, 0x24,
     /* 8*/ 0x48, 0x89, 0x4c, 0x24, 0x08, 0x48, 0x89, 0x54, 0x24, 0x10,
     /*18*/ 0x48, 0x89, 0x74, 0x24, 0x18, 0x48, 0x89, 0x7c, 0x24, 0x20,

@@ -75,13 +75,15 @@ typedef struct {
     Int        size;
 } Event;
 
-static Event events[N_EVENTS];
 Int   APROF_(events_used) = 0;
+
+#if MEM_TRACE
+static Event events[N_EVENTS];
 
 void APROF_(flushEvents)(IRSB* sb) {
     
     Int        i;
-    HChar*      helperName = NULL;
+    HChar*     helperName = NULL;
     void*      helperAddr = NULL;
     IRExpr**   argv = NULL;
     IRDirty*   di;
@@ -157,8 +159,10 @@ void APROF_(addEvent_Ir) ( IRSB* sb, IRAtom* iaddr, UInt isize ) {
 void APROF_(addEvent_Dr) ( IRSB* sb, IRAtom* daddr, Int dsize ) {
     
     Event* evt;
+    #if DEBUG
     tl_assert(isIRAtom(daddr));
     tl_assert(dsize >= 1 && dsize <= MAX_DSIZE);
+    #endif
     if (APROF_(events_used) == N_EVENTS)
         APROF_(flushEvents)(sb);
     tl_assert(APROF_(events_used) >= 0 && APROF_(events_used) < N_EVENTS);
@@ -173,8 +177,11 @@ void APROF_(addEvent_Dw) ( IRSB* sb, IRAtom* daddr, Int dsize ) {
     
     Event* lastEvt;
     Event* evt;
+    
+    #if DEBUG
     tl_assert(isIRAtom(daddr));
     tl_assert(dsize >= 1 && dsize <= MAX_DSIZE);
+    #endif
 
     // Is it possible to merge this write with the preceding read?
     lastEvt = &events[APROF_(events_used)-1];
@@ -189,10 +196,14 @@ void APROF_(addEvent_Dw) ( IRSB* sb, IRAtom* daddr, Int dsize ) {
     // No.  Add as normal.
     if (APROF_(events_used) == N_EVENTS)
         APROF_(flushEvents)(sb);
+    
+    #if DEBUG
     tl_assert(APROF_(events_used) >= 0 && APROF_(events_used) < N_EVENTS);
+    #endif
     evt = &events[APROF_(events_used)];
     evt->ekind = Event_Dw;
     evt->size  = dsize;
     evt->addr  = daddr;
     APROF_(events_used)++;
 }
+#endif

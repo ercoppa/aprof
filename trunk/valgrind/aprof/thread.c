@@ -218,7 +218,7 @@ void APROF_(thread_switch)(ThreadId tid, ULong blocks_dispatched) {
      * Why? Investigate! 
      */
      
-    if (tid == APROF_(current_TID)) return;
+    if (LIKELY(tid == APROF_(current_TID))) return;
     
     #if INPUT_METRIC == RVMS
     ++APROF_(global_counter);
