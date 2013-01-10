@@ -492,7 +492,7 @@ void APROF_(print_report_CCT)(FILE * f, CCTNode * root, UInt parent_id);
 
 /* Memory access handler (memory.c) */
 VG_REGPARM(3) void APROF_(trace_access)(UWord type, 
-                            Addr addr, SizeT size, Bool kernel_access);
+                            Addr addr, SizeT size, UWord kernel_access);
 
 /* Function entry/exit handlers (function.c) */
 RoutineInfo * APROF_(new_routine_info)(ThreadData * tdata, Function * fn, UWord target);
