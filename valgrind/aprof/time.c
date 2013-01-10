@@ -33,6 +33,7 @@
 
 #include "aprof.h"
 
+#if TIME != BB_COUNT
 ULong APROF_(time)(ThreadData * tdata) {
 
     #if EMPTY_ANALYSIS
@@ -54,6 +55,7 @@ ULong APROF_(time)(ThreadData * tdata) {
     return 0;
 
 }
+#endif
 
 #if TIME == INSTR
 VG_REGPARM(0) void APROF_(add_one_guest_instr)(void) {

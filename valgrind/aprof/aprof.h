@@ -149,7 +149,7 @@
 #endif
 
 /* Failure/error function */
-#define AP_ASSERT(cond, msg)    do{ if (!(cond)) { \
+#define AP_ASSERT(cond, msg)    do{ if (UNLIKELY(!(cond))) { \
                                     VG_(printf)("%s\n", (msg)); \
                                     tl_assert(cond); \
                                     } \
@@ -500,7 +500,11 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act);
 void APROF_(function_exit)(ThreadData * tdata, Activation * act);
 
 /* time (time.c) */
+#if TIME == BB_COUNT
+#define vgAprof_time(tdata) (tdata)->bb_c
+#else
 ULong APROF_(time)(ThreadData * tdata);
+#endif
 #if TIME == INSTR
 VG_REGPARM(0) void APROF_(add_one_guest_instr)(void);
 #endif

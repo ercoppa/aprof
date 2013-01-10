@@ -109,7 +109,10 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
 
     Int        i;
     IRSB*      sbOut;
+    
+    #if MEM_TRACE
     IRTypeEnv* tyenv = sbIn->tyenv;
+    #endif
     APROF_(events_used) = 0;
 
     if (gWordTy != hWordTy) /* We don't currently support this case. */
@@ -137,13 +140,15 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
     
     #if TRACE_FUNCTION
     
-    BB * bb = APROF_(get_BB)(sbIn->stmts[i]->Ist.IMark.addr);
+    BB * bb = APROF_(get_BB)(sbIn->stmts[i]->Ist.IMark.addr +
+                                + (Addr)sbIn->stmts[i]->Ist.IMark.delta);
     #if DEBUG
     AP_ASSERT(bb != NULL, "Invalid BB")
     #endif
 
     IRExpr  * e3 = mkIRExpr_HWord ( (HWord) bb );
-    IRExpr  * e2 = mkIRExpr_HWord ( (HWord) (Addr)sbIn->stmts[i]->Ist.IMark.addr );
+    IRExpr  * e2 = mkIRExpr_HWord ( (HWord) (Addr)sbIn->stmts[i]->Ist.IMark.addr
+                                    + (Addr)sbIn->stmts[i]->Ist.IMark.delta);
     IRDirty * di3 = unsafeIRDirty_0_N( 2, "BB start",
                                 VG_(fnptr_to_fnentry)( &APROF_(BB_start) ),
                                 mkIRExprVec_2( e2, e3 ) );
@@ -194,9 +199,13 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
                 #if MEM_TRACE
                 
                 #if IGNORE_REPEAT_ACC
-                //APROF_(do_access)(mkIRExpr_HWord( (HWord)st->Ist.IMark.addr ));
+                /*
+                APROF_(do_access)(mkIRExpr_HWord( (HWord)st->Ist.IMark.addr + 
+                                            (Addr)st->Ist.IMark.delta));
+                */
                 #else
-                APROF_(addEvent_Ir)( sbOut, mkIRExpr_HWord( (HWord)st->Ist.IMark.addr ),
+                APROF_(addEvent_Ir)( sbOut, mkIRExpr_HWord( (HWord)st->Ist.IMark.addr +
+                                                        (Addr)st->Ist.IMark.delta),
                                 st->Ist.IMark.len );
                 #endif
                 
@@ -521,6 +530,9 @@ static void APROF_(post_clo_init)(void) {
     #if INPUT_METRIC == RVMS
     APROF_(global_shadow_memory) = LK_create();
     #endif
+    
+    VG_(clo_vex_control).iropt_unroll_thresh = 0;
+    VG_(clo_vex_control).guest_chase_thresh  = 0;
 }
 
 /* aprof finalization */
