@@ -468,10 +468,11 @@ extern UInt APROF_(global_counter);
 /* Functions */
 
 /* f{open, write, close, flush} internal implementation (fwrite.c) */
-FILE * APROF_(fopen)(char * name);
+FILE * APROF_(fopen)(const HChar * name);
 void APROF_(fflush)(FILE * f);
-void APROF_(fwrite)(FILE * f, char * buffer, unsigned int size);
+void APROF_(fwrite)(FILE * f, const HChar * buffer, UInt size);
 void APROF_(fclose)(FILE * f);
+void APROF_(fprintf)(FILE * f, const HChar * format, ...);
 
 /* handlers of thread events (thread.c) */
 void APROF_(thread_switch)(ThreadId tid, ULong blocks_dispatched);
