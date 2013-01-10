@@ -95,11 +95,9 @@ void APROF_(print_report_CCT)(FILE * f, CCTNode* root, UInt parent_id) {
         
         char msg[256];
         if (parent_id > 0)
-            VG_(sprintf)(msg, "x %llu %u %u\n", root->routine_id, root->context_id, parent_id);
+            APROF_(fprintf)(report, "x %llu %u %u\n", root->routine_id, root->context_id, parent_id);
         else
-            VG_(sprintf)(msg, "x %llu %u -1\n", root->routine_id, root->context_id);
-        
-        APROF_(fwrite)(f, msg, VG_(strlen(msg)));
+            APROF_(fprintf)(report, "x %llu %u -1\n", root->routine_id, root->context_id);
         
     }
 
@@ -127,11 +125,10 @@ void APROF_(print_cct_graph)(FILE * f, CCTNode* root, UInt parent_id, char * par
     if (parent_name != NULL){
         
         //APROF_(clean_name)(root->name);
-        VG_(sprintf)(msg, "\"%s\"->\"%s%llu\";\n", parent_name, root->name, root->context_id);
-        APROF_(fwrite)(f, msg, VG_(strlen(msg)));
+        APROF_(fprintf)(report, "\"%s\"->\"%s%llu\";\n", parent_name, root->name, root->context_id);
 
     }
-    VG_(sprintf)(msg, "%s%llu", root->name, root->context_id);
+    APROF_(fprintf)(report, "%s%llu", root->name, root->context_id);
 
     // call recursively function on children
     CCTNode* theNodePtr;

@@ -1,5 +1,6 @@
 /*
- * aprof's implementation of libc fopen, fwrite, fclose, fflush functions 
+ * aprof's implementation of libc fopen, fwrite, fclose, 
+ * fflush and fprintf functions 
  * 
  * Last changed: $Date$
  * Revision:     $Rev$
@@ -34,8 +35,9 @@
 #include "aprof.h"
 
 /* Note: fwrite() & co are not provided by valgrind, so... */
+static HChar buffer[4096];
 
-FILE * APROF_(fopen)(char * name){
+FILE * APROF_(fopen)(const HChar * name){
     
     SysRes res = VG_(open)(name, VKI_O_EXCL|VKI_O_CREAT|VKI_O_WRONLY, VKI_S_IRUSR|VKI_S_IWUSR);
     int file = (Int) sr_Res(res);
@@ -53,7 +55,7 @@ FILE * APROF_(fopen)(char * name){
 
 void APROF_(fflush)(FILE * f) {
     
-    unsigned int bw = 0, bf = 0, size = f->fw_pos;
+    UInt bw = 0, bf = 0, size = f->fw_pos;
     do {
         bf = VG_(write)(f->file, f->fw_buffer + bw, size - bw);
         AP_ASSERT(bf != -1, "Error during writing\n");
@@ -64,16 +66,31 @@ void APROF_(fflush)(FILE * f) {
 
 }
 
-void APROF_(fwrite)(FILE * f, char * buffer, unsigned int size) {
+void APROF_(fwrite)(FILE * f, const HChar * buf, UInt size) {
 
-    if (buffer == NULL || size == 0) return;
+    if (buf == NULL || size == 0) return;
     
-    /* We suppose size always less than BUFFER_SIZE */
-    AP_ASSERT(size < BUFFER_SIZE, "Error during writing\n");
-    
-    if (BUFFER_SIZE - f->fw_pos <= size) APROF_(fflush)(f);
-    VG_(strncpy)(f->fw_buffer + f->fw_pos, buffer, size);
-    f->fw_pos += size;
+    while (1) {
+        
+        if (size < BUFFER_SIZE - f->fw_pos) {
+        
+            // it fits inside... just copy
+            VG_(strncpy)(f->fw_buffer + f->fw_pos, buf, size);
+            f->fw_pos += size;
+            return;
+        
+        } else {
+            
+            // copy only a piece of input buffer, then flush
+            VG_(strncpy)(f->fw_buffer + f->fw_pos, buf, 
+                                BUFFER_SIZE - f->fw_pos);
+            buf += BUFFER_SIZE - f->fw_pos;
+            size -= BUFFER_SIZE - f->fw_pos;
+            APROF_(fflush)(f);
+            
+        }
+        
+    }
 
 }
 
@@ -83,4 +100,15 @@ void APROF_(fclose)(FILE * f) {
     VG_(close)(f->file);
     VG_(free)(f);
 
+}
+
+void APROF_(fprintf)(FILE * f, const HChar * format, ...) {
+    
+    va_list vargs;
+    va_start(vargs, format);
+    UInt size = VG_(vsprintf)(buffer, format, vargs);
+    va_end(vargs);
+    
+    APROF_(fwrite)(f, buffer, size);
+    
 }
