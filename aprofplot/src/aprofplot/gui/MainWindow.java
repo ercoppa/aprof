@@ -233,12 +233,12 @@ public class MainWindow extends javax.swing.JFrame {
         jMenuItem4 = new javax.swing.JMenuItem();
         jMenu3 = new javax.swing.JMenu();
         jCheckBoxMenuItem12 = new javax.swing.JCheckBoxMenuItem();
+        jCheckBoxMenuItem15 = new javax.swing.JCheckBoxMenuItem();
+        jCheckBoxMenuItem18 = new javax.swing.JCheckBoxMenuItem();
         jCheckBoxMenuItem13 = new javax.swing.JCheckBoxMenuItem();
         jCheckBoxMenuItem14 = new javax.swing.JCheckBoxMenuItem();
-        jCheckBoxMenuItem15 = new javax.swing.JCheckBoxMenuItem();
-        jCheckBoxMenuItem16 = new javax.swing.JCheckBoxMenuItem();
         jCheckBoxMenuItem17 = new javax.swing.JCheckBoxMenuItem();
-        jCheckBoxMenuItem18 = new javax.swing.JCheckBoxMenuItem();
+        jCheckBoxMenuItem16 = new javax.swing.JCheckBoxMenuItem();
         jCheckBoxMenuItem19 = new javax.swing.JCheckBoxMenuItem();
         jCheckBoxMenuItem1 = new javax.swing.JCheckBoxMenuItem();
         jMenu4 = new javax.swing.JMenu();
@@ -780,7 +780,7 @@ public class MainWindow extends javax.swing.JFrame {
         jScrollPane2.setVerticalScrollBarPolicy(javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
         jScrollPane2.setPreferredSize(new java.awt.Dimension(550, 450));
 
-        jTable2.setModel(new RmsTableModel());
+        jTable2.setModel(new RmsTableModel(this));
         jTable2.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         restoreSortingRmsTable();
         jTable2.getSelectionModel().addListSelectionListener(new javax.swing.event.ListSelectionListener() {
@@ -1016,6 +1016,22 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jMenu3.add(jCheckBoxMenuItem12);
 
+        jCheckBoxMenuItem15.setText("Mean cumulative cost plot");
+        jCheckBoxMenuItem15.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCheckBoxMenuItem15ActionPerformed(evt);
+            }
+        });
+        jMenu3.add(jCheckBoxMenuItem15);
+
+        jCheckBoxMenuItem18.setText("Rms frequency plot");
+        jCheckBoxMenuItem18.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCheckBoxMenuItem18ActionPerformed(evt);
+            }
+        });
+        jMenu3.add(jCheckBoxMenuItem18);
+
         jCheckBoxMenuItem13.setText("Min/Avg/Max cost plot");
         jCheckBoxMenuItem13.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -1032,22 +1048,6 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jMenu3.add(jCheckBoxMenuItem14);
 
-        jCheckBoxMenuItem15.setText("Mean cumulative cost plot");
-        jCheckBoxMenuItem15.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxMenuItem15ActionPerformed(evt);
-            }
-        });
-        jMenu3.add(jCheckBoxMenuItem15);
-
-        jCheckBoxMenuItem16.setText("Curve bounding plot");
-        jCheckBoxMenuItem16.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxMenuItem16ActionPerformed(evt);
-            }
-        });
-        jMenu3.add(jCheckBoxMenuItem16);
-
         jCheckBoxMenuItem17.setText("Cost variance plot");
         jCheckBoxMenuItem17.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -1056,13 +1056,13 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jMenu3.add(jCheckBoxMenuItem17);
 
-        jCheckBoxMenuItem18.setText("Rms frequency plot");
-        jCheckBoxMenuItem18.addActionListener(new java.awt.event.ActionListener() {
+        jCheckBoxMenuItem16.setText("Curve bounding plot");
+        jCheckBoxMenuItem16.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxMenuItem18ActionPerformed(evt);
+                jCheckBoxMenuItem16ActionPerformed(evt);
             }
         });
-        jMenu3.add(jCheckBoxMenuItem18);
+        jMenu3.add(jCheckBoxMenuItem16);
 
         jCheckBoxMenuItem19.setText("Program statistics plot");
         jCheckBoxMenuItem19.addActionListener(new java.awt.event.ActionListener() {
@@ -1230,7 +1230,15 @@ public class MainWindow extends javax.swing.JFrame {
         */
 		jLabel6.setText(" Calls: " + report.getTotalCalls() + " ");
 		jLabel7.setText("");
-	
+        
+        if (this.isInputMetricRms()) {
+            jCheckBoxMenuItem18.setText("RMS frequency plot");
+            jCheckBoxMenuItem10.setText("RMS frequency plot");
+        } else {
+            jCheckBoxMenuItem18.setText("RVMS frequency plot");
+            jCheckBoxMenuItem10.setText("RVMS frequency plot");
+        }
+        
 	}
 
 	protected void loadReport(final File file) {
@@ -1262,8 +1270,21 @@ public class MainWindow extends javax.swing.JFrame {
 		
 	}
     
+    public boolean isInputMetricRms() {
+        
+        if (report == null) return true;
+        
+        if (report.getInputMetric() == AprofReport.RVMS)
+            return false;
+        
+        return true;
+    }
+    
     private void failLoadReport(File file, Exception e) {
+        
+        //System.out.println(e);
         //e.printStackTrace();
+        
         javax.swing.JOptionPane.showMessageDialog(this, 
                 "Couldn't open the chosen file", "Error", 
                 javax.swing.JOptionPane.ERROR_MESSAGE);
@@ -1462,7 +1483,8 @@ public class MainWindow extends javax.swing.JFrame {
 				
 				// Clear routinr profile
 				((RmsTableModel)jTable2.getModel()).setData(null);
-
+                ((RmsTableModel)jTable2.getModel()).refreshStructure();
+                
 				jProgressBar1.setVisible(false);
 				jProgressBar1.setEnabled(false);
 				loading = false;

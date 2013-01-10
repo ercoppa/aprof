@@ -50,7 +50,10 @@ public class RoutinesTableModel extends AbstractTableModel {
         columnTypes.add(Double.class);
         
         // # RMS
-        columnNames.add("#RMS");
+        if (main == null || main.isInputMetricRms())
+            columnNames.add("#RMS");
+        else
+            columnNames.add("#RVMS");
         columnTypes.add(Integer.class);
         
         // Cost %

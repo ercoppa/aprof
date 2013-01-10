@@ -9,8 +9,10 @@ public class RmsTableModel extends AbstractTableModel {
 	private Routine rtn = null;
 	private ArrayList<String> columnNames = new ArrayList<String>();
     private ArrayList<Class>  columnTypes = new ArrayList<Class>();
+    private MainWindow main = null;
     
-    public RmsTableModel() {
+    public RmsTableModel(MainWindow main) {
+        this.main = main;
         updateColumns();
     }
     
@@ -19,9 +21,12 @@ public class RmsTableModel extends AbstractTableModel {
         columnNames = new ArrayList<String>();
         columnTypes = new ArrayList<Class>();
         
-        columnNames.add("rms");
+        if (main == null || main.isInputMetricRms())
+            columnNames.add("RMS");
+        else
+            columnNames.add("RVMS");
         columnTypes.add(Integer.class);
-        
+            
         if (Main.getChartCost() == Main.COST_CUMULATIVE)
             columnNames.add("min cost (cumul)");
         else
@@ -45,15 +50,16 @@ public class RmsTableModel extends AbstractTableModel {
         
         columnNames.add("freq");
         columnTypes.add(Long.class);
+        
+        if (main != null && !main.isInputMetricRms()) {
+            columnNames.add("Ratio");
+            columnTypes.add(Double.class);
+        }
     }
-
-	public RmsTableModel(Routine r) {
-		this.rtn = r;
-	}
 
 	public void setData(Routine r) {
 		this.rtn = r;
-        updateColumns();
+        //updateColumns();
 		fireTableDataChanged();
 	}
 
@@ -95,6 +101,7 @@ public class RmsTableModel extends AbstractTableModel {
 			case 2: return Math.ceil(te.getAvgCost() * 10) / 10;
 			case 3: return te.getMaxCost();
 			case 4: return te.getOcc();
+            case 5: return te.getRatioRmsRvms();
 			//case 5: return te.getVar();
 			//case 6: return rtn.getMcc(te.getRms());
 			default: return null;
@@ -108,6 +115,7 @@ public class RmsTableModel extends AbstractTableModel {
 	}
     
     public void refreshStructure() {
+        updateColumns();
         fireTableStructureChanged();
     }
 }

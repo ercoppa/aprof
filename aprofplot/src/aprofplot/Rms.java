@@ -13,6 +13,9 @@ public class Rms implements Comparable<Rms> {
     private long self_max;
     private double total_self_sqr_sum;
 	private long occ;
+    
+    private long sum_rms;
+    private long sum_sqr_rms;
 	
 	public static final int MAX_COST = 0;
 	public static final int AVG_COST = 1;
@@ -28,7 +31,7 @@ public class Rms implements Comparable<Rms> {
 	public Rms(long rms, long min_cost, long max_cost, double total_cost, 
                 double total_real_cost, double total_self, long occ,
                 long self_min, long self_max, double cumul_sqr,
-                double self_sqr) {
+                double self_sqr, long sum_rms, long sum_sqr_rms) {
 
 		this.rms = rms;
 		this.min_cost = min_cost;
@@ -41,7 +44,9 @@ public class Rms implements Comparable<Rms> {
         this.self_max = self_max;
         this.total_self_sqr_sum = self_sqr;
 		this.occ = occ;
-		
+		this.sum_rms = sum_rms;
+        this.sum_sqr_rms = sum_sqr_rms;
+        
         long cost = 0;
         if (Main.getChartCost() == Main.COST_CUMULATIVE)
             cost = this.max_cost;
@@ -226,7 +231,9 @@ public class Rms implements Comparable<Rms> {
                 this.self_min + te.getSelfMinCost(),
                 this.self_max + te.getSelfMaxCost(),
                 this.total_sqr_sum_cost + te.getTotalCumulativeSqrCost(),
-                this.total_sqr_sum_cost + te.getTotalSelfSqrCost());
+                this.total_sqr_sum_cost + te.getTotalSelfSqrCost(),
+                this.sum_rms + te.getSumRms(),
+                this.sum_sqr_rms + te.getSumSqrRms());
 	}
 
     public long getCumulativeMinCost() {
@@ -259,5 +266,17 @@ public class Rms implements Comparable<Rms> {
 
     public double getTotalSelfSqrCost() {
         return this.total_self_sqr_sum;
+    }
+    
+    public long getSumRms() {
+        return this.sum_rms;
+    }
+    
+    public long getSumSqrRms() {
+        return this.sum_sqr_rms;
+    }
+    
+    public double getRatioRmsRvms() {
+        return (((double)sum_rms) / ((double)(this.rms * this.occ))); 
     }
 }
