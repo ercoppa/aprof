@@ -70,6 +70,8 @@ public class ContextualizedRoutineInfo extends RoutineInfo {
 		long occ = 0;
         double cumul_sqr = 0;
         double self_sqr = 0;
+        long sum_rms = 0;
+        long sum_sqr_rms = 0;
         
 		while (i.hasNext()) {
 			
@@ -78,7 +80,8 @@ public class ContextualizedRoutineInfo extends RoutineInfo {
 				
 				Rms rr = new Rms(current_rms, min_cost, max_cost, total_cost,
 									total_real_cost, total_self, occ, 
-                                    self_min, self_max, cumul_sqr, self_sqr);
+                                    self_min, self_max, cumul_sqr, self_sqr,
+                                    sum_rms, sum_sqr_rms);
 				
 				addRms(rr);
 				
@@ -93,6 +96,8 @@ public class ContextualizedRoutineInfo extends RoutineInfo {
 				occ = 0;
                 cumul_sqr = 0;
                 self_sqr = 0;
+                sum_rms = 0;
+                sum_sqr_rms = 0;
 				current_rms = r.getRms();
 				
 			}
@@ -108,12 +113,15 @@ public class ContextualizedRoutineInfo extends RoutineInfo {
             occ += r.getOcc();
             cumul_sqr += r.getTotalCumulativeSqrCost();
             self_sqr += r.getTotalSelfSqrCost();
+            sum_rms += r.getSumRms();
+            sum_sqr_rms += r.getSumSqrRms();
 			
 		}
 		
 		Rms rr = new Rms(current_rms, min_cost, max_cost, total_cost,
 									total_real_cost, total_self, occ,
-                                    self_min, self_max, cumul_sqr, self_sqr);
+                                    self_min, self_max, cumul_sqr, self_sqr,
+                                    sum_rms, sum_sqr_rms);
 				
 		addRms(rr);
 		

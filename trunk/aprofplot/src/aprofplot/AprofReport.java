@@ -6,10 +6,19 @@ import java.util.regex.MatchResult;
 
 public class AprofReport {
 
+    // input metric type
+    public static final int RMS  = 0;
+    public static final int RVMS = 1;
+    private int input_metric;
+    
+    // performance metric type
+    private static final int BB   = 0;
+    private static final int TIME = 1;
+    private int performance_metric;
+    
 	private String appname;
 	private String cmdline;
 	private int version;
-	private String metric;
 	private double total_cost;
     private double total_self_cost;
 	private long total_calls;
@@ -39,6 +48,9 @@ public class AprofReport {
 		favorites = new HashSet<String>();
 		file = f;
 
+        performance_metric = BB;
+        input_metric = RMS;
+        
 		// stats
 		num_class_sms = new long[max_class];
 		tot_calls_class_sms = new long[max_class];
@@ -54,6 +66,7 @@ public class AprofReport {
 			//System.out.println(str);
 			
 			tokenizer = new StringTokenizer(str);
+            if (!tokenizer.hasMoreTokens()) continue;
 			String token = tokenizer.nextToken();
 
 			if (token.equals("v")) { // report version number
@@ -61,11 +74,28 @@ public class AprofReport {
 				continue;
 			}
 
-			if (token.equals("m")) { // metric type
-				this.metric = tokenizer.nextToken();
-				continue;
+			if (token.equals("m")) { // performance metric type
+				
+                String m = tokenizer.nextToken();
+				if (m.equals("bb_count"))
+                    this.performance_metric = BB;
+                else if (m.equals("time-usec"))
+                    this.performance_metric = TIME;
+                    
+                continue;
 			}
 
+            if (token.equals("i")) { // input metric type
+				
+                String m = tokenizer.nextToken();
+				if (m.equals("rms"))
+                    this.input_metric = RMS;
+                else if (m.equals("rvms"))
+                    this.input_metric = RVMS;
+                    
+                continue;
+			}
+            
 			if (token.equals("k")) { // total cost
 				this.total_cost = Double.parseDouble(tokenizer.nextToken());
 				continue;
@@ -80,7 +110,7 @@ public class AprofReport {
 				this.appname = tokenizer.nextToken();
 				continue;
 			}
-
+            
 			if (token.equals("r")) { // routine
 				
 				String rtn_name;
@@ -213,9 +243,17 @@ public class AprofReport {
                 if (this.version > 3) 
                     self_sqr = Double.parseDouble(tokenizer.nextToken());
                 
+                long sum_rms = 0;
+                long sum_sqr_rms = 0;
+                if (this.version >= 5 && this.input_metric == RVMS) {
+                    sum_rms = Long.parseLong(tokenizer.nextToken());
+                    sum_sqr_rms = Long.parseLong(tokenizer.nextToken());
+                }
+                
                 Rms te = new Rms(rms, min_cost, max_cost, cost_sum, 
                                     real, self, occ, self_min, self_max,
-                                    cumul_sqr, self_sqr);
+                                    cumul_sqr, self_sqr, sum_rms,
+                                    sum_sqr_rms);
                 
 				RoutineInfo r = null;
 				try {
@@ -264,9 +302,17 @@ public class AprofReport {
                 if (this.version > 3) 
                     self_sqr = Double.parseDouble(tokenizer.nextToken());
                 
+                long sum_rms = 0;
+                long sum_sqr_rms = 0;
+                if (this.version >= 5 && this.input_metric == RVMS) {
+                    sum_rms = Long.parseLong(tokenizer.nextToken());
+                    sum_sqr_rms = Long.parseLong(tokenizer.nextToken());
+                }
+                
 				Rms te = new Rms(rms, min_cost, max_cost, tot_cost, 
 									real, self, occ, self_min, self_max,
-                                    cumul_sqr, self_sqr);
+                                    cumul_sqr, self_sqr, sum_rms,
+                                    sum_sqr_rms);
 				
 				RoutineContext c = null;
 				try {
@@ -659,4 +705,9 @@ public class AprofReport {
 
 		return hottest_calls;
 	}
+
+    public int getInputMetric() {
+        return input_metric;
+    }
+
 }

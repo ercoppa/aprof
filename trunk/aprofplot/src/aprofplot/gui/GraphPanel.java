@@ -828,8 +828,12 @@ public class GraphPanel extends javax.swing.JPanel {
 				return "number of collected tuples";
 			
 			default:
-				return "read memory size";
-		
+                
+                if (main_window.isInputMetricRms())
+                    return "read memory size";
+                else
+                    return "read versioned memory size";
+                
 		}
 	
 	} 
@@ -932,8 +936,13 @@ public class GraphPanel extends javax.swing.JPanel {
 		switch (this.graph_type) {
 			
 			case COST_PLOT: s = "Cost plot"; break;
-			case FREQ_PLOT: s = "Rms frequency plot"; break;
-			case MMM_PLOT: s = "Min/Avg/Max cost plot"; break;
+			case FREQ_PLOT: 
+                if (main_window.isInputMetricRms()) {
+                    s = "RMS frequency plot"; break;
+                } else {
+                    s = "RVMS frequency plot"; break;
+                }
+            case MMM_PLOT: s = "Min/Avg/Max cost plot"; break;
 			case TOTALCOST_PLOT: s = "Total cost plot"; break;
 			case VAR_PLOT: s = "Cost variance plot"; break;
 			case RTN_PLOT: s = "Program statistics plot"; break;
@@ -1783,10 +1792,15 @@ public class GraphPanel extends javax.swing.JPanel {
 					series[5].add(x, getY(te, 1), false);
 					series[11].add(x, getY(te, 2), false);
 
-				} else if (graph_type == FREQ_PLOT || graph_type == MCC_PLOT) {
+				} else if (graph_type == FREQ_PLOT) {
 
-					series[0].add(x, getY(te, 0), false);
-
+                    int index = (int)(((double)1-te.getRatioRmsRvms())*10);
+					series[index].add(x, getY(te, 0), false);
+                
+                } else if (graph_type == MCC_PLOT) {
+                    
+                    series[0].add(x, getY(te, 0), false);
+                    
 				} else {
 
 					y = getY(te, 0);

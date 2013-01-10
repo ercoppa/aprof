@@ -28,6 +28,11 @@ public class RmsFilterDialog extends javax.swing.JDialog {
 			jTextField3.setEnabled(true);
 			jTextField3.setText(criteria[2]);
 		}
+        
+        if (((MainWindow)this.getParent()).isInputMetricRms())
+            jCheckBox2.setText("#RMS");
+        else
+            jCheckBox2.setText("#RVMS");
 	}
 
 	/** This method is called from within the constructor to
