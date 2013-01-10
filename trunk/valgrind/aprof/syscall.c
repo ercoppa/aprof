@@ -31,6 +31,40 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+/*
+   syscalls:
+   
+   -------------------------------------------------------- 
+   | NAME     | SEEN AS   | ARCH                          |
+   --------------------------------------------------------
+    read        SYS_STORE   *
+    recv        SYS_STORE   ppc32_linux, ppc64_linux
+    recvfrom    SYS_STORE   * - {x86_linux, s390x}
+    pread       SYS_STORE   x86_darwin, amd64_darwin
+    pread64     SYS_STORE   * - {x86_darwin, amd64_darwin}
+    readv       SYS_STORE   *
+    preadv      SYS_STORE   * - {x86_darwin, amd64_darwin}
+    write       LOAD        *
+    send        LOAD        ppc32_linux, ppc64_linux 
+    sendto      LOAD        * - {x86_linux, s390x}
+    pwrite      LOAD        x86_darwin, amd64_darwin
+    pwrite64    LOAD        * - {x86_darwin, amd64_darwin}
+    writev      LOAD        *
+    pwritev     LOAD        * - {x86_darwin, amd64_darwin}
+    msgrcv      SYS_STORE   * - {x86_linux}
+    msgsnd      LOAD        * - {x86_linux}
+   ---------------------------------------------------------
+
+    '*' := all architectures
+    '* - {arch, ...}' := all archs with the exception of ...
+    'SYS_STORE' := we treat this as a "kernel" STORE, we do not
+                   reset private shadow memories but instead we only
+                   increase the global counter and update
+                   the global shadow memory
+    'LOAD' := a normal load :)
+
+ */
+
 #include "aprof.h"
 
 #if SYSCALL_WRAPPING == 1 && INPUT_METRIC == RVMS
@@ -205,11 +239,6 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
             #else
             False
             #endif
-            
-            #if !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin)
-            //|| syscallno== __NR_pwritev
-            #endif
-            
             ){
         
         Addr addr = args[1];
@@ -236,11 +265,6 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
                 #else
                 False
                 #endif
-                
-                #if !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin)
-                //|| syscallno== __NR_pwritev
-                #endif
-                
                 ){
                                 
         Addr addr = args[1];
