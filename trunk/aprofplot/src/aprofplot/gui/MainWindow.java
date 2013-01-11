@@ -717,6 +717,7 @@ public class MainWindow extends javax.swing.JFrame {
         jLabel3.setText(" ");
         jPanel6.add(jLabel3, java.awt.BorderLayout.NORTH);
 
+        jSplitPane5.setDividerSize(0);
         jSplitPane5.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
 
         jScrollPane6.setVisible(false);
@@ -1313,7 +1314,10 @@ public class MainWindow extends javax.swing.JFrame {
         }
             
         routines_table_sorter.setSortKeys(routines_sort);
-        routines_table_sorter.setSortable(5, false);
+        if (this.isInputMetricRms())
+            routines_table_sorter.setSortable(5, false);
+        else
+            routines_table_sorter.setSortable(6, false);
     }
     
     @SuppressWarnings("unchecked")
@@ -1366,7 +1370,10 @@ public class MainWindow extends javax.swing.JFrame {
         }
         
         contexts_table_sorter.setSortKeys(contexts_sort);
-        contexts_table_sorter.setSortable(5, false);
+        if (this.isInputMetricRms())
+            contexts_table_sorter.setSortable(5, false);
+        else
+            contexts_table_sorter.setSortable(6, false);
     }
     
     private void setComparatorContexts() {
@@ -1484,6 +1491,8 @@ public class MainWindow extends javax.swing.JFrame {
 				// Clear routinr profile
 				((RmsTableModel)jTable2.getModel()).setData(null);
                 ((RmsTableModel)jTable2.getModel()).refreshStructure();
+                
+                freqGraphPanel.updateGraphTitle();
                 
 				jProgressBar1.setVisible(false);
 				jProgressBar1.setEnabled(false);

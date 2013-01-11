@@ -17,6 +17,8 @@ public abstract class Routine implements Comparable<Routine> {
 	private long total_calls;
 	private long min_rms;
 	private long max_rms;
+    private long sum_rms;
+    private long sum_rvms;
 	// Read memory size elements for this routine
 	private ArrayList<Rms> rms_list;
 	
@@ -74,6 +76,9 @@ public abstract class Routine implements Comparable<Routine> {
         total_self += r.getTotalSelfCost();
 		total_calls += r.getOcc();
 	
+        sum_rvms += r.getOcc() * r.getRms();
+        sum_rms += r.getSumRms();
+        
 		// Invalid mcc cache
 		last_mcc_n = -1;
 		
@@ -283,5 +288,9 @@ public abstract class Routine implements Comparable<Routine> {
 			}
 		});
 	}
+
+    public double getRatioRmsRvms() {
+        return (((double) sum_rms) / ((double) sum_rvms));
+    }
 	
 }

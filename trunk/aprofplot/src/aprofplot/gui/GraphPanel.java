@@ -930,7 +930,7 @@ public class GraphPanel extends javax.swing.JPanel {
 
 	}
 	
-	private void updateGraphTitle() {
+	public void updateGraphTitle() {
 		
 		String s;
 		switch (this.graph_type) {

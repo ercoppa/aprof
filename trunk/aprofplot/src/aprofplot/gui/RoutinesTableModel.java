@@ -80,6 +80,12 @@ public class RoutinesTableModel extends AbstractTableModel {
         columnNames.add("Calls %");
         columnTypes.add(Double.class);
         
+        // ratio RMS/RVMS
+        if (main != null && !main.isInputMetricRms()) {
+            columnNames.add("Ext. input");
+            columnTypes.add(Double.class);
+        }   
+        
 		if (hasContext) {
             
             if (is_table_routine) {
@@ -221,6 +227,10 @@ public class RoutinesTableModel extends AbstractTableModel {
 			case 7: // % of rtn calls wrt all rtns
 					return Math.ceil(((double)rtn_info.getTotalCalls() / 
                             (double)report.getTotalCalls()) * 100 * 100) / 100;
+            case 8:
+                    // # RMS
+                    if (!main.isInputMetricRms())
+                        return (1 - rtn_info.getRatioRmsRvms());
 			
 		}
 		

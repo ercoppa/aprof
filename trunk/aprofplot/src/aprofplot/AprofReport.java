@@ -23,6 +23,8 @@ public class AprofReport {
     private double total_self_cost;
 	private long total_calls;
 	private long total_contexts;
+    private long sum_rms;
+    private long sum_rvms;
 	private ArrayList<RoutineInfo> routines;
 	private ArrayList<RoutineContext> contexts;
 	private HashSet<String> favorites;
@@ -42,6 +44,8 @@ public class AprofReport {
 		total_cost = 0;
 		total_calls = 0;
 		total_contexts = 0;
+        sum_rms = 0;
+        sum_rvms = 0;
 		routines = new ArrayList<RoutineInfo>();
 		contexts = new ArrayList<RoutineContext>();
 		libset = new HashSet<String>();
@@ -246,8 +250,12 @@ public class AprofReport {
                 long sum_rms = 0;
                 long sum_sqr_rms = 0;
                 if (this.version >= 5 && this.input_metric == RVMS) {
+                    
                     sum_rms = Long.parseLong(tokenizer.nextToken());
                     sum_sqr_rms = Long.parseLong(tokenizer.nextToken());
+                    this.sum_rms += sum_rms;
+                    this.sum_rvms += rms * occ;
+                    
                 }
                 
                 Rms te = new Rms(rms, min_cost, max_cost, cost_sum, 
@@ -307,6 +315,8 @@ public class AprofReport {
                 if (this.version >= 5 && this.input_metric == RVMS) {
                     sum_rms = Long.parseLong(tokenizer.nextToken());
                     sum_sqr_rms = Long.parseLong(tokenizer.nextToken());
+                    this.sum_rms += sum_rms;
+                    this.sum_rvms += rms * occ;
                 }
                 
 				Rms te = new Rms(rms, min_cost, max_cost, tot_cost, 
@@ -708,6 +718,10 @@ public class AprofReport {
 
     public int getInputMetric() {
         return input_metric;
+    }
+
+    public double getRatioRmsRvms() {
+        return (((double) sum_rms) / ((double) sum_rvms));
     }
 
 }
