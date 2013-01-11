@@ -328,9 +328,11 @@ static Function * merge_tuple(HChar * line, Int size,
         if (VG_(strlen)((HChar *)app) > 0)
             app[VG_(strlen)((HChar *)app) -1] = '\0';
         
-        //VG_(printf)("Command is #%s# versus #%s#\n", app, (Char *) VG_(args_the_exename));
-        if (VG_(strcmp)((HChar *)app, (HChar *) VG_(args_the_exename)) != 0) 
+        if (VG_(strcmp)((HChar *)app, (HChar *) VG_(args_the_exename)) != 0) {
+            VG_(printf)("Command is #%s# versus #%s#\n", app, (Char *) VG_(args_the_exename));
+            VG_(printf)("Different command\n");
             return (void *)1; /* special value */
+        }
     
     } else if (token[0] == 'k') {
         
@@ -346,8 +348,10 @@ static Function * merge_tuple(HChar * line, Int size,
         token = VG_(strtok)(NULL, "@");
         if (token == NULL) return curr;
         ULong ver = VG_(strtoull10) ((HChar *)token, NULL);
-        if (ver != REPORT_VERSION) 
+        if (ver != REPORT_VERSION) {
+            VG_(printf)("Invalid version\n");
             return (void *)1; /* special value */
+        }
         
     } else if (token[0] == 'q') {
         
@@ -666,8 +670,15 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
         char * obj_name = "NONE";
         if (rtn_info->fn->obj != NULL) obj_name = rtn_info->fn->obj->name; 
         
+        #if DISTINCT_RMS
+        APROF_(fprintf)(report, "r \"%s\" \"%s\" %llu %lu\n", 
+                    rtn_info->fn->name, obj_name, 
+                    rtn_info->routine_id, 
+                    (UInt) HT_count_nodes(rtn_info->distinct_rms));
+        #else
         APROF_(fprintf)(report, "r \"%s\" \"%s\" %llu\n", rtn_info->fn->name, 
                     obj_name, rtn_info->routine_id);
+        #endif
         
         if (rtn_info->fn->mangled != NULL) {
             APROF_(fprintf)(report, "u %llu \"%s\"\n", rtn_info->routine_id, 
@@ -761,13 +772,7 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
         }
         #endif
 
-        #if CCT
-        HT_destruct(rtn_info->context_rms_map);
-        #else
-        HT_destruct(rtn_info->rms_map);
-        #endif
-        
-        VG_(free)(rtn_info);
+        APROF_(destroy_routine_info)(rtn_info);
         rtn_info = HT_RemoveNext(tdata->routine_hash_table);
 
     }

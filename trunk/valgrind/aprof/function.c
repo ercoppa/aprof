@@ -41,6 +41,10 @@ void APROF_(destroy_routine_info)(RoutineInfo * ri) {
     HT_destruct(ri->rms_map);
     #endif
     
+    #if DISTINCT_RMS
+    HT_destruct(ri->distinct_rms); 
+    #endif
+    
     VG_(free)(ri);
 
 }
@@ -71,6 +75,10 @@ RoutineInfo * APROF_(new_routine_info)(ThreadData * tdata,
     #endif
     
     rtn_info->routine_id = tdata->next_routine_id++;
+
+    #if DISTINCT_RMS
+    rtn_info->distinct_rms = HT_construct(VG_(free));
+    #endif
 
     #if CCT
     
@@ -337,6 +345,14 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
         #endif
 
     }
+
+    #if DISTINCT_RMS
+    HashNode * node = HT_lookup(rtn_info->distinct_rms, act->rms);
+    if (node == NULL) {
+        node = VG_(calloc)("distinct rms node", sizeof(HashNode), 1);
+        HT_add_node(rtn_info->distinct_rms, act->rms, node);
+    }
+    #endif
 
     // bookkeeping
     
