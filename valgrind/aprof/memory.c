@@ -115,9 +115,16 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
          */
          if (type == STORE || type == MODIFY) {
             
+            #if THREAD_INPUT == 1
             wts = LK_insert(APROF_(global_shadow_memory), addr, ts);
+            #endif
 
             if (kernel_access) {
+                
+                #if THREAD_INPUT == 0
+                wts = LK_insert(APROF_(global_shadow_memory), addr, ts);
+                #endif
+                
                 #if !COSTANT_MEM_ACCESS
                 continue;
                 #else

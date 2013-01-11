@@ -90,12 +90,18 @@
 #define RVMS                2    // Read Versioned Memory Size
 #define INPUT_METRIC        RVMS
 
+#define DISTINCT_RMS        1   // if 1 and INPUT_METRIC == RVMS
+                                // we append at the end of each "r" 
+                                // report tag the # of distinct RMS
+
 #define TRACE_FUNCTION      1   // if 1, aprof traces functions by itself, 
                                 // otherwise the program must be 
                                 // instrumentated by GCC
                                 // with -finstrument-functions
                                 
 #define MEM_TRACE           1   // if 0 disable mem instrumentation
+#define THREAD_INPUT        1   // if 1, every write creates a new
+                                // version of an input
 #define SYSCALL_WRAPPING    1   // if 1, I/O syscall are wrapped in 
                                 // order to catch external I/O
 
@@ -140,12 +146,26 @@
 #define BUFFER_SIZE         32000   // FILE buffer size
 #define NAME_SIZE           4096    // function/object name buffer size 
 
+/* some config check */
+
 #if defined(VG_BIGENDIAN)
 #define Endness Iend_BE
 #elif defined(VG_LITTLEENDIAN)
 #define Endness Iend_LE
 #else
 #error "Unknown endianness"
+#endif
+
+#if DISTINCT_RMS && INPUT_METRIC != RVMS
+#error "DISTINCT_RMS == 1 but INPUT_METRIC != RVMS"
+#endif
+
+#if THREAD_INPUT && INPUT_METRIC != RVMS
+#error "THREAD_INPUT == 1 but INPUT_METRIC != RVMS"
+#endif
+
+#if SYSCALL_WRAPPING && INPUT_METRIC != RVMS
+#error "SYSCALL_WRAPPING == 1 but INPUT_METRIC != RVMS"
 #endif
 
 /* Failure/error function */
@@ -283,6 +303,10 @@ typedef struct {
     HashTable *  rms_map;                // set of unique RMSInfo records for this routine
     #else
     HashTable *  context_rms_map;        // set of pairs <context_id, sms_map>
+    #endif
+    
+    #if DISTINCT_RMS
+    HashTable * distinct_rms;                // ht of RMS seen
     #endif
 
 } RoutineInfo;
