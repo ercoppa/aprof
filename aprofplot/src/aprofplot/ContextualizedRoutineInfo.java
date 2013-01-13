@@ -14,14 +14,14 @@ public class ContextualizedRoutineInfo extends RoutineInfo {
 	private ArrayList<Rms> lazy_list;
 
 	public ContextualizedRoutineInfo(int id) {
-		super(id, null, null);
+		super(id, null, null, 0);
 		this.contexts = new ArrayList<RoutineContext>();
 		this.lazy_list = new ArrayList<Rms>();
 		this.collapsed = true;
 	}
 
 	public ContextualizedRoutineInfo(int id, String name, String image) {
-		super(id, name, image);
+		super(id, name, image, 0);
 		this.contexts = new ArrayList<RoutineContext>();
 		this.lazy_list = new ArrayList<Rms>();
 		this.collapsed = true;

@@ -19,6 +19,7 @@ public abstract class Routine implements Comparable<Routine> {
 	private long max_rms;
     private long sum_rms;
     private long sum_rvms;
+    private long num_rms;
 	// Read memory size elements for this routine
 	private ArrayList<Rms> rms_list;
 	
@@ -35,7 +36,7 @@ public abstract class Routine implements Comparable<Routine> {
 	public final static int SORT_OTHER = 2;
 	private int sort_status = UNSORTED;
 	     
-	public Routine() {
+	public Routine(long num_rms) {
 		
 		min_cost = Double.MAX_VALUE;
 		max_cost = 0;
@@ -46,6 +47,7 @@ public abstract class Routine implements Comparable<Routine> {
         self_min = Double.MAX_VALUE;
         self_max = 0;
         self_max_avg = 0;
+        this.num_rms = num_rms;
 		rms_list = new ArrayList<Rms>();
 	
 	}
@@ -289,8 +291,24 @@ public abstract class Routine implements Comparable<Routine> {
 		});
 	}
 
-    public double getRatioRmsRvms() {
+    public double getRatioSumRmsRvms() {
         return (((double) sum_rms) / ((double) sum_rvms));
     }
+    
+    public void setCountRms(long distinct_rms) {
+        if (distinct_rms > 0)
+            this.num_rms = distinct_rms;
+    }
 	
+    public long getCountRms() {
+     
+        if (num_rms > 0) return num_rms;
+        return getSizeRmsList();
+    }
+    
+    public double getRatioRvmsRms() {
+        return (((double)getSizeRmsList()) /
+                ((double)getCountRms()));
+    }
+    
 }
