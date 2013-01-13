@@ -109,7 +109,7 @@
 #define IGNORE_DL_RUNTIME   0   // if 1, disable analysis for dl_
                                 // runtime_resolve (and its children)
 
-#define REPORT_VERSION      5   // see documentation on our site: 
+#define REPORT_VERSION      6   // see documentation on our site: 
                                 // 1 == 1.1, 2 == 1.2, ...
                                 
 #define DISCARD_UNKNOWN     1   // discard info about PLT or unknown 
