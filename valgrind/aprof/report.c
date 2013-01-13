@@ -670,15 +670,15 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
         char * obj_name = "NONE";
         if (rtn_info->fn->obj != NULL) obj_name = rtn_info->fn->obj->name; 
         
-        #if DISTINCT_RMS
         APROF_(fprintf)(report, "r \"%s\" \"%s\" %llu %lu\n", 
                     rtn_info->fn->name, obj_name, 
                     rtn_info->routine_id, 
-                    (UInt) HT_count_nodes(rtn_info->distinct_rms));
-        #else
-        APROF_(fprintf)(report, "r \"%s\" \"%s\" %llu\n", rtn_info->fn->name, 
-                    obj_name, rtn_info->routine_id);
-        #endif
+                    #if DISTINCT_RMS
+                    (UInt) HT_count_nodes(rtn_info->distinct_rms)
+                    #else
+                    0
+                    #endif
+                    );
         
         if (rtn_info->fn->mangled != NULL) {
             APROF_(fprintf)(report, "u %llu \"%s\"\n", rtn_info->routine_id, 
