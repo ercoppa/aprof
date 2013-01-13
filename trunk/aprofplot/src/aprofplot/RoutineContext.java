@@ -9,11 +9,11 @@ public class RoutineContext extends Routine {
 	private ContextualizedRoutineInfo overall; 
 
 	public RoutineContext() {
-		return;
+		super(0);
 	}
 
 	public RoutineContext(RoutineContext parent, ContextualizedRoutineInfo overall) {
-								
+		super(0);					
 		this.parent = parent;
 		this.overall = overall;
 	}

@@ -408,7 +408,7 @@
             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jToggleButton6ActionPerformed"/>
           </Events>
           <AuxValues>
-            <AuxValue name="JavaCodeGenerator_AddingCodePre" type="java.lang.String" value="if (graph_type == RTN_PLOT)&#xa;&#x9;jToggleButton6.setVisible(false);"/>
+            <AuxValue name="JavaCodeGenerator_AddingCodePre" type="java.lang.String" value="if (graph_type == RTN_PLOT &#xa;    || graph_type == EXTERNAL_INPUT_PLOT &#xa;    || graph_type == RATIO_TUPLES_PLOT)&#xa;&#x9;jToggleButton6.setVisible(false);"/>
           </AuxValues>
         </Component>
         <Component class="javax.swing.JToggleButton" name="jToggleButton7">
@@ -491,7 +491,7 @@
             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jToggleButton4ActionPerformed"/>
           </Events>
           <AuxValues>
-            <AuxValue name="JavaCodeGenerator_AddingCodePre" type="java.lang.String" value="if (graph_type == RTN_PLOT)&#xa;&#x9;jToggleButton4.setVisible(false);"/>
+            <AuxValue name="JavaCodeGenerator_AddingCodePre" type="java.lang.String" value="if (graph_type == RTN_PLOT &#xa;    || graph_type == EXTERNAL_INPUT_PLOT &#xa;    || graph_type == RATIO_TUPLES_PLOT)&#xa;&#x9;jToggleButton4.setVisible(false);"/>
           </AuxValues>
         </Component>
         <Component class="javax.swing.JButton" name="jButton3">
@@ -538,7 +538,7 @@
         </Container>
         <Component class="javax.swing.JLabel" name="jLabel2">
           <AuxValues>
-            <AuxValue name="JavaCodeGenerator_InitCodePost" type="java.lang.String" value="if (graph_type == FREQ_PLOT || graph_type == MMM_PLOT || graph_type == RTN_PLOT)&#xa;    jLabel2.setIcon(new javax.swing.ImageIcon(getClass().getResource(&quot;/aprofplot/gui/resources/Dummy.png&quot;))); // NOI18N&#xa;else {&#xa;    jLabel2.setIcon(new javax.swing.ImageIcon(getClass().getResource(&quot;/aprofplot/gui/resources/Color-scale.png&quot;))); // NOI18N&#xa;    //jLabel2.setBorder(new javax.swing.border.LineBorder(java.awt.Color.BLACK));&#xa;}"/>
+            <AuxValue name="JavaCodeGenerator_InitCodePost" type="java.lang.String" value="if (graph_type == FREQ_PLOT &#xa;    || graph_type == MMM_PLOT &#xa;    || graph_type == RTN_PLOT&#xa;    || graph_type == EXTERNAL_INPUT_PLOT&#xa;    || graph_type == RATIO_TUPLES_PLOT)&#xa;    jLabel2.setIcon(new javax.swing.ImageIcon(getClass().getResource(&quot;/aprofplot/gui/resources/Dummy.png&quot;))); // NOI18N&#xa;else {&#xa;    jLabel2.setIcon(new javax.swing.ImageIcon(getClass().getResource(&quot;/aprofplot/gui/resources/Color-scale.png&quot;))); // NOI18N&#xa;    //jLabel2.setBorder(new javax.swing.border.LineBorder(java.awt.Color.BLACK));&#xa;}"/>
           </AuxValues>
         </Component>
       </SubComponents>

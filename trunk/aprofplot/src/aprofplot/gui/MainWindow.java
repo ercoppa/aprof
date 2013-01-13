@@ -108,6 +108,8 @@ public class MainWindow extends javax.swing.JFrame {
         jCheckBoxMenuItem9 = new javax.swing.JCheckBoxMenuItem();
         jCheckBoxMenuItem8 = new javax.swing.JCheckBoxMenuItem();
         jCheckBoxMenuItem11 = new javax.swing.JCheckBoxMenuItem();
+        jCheckBoxMenuItem22 = new javax.swing.JCheckBoxMenuItem();
+        jCheckBoxMenuItem23 = new javax.swing.JCheckBoxMenuItem();
         jButton12 = new javax.swing.JButton();
         jToolBar1 = new javax.swing.JToolBar();
         jButton3 = new javax.swing.JButton();
@@ -240,6 +242,8 @@ public class MainWindow extends javax.swing.JFrame {
         jCheckBoxMenuItem17 = new javax.swing.JCheckBoxMenuItem();
         jCheckBoxMenuItem16 = new javax.swing.JCheckBoxMenuItem();
         jCheckBoxMenuItem19 = new javax.swing.JCheckBoxMenuItem();
+        jCheckBoxMenuItem20 = new javax.swing.JCheckBoxMenuItem();
+        jCheckBoxMenuItem21 = new javax.swing.JCheckBoxMenuItem();
         jCheckBoxMenuItem1 = new javax.swing.JCheckBoxMenuItem();
         jMenu4 = new javax.swing.JMenu();
         jMenuItem3 = new javax.swing.JMenuItem();
@@ -343,6 +347,22 @@ public class MainWindow extends javax.swing.JFrame {
             }
         });
         jPopupMenu1.add(jCheckBoxMenuItem11);
+
+        jCheckBoxMenuItem22.setText("Ratio tuples plot");
+        jCheckBoxMenuItem22.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCheckBoxMenuItem22ActionPerformed(evt);
+            }
+        });
+        jPopupMenu1.add(jCheckBoxMenuItem22);
+
+        jCheckBoxMenuItem23.setText("External input plot");
+        jCheckBoxMenuItem23.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCheckBoxMenuItem23ActionPerformed(evt);
+            }
+        });
+        jPopupMenu1.add(jCheckBoxMenuItem23);
 
         jButton12.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Filter-icon.png"))); // NOI18N
         jButton12.setToolTipText("Filter routines");
@@ -1073,6 +1093,22 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jMenu3.add(jCheckBoxMenuItem19);
 
+        jCheckBoxMenuItem20.setText("Ratio # tuples plot");
+        jCheckBoxMenuItem20.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCheckBoxMenuItem20ActionPerformed(evt);
+            }
+        });
+        jMenu3.add(jCheckBoxMenuItem20);
+
+        jCheckBoxMenuItem21.setText("External input ratio plot");
+        jCheckBoxMenuItem21.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCheckBoxMenuItem21ActionPerformed(evt);
+            }
+        });
+        jMenu3.add(jCheckBoxMenuItem21);
+
         jCheckBoxMenuItem1.setText("Source code editor");
         jCheckBoxMenuItem1.setEnabled(false);
         jCheckBoxMenuItem1.addActionListener(new java.awt.event.ActionListener() {
@@ -1469,7 +1505,9 @@ public class MainWindow extends javax.swing.JFrame {
 		if (jCheckBoxMenuItem9.isSelected()) VarGraphPanel.clearData();
 		if (jCheckBoxMenuItem6.isSelected()) TotalCostGraphPanel.clearData();
 		if (jCheckBoxMenuItem7.isSelected()) MccGraphPanel.clearData();
-		if (jCheckBoxMenuItem9.isSelected()) RtnGraphPanel.setData(null);
+		if (jCheckBoxMenuItem11.isSelected()) RtnGraphPanel.setData(null);
+        if (jCheckBoxMenuItem22.isSelected()) RatioTuplesGraphPanel.setData(null);
+        if (jCheckBoxMenuItem23.isSelected()) ExternalInputGraphPanel.setData(null);
 		
 		// Update routine table: we change data in table, this must be done by swing thread
 		final AprofReport final_report = report;
@@ -1603,29 +1641,53 @@ public class MainWindow extends javax.swing.JFrame {
 		
 		// this method is called by one graph, we notify to all others...
 		
-		if (graph_type != GraphPanel.COST_PLOT) CostGraphPanel.setXLogScale(log);
-		if (graph_type != GraphPanel.RATIO_PLOT) ratioGraphPanel.setXLogScale(log);
-		if (graph_type != GraphPanel.FREQ_PLOT) freqGraphPanel.setXLogScale(log);
-		if (graph_type != GraphPanel.MMM_PLOT) MMMGraphPanel.setXLogScale(log);
-		if (graph_type != GraphPanel.VAR_PLOT) VarGraphPanel.setXLogScale(log);
-		if (graph_type != GraphPanel.TOTALCOST_PLOT) TotalCostGraphPanel.setXLogScale(log);
-		if (graph_type != GraphPanel.RTN_PLOT) RtnGraphPanel.setXLogScale(log);
-		if (graph_type != GraphPanel.MCC_PLOT) MccGraphPanel.setXLogScale(log);
-	
+		if (graph_type != GraphPanel.COST_PLOT) 
+            CostGraphPanel.setXLogScale(log);
+		if (graph_type != GraphPanel.RATIO_PLOT) 
+            ratioGraphPanel.setXLogScale(log);
+		if (graph_type != GraphPanel.FREQ_PLOT) 
+            freqGraphPanel.setXLogScale(log);
+		if (graph_type != GraphPanel.MMM_PLOT) 
+            MMMGraphPanel.setXLogScale(log);
+		if (graph_type != GraphPanel.VAR_PLOT) 
+            VarGraphPanel.setXLogScale(log);
+		if (graph_type != GraphPanel.TOTALCOST_PLOT) 
+            TotalCostGraphPanel.setXLogScale(log);
+		if (graph_type != GraphPanel.RTN_PLOT) 
+            RtnGraphPanel.setXLogScale(log);
+		if (graph_type != GraphPanel.MCC_PLOT) 
+            MccGraphPanel.setXLogScale(log);
+        if (graph_type != GraphPanel.RATIO_TUPLES_PLOT) 
+            RatioTuplesGraphPanel.setXLogScale(log);
+        if (graph_type != GraphPanel.EXTERNAL_INPUT_PLOT) 
+            ExternalInputGraphPanel.setXLogScale(log);
+        
 	}
 
 	protected void setYLogScaleAll(int graph_type, boolean log) {
 		
 		// this method is called by one graph, we notify to all others...
 		
-		if (graph_type != GraphPanel.COST_PLOT) CostGraphPanel.setYLogScale(log);
-		if (graph_type != GraphPanel.RATIO_PLOT) ratioGraphPanel.setYLogScale(log);
-		if (graph_type != GraphPanel.FREQ_PLOT) freqGraphPanel.setYLogScale(log);
-		if (graph_type != GraphPanel.MMM_PLOT) MMMGraphPanel.setYLogScale(log);
-		if (graph_type != GraphPanel.TOTALCOST_PLOT) TotalCostGraphPanel.setYLogScale(log);
-		if (graph_type != GraphPanel.VAR_PLOT) VarGraphPanel.setYLogScale(log);
-		if (graph_type != GraphPanel.MCC_PLOT) MccGraphPanel.setYLogScale(log);
-		if (graph_type != GraphPanel.RTN_PLOT) RtnGraphPanel.setYLogScale(log);
+		if (graph_type != GraphPanel.COST_PLOT) 
+            CostGraphPanel.setYLogScale(log);
+		if (graph_type != GraphPanel.RATIO_PLOT) 
+            ratioGraphPanel.setYLogScale(log);
+		if (graph_type != GraphPanel.FREQ_PLOT) 
+            freqGraphPanel.setYLogScale(log);
+		if (graph_type != GraphPanel.MMM_PLOT) 
+            MMMGraphPanel.setYLogScale(log);
+		if (graph_type != GraphPanel.TOTALCOST_PLOT) 
+            TotalCostGraphPanel.setYLogScale(log);
+		if (graph_type != GraphPanel.VAR_PLOT) 
+            VarGraphPanel.setYLogScale(log);
+		if (graph_type != GraphPanel.MCC_PLOT) 
+            MccGraphPanel.setYLogScale(log);
+		if (graph_type != GraphPanel.RTN_PLOT) 
+            RtnGraphPanel.setYLogScale(log);
+        if (graph_type != GraphPanel.RATIO_TUPLES_PLOT) 
+            RatioTuplesGraphPanel.setYLogScale(log);
+        if (graph_type != GraphPanel.EXTERNAL_INPUT_PLOT) 
+            ExternalInputGraphPanel.setYLogScale(log);
 	
 	}
 
@@ -1633,14 +1695,26 @@ public class MainWindow extends javax.swing.JFrame {
 
 		// this method is called by one graph, we notify to all others...
 		
-		if (graph_type != GraphPanel.COST_PLOT) CostGraphPanel.maximize();
-		if (graph_type != GraphPanel.RATIO_PLOT) ratioGraphPanel.maximize();
-		if (graph_type != GraphPanel.FREQ_PLOT) freqGraphPanel.maximize();
-		if (graph_type != GraphPanel.MMM_PLOT) MMMGraphPanel.maximize();
-		if (graph_type != GraphPanel.TOTALCOST_PLOT) TotalCostGraphPanel.maximize();
-		if (graph_type != GraphPanel.VAR_PLOT) VarGraphPanel.maximize();
-		if (graph_type != GraphPanel.RTN_PLOT) RtnGraphPanel.maximize();
-		if (graph_type != GraphPanel.MCC_PLOT) MccGraphPanel.maximize();
+		if (graph_type != GraphPanel.COST_PLOT) 
+            CostGraphPanel.maximize();
+		if (graph_type != GraphPanel.RATIO_PLOT) 
+            ratioGraphPanel.maximize();
+		if (graph_type != GraphPanel.FREQ_PLOT) 
+            freqGraphPanel.maximize();
+		if (graph_type != GraphPanel.MMM_PLOT) 
+            MMMGraphPanel.maximize();
+		if (graph_type != GraphPanel.TOTALCOST_PLOT) 
+            TotalCostGraphPanel.maximize();
+		if (graph_type != GraphPanel.VAR_PLOT) 
+            VarGraphPanel.maximize();
+		if (graph_type != GraphPanel.RTN_PLOT) 
+            RtnGraphPanel.maximize();
+		if (graph_type != GraphPanel.MCC_PLOT) 
+            MccGraphPanel.maximize();
+        if (graph_type != GraphPanel.RATIO_TUPLES_PLOT) 
+            RatioTuplesGraphPanel.maximize();
+        if (graph_type != GraphPanel.EXTERNAL_INPUT_PLOT) 
+            ExternalInputGraphPanel.maximize();
 	
 	}
 
@@ -1654,7 +1728,6 @@ public class MainWindow extends javax.swing.JFrame {
 		if (graph_type != GraphPanel.MMM_PLOT) MMMGraphPanel.setGroupThreshold(threshold);
 		if (graph_type != GraphPanel.TOTALCOST_PLOT) TotalCostGraphPanel.setGroupThreshold(threshold);
 		if (graph_type != GraphPanel.VAR_PLOT) VarGraphPanel.setGroupThreshold(threshold);
-		if (graph_type != GraphPanel.RTN_PLOT) RtnGraphPanel.setGroupThreshold(threshold);
 		if (graph_type != GraphPanel.MCC_PLOT) MccGraphPanel.setGroupThreshold(threshold);
 	
 	}
@@ -1669,7 +1742,6 @@ public class MainWindow extends javax.swing.JFrame {
 		if (graph_type != GraphPanel.MMM_PLOT) MMMGraphPanel.setSmoothThreshold(threshold);
 		if (graph_type != GraphPanel.TOTALCOST_PLOT) TotalCostGraphPanel.setSmoothThreshold(threshold);
 		if (graph_type != GraphPanel.VAR_PLOT) VarGraphPanel.setSmoothThreshold(threshold);
-		if (graph_type != GraphPanel.RTN_PLOT) RtnGraphPanel.setSmoothThreshold(threshold);
 		if (graph_type != GraphPanel.MCC_PLOT) MccGraphPanel.setSmoothThreshold(threshold);
 	
 	}
@@ -1678,8 +1750,10 @@ public class MainWindow extends javax.swing.JFrame {
 		
 		// this method is called by one graph, we notify to all others...
 		
-		if (graph_type != GraphPanel.COST_PLOT) this.CostGraphPanel.setGroupCost(cost_type);
-		if (graph_type != GraphPanel.RATIO_PLOT) this.ratioGraphPanel.setGroupCost(cost_type);
+		if (graph_type != GraphPanel.COST_PLOT) 
+            this.CostGraphPanel.setGroupCost(cost_type);
+		if (graph_type != GraphPanel.RATIO_PLOT) 
+            this.ratioGraphPanel.setGroupCost(cost_type);
 	
 	}
 
@@ -2629,6 +2703,38 @@ public class MainWindow extends javax.swing.JFrame {
 		}
     }//GEN-LAST:event_jButton12ActionPerformed
 
+    private void jCheckBoxMenuItem20ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem20ActionPerformed
+        
+        // ratio # RMS / # RVMS checkbox (menubar)
+        if (jCheckBoxMenuItem20.isSelected()) addGraph(RatioTuplesGraphPanel);
+		else removeGraph(RatioTuplesGraphPanel);
+        
+    }//GEN-LAST:event_jCheckBoxMenuItem20ActionPerformed
+
+    private void jCheckBoxMenuItem21ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem21ActionPerformed
+        
+        // External input ratio checkbox (menubar)
+        if (jCheckBoxMenuItem21.isSelected()) addGraph(ExternalInputGraphPanel);
+		else removeGraph(ExternalInputGraphPanel);
+        
+    }//GEN-LAST:event_jCheckBoxMenuItem21ActionPerformed
+
+    private void jCheckBoxMenuItem22ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem22ActionPerformed
+        
+        // ratio # RMS / # RVMS checkbox (toolbar)
+        if (jCheckBoxMenuItem22.isSelected()) addGraph(RatioTuplesGraphPanel);
+		else removeGraph(RatioTuplesGraphPanel);
+        
+    }//GEN-LAST:event_jCheckBoxMenuItem22ActionPerformed
+
+    private void jCheckBoxMenuItem23ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem23ActionPerformed
+        
+        // External input ratio checkbox (toolbar)
+        if (jCheckBoxMenuItem23.isSelected()) addGraph(ExternalInputGraphPanel);
+		else removeGraph(ExternalInputGraphPanel);
+        
+    }//GEN-LAST:event_jCheckBoxMenuItem23ActionPerformed
+
 	private void resetRoutineTableFilter() {
 		
 		// reset filter over routine table
@@ -2879,6 +2985,8 @@ public class MainWindow extends javax.swing.JFrame {
 		if (TotalCostGraphPanel != null) TotalCostGraphPanel.refreshFilter();
 		if (VarGraphPanel != null) VarGraphPanel.refreshFilter();
 		if (RtnGraphPanel != null) RtnGraphPanel.refreshFilter();
+        if (RatioTuplesGraphPanel != null) RatioTuplesGraphPanel.refreshFilter();
+        if (ExternalInputGraphPanel != null) ExternalInputGraphPanel.refreshFilter();
 		if (MccGraphPanel != null) MccGraphPanel.refreshFilter();
 	}
 
@@ -3033,6 +3141,8 @@ public class MainWindow extends javax.swing.JFrame {
 		VarGraphPanel = new GraphPanel(GraphPanel.VAR_PLOT, this);
 		RtnGraphPanel = new GraphPanel(GraphPanel.RTN_PLOT, this);
 		MccGraphPanel = new GraphPanel(GraphPanel.MCC_PLOT, this);
+        RatioTuplesGraphPanel = new GraphPanel(GraphPanel.RATIO_TUPLES_PLOT, this);
+        ExternalInputGraphPanel = new GraphPanel(GraphPanel.EXTERNAL_INPUT_PLOT, this);
 		
 		// Set performance monitor
 		CostGraphPanel.setPerformanceMonitor(perf);
@@ -3043,7 +3153,9 @@ public class MainWindow extends javax.swing.JFrame {
 		VarGraphPanel.setPerformanceMonitor(perf);
 		RtnGraphPanel.setPerformanceMonitor(perf);
 		MccGraphPanel.setPerformanceMonitor(perf);
-		
+		RatioTuplesGraphPanel.setPerformanceMonitor(perf);
+        ExternalInputGraphPanel.setPerformanceMonitor(perf);
+        
 		ArrayList<Integer> graph_order = Main.getGraphOrder();
 		// Reset graph order (addGraph will set this later)
 		Main.setGraphOrder(new ArrayList<Integer>());
@@ -3086,6 +3198,14 @@ public class MainWindow extends javax.swing.JFrame {
 					g = MccGraphPanel;
 					break;
 					
+                case GraphPanel.RATIO_TUPLES_PLOT:
+                    g = RatioTuplesGraphPanel;
+                    break;
+                    
+                case GraphPanel.EXTERNAL_INPUT_PLOT:
+                    g = ExternalInputGraphPanel;
+                    break;
+                        
 				default:
 					System.out.println("Invalid graph type");
 					throw new RuntimeException("Invalid graph type");
@@ -3144,6 +3264,16 @@ public class MainWindow extends javax.swing.JFrame {
 				jCheckBoxMenuItem11.setSelected(true);
 				jCheckBoxMenuItem19.setSelected(true);
 				break;
+                
+            case GraphPanel.RATIO_TUPLES_PLOT:
+                jCheckBoxMenuItem20.setSelected(true);
+                jCheckBoxMenuItem22.setSelected(true);
+                break;
+                
+            case GraphPanel.EXTERNAL_INPUT_PLOT:
+                jCheckBoxMenuItem21.setSelected(true);
+                jCheckBoxMenuItem23.setSelected(true);
+                break;
 				
 		}
 		
@@ -3232,6 +3362,16 @@ public class MainWindow extends javax.swing.JFrame {
 				jCheckBoxMenuItem19.setSelected(false);
 				break;
 				
+            case GraphPanel.RATIO_TUPLES_PLOT:
+                jCheckBoxMenuItem20.setSelected(false);
+                jCheckBoxMenuItem22.setSelected(false);
+                break;
+                
+            case GraphPanel.EXTERNAL_INPUT_PLOT:
+                jCheckBoxMenuItem21.setSelected(false);
+                jCheckBoxMenuItem23.setSelected(false);
+                break;
+            
 		}
 		
 		// This does not work...
@@ -3553,6 +3693,14 @@ public class MainWindow extends javax.swing.JFrame {
         loadRoutine(this.rtn_info);
     }
     
+    public boolean hasDistinctRms() {
+        
+        if (report != null && report.hasDistinctRms())
+            return true;
+        
+        return false;
+    }
+    
 	// For now we decide to disable context tree panel 
 	/*
 	private void expandContextTree() {
@@ -3637,6 +3785,10 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem17;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem18;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem19;
+    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem20;
+    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem21;
+    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem22;
+    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem23;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem4;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem5;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem6;
@@ -3730,7 +3882,8 @@ public class MainWindow extends javax.swing.JFrame {
 	private GraphPanel CostGraphPanel, ratioGraphPanel, 
 						freqGraphPanel, MMMGraphPanel,
 						TotalCostGraphPanel, VarGraphPanel,
-						RtnGraphPanel, MccGraphPanel;
+						RtnGraphPanel, MccGraphPanel,
+                        RatioTuplesGraphPanel, ExternalInputGraphPanel;
     
 	private TableRowSorter<TableModel> routines_table_sorter = null;
 	private List<RowSorter.SortKey> routines_sort = null;

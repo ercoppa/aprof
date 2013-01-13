@@ -25,6 +25,7 @@ public class AprofReport {
 	private long total_contexts;
     private long sum_rms;
     private long sum_rvms;
+    private long num_rms;
 	private ArrayList<RoutineInfo> routines;
 	private ArrayList<RoutineContext> contexts;
 	private HashSet<String> favorites;
@@ -46,6 +47,7 @@ public class AprofReport {
 		total_contexts = 0;
         sum_rms = 0;
         sum_rvms = 0;
+        num_rms = 0;
 		routines = new ArrayList<RoutineInfo>();
 		contexts = new ArrayList<RoutineContext>();
 		libset = new HashSet<String>();
@@ -121,17 +123,26 @@ public class AprofReport {
 				String lib;
                 String sum = null;
 				String id;
+                long distinct_rms = 0;
 			
 				Scanner s = new Scanner(str);
-                s.findInLine("r \"([^\"]+)\" \"([^\"]+)\" ([0-9]+)");
+                if (this.version >= 6)
+                    s.findInLine("r \"([^\"]+)\" \"([^\"]+)\" ([0-9]+) ([0-9]+)");
+                else
+                    s.findInLine("r \"([^\"]+)\" \"([^\"]+)\" ([0-9]+)");
                 MatchResult result = s.match();
 
 				rtn_name = result.group(1);
 				lib = result.group(2);
                 id = result.group(3);
 				
+                if (this.version >= 6) {
+                    distinct_rms = Long.parseLong(result.group(4));
+                    this.num_rms += distinct_rms;
+                }
+                
 				int rtn_id = Integer.parseInt(id);
-				
+                
 				RoutineInfo r;
 				try {
 					
@@ -139,11 +150,12 @@ public class AprofReport {
 					if (r == null) throw new IndexOutOfBoundsException();
 					r.setImage(lib);
 					r.setName(rtn_name);
+                    r.setCountRms(distinct_rms);
                     
 				} catch(IndexOutOfBoundsException e) {
 					
 					if (contexts.isEmpty())
-						r = new RoutineInfo(rtn_id, rtn_name, lib);
+						r = new RoutineInfo(rtn_id, rtn_name, lib, distinct_rms);
 					else
 						r = (RoutineInfo) new ContextualizedRoutineInfo(rtn_id, 
                                                    rtn_name, lib);
@@ -677,7 +689,29 @@ public class AprofReport {
 			}
 		});
 	}
+    
+    public void sortRoutinesByRatioTuples() {
+		Collections.sort(routines, new Comparator<RoutineInfo> () {
+			@Override
+			public int compare(RoutineInfo r1, RoutineInfo r2) {
+			   if (r1.getRatioRvmsRms() == r2.getRatioRvmsRms()) return 0;
+			   if (r1.getRatioRvmsRms() < r2.getRatioRvmsRms()) return 1;
+			   return -1;
+			}
+		});
+	}
 
+    public void sortRoutinesByExternalInput() {
+		Collections.sort(routines, new Comparator<RoutineInfo> () {
+			@Override
+			public int compare(RoutineInfo r1, RoutineInfo r2) {
+			   if (r1.getRatioSumRmsRvms() == r2.getRatioSumRmsRvms()) return 0;
+			   if ((1 - r1.getRatioSumRmsRvms()) < (1-r2.getRatioSumRmsRvms())) return 1;
+			   return -1;
+			}
+		});
+	}
+    
 	public ArrayList<Routine> getRoutines() {
 		return new ArrayList<Routine>(this.routines);
 	}
@@ -723,5 +757,9 @@ public class AprofReport {
     public double getRatioRmsRvms() {
         return (((double) sum_rms) / ((double) sum_rvms));
     }
-
+    
+    public boolean hasDistinctRms() {
+        return (num_rms > 0);
+    }
+ 
 }
