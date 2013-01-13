@@ -350,7 +350,8 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
     HashNode * node = HT_lookup(rtn_info->distinct_rms, act->rms);
     if (node == NULL) {
         node = VG_(calloc)("distinct rms node", sizeof(HashNode), 1);
-        HT_add_node(rtn_info->distinct_rms, act->rms, node);
+        node->key = act->rms;
+        HT_add_node(rtn_info->distinct_rms, node->key, node);
     }
     #endif
 
