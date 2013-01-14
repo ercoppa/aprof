@@ -101,6 +101,8 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
     while (size_fix > 0) {
     #endif
         
+        //VG_(printf)("addr: %lu ~ size: %d\n", addr, size_fix);
+        
         Activation * act = APROF_(get_activation_noresize)(tdata, tdata->stack_depth);
         
         #if INPUT_METRIC == RVMS
@@ -126,6 +128,8 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
                 #endif
                 
                 #if !COSTANT_MEM_ACCESS
+                size_fix -= APROF_(addr_multiple);
+                addr += APROF_(addr_multiple);
                 continue;
                 #else
                 return;
@@ -152,6 +156,8 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
             #if COSTANT_MEM_ACCESS
             return;
             #else
+            size_fix -= APROF_(addr_multiple);
+            addr += APROF_(addr_multiple);
             continue;
             #endif
         }
