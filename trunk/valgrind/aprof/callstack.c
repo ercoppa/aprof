@@ -94,7 +94,7 @@ Activation * APROF_(resize_stack)(ThreadData * tdata, unsigned int depth) {
         tdata->max_stack_size = tdata->max_stack_size * 2; 
         
         #if VERBOSE
-        VG_(printf)("Relocate stack: %lu\n", tdata->max_stack_size);
+        VG_(printf)("Relocate stack: %u\n", tdata->max_stack_size);
         #endif
         
         tdata->stack = VG_(realloc)("stack", tdata->stack, 

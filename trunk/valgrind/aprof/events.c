@@ -99,22 +99,25 @@ void APROF_(flushEvents)(IRSB* sb) {
             case Event_Ir: break;
             
             case Event_Dr:    helperName = "trace_load";
-                            argv = mkIRExprVec_3(    mkIRExpr_HWord(LOAD), 
+                            argv = mkIRExprVec_4(   mkIRExpr_HWord(LOAD), 
                                                     ev->addr, 
-                                                    mkIRExpr_HWord( ev->size ) );
+                                                    mkIRExpr_HWord( ev->size ),
+                                                    mkIRExpr_HWord(False) );
                             helperAddr = APROF_(trace_access);
                             break;
 
             case Event_Dw:  helperName = "trace_store";
-                            argv = mkIRExprVec_3(    mkIRExpr_HWord(STORE), 
+                            argv = mkIRExprVec_4(   mkIRExpr_HWord(STORE), 
                                                     ev->addr, 
-                                                    mkIRExpr_HWord( ev->size ) );
+                                                    mkIRExpr_HWord( ev->size ),
+                                                    mkIRExpr_HWord(False) );
                             helperAddr =  APROF_(trace_access); break;
 
             case Event_Dm:  helperName = "trace_modify";
-                            argv = mkIRExprVec_3(    mkIRExpr_HWord(MODIFY), 
+                            argv = mkIRExprVec_4(   mkIRExpr_HWord(MODIFY), 
                                                     ev->addr, 
-                                                    mkIRExpr_HWord( ev->size ) );
+                                                    mkIRExpr_HWord( ev->size ),
+                                                    mkIRExpr_HWord(False) );
                             helperAddr =  APROF_(trace_access); break;
             
             default:
