@@ -374,7 +374,11 @@ typedef struct {
                                          // after a return of a called 
                                          // function (only meaningful if 
                                          // the function is called with Ijk_Call)
+    
+    #if IGNORE_DL_RUNTIME
     Bool            skip;                // if True, disable analysis 
+    #endif
+    
     #endif
 
 } Activation;
@@ -422,7 +426,11 @@ typedef struct ThreadData {
     #if TRACE_FUNCTION
     BB *             last_bb;            // Last executed BB
     jump_t           last_exit;          // Last "final" exit/jump of last BB
+    
+    #if IGNORE_DL_RUNTIME
     Bool             skip;               // Disable analysis
+    #endif
+    
     #endif
     
     #if EVENTCOUNT

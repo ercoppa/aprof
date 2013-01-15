@@ -228,7 +228,7 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
     }
     #endif
     
-    #if TRACE_FUNCTION
+    #if TRACE_FUNCTION && IGNORE_DL_RUNTIME
     if (act->skip) tdata->skip = True;
     #endif
     
@@ -415,12 +415,12 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
         #if TRACE_FUNCTION && IGNORE_DL_RUNTIME
         if (!tdata->skip) {
         #endif
-        
+
             parent_activation->rms                 += act->rms;
             #if INPUT_METRIC == RVMS
             parent_activation->rvms                += act->rvms;
             #endif
-            
+        
             parent_activation->total_children_time += partial_cumulative;
         
         #if TRACE_FUNCTION && IGNORE_DL_RUNTIME
