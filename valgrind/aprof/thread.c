@@ -48,7 +48,7 @@ ThreadData * APROF_(current_tdata) = NULL;
 static ThreadData * APROF_(thread_start)(ThreadId tid){
 
     #if VERBOSE
-    VG_(printf)("start thread data %d\n", tid);
+    VG_(printf)("start thread %d\n", tid);
     #endif
     
     ThreadData * tdata = VG_(calloc)("thread_data", sizeof(ThreadData), 1);
@@ -219,6 +219,10 @@ void APROF_(thread_switch)(ThreadId tid, ULong blocks_dispatched) {
      */
      
     if (LIKELY(tid == APROF_(current_TID))) return;
+    
+    #if VERBOSE
+    VG_(printf)("switch to thread %d\n", tid);
+    #endif
     
     #if INPUT_METRIC == RVMS
     ++APROF_(global_counter);
