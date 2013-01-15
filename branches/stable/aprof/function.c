@@ -244,7 +244,7 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
 	}
 	#endif
 	
-	#if TRACE_FUNCTION
+	#if TRACE_FUNCTION && IGNORE_DL_RUNTIME
 	if (act->skip) tdata->skip = True;
 	#endif
 	

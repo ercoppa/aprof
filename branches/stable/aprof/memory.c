@@ -67,7 +67,7 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type, Addr addr, SizeT size) {
     
 	if (tdata->stack_depth == 0) return;
     
-	#if TRACE_FUNCTION
+	#if TRACE_FUNCTION && IGNORE_DL_RUNTIME
 	if (tdata->skip) return;
 	#endif
 	
