@@ -1,7 +1,9 @@
 = Debugging performance of V8 =
 
-
 == Code ==
+
+This is the code of our test using V8.
+
 {{{
 #include <v8.h>
 #include <string>
@@ -97,6 +99,8 @@ int main(int argc, char* argv[]) {
 
 == Input ==
 
+This is the content of the JS script given as input to the previous program.
+
 {{{
 /*
 CryptoJS v3.0.2
@@ -123,3 +127,5 @@ sha256.update("Message Part 3");
 var hash = sha256.finalize();
 
 }}}
+
+== Results ==
