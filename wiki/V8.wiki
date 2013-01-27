@@ -136,5 +136,5 @@ These are some graphs generated with [aprof_plot_manual aprof-plot] on a report 
   * on x axis: our estimation of the input size ([aprof_manual#Input_size_estimation:_Read_Memory_Size_(RMS) Read Memory size]); 
   * on the y axis there is a performance metric ([aprof_manual#Performance_Metric number of executed basic blocks]).
 
-
-v8::internal::Parser::ParseAssignmentExpression:
+|| Routine: v8::internal::Parser::ParseAssignmentExpression: ||
+|| [] ||
