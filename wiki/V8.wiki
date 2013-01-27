@@ -136,5 +136,50 @@ These are some graphs generated with [aprof_plot_manual aprof-plot] on a report 
   * on x axis: our estimation of the input size ([aprof_manual#Input_size_estimation:_Read_Memory_Size_(RMS) Read Memory size]); 
   * on the y axis there is a performance metric ([aprof_manual#Performance_Metric number of executed basic blocks]).
 
-|| Routine: v8::internal::Parser::ParseAssignmentExpression: ||
-|| [] ||
+|| Routine: `v8::internal::Parser::ParseAssignmentExpression` ||
+|| [http://aprof.googlecode.com/svn/trunk/wiki_images/v8/1.png] ||
+
+|| Routine: `v8::internal::Parser::ParseBinaryExpression` ||
+|| [http://aprof.googlecode.com/svn/trunk/wiki_images/v8/2.png] ||
+
+|| Routine: `v8::internal::Parser::ParseConditionalExpression` ||
+|| [http://aprof.googlecode.com/svn/trunk/wiki_images/v8/3.png] ||
+
+|| Routine: `v8::internal::Parser::ParseUnaryExpression` ||
+|| [http://aprof.googlecode.com/svn/trunk/wiki_images/v8/4.png] ||
+
+|| Routine: `v8::internal::Parser::ParsePostfixExpression` ||
+|| [http://aprof.googlecode.com/svn/trunk/wiki_images/v8/5.png] ||
+
+|| Routine: `v8::internal::Parser::ParseLeftHandSideExpression` ||
+|| [http://aprof.googlecode.com/svn/trunk/wiki_images/v8/6.png] ||
+
+|| Routine: `v8::internal::Parser::ParseStatement` ||
+|| [http://aprof.googlecode.com/svn/trunk/wiki_images/v8/7.png] ||
+
+|| Routine: `v8::internal::Parser::ParseMemberWithNewPrefixesExpression` ||
+|| [http://aprof.googlecode.com/svn/trunk/wiki_images/v8/8.png] ||
+
+|| Routine: `v8::internal::Parser::ParseExpression` ||
+|| [http://aprof.googlecode.com/svn/trunk/wiki_images/v8/9.png] ||
+
+|| Routine: `v8::internal::Parser::ParsePrimaryExpression` ||
+|| [http://aprof.googlecode.com/svn/trunk/wiki_images/v8/10.png] ||
+
+|| Routine: `v8::preparser::PreParser::ParseAssignmentExpression` ||
+|| [http://aprof.googlecode.com/svn/trunk/wiki_images/v8/11.png] ||
+
+|| Routine: `v8::preparser::PreParser::ParseBinaryExpression` ||
+|| [http://aprof.googlecode.com/svn/trunk/wiki_images/v8/12.png] ||
+
+|| Routine: `v8::preparser::PreParser::ParseConditionalExpression` ||
+|| [http://aprof.googlecode.com/svn/trunk/wiki_images/v8/13.png] ||
+
+|| Routine: `v8::preparser::PreParser::ParseUnaryExpression` ||
+|| [http://aprof.googlecode.com/svn/trunk/wiki_images/v8/14.png] ||
+
+|| Routine: `v8::preparser::PreParser::ParsePostfixExpression` ||
+|| [http://aprof.googlecode.com/svn/trunk/wiki_images/v8/15.png] ||
+
+|| Routine: `v8::preparser::PreParser::ParseLeftHandSideExpression` ||
+|| [http://aprof.googlecode.com/svn/trunk/wiki_images/v8/16.png] ||
