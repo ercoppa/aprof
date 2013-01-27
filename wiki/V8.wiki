@@ -132,7 +132,7 @@ var hash = sha256.finalize();
 
 == Results ==
 
-These are some graphs generated with aprof-plot on a report produced by aprof on the previous code and input. 
+These are some graphs generated with [aprof_plot_manual aprof-plot] on a report produced by [aprof_manual aprof] on the previous code and input. 
 
 On the x axis there is our estimation of the input size ([aprof_manual#Input_size_estimation:_Read_Memory_Size_(RMS) Read Memory size]). On the y axis there is a performance metric ([aprof_manual#Performance_Metric number of executed basic blocks]).
 
