@@ -35,7 +35,8 @@
 #include "aprof.h"
 
 /* Note: fwrite() & co are not provided by valgrind, so... */
-static HChar buffer[4096];
+#define INTERNAL_BUFF_SIZE 4096*5
+static HChar buffer[INTERNAL_BUFF_SIZE];
 
 FILE * APROF_(fopen)(const HChar * name){
     
@@ -58,7 +59,7 @@ void APROF_(fflush)(FILE * f) {
     UInt bw = 0, bf = 0, size = f->fw_pos;
     do {
         bf = VG_(write)(f->file, f->fw_buffer + bw, size - bw);
-        AP_ASSERT(bf != -1, "Error during writing\n");
+        AP_ASSERT(bf >= 0, "Error during writing\n");
         bw += bf;
     } while(bw < size);
     
@@ -108,6 +109,8 @@ void APROF_(fprintf)(FILE * f, const HChar * format, ...) {
     va_start(vargs, format);
     UInt size = VG_(vsprintf)(buffer, format, vargs);
     va_end(vargs);
+    
+    AP_ASSERT(size < INTERNAL_BUFF_SIZE, "possible mal-formatted file");
     
     APROF_(fwrite)(f, buffer, size);
     
