@@ -57,85 +57,11 @@ LookupTable * APROF_(global_shadow_memory) = NULL;
 UInt APROF_(global_counter) = 0;
 #endif
 
-memory_event * memory_buffer = NULL;
-ULong memory_buffer_size      = 0;
-UInt count                   = 0;
-
 VG_REGPARM(3) void APROF_(trace_access)(UWord type, 
                                         Addr addr, 
                                         SizeT size,
                                         UWord kernel_access) {
-
-    /*
-    VG_(printf)("memory_buffer: %p\n", memory_buffer);
-    VG_(printf)("memory_buffer_size: %llu\n", memory_buffer_size);
-    VG_(printf)("count: %u\n", count);
-    */
     
-    AP_ASSERT(0, "babab");
-    
-    memory_event * ev = &(memory_buffer[count]);
-    AP_ASSERT(ev->addr == addr, "Bad address");
-    AP_ASSERT(ev->size == size, "Bad address");
-    AP_ASSERT(ev->type == type, "Bad address");
-    
-    count++;
-    AP_ASSERT(count * sizeof(memory_event) == memory_buffer_size, "Bad count");
-    
-    AP_ASSERT(count < BUF_MEM_SIZE, "Memory buffer overflow");
-    /*
-    memory_buffer[memory_buffer_size].addr = addr;
-    memory_buffer[memory_buffer_size].size = size;
-    memory_buffer[memory_buffer_size].type = type;
-    
-    AP_ASSERT(memory_buffer[memory_buffer_size].addr == addr, "error");
-    AP_ASSERT(memory_buffer[memory_buffer_size].size == size, "error");
-    AP_ASSERT(memory_buffer[memory_buffer_size].type == type, "error");
-    
-    memory_buffer_size++;
-    
-    if (memory_buffer_size == BUF_MEM_SIZE)
-        commit_memory_events();
-*/
-}
-
-void init_memory_buffer(void) {
-    
-    //VG_(printf)("memory_buffer: %p\n", memory_buffer);
-    memory_buffer = VG_(calloc)("memory events", 
-        BUF_MEM_SIZE, sizeof(memory_event));
-    //VG_(printf)("memory_buffer: %p\n\n", memory_buffer);
-
-}
-
-inline void memory_commit(UWord type, 
-                            Addr addr, 
-                            SizeT size);
-
-void commit_memory_events(void) {
-
-    UInt size = memory_buffer_size / sizeof(memory_event);
-    /*
-    if (size > 500)
-        VG_(printf)("Commit: %u\n", size);
-    */
-    UInt i;
-    for (i = 0; i < size; i++) {
-
-        memory_commit(  memory_buffer[i].type, 
-                                memory_buffer[i].addr, 
-                                memory_buffer[i].size);
-        
-    }
-
-    memory_buffer_size = 0;
-    count = 0;
-}
-
-inline void memory_commit(UWord type, 
-                            Addr addr, 
-                            SizeT size) {
-
     ThreadData * tdata = APROF_(current_tdata);
     
     #if DEBUG
@@ -281,4 +207,3 @@ inline void memory_commit(UWord type,
     #endif
     
 }
-

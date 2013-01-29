@@ -88,9 +88,9 @@
                                  // Input estimation metric:
 #define RMS                 1    // Read Memory Size
 #define RVMS                2    // Read Versioned Memory Size
-#define INPUT_METRIC        RMS
+#define INPUT_METRIC        RVMS
 
-#define DISTINCT_RMS        0   // if 1 and INPUT_METRIC == RVMS
+#define DISTINCT_RMS        1   // if 1 and INPUT_METRIC == RVMS
                                 // we append at the end of each "r" 
                                 // report tag the # of distinct RMS
 
@@ -100,9 +100,9 @@
                                 // with -finstrument-functions
                                 
 #define MEM_TRACE           1   // if 0 disable mem instrumentation
-#define THREAD_INPUT        0   // if 1, every write creates a new
+#define THREAD_INPUT        1   // if 1, every write creates a new
                                 // version of an input
-#define SYSCALL_WRAPPING    0   // if 1, I/O syscall are wrapped in 
+#define SYSCALL_WRAPPING    1   // if 1, I/O syscall are wrapped in 
                                 // order to catch external I/O
 
 #define DEBUG_ALLOCATION    0   // if 1, check every allocation made by aprof
@@ -176,16 +176,6 @@
                                 } while(0);
 
 /* Data structures */
-
-#define OFFSETOF(type, field)    ((unsigned long) &(((type *) 0)->field))
-
-typedef struct memory_event {
-    
-    Addr  addr; 
-    SizeT size;
-    UChar type;
-    
-} memory_event;
 
 typedef IRExpr IRAtom;
 // type of memory access
@@ -507,10 +497,6 @@ extern LookupTable * APROF_(global_shadow_memory);
 extern UInt APROF_(global_counter);
 #endif
 
-extern memory_event * memory_buffer;
-extern ULong memory_buffer_size;
-#define BUF_MEM_SIZE 1024*1000
-
 /* Functions */
 
 /* f{open, write, close, flush} internal implementation (fwrite.c) */
@@ -539,8 +525,6 @@ void APROF_(print_report_CCT)(FILE * f, CCTNode * root, UInt parent_id);
 /* Memory access handler (memory.c) */
 VG_REGPARM(3) void APROF_(trace_access)(UWord type, 
                             Addr addr, SizeT size, UWord kernel_access);
-void commit_memory_events(void);
-void init_memory_buffer(void);
 
 /* Function entry/exit handlers (function.c) */
 RoutineInfo * APROF_(new_routine_info)(ThreadData * tdata, Function * fn, UWord target);

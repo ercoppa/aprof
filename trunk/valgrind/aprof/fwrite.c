@@ -35,7 +35,7 @@
 #include "aprof.h"
 
 /* Note: fwrite() & co are not provided by valgrind, so... */
-static HChar buffer[4096*2];
+static HChar buffer[4096];
 
 FILE * APROF_(fopen)(const HChar * name){
     
