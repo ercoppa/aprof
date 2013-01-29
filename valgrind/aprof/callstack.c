@@ -490,7 +490,6 @@ static void APROF_(push_stack)(ThreadData * tdata, UWord sp, Function * f, Bool 
     AP_ASSERT(f != NULL, "Invalid function");
     #endif
     
-    commit_memory_events(); 
     tdata->stack_depth++;
     Activation * act = APROF_(get_activation)(tdata, tdata->stack_depth);
     #if DEBUG
@@ -544,7 +543,7 @@ static UInt APROF_(pop_stack)(ThreadData * tdata, UWord csp, UInt n_frames,
           ) 
     {
         
-        commit_memory_events();
+        
         APROF_(function_exit)(tdata, current);
         
         if (n_frames > 0) n_frames--;
@@ -564,9 +563,6 @@ static UInt APROF_(pop_stack)(ThreadData * tdata, UWord csp, UInt n_frames,
 
 /* Helper function called at start of a BB */
 VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
-
-    if (memory_buffer_size / sizeof(memory_event) > BUF_MEM_SIZE - 150)
-        commit_memory_events();
 
     #if DEBUG
     AP_ASSERT(target > 0, "Invalid target");
@@ -1024,7 +1020,6 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
                 
                 /* Update current stack pointer */
                 csp = current->sp;
-                commit_memory_events();
                 APROF_(function_exit)(tdata, current);
                 
                 /* Adjust stack */
@@ -1141,7 +1136,6 @@ void APROF_(unwind_stack)(ThreadData * tdata) {
     while (tdata->stack_depth > 0)  {
 
         Activation * current = APROF_(get_activation_noresize)(tdata, tdata->stack_depth);
-        commit_memory_events();
         APROF_(function_exit)(tdata, current);
         tdata->stack_depth--;
         current--;

@@ -47,8 +47,6 @@ ThreadData * APROF_(current_tdata) = NULL;
 
 static ThreadData * APROF_(thread_start)(ThreadId tid){
 
-    commit_memory_events();
-
     #if VERBOSE
     VG_(printf)("start thread %d\n", tid);
     #endif
@@ -136,8 +134,6 @@ static ThreadData * APROF_(thread_start)(ThreadId tid){
 
 void APROF_(thread_exit)(ThreadId tid){
 
-    commit_memory_events();
-
     APROF_(current_TID) = VG_INVALID_THREADID;
     APROF_(current_tdata) = NULL;
 
@@ -223,8 +219,6 @@ void APROF_(thread_switch)(ThreadId tid, ULong blocks_dispatched) {
      */
      
     if (LIKELY(tid == APROF_(current_TID))) return;
-    
-    commit_memory_events();
     
     #if VERBOSE
     VG_(printf)("switch to thread %d\n", tid);
