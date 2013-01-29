@@ -278,7 +278,7 @@ public class Rms implements Comparable<Rms> {
     
     public double getRatioRmsRvms() {
         
-        if (this.rms > 0)
+        if (this.rms > 0 && sum_rms > 0)
             return (((double)sum_rms) / ((double)(this.rms * this.occ))); 
         
         return 1;   

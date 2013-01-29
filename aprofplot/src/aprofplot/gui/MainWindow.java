@@ -1293,6 +1293,7 @@ public class MainWindow extends javax.swing.JFrame {
 				try {
 					setReport(new AprofReport(file), file);
 				} catch (Exception ex) {
+                    ex.printStackTrace();
 					System.out.println("Fail to load");
 					System.out.println(ex);
                     jProgressBar1.setVisible(false);
