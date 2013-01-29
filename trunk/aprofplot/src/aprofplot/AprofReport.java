@@ -368,6 +368,7 @@ public class AprofReport {
 			if (token.equals("u")) { // demangled routine
 				
 				int index = Integer.parseInt(tokenizer.nextToken());
+                //System.out.println(index);
 				String name = "";
 				while (tokenizer.hasMoreTokens()) {
 					name += (tokenizer.nextToken() + " ");
