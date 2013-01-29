@@ -56,6 +56,113 @@ Bool APROF_(merge_report_threads) = False;
 static UInt  APROF_(addr_accessed_size) = INIT_SIZE_ADDR_ACC;
 static IRExpr **  APROF_(addr_accessed) = NULL;
 
+static void buffered_access(IRExpr * addr, SizeT size, 
+                            UChar type, IRSB * sbOut) {
+    
+    // get displacement
+    IRTemp t1 = newIRTemp(sbOut->tyenv, Ity_I64);
+    IRExpr * count = IRExpr_Load(Endness, Ity_I64,
+                        IRExpr_Const(IRConst_U64( (UWord) &memory_buffer_size))
+                        );
+    IRStmt * val = IRStmt_WrTmp(t1, count);
+    addStmtToIRSB(sbOut, val);
+
+    //AP_ASSERT(((UWord) memory_buffer) == ((UWord)&(memory_buffer[0])), "BAD");
+    
+    /*
+    VG_(printf)("memory_buffer: %p [inst]\n",
+                    memory_buffer);
+    */
+    
+    // &(event) := buffer + displacement
+    IRTemp t2 = newIRTemp(sbOut->tyenv, Ity_I64);
+    IRExpr * event_addr = IRExpr_Binop(Iop_Add64, 
+                            IRExpr_Const(IRConst_U64( (UWord) memory_buffer)), 
+                            //IRExpr_Const(IRConst_U64( (UWord) 0))
+                            IRExpr_RdTmp(t1)
+                            ); 
+    val = IRStmt_WrTmp(t2, event_addr);
+    addStmtToIRSB(sbOut, val);
+    
+    /*
+    VG_(printf)("field offset: %lu [inst]\n",
+                    OFFSETOF(memory_event, addr));
+    */
+    
+    // &(event.addr) := &(event) + field_offset
+    IRTemp t3 = newIRTemp(sbOut->tyenv, Ity_I64);
+    IRExpr * field = IRExpr_Binop(Iop_Add64,
+                            IRExpr_RdTmp(t2),
+                            IRExpr_Const(IRConst_U64( OFFSETOF(memory_event, addr) ))
+                            );                       
+    val = IRStmt_WrTmp(t3, field);
+    addStmtToIRSB(sbOut, val);
+    
+    // event.addr := a
+    addStmtToIRSB(  sbOut, 
+                    IRStmt_Store(Endness,
+                        //IRExpr_Const(IRConst_U64( (UWord) memory_buffer)),
+                        IRExpr_RdTmp(t3), 
+                        addr
+                        )
+                    );
+    
+    // &(event.size) := &(event) + field_offset
+    t3 = newIRTemp(sbOut->tyenv, Ity_I64);
+    field = IRExpr_Binop(Iop_Add64,
+                            IRExpr_RdTmp(t2),
+                            IRExpr_Const(IRConst_U64( OFFSETOF(memory_event, size) ))
+                            );                       
+    val = IRStmt_WrTmp(t3, field);
+    addStmtToIRSB(sbOut, val);
+    
+    // event.size := size
+    addStmtToIRSB(  sbOut, 
+                    IRStmt_Store(Endness,
+                        //IRExpr_Const(IRConst_U64( (UWord) memory_buffer)),
+                        IRExpr_RdTmp(t3), 
+                        mkIRExpr_HWord( size )
+                        )
+                    );
+    
+    // &(event.type) := &(event) + field_offset
+    t3 = newIRTemp(sbOut->tyenv, Ity_I64);
+    field = IRExpr_Binop(Iop_Add64,
+                            IRExpr_RdTmp(t2),
+                            IRExpr_Const(IRConst_U64( OFFSETOF(memory_event, type) ))
+                            );                       
+    val = IRStmt_WrTmp(t3, field);
+    addStmtToIRSB(sbOut, val);
+    
+    // event.type := type
+    addStmtToIRSB(  sbOut, 
+                    IRStmt_Store(Endness,
+                        //IRExpr_Const(IRConst_U64( (UWord) memory_buffer)),
+                        IRExpr_RdTmp(t3), 
+                        mkIRExpr_HWord( type )
+                        )
+                    );
+    
+    // temp = mem_event_count + sizeof(event)
+    IRTemp t4 = newIRTemp(sbOut->tyenv, Ity_I64);
+    IRExpr * inc = IRExpr_Binop(Iop_Add64,
+                            IRExpr_RdTmp(t1),
+                            IRExpr_Const(IRConst_U64( sizeof(memory_event) ))
+                            );
+    val = IRStmt_WrTmp(t4, inc);
+    addStmtToIRSB(sbOut, val);
+    
+    
+    // mem_event_count := temp
+    addStmtToIRSB(  sbOut, 
+                    IRStmt_Store(Endness,
+                        IRExpr_Const(IRConst_U64( (UWord) &memory_buffer_size)),
+                        IRExpr_RdTmp(t4)
+                        )
+                    );
+    
+}
+
 /*
  * Return true if the accessed memory address was not accessed previously
  * by the current BB. Linear search.
@@ -165,10 +272,10 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
     #endif
    
     #if MEM_TRACE && IGNORE_REPEAT_ACC
-    HChar * helperNameA;
-    void * helperAddrA;
-    IRExpr * * argvA;
-    IRDirty * diA;
+    //HChar * helperNameA;
+    //void * helperAddrA;
+    //IRExpr * * argvA;
+    //IRDirty * diA;
     #endif
    
     for (/*use current i*/; i < sbIn->stmts_used; i++) {
@@ -231,6 +338,10 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
                     #if IGNORE_REPEAT_ACC
                     IRExpr * a = data->Iex.Load.addr;
                     if (APROF_(do_access)(a)) {
+                        
+                        buffered_access(a, sizeofIRType(data->Iex.Load.ty), LOAD, sbOut);
+                        
+                        /*
                         helperNameA = "trace_load";
                         argvA = mkIRExprVec_4(  mkIRExpr_HWord(LOAD),
                                                 a, 
@@ -242,7 +353,9 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
                                     VG_(fnptr_to_fnentry)( helperAddrA ),
                                     argvA );
                         addStmtToIRSB( sbOut, IRStmt_Dirty(diA) );
+                        */
                     }
+                    
                     #else
                     APROF_(addEvent_Dr)( sbOut, data->Iex.Load.addr,
                                     sizeofIRType(data->Iex.Load.ty) );
@@ -262,6 +375,10 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
                 #if IGNORE_REPEAT_ACC
                 IRExpr * a = st->Ist.Store.addr;
                 if (APROF_(do_access)(a)) {
+                    
+                    buffered_access(a, sizeofIRType(typeOfIRExpr(tyenv, data)), STORE, sbOut);
+                    
+                    /*
                     helperNameA = "trace_store";
                     argvA = mkIRExprVec_4(  mkIRExpr_HWord(STORE),
                                             a, 
@@ -273,6 +390,7 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
                                 VG_(fnptr_to_fnentry)( helperAddrA ),
                                 argvA );
                     addStmtToIRSB( sbOut, IRStmt_Dirty(diA) );
+                    */
                 }
                 #else
                 APROF_(addEvent_Dw)(sbOut, st->Ist.Store.addr,
@@ -300,6 +418,10 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
                     IRExpr * a = d->mAddr;
                     if (d->mFx == Ifx_Read || d->mFx == Ifx_Modify) {
                         if (APROF_(do_access)(a)) {
+                            
+                            buffered_access(a, dsize, LOAD, sbOut);
+                            
+                            /*
                             helperNameA = "trace_load";
                             argvA = mkIRExprVec_4(    mkIRExpr_HWord(LOAD),
                                                         a, 
@@ -311,10 +433,15 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
                                         VG_(fnptr_to_fnentry)( helperAddrA ),
                                         argvA );
                             addStmtToIRSB( sbOut, IRStmt_Dirty(diA) );
+                            */
                         }
                     }
                     else if (d->mFx == Ifx_Write) {
                         if (APROF_(do_access)(a)) {
+                            
+                            buffered_access(a, dsize, STORE, sbOut);
+                            
+                            /*
                             helperNameA = "trace_store";
                             argvA = mkIRExprVec_4(    mkIRExpr_HWord(STORE),
                                                         a, 
@@ -325,7 +452,8 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
                             diA = unsafeIRDirty_0_N( 3, helperNameA, 
                                         VG_(fnptr_to_fnentry)( helperAddrA ),
                                         argvA );
-                            addStmtToIRSB( sbOut, IRStmt_Dirty(diA) );
+                            addStmtToIRSB( sbOut, IRStmt_Dirty(diA
+                            */
                         }
                     }
                     #else
@@ -367,6 +495,10 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
                 #if IGNORE_REPEAT_ACC
                 IRExpr * a = cas->addr;
                 if (APROF_(do_access)(a)) {
+                    
+                    buffered_access(a, dataSize, LOAD, sbOut);
+                    
+                    /*
                     helperNameA = "trace_load";
                     argvA = mkIRExprVec_4(  mkIRExpr_HWord(LOAD),
                                             a, 
@@ -378,6 +510,7 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
                                 VG_(fnptr_to_fnentry)( helperAddrA ),
                                 argvA );
                     addStmtToIRSB( sbOut, IRStmt_Dirty(diA) );
+                    */
                 }
                 #else
                 APROF_(addEvent_Dr)( sbOut, cas->addr, dataSize );
@@ -401,6 +534,10 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
                     #if IGNORE_REPEAT_ACC
                     IRExpr * a = st->Ist.LLSC.addr;
                     if (APROF_(do_access)(a)) {
+                        
+                        buffered_access(a, sizeofIRType(dataTy), LOAD, sbOut);
+                        
+                        /*
                         helperNameA = "trace_load";
                         argvA = mkIRExprVec_4(  mkIRExpr_HWord(LOAD),
                                                 a, 
@@ -412,6 +549,7 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
                                     VG_(fnptr_to_fnentry)( helperAddrA ),
                                     argvA );
                         addStmtToIRSB( sbOut, IRStmt_Dirty(diA) );
+                        */
                     }
                     
                     #else
@@ -424,6 +562,10 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
                     #if IGNORE_REPEAT_ACC
                     IRExpr * a = st->Ist.LLSC.addr;
                     if (APROF_(do_access)(a)) {
+                        
+                        buffered_access(a, sizeofIRType(dataTy), STORE, sbOut);
+                        
+                        /*
                         helperNameA = "trace_store";
                         argvA = mkIRExprVec_4(  mkIRExpr_HWord(STORE),
                                                 a, 
@@ -435,6 +577,7 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
                                     VG_(fnptr_to_fnentry)( helperAddrA ),
                                     argvA );
                         addStmtToIRSB( sbOut, IRStmt_Dirty(diA) );
+                        */
                     }
                     #else
                     APROF_(addEvent_Dw)( sbOut, st->Ist.LLSC.addr, sizeofIRType(dataTy) );
@@ -494,7 +637,15 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
     #endif
     
     #endif
-
+    
+/*
+    UInt k;
+    VG_(printf)("\n\n#####################\n");
+    for (k = 0; k < sbIn->stmts_used; k++) {
+        ppIRStmt(sbIn->stmts[k]);
+        VG_(printf)("\n");
+    }
+*/
     return sbOut;
 }
 
@@ -534,6 +685,8 @@ static void APROF_(post_clo_init)(void) {
     
     VG_(clo_vex_control).iropt_unroll_thresh = 0;
     VG_(clo_vex_control).guest_chase_thresh  = 0;
+    
+    init_memory_buffer();
 }
 
 /* aprof finalization */
