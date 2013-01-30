@@ -62,7 +62,7 @@
 #define EMPTY_ANALYSIS      0   // if 1, analysis routines are empty 
                                 // (useful in combination with EVENTCOUNT)
 
-#define DEBUG               0   // Enable some sanity checks
+#define DEBUG               1   // Enable some sanity checks
 
 #define VERBOSE             0   // 0 disabled, 1 function + thread, 2 
                                 // function + thread + load/store/modify,
@@ -116,7 +116,7 @@
                                 // function (but this does not imply to
                                 // discard info about its children)
                                 
-#define IGNORE_REPEAT_ACC   1   // if 1, ignore repeated accesses to 
+#define IGNORE_REPEAT_ACC   0   // if 1, ignore repeated accesses to 
                                 // the same address within a BB
                                 
 #define REPORT_NAME         2   // if 1 report name is prog_TID.aprof, 
@@ -166,6 +166,10 @@
 
 #if SYSCALL_WRAPPING && INPUT_METRIC != RVMS
 #error "SYSCALL_WRAPPING == 1 but INPUT_METRIC != RVMS"
+#endif
+
+#if INPUT_METRIC == RVMS && IGNORE_REPEAT_ACC
+#error "With IGNORE_REPEAT_ACC you're ignoring a store after a load. This is not ok with RVMS"
 #endif
 
 /* Failure/error function */
@@ -266,9 +270,9 @@ struct pattern {
 // file descriptor
 typedef struct FILE {
 
-    int        file;                     // file descriptior ID 
-    char       fw_buffer[BUFFER_SIZE];   // buffer
-    int        fw_pos;                   // buffer offset
+    Int        file;                     // file descriptior ID 
+    HChar      fw_buffer[BUFFER_SIZE];   // buffer
+    Int        fw_pos;                   // buffer offset
 
 } FILE;
 

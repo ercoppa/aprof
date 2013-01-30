@@ -41,15 +41,13 @@ static HChar buffer[INTERNAL_BUFF_SIZE];
 FILE * APROF_(fopen)(const HChar * name){
     
     SysRes res = VG_(open)(name, VKI_O_EXCL|VKI_O_CREAT|VKI_O_WRONLY, VKI_S_IRUSR|VKI_S_IWUSR);
-    int file = (Int) sr_Res(res);
+    Int file = (Int) sr_Res(res);
     if (file <= 0) return NULL;
-    
-    //AP_ASSERT(file >= 0, "Can't create a log file.")
     
     FILE * f = VG_(malloc)("log_file", sizeof(FILE));
     f->file = file;
     f->fw_pos = 0;
-    
+
     return f;
 
 }
@@ -76,17 +74,22 @@ void APROF_(fwrite)(FILE * f, const HChar * buf, UInt size) {
         if (size < BUFFER_SIZE - f->fw_pos) {
         
             // it fits inside... just copy
-            VG_(strncpy)(f->fw_buffer + f->fw_pos, buf, size);
+            VG_(memcpy)(f->fw_buffer + f->fw_pos, buf, size);
+
             f->fw_pos += size;
+            
             return;
         
         } else {
             
             // copy only a piece of input buffer, then flush
-            VG_(strncpy)(f->fw_buffer + f->fw_pos, buf, 
+            VG_(memcpy)(f->fw_buffer + f->fw_pos, buf, 
                                 BUFFER_SIZE - f->fw_pos);
+            
             buf += BUFFER_SIZE - f->fw_pos;
             size -= BUFFER_SIZE - f->fw_pos;
+            f->fw_pos += BUFFER_SIZE - f->fw_pos;
+            
             APROF_(fflush)(f);
             
         }
@@ -110,7 +113,9 @@ void APROF_(fprintf)(FILE * f, const HChar * format, ...) {
     UInt size = VG_(vsprintf)(buffer, format, vargs);
     va_end(vargs);
     
+    #if DEBUG
     AP_ASSERT(size < INTERNAL_BUFF_SIZE, "possible mal-formatted file");
+    #endif
     
     APROF_(fwrite)(f, buffer, size);
     

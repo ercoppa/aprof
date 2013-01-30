@@ -36,14 +36,24 @@
 // last modification time of the current program
 static ULong APROF_(binary_time) = 0;
 
-static HChar * put_delim(HChar * str, Int size) {
+#define DELIM_SQ '$'
+#define DELIM_DQ "$"
+
+static HChar * put_delim(HChar * str_orig, Int size) {
+    
+    HChar * str = str_orig;
+    
+    #if DEBUG
+    str = VG_(malloc)("line", VG_(strlen)(str_orig));
+    str = VG_(strcpy)(str, str_orig);
+    #endif
     
     Int skip = 0;
     Int i = 0;
     for (i = 0; i < size; i++) {
         
         if (str[i] == ' ' && !skip)
-            str[i] = '@';
+            str[i] = DELIM_SQ;
         
         else if (str[i] == '"')
             skip = ~skip;
@@ -62,7 +72,7 @@ static Function * merge_tuple(HChar * line, Int size,
     if (size <= 0) return curr;
     line = put_delim(line, size);
     
-    HChar * token = VG_(strtok)(line, "@");
+    HChar * token = VG_(strtok)(line, DELIM_DQ);
     if (token == NULL) return curr;
     
     /* FixMe check exec mtime */
@@ -70,14 +80,14 @@ static Function * merge_tuple(HChar * line, Int size,
     if (token[0] == 'r') {
         
         // function name
-        token = VG_(strtok)(NULL, "@");
+        token = VG_(strtok)(NULL, DELIM_DQ);
         if (token == NULL) return curr;
         token[VG_(strlen)(token) - 1] = '\0'; // remove last "
         token++; // skip first "
         HChar * name = VG_(strdup)("fn_name", token);
         
         // object name
-        token = VG_(strtok)(NULL, "@");
+        token = VG_(strtok)(NULL, DELIM_DQ);
         if (token == NULL) return curr;
         token[VG_(strlen)(token) - 1] = '\0'; // remove last "
         token++; // skip first "
@@ -148,11 +158,11 @@ static Function * merge_tuple(HChar * line, Int size,
         if (curr == NULL || curr->mangled != NULL) 
             return curr;
         
-        token = VG_(strtok)(NULL, "@");
+        token = VG_(strtok)(NULL, DELIM_DQ);
         if (token == NULL) return curr;
         
         // skip routine ID
-        token = VG_(strtok)(NULL, "@");
+        token = VG_(strtok)(NULL, DELIM_DQ);
         if (token == NULL) return curr;
         
         // function mangled name
@@ -163,84 +173,84 @@ static Function * merge_tuple(HChar * line, Int size,
     } else if (token[0] == 'p') {
         
         // routine ID
-        token = VG_(strtok)(NULL, "@");
+        token = VG_(strtok)(NULL, DELIM_DQ);
         if (token == NULL) return curr;
         
         // RMS
-        token = VG_(strtok)(NULL, "@");
+        token = VG_(strtok)(NULL, DELIM_DQ);
         if (token == NULL) return curr;
         ULong rms = VG_(strtoull10) ((HChar *)token, NULL);
         if (rms == 0) return curr;
         
         // min
-        token = VG_(strtok)(NULL, "@");
+        token = VG_(strtok)(NULL, DELIM_DQ);
         if (token == NULL) return curr;
         ULong min = VG_(strtoull10) ((HChar *)token, NULL);
         if (min == 0) return curr;
         
         // max
-        token = VG_(strtok)(NULL, "@");
+        token = VG_(strtok)(NULL, DELIM_DQ);
         if (token == NULL) return curr;
         ULong max = VG_(strtoull10) ((HChar *)token, NULL);
         if (max == 0) return curr;
         
         // sum
-        token = VG_(strtok)(NULL, "@");
+        token = VG_(strtok)(NULL, DELIM_DQ);
         if (token == NULL) return curr;
         ULong sum = VG_(strtoull10) ((HChar *)token, NULL);
         if (sum == 0) return curr;
         
         // sqr sum
-        token = VG_(strtok)(NULL, "@");
+        token = VG_(strtok)(NULL, DELIM_DQ);
         if (token == NULL) return curr;
         ULong sqr_sum = VG_(strtoull10) ((HChar *)token, NULL);
         if (sqr_sum == 0) return curr;
         
         // occ
-        token = VG_(strtok)(NULL, "@");
+        token = VG_(strtok)(NULL, DELIM_DQ);
         if (token == NULL) return curr;
         ULong occ = VG_(strtoull10) ((HChar *)token, NULL);
         if (occ == 0) return curr;
         
         // cumul_real
-        token = VG_(strtok)(NULL, "@");
+        token = VG_(strtok)(NULL, DELIM_DQ);
         if (token == NULL) return curr;
         ULong cumul_real = VG_(strtoull10) ((HChar *)token, NULL);
         if (cumul_real == 0) return curr;
         
         // self_total
-        token = VG_(strtok)(NULL, "@");
+        token = VG_(strtok)(NULL, DELIM_DQ);
         if (token == NULL) return curr;
         ULong self = VG_(strtoull10) ((HChar *)token, NULL);
         if (self == 0) return curr;
         
         // self_min
-        token = VG_(strtok)(NULL, "@");
+        token = VG_(strtok)(NULL, DELIM_DQ);
         if (token == NULL) return curr;
         ULong self_min = VG_(strtoull10) ((HChar *)token, NULL);
         if (self_min == 0) return curr;
         
         // self_max
-        token = VG_(strtok)(NULL, "@");
+        token = VG_(strtok)(NULL, DELIM_DQ);
         if (token == NULL) return curr;
         ULong self_max = VG_(strtoull10) ((HChar *)token, NULL);
         if (self_max == 0) return curr;
         
         // sqr self
-        token = VG_(strtok)(NULL, "@");
+        token = VG_(strtok)(NULL, DELIM_DQ);
         if (token == NULL) return curr;
         ULong self_sqr = VG_(strtoull10) ((HChar *)token, NULL);
         if (self_sqr == 0) return curr;
         
         #if INPUT_METRIC == RVMS
         // ratio_sum
-        token = VG_(strtok)(NULL, "@");
+        token = VG_(strtok)(NULL, DELIM_DQ);
         if (token == NULL) return curr;
         ULong ratio = VG_(strtoull10) ((HChar *)token, NULL);
         if (ratio == 0) return curr;
         
         // ratio sum sqr
-        token = VG_(strtok)(NULL, "@");
+        token = VG_(strtok)(NULL, DELIM_DQ);
         if (token == NULL) return curr;
         ULong ratio_sqr = VG_(strtoull10) ((HChar *)token, NULL);
         if (ratio_sqr == 0) return curr;
@@ -317,26 +327,34 @@ static Function * merge_tuple(HChar * line, Int size,
 
     } else if (token[0] == 'a') {
         
-        token = VG_(strtok)(NULL, "@");
+        token = VG_(strtok)(NULL, DELIM_DQ);
         Char app[1024] = {0};
         while (token != NULL) {
             //VG_(printf)("token: %s\n", token);
             VG_(strcat)((HChar *)app, (HChar *)token);
             VG_(strcat)((HChar *)app, " ");
-            token = VG_(strtok)(NULL, "@");
+            token = VG_(strtok)(NULL, DELIM_DQ);
         }
+        
+        //VG_(printf)("app: %s\n", app);
+        
         if (VG_(strlen)((HChar *)app) > 0)
             app[VG_(strlen)((HChar *)app) -1] = '\0';
         
         if (VG_(strcmp)((HChar *)app, (HChar *) VG_(args_the_exename)) != 0) {
+            
+            /*
+            VG_(printf)("Line is: %s\n", line_orig);
             VG_(printf)("Command is #%s# versus #%s#\n", app, (Char *) VG_(args_the_exename));
             VG_(printf)("Different command\n");
+            AP_ASSERT(0, "wrong");
+            */
             return (void *)1; /* special value */
         }
     
     } else if (token[0] == 'k') {
         
-        token = VG_(strtok)(NULL, "@");
+        token = VG_(strtok)(NULL, DELIM_DQ);
         if (token == NULL) return curr;
         ULong sum = VG_(strtoull10) ((HChar *)token, NULL);
         if (sum == 0) return curr;
@@ -345,7 +363,7 @@ static Function * merge_tuple(HChar * line, Int size,
         
     } else if (token[0] == 'v') {
         
-        token = VG_(strtok)(NULL, "@");
+        token = VG_(strtok)(NULL, DELIM_DQ);
         if (token == NULL) return curr;
         ULong ver = VG_(strtoull10) ((HChar *)token, NULL);
         if (ver != REPORT_VERSION) {
@@ -364,6 +382,8 @@ static Function * merge_tuple(HChar * line, Int size,
 }
 
 static Bool merge_report(HChar * report, ThreadData * tdata) {
+    
+    //VG_(printf)("Try to merge: %s\n", report);
     
     /* open report */
     HChar * rep = VG_(expand_file_name)("aprof log", report);
@@ -403,7 +423,7 @@ static Bool merge_report(HChar * report, ThreadData * tdata) {
                  * OR different report version
                  */
                 if (current_routine == (void *)1) {
-                    VG_(printf)("No merge\n");
+                    //VG_(printf)("No merge: %s\n", (const HChar *)rep);
                     VG_(close)(file);
                     return False;
                 }
@@ -588,15 +608,16 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
         attempt++;
     }
 
-    VG_(free)(filename);
+    //VG_(printf)("Writing report: %s\n", filename);
     AP_ASSERT(report != NULL, "Can't create report file");
-    
-    //VG_(printf)("Writing report TID=%u file=%s\n", tid, filename);
 
     // write header
     APROF_(fprintf)(report, "c -------------------------------------\n");
     APROF_(fprintf)(report, "c report generated by aprof (valgrind) \n");
+    //APROF_(fprintf)(report, "c %s\n", filename);
     APROF_(fprintf)(report, "c -------------------------------------\n");
+    
+    VG_(free)(filename);
     
     // write version 
     APROF_(fprintf)(report, "v %d\n", REPORT_VERSION);
