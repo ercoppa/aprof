@@ -75,11 +75,26 @@ void APROF_(pre_syscall)(ThreadId tid, UInt syscallno,
 void APROF_(post_syscall)(ThreadId tid, UInt syscallno, 
                             UWord * args, UInt nArgs, SysRes res) {
 
-    #if defined(VGO_linux)
-    if(res._isError) return;
-    #elif defined(VGO_darwin)
-    if(res._mode == SysRes_UNIX_ERR) return;
+    #if DEBUG
+    AP_ASSERT(tid == VG_(get_running_tid)(), "TID mismatch");
     #endif
+    
+    /*
+     * This is an undocumented behavior of Valgrind 
+     */
+    if (tid != APROF_(current_TID)) {
+        APROF_(thread_switch)(tid, 0);
+    } 
+
+    #if defined(VGO_linux)
+    if(res._isError) {
+    #elif defined(VGO_darwin)
+    if(res._mode == SysRes_UNIX_ERR) {
+    #endif
+
+        return;
+    
+    }
 
     Int size = (Int) sr_Res(res);
     
@@ -284,7 +299,6 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
         }
     
     }
-  
 }
 
 #endif
