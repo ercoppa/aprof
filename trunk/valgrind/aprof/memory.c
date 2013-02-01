@@ -62,10 +62,13 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
                                         SizeT size,
                                         UWord kernel_access) {
     
-    ThreadData * tdata = APROF_(current_tdata);
-    
     #if DEBUG
-    AP_ASSERT(tdata != NULL, "Invalid tdata");
+    AP_ASSERT(APROF_(current_TID) == VG_(get_running_tid)(), "TID mismatch");
+    #endif
+    
+    ThreadData * tdata = APROF_(current_tdata);
+    #if DEBUG
+    AP_ASSERT(tdata != NULL, "Thread data is NULL");
     #endif
     
     #if VERBOSE > 1
@@ -103,8 +106,6 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
     #endif
         
         //VG_(printf)("addr: %lu ~ size: %d\n", addr, size_fix);
-        
-        Activation * act = APROF_(get_activation_noresize)(tdata, tdata->stack_depth);
         
         #if INPUT_METRIC == RVMS
         
@@ -162,6 +163,8 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
             continue;
             #endif
         }
+
+        Activation * act = APROF_(get_activation_noresize)(tdata, tdata->stack_depth);
 
         if(old_ts < wts){
             act->rvms++;

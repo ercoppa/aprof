@@ -218,7 +218,13 @@ void APROF_(thread_switch)(ThreadId tid, ULong blocks_dispatched) {
      * Why? Investigate! 
      */
      
-    if (LIKELY(tid == APROF_(current_TID))) return;
+     
+    #if DEBUG
+    AP_ASSERT(tid == VG_(get_running_tid)(), "TID mismatch");
+    #endif
+    
+    //if (LIKELY(tid == APROF_(current_TID))) return;
+    if (tid == APROF_(current_TID)) return;
     
     #if VERBOSE
     VG_(printf)("switch to thread %d\n", tid);
