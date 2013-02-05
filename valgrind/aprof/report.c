@@ -644,6 +644,9 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
     APROF_(fprintf)(report, "i rvms\n");
     #endif
     
+    // write memory resolution
+    APROF_(fprintf)(report, "g %d\n", APROF_(addr_multiple));
+    
     #if EVENTCOUNT
     APROF_(fprintf)(report, "c JSR=%llu - RTS=%llu - RD=%llu - WR=%llu\n", 
             tdata->num_func_enter, tdata->num_func_exit, 
