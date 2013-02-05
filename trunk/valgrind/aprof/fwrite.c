@@ -40,9 +40,10 @@ static HChar buffer[INTERNAL_BUFF_SIZE];
 
 FILE * APROF_(fopen)(const HChar * name){
     
-    SysRes res = VG_(open)(name, VKI_O_EXCL|VKI_O_CREAT|VKI_O_WRONLY, VKI_S_IRUSR|VKI_S_IWUSR);
+    SysRes res = VG_(open)(name, VKI_O_EXCL|VKI_O_CREAT|VKI_O_WRONLY, 
+                                VKI_S_IRUSR|VKI_S_IWUSR);
     Int file = (Int) sr_Res(res);
-    if (file <= 0) return NULL;
+    if (file < 0) return NULL;
     
     FILE * f = VG_(malloc)("log_file", sizeof(FILE));
     f->file = file;
