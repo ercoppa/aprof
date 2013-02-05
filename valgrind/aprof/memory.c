@@ -186,6 +186,7 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
         
         #else
         
+        Activation * act = APROF_(get_activation_noresize)(tdata, tdata->stack_depth);
         UInt old_aid = LK_insert( tdata->accesses, addr, act->aid);
         
         if (old_aid < act->aid && (type == LOAD || type == MODIFY)) {
