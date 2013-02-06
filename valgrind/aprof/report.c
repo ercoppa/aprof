@@ -481,7 +481,6 @@ static HChar * report_name(HChar * filename_priv, UInt tid, UInt postfix_c) {
 
 }
 
-
 static UInt search_report(HChar ** reports, Bool all_runs) {
     
     HChar * directory = VG_(expand_file_name)("aprof log", "./");
@@ -566,7 +565,7 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
                 HChar * new = VG_(expand_file_name)("aprof log", name);
                 VG_(rename) (old, new);
                 */
-                //VG_(printf)("Renaming report %s -> %s\n", reports[j], name);
+                VG_(umsg)("Merged report %s\n", reports[j]);
                 
                 VG_(unlink) (old);
                 VG_(free)(old);
@@ -608,7 +607,7 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
         attempt++;
     }
 
-    //VG_(printf)("Writing report: %s\n", filename);
+    //VG_(umsg)("Writing report: %s\n", filename);
     AP_ASSERT(report != NULL, "Can't create report file");
 
     // write header
@@ -815,10 +814,13 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
     VG_(free)(filename);
     #endif
     
-    VG_(umsg)("Report: %s\n", filename);
-    VG_(free)(filename);
-    
     // close report file
     APROF_(fclose)(report);
     
+    VG_(umsg)("Report: %s\n", filename);
+    VG_(free)(filename);
+    
+
+    if (APROF_(running_threads) == 1)
+        APROF_(print_info_mem_usage)();
 }

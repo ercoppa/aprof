@@ -42,9 +42,9 @@ FILE * APROF_(fopen)(const HChar * name){
     
     SysRes res = VG_(open)(name, VKI_O_EXCL|VKI_O_CREAT|VKI_O_WRONLY, 
                                 VKI_S_IRUSR|VKI_S_IWUSR);
-    Int file = (Int) sr_Res(res);
-    if (file < 0) return NULL;
+    if (sr_isError(res)) return NULL;
     
+    Int file = (Int) sr_Res(res);
     FILE * f = VG_(malloc)("log_file", sizeof(FILE));
     f->file = file;
     f->fw_pos = 0;
@@ -54,6 +54,9 @@ FILE * APROF_(fopen)(const HChar * name){
 }
 
 void APROF_(fflush)(FILE * f) {
+    
+    
+    if (f->fw_pos == 0) return;
     
     UInt bw = 0, bf = 0, size = f->fw_pos;
     do {
