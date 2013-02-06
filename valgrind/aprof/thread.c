@@ -299,14 +299,22 @@ void APROF_(kill_threads)(void) {
  */
 UInt APROF_(overflow_handler)(void) {
 
+    /*
     VG_(umsg)("Global counter overflow\n");
 
+    HChar name[128];
+    VG_(sprintf)(name, "overflow_log_%u", round++);
+    FILE * f = APROF_(fopen)(name);
+    if (f == NULL) AP_ASSERT(0, "Cannot open overflow log");
+    */
+    
     UInt sum = 0; // # valid timestamps
     UInt count_thread = APROF_(running_threads);
 
     // pointers to active shadow memories
-    LookupTable ** shamem = VG_(calloc)("pointers to GSM and all PSM", 
-                                            count_thread, sizeof(shamem));
+    LookupTable ** shamem = VG_(calloc)("pointers to all PSM", 
+                                            count_thread, 
+                                            sizeof(LookupTable *));
     
     // current stack depth of each thread
     UInt * stack_depths = VG_(calloc)("index for merge", count_thread, sizeof(UInt));
@@ -322,10 +330,13 @@ UInt APROF_(overflow_handler)(void) {
         
         } else {
         
+            //APROF_(fprintf)(f, "Thread: %u ~ depth: %d\n", j, threads[j]->stack_depth);
+            //APROF_(fflush)(f);
+        
             shamem[i] = threads[j]->accesses;
-            stack_depths[i] = threads[j++]->stack_depth;
+            stack_depths[i] = threads[j]->stack_depth;
             sum += stack_depths[i]; // over-estimation
-            i++;
+            i++; j++;
         
         }
     }
@@ -370,6 +381,7 @@ UInt APROF_(overflow_handler)(void) {
             if(stack_depths[j] > 0){
                 
                 act_tmp = APROF_(get_activation)(threads[k], stack_depths[j]);
+                //APROF_(fprintf)(f, "Thread[%u]: aid = %u\n", k, act_tmp->aid);
 
                 if(max < act_tmp->aid){
                     
@@ -384,6 +396,7 @@ UInt APROF_(overflow_handler)(void) {
     
         }
 
+        //APROF_(fprintf)(f, "Max: %u\n", max);
         active_ts[i] = max;
         
         // next time we check for the max the caller of this act
@@ -393,14 +406,28 @@ UInt APROF_(overflow_handler)(void) {
 
     }
     
+    /*
+    APROF_(fprintf)(f, "ACTIVE_TS: ");
+    for (i = 0; i < sum; i++)
+        APROF_(fprintf)(f, " %u=%u ", i, active_ts[i]);
+    APROF_(fprintf)(f, "\n");
+    APROF_(fflush)(f);
+    */
+    
     VG_(free)(stack_depths);
 
     // compress shadow memories
+    //VG_(umsg)("Compressing\n");
     LK_compress(active_ts, sum, shamem);
 
     VG_(free)(active_ts);
     VG_(free)(shamem);
     
+    /*
+    APROF_(fclose)(f);
+    VG_(umsg)("Global counter overflow handler end\n");
+    //AP_ASSERT(0, "test");
+    */
     return sum + 1;
 }
 #else
