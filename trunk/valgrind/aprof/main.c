@@ -535,6 +535,60 @@ static void APROF_(post_clo_init)(void) {
     VG_(clo_vex_control).iropt_unroll_thresh = 0;
     VG_(clo_vex_control).guest_chase_thresh  = 0;
 }
+ 
+#define PROC_SIZE 1024*5
+static void print_info_mem_usage(void) {
+    
+    VG_(umsg)("Getting info about memory\n");
+    
+    HChar buf[PROC_SIZE];
+    VG_(sprintf)(buf, "/proc/%d/status", VG_(getpid)());
+    SysRes res = VG_(open)(buf, VKI_O_RDONLY, 0);
+    Int file = (Int) sr_Res(res);
+    if (file < 0) {
+        VG_(umsg)("No info about memory usage\n");
+        return;
+    }
+    
+    UInt rb = 0;
+    Int ret;
+    while (rb < PROC_SIZE) {
+        ret = VG_(read)(file, buf + rb, PROC_SIZE - rb);
+        if (ret > 0) rb = ret;
+        else break;
+    }
+    
+    ret = 0;
+    HChar * sentinel = "VmPeak:	";
+    UInt sent_pos = 0;
+    UInt sent_len = VG_(strlen)(sentinel);
+    while (rb > 0) {
+
+        //VG_(printf)("%c", buf[ret]);
+        rb--; 
+        
+        if (buf[ret++] == sentinel[sent_pos]) {
+            
+            sent_pos++;
+            if (sent_pos == sent_len) break;
+                
+        } else if (sent_pos > 0)
+            sent_pos = 0;
+
+    }
+    
+    if (sent_pos == sent_len) {
+        VG_(printf)("==%d== Memory used by aprof:", VG_(getpid)());
+        while (rb > 0) {
+            
+            VG_(printf)("%c", buf[ret]);
+            if (buf[ret++] == '\n') break;
+            rb--;
+        
+        }
+    } else
+        VG_(umsg)("No info about memory usage\n");
+}
 
 /* aprof finalization */
 static void APROF_(fini)(Int exitcode) {
@@ -574,6 +628,9 @@ static void APROF_(fini)(Int exitcode) {
     #if INPUT_METRIC == RVMS
     LK_destroy(APROF_(global_shadow_memory));
     #endif
+
+    print_info_mem_usage();
+
 }
 
 #if 0
