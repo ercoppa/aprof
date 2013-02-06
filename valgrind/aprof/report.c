@@ -815,7 +815,7 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
     VG_(free)(filename);
     #endif
     
-    //VG_(printf)("Wrote report: %s\n", filename);
+    VG_(umsg)("Report: %s\n", filename);
     VG_(free)(filename);
     
     // close report file
