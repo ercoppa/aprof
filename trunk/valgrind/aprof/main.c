@@ -537,16 +537,16 @@ static void APROF_(post_clo_init)(void) {
 }
  
 #define PROC_SIZE 1024*5
-static void print_info_mem_usage(void) {
+void APROF_(print_info_mem_usage)(void) {
     
-    VG_(umsg)("Getting info about memory\n");
+    //VG_(umsg)("Getting info about memory\n");
     
     HChar buf[PROC_SIZE];
-    VG_(sprintf)(buf, "/proc/%d/status", VG_(getpid)());
+    VG_(sprintf)(buf, "/proc/%d/status", VG_(gettid)());
     SysRes res = VG_(open)(buf, VKI_O_RDONLY, 0);
     Int file = (Int) sr_Res(res);
     if (file < 0) {
-        VG_(umsg)("No info about memory usage\n");
+        VG_(umsg)("No info about memory usage [1]\n");
         return;
     }
     
@@ -557,6 +557,8 @@ static void print_info_mem_usage(void) {
         if (ret > 0) rb = ret;
         else break;
     }
+    
+    VG_(close)(file);
     
     ret = 0;
     HChar * sentinel = "VmPeak:	";
@@ -587,7 +589,7 @@ static void print_info_mem_usage(void) {
         
         }
     } else
-        VG_(umsg)("No info about memory usage\n");
+        VG_(umsg)("No info about memory usage [2]\n");
 }
 
 /* aprof finalization */
@@ -628,8 +630,6 @@ static void APROF_(fini)(Int exitcode) {
     #if INPUT_METRIC == RVMS
     LK_destroy(APROF_(global_shadow_memory));
     #endif
-
-    print_info_mem_usage();
 
 }
 

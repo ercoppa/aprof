@@ -584,6 +584,9 @@ void APROF_(remove_alloc)(UWord type);
 void APROF_(print_alloc)(void);
 #endif
 
+/* main.c */
+void APROF_(print_info_mem_usage)(void);
+
 /* internal debug info of valgrind */
 Bool VG_(get_fnname_no_cxx_demangle) (Addr a, Char* buf, Int nbuf);
 
