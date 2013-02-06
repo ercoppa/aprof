@@ -147,7 +147,10 @@ UInt LK_insert(LookupTable * suf, UWord addr, UInt ts) {
         #if DEBUG_ALLOCATION
         APROF_(add_alloc)(SEG_SUF);
         #endif
-        
+        /*
+        if (suf == APROF_(global_shadow_memory))
+            VG_(umsg)("Create global chunk %lu\n", i);
+        */
     }
     #endif
 
@@ -161,6 +164,14 @@ UInt LK_insert(LookupTable * suf, UWord addr, UInt ts) {
         suf->table[i] = VG_(calloc)("suf sm", sizeof(UInt) * APROF_(flt_size), 1);
         #else
         suf->table[i]->table[k] = VG_(calloc)("suf sm", sizeof(UInt) * APROF_(flt_size), 1);
+        /*
+        if (suf == APROF_(global_shadow_memory)) {
+            
+            VG_(umsg)("Create global chunk (%lu,%lu)\n", i, k);
+            AP_ASSERT(APROF_(global_shadow_memory)->table[i]->table[k] != NULL,
+                "GSM broken")
+        }
+        */
         #endif
         
         #if DEBUG_ALLOCATION
@@ -168,7 +179,7 @@ UInt LK_insert(LookupTable * suf, UWord addr, UInt ts) {
         #endif
         
         #ifdef __i386__
-        suf->table[i][j] = ts;;
+        suf->table[i][j] = ts;
         #else
         suf->table[i]->table[k][j] = ts;
         #endif
@@ -226,6 +237,8 @@ UInt LK_lookup(LookupTable * suf, UWord addr) {
 #if INPUT_METRIC == RVMS
 void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
     
+    //FILE * f = (FILE *) file;
+    
     UInt count_thread = APROF_(running_threads);
     UInt i = 0;
     UInt k = 0;
@@ -239,8 +252,9 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
     // scan global shadow memory (GSM)
     for(i = 0; i < LK_SIZE; i++){
     
-        // chunk: a list of ts (e.g. ts for a 64KB segment)
+        // chunk: a list of ts (e.g. ts for a 64KB segment) 
         UInt * global_chunk = (UInt *) APROF_(global_shadow_memory)->table[i];
+        //if (global_chunk != NULL) VG_(umsg)("Global chunk %u exists\n", i);
 
         #ifndef __i386__ // 64bit: 3 level lookup table...
         for(j = 0; j < ILT_SIZE; j++){
@@ -250,47 +264,93 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
              * if not we assume wts[x] = 0 
              */
 
-            if(global_chunk != NULL)
-                global_chunk = ((ILT *) global_chunk)->table[j];
+            if(APROF_(global_shadow_memory)->table[i] != NULL) {
+                
+                global_chunk = APROF_(global_shadow_memory)->table[i]->table[j];
+                
+                //if (global_chunk != NULL)
+                //    VG_(umsg)("Global chunk (%u,%u) exists\n", i, j);
+            
+            } 
+            
         #endif
-
-            /*
-             * if global_chunk is invalid we expect also that 
-             * threads chunks are invalid...
-             */
-            if(global_chunk == NULL) continue;
-
+            
+            UInt * local[count_thread];
+            UInt q = 0;
+            for(t = 0; t < count_thread; t++){
+                
+                // check if this curren chunk was accessed by thread t
+                
+                UInt * local_chunk = (UInt *) shamem[t]->table[i];
+                if (local_chunk == NULL) continue;
+                
+                #ifndef __i386__ // 64bit: 3 level lookup table...
+                local_chunk = (UInt *) ((ILT*) local_chunk)->table[j];
+                if (local_chunk == NULL) continue;
+                #endif
+            
+                local[q++] = local_chunk;
+                
+            }
+            
+            if (q == 0 && global_chunk == NULL) continue;
+            
+            #ifndef __i386__
+            //VG_(umsg)("Chunk: %u %u\n", i, j);
+            #endif
+            
+            UInt gts = 0; ts = 0;
             for (k = 0; k < APROF_(flt_size); k++){
                 
-                ts = binary_search(array, 0, size, global_chunk[k]);
+                if (global_chunk != NULL) {
+                    
+                    gts = global_chunk[k];
+                    if (gts > 0) 
+                        ts = binary_search(array, 0, size, gts);
+                    else
+                        ts = 0;
+                    
+                    /*
+                    APROF_(fprintf)(f, "TS = %u ~ GTS = %u\n", ts, gts);
+                    APROF_(fflush)(f);
+                    */
+                }
                 
                 // for each thread, access the relative chunk
-                for(t = 0; t < count_thread; t++){
+                for(t = 0; t < q; t++){
                     
-                    // check if this cell was accessed by thread t
-                    
-                    UInt * local_chunk = (UInt *) shamem[t]->table[i];
-                    if (local_chunk == NULL) continue;
-                    
-                    #ifndef __i386__ // 64bit: 3 level lookup table...
-                    local_chunk = (UInt *) ((ILT*) local_chunk)->table[j];
-                    if (local_chunk == NULL) continue;
-                    #endif
+                    UInt * local_chunk = local[t];
 
-                    if(local_chunk[k] < global_chunk[k]) {
+                    if(local_chunk[k] < gts) {
+                        
+                        /*
+                        APROF_(fprintf)(f, "[%d] TS: %u => %u ~ GTS: %u\n", 
+                            t, local_chunk[k], 0, gts);
+                        APROF_(fflush)(f);
+                        */
                         
                         /* 
-                         * it means that this value is not 
+                         * it means that this value was not 
                          * accessed by thread t
                          */
                         local_chunk[k] = 0;
 
-                    } else if(local_chunk[k] == global_chunk[k]) {
-                    
+                    } else if(local_chunk[k] == gts) {
+                        
+                        /*
+                        if (gts > 0) {
+                            APROF_(fprintf)(f, "[%d] TS: %u => %u ~ GTS: %u\n", 
+                                t, local_chunk[k], ts, gts);
+                            APROF_(fflush)(f);
+                        }
+                        */
+                        
                         /* thread t wrote this value */
                         local_chunk[k] = ts;
 
                     } else { 
+                        
+                        //UInt old = local_chunk[k];
                         
                         /* 
                          * thread t read this value so we have to reassign 
@@ -299,12 +359,23 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
                          */
                         local_chunk[k] = binary_search(array, ts, 
                                                     size, local_chunk[k]);
-                    
+                        
+                        /*
+                        APROF_(fprintf)(f, "[%d] TS: %u => %u ~ GTS: %u (binary)\n", 
+                            t, old, local_chunk[k], gts);
+                        APROF_(fflush)(f);
+                        */
                     }
                 }
   
-                global_chunk[k] = ts;
-
+                if (global_chunk != NULL) {
+                    /*
+                    APROF_(fprintf)(f, "GTS: %u => %u\n", global_chunk[k], ts);
+                    APROF_(fflush)(f);
+                    */
+                    global_chunk[k] = ts;
+                
+                }
             }
         
         #ifndef __i386__    
@@ -317,6 +388,8 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
 
 
 UInt binary_search(UInt * array, UInt init, UInt size, UInt ts){
+    
+    if (array[1] > ts) return array[0];
     
     UInt l = init;
     UInt h = size - 1;
