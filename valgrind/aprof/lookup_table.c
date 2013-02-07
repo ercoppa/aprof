@@ -33,6 +33,8 @@
 
 #include "aprof.h"
 
+#define COMPRESS_DEBUG 0
+
 /* 
  * # timestamps in the last level of the lookup table
  * default value for memory resolution = 4 => 65536/4
@@ -237,7 +239,9 @@ UInt LK_lookup(LookupTable * suf, UWord addr) {
 #if INPUT_METRIC == RVMS
 void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
     
-    //FILE * f = (FILE *) file;
+    #if COMPRESS_DEBUG
+    FILE * f = (FILE *) file;
+    #endif
     
     UInt count_thread = APROF_(running_threads);
     UInt i = 0;
@@ -254,7 +258,9 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
     
         // chunk: a list of ts (e.g. ts for a 64KB segment) 
         UInt * global_chunk = (UInt *) APROF_(global_shadow_memory)->table[i];
-        //if (global_chunk != NULL) VG_(umsg)("Global chunk %u exists\n", i);
+        #if COMPRESS_DEBUG
+        if (global_chunk != NULL) VG_(umsg)("Global chunk %u exists\n", i);
+        #endif
 
         #ifndef __i386__ // 64bit: 3 level lookup table...
         for(j = 0; j < ILT_SIZE; j++){
@@ -268,8 +274,10 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
                 
                 global_chunk = APROF_(global_shadow_memory)->table[i]->table[j];
                 
-                //if (global_chunk != NULL)
-                //    VG_(umsg)("Global chunk (%u,%u) exists\n", i, j);
+                #if COMPRESS_DEBUG
+                if (global_chunk != NULL)
+                    VG_(umsg)("Global chunk (%u,%u) exists\n", i, j);
+                #endif
             
             } 
             
@@ -279,7 +287,7 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
             UInt q = 0;
             for(t = 0; t < count_thread; t++){
                 
-                // check if this curren chunk was accessed by thread t
+                // check if this current chunk was accessed by thread t
                 
                 UInt * local_chunk = (UInt *) shamem[t]->table[i];
                 if (local_chunk == NULL) continue;
@@ -296,7 +304,9 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
             if (q == 0 && global_chunk == NULL) continue;
             
             #ifndef __i386__
-            //VG_(umsg)("Chunk: %u %u\n", i, j);
+            #if COMPRESS_DEBUG
+            VG_(umsg)("Chunk: %u %u\n", i, j);
+            #endif
             #endif
             
             UInt gts = 0; ts = 0;
@@ -310,10 +320,10 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
                     else
                         ts = 0;
                     
-                    /*
+                    #if COMPRESS_DEBUG
                     APROF_(fprintf)(f, "TS = %u ~ GTS = %u\n", ts, gts);
                     APROF_(fflush)(f);
-                    */
+                    #endif
                 }
                 
                 // for each thread, access the relative chunk
@@ -323,11 +333,11 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
 
                     if(local_chunk[k] < gts) {
                         
-                        /*
+                        #if COMPRESS_DEBUG
                         APROF_(fprintf)(f, "[%d] TS: %u => %u ~ GTS: %u\n", 
                             t, local_chunk[k], 0, gts);
                         APROF_(fflush)(f);
-                        */
+                        #endif
                         
                         /* 
                          * it means that this value was not 
@@ -337,20 +347,22 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
 
                     } else if(local_chunk[k] == gts) {
                         
-                        /*
+                        #if COMPRESS_DEBUG
                         if (gts > 0) {
                             APROF_(fprintf)(f, "[%d] TS: %u => %u ~ GTS: %u\n", 
                                 t, local_chunk[k], ts, gts);
                             APROF_(fflush)(f);
                         }
-                        */
+                        #endif
                         
                         /* thread t wrote this value */
                         local_chunk[k] = ts;
 
                     } else { 
                         
-                        //UInt old = local_chunk[k];
+                        #if COMPRESS_DEBUG
+                        UInt old = local_chunk[k];
+                        #endif
                         
                         /* 
                          * thread t read this value so we have to reassign 
@@ -360,19 +372,22 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
                         local_chunk[k] = binary_search(array, ts, 
                                                     size, local_chunk[k]);
                         
-                        /*
+                        #if COMPRESS_DEBUG
                         APROF_(fprintf)(f, "[%d] TS: %u => %u ~ GTS: %u (binary)\n", 
                             t, old, local_chunk[k], gts);
                         APROF_(fflush)(f);
-                        */
+                        #endif
+                        
                     }
                 }
   
                 if (global_chunk != NULL) {
-                    /*
+                    
+                    #if COMPRESS_DEBUG
                     APROF_(fprintf)(f, "GTS: %u => %u\n", global_chunk[k], ts);
                     APROF_(fflush)(f);
-                    */
+                    #endif
+                    
                     global_chunk[k] = ts;
                 
                 }
