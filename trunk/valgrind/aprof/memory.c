@@ -54,7 +54,7 @@ LookupTable * APROF_(global_shadow_memory) = NULL;
  * - a new routine activation
  * - a thread switch
  */
-UInt APROF_(global_counter) = 0;
+UInt APROF_(global_counter) = 1;
 #endif
 
 VG_REGPARM(3) void APROF_(trace_access)(UWord type, 

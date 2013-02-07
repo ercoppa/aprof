@@ -161,15 +161,15 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
     #if INPUT_METRIC == RVMS
     
     act->rvms                = 0;
-    act->aid                 = ++APROF_(global_counter);
-    if (act->aid == 0)  // check & fix timestamp overflow
-        act->aid = APROF_(global_counter) = APROF_(overflow_handler)();
+    act->aid                 = APROF_(global_counter)++;
+    if (APROF_(global_counter) == 0)  // check & fix timestamp overflow
+        APROF_(global_counter) = APROF_(overflow_handler)();
     
     #else
     
-    act->aid                 = ++tdata->next_aid;
-    if (act->aid == 0)  // check & fix timestamp overflow
-        act->aid = tdata->next_aid = APROF_(overflow_handler)();
+    act->aid                 = tdata->next_aid++;
+    if (tdata->next_aid == 0)  // check & fix timestamp overflow
+        tdata->next_aid = APROF_(overflow_handler)();
     
     #endif
     
