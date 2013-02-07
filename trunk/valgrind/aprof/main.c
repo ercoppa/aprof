@@ -535,7 +535,9 @@ static void APROF_(post_clo_init)(void) {
     VG_(clo_vex_control).iropt_unroll_thresh = 0;
     VG_(clo_vex_control).guest_chase_thresh  = 0;
 }
- 
+
+#if MEM_USAGE_INFO 
+
 #define PROC_SIZE 1024*5
 void APROF_(print_info_mem_usage)(void) {
     
@@ -591,6 +593,8 @@ void APROF_(print_info_mem_usage)(void) {
     } else
         VG_(umsg)("No info about memory usage [2]\n");
 }
+
+#endif
 
 /* aprof finalization */
 static void APROF_(fini)(Int exitcode) {

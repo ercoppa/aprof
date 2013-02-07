@@ -125,6 +125,9 @@
 #define CCT_GRAPHIC         0   // output CCT as dot language in an 
                                 // external file (file.graph); EXPERIMENTAL
 
+#define MEM_USAGE_INFO      0   // Check VmPeak in /proc/PID/status
+                                // to get info about aprof mem usage 
+
 /* shadow memory  */
 
 #define CHECK_OVERFLOW      0   // On 64bit machine, we map only 2048GB...
@@ -585,7 +588,9 @@ void APROF_(print_alloc)(void);
 #endif
 
 /* main.c */
+#if MEM_USAGE_INFO
 void APROF_(print_info_mem_usage)(void);
+#endif
 
 /* internal debug info of valgrind */
 Bool VG_(get_fnname_no_cxx_demangle) (Addr a, Char* buf, Int nbuf);
