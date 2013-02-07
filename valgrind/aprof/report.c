@@ -43,10 +43,8 @@ static HChar * put_delim(HChar * str_orig, Int size) {
     
     HChar * str = str_orig;
     
-    #if DEBUG
     str = VG_(malloc)("line", VG_(strlen)(str_orig));
     str = VG_(strcpy)(str, str_orig);
-    #endif
     
     Int skip = 0;
     Int i = 0;
@@ -68,6 +66,7 @@ static HChar * put_delim(HChar * str_orig, Int size) {
 #if CCT == 0
 static Function * merge_tuple(HChar * line, Int size, 
                             Function * curr, ThreadData * tdata) {
+    
     
     if (size <= 0) return curr;
     line = put_delim(line, size);
@@ -130,20 +129,24 @@ static Function * merge_tuple(HChar * line, Int size,
                 obj = obj->next;
             }
             
-            //VG_(printf)("New object: %s\n", obj_name);
-            
-            obj = VG_(calloc)("obj", sizeof(Object), 1);
-            #if DEBUG
-            AP_ASSERT(obj != NULL, "Obj not allocable");
-            #endif
-            
-            obj->key = hash_obj;
-            obj->name = obj_name;
-            obj->filename = NULL; /* FixMe */
-            HT_add_node(APROF_(obj_ht), obj->key, obj);
+            if (obj == NULL) {
+                
+                //VG_(printf)("New object: %s\n", obj_name);
+                
+                obj = VG_(calloc)("obj", sizeof(Object), 1);
+                #if DEBUG
+                AP_ASSERT(obj != NULL, "Obj not allocable");
+                #endif
+                
+                obj->key = hash_obj;
+                obj->name = obj_name;
+                obj->filename = NULL; /* FixMe */
+                HT_add_node(APROF_(obj_ht), obj->key, obj);
+                
+                curr->obj = obj;
+            }
             
             curr->obj = obj;
-            
         }
         
         RoutineInfo * rtn_info = HT_lookup(tdata->routine_hash_table, (UWord)curr);
@@ -174,86 +177,82 @@ static Function * merge_tuple(HChar * line, Int size,
         
         // routine ID
         token = VG_(strtok)(NULL, DELIM_DQ);
-        if (token == NULL) return curr;
+        if (token == NULL) return (void *)1;
         
         // RMS
         token = VG_(strtok)(NULL, DELIM_DQ);
-        if (token == NULL) return curr;
+        if (token == NULL) return (void *)1;
         ULong rms = VG_(strtoull10) ((HChar *)token, NULL);
-        if (rms == 0) return curr;
         
         // min
         token = VG_(strtok)(NULL, DELIM_DQ);
-        if (token == NULL) return curr;
+        if (token == NULL) return (void *)1;
         ULong min = VG_(strtoull10) ((HChar *)token, NULL);
-        if (min == 0) return curr;
+        if (min == 0) return (void *)1;
         
         // max
         token = VG_(strtok)(NULL, DELIM_DQ);
-        if (token == NULL) return curr;
+        if (token == NULL) return (void *)1;
         ULong max = VG_(strtoull10) ((HChar *)token, NULL);
-        if (max == 0) return curr;
+        if (max == 0) return (void *)1;
         
         // sum
         token = VG_(strtok)(NULL, DELIM_DQ);
-        if (token == NULL) return curr;
+        if (token == NULL) return (void *)1;
         ULong sum = VG_(strtoull10) ((HChar *)token, NULL);
-        if (sum == 0) return curr;
+        if (sum == 0) return (void *)1;
         
         // sqr sum
         token = VG_(strtok)(NULL, DELIM_DQ);
-        if (token == NULL) return curr;
+        if (token == NULL) return (void *)1;
         ULong sqr_sum = VG_(strtoull10) ((HChar *)token, NULL);
-        if (sqr_sum == 0) return curr;
+        if (sqr_sum == 0) return (void *)1;
         
         // occ
         token = VG_(strtok)(NULL, DELIM_DQ);
-        if (token == NULL) return curr;
+        if (token == NULL) return (void *)1;
         ULong occ = VG_(strtoull10) ((HChar *)token, NULL);
-        if (occ == 0) return curr;
+        if (occ == 0) return (void *)1;
         
         // cumul_real
         token = VG_(strtok)(NULL, DELIM_DQ);
-        if (token == NULL) return curr;
+        if (token == NULL) return (void *)1;
         ULong cumul_real = VG_(strtoull10) ((HChar *)token, NULL);
-        if (cumul_real == 0) return curr;
         
         // self_total
         token = VG_(strtok)(NULL, DELIM_DQ);
-        if (token == NULL) return curr;
+        if (token == NULL) return (void *)1;
         ULong self = VG_(strtoull10) ((HChar *)token, NULL);
-        if (self == 0) return curr;
+        if (self == 0) return (void *)1;
         
         // self_min
         token = VG_(strtok)(NULL, DELIM_DQ);
-        if (token == NULL) return curr;
+        if (token == NULL) return (void *)1;
         ULong self_min = VG_(strtoull10) ((HChar *)token, NULL);
-        if (self_min == 0) return curr;
+        if (self_min == 0) return (void *)1;
         
         // self_max
         token = VG_(strtok)(NULL, DELIM_DQ);
-        if (token == NULL) return curr;
+        if (token == NULL) return (void *)1;
         ULong self_max = VG_(strtoull10) ((HChar *)token, NULL);
-        if (self_max == 0) return curr;
+        if (self_max == 0) return (void *)1;
         
         // sqr self
         token = VG_(strtok)(NULL, DELIM_DQ);
-        if (token == NULL) return curr;
+        if (token == NULL) return (void *)1;
         ULong self_sqr = VG_(strtoull10) ((HChar *)token, NULL);
-        if (self_sqr == 0) return curr;
+        if (self_sqr == 0) return (void *)1;
         
         #if INPUT_METRIC == RVMS
         // ratio_sum
         token = VG_(strtok)(NULL, DELIM_DQ);
-        if (token == NULL) return curr;
+        if (token == NULL) return (void *)1;
         ULong ratio = VG_(strtoull10) ((HChar *)token, NULL);
-        if (ratio == 0) return curr;
         
         // ratio sum sqr
         token = VG_(strtok)(NULL, DELIM_DQ);
-        if (token == NULL) return curr;
+        if (token == NULL) return (void *)1;
         ULong ratio_sqr = VG_(strtoull10) ((HChar *)token, NULL);
-        if (ratio_sqr == 0) return curr;
         #endif
         
         /*
@@ -420,10 +419,11 @@ static Bool merge_report(HChar * report, ThreadData * tdata) {
                 
                 /* 
                  * this means that the report has a different command 
-                 * OR different report version
+                 * OR different report version OR is malformed
                  */
                 if (current_routine == (void *)1) {
-                    VG_(printf)("No merge: %s\n", (const HChar *)rep);
+                    VG_(printf)("Error on line: %s\n", line);
+                    VG_(printf)("No merge or partial: %s\n", (const HChar *)rep);
                     VG_(close)(file);
                     return False;
                 }
@@ -820,7 +820,8 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
     VG_(umsg)("Report: %s\n", filename);
     VG_(free)(filename);
     
-
+    #if MEM_USAGE_INFO
     if (APROF_(running_threads) == 1)
         APROF_(print_info_mem_usage)();
+    #endif
 }
