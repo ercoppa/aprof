@@ -1351,10 +1351,8 @@ public class MainWindow extends javax.swing.JFrame {
         }
             
         routines_table_sorter.setSortKeys(routines_sort);
-        if (this.isInputMetricRms())
-            routines_table_sorter.setSortable(5, false);
-        else
-            routines_table_sorter.setSortable(6, false);
+        routines_table_sorter.setSortable(5, false);
+        
     }
     
     @SuppressWarnings("unchecked")
@@ -1407,10 +1405,8 @@ public class MainWindow extends javax.swing.JFrame {
         }
         
         contexts_table_sorter.setSortKeys(contexts_sort);
-        if (this.isInputMetricRms())
-            contexts_table_sorter.setSortable(5, false);
-        else
-            contexts_table_sorter.setSortable(6, false);
+        contexts_table_sorter.setSortable(5, false);
+       
     }
     
     private void setComparatorContexts() {

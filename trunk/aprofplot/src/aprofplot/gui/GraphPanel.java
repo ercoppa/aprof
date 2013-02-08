@@ -2089,7 +2089,7 @@ public class GraphPanel extends javax.swing.JPanel {
                 
                 /*
                 System.out.println(r.getName() + " " + x + " " + y + " " 
-                        + r.getSizeRmsList() + " " + r.getCountRms());
+                        + r.sumRms() + " " + r.sumRvms());
                 */
                 series[0].add(x, y, false);
                 
