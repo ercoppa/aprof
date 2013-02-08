@@ -80,32 +80,31 @@ static Function * merge_tuple(HChar * line, Int size,
         
         // function name
         token = VG_(strtok)(NULL, DELIM_DQ);
-        if (token == NULL) return curr;
+        if (token == NULL) return (void *)1;
         token[VG_(strlen)(token) - 1] = '\0'; // remove last "
         token++; // skip first "
         HChar * name = VG_(strdup)("fn_name", token);
         
         // object name
         token = VG_(strtok)(NULL, DELIM_DQ);
-        if (token == NULL) return curr;
+        if (token == NULL) return (void *)1;
         token[VG_(strlen)(token) - 1] = '\0'; // remove last "
         token++; // skip first "
         HChar * obj_name = VG_(strdup)("obj_name", token);
         
+        //VG_(umsg)("Parsed: %s %s\n", name, obj_name);
+        
         // Search function
         UInt hash = APROF_(str_hash)((Char *)name);
-        curr = HT_lookup(APROF_(fn_ht), hash);
-        while (curr != NULL 
-                && VG_(strcmp)((HChar *)curr->name, (HChar *)name) != 0) {
-                    
+        curr = HT_lookup(APROF_(fn_ht), hash);     
+        while (curr != NULL && VG_(strcmp)(curr->name, name) != 0) {
+            
             curr = curr->next;
         }
         
-        //VG_(printf)("Parsed: %s %s\n", name, obj_name);
-        
         if (curr == NULL) { // this is a new function
             
-            //VG_(printf)("New Function: %s\n", name);
+            VG_(umsg)("New Function: %s\n", name);
             
             curr = VG_(calloc)("fn", sizeof(Function), 1);
             #if DEBUG
@@ -391,7 +390,10 @@ static Bool merge_report(HChar * report, ThreadData * tdata) {
                                 VKI_S_IRUSR|VKI_S_IWUSR);
     VG_(free)(rep);
     Int file = (Int) sr_Res(res);
-    AP_ASSERT(file > 0, "Can't read a log file.");
+    if (file <= 0) {
+        VG_(umsg)("Can't read: %s\n", rep);
+        AP_ASSERT(file > 0, "Can't read a log file.");
+    }
     
     Char buf[4096];
     HChar line[1024];
