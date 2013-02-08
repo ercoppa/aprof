@@ -304,9 +304,9 @@ static UInt round = 0;
 #endif
 UInt APROF_(overflow_handler)(void) {
 
-    #if OVERFLOW_DEBUG
     VG_(umsg)("Global counter overflow\n");
 
+    #if OVERFLOW_DEBUG
     HChar name[128];
     VG_(sprintf)(name, "overflow_log_%u", round++);
     FILE * f = APROF_(fopen)(name);
@@ -453,9 +453,9 @@ UInt APROF_(overflow_handler)(void) {
     
     #if OVERFLOW_DEBUG
     APROF_(fclose)(f);
+    #endif
     VG_(umsg)("Global counter overflow handler end\n");
     //AP_ASSERT(0, "test");
-    #endif
     
     return sum + 1;
 }

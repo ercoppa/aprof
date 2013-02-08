@@ -138,8 +138,10 @@ static void resize (HashTable * table)
    the node to the appropriate chain.  No duplicate key detection is done. */
 void HT_add_node (HashTable * table, UWord key, void * n)
 {
+    
    HashNode * node      = (HashNode *) n;
    node->next           = NULL;
+   //vg_assert(node->key == key);
    UWord chain          = CHAIN_NO(key, table);
    node->next           = table->chains[chain];
    table->chains[chain] = node;
