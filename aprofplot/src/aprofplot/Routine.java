@@ -291,7 +291,21 @@ public abstract class Routine implements Comparable<Routine> {
 		});
 	}
 
+    public double sumRms() {
+        return sum_rms;
+    }
+    
+    public double sumRvms() {
+        return sum_rvms;
+    }
+    
     public double getRatioSumRmsRvms() {
+        
+        if (sum_rms > 0 && sum_rvms == 0)
+            return Double.MAX_VALUE;
+        else if (sum_rms == 0 && sum_rvms == 0)
+            return 1;
+            
         return (((double) sum_rms) / ((double) sum_rvms));
     }
     
