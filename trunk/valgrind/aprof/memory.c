@@ -172,14 +172,24 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
  
         else if (old_ts < act->aid) {
             
-            act->rms++;
             act->rvms++;
             if (old_ts > 0 && old_ts >= APROF_(get_activation_noresize)(tdata, 1)->aid) {
                 
                 act = APROF_(get_activation_by_aid)(tdata, old_ts);
                 act->rvms--;
-                act->rms--;
+
+            }
+
+        }
+        
+        if (old_ts < act->aid) {
             
+            act->rms++;
+            if (old_ts > 0 && old_ts >= APROF_(get_activation_noresize)(tdata, 1)->aid) {
+                
+                act = APROF_(get_activation_by_aid)(tdata, old_ts);
+                act->rms--;
+
             }
 
         }

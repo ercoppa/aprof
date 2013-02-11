@@ -3,6 +3,11 @@ include $(top_srcdir)/Makefile.tool.am
 EXTRA_DIST = docs/va-manual.xml
 CFLAGS += -Werror -Winline
 
+noinst_HEADERS = \
+	data-common.h \
+	hashtable/hashtable.h \
+	aprof.h
+
 #----------------------------------------------------------------------------
 # aprof-<platform>
 #----------------------------------------------------------------------------

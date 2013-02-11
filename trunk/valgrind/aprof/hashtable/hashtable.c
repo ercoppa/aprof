@@ -31,7 +31,14 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+#ifdef EXTERNAL
+#include "../extra/valgrind-types.h"
+#else
 #include "../aprof.h"
+#endif
+
+#include "hashtable.h"
+
 #define vg_assert tl_assert
 
 /*--------------------------------------------------------------------*/
