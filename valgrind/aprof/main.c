@@ -670,7 +670,7 @@ static void APROF_(print_usage)(void) {
     
     VG_(printf)(
         "    --memory-resolution=<n>        Memory resolution of the shadow memory {1, 2, 4, 8, 16} [4]\n"
-        #if CCT == 0 && defined(VGO_linux)
+        #if CCT == 0 && defined(VGO_linux) && 0
         "    --merge-report-threads=yes|no  Merge reports of all threads for current process [no]\n"
         "    --merge-report-runs=yes|no     Merge reports of the current program with reports of previous program runs [no]\n"
         "                                   reports must be in the current working directory \n"
