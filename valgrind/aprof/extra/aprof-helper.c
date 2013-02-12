@@ -60,10 +60,19 @@
 #define DASSERT(cond, ...) // do nothing
 #endif // DEBUG
 
+#define BG_GREEN   "\x1b[42m"
+#define BG_RESET   "\x1b[0m"
+#define BG_RED     "\x1b[41m"
+
+#define GREEN(str) BG_GREEN str BG_RESET
+#define RED(str) BG_RED str BG_RESET
+
 #define SLOT 2
 
 // Sum performance metric (# BB) btw all reports merged
-static ULong sum_performance_metric[SLOT] = {0, 0};
+static ULong performance_metric[SLOT] = {0, 0};
+static ULong real_total_cost[SLOT] = {0, 0};
+static ULong self_total_cost[SLOT] = {0, 0};
 
 // next routine ID
 static ULong next_routine_id[SLOT] = {1, 1};
@@ -462,7 +471,10 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
                 "Invalid sqr_sum");
         
         ADD(info_access->cumul_real_time_sum, cumul_real);
+        ADD(real_total_cost[slot], cumul_real);
+        
         ADD(info_access->self_time_sum, self);
+        ADD(self_total_cost[slot], self);
         ADD(info_access->self_sum_sqr, self_sqr);
         
         ASSERT(info_access->cumul_real_time_sum >= 0 
@@ -576,7 +588,7 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         UOF_LONG(sum, line_orig);
         ASSERT(sum > 0, "Invalid sum: %s", line_orig);
         
-        ADD(sum_performance_metric[slot], sum);
+        ADD(performance_metric[slot], sum);
         
     } else if (token[0] == 'v') {
         
@@ -729,6 +741,71 @@ static HChar ** search_reports(UInt * n) {
 
 }
 
+#define NUM_ALIGN 8
+
+static void print_diff(double a, double b) {
+    
+    double diff = b - a;
+    double diff_p = 0;
+    if (a != 0) diff_p = diff / (a / 100);
+    
+    printf(" | %*.0f | %*.0f | ", NUM_ALIGN*3, a, NUM_ALIGN*3, b);
+    
+    if ((a == 0 && b == 0) || diff == 0) printf("[%+*.1f]", NUM_ALIGN, 0.0);
+    else if (a == 0) printf("[" GREEN("%*s") "]", NUM_ALIGN, "+inf");
+    else if (b == 0) printf("[" RED("%*s") "]", NUM_ALIGN, "-inf");
+    else if (diff > 0) printf("[" GREEN("%+*.1f") "]", NUM_ALIGN, diff_p);
+    else printf("[" RED("%+*.1f") "]", NUM_ALIGN, diff_p);
+    
+    printf("\n");
+    
+}
+
+#define STR_ALIGN 32
+
+static void compare_report(UInt r1, UInt r2) {
+    
+    printf("Comparing reports:\n\n");
+    
+    UInt i = 128;
+    while (i-- > 0) printf("-");
+    printf("\n");
+    
+    printf("%*s | %*s | %*s | %*s\n", STR_ALIGN, "Report", 
+                NUM_ALIGN*3, logs[r1],
+                NUM_ALIGN*3, logs[r2],
+                NUM_ALIGN + 2, "diff(%)");
+    
+    i = 128;
+    while (i-- > 0) printf("-");
+    printf("\n");
+    
+    printf("%*s | %*s | %*s | \n", STR_ALIGN, "", 
+                NUM_ALIGN*3, "",
+                NUM_ALIGN*3, "");
+    
+    // # routines
+    printf("%-*s", STR_ALIGN, "# routines:");
+    print_diff(HT_count_nodes(routine_hash_table[r1]),
+                HT_count_nodes(routine_hash_table[r2]));
+    
+    // total metric
+    printf("%-*s", STR_ALIGN, "Performance metric:");
+    print_diff(performance_metric[r1], performance_metric[r1]);
+    
+    /* not so useful...
+    // real total cost
+    printf("%-*s", STR_ALIGN, "Real cumulativetotal cost:");
+    print_diff(real_total_cost[r1], real_total_cost[r1]);
+    */
+    
+    // self total cost
+    printf("%-*s", STR_ALIGN, "Self total cost:");
+    print_diff(self_total_cost[r1], self_total_cost[r1]);
+    
+    return;
+} 
+
 static void clean_data(UInt slot) {
     
     ASSERT(slot < SLOT, "Invalid slot");
@@ -778,6 +855,10 @@ static void cmd_options(HChar * binary_name) {
 Int main(Int argc, HChar *argv[]) {
     
     printf("aprof-helper - http://code.google.com/p/aprof/\n\n");
+    
+    /*
+     * Parse options, sanitize options, etc
+     */
     
     if (argc == 1) {
         cmd_options(argv[0]);
@@ -885,7 +966,7 @@ Int main(Int argc, HChar *argv[]) {
     
     UInt size = 0; 
     HChar ** reports = NULL;
-    if (directory != NULL) {
+    if (directory != NULL && logs[0] == NULL) {
         
         printf("Searching reports in: %s\n", directory);
         reports = search_reports(&size);
@@ -893,10 +974,19 @@ Int main(Int argc, HChar *argv[]) {
     } else {
         
         reports = logs;
+        //printf("Report[0]: %s\n", logs[0]);
+        
         if (logs[1] == NULL) size = 1;
-        else size = 2;
+        else {
+            //printf("Report[1]: %s\n", logs[1]);
+            size = 2;
+        }
         
     }
+    
+    /*
+     * Do something!
+     */
     
     if (consistency) {
         
@@ -907,13 +997,28 @@ Int main(Int argc, HChar *argv[]) {
         }
         printf("Checked consistency of %u reports\n", size);
     
+    } else if (compare) {
+        
+        reset_data(0);
+        merge_report(reports[0], 0);
+        reset_data(1);
+        merge_report(reports[1], 1);
+        compare_report(0, 1);
+        
+    } else { // merge
+        
+        
+        
     }
     
-    
-    // Clean up memory
+    /*
+     * Clean up memory
+     */
+     
     for (i = 0; i < SLOT; i++)
         clean_data(i);
-    if (directory != NULL) {
+        
+    if (directory != NULL && logs[0] == NULL) {
     
         i = 0;
         while (i < size) VG_(free)(reports[i++]);

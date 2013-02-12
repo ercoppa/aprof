@@ -89,9 +89,9 @@
                                  // Input estimation metric:
 #define RMS                 1    // Read Memory Size
 #define RVMS                2    // Read Versioned Memory Size
-#define INPUT_METRIC        RVMS
+#define INPUT_METRIC        RMS
 
-#define DISTINCT_RMS        1   // if 1 and INPUT_METRIC == RVMS
+#define DISTINCT_RMS        0   // if 1 and INPUT_METRIC == RVMS
                                 // we append at the end of each "r" 
                                 // report tag the # of distinct RMS
 
@@ -101,9 +101,9 @@
                                 // with -finstrument-functions
                                 
 #define MEM_TRACE           1   // if 0 disable mem instrumentation
-#define THREAD_INPUT        1   // if 1, every write creates a new
+#define THREAD_INPUT        0   // if 1, every write creates a new
                                 // version of an input
-#define SYSCALL_WRAPPING    1   // if 1, I/O syscall are wrapped in 
+#define SYSCALL_WRAPPING    0   // if 1, I/O syscall are wrapped in 
                                 // order to catch external I/O
 
 #define DEBUG_ALLOCATION    0   // if 1, check every allocation made by aprof
