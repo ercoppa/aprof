@@ -1,4 +1,4 @@
-CFLAGS = -Wall -Werror
+CFLAGS = -Wall -Werror -std=gnu99
 CC     = gcc
 
 all: ../data-common.h valgrind-types.h hashtable.o aprof-helper.c 

@@ -282,10 +282,7 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
         }
         #endif
         
-        #if DISCARD_UNKNOWN
-        }
-        #endif
-
+        #if DISTINCT_RMS
         HT_ResetIter(rtn_info->distinct_rms);
         HashNode * node = HT_RemoveNext(rtn_info->distinct_rms);
         while(node != NULL) {
@@ -296,6 +293,11 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
             node = HT_RemoveNext(rtn_info->distinct_rms);
         
         }
+        #endif
+        
+        #if DISCARD_UNKNOWN
+        }
+        #endif
 
         APROF_(destroy_routine_info)(rtn_info);
         rtn_info = HT_RemoveNext(tdata->routine_hash_table);
