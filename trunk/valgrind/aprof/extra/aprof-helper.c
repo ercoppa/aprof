@@ -8,6 +8,7 @@
  */
 #define DISTINCT_RMS        1
 #define REPORT_VERSION      6
+#define REPORT_VERSION_OLD  4
                                  // Input estimation metric:
 #define RMS                 1    // Read Memory Size
 #define RVMS                2    // Read Versioned Memory Size
@@ -45,7 +46,7 @@
 #define ADD(dest, inc) do { \
                             ULong old = dest; \
                             dest += inc; \
-                            ASSERT(dest > old, "overflow"); \
+                            ASSERT(dest >= old, "overflow"); \
                             } while(0); 
 
 // check under/overflow strtol
@@ -59,29 +60,54 @@
 #define DASSERT(cond, ...) // do nothing
 #endif // DEBUG
 
+#define SLOT 2
+
 // Sum performance metric (# BB) btw all reports merged
-static ULong sum_performance_metric = 0;
+static ULong sum_performance_metric[SLOT] = {0, 0};
 
 // next routine ID
-static ULong next_routine_id = 1;
+static ULong next_routine_id[SLOT] = {1, 1};
 
 // command
-HChar * report_cmd = NULL;
+HChar * report_cmd[SLOT] = {NULL, NULL};
 
+Bool consistency = False;
+Bool compare = False;
 Bool merge_runs = False;
 Bool merge_threads = False;
 HChar * directory = NULL;
+HChar * logs[SLOT] = {NULL, NULL};
+UInt version[SLOT] = {0, 0};
 
-static HashTable * fn_ht = NULL;
-static HashTable * obj_ht = NULL;
-static HashTable * routine_hash_table;
+static HashTable * fn_ht[SLOT] = {NULL, NULL};
+static HashTable * obj_ht[SLOT] = {NULL, NULL};
+static HashTable * routine_hash_table[SLOT] = {NULL, NULL};
 
-static void destroy_routine_info(void * rtn) {
-    return;
+static void fn_destroy(void * fnt) {
+    Function * fn = (Function *) fnt;
+    VG_(free)(fn->name);
+    VG_(free)(fn->mangled);
+    VG_(free)(fnt);
 }
 
-static RoutineInfo * new_routine_info(Function * fn, UWord target) {
+static void obj_destroy(void * obj) {
+    Object * o = (Object *) obj;
+    VG_(free)(o->name);
+    VG_(free)(o);
+}
+
+static void destroy_routine_info(void * rtn) {
     
+    RoutineInfo * ri = (RoutineInfo *) rtn;
+    HT_destruct(ri->rms_map);
+    HT_destruct(ri->distinct_rms);
+    
+    VG_(free)(rtn);
+}
+
+static RoutineInfo * new_routine_info(Function * fn, UWord target, UInt slot) {
+    
+    ASSERT(slot < SLOT, "Invalid slot");
     DASSERT(fn != NULL, "Invalid function info");
     DASSERT(target > 0, "Invalid target");
     
@@ -90,14 +116,14 @@ static RoutineInfo * new_routine_info(Function * fn, UWord target) {
     
     rtn_info->key = target;
     rtn_info->fn = fn;
-    rtn_info->routine_id = next_routine_id++;
+    rtn_info->routine_id = next_routine_id[slot]++;
     rtn_info->distinct_rms = 0;
 
     /* elements of this ht are freed when we generate the report */
-    rtn_info->rms_map = HT_construct(NULL);
+    rtn_info->rms_map = HT_construct(free);
     DASSERT(rtn_info->rms_map != NULL, "rms_map not allocable");
     
-    HT_add_node(routine_hash_table, rtn_info->key, rtn_info);
+    HT_add_node(routine_hash_table[slot], rtn_info->key, rtn_info);
     
     return rtn_info;
 }
@@ -108,7 +134,7 @@ static HChar * put_delim(HChar * str_orig) {
     Int size = strlen(str_orig);
     DASSERT(size > 0, "Invalid size of input string");
     
-    str = malloc(size);
+    str = malloc(size + 1);
     str = strcpy(str, str_orig);
     
     Int skip = 0;
@@ -141,7 +167,7 @@ static UInt str_hash(const HChar * str) {
 }
 
 static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
-                                    HChar * report) {
+                                    HChar * report, UInt slot, UInt * rid) {
     
     if (VG_(strlen)(line_input) <= 0) return curr;
     HChar * line = put_delim(line_input);
@@ -149,9 +175,9 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
     ASSERT(VG_(strlen)(line_input) + VG_(strlen)(report) + 1 < 2048,
         "line + report too long");
     HChar * line_orig = VG_(calloc)("report line", 2048, 1);
-    line_orig = VG_(strcat)(line_orig, "Report: ");
+    line_orig = VG_(strcat)(line_orig, "\n\tReport: ");
     line_orig = VG_(strcat)(line_orig, report);
-    line_orig = VG_(strcat)(line_orig, "\nLine: ");
+    line_orig = VG_(strcat)(line_orig, "\n\tLine: ");
     line_orig = VG_(strcat)(line_orig, line_input);
     line_orig = VG_(strcat)(line_orig, "\n");
     
@@ -178,16 +204,18 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         HChar * obj_name = VG_(strdup2)("obj_name", token);
         DASSERT(obj_name != NULL, "Invalid obj name");
         
-        // skip routine ID
+        // routine ID
         token = VG_(strtok)(NULL, DELIM_DQ);
         ASSERT(token != NULL, "Invalid id: %s", line_orig);
         ULong id = VG_(strtoull10)(token, NULL); 
-        DASSERT(id > 0, "Invalid ID: %s", line_orig);
+        DASSERT(id >= 0, "Invalid ID: %s", line_orig);
         UOF_LONG(id, line_orig);
+        
+        *rid = id;
         
         // Search function
         UInt hash = str_hash(name);
-        Function * fn = HT_lookup(fn_ht, hash);     
+        Function * fn = HT_lookup(fn_ht[slot], hash);     
         while (fn != NULL && VG_(strcmp)(fn->name, name) != 0) {
             
             fn = fn->next;
@@ -196,19 +224,19 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         if (fn == NULL) { // this is a new function
             
             fn = VG_(calloc)("fn", sizeof(Function), 1);
-            DASSERT(curr != NULL, "Function not allocable");
+            DASSERT(fn != NULL, "Function not allocable");
             
             fn->key = hash;
             fn->name = name;
             
-            HT_add_node(fn_ht, fn->key, fn);
+            HT_add_node(fn_ht[slot], fn->key, fn);
             
-        }
+        } else VG_(free)(name);
         
         if (fn->obj == NULL) { // new object
             
             UInt hash_obj = str_hash(obj_name);
-            Object * obj = HT_lookup(obj_ht, hash_obj);
+            Object * obj = HT_lookup(obj_ht[slot], hash_obj);
             while (obj != NULL && VG_(strcmp)(obj->name, obj_name) != 0) {
                 
                 obj = obj->next;
@@ -222,18 +250,20 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
                 obj->key = hash_obj;
                 obj->name = obj_name;
                 obj->filename = NULL; /* FixMe */
-                HT_add_node(obj_ht, obj->key, obj);
+                HT_add_node(obj_ht[slot], obj->key, obj);
                 
                 fn->obj = obj;
-            }
+            
+            } else VG_(free)(obj_name);
             
             fn->obj = obj;
-        }
         
-        curr = HT_lookup(routine_hash_table, (UWord) fn);
+        } else VG_(free)(obj_name);
+        
+        curr = HT_lookup(routine_hash_table[slot], (UWord) fn);
         if (curr == NULL) {
             
-            curr = new_routine_info(fn, (UWord) fn);
+            curr = new_routine_info(fn, (UWord) fn, slot);
             DASSERT(curr != NULL, "Invalid routine info");
         
         } 
@@ -242,12 +272,14 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         
         ASSERT(curr != NULL, "mangled name without a valid fn: %s", line_orig);
         
-        // skip routine ID
+        //  routine ID
         token = VG_(strtok)(NULL, DELIM_DQ);
         ASSERT(token != NULL, "Invalid id: %s", line_orig);
         ULong id = VG_(strtoull10)(token, NULL); 
         DASSERT(id > 0, "Invalid ID: %s", line_orig);
         UOF_LONG(id, line_orig);
+        
+        ASSERT(*rid == id, "Routine id mismatch: %s", line_orig);
         
         token = VG_(strtok)(NULL, DELIM_DQ);
         ASSERT(token != NULL, "Invalid mangled name: %s", line_orig);
@@ -275,8 +307,10 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         token = VG_(strtok)(NULL, DELIM_DQ);
         ASSERT(token != NULL, "Invalid id: %s", line_orig);
         ULong id = VG_(strtoull10)(token, NULL); 
-        ASSERT(id > 0, "Invalid ID: %s", line_orig);
+        ASSERT(id >= 0, "Invalid ID: %s", line_orig);
         UOF_LONG(id, line_orig);
+        
+        ASSERT(*rid == id, "Routine id mismatch: %s", line_orig);
         
         // RMS
         token = VG_(strtok)(NULL, DELIM_DQ);
@@ -311,7 +345,7 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         ASSERT(token != NULL, "Invalid sqr sum: %s", line_orig);
         ULong sqr_sum = VG_(strtoull10) (token, NULL);
         UOF_LONG(sqr_sum, line_orig);
-        ASSERT(sqr_sum > sum, "Invalid sqr_sum: %s", line_orig);
+        ASSERT(sqr_sum >= sum, "Invalid sqr_sum: %s", line_orig);
         
         // occ
         token = VG_(strtok)(NULL, DELIM_DQ);
@@ -328,7 +362,7 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         ASSERT(token != NULL, "Invalid cumul: %s", line_orig);
         ULong cumul_real = VG_(strtoull10) (token, NULL);
         UOF_LONG(cumul_real, line_orig);
-        ASSERT(cumul_real > 0 && cumul_real <= sum, 
+        ASSERT(cumul_real >= 0 && cumul_real <= sum, 
                     "Invalid cumul: %s", line_orig);
         
         // self_total
@@ -363,22 +397,28 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
                         "Invalid self sqr: %s", line_orig);
         
         
-        #if INPUT_METRIC == RVMS
-        // rms sum
-        token = VG_(strtok)(NULL, DELIM_DQ);
-        ASSERT(token != NULL, "Invalid rms sum: %s", line_orig);
-        ULong rms_sum = VG_(strtoull10) (token, NULL);
-        UOF_LONG(rms_sum, line_orig);
-        ASSERT(rms_sum <= rms*occ, "invalid rms sum: %s", line_orig);
+        ULong rms_sum = 0;
+        ULong rms_sqr = 0;
+        if (version[slot] == REPORT_VERSION) {
         
-        // ratio sum sqr
-        token = VG_(strtok)(NULL, DELIM_DQ);
-        ASSERT(token != NULL, "Invalid sqr rms: %s", line_orig);
-        ULong rms_sqr = VG_(strtoull10) (token, NULL);
-        UOF_LONG(rms_sqr, line_orig);
-        ASSERT(rms_sqr <= rms*rms*occ, "invalid rms sqr: %s", line_orig);
-        #endif // INPUT_METRIC == RVMS
-        
+            #if INPUT_METRIC == RVMS
+            // rms sum
+            token = VG_(strtok)(NULL, DELIM_DQ);
+            ASSERT(token != NULL, "Invalid rms sum: %s", line_orig);
+            rms_sum = VG_(strtoull10) (token, NULL);
+            UOF_LONG(rms_sum, line_orig);
+            ASSERT(rms_sum <= rms*occ, "invalid rms sum: %s", line_orig);
+            
+            // ratio sum sqr
+            token = VG_(strtok)(NULL, DELIM_DQ);
+            ASSERT(token != NULL, "Invalid sqr rms: %s", line_orig);
+            rms_sqr = VG_(strtoull10) (token, NULL);
+            UOF_LONG(rms_sqr, line_orig);
+            ASSERT(rms_sqr <= rms*rms*occ, "invalid rms sqr: %s", line_orig);
+            #endif // INPUT_METRIC == RVMS
+
+        }
+
         ASSERT(curr != NULL, "Invalid routine: %s", line_orig);
         RMSInfo * info_access = HT_lookup(curr->rms_map, rms); 
         if (info_access == NULL) {
@@ -397,7 +437,7 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         ADD(info_access->cumulative_sum_sqr, sqr_sum);
         ADD(info_access->calls_number, occ);
 
-        ASSERT(info_access->cumulative_sum_sqr > info_access->cumulative_time_sum, 
+        ASSERT(info_access->cumulative_sum_sqr >= info_access->cumulative_time_sum, 
             "Invalid sqr_sum: %s", line_orig);
 
         if (info_access->max_cumulative_time < max) 
@@ -425,7 +465,7 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         ADD(info_access->self_time_sum, self);
         ADD(info_access->self_sum_sqr, self_sqr);
         
-        ASSERT(info_access->cumul_real_time_sum > 0 
+        ASSERT(info_access->cumul_real_time_sum >= 0 
                     && info_access->cumul_real_time_sum <= 
                     info_access->cumulative_time_sum, 
                     "Invalid cumul: %s", line_orig);
@@ -451,21 +491,25 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
                 info_access->calls_number, 
                 "Invalid sqr_sum");
         
-        #if INPUT_METRIC == RVMS
-        ADD(info_access->rms_input_sum, rms_sum);
-        ADD(info_access->rms_input_sum_sqr, rms_sqr);
+        if (version[slot] == REPORT_VERSION) {
+            
+            #if INPUT_METRIC == RVMS
+            ADD(info_access->rms_input_sum, rms_sum);
+            ADD(info_access->rms_input_sum_sqr, rms_sqr);
+            
+            ASSERT(info_access->rms_input_sum <= 
+                        rms * info_access->calls_number, 
+                        "invalid rms sum");
+            
+            ASSERT(info_access->rms_input_sum_sqr <= 
+                        rms * rms * info_access->calls_number, 
+                        "invalid rms sqr");
+            
+            #endif // INPUT_METRIC == RVMS
         
-        ASSERT(info_access->rms_input_sum <= 
-                    rms * info_access->calls_number, 
-                    "invalid rms sum");
-        
-        ASSERT(info_access->rms_input_sum_sqr <= 
-                    rms * rms * info_access->calls_number, 
-                    "invalid rms sqr");
-        
-        #endif // INPUT_METRIC == RVMS
-
-    } else if (token[0] == 'f') {
+        }
+    
+    } else if (token[0] == 'g') {
     
         // routine ID
         token = VG_(strtok)(NULL, DELIM_DQ);
@@ -473,6 +517,8 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         ULong id = VG_(strtoull10)(token, NULL); 
         DASSERT(id > 0, "Invalid ID: %s", line_orig);
         UOF_LONG(id, line_orig);
+        
+        ASSERT(*rid == id, "Routine id mismatch: %s", line_orig);
         
         // RMS
         token = VG_(strtok)(NULL, DELIM_DQ);
@@ -510,14 +556,14 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         // remove final space
         app[VG_(strlen)(app) -1] = '\0';
         
-        if (report_cmd == NULL) {
+        if (report_cmd[slot] == NULL) {
             
             HChar * app_c = VG_(strdup2)("cmd", app);
-            report_cmd = app_c;
+            report_cmd[slot] = app_c;
         
         } else {
             
-            ASSERT(VG_(strcmp)(app, report_cmd) == 0, 
+            ASSERT(VG_(strcmp)(app, report_cmd[slot]) == 0, 
                 "different command");
             
         }
@@ -525,12 +571,12 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
     } else if (token[0] == 'k') {
         
         token = VG_(strtok)(NULL, DELIM_DQ);
-        ASSERT(token == NULL, "Invalid perf metric: %s", line_orig);
+        ASSERT(token != NULL, "Invalid perf metric: %s", line_orig);
         ULong sum = VG_(strtoull10) (token, NULL);
         UOF_LONG(sum, line_orig);
         ASSERT(sum > 0, "Invalid sum: %s", line_orig);
         
-        ADD(sum_performance_metric, sum);
+        ADD(sum_performance_metric[slot], sum);
         
     } else if (token[0] == 'v') {
         
@@ -538,7 +584,27 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         ASSERT(token != NULL, "Invalid version: %s", line_orig);
         ULong ver = VG_(strtoull10) (token, NULL);
         UOF_LONG(ver, line_orig);
-        ASSERT(ver == REPORT_VERSION, "Invalid version: %s", line_orig);
+        ASSERT(ver == REPORT_VERSION || ver == REPORT_VERSION_OLD, 
+            "Invalid version: %s", line_orig);
+        
+        if (version[slot] == 0) version[slot] = ver;
+        if (merge_runs || merge_threads || compare){
+            
+            if (slot > 0) {
+            
+                ASSERT(version[0] == version[1], 
+                "You are elaborating reports of different versions: %s", 
+                line_orig);
+            
+            } else {
+                
+                ASSERT(version[0] == ver, 
+                "You are elaborating reports of different versions: %s", 
+                line_orig);
+            
+            }
+            
+        }
         
     } else if (token[0] == 'q' || token[0] == 'x') {
         
@@ -546,10 +612,36 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         
     }
     
+    VG_(free)(line);
+    VG_(free)(line_orig);
     return curr;
 }
 
-static Bool merge_report(HChar * report) {
+static void post_merge_consistency(UInt slot, HChar * report) {
+    
+    HT_ResetIter(routine_hash_table[slot]);
+    RoutineInfo * rtn = (RoutineInfo *) HT_Next(routine_hash_table[slot]);
+    while (rtn != NULL) {
+        
+        ULong cumul_real = 0;
+        
+        HT_ResetIter(rtn->rms_map);
+        RMSInfo * i = (RMSInfo *) HT_Next(rtn->rms_map);
+        while (i != NULL) {
+            
+            ADD(cumul_real, i->cumul_real_time_sum);
+            i = (RMSInfo *) HT_Next(rtn->rms_map);
+        }
+        
+        ASSERT(cumul_real > 0, "Invalid cumul real");
+        
+        rtn = (RoutineInfo *) HT_Next(routine_hash_table[slot]);
+    }
+    
+    
+}
+
+static Bool merge_report(HChar * report, UInt slot) {
     
     //VG_(printf)("Try to merge: %s\n", report);
     
@@ -560,6 +652,7 @@ static Bool merge_report(HChar * report) {
     HChar line[1024];
     UInt offset = 0;
     RoutineInfo * current_routine = NULL;
+    UInt curr_rid = 0;
     
     /* merge tuples */
     while (1) {
@@ -578,7 +671,8 @@ static Bool merge_report(HChar * report) {
             if (buf[i] == '\n') {
                 
                 line[offset++] = '\0';
-                current_routine = merge_tuple(line, current_routine, report);
+                current_routine = merge_tuple(line, current_routine, 
+                                                report, slot, &curr_rid);
                 offset = 0;
             
             } else line[offset++] = buf[i]; 
@@ -589,9 +683,13 @@ static Bool merge_report(HChar * report) {
     }    
     
     line[offset++] = '\0';
-    current_routine = merge_tuple(line, current_routine, report);
+    current_routine = merge_tuple(line, current_routine, report, 
+                                        slot, &curr_rid);
     
     VG_(close)(file);
+    
+    post_merge_consistency(slot, report);
+    
     return True;
 } 
 
@@ -625,22 +723,33 @@ static HChar ** search_reports(UInt * n) {
         
     }
 
+    closedir(dir);
+
     return reports;
 
 }
 
-static void reset_data(void) {
+static void clean_data(UInt slot) {
     
-    if (fn_ht != NULL) HT_destruct(fn_ht);
-    if (obj_ht != NULL) HT_destruct(obj_ht);
-    if (routine_hash_table != NULL) HT_destruct(routine_hash_table);
-    if (report_cmd != NULL) VG_(free)(report_cmd);
+    ASSERT(slot < SLOT, "Invalid slot");
     
-    next_routine_id = 1;
-    report_cmd = NULL;
-    fn_ht = HT_construct(free);
-    obj_ht = HT_construct(free);
-    routine_hash_table = HT_construct(destroy_routine_info);
+    if (fn_ht[slot] != NULL) HT_destruct(fn_ht[slot]);
+    if (obj_ht[slot] != NULL) HT_destruct(obj_ht[slot]);
+    if (routine_hash_table[slot] != NULL) HT_destruct(routine_hash_table[slot]);
+    if (report_cmd[slot] != NULL) VG_(free)(report_cmd[slot]);
+    
+}
+
+static void reset_data(UInt slot) {
+    
+    clean_data(slot);
+    
+    next_routine_id[slot] = 1;
+    report_cmd[slot] = NULL;
+    fn_ht[slot] = HT_construct(fn_destroy);
+    obj_ht[slot] = HT_construct(obj_destroy);
+    routine_hash_table[slot] = HT_construct(destroy_routine_info);
+    version[slot] = 0;
     
     return;
     
@@ -676,12 +785,31 @@ Int main(Int argc, HChar *argv[]) {
     }
 
     opterr = 0;
-    int opt;
+    Int opt;
+    UInt i;
      
-    while ((opt = getopt(argc, argv, "rtd:")) != -1) {
+    while ((opt = getopt(argc, argv, "rtkca:b:d:")) != -1) {
         
         switch(opt) {
+            
+            case 'a':
+                logs[0] = optarg;
+                if (optarg[0] == '=') logs[0]++;
+                break;
                 
+            case 'b':
+                logs[1] = optarg;
+                if (optarg[0] == '=') logs[1]++;
+                break;
+                
+            case 'c':
+                compare = True;
+                break;
+                
+            case 'k':
+                consistency = True;
+                break;
+            
             case 'r':
                 merge_runs = True;
                 //printf("merge runs := True (%u)\n", merge_runs);
@@ -717,25 +845,81 @@ Int main(Int argc, HChar *argv[]) {
         
     }
     
-    if (!merge_runs && !merge_threads) {
+    if (!merge_runs && !merge_threads && !consistency && !compare) {
         cmd_options(argv[0]);
         return 1;
     }
+    
+    // compare (log, log)
+    if (compare && (logs[0] == NULL || logs[1] == NULL)) {
         
-    if (directory == NULL) {
-        HChar * cwd = VG_(calloc)("cwd", 1024, 1);
-        directory = getcwd(cwd, 1024);
+        EMSG("compare option requires two log files\n");
+        cmd_options(argv[0]);
+        return 1;
     }
     
-    printf("Searching reports in: %s\n", directory);
-    reset_data();
+    if ((logs[0] != NULL || logs[1] != NULL) && directory != NULL) {
+        
+        EMSG("Please pass one/two log files or a directory, not both\n");
+        cmd_options(argv[0]);
+        return 1;
+    }
     
-    UInt size, i = 0;
-    HChar ** reports = search_reports(&size);
-    while (i < size) printf("Found report: %s\n", reports[i++]);
+    if (merge_runs || merge_threads || compare) {
+        consistency = False;
+    }
     
-    if (False) merge_report(NULL);
-    VG_(free)(reports);
+    if ((merge_runs || merge_threads) && compare) {
+        
+        EMSG("Too many actions\n");
+        cmd_options(argv[0]);
+        return 1;
+    }
+    
+    if (directory == NULL) {
+        
+        HChar cwd[1024];
+        directory = getcwd(cwd, 1024);
+    
+    }
+    
+    UInt size = 0; 
+    HChar ** reports = NULL;
+    if (directory != NULL) {
+        
+        printf("Searching reports in: %s\n", directory);
+        reports = search_reports(&size);
+    
+    } else {
+        
+        reports = logs;
+        if (logs[1] == NULL) size = 1;
+        else size = 2;
+        
+    }
+    
+    if (consistency) {
+        
+        i = 0;
+        while (i < size) {
+            reset_data(0);
+            merge_report(reports[i++], 0);
+        }
+        printf("Checked consistency of %u reports\n", size);
+    
+    }
+    
+    
+    // Clean up memory
+    for (i = 0; i < SLOT; i++)
+        clean_data(i);
+    if (directory != NULL) {
+    
+        i = 0;
+        while (i < size) VG_(free)(reports[i++]);
+        VG_(free)(reports);
+    
+    }
     
     return 0;
 }

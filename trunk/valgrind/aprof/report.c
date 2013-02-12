@@ -290,7 +290,7 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
         HashNode * node = HT_RemoveNext(rtn_info->distinct_rms);
         while(node != NULL) {
             
-            APROF_(fprintf)(report, "f %llu %lu\n", 
+            APROF_(fprintf)(report, "g %llu %lu\n", 
                                 rtn_info->routine_id, node->key);
             VG_(free)(node);
             node = HT_RemoveNext(rtn_info->distinct_rms);
