@@ -58,7 +58,7 @@
 
 /* Behaviour macro */
 #define EMPTY_ANALYSIS      0   // if 1, analysis routines are empty (useful in combination with EVENTCOUNT)
-#define DEBUG               0   // Enable some sanity checks
+#define DEBUG               1   // Enable some sanity checks
 #define VERBOSE             0   // 0 disabled, 1 function + thread, 2 function + thread + load/store/modify,
                                 // 4 very verbose function tracing
 #define EVENTCOUNT          0   // 0 disabled, 1 memory accesses, 2 functions, 3 mem+fn

@@ -35,18 +35,17 @@
 /* Note: fwrite() & co is not provided by valgrind, so... */
 
 FILE * APROF_(fopen)(char * name){
-	
-	SysRes res = VG_(open)(name, VKI_O_EXCL|VKI_O_CREAT|VKI_O_WRONLY, VKI_S_IRUSR|VKI_S_IWUSR);
-	int file = (Int) sr_Res(res);
-	if (file <= 0) return NULL;
-	
-	//AP_ASSERT(file >= 0, "Can't create a log file.")
-	
-	FILE * f = VG_(malloc)("log_file", sizeof(FILE));
-	f->file = file;
-	f->fw_pos = 0;
-	
-	return f;
+
+    SysRes res = VG_(open)(name, VKI_O_EXCL|VKI_O_CREAT|VKI_O_WRONLY, 
+                                VKI_S_IRUSR|VKI_S_IWUSR);
+    if (sr_isError(res)) return NULL;
+    
+    Int file = (Int) sr_Res(res);
+    FILE * f = VG_(malloc)("log_file", sizeof(FILE));
+    f->file = file;
+    f->fw_pos = 0;
+
+    return f;
 
 }
 
