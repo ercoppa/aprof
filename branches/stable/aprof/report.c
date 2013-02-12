@@ -547,7 +547,7 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
     // open report file
 	FILE * report = APROF_(fopen)(filename);
 	UInt attempt = 0;
-	while (report == NULL && attempt < 32) {
+	while (report == NULL && attempt < 10000) {
 		
 		filename = VG_(expand_file_name)("aprof log", 
 			report_name(filename_priv, tid, attempt));
