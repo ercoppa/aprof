@@ -123,23 +123,14 @@ public class AprofReport {
 				String lib;
                 String sum = null;
 				String id;
-                long distinct_rms = 0;
 			
 				Scanner s = new Scanner(str);
-                if (this.version >= 6)
-                    s.findInLine("r \"([^\"]+)\" \"([^\"]+)\" ([0-9]+) ([0-9]+)");
-                else
-                    s.findInLine("r \"([^\"]+)\" \"([^\"]+)\" ([0-9]+)");
+                s.findInLine("r \"([^\"]+)\" \"([^\"]+)\" ([0-9]+)");
                 MatchResult result = s.match();
 
 				rtn_name = result.group(1);
 				lib = result.group(2);
                 id = result.group(3);
-				
-                if (this.version >= 6) {
-                    distinct_rms = Long.parseLong(result.group(4));
-                    this.num_rms += distinct_rms;
-                }
                 
 				int rtn_id = Integer.parseInt(id);
                 
@@ -150,12 +141,11 @@ public class AprofReport {
 					if (r == null) throw new IndexOutOfBoundsException();
 					r.setImage(lib);
 					r.setName(rtn_name);
-                    r.setCountRms(distinct_rms);
                     
 				} catch(IndexOutOfBoundsException e) {
 					
 					if (contexts.isEmpty())
-						r = new RoutineInfo(rtn_id, rtn_name, lib, distinct_rms);
+						r = new RoutineInfo(rtn_id, rtn_name, lib, 0);
 					else
 						r = (RoutineInfo) new ContextualizedRoutineInfo(rtn_id, 
                                                    rtn_name, lib);
@@ -173,6 +163,18 @@ public class AprofReport {
 				continue;
 			}
 
+            if (token.equals("g")) {
+                
+                if (!tokenizer.hasMoreTokens()) continue;
+                int rtn_id = Integer.parseInt(tokenizer.nextToken());
+                if (!tokenizer.hasMoreTokens()) continue;
+                int rms = Integer.parseInt(tokenizer.nextToken());
+                
+                RoutineInfo r = routines.get(rtn_id);
+                r.setCountRms(r.getCountRms() + 1);
+                
+            }
+            
 			if (token.equals("x")) { // context
 
 				int routine_id = Integer.parseInt(tokenizer.nextToken());
