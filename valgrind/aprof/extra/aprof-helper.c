@@ -38,6 +38,7 @@
 #define ASSERT(cond, ...)   do { \
                                     if (!(cond)) { \
                                         EMSG(__VA_ARGS__); \
+                                        EMSG("\n"); \
                                         assert(cond); \
                                     } \
                             } while(0);
@@ -48,6 +49,9 @@
                             dest += inc; \
                             ASSERT(dest >= old, "overflow"); \
                             } while(0); 
+
+#define MAX(a,b) do { if (b > a) a = b; } while(0);
+#define ABS_DIFF(val,a,b) do { val = a - b; if (val < 0) val = -val; } while(0);
 
 // check under/overflow strtol
 #define UOF_LONG(val, line) ASSERT(val != LLONG_MIN && val != LLONG_MAX, \
@@ -67,7 +71,32 @@
 #define GREEN(str) BG_GREEN str BG_RESET
 #define RED(str) BG_RED str BG_RESET
 
+#define STR(buf, ...) sprintf(buf, __VA_ARGS__);
+
 #define SLOT 2
+
+// compare modes:
+#define LOOSE           0
+#define STRICT          1
+#define TOLLERANCE      2
+
+// assert if mode is STRICT
+#define SASSERT(...) if(mode == STRICT){ASSERT(__VA_ARGS__)};
+#define IFS(cond) if (mode == STRICT && cond)
+// assert if mode is TOLLERANCE
+#define TASSERT(...) if(mode == TOLLERANCE){ASSERT(__VA_ARGS__)};
+#define IFT(cond) if (mode == TOLLERANCE && cond)
+// assert if mode is not LOOSE
+#define TSASSERT(...) if(mode != LOOSE){ASSERT(__VA_ARGS__)};
+
+#define INPUT_TOLLERANCE_P 5   // percentage
+#define INPUT_TOLLERANCE   20  // abs value
+#define COST_TOLLERANCE_P  15  // percentage
+#define COST_TOLLERANCE    150 // abs value
+
+
+#define STR_ALIGN 48
+#define NUM_ALIGN 8
 
 // Sum performance metric (# BB) btw all reports merged
 static ULong performance_metric[SLOT] = {0, 0};
@@ -131,6 +160,9 @@ static RoutineInfo * new_routine_info(Function * fn, UWord target, UInt slot) {
     /* elements of this ht are freed when we generate the report */
     rtn_info->rms_map = HT_construct(free);
     DASSERT(rtn_info->rms_map != NULL, "rms_map not allocable");
+    
+    rtn_info->distinct_rms = HT_construct(free);
+    DASSERT(rtn_info->distinct_rms != NULL, "rms_map not allocable");
     
     HT_add_node(routine_hash_table[slot], rtn_info->key, rtn_info);
     
@@ -405,7 +437,6 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         ASSERT(self_sqr >= self_min*self_min*occ, 
                         "Invalid self sqr: %s", line_orig);
         
-        
         ULong rms_sum = 0;
         ULong rms_sqr = 0;
         if (version[slot] == REPORT_VERSION) {
@@ -629,6 +660,34 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
     return curr;
 }
 
+static void check_rvms(double sum_rms, double sum_rvms, 
+                            ULong num_rms, ULong num_rvms,
+                            HChar * name, HChar * report) {
+    
+    double ext_ratio = 0;
+            
+    ASSERT(sum_rms >= 0, "Invalid sum RMS - %s - %s", 
+                name, report);
+    ASSERT(sum_rvms >= sum_rms, 
+            "RVMS should be bigger than RMS - %s - %s",
+            name, report);
+    
+    if (sum_rvms == 0 && sum_rms == 0)
+        ext_ratio = 0;
+    else 
+        ext_ratio = 1.0 - (sum_rms/sum_rvms);
+    
+    // # RVMS - # RMS
+    ULong diff = num_rvms - num_rms; 
+
+    if (ext_ratio == 0) {
+        ASSERT(diff == 0, 
+            "Routine %s has external ratio %f and diff # %llu - %s",
+            name, ext_ratio, diff, report);
+    }
+                                
+}
+
 static void post_merge_consistency(UInt slot, HChar * report) {
     
     HT_ResetIter(routine_hash_table[slot]);
@@ -636,20 +695,33 @@ static void post_merge_consistency(UInt slot, HChar * report) {
     while (rtn != NULL) {
         
         ULong cumul_real = 0;
+        double sum_rms = 0;
+        double sum_rvms = 0;
         
         HT_ResetIter(rtn->rms_map);
         RMSInfo * i = (RMSInfo *) HT_Next(rtn->rms_map);
         while (i != NULL) {
             
+            if (version[slot] == REPORT_VERSION) {
+                ADD(sum_rms, i->rms_input_sum);
+                ADD(sum_rvms, i->key*i->calls_number);
+            }
+            
             ADD(cumul_real, i->cumul_real_time_sum);
             i = (RMSInfo *) HT_Next(rtn->rms_map);
         }
         
-        ASSERT(cumul_real > 0, "Invalid cumul real");
+        ASSERT(cumul_real > 0, "Invalid cumul real: %s:%s", 
+                    rtn->fn->name, report);
+        
+        if (version[slot] == REPORT_VERSION)
+            check_rvms(sum_rms, sum_rvms, 
+                        HT_count_nodes(rtn->distinct_rms),
+                        HT_count_nodes(rtn->rms_map),
+                        rtn->fn->name, report);
         
         rtn = (RoutineInfo *) HT_Next(routine_hash_table[slot]);
     }
-    
     
 }
 
@@ -741,8 +813,6 @@ static HChar ** search_reports(UInt * n) {
 
 }
 
-#define NUM_ALIGN 8
-
 static void print_diff(double a, double b) {
     
     double diff = b - a;
@@ -761,11 +831,198 @@ static void print_diff(double a, double b) {
     
 }
 
-#define STR_ALIGN 32
+static void missing_routines(UInt r1, UInt r2, UInt mode, Bool reverse) {
 
-static void compare_report(UInt r1, UInt r2) {
+    HChar b[1024];
+
+    HT_ResetIter(routine_hash_table[r1]);
+    RoutineInfo * rtn = NULL;
+    while (1) {
+        
+        rtn = (RoutineInfo *) HT_Next(routine_hash_table[r1]);
+        if (rtn == NULL) break;
+        
+        Function * fn = (Function *) HT_lookup(fn_ht[r2], (UWord) rtn->fn->key);
+        while (fn != NULL && VG_(strcmp)(fn->name, rtn->fn->name) != 0) {
+            fn = fn->next;
+        }
+        
+        if (fn == NULL) {
+            
+            STR(b, "Missing routine [%s]", rtn->fn->name);
+            printf("%-*s", STR_ALIGN, b);
+            if (reverse)
+                print_diff(0, 1);
+            else
+                print_diff(1, 0);
+        
+        }
+        
+        RoutineInfo * rtn2 = (RoutineInfo *) HT_lookup(routine_hash_table[r2], 
+                                                        (UWord) fn);
+        
+        if (rtn2 == NULL) {
+            
+            STR(b, "Missing routine [%s]", rtn->fn->name);
+            printf("%-*s", STR_ALIGN, b);
+            if (reverse)
+                print_diff(0, 1);
+            else
+                print_diff(1, 0);
+        
+        }
+    }
+
+}
+
+static void print_diff_if_tol(double a, double b, HChar * str,
+                                ULong toll, ULong toll_p) {
     
-    printf("Comparing reports:\n\n");
+    double diff = a - b; 
+    if (diff > 0 && diff > toll && diff > (b / 100) * toll_p) {
+    
+        printf("%-*s", STR_ALIGN, str);
+        print_diff(a, b);
+    
+    } else if (diff < 0 && -diff > toll && -diff > (a / 100) * toll_p) {
+        
+        printf("%-*s", STR_ALIGN, str);
+        print_diff(a, b);
+    
+    }
+    
+}
+
+static void print_diff_if_input(double a, double b, HChar * str) {
+    print_diff_if_tol(a, b, str, INPUT_TOLLERANCE, INPUT_TOLLERANCE_P);
+}
+
+static void print_diff_if_cost(double a, double b, HChar * str) {
+    print_diff_if_tol(a, b, str, COST_TOLLERANCE, COST_TOLLERANCE_P);
+}
+
+static void compare_routine(RoutineInfo * rtn, 
+                                RoutineInfo * rtn2, UInt mode) {
+
+    HChar b[1024];
+    
+    ULong sum_rvms = 0;
+    ULong sum_rvms2 = 0;
+    //ULong max_diff_rvms = 0;
+    
+    ULong sum_real_cost = 0;
+    ULong sum_real_cost2 = 0;
+    //ULong max_diff_rcost = 0;
+    
+    ULong sum_self_cost = 0;
+    ULong sum_self_cost2 = 0;
+    //ULong max_diff_scost = 0;
+    
+    ULong calls = 0;
+    ULong calls2 = 0;
+    //ULong max_diff_calls = 0;
+    
+    ULong sum_rms = 0;
+    ULong sum_rms2 = 0;
+    //ULong max_diff_rms = 0;
+
+    if (HT_count_nodes(rtn->rms_map) != HT_count_nodes(rtn2->rms_map)) {
+    
+        STR(b, "# RVMS [%s]", rtn->fn->name);
+        printf("%-*s", STR_ALIGN, b);
+        print_diff(HT_count_nodes(rtn->rms_map), HT_count_nodes(rtn2->rms_map));
+        
+    }
+    
+    if (HT_count_nodes(rtn->distinct_rms) != HT_count_nodes(rtn2->distinct_rms)) {
+    
+        STR(b, "# RMS [%s]", rtn->fn->name);
+        printf("%-*s", STR_ALIGN, b);
+        print_diff(HT_count_nodes(rtn->distinct_rms), HT_count_nodes(rtn2->distinct_rms));
+        
+    }
+
+    HT_ResetIter(rtn->rms_map);
+    RMSInfo * i = NULL;
+    while (1) {
+        
+        i = (RMSInfo *) HT_Next(rtn->rms_map);
+        if (i == NULL) break;
+        
+        ADD(sum_rvms, i->key * i->calls_number);
+        ADD(calls, i->calls_number);
+        ADD(sum_real_cost, i->cumul_real_time_sum);
+        ADD(sum_self_cost, i->self_time_sum);
+        ADD(sum_rms, i->rms_input_sum);
+        
+        RMSInfo * i2 = (RMSInfo *) HT_lookup(rtn2->rms_map, (UWord) i->key);
+        if (i2 == NULL) {
+            
+            /*
+            IFS(1) {
+                
+                STR(b, "Missing RVMS [%s]", rtn->fn->name);
+                printf("%-*s", STR_ALIGN, b);
+                print_diff(i->key, 0);
+                
+            }
+            */
+            continue;
+        }
+        
+    }
+    
+    // Missing tuples in rtn
+    HT_ResetIter(rtn2->rms_map);
+    while (1) {
+        
+        i = (RMSInfo *) HT_Next(rtn2->rms_map);
+        if (i == NULL) break;
+        
+        ADD(sum_rvms2, i->key * i->calls_number);
+        ADD(calls2, i->calls_number);
+        ADD(sum_real_cost2, i->cumul_real_time_sum);
+        ADD(sum_self_cost2, i->self_time_sum);
+        ADD(sum_rms2, i->rms_input_sum);
+        
+        RMSInfo * i2 = (RMSInfo *) HT_lookup(rtn->rms_map, (UWord) i->key);
+        if (i2 == NULL) {
+            
+            /*
+            IFS(1) {
+                
+                STR(b, "Missing RVMS [%s]", rtn->fn->name);
+                printf("%-*s", STR_ALIGN, b);
+                print_diff(0, i->key);
+                
+            }
+            */
+            
+            continue;
+        }
+        
+    }
+
+    STR(b, "Diff sum(RVMS) [%s]", rtn->fn->name);
+    print_diff_if_input(sum_rvms, sum_rvms2, b);    
+
+    STR(b, "Diff sum(calls) [%s]", rtn->fn->name);
+    print_diff_if_cost(calls, calls2, b); 
+    
+    STR(b, "Diff sum(real_cost) [%s]", rtn->fn->name);
+    print_diff_if_cost(sum_real_cost, sum_real_cost2, b);
+
+    STR(b, "Diff sum(self_cost) [%s]", rtn->fn->name);
+    print_diff_if_cost(sum_self_cost, sum_self_cost2, b);
+    
+    STR(b, "Diff sum(rms) [%s]", rtn->fn->name);
+    print_diff_if_input(sum_rms, sum_rms2, b);
+
+}
+
+static void compare_report(UInt r1, UInt r2, UInt mode) {
+    
+    //printf("Comparing reports:\n\n");
     
     UInt i = 128;
     while (i-- > 0) printf("-");
@@ -802,6 +1059,31 @@ static void compare_report(UInt r1, UInt r2) {
     // self total cost
     printf("%-*s", STR_ALIGN, "Self total cost:");
     print_diff(self_total_cost[r1], self_total_cost[r1]);
+    
+    missing_routines(r1, r2, mode, False);
+    missing_routines(r1, r2, mode, True);
+
+    HT_ResetIter(routine_hash_table[r1]);
+    RoutineInfo * rtn = NULL;
+    while (1) {
+        
+        rtn = (RoutineInfo *) HT_Next(routine_hash_table[r1]);
+        if (rtn == NULL) break;
+        
+        Function * fn = (Function *) HT_lookup(fn_ht[r2], (UWord) rtn->fn->key);
+        while (fn != NULL && VG_(strcmp)(fn->name, rtn->fn->name) != 0) {
+            fn = fn->next;
+        }
+        if (fn == NULL) continue;
+        
+        RoutineInfo * rtn2 = (RoutineInfo *) HT_lookup(routine_hash_table[r2], 
+                                                        (UWord) fn);
+        if (rtn2 == NULL) continue;
+        
+        // compare routine
+        compare_routine(rtn, rtn2, mode);
+    
+    }
     
     return;
 } 
@@ -1003,7 +1285,7 @@ Int main(Int argc, HChar *argv[]) {
         merge_report(reports[0], 0);
         reset_data(1);
         merge_report(reports[1], 1);
-        compare_report(0, 1);
+        compare_report(0, 1, STRICT);
         
     } else { // merge
         
