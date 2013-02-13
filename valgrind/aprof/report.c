@@ -143,7 +143,7 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
     #endif
     
     // write memory resolution
-    APROF_(fprintf)(report, "g %d\n", APROF_(addr_multiple));
+    APROF_(fprintf)(report, "t %d\n", APROF_(addr_multiple));
     
     #if EVENTCOUNT
     APROF_(fprintf)(report, "c JSR=%llu - RTS=%llu - RD=%llu - WR=%llu\n", 
