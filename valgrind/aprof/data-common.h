@@ -139,6 +139,10 @@ typedef struct {
     #if DISTINCT_RMS
     HashTable * distinct_rms;                // ht of RMS seen
     #endif
+    
+    #if EXTERNAL
+    ULong       total_calls;
+    #endif
 
 } RoutineInfo;
 
@@ -155,7 +159,12 @@ typedef struct {
                                          
     ULong       cumulative_time_sum;     // total time spent by the 
                                          // routine in calls with this rms
+    #if EXTERNAL
+    double       cumulative_sum_sqr;      // sum of the square of cumulative costs
+    #else
     ULong       cumulative_sum_sqr;      // sum of the square of cumulative costs
+    #endif
+    
     ULong       calls_number;            // number of times the routine 
                                          // has been called with this rms
     ULong       cumul_real_time_sum;     // total time spent by the routine 
@@ -168,7 +177,11 @@ typedef struct {
                                          // the routine in calls with this rms
     ULong       self_time_max;           // maximum self time spent by the 
                                          // routine in calls with this rms
+    #if EXTERNAL                                     
+    double      self_sum_sqr;            // sum of the square of self costs
+    #else
     ULong       self_sum_sqr;            // sum of the square of self costs
+    #endif
 
     #if INPUT_METRIC == RVMS
     ULong       rms_input_sum;            // sum of ratios RMS/RVMS
