@@ -347,6 +347,9 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
     }
 
     #if DISTINCT_RMS
+    
+    AP_ASSERT(act->rms <= act->rvms, "Wrong!");
+    
     HashNode * node = HT_lookup(rtn_info->distinct_rms, act->rms);
     if (node == NULL) {
         node = VG_(calloc)("distinct rms node", sizeof(HashNode), 1);

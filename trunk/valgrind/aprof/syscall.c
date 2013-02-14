@@ -204,7 +204,7 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
             
             APROF_(trace_access)(   LOAD, 
                                     addr, 
-                                    APROF_(addr_multiple), False);
+                                    APROF_(addr_multiple), True);
                                     
             size -= APROF_(addr_multiple);
             addr += APROF_(addr_multiple);
@@ -239,7 +239,7 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
                 
                 APROF_(trace_access)(   LOAD, 
                                         addr, 
-                                        APROF_(addr_multiple), False);
+                                        APROF_(addr_multiple), True);
                 
                 iov_len -= APROF_(addr_multiple);
                 addr += APROF_(addr_multiple);
@@ -292,7 +292,7 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
             
             APROF_(trace_access)(   LOAD, 
                                     addr, 
-                                    APROF_(addr_multiple), False);
+                                    APROF_(addr_multiple), True);
             
             size -= APROF_(addr_multiple);
             addr += APROF_(addr_multiple);

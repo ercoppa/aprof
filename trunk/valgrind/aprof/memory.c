@@ -182,7 +182,7 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
 
         }
         
-        if (old_ts < act->aid) {
+        if (old_ts < act->aid  && !kernel_access) {
             
             act->rms++;
             if (old_ts > 0 && old_ts >= APROF_(get_activation_noresize)(tdata, 1)->aid) {

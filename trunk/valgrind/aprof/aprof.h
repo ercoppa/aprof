@@ -89,11 +89,7 @@
                                  // Input estimation metric:
 #define RMS                 1    // Read Memory Size
 #define RVMS                2    // Read Versioned Memory Size
-#define INPUT_METRIC        RMS
-
-#define DISTINCT_RMS        0   // if 1 and INPUT_METRIC == RVMS
-                                // we append at the end of each "r" 
-                                // report tag the # of distinct RMS
+#define INPUT_METRIC        RVMS
 
 #define TRACE_FUNCTION      1   // if 1, aprof traces functions by itself, 
                                 // otherwise the program must be 
@@ -101,9 +97,9 @@
                                 // with -finstrument-functions
                                 
 #define MEM_TRACE           1   // if 0 disable mem instrumentation
-#define THREAD_INPUT        0   // if 1, every write creates a new
+#define THREAD_INPUT        1   // if 1, every write creates a new
                                 // version of an input
-#define SYSCALL_WRAPPING    0   // if 1, I/O syscall are wrapped in 
+#define SYSCALL_WRAPPING    1   // if 1, I/O syscall are wrapped in 
                                 // order to catch external I/O
 
 #define DEBUG_ALLOCATION    0   // if 1, check every allocation made by aprof
@@ -160,8 +156,8 @@
 #error "Unknown endianness"
 #endif
 
-#if DISTINCT_RMS && INPUT_METRIC != RVMS
-#error "DISTINCT_RMS == 1 but INPUT_METRIC != RVMS"
+#if INPUT_METRIC == RVMS
+#define DISTINCT_RMS 1
 #endif
 
 #if THREAD_INPUT && INPUT_METRIC != RVMS
