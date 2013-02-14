@@ -993,14 +993,6 @@ static void print_diff_if_cost(double a, double b, HChar * str) {
     
 }
 
-static void compare_distinct_rms(RoutineInfo * rtn, RoutineInfo * rtn2,
-                                    aprof_report * r, aprof_report * r2,
-                                    UInt mode) {
-    
-    //HChar b[1024];
-    return;
-}
-
 static int compar(const void * a, const void * b) {
     
     ULong c = *((ULong *) a);
@@ -1009,6 +1001,100 @@ static int compar(const void * a, const void * b) {
     if (c == d) return 0;
     if (c < d) return -1;
     else return 1;
+}
+
+static void compare_distinct_rms(RoutineInfo * rtn, RoutineInfo * rtn2,
+                                    aprof_report * r, aprof_report * r2,
+                                    UInt mode) {
+    
+    HChar b[1024];
+    
+    HashTable * ht1 = rtn->rms_map;
+    HashTable * ht2 = rtn2->rms_map;
+    
+    if (r->input_metric == RVMS)
+        ht1 = rtn->distinct_rms;
+        
+    if (r2->input_metric == RVMS)
+        ht2 = rtn2->distinct_rms;
+    
+    ULong * rms1 = malloc(sizeof(ULong) * HT_count_nodes(ht1));
+    ULong * rms2 = malloc(sizeof(ULong) * HT_count_nodes(ht2));
+    
+    UInt k = 0;
+    
+    HT_ResetIter(ht1);
+    HashNode * n1 = NULL;
+    while(1) {
+            
+        n1 = HT_Next(ht1);
+        if (n1 == NULL) break;
+        rms1[k++] = n1->key;
+            
+    }
+    
+    HT_ResetIter(ht2);
+    n1 = NULL;
+    k = 0;
+    while(1) {
+            
+        n1 = HT_Next(ht2);
+        if (n1 == NULL) break;
+        rms2[k++] = n1->key;
+            
+    }
+    
+    qsort(rms1, HT_count_nodes(ht1), sizeof(ULong), compar);
+    qsort(rms2, HT_count_nodes(ht2), sizeof(ULong), compar);
+    
+    for (k = 0; k < HT_count_nodes(ht1); k++) {
+        
+        n1 = HT_lookup(ht1, (UWord) rms1[k]);
+        ASSERT(n1 != NULL, "Impossible");
+        
+        HashNode * n2 = NULL;
+        if (k < HT_count_nodes(ht2))
+            n2 = HT_lookup(ht2, (UWord) rms1[k]);
+        
+        if (n2 == NULL) {
+            
+            IFS(1) {
+                
+                STR(b, "Missing RMS [%s]", rtn->fn->name);
+                printf("%-*s", STR_ALIGN, b);
+                print_diff(n1->key, 0);
+            
+            }
+            
+        }
+        
+    }
+    
+    for (k = 0; k < HT_count_nodes(ht2); k++) {
+        
+        n1 = HT_lookup(ht2, (UWord) rms2[k]);
+        ASSERT(n1 != NULL, "Impossible");
+        
+        HashNode * n2 = NULL;
+        if (k < HT_count_nodes(ht1))
+            n2 = HT_lookup(ht1, (UWord) rms2[k]);
+        
+        if (n2 == NULL) {
+            
+            IFS(1) {
+                
+                STR(b, "Missing RMS [%s]", rtn->fn->name);
+                printf("%-*s", STR_ALIGN, b);
+                print_diff(0, n1->key);
+            
+            }
+            
+        }
+        
+    }
+    
+    VG_(free)(rms1);
+    VG_(free)(rms2);
 }
 
 static void compare_routine(RoutineInfo * rtn, RoutineInfo * rtn2, 
@@ -1110,10 +1196,16 @@ static void compare_routine(RoutineInfo * rtn, RoutineInfo * rtn2,
         ADD(sum_self_cost, i->self_time_sum);
         ADD(sum_rms, i->rms_input_sum);
         
+        if (r->input_metric != r2->input_metric) continue;
+        
         RMSInfo * i2 = NULL;
-        if (j < HT_count_nodes(rtn2->rms_map))
+        if (j < HT_count_nodes(rtn2->rms_map)) {
+        
             i2 = (RMSInfo *) HT_lookup(rtn2->rms_map, rms_2[j]);
-       
+            ASSERT(i2 != NULL, "Impossible");
+        
+        }
+        
         if (i2 == NULL) {
 
             IFS(1) {
@@ -1158,9 +1250,15 @@ static void compare_routine(RoutineInfo * rtn, RoutineInfo * rtn2,
         ADD(sum_self_cost2, i->self_time_sum);
         ADD(sum_rms2, i->rms_input_sum);
         
+        if (r->input_metric != r2->input_metric) continue;
+        
         RMSInfo * i2 = NULL;
-        if (j < HT_count_nodes(rtn->rms_map))
+        if (j < HT_count_nodes(rtn->rms_map)) {
+            
             i2 = (RMSInfo *) HT_lookup(rtn->rms_map, rms_1[j]);
+            ASSERT(i2 != NULL, "Impossible");
+            
+        }
         
         if (i2 == NULL) {
 
@@ -1174,7 +1272,12 @@ static void compare_routine(RoutineInfo * rtn, RoutineInfo * rtn2,
         
         } else if (i->key != i2->key) {
             
-            // already handled
+            IFS(1) {
+                
+                STR(b, "Different RVMS [%s]", rtn->fn->name);
+                print_diff_if_input(i2->key, i->key, b);
+            
+            }
         
         }
         
@@ -1186,10 +1289,12 @@ static void compare_routine(RoutineInfo * rtn, RoutineInfo * rtn2,
         
     }
 
-    /* this is not so useful
-    STR(b, "Diff sum(RVMS) [%s]", rtn->fn->name);
-    print_diff_if_input(sum_rvms, sum_rvms2, b);    
-    */
+    if (r->input_metric != r2->input_metric) {
+    
+        STR(b, "Diff sum(RVMS) [%s]", rtn->fn->name);
+        print_diff_if_input(sum_rvms, sum_rvms2, b);    
+    
+    }
     
     if (True) {
         
@@ -1204,10 +1309,8 @@ static void compare_routine(RoutineInfo * rtn, RoutineInfo * rtn2,
     
     }
     
-    /* this is not so useful
-    STR(b, "Diff sum(rms) [%s]", rtn->fn->name);
-    print_diff_if_input(sum_rms, sum_rms2, b);
-    */
+    VG_(free)(rms_1);
+    VG_(free)(rms_2);
 
 }
 
