@@ -605,15 +605,23 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         ULong rms = VG_(strtoull10) (token, NULL);
         UOF_LONG(rms, line_orig);
         
+        // calls (optional)
+        token = VG_(strtok)(NULL, DELIM_DQ);
+        ULong calls = 0;
+        if (token != NULL)
+            calls = VG_(strtoull10) (token, NULL);
+        UOF_LONG(calls, line_orig);
+            
         ASSERT(curr != NULL, "distinct rms for a void routine: %s", line_orig);
-        HashNode * node = HT_lookup(curr->distinct_rms, rms);
+        RMSValue * node = (RMSValue *) HT_lookup(curr->distinct_rms, rms);
         if (node == NULL) {
             
-            node = VG_(calloc)("distinct rms node", sizeof(HashNode), 1);
+            node = VG_(calloc)("distinct rms node", sizeof(RMSValue), 1);
             node->key = rms;
+            node->calls = calls;
             HT_add_node(curr->distinct_rms, node->key, node);
         
-        }
+        } else node->calls += calls;
 
     } else if (token[0] == 'a') {
         

@@ -98,7 +98,7 @@ static ThreadData * APROF_(thread_start)(ThreadId tid){
     tdata->accesses = LK_create();
     
     #if INPUT_METRIC == RMS
-    tdata->next_aid = 0;
+    tdata->next_aid = 1;
     #endif
     
     #if CCT

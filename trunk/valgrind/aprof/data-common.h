@@ -121,6 +121,14 @@ typedef struct CCTNode {
 
 #endif // APROF_TOOL
 
+typedef struct {
+    
+    UWord         key;
+    void *        next;
+    ULong         calls;
+    
+} RMSValue;
+
 // Info about a routine, not shared btw threads 
 typedef struct {
 
@@ -137,7 +145,7 @@ typedef struct {
     #endif
     
     #if DISTINCT_RMS
-    HashTable * distinct_rms;                // ht of RMS seen
+    HashTable * distinct_rms;             // ht of RMS seen
     #endif
     
     #if EXTERNAL
@@ -208,7 +216,7 @@ typedef struct {
     UInt           aid;                  // Activation ID Activation ID 
                                          // (value of the global counter
                                          // when this act started)
-    
+
     #if CCT
     CCTNode *      node;                 // pointer to the CCT node 
                                          // associated with the call
