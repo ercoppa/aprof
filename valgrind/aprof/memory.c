@@ -100,7 +100,7 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
     Int size_fix = size;
     APROF_(fix_access_size)(addr, size_fix);
     #endif
-    
+ 
     #if !COSTANT_MEM_ACCESS
     while (size_fix > 0) {
     #endif
@@ -165,7 +165,7 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
         }
 
         Activation * act = APROF_(get_activation_noresize)(tdata, tdata->stack_depth);
-
+       
         if(old_ts < wts){
             act->rvms++;
         }
@@ -175,23 +175,21 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
             act->rvms++;
             if (old_ts > 0 && old_ts >= APROF_(get_activation_noresize)(tdata, 1)->aid) {
                 
-                act = APROF_(get_activation_by_aid)(tdata, old_ts);
-                act->rvms--;
+                Activation * act2 = APROF_(get_activation_by_aid)(tdata, old_ts);
+                act2->rvms--;
 
             }
 
         }
         
-        if (old_ts < act->aid  && !kernel_access) {
-            
+        if (!kernel_access && old_ts < act->aid) {
+
             act->rms++;
             if (old_ts > 0 && old_ts >= APROF_(get_activation_noresize)(tdata, 1)->aid) {
                 
-                act = APROF_(get_activation_by_aid)(tdata, old_ts);
-                act->rms--;
-
+                Activation * act2 = APROF_(get_activation_by_aid)(tdata, old_ts);
+                act2->rms--;        
             }
-
         }
         
         #else
@@ -219,5 +217,5 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
         
     }
     #endif
-    
+
 }

@@ -284,11 +284,12 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
         
         #if DISTINCT_RMS
         HT_ResetIter(rtn_info->distinct_rms);
-        HashNode * node = HT_RemoveNext(rtn_info->distinct_rms);
+        RMSValue * node = (RMSValue *) HT_RemoveNext(rtn_info->distinct_rms);
         while(node != NULL) {
             
-            APROF_(fprintf)(report, "g %llu %lu\n", 
-                                rtn_info->routine_id, node->key);
+            APROF_(fprintf)(report, "g %llu %lu %llu\n", 
+                                rtn_info->routine_id, node->key,
+                                node->calls);
             VG_(free)(node);
             node = HT_RemoveNext(rtn_info->distinct_rms);
         

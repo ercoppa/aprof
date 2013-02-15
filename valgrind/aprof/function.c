@@ -158,12 +158,15 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
     act->rms                 = 0;
     act->total_children_time = 0;
     
-    #if INPUT_METRIC == RVMS
-    
+    #if INPUT_METRIC == RVMS 
+
     act->rvms                = 0;
-    act->aid                 = APROF_(global_counter)++;
-    if (APROF_(global_counter) == 0)  // check & fix timestamp overflow
-        APROF_(global_counter) = APROF_(overflow_handler)();
+    act->aid                 = ++APROF_(global_counter);
+    if (++APROF_(global_counter) == 0) {  // check & fix timestamp overflow
+        tdata->stack_depth--; // because 
+        act->aid = APROF_(global_counter) = APROF_(overflow_handler)();
+        tdata->stack_depth++;
+    }
     
     #else
     
@@ -350,12 +353,16 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
     
     AP_ASSERT(act->rms <= act->rvms, "Wrong!");
     
-    HashNode * node = HT_lookup(rtn_info->distinct_rms, act->rms);
+    RMSValue * node = (RMSValue *) HT_lookup(rtn_info->distinct_rms, act->rms);
     if (node == NULL) {
-        node = VG_(calloc)("distinct rms node", sizeof(HashNode), 1);
+    
+        node = (RMSValue *) VG_(calloc)("distinct rms node", sizeof(RMSValue), 1);
         node->key = act->rms;
+        node->calls = 1;
         HT_add_node(rtn_info->distinct_rms, node->key, node);
-    }
+    
+    } else
+        node->calls++;
     #endif
 
     // bookkeeping
