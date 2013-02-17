@@ -170,8 +170,16 @@ public class AprofReport {
                 if (!tokenizer.hasMoreTokens()) continue;
                 int rms = Integer.parseInt(tokenizer.nextToken());
                 
+                long calls = 0;
+                if (tokenizer.hasMoreTokens()) {
+                    
+                    calls = Long.parseLong(tokenizer.nextToken());
+                    
+                }
+                
                 RoutineInfo r = routines.get(rtn_id);
                 r.setCountRms(r.getCountRms() + 1);
+                num_rms++;
                 
             }
             
@@ -413,6 +421,8 @@ public class AprofReport {
 		
 		for (int i = 0; i < routines.size(); i++) {
 			
+            //System.out.println("Routine i=" + i);
+            
 			long calls = routines.get(i).getTotalCalls();
 			if (routines.get(i).getTotalCumulativeCost() > total_cost)
 				total_cost = routines.get(i).getTotalCumulativeCost();

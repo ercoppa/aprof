@@ -101,7 +101,7 @@ public class RmsTableModel extends AbstractTableModel {
 			case 2: return Math.ceil(te.getAvgCost() * 10) / 10;
 			case 3: return te.getMaxCost();
 			case 4: return te.getOcc();
-            case 5: return (1 - te.getRatioRmsRvms());
+            case 5: return (1 - te.getRatioSumRmsRvms()) * 100;
 			//case 5: return te.getVar();
 			//case 6: return rtn.getMcc(te.getRms());
 			default: return null;
