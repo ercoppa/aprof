@@ -88,7 +88,7 @@ public class RoutinesTableModel extends AbstractTableModel {
         
         // dii # RMS - # RVMS
         if (main != null && main.hasDistinctRms()) {
-            columnNames.add("Diff. #RMS");
+            columnNames.add("Diff. #RVMS %");
             columnTypes.add(Long.class);
         }
         
@@ -236,13 +236,14 @@ public class RoutinesTableModel extends AbstractTableModel {
             case 8:
                     // sum(RMS) / sum (RVMS) 
                     if (!main.isInputMetricRms())
-                        return (1 - rtn_info.getRatioSumRmsRvms());
+                        return (1 - rtn_info.getRatioSumRmsRvms()) * 100;
                 
             case 9:
                     // # RMS
                     if (main.hasDistinctRms())
-                        return rtn_info.getSizeRmsList() 
-                                - rtn_info.getCountRms();
+                        return Math.ceil((((double)(rtn_info.getSizeRmsList() 
+                                    - rtn_info.getCountRms()) ) /
+                                    rtn_info.getCountRms()) * 100) / 100;
 			
 		}
 		

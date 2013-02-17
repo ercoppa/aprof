@@ -302,22 +302,22 @@ public abstract class Routine implements Comparable<Routine> {
     public double getRatioSumRmsRvms() {
         
         if (sum_rms > 0 && sum_rvms == 0)
-            return Double.MAX_VALUE;
+            throw new RuntimeException("Invalid RVMS");
         else if (sum_rms == 0 && sum_rvms == 0)
             return 1;
+           
+        if (this.getName().equals("diff"))
+            System.out.println("sum rms: " + sum_rms + "  sum rvms: " + sum_rvms);
             
         return (((double) sum_rms) / ((double) sum_rvms));
     }
     
     public void setCountRms(long distinct_rms) {
-        if (distinct_rms > 0)
-            this.num_rms = distinct_rms;
+        this.num_rms = distinct_rms;
     }
 	
     public long getCountRms() {
-     
-        if (num_rms > 0) return num_rms;
-        return getSizeRmsList();
+        return num_rms;
     }
     
     public double getRatioRvmsRms() {

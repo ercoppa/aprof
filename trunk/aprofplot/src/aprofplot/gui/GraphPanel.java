@@ -878,7 +878,7 @@ public class GraphPanel extends javax.swing.JPanel {
 			
             case RATIO_TUPLES_PLOT:
             case EXTERNAL_INPUT_PLOT:
-                return "routines (sorted by ratio)";
+                return "percentage of routines";
                 
 			default:
                 
@@ -1014,7 +1014,7 @@ public class GraphPanel extends javax.swing.JPanel {
 			case TOTALCOST_PLOT: s = "Total cost plot"; break;
 			case VAR_PLOT: s = "Cost variance plot"; break;
 			case RTN_PLOT: s = "Program statistics plot"; break;
-            case RATIO_TUPLES_PLOT: s = "Ratio #RMS/#RVMS plot"; break;
+            case RATIO_TUPLES_PLOT: s = "Ratio #RVMS/#RMS plot"; break;
             case EXTERNAL_INPUT_PLOT: s = "External input plot"; break;
 			case MCC_PLOT: s = "Mean cumulative cost plot"; break;
 			case RATIO_PLOT: s = "Curve bounding plot - T(n) / ";
@@ -1880,7 +1880,7 @@ public class GraphPanel extends javax.swing.JPanel {
 
 				} else if (graph_type == FREQ_PLOT) {
 
-                    int index = (int)(((double)1-te.getRatioRmsRvms())*10);
+                    int index = (int)(((double)1-te.getRatioSumRmsRvms())*10);
 					series[index].add(x, getY(te, 0), false);
                 
                 } else if (graph_type == MCC_PLOT) {
@@ -2057,8 +2057,12 @@ public class GraphPanel extends javax.swing.JPanel {
             for (int i = 0; i < rr.size(); i++) {
                 
                 Routine r = rr.get(i);
-                x = i;
-                y = r.getRatioRvmsRms();
+                x = ((double)i) / (((double)rr.size())/100);
+                
+                if (main_window.hasDistinctRms())
+                    y = r.getRatioRvmsRms();
+                else
+                    y = 0;
                 
                 /*
                 System.out.println(r.getName() + " " + x + " " + y + " " 
@@ -2084,8 +2088,12 @@ public class GraphPanel extends javax.swing.JPanel {
             for (int i = 0; i < rr.size(); i++) {
                 
                 Routine r = rr.get(i);
-                x = i;
-                y = (1 - r.getRatioSumRmsRvms()) * 100;
+                x = ((double)i) / (((double)rr.size())/100);
+                
+                if (main_window.hasDistinctRms())
+                    y = (1 - r.getRatioSumRmsRvms()) * 100;
+                else
+                    y = 0;
                 
                 /*
                 System.out.println(r.getName() + " " + x + " " + y + " " 
@@ -2124,7 +2132,7 @@ public class GraphPanel extends javax.swing.JPanel {
 			File tmp = null;
 			PrintWriter out = null;
 			if (graph_type == COST_PLOT) {
-				AprofReport report = main_window.getCurrentReport();
+				AprofReport report = main_winmain_dow.getCurrentReport();
 				tmp = new File(report.getName() + "-" + this.rtn_info.getName() + ".rprof_" + group_threshold);
 				tmp.createNewFile();
 				out = new PrintWriter(new FileWriter(tmp));
