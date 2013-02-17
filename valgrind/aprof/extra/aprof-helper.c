@@ -115,8 +115,8 @@
 #define NUM_ALIGN 8
 
 #define DIR_MERGE_THREAD "merge_by_pid"
-#define DIR_MERGE_RUNS   "merge_by_run"
-#define DIR_MERGE_ALL    "merge_by_pid_run"
+#define DIR_MERGE_RUNS   "merge_by_cmd"
+#define DIR_MERGE_ALL    "merge_by_pid_cmd"
 
 Bool consistency = False;
 Bool compare = False;
@@ -198,6 +198,30 @@ static UInt get_memory_resolution_report(HChar * report) {
     UInt res = strtol(res_s, NULL, 10);
     
     return res;
+}
+
+static UInt get_tid_report(HChar * report) {
+    
+    HChar * rep = basename(report);
+    ASSERT(rep != NULL && strlen(rep) > 0, "Invalid report");
+    
+    // report: PID_TID_RES[_N].aprof
+    
+    // skip PID_
+    UInt pos = 0;
+    while (rep[pos] != '_' && rep[pos] != '\0') pos++;
+    ASSERT(pos > 0, "Invalid report name: %s", report);
+    
+    UInt t_pos = pos + 1;
+    while (rep[t_pos] != '_' && rep[t_pos] != '\0') t_pos++;
+    ASSERT(t_pos > pos + 1, "Invalid report name: %s", report);
+    
+    HChar tid_s[16];
+    strncpy(tid_s, rep + pos + 1, t_pos - pos);  
+    UInt tid = strtol(tid_s, NULL, 10);
+
+    //printf("Tid = %u report %s\n", tid, report);
+    return tid;
 }
 
 static UInt get_pid_report(HChar * report) {
@@ -291,12 +315,8 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
     
     ASSERT(VG_(strlen)(line_input) + VG_(strlen)(report) + 1 < 2048,
         "line + report too long");
-    HChar * line_orig = VG_(calloc)("report line", 2048, 1);
-    line_orig = VG_(strcat)(line_orig, "\n\tReport: ");
-    line_orig = VG_(strcat)(line_orig, report);
-    line_orig = VG_(strcat)(line_orig, "\n\tLine: ");
-    line_orig = VG_(strcat)(line_orig, line_input);
-    line_orig = VG_(strcat)(line_orig, "\n");
+    HChar line_orig[2048] = {0};
+    STR(line_orig, "\n\tReport: %s\n\tLine: %s\n", report, line_input);
     
     HChar * token = VG_(strtok)(line, DELIM_DQ);
     ASSERT(token != NULL, "Invalid line: %s", line_orig); 
@@ -686,12 +706,12 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         
         token = VG_(strtok)(NULL, DELIM_DQ);
         ASSERT(token != NULL && VG_(strlen)(token) > 0, 
-            "invalid app name: %s", line_orig); 
+            "invalid cmd name: %s", line_orig); 
         HChar app[1024] = { 0 };
         while (token != NULL) {
             
             ASSERT(VG_(strlen)(app) + VG_(strlen)(token) + 1 < 1024,
-                "app name too long: %s", line_orig); 
+                "cmd name too long: %s", line_orig); 
             
             VG_(strcat)(app, token);
             VG_(strcat)(app, " ");
@@ -704,18 +724,19 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         
         if (r->cmd == NULL) {
             
-            HChar * app_c = VG_(strdup2)("cmd", app);
-            r->cmd = app_c;
+            HChar * app_c = VG_(strdup2)("app", app);
+            r->app = app_c;
         
         } else {
             
-            if (VG_(strcmp)(app, r->cmd) != 0) {
+            if (VG_(strcmp)(app, r->app) != 0) {
                 *invalid = True;
+                VG_(free)(line);
                 return NULL;
             }
             /*
-            ASSERT(VG_(strcmp)(app, r->cmd) == 0, 
-                "different command");
+            ASSERT(VG_(strcmp)(app, r->app) == 0, 
+                "different app");
             */
         }
     
@@ -760,6 +781,7 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
                 
                 if (r->version != ver) {
                     *invalid = True;
+                    VG_(free)(line);
                     return NULL;
                 }
                 /*
@@ -798,7 +820,7 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
             ASSERT(0, "Invalid version: %s", line_orig);
     
     } else if (token[0] == 'c' || token[0] == 'e' || token[0] == 'm'
-                    || token[0] == 'f' || token[0] == 'u'){ 
+                    || token[0] == 'u'){ 
     
         // ignored...
     
@@ -812,9 +834,48 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
     
         if (r->memory_resolution != m_res) {
             *invalid = True;
+            VG_(free)(line);
             return NULL;
         }
     
+    } else if (token[0] == 'f') {
+        
+        token = VG_(strtok)(NULL, DELIM_DQ);
+        ASSERT(token != NULL && VG_(strlen)(token) > 0, 
+            "invalid cmd name: %s", line_orig); 
+        HChar app[1024] = { 0 };
+        while (token != NULL) {
+            
+            ASSERT(VG_(strlen)(app) + VG_(strlen)(token) + 1 < 1024,
+                "cmd name too long: %s", line_orig); 
+            
+            VG_(strcat)(app, token);
+            VG_(strcat)(app, " ");
+            token = VG_(strtok)(NULL, DELIM_DQ);
+        
+        }
+         
+        // remove final space
+        app[VG_(strlen)(app) -1] = '\0';
+        
+        if (r->cmd == NULL) {
+            
+            HChar * app_c = VG_(strdup2)("cmd", app);
+            r->cmd = app_c;
+        
+        } else {
+            
+            if (VG_(strcmp)(app, r->cmd) != 0) {
+                *invalid = True;
+                VG_(free)(line);
+                return NULL;
+            }
+            /*
+            ASSERT(VG_(strcmp)(app, r->cmd) == 0, 
+                "different command");
+            */
+        }
+        
     } else {
         
         ASSERT(0, "Unknown tag %c %s", token[0], line_orig);
@@ -822,7 +883,6 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
     }
     
     VG_(free)(line);
-    VG_(free)(line_orig);
     return curr;
 }
 
@@ -910,12 +970,6 @@ static Bool merge_report(HChar * report, aprof_report * rep_data) {
     //VG_(printf)("Try to merge: %s\n", report);
     HChar buf[4096];
     
-    if (directory != NULL) {
-        STR(buf, "%s/%s", directory, report);
-    } else {
-        STR(buf, "%s", report);
-    }
-    
     UInt m_res = get_memory_resolution_report(report);
     ASSERT(m_res == 1 || m_res == 2 || m_res == 4 || m_res == 8 || m_res == 16,
             "Invalid memory resolution: %s", report);
@@ -925,8 +979,9 @@ static Bool merge_report(HChar * report, aprof_report * rep_data) {
         
     rep_data->memory_resolution = m_res;
     
-    Int file = VG_(open)(buf, O_RDONLY, S_IRUSR|S_IWUSR);
-    ASSERT(file >= 0, "Can't read: %s", buf);
+    Int file = VG_(open)(report, O_RDONLY, S_IRUSR|S_IWUSR);
+    if (file < 0) perror(NULL);
+    ASSERT(file >= 0, "Can't read: %s", report);
     
     HChar line[1024];
     UInt offset = 0;
@@ -943,7 +998,7 @@ static Bool merge_report(HChar * report, aprof_report * rep_data) {
             EMSG("Error when reading %s\n", report);
             return False;
         
-        } else if (r == 0) return True; /* EOF */
+        } else if (r == 0) break; /* EOF */
         
         Int i;
         for (i = 0; i < r; i++) {
@@ -1008,7 +1063,10 @@ static HChar ** search_reports(UInt * n) {
                 size = size * 2;
                 reports = realloc(reports, sizeof(HChar *) * size);
             }
-            reports[(*n)++] = VG_(strdup2)("report", (HChar *)file->d_name);
+            HChar * rep = malloc(1024);
+            //printf("directory: %s\n", directory);
+            STR(rep, "%s%s", directory, file->d_name);
+            reports[(*n)++] = rep;
             
         }
         
@@ -1534,12 +1592,14 @@ static void compare_report(aprof_report * r, aprof_report * r2, UInt mode) {
 
 static void save_report(aprof_report * r, HChar * report_name) {
     
+    /*
     char cmd[1024] = {0};
     sprintf(cmd, "touch %s", report_name);
     //printf("%s\n", cmd);
     int res = system(cmd);
     ASSERT(res != -1, "Error during copy");
     return;
+    */
     
     FILE * report = fopen(report_name, "w");
     ASSERT(report != NULL, "Can't save current report into %s", report_name);
@@ -1573,6 +1633,93 @@ static void save_report(aprof_report * r, HChar * report_name) {
     // write application name
     fprintf(report, "a %s\n", r->app);
     
+    // write commandline
+    fprintf(report, "f %s\n", r->cmd);
+    
+    HT_ResetIter(r->routine_hash_table);
+
+    RoutineInfo * rtn_info = HT_Next(r->routine_hash_table);
+    while (rtn_info != NULL) {
+        
+        char * obj_name = "NONE";
+        if (rtn_info->fn->obj != NULL)
+            obj_name = rtn_info->fn->obj->name; 
+        
+        // routine
+        fprintf(report, "r \"%s\" \"%s\" %llu\n", 
+                    rtn_info->fn->name, obj_name, 
+                    rtn_info->routine_id);
+        
+        // mangled name
+        if (rtn_info->fn->mangled != NULL) {
+            fprintf(report, "u %llu \"%s\"\n", rtn_info->routine_id, 
+                        rtn_info->fn->mangled);
+        }
+
+        // tuples 
+        HT_ResetIter(rtn_info->rms_map);
+        RMSInfo * info_access = HT_Next(rtn_info->rms_map);
+        while (info_access != NULL) {
+            
+            if (r->input_metric == RVMS) {
+                
+                fprintf(report,
+                            "p %llu %lu %llu %llu %llu %.0f %llu %llu %llu %llu %llu %.0f %llu %.0f\n", 
+                            rtn_info->routine_id,
+                            info_access->key,
+                            info_access->min_cumulative_time,
+                            info_access->max_cumulative_time,
+                            info_access->cumulative_time_sum, 
+                            info_access->cumulative_sum_sqr,
+                            info_access->calls_number,
+                            info_access->cumul_real_time_sum,
+                            info_access->self_time_sum,
+                            info_access->self_time_min,
+                            info_access->self_time_max,
+                            info_access->self_sum_sqr,
+                            info_access->rms_input_sum,
+                            info_access->rms_input_sum_sqr
+                            );
+            
+            } else {
+                
+                fprintf(report,
+                            "p %llu %lu %llu %llu %llu %.0f %llu %llu %llu %llu %llu %.0f\n",
+                            rtn_info->routine_id,
+                            info_access->key,
+                            info_access->min_cumulative_time,
+                            info_access->max_cumulative_time,
+                            info_access->cumulative_time_sum, 
+                            info_access->cumulative_sum_sqr,
+                            info_access->calls_number,
+                            info_access->cumul_real_time_sum,
+                            info_access->self_time_sum,
+                            info_access->self_time_min,
+                            info_access->self_time_max,
+                            info_access->self_sum_sqr
+                            );
+                
+            }
+            
+            
+            info_access = HT_Next(rtn_info->rms_map);
+        }
+        
+        HT_ResetIter(rtn_info->distinct_rms);
+        RMSValue * node = (RMSValue *) HT_Next(rtn_info->distinct_rms);
+        while(node != NULL) {
+            
+            fprintf(report, "g %llu %lu %llu\n", 
+                                rtn_info->routine_id, node->key,
+                                node->calls);
+            node = HT_Next(rtn_info->distinct_rms);
+        
+        }
+    
+        rtn_info = HT_Next(r->routine_hash_table);
+
+    }
+    
     fclose(report);
 }
 
@@ -1584,6 +1731,7 @@ static void clean_data(aprof_report * rep) {
     if (rep->obj_ht != NULL) HT_destruct(rep->obj_ht);
     if (rep->routine_hash_table != NULL) HT_destruct(rep->routine_hash_table);
     if (rep->cmd != NULL) VG_(free)(rep->cmd);
+    if (rep->app != NULL) VG_(free)(rep->app);
     
 }
 
@@ -1591,8 +1739,10 @@ static void reset_data(aprof_report * rep) {
     
     clean_data(rep);
     
-    rep->next_routine_id = 1;
+    rep->next_routine_id = 0;
     rep->cmd = NULL;
+    rep->app = NULL;
+    rep->memory_resolution = 0;
     rep->fn_ht = HT_construct(fn_destroy);
     rep->obj_ht = HT_construct(obj_destroy);
     rep->routine_hash_table = HT_construct(destroy_routine_info);
@@ -1610,12 +1760,136 @@ static void reset_data(aprof_report * rep) {
 
 static HChar ** merge_by_run(HChar ** reports, UInt * size, 
                                 Bool merged_by_thread) {
-    return reports;
+    
+    printf("Merging reports with same command...\n");
+    
+    UInt size_post = 0; UInt i = 0;
+    HChar ** reports_post = VG_(calloc)("test", sizeof(HChar *), *size);
+    
+    /*
+     * Merge by command
+     */
+    char merge_dir[1024] = {0};
+    int res = 0;
+    HChar buf[1024] = {0};
+    STR(buf, "%s", reports[0]); 
+    if (merge_threads)
+        res = sprintf(merge_dir, "%s/../%s", dirname(buf),
+                        DIR_MERGE_ALL);
+    else
+        res = sprintf(merge_dir, "%s/%s", dirname(buf),
+                        DIR_MERGE_RUNS);
+    ASSERT(res < 1024, "path too long");
+    res = mkdir(merge_dir, 0777);
+    ASSERT(errno != EEXIST, "directory %s already exists", merge_dir);
+    ASSERT(res == 0, "Invalid merge directory");
+    
+    Int curr = -1; UInt merged = 0;
+    UInt curr_pid = 0, curr_tid = 0;
+    while (1) {
+        
+        if (reports[i] == NULL) goto next;
+        
+        //printf("checking report: %s\n", reports[i]);
+        
+        if (curr == -1) {
+            
+            curr = i;
+            curr_pid = get_pid_report(reports[i]);
+            curr_tid = get_tid_report(reports[i]);
+            
+            reset_data(&ap_rep[0]);
+            //printf("Trying with %s\n", reports[curr]);
+            Bool res = merge_report(reports[curr], &ap_rep[0]);
+            ASSERT(res, "Report %s should be merged but is invalid", 
+                                reports[curr]);
+            merged++;
+            
+        } else {
+            
+            ASSERT(merged > 0, "Impossible");
+            /*
+            printf("Current: %s [%u:%u] - Checking: %s [%u:%u]\n", 
+                        reports[curr], curr_pid, curr_pid, reports[i],
+                        get_pid_report(reports[i]), get_tid_report(reports[i]));
+            */
+            if (curr_pid != get_pid_report(reports[i]) &&
+                    (merge_threads || curr_tid == get_tid_report(reports[i])) ) {
+
+                /*
+                printf("Current: %s [%u:%u] - Checking: %s [%u:%u]\n", 
+                            reports[curr], curr_pid, curr_tid, reports[i],
+                            get_pid_report(reports[i]), get_tid_report(reports[i]));
+                
+                */
+                Bool res = merge_report(reports[i], &ap_rep[0]);
+                if (res) {
+                    if (merged == 1) 
+                        printf("Merging: %s %s ", reports[curr], reports[i]);
+                    else
+                        printf("%s ", reports[i]);
+                    free(reports[i]);
+                    reports[i] = NULL;
+                    merged++;
+                }
+            }
+            
+        }
+
+next:            
+        if (i + 1 == *size) {
+            
+            if (curr == -1) break;
+            
+            if (merged > 0) {
+                
+                HChar * new_rep = VG_(calloc)("t", 1024, 2);
+                HChar buf[1024] = {0};
+                STR(buf, "%s", reports[curr]); 
+                //printf("saving %s\n", reports[curr]);
+                if (merge_threads)
+                    sprintf(new_rep, "%s/../%s/%s", dirname(buf),
+                            DIR_MERGE_ALL, basename(reports[curr]));
+                else
+                    sprintf(new_rep, "%s/%s/%s", dirname(buf),
+                            DIR_MERGE_RUNS, basename(reports[curr]));
+                
+                if (merged > 1) printf("into %s\n", new_rep);
+                save_report(&ap_rep[0], new_rep);
+                reports_post[size_post++] = new_rep;
+                
+                merged = 0;
+                free(reports[curr]);
+            
+            } else {
+                
+                ASSERT(0, "Impossible");
+                
+            }
+            
+            reports[curr] = NULL;
+            curr = -1;
+        } 
+        
+        i = (i + 1) % *size;
+    }
+    
+    
+    i = 0;
+    while (i < *size) {
+        if (reports_post[i] != NULL) 
+            VG_(free)(reports[i]);
+        i++;
+    }
+    VG_(free)(reports);
+    
+    *size = size_post;
+    return reports_post;
 }
 
 static HChar ** merge_by_thread(HChar ** reports, UInt * size) {
     
-    printf("Merging reports with same PID\n");
+    printf("Merging reports with same PID...\n");
     
     UInt size_post = 0;
     HChar ** reports_post = VG_(calloc)("test", sizeof(HChar *), *size);
@@ -1625,7 +1899,9 @@ static HChar ** merge_by_thread(HChar ** reports, UInt * size) {
      */
     
     HChar merge_dir[1024] = {0};
-    int res = sprintf(merge_dir, "%s/%s", dirname(reports[0]),
+    HChar buf[1024] = {0};
+    STR(buf, "%s", reports[0]);
+    int res = sprintf(merge_dir, "%s/%s", dirname(buf),
                         DIR_MERGE_THREAD);
     ASSERT(res < 1024, "path too long");
     res = mkdir(merge_dir, 0777);
@@ -1653,14 +1929,14 @@ static HChar ** merge_by_thread(HChar ** reports, UInt * size) {
                 
                 if (merged == 0) {
                     reset_data(&ap_rep[0]);
-                    //printf("Merging %s\n", reports[curr]);
+                    printf("Merging %s ", reports[curr]);
                     Bool res = merge_report(reports[curr], &ap_rep[0]);
                     ASSERT(res, "Report %s should be merged but is invalid", 
                                         reports[curr]);
                     merged++;
                 }
 
-                //printf("Merging %s\n", reports[i]);
+                printf("%s ", reports[i]);
                 Bool res = merge_report(reports[i], &ap_rep[0]);
                 ASSERT(res, "Report %s should be merged but is invalid", 
                             reports[i]);
@@ -1680,21 +1956,27 @@ next:
             HChar cmd[1024] = {0};
             if (merged > 0) {
                 
-                //printf("saving %s\n", reports[curr]);
-                sprintf(new_rep, "%s/%s/%s", dirname(reports[curr]),
+                HChar buf[1024] = {0};
+                STR(buf, "%s", reports[curr]);
+                sprintf(new_rep, "%s/%s/%s", dirname(buf),
                             DIR_MERGE_THREAD, basename(reports[curr]));
+                
+                printf("into %s\n", new_rep);
+                //printf("saving %s to %s\n", reports[curr], new_rep);
                 
                 save_report(&ap_rep[0], new_rep);
                 reports_post[size_post++] = new_rep;
                 
                 merged = 0;
-                free(reports[curr]);
             
             } else {
                 
-                //printf("no candidate for merging %s\n", reports[curr]);
-                sprintf(new_rep, "%s/%s/%s", dirname(reports[curr]),
+                HChar buf[1024] = {0};
+                STR(buf, "%s", reports[curr]);
+                sprintf(new_rep, "%s/%s/%s", dirname(buf),
                             DIR_MERGE_THREAD, basename(reports[curr]));
+                
+                //printf("no candidate for merging %s, copying to %s\n", reports[curr], new_rep);
                 
                 reports_post[size_post++] = new_rep;
                 
@@ -1703,10 +1985,9 @@ next:
                 res = system(cmd);
                 ASSERT(res != -1, "Error during copy");
                 
-                free(reports[i]);
-                
             }
             
+            free(reports[curr]);
             reports[curr] = NULL;
             curr = -1;
         } 
@@ -1796,8 +2077,16 @@ Int main(Int argc, HChar *argv[]) {
                 break;
                 
             case 'd':
-                directory = optarg;
                 if (optarg[0] == '=') directory++;
+                ASSERT(strlen(optarg) > 0 && strlen(optarg) < 1024, 
+                            "path too long");
+                HChar dir[1024];
+                if (optarg[strlen(optarg) -1] == '/') {
+                    STR(dir, "%s", optarg);
+                } else {
+                    STR(dir, "%s/", optarg);
+                }
+                directory = dir;
                 //printf("directory := %s\n", directory);
                 break;
                 
@@ -1868,7 +2157,8 @@ Int main(Int argc, HChar *argv[]) {
     if (directory == NULL) {
         
         HChar cwd[1024];
-        directory = getcwd(cwd, 1024);
+        sprintf(cwd, "./");
+        directory = cwd;
     
     }
     

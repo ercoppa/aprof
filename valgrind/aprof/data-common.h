@@ -192,8 +192,12 @@ typedef struct {
     #endif
 
     #if INPUT_METRIC == RVMS
-    ULong       rms_input_sum;            // sum of ratios RMS/RVMS
-    ULong       rms_input_sum_sqr;        // sum of squares of ratios RMS/RVMS
+    ULong       rms_input_sum;            // sum of RMS
+    #if EXTERNAL
+    double       rms_input_sum_sqr;        // sum of squares of RMS
+    #else
+    ULong       rms_input_sum_sqr;        // sum of squares of RMS
+    #endif
     #endif
 
 } RMSInfo;
