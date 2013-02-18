@@ -168,7 +168,7 @@ public class AprofReport {
                 if (!tokenizer.hasMoreTokens()) continue;
                 int rtn_id = Integer.parseInt(tokenizer.nextToken());
                 if (!tokenizer.hasMoreTokens()) continue;
-                int rms = Integer.parseInt(tokenizer.nextToken());
+                long rms = Long.parseLong(tokenizer.nextToken());
                 
                 long calls = 0;
                 if (tokenizer.hasMoreTokens()) {

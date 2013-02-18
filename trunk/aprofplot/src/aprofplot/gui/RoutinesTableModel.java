@@ -240,11 +240,14 @@ public class RoutinesTableModel extends AbstractTableModel {
                 
             case 9:
                     // # RMS
-                    if (main.hasDistinctRms())
-                        return Math.ceil((((double)(rtn_info.getSizeRmsList() 
+                    if (main.hasDistinctRms()) {
+                        //System.out.println(rtn_info.getSizeRmsList() + " " + 
+                        //                     rtn_info.getCountRms());
+                        return (Math.ceil((((double)(rtn_info.getSizeRmsList() 
                                     - rtn_info.getCountRms()) ) /
-                                    rtn_info.getCountRms()) * 100) / 100;
+                                    rtn_info.getCountRms()) * 100) / 100) * 100;
 			
+                    }
 		}
 		
 		//System.out.println("Index requested: " + columnIndex + " over " + columnNames.length);
