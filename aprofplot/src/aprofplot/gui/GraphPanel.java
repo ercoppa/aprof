@@ -1880,7 +1880,9 @@ public class GraphPanel extends javax.swing.JPanel {
 
 				} else if (graph_type == FREQ_PLOT) {
 
-                    int index = (int)(((double)1-te.getRatioSumRmsRvms())*10);
+                    int index = 0;
+                    if (main_window.hasDistinctRms())
+                        index = (int)(((double)1-te.getRatioSumRmsRvms())*10);
 					series[index].add(x, getY(te, 0), false);
                 
                 } else if (graph_type == MCC_PLOT) {
@@ -2059,9 +2061,13 @@ public class GraphPanel extends javax.swing.JPanel {
                 Routine r = rr.get(i);
                 x = ((double)i) / (((double)rr.size())/100);
                 
-                if (main_window.hasDistinctRms())
+                if (main_window.hasDistinctRms()) {
                     y = r.getRatioRvmsRms();
-                else
+                    /*
+                    y = ((double)(r.getSizeRmsList() 
+                                    - r.getCountRms()) ) /
+                                    r.getCountRms();*/
+                } else
                     y = 0;
                 
                 /*
