@@ -89,8 +89,14 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
     */
     
     /* Add path to log filename */
+    #ifdef LOG_DIR
+    HChar * filename = VG_(calloc)("log", 2048, 1);
+    VG_(sprintf)(filename, "%s/%s", LOG_DIR, 
+                    report_name(filename_priv, tid, 0));
+    #else
     HChar * filename = VG_(expand_file_name)("aprof log", 
                             report_name(filename_priv, tid, 0));
+    #endif
 
     // open report file
     FILE * report = APROF_(fopen)(filename);
@@ -98,8 +104,14 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
     while (report == NULL && attempt < 1024) {
 
         VG_(free)(filename);
+        #ifdef LOG_DIR
+        filename = VG_(calloc)("log", 2048, 1);
+        VG_(sprintf)(filename, "%s/%s", LOG_DIR, 
+                    report_name(filename_priv, tid, 0));
+        #else
         filename = VG_(expand_file_name)("aprof log", 
             report_name(filename_priv, tid, attempt));
+        #endif
         
         report = APROF_(fopen)(filename);
         

@@ -99,7 +99,7 @@
 #define MEM_TRACE           1   // if 0 disable mem instrumentation
 #define THREAD_INPUT        1   // if 1, every write creates a new
                                 // version of an input
-#define SYSCALL_WRAPPING    1   // if 1, I/O syscall are wrapped in 
+#define SYSCALL_WRAPPING    0   // if 1, I/O syscall are wrapped in 
                                 // order to catch external I/O
 
 #define DEBUG_ALLOCATION    0   // if 1, check every allocation made by aprof
@@ -124,6 +124,9 @@
 
 #define MEM_USAGE_INFO      0   // Check VmPeak in /proc/PID/status
                                 // to get info about aprof mem usage 
+
+//#define LOG_DIR             "/lustre/work/ifinocch/parsec-2.1/aprof-log"
+//#define LOG_DIR             "/home/ercoppa/Desktop"
 
 /* shadow memory  */
 
