@@ -113,7 +113,7 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
         if (APROF_(log_dir) != NULL) {
         
             VG_(sprintf)(filename, "%s/%s", APROF_(log_dir), 
-                        report_name(filename_priv, tid, 0));
+                        report_name(filename_priv, tid, attempt));
         
         } else {
 
