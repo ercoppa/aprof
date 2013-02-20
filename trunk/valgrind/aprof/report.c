@@ -108,6 +108,8 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
     UInt attempt = 0;
     while (report == NULL && attempt < 1024) {
 
+        VG_(umsg)("File %s already exists\n", filename);
+
         if (APROF_(log_dir) != NULL) {
         
             VG_(sprintf)(filename, "%s/%s", APROF_(log_dir), 

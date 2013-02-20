@@ -99,7 +99,7 @@
 #define MEM_TRACE           1   // if 0 disable mem instrumentation
 #define THREAD_INPUT        1   // if 1, every write creates a new
                                 // version of an input
-#define SYSCALL_WRAPPING    0   // if 1, I/O syscall are wrapped in 
+#define SYSCALL_WRAPPING    1   // if 1, I/O syscall are wrapped in 
                                 // order to catch external I/O
 
 #define DEBUG_ALLOCATION    0   // if 1, check every allocation made by aprof
