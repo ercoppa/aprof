@@ -89,29 +89,37 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
     */
     
     /* Add path to log filename */
-    #ifdef LOG_DIR
-    HChar * filename = VG_(calloc)("log", 2048, 1);
-    VG_(sprintf)(filename, "%s/%s", LOG_DIR, 
+    HChar * filename = NULL;
+    if (APROF_(log_dir) != NULL) {
+        
+        filename = VG_(calloc)("log", 2048, 1);
+        VG_(sprintf)(filename, "%s/%s", APROF_(log_dir), 
                     report_name(filename_priv, tid, 0));
-    #else
-    HChar * filename = VG_(expand_file_name)("aprof log", 
+                    
+    } else {
+        
+        filename = VG_(expand_file_name)("aprof log", 
                             report_name(filename_priv, tid, 0));
-    #endif
+    
+    }
 
     // open report file
     FILE * report = APROF_(fopen)(filename);
     UInt attempt = 0;
     while (report == NULL && attempt < 1024) {
 
-        VG_(free)(filename);
-        #ifdef LOG_DIR
-        filename = VG_(calloc)("log", 2048, 1);
-        VG_(sprintf)(filename, "%s/%s", LOG_DIR, 
-                    report_name(filename_priv, tid, 0));
-        #else
-        filename = VG_(expand_file_name)("aprof log", 
-            report_name(filename_priv, tid, attempt));
-        #endif
+        if (APROF_(log_dir) != NULL) {
+        
+            VG_(sprintf)(filename, "%s/%s", APROF_(log_dir), 
+                        report_name(filename_priv, tid, 0));
+        
+        } else {
+
+            VG_(free)(filename);
+            filename = VG_(expand_file_name)("aprof log", 
+                report_name(filename_priv, tid, attempt));
+        
+        }
         
         report = APROF_(fopen)(filename);
         

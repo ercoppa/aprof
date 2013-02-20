@@ -911,7 +911,7 @@ static void check_rvms(double sum_rms, double sum_rvms,
             "Routine %s has external ratio %f and diff # %llu - %s",
             name, ext_ratio, diff, report);
     }
-                                
+                                              
 }
 
 static void post_merge_consistency(aprof_report * r, HChar * report) {
@@ -940,7 +940,7 @@ static void post_merge_consistency(aprof_report * r, HChar * report) {
         ASSERT(cumul_real > 0, "Invalid cumul real: %s:%s", 
                     rtn->fn->name, report);
         
-        if (r->version == REPORT_VERSION) {
+        if (r->version == REPORT_VERSION && r->input_metric == RVMS) {
             
             check_rvms(sum_rms, sum_rvms, 
                         HT_count_nodes(rtn->distinct_rms),

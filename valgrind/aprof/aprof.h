@@ -124,10 +124,6 @@
 
 #define MEM_USAGE_INFO      0   // Check VmPeak in /proc/PID/status
                                 // to get info about aprof mem usage 
-
-//#define LOG_DIR             "/lustre/work/ifinocch/parsec-2.1/aprof-log"
-//#define LOG_DIR             "/home/ercoppa/Desktop"
-
 /* shadow memory  */
 
 #define CHECK_OVERFLOW      0   // On 64bit machine, we map only 2048GB...
@@ -198,20 +194,11 @@
 extern UInt APROF_(addr_multiple);
 
 /*
- * Merge reports of different thread of the same
- * running process. 
+ * if defined, reports will be saved in this directory
  * 
  * defined in main.c
  */
-extern Bool APROF_(merge_report_threads);
-
-/*
- * Merge reports of different runs of the same
- * binary program. 
- * 
- * defined in main.c
- */
-extern Bool APROF_(merge_report_runs);
+extern const HChar * APROF_(log_dir);
 
 /* memory events (events.c) */
 extern Int APROF_(events_used);
