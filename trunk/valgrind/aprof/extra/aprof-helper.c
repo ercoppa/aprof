@@ -1794,6 +1794,7 @@ static HChar ** merge_by_run(HChar ** reports, UInt * size,
                                 Bool merged_by_thread) {
     
     printf("Merging reports with same command...\n");
+    if (*size == 0) return reports;
     
     UInt size_post = 0; UInt i = 0;
     HChar ** reports_post = VG_(calloc)("test", sizeof(HChar *), *size);
@@ -1922,6 +1923,7 @@ next:
 static HChar ** merge_by_thread(HChar ** reports, UInt * size) {
     
     printf("Merging reports with same PID...\n");
+    if (*size == 0) return reports;
     
     UInt size_post = 0;
     HChar ** reports_post = VG_(calloc)("test", sizeof(HChar *), *size);
