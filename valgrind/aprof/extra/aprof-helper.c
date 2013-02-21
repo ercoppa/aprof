@@ -145,6 +145,8 @@ typedef struct aprof_report {
     ULong next_routine_id;
     
     ULong tmp;
+    Bool sqr_over;
+    Bool self_sqr_over;
 
 } aprof_report;
 
@@ -448,6 +450,9 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         
     } else if (token[0] == 'p') {
         
+        Bool over_sqr = False;
+        Bool over_self_sqr = False;
+        
         // routine ID
         token = VG_(strtok)(NULL, DELIM_DQ);
         ASSERT(token != NULL, "Invalid id: %s", line_orig);
@@ -501,9 +506,14 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         
         ASSERT(sum >= min*occ, "Invalid sum: %s", line_orig);
         
-        if (min <= 100000)
-            ASSERT(sqr_sum >= ((double)min)*((double)min)*
-                    ((double)occ), "Invalid sqr_sum: %s", line_orig);
+        if (sqr_sum < ((double)min)*((double)min)*((double)occ)) {
+            
+            EMSG(RED("Warning:") " Invalid sqr_sum (overflow?): %s\n", 
+                report);
+            
+            over_sqr = True;
+            r->sqr_over = True;
+        }
         
         // cumul_real
         token = VG_(strtok)(NULL, DELIM_DQ);
@@ -545,8 +555,15 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         ASSERT(token != NULL, "Invalid sqr self: %s", line_orig);
         double self_sqr = VG_(strtod) (token, NULL);
         UOF_DOUBLE(self_sqr, line_orig);
-        ASSERT(self_sqr >= ((double)self_min) * ((double)self_min)
-                    * ((double)occ), "Invalid self sqr: %s", line_orig);
+        
+        if (self_sqr < ((double)self_min) * ((double)self_min)) {
+            
+            EMSG(RED("Warning:") " Invalid self sqr (overflow?): %s\n", 
+                report);
+            
+            over_self_sqr = True;
+            r->self_sqr_over = True;
+        }
         
         ULong rms_sum = 0;
         double rms_sqr = 0;
@@ -606,12 +623,17 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
                 info_access->min_cumulative_time *
                 info_access->calls_number, 
                 "Invalid sum");
-        if (info_access->min_cumulative_time <= 100000)
-            ASSERT(info_access->cumulative_sum_sqr >= 
+                
+        if (info_access->cumulative_sum_sqr < 
                 ((double)info_access->min_cumulative_time) * 
                 ((double)info_access->min_cumulative_time) *
-                ((double)info_access->calls_number), 
-                "Invalid sqr_sum");
+                ((double)info_access->calls_number)) {
+            
+            if (!over_sqr && !r->sqr_over) 
+                EMSG(RED("Warning:") " Invalid sqr_sum (overflow?): %s\n", 
+                            report);
+            
+        }
         
         ADD(info_access->cumul_real_time_sum, cumul_real);
         ADD(r->real_total_cost, cumul_real);
@@ -645,11 +667,17 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
                 info_access->self_time_min *
                 info_access->calls_number, 
                 "Invalid sum");
-        ASSERT(info_access->self_sum_sqr >= 
+                
+        if (info_access->self_sum_sqr <
                 ((double)info_access->self_time_min) * 
                 ((double)info_access->self_time_min) *
-                ((double)info_access->calls_number), 
-                "Invalid sqr_sum");
+                ((double)info_access->calls_number)) {
+            
+            if (!over_self_sqr && !r->self_sqr_over) {
+                EMSG(RED("Warning:") " Invalid sqr_sum (overflow?): %s\n", 
+                            report);
+            }
+        }
         
         if (r->version == REPORT_VERSION && r->input_metric == RVMS) {
             
@@ -957,7 +985,8 @@ static void post_merge_consistency(aprof_report * r, HChar * report) {
                 ADD(sum_rms_distinct, v->key * v->calls);
             }
             ASSERT(sum_rms_distinct == sum_rms, 
-                "Mismatch sum rms (tag v versus r)")
+                "Mismatch sum rms (tag v versus rvms in %s %s",
+                    rtn->fn->name, report)
             
         }
         rtn = (RoutineInfo *) HT_Next(r->routine_hash_table);
@@ -988,6 +1017,9 @@ static Bool merge_report(HChar * report, aprof_report * rep_data) {
     RoutineInfo * current_routine = NULL;
     UInt curr_rid = 0;
     Bool invalid = False;
+    
+    rep_data->sqr_over = False;
+    rep_data->self_sqr_over = False;
     
     /* merge tuples */
     while (1) {
@@ -2013,15 +2045,21 @@ static void cmd_options(HChar * binary_name) {
     
     printf("\n  Actions:\n");
     
-    printf("    -r         Merge reports of different program's runs\n");
+    printf("    -k         check consistency of report(s)\n");
+    
+    printf("    -r         merge reports of different program's runs (different PID)\n");
     printf("               if no -t option is specified then this will not\n");
     printf("               merge reports of different threads.\n");
     
-    printf("    -t         Merge reports of different threads of the same program's run\n");
+    printf("    -t         merge reports of different threads of the same program's run (same PID)\n");
+    
+    printf("    -c         compare two reports; required -a and -b arguments.\n");
     
     printf("\n  Other options:\n");
     
     printf("    -d <PATH>  report's directory [default: working directory]\n");
+    printf("    -a <PATH>  perform an action on a specific report\n");
+    printf("    -b <PATH>  compare report specified with -a with this report\n");
     
     printf("\n");
     return;
@@ -2180,7 +2218,7 @@ Int main(Int argc, HChar *argv[]) {
     HChar ** reports = NULL;
     if (directory != NULL && logs[0] == NULL) {
         
-        printf("Searching reports in: %s\n", directory);
+        //printf("Searching reports in: %s\n", directory);
         reports = search_reports(&size);
     
     } else {
@@ -2207,6 +2245,8 @@ Int main(Int argc, HChar *argv[]) {
             reset_data(&ap_rep[0]);
             merge_report(reports[i++], &ap_rep[0]);
         }
+        
+        printf(GREEN("Passed:")" ");
         if (size == 1)
             printf("Checked consistency of report: %s\n", reports[0]);
         else if (logs[0] != NULL && logs[1] != NULL) {
