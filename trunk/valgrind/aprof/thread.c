@@ -474,6 +474,8 @@ UInt APROF_(overflow_handler_rms)(void) {
 
 #if INPUT_METRIC == RMS || DEBUG_DRMS
 
+    VG_(umsg)("Local counter overflow\n");
+
     ThreadData * tdata = APROF_(current_tdata);
     #if DEBUG
     AP_ASSERT(tdata != NULL, "Invalid tdata");
