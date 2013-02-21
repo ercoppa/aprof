@@ -113,6 +113,30 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
         UInt old_ts;
         UInt wts;
         
+        #if DEBUG_DRMS
+        Activation * act = APROF_(get_activation_noresize)(tdata, tdata->stack_depth);
+        
+        Bool rms_inc = False;
+        Bool rms_est_inc = False;
+        if (!kernel_access) {
+        
+            UInt old_aid = LK_insert(tdata->accesses_rms, addr, act->aid_rms);
+            if (old_aid < act->aid_rms && (type == LOAD || type == MODIFY)) {
+                
+                //VG_(printf)("RMS-real: %u %u", old_aid, act->aid_rms);
+                rms_inc = True; 
+                /*
+                if (old_aid > 0 && old_aid >= APROF_(get_activation_noresize)(tdata, 1)->aid_rms) {
+                    
+                    //
+
+                }
+                */
+            }
+        
+        }
+        #endif
+        
         /*
          * We are writing a new input value. So, this is a new "version"
          * of the memory cell. Update its timestamp in the global shadow memory.
@@ -128,6 +152,16 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
                 #if THREAD_INPUT == 0
                 wts = LK_insert(APROF_(global_shadow_memory), addr, ts);
                 #endif
+                
+                #if DEBUG_DRMS
+                if (rms_est_inc != rms_inc) {
+                    if (rms_est_inc) VG_(printf)("RMS-est  true\n");
+                    else VG_(printf)("RMS-est  false\n");
+                    if (rms_inc) VG_(printf)("RMS-real true\n");
+                    else VG_(printf)("RMS-real false\n");
+                }
+                AP_ASSERT(rms_est_inc == rms_inc, "Invalid estimation RMS");
+                #endif // DEBUG_DRMS
                 
                 #if !COSTANT_MEM_ACCESS
                 size_fix -= APROF_(addr_multiple);
@@ -155,6 +189,17 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
         old_ts = LK_insert(tdata->accesses, addr, ts);
 
         if(type == STORE) {
+            
+            #if DEBUG_DRMS
+            if (rms_est_inc != rms_inc) {
+                if (rms_est_inc) VG_(printf)("RMS-est  true\n");
+                else VG_(printf)("RMS-est  false\n");
+                if (rms_inc) VG_(printf)("RMS-real true\n");
+                else VG_(printf)("RMS-real false\n");
+            }
+            AP_ASSERT(rms_est_inc == rms_inc, "Invalid estimation RMS");
+            #endif // DEBUG_DRMS
+            
             #if COSTANT_MEM_ACCESS
             return;
             #else
@@ -164,7 +209,9 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
             #endif
         }
 
+        #if DEBUG_DRMS == 0
         Activation * act = APROF_(get_activation_noresize)(tdata, tdata->stack_depth);
+        #endif
        
         if(old_ts < wts){
             act->rvms++;
@@ -184,6 +231,10 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
         
         if (!kernel_access && old_ts < act->aid) {
 
+            #if DEBUG_DRMS
+            rms_est_inc = True;
+            #endif
+            
             act->rms++;
             if (old_ts > 0 && old_ts >= APROF_(get_activation_noresize)(tdata, 1)->aid) {
                 
@@ -191,6 +242,16 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
                 act2->rms--;        
             }
         }
+        
+        #if DEBUG_DRMS
+        if (rms_est_inc != rms_inc) {
+            if (rms_est_inc) VG_(printf)("RMS-est  true\n");
+            else VG_(printf)("RMS-est  false\n");
+            if (rms_inc) VG_(printf)("RMS-real true\n");
+            else VG_(printf)("RMS-real false\n");
+        }
+        AP_ASSERT(rms_est_inc == rms_inc, "Invalid estimation RMS");
+        #endif // DEBUG_DRMS
         
         #else
         

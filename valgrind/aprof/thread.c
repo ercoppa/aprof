@@ -101,6 +101,11 @@ static ThreadData * APROF_(thread_start)(ThreadId tid){
     tdata->next_aid = 1;
     #endif
     
+    #if DEBUG_DRMS
+    tdata->next_aid = 1;
+    tdata->accesses_rms = LK_create();
+    #endif
+    
     #if CCT
     
     // allocate dummy CCT root
@@ -459,8 +464,15 @@ UInt APROF_(overflow_handler)(void) {
     
     return sum + 1;
 }
-#else
+#endif
+
+#if INPUT_METRIC == RMS
 UInt APROF_(overflow_handler)(void) {
+#elif DEBUG_DRMS
+UInt APROF_(overflow_handler_rms)(void) {
+#endif
+
+#if INPUT_METRIC == RMS || DEBUG_DRMS
 
     ThreadData * tdata = APROF_(current_tdata);
     #if DEBUG

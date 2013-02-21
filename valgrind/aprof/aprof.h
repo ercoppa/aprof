@@ -145,6 +145,8 @@
 #define BUFFER_SIZE         32000   // FILE buffer size
 #define NAME_SIZE           4096    // function/object name buffer size 
 
+#define DEBUG_DRMS          0
+
 /* some config check */
 
 #if defined(VG_BIGENDIAN)
@@ -169,6 +171,10 @@
 
 #if INPUT_METRIC == RVMS && IGNORE_REPEAT_ACC
 #error "With IGNORE_REPEAT_ACC you're ignoring a store after a load. This is not ok with RVMS"
+#endif
+
+#if INPUT_METRIC == RMS
+#undef DEBUG_DRMS
 #endif
 
 /* Failure/error function */
@@ -241,6 +247,10 @@ void APROF_(thread_switch)(ThreadId tid, ULong blocks_dispatched);
 void APROF_(thread_exit)(ThreadId tid);
 void APROF_(kill_threads)(void);
 UInt APROF_(overflow_handler)(void);
+
+#if DEBUG_DRMS
+UInt APROF_(overflow_handler_rms)(void);
+#endif
 
 /* report functions (report.c) */
 void APROF_(generate_report)(ThreadData * tdata, ThreadId tid);

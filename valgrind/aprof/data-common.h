@@ -221,6 +221,10 @@ typedef struct {
                                          // (value of the global counter
                                          // when this act started)
 
+    #if DEBUG_DRMS
+    UInt           aid_rms;
+    #endif
+
     #if CCT
     CCTNode *      node;                 // pointer to the CCT node 
                                          // associated with the call
@@ -245,6 +249,12 @@ typedef struct {
 typedef struct ThreadData {
 
     LookupTable *   accesses;            // stack of sets of addresses
+    
+    #if DEBUG_DRMS
+    LookupTable *   accesses_rms;         // stack of sets of addresses
+    UInt            next_aid;
+    #endif
+    
     HashTable *     routine_hash_table;  // table of all encountered routines
     UInt            stack_depth;         // stack depth
     Activation *    stack;               // activation stack
