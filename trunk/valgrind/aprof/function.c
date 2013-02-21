@@ -176,6 +176,12 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
     
     #endif
     
+    #if DEBUG_DRMS
+    act->aid_rms                 = tdata->next_aid++;
+    if (tdata->next_aid == 0)  // check & fix timestamp overflow
+        tdata->next_aid = APROF_(overflow_handler_rms)();
+    #endif
+    
     #if DISCARD_UNKNOWN
     if (!rtn_info->fn->discard_info) {
     #endif

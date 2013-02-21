@@ -427,7 +427,9 @@ UInt binary_search(UInt * array, UInt init, UInt size, UInt ts){
 
 }
 
-#else
+#endif
+
+#if INPUT_METRIC == RMS || DEBUG_DRMS
 
 void LK_compress_rms(LookupTable * uf, UInt * arr_rid, UInt size_arr) {
     

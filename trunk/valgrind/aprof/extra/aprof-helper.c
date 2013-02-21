@@ -41,8 +41,18 @@
 
 #define EMSG(...) fprintf(stderr, __VA_ARGS__);
 
+#define BG_GREEN   "\x1b[42m"
+#define BG_YELLOW  "\x1b[43m"
+#define BG_RESET   "\x1b[0m"
+#define BG_RED     "\x1b[41m"
+
+#define YELLOW(str) BG_YELLOW str BG_RESET
+#define GREEN(str) BG_GREEN str BG_RESET
+#define RED(str) BG_RED str BG_RESET
+
 #define ASSERT(cond, ...)   do { \
                                     if (!(cond)) { \
+                                        EMSG(RED("Fatal error:")" "); \
                                         EMSG(__VA_ARGS__); \
                                         EMSG("\n"); \
                                         assert(cond); \
@@ -80,13 +90,6 @@
 #else // DEBUG
 #define DASSERT(cond, ...) // do nothing
 #endif // DEBUG
-
-#define BG_GREEN   "\x1b[42m"
-#define BG_RESET   "\x1b[0m"
-#define BG_RED     "\x1b[41m"
-
-#define GREEN(str) BG_GREEN str BG_RESET
-#define RED(str) BG_RED str BG_RESET
 
 #define STR(buf, ...) sprintf(buf, __VA_ARGS__);
 
@@ -450,9 +453,6 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         
     } else if (token[0] == 'p') {
         
-        Bool over_sqr = False;
-        Bool over_self_sqr = False;
-        
         // routine ID
         token = VG_(strtok)(NULL, DELIM_DQ);
         ASSERT(token != NULL, "Invalid id: %s", line_orig);
@@ -506,12 +506,12 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         
         ASSERT(sum >= min*occ, "Invalid sum: %s", line_orig);
         
-        if (sqr_sum < ((double)min)*((double)min)*((double)occ)) {
+        if (sqr_sum < ((double)min)*((double)min)*((double)occ)
+                && !r->sqr_over) {
             
-            EMSG(RED("Warning:") " Invalid sqr_sum (overflow?): %s\n", 
+            EMSG(YELLOW("Warning:") " Invalid sqr_sum (overflow?): %s\n", 
                 report);
             
-            over_sqr = True;
             r->sqr_over = True;
         }
         
@@ -556,12 +556,12 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         double self_sqr = VG_(strtod) (token, NULL);
         UOF_DOUBLE(self_sqr, line_orig);
         
-        if (self_sqr < ((double)self_min) * ((double)self_min)) {
+        if (self_sqr < ((double)self_min) * ((double)self_min)
+                && !r->self_sqr_over) {
             
-            EMSG(RED("Warning:") " Invalid self sqr (overflow?): %s\n", 
+            EMSG(YELLOW("Warning:") " Invalid self sqr (overflow?): %s\n", 
                 report);
             
-            over_self_sqr = True;
             r->self_sqr_over = True;
         }
         
@@ -627,12 +627,13 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         if (info_access->cumulative_sum_sqr < 
                 ((double)info_access->min_cumulative_time) * 
                 ((double)info_access->min_cumulative_time) *
-                ((double)info_access->calls_number)) {
-            
-            if (!over_sqr && !r->sqr_over) 
-                EMSG(RED("Warning:") " Invalid sqr_sum (overflow?): %s\n", 
+                ((double)info_access->calls_number) &&
+                !r->sqr_over) {
+             
+            EMSG(YELLOW("Warning:") " Invalid sqr_sum (overflow?): %s\n", 
                             report);
             
+            r->sqr_over = True;
         }
         
         ADD(info_access->cumul_real_time_sum, cumul_real);
@@ -671,12 +672,11 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         if (info_access->self_sum_sqr <
                 ((double)info_access->self_time_min) * 
                 ((double)info_access->self_time_min) *
-                ((double)info_access->calls_number)) {
-            
-            if (!over_self_sqr && !r->self_sqr_over) {
-                EMSG(RED("Warning:") " Invalid sqr_sum (overflow?): %s\n", 
+                ((double)info_access->calls_number) &&
+                !r->self_sqr_over) {
+
+            EMSG(YELLOW("Warning:") " Invalid sqr_sum (overflow?): %s\n", 
                             report);
-            }
         }
         
         if (r->version == REPORT_VERSION && r->input_metric == RVMS) {
@@ -2068,7 +2068,7 @@ static void cmd_options(HChar * binary_name) {
 }
 
 Int main(Int argc, HChar *argv[]) {
-    
+
     //printf("aprof-helper - http://code.google.com/p/aprof/\n\n");
     
     /*
