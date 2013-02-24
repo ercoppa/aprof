@@ -33,7 +33,9 @@
 
 #include "aprof.h"
 
+#if DEBUG_DRMS
 #define OVERFLOW_DEBUG 0
+#endif
 
 /* # running threads */
 UInt APROF_(running_threads) = 0;
@@ -362,7 +364,8 @@ UInt APROF_(overflow_handler)(void) {
     #endif
  
     // current valid timestamps 
-    UInt * active_ts = VG_(calloc)("array overflow", sum, sizeof(UInt));
+    sum++;
+    UInt * active_ts = VG_(calloc)("array overflow", sum*2, sizeof(UInt));
     
     /* 
      * Collect valid activation-ts using a merge 
@@ -392,6 +395,7 @@ UInt APROF_(overflow_handler)(void) {
          */
         Activation * act_max = NULL;
         UInt max_ind = 0;
+        UInt max_thread = 0;
 
         /* find the max activation ts among all shadow stacks */ 
         for(j = 0; j < count_thread; j++){
@@ -411,6 +415,7 @@ UInt APROF_(overflow_handler)(void) {
                     
                     max = act_tmp->aid;
                     act_max = act_tmp;
+                    max_thread = k;
                     max_ind = j;
                 
                 }
@@ -426,6 +431,7 @@ UInt APROF_(overflow_handler)(void) {
         #endif
 
         active_ts[i] = max;
+        active_ts[sum+i] = max_thread + 1;
         
         // next time we check for the max the caller of this act
         stack_depths[max_ind]--; 
@@ -450,16 +456,18 @@ UInt APROF_(overflow_handler)(void) {
     // compress shadow memories
     #if OVERFLOW_DEBUG
     VG_(umsg)("Compressing\n");
-    #endif
+    LK_compress(active_ts, sum, shamem, f);
+    #else
     LK_compress(active_ts, sum, shamem);
-
+    #endif
+    
     VG_(free)(active_ts);
     VG_(free)(shamem);
     
     #if OVERFLOW_DEBUG
     APROF_(fclose)(f);
     #endif
-    VG_(umsg)("Global counter overflow handler end\n");
+    //VG_(umsg)("Global counter overflow handler end\n");
     //AP_ASSERT(0, "test");
     
     return sum + 1;
@@ -482,19 +490,32 @@ UInt APROF_(overflow_handler_rms)(void) {
     #endif
 
     /* Collect all valid aid */
-    UInt * arr_aid = VG_(calloc)("arr rid", tdata->stack_depth - 1, sizeof(UInt));
+    UInt * arr_aid = VG_(calloc)("arr rid", tdata->stack_depth, sizeof(UInt));
     int j = 0;
-    for (j = 0; j < tdata->stack_depth - 1; j++) {
+    //VG_(umsg)("Stack depth: %d\n", tdata->stack_depth);
+    for (j = 0; j < tdata->stack_depth; j++) {
     
         Activation * act_c = APROF_(get_activation)(tdata, j + 1);
+        #if DEBUG_DRMS
+        //VG_(umsg)("%u=%u ", j + 1, act_c->aid_rms);
+        arr_aid[j] = act_c->aid_rms;
+        act_c->aid_rms = j + 1;
+        #else
         arr_aid[j] = act_c->aid;
         act_c->aid = j + 1;
-    
+        #endif
+        
     }
-    LK_compress_rms(tdata->accesses, arr_aid, tdata->stack_depth -1);
+    #if DEBUG_DRMS
+    //VG_(umsg)("\n");
+    LK_compress_rms(tdata->accesses_rms, arr_aid, tdata->stack_depth);
+    #else
+    LK_compress_rms(tdata->accesses, arr_aid, tdata->stack_depth);
+    #endif
     VG_(free)(arr_aid);
 
-    return tdata->stack_depth;
+    //VG_(umsg)("Local counter: %u\n", tdata->stack_depth + 1);
+    return tdata->stack_depth + 1;
 
 }
 #endif

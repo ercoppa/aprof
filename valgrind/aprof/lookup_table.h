@@ -47,6 +47,11 @@
 #ifndef _LK_H_
 #define _LK_H_
 
+#define DEBUG_DRMS 0
+#if DEBUG_DRMS
+#define COMPRESS_DEBUG 0
+#endif
+
 //#define __i386__
 
 #ifdef __i386__
@@ -106,13 +111,11 @@ UInt LK_lookup(LookupTable * lt, UWord key);
  * size:   size of the previous array
  * memsha: all the thread shadow memories
  */
+#if COMPRESS_DEBUG
+void LK_compress(UInt * array, UInt size, LookupTable ** memsha, void * f);
+#else
 void LK_compress(UInt * array, UInt size, LookupTable ** memsha);
+#endif
 void LK_compress_rms(LookupTable * uf, UInt * arr_rid, UInt size_arr);
-
-/*
- * Binary search in an array...
- */
-UInt binary_search(UInt * array, UInt init, UInt size, UInt ts);
-
 
 #endif

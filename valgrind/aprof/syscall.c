@@ -82,8 +82,10 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
     /*
      * This is an undocumented behavior of Valgrind 
      */
+    Bool forced_switch = False;
     if (tid != APROF_(current_TID)) {
         APROF_(thread_switch)(tid, 0);
+        forced_switch = True; 
     } 
 
     #if defined(VGO_linux)
@@ -120,9 +122,11 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
             Addr addr = args[1];
             APROF_(fix_access_size)(addr, size);
             
-            APROF_(global_counter)++;
-            if(APROF_(global_counter) == 0)
-                APROF_(global_counter) = APROF_(overflow_handler)();
+            if (!forced_switch) {
+                APROF_(global_counter)++;
+                if(APROF_(global_counter) == 0)
+                    APROF_(global_counter) = APROF_(overflow_handler)();
+            }
             
             while(size > 0) {
                 
@@ -148,9 +152,11 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
             UWord i;
             Int iov_len;
             
-            APROF_(global_counter)++;
-            if(APROF_(global_counter) == 0)
-                APROF_(global_counter) = APROF_(overflow_handler)();
+            if (!forced_switch) {
+                APROF_(global_counter)++;
+                if(APROF_(global_counter) == 0)
+                    APROF_(global_counter) = APROF_(overflow_handler)();
+            }
             
             for(i = 0; i < iovcnt; i++){
                 
@@ -260,9 +266,11 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
         size = size + sizeof(long int);
         APROF_(fix_access_size)(addr, size);
         
-        APROF_(global_counter)++;
-        if(APROF_(global_counter) == 0)
-            APROF_(global_counter) = APROF_(overflow_handler)();
+        if (!forced_switch) {
+            APROF_(global_counter)++;
+            if(APROF_(global_counter) == 0)
+                APROF_(global_counter) = APROF_(overflow_handler)();
+        }
         
         while(size > 0) {
             
