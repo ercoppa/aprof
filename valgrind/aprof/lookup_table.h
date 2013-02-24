@@ -47,10 +47,8 @@
 #ifndef _LK_H_
 #define _LK_H_
 
-#define DEBUG_DRMS 0
-#if DEBUG_DRMS
+
 #define COMPRESS_DEBUG 0
-#endif
 
 //#define __i386__
 
