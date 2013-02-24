@@ -118,20 +118,29 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
         
         Bool rms_inc = False;
         Bool rms_est_inc = False;
+        Bool rms_dec = False;
+        Bool rms_est_dec = False;
+        Activation * act_dec = NULL;
+        Activation * act_est_dec = NULL;
+        UInt old_aid = 0;
+        UInt j = (addr & 0xffff) >> 2;
+        UInt i = addr >> 30; // 14 + 16
+        UInt k = (addr >> 16) & 0x3fff;
         if (!kernel_access) {
         
-            UInt old_aid = LK_insert(tdata->accesses_rms, addr, act->aid_rms);
+            //if (i == 0 && k == 1058 && j == 2878) VG_(printf)("RMS-real access: %u\n", tdata->next_aid - 1);
+            old_aid = LK_insert(tdata->accesses_rms, addr, tdata->next_aid - 1);
             if (old_aid < act->aid_rms && (type == LOAD || type == MODIFY)) {
                 
                 //VG_(printf)("RMS-real: %u %u", old_aid, act->aid_rms);
                 rms_inc = True; 
-                /*
                 if (old_aid > 0 && old_aid >= APROF_(get_activation_noresize)(tdata, 1)->aid_rms) {
                     
-                    //
+                    rms_dec = True;
+                    act_dec = APROF_(get_activation_by_aid_rms)(tdata, old_aid);
 
                 }
-                */
+                
             }
         
         }
@@ -160,7 +169,8 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
                     if (rms_inc) VG_(printf)("RMS-real true\n");
                     else VG_(printf)("RMS-real false\n");
                 }
-                AP_ASSERT(rms_est_inc == rms_inc, "Invalid estimation RMS");
+                AP_ASSERT(!rms_dec, "Invalid estimation RMS [1]");
+                AP_ASSERT(rms_est_inc == rms_inc, "Invalid estimation RMS [2]");
                 #endif // DEBUG_DRMS
                 
                 #if !COSTANT_MEM_ACCESS
@@ -186,6 +196,7 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
         /*
          * Update the timestamp in the private shadow memory.
          */
+        //if (i == 0 && k == 1058 && j == 2878) VG_(printf)("RMS-est  access: %u\n", ts);
         old_ts = LK_insert(tdata->accesses, addr, ts);
 
         if(type == STORE) {
@@ -197,7 +208,8 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
                 if (rms_inc) VG_(printf)("RMS-real true\n");
                 else VG_(printf)("RMS-real false\n");
             }
-            AP_ASSERT(rms_est_inc == rms_inc, "Invalid estimation RMS");
+            AP_ASSERT(!rms_dec, "Invalid estimation RMS [1]");
+            AP_ASSERT(rms_est_inc == rms_inc, "Invalid estimation RMS [2]");
             #endif // DEBUG_DRMS
             
             #if COSTANT_MEM_ACCESS
@@ -233,24 +245,52 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
 
             #if DEBUG_DRMS
             rms_est_inc = True;
+            rms_est_dec = False;
             #endif
             
             act->rms++;
             if (old_ts > 0 && old_ts >= APROF_(get_activation_noresize)(tdata, 1)->aid) {
                 
                 Activation * act2 = APROF_(get_activation_by_aid)(tdata, old_ts);
-                act2->rms--;        
+                act2->rms--;
+                
+                #if DEBUG_DRMS
+                rms_est_dec = True;
+                act_est_dec = act2;
+                #endif     
             }
+            
         }
         
         #if DEBUG_DRMS
-        if (rms_est_inc != rms_inc) {
+        if (!kernel_access && (rms_est_inc != rms_inc || rms_dec != rms_est_dec 
+                    || act_dec != act_est_dec)) {
+            
+            if (kernel_access) VG_(printf)("Kernel access");
+            VG_(printf)("addr: %u:%u:%u\n", i, k, j);
+            
+            VG_(printf)("RMS-real  %u %u(%d:%u)\n", 
+                old_aid, act->aid_rms, tdata->stack_depth,
+                tdata->next_aid);
+            VG_(printf)("RMS-est  %u %u\n", old_ts, 
+                            act->aid);
+            
+            if (act_dec != NULL) VG_(printf)("RMS-real act dec %s\n", 
+                                        act_dec->rtn_info->fn->name);
+            if (act_dec != NULL) VG_(printf)("RMS-est  act dec %s\n", 
+                                        act_est_dec->rtn_info->fn->name);
             if (rms_est_inc) VG_(printf)("RMS-est  true\n");
             else VG_(printf)("RMS-est  false\n");
             if (rms_inc) VG_(printf)("RMS-real true\n");
             else VG_(printf)("RMS-real false\n");
+            if (rms_est_dec) VG_(printf)("RMS-est  dec true\n");
+            else VG_(printf)("RMS-est  dec false\n");
+            if (rms_dec) VG_(printf)("RMS-real dec true\n");
+            else VG_(printf)("RMS-real dec false\n");
         }
-        AP_ASSERT(rms_est_inc == rms_inc, "Invalid estimation RMS");
+        AP_ASSERT(rms_dec == rms_est_dec, "Invalid estimation RMS [1]");
+        AP_ASSERT(act_dec == act_est_dec, "Invalid estimation RMS [1b]");
+        AP_ASSERT(rms_est_inc == rms_inc, "Invalid estimation RMS [2]");
         #endif // DEBUG_DRMS
         
         #else

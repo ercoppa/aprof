@@ -159,7 +159,10 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
     act->total_children_time = 0;
     
     #if INPUT_METRIC == RVMS 
-
+    /*
+    VG_(umsg)("G: Stack depth %d aid %u %s\n", tdata->stack_depth, 
+                APROF_(global_counter) + 1, act->rtn_info->fn->name);
+    */
     act->rvms                = 0;
     act->aid                 = ++APROF_(global_counter);
     if (APROF_(global_counter) == 0) {  // check & fix timestamp overflow
@@ -178,6 +181,10 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
     
     #if DEBUG_DRMS
     act->aid_rms                 = tdata->next_aid++;
+    /*
+    VG_(umsg)("L: Stack depth %d aid %u %s\n", tdata->stack_depth, 
+                tdata->next_aid - 1, act->rtn_info->fn->name);
+    */
     if (tdata->next_aid == 0)  // check & fix timestamp overflow
         tdata->next_aid = APROF_(overflow_handler_rms)();
     #endif

@@ -114,6 +114,23 @@ Activation * APROF_(resize_stack)(ThreadData * tdata, unsigned int depth) {
 
 }
 
+#if DEBUG_DRMS
+Activation * APROF_(get_activation_by_aid_rms)(ThreadData * tdata, UInt aid) {
+    
+    Activation * a = &tdata->stack[tdata->stack_depth - 2];
+    while (a->aid_rms > aid) {
+        
+        a--;
+        #if DEBUG
+        AP_ASSERT(a >= tdata->stack, "Requested aid not found in stack!");
+        #endif
+        
+    }
+    return a;
+    
+}
+#endif
+
 Activation * APROF_(get_activation_by_aid)(ThreadData * tdata, UInt aid) {
     
     #if DEBUG
