@@ -103,10 +103,6 @@ RoutineInfo * APROF_(new_routine_info)(ThreadData * tdata,
     rtn_info->rvms_map = HT_construct(NULL);
     #endif
     
-    #if DEBUG
-    AP_ASSERT(rtn_info->rms_map != NULL, "sms_map not allocable");
-    #endif
-    
     #if DEBUG_ALLOCATION
     APROF_(add_alloc)(HT);
     #endif
