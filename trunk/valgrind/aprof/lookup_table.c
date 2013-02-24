@@ -33,9 +33,7 @@
 
 #include "aprof.h"
 
-#if DEBUG_DRMS
 #define COMPRESS_DEBUG 0
-#endif
 
 /* 
  * # timestamps in the last level of the lookup table
@@ -249,34 +247,52 @@ static UInt binary_search(UInt * array, UInt init, UInt size, UInt ts){
     
     if (size == 1) return 0;
     if (array[1] > ts) return 0;
-    
+    if (array[size - 1] <= ts) return size - 1;
+/*    
     Int q = size - 1;
     while (q >= 0) {
-        if (array[q--] <= ts) { q++; break; }
+        if (array[q--] <= ts) { 
+            q++; 
+            break; // return q;
+        }
     }
-    //VG_(printf)("binary[val=%u, init=%u, size=%u]:\n", ts, init, size);
     AP_ASSERT(q >= 0, "value not found [1]");
-
-    UInt l = init;
-    UInt h = size - 1;
-    UInt k;
-    while(l != (h - 1)){
-
-        k = (l + h) / 2;
+*/
+    Int min = init;
+    Int max = size - 1;
+    
+    do {
         
-        if(array[k] == ts)
-            return k;
-    
-        else if(array[k] < ts)
-            l = k;
+        Int index = (min + max) / 2;
+        
+        if (array[index] == ts) {
+            
+            //AP_ASSERT(index == q, "Invalid binary search");
+            return index;
+        }
+        
+        else if (array[index] > ts) 
+            max = index - 1; 
+            
+        else {
+            
+            if (array[index + 1] > ts) {
+                //VG_(umsg)("index=%u q=%u\n", index, q);
+                //AP_ASSERT(index == q, "Invalid binary search");
+                return index;
+            }
+            min = index + 1;
+            
+        }
+        
+    } while(min <= max);
 
-        else
-            h = k;
-    
-    }
-    
-    AP_ASSERT(l == q, "Invalid binary search");
-    return l;
+    VG_(umsg)("Binary(%u) ", ts);
+    UInt i = 0;
+    while (i < size) VG_(umsg)("%u ", array[i++]);
+    VG_(umsg)("\n");
+    AP_ASSERT(0, "Binary search fail");
+    return 0;
 }
 
 #if COMPRESS_DEBUG
@@ -345,7 +361,7 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
                 if (local_chunk == NULL) continue;
                 #endif
             
-                local[q] = local_chunk;
+                local[q++] = local_chunk;
                 
             }
             
@@ -393,12 +409,20 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
 
                     if(local_chunk[k] < gts) {
 
+                        #if COMPRESS_DEBUG
+                        if (1 || gts > 0) {
+                            APROF_(fprintf)(f, "[%d] TS: %u => %u ~ GTS: %u - [%u:%u:%u]\n", 
+                                t, local_chunk[k], ts, 0, i, j, k);
+                            APROF_(fflush)(f);
+                        }
+                        #endif
+
                         local_chunk[k] = 0;
                         
                     } else if(local_chunk[k] == gts) {
                         
                         #if COMPRESS_DEBUG
-                        if (gts > 0) {
+                        if (1 || gts > 0) {
                             APROF_(fprintf)(f, "[%d] TS: %u => %u ~ GTS: %u - [%u:%u:%u]\n", 
                                 t, local_chunk[k], ts, gts, i, j, k);
                             APROF_(fflush)(f);
@@ -423,8 +447,8 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
                                                     size, local_chunk[k]);
                         
                         
-                        #if COMPRESS_DEBUG
                         AP_ASSERT(local_chunk[k] >= ts, "Invalid re-assignment");
+                        #if COMPRESS_DEBUG
                         APROF_(fprintf)(f, "[%d] TS: %u => %u ~ GTS: %u (binary) - [%u:%u:%u]\n", 
                             t, old, local_chunk[k], gts, i, j, k);
                         APROF_(fflush)(f);

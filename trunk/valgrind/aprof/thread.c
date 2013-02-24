@@ -408,7 +408,7 @@ UInt APROF_(overflow_handler)(void) {
                 act_tmp = APROF_(get_activation)(threads[k], stack_depths[j]);
                 
                 #if OVERFLOW_DEBUG
-                APROF_(fprintf)(f, "Thread[%u]: aid = %u\n", k, act_tmp->aid);
+                APROF_(fprintf)(f, "Thread[%u]: aid = %u\n", k, act_tmp->aid_rvms);
                 APROF_(fflush)(f);
                 #endif
 

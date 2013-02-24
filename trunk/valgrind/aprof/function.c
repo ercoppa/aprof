@@ -170,7 +170,7 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
     */
     act->rvms                = 0;
     act->aid_rvms            = ++APROF_(global_counter);
-    if (APROF_(global_counter) == 0) {  // check & fix timestamp overflow
+    if (APROF_(global_counter) % 100000 == 0) {  // check & fix timestamp overflow
         tdata->stack_depth--; // because 
         act->aid_rvms = APROF_(global_counter) = APROF_(overflow_handler)();
         tdata->stack_depth++;

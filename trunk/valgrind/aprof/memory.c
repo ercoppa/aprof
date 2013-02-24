@@ -105,7 +105,12 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
     while (size_fix > 0) {
     #endif
         
-        //VG_(printf)("addr: %lu\n", addr);
+        /*
+        UInt j = (addr & 0xffff) >> 2;
+        UInt i = addr >> 30; // 14 + 16
+        UInt k = (addr >> 16) & 0x3fff;
+        VG_(umsg)("addr: %u:%u:%u\n", i, k, j);
+        */
         
         #if INPUT_METRIC == RMS || DISTINCT_RMS
         Activation * act = APROF_(get_activation_noresize)(tdata, tdata->stack_depth);
@@ -120,6 +125,7 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
         if (old_aid < act->aid_rms && (type == LOAD || type == MODIFY)) {
             
             act->rms++;
+            //VG_(umsg)("RMS++\n");
             if (old_aid > 0 && old_aid >= APROF_(get_activation_noresize)(tdata, 1)->aid_rms) {
                 
                 APROF_(get_activation_by_aid_rms)(tdata, old_aid)->rms--;
@@ -197,11 +203,13 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
         #endif
        
         if(old_ts < wts){
+            //VG_(umsg)("RVMS++ [1]\n");
             act->rvms++;
         }
  
         else if (old_ts < act->aid_rvms) {
             
+            //VG_(umsg)("RVMS++ [2]\n");
             act->rvms++;
             if (old_ts > 0 && old_ts >= APROF_(get_activation_noresize)(tdata, 1)->aid_rvms) {
                 
@@ -212,6 +220,11 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
         }
         
         //VG_(umsg)("old_ts %u - act->aid_rvms: %u\n", old_ts, act->aid_rvms);
+        
+        #if DISTINCT_RMS
+        AP_ASSERT(act->rms <= act->rvms, "Wrong!");
+        #endif
+        
         #endif
     
     #if !COSTANT_MEM_ACCESS
