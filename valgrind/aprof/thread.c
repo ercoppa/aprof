@@ -33,9 +33,7 @@
 
 #include "aprof.h"
 
-#if DEBUG_DRMS
 #define OVERFLOW_DEBUG 0
-#endif
 
 /* # running threads */
 UInt APROF_(running_threads) = 0;
@@ -97,15 +95,13 @@ static ThreadData * APROF_(thread_start)(ThreadId tid){
     return tdata;
     #endif
     
-    tdata->accesses = LK_create();
-    
-    #if INPUT_METRIC == RMS
-    tdata->next_aid = 1;
-    #endif
-    
-    #if DEBUG_DRMS
+    #if INPUT_METRIC == RMS || DISTINCT_RMS
     tdata->next_aid = 1;
     tdata->accesses_rms = LK_create();
+    #endif
+    
+    #if INPUT_METRIC == RVMS
+    tdata->accesses_rvms = LK_create();
     #endif
     
     #if CCT
@@ -200,7 +196,13 @@ void APROF_(thread_exit)(ThreadId tid){
     
     /* destroy all thread data data */
     
-    LK_destroy(tdata->accesses);
+    #if INPUT_METRIC == RMS || DISTINCT_RMS
+    LK_destroy(tdata->accesses_rms);
+    #endif
+    
+    #if INPUT_METRIC == RVMS
+    LK_destroy(tdata->accesses_rvms);
+    #endif
     
     #if CCT
     // deallocate CCT
@@ -351,7 +353,7 @@ UInt APROF_(overflow_handler)(void) {
             APROF_(fflush)(f);
             #endif
         
-            shamem[i] = threads[j]->accesses;
+            shamem[i] = threads[j]->accesses_rvms;
             stack_depths[i] = threads[j]->stack_depth;
             sum += stack_depths[i]; // over-estimation
             i++; j++;
@@ -364,8 +366,8 @@ UInt APROF_(overflow_handler)(void) {
     #endif
  
     // current valid timestamps 
-    sum++;
-    UInt * active_ts = VG_(calloc)("array overflow", sum*2, sizeof(UInt));
+    sum++; // in order to have an initiali zero
+    UInt * active_ts = VG_(calloc)("array overflow", sum, sizeof(UInt));
     
     /* 
      * Collect valid activation-ts using a merge 
@@ -395,7 +397,6 @@ UInt APROF_(overflow_handler)(void) {
          */
         Activation * act_max = NULL;
         UInt max_ind = 0;
-        UInt max_thread = 0;
 
         /* find the max activation ts among all shadow stacks */ 
         for(j = 0; j < count_thread; j++){
@@ -411,11 +412,10 @@ UInt APROF_(overflow_handler)(void) {
                 APROF_(fflush)(f);
                 #endif
 
-                if(max < act_tmp->aid){
+                if(max < act_tmp->aid_rvms){
                     
-                    max = act_tmp->aid;
+                    max = act_tmp->aid_rvms;
                     act_max = act_tmp;
-                    max_thread = k;
                     max_ind = j;
                 
                 }
@@ -431,11 +431,10 @@ UInt APROF_(overflow_handler)(void) {
         #endif
 
         active_ts[i] = max;
-        active_ts[sum+i] = max_thread + 1;
         
         // next time we check for the max the caller of this act
         stack_depths[max_ind]--; 
-        act_max->aid = i; // re-assign ts
+        act_max->aid_rvms = i; // re-assign ts
     
     }
     
@@ -474,13 +473,8 @@ UInt APROF_(overflow_handler)(void) {
 }
 #endif
 
-#if INPUT_METRIC == RMS
-UInt APROF_(overflow_handler)(void) {
-#elif DEBUG_DRMS
+#if INPUT_METRIC == RMS || DISTINCT_RMS
 UInt APROF_(overflow_handler_rms)(void) {
-#endif
-
-#if INPUT_METRIC == RMS || DEBUG_DRMS
 
     VG_(umsg)("Local counter overflow\n");
 
@@ -496,26 +490,18 @@ UInt APROF_(overflow_handler_rms)(void) {
     for (j = 0; j < tdata->stack_depth; j++) {
     
         Activation * act_c = APROF_(get_activation)(tdata, j + 1);
-        #if DEBUG_DRMS
         //VG_(umsg)("%u=%u ", j + 1, act_c->aid_rms);
         arr_aid[j] = act_c->aid_rms;
         act_c->aid_rms = j + 1;
-        #else
-        arr_aid[j] = act_c->aid;
-        act_c->aid = j + 1;
-        #endif
         
     }
-    #if DEBUG_DRMS
+    
     //VG_(umsg)("\n");
     LK_compress_rms(tdata->accesses_rms, arr_aid, tdata->stack_depth);
-    #else
-    LK_compress_rms(tdata->accesses, arr_aid, tdata->stack_depth);
-    #endif
     VG_(free)(arr_aid);
 
     //VG_(umsg)("Local counter: %u\n", tdata->stack_depth + 1);
     return tdata->stack_depth + 1;
 
 }
-#endif
+#endif // INPUT_METRIC == RMS || DISTINCT_RMS

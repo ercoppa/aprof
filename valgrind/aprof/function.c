@@ -38,12 +38,16 @@ void APROF_(destroy_routine_info)(RoutineInfo * ri) {
     #if CCT
     HT_destruct(ri->context_rms_map);
     #else
+    
+    #if INPUT_METRIC == RMS || DISTINCT_RMS
     HT_destruct(ri->rms_map);
     #endif
     
-    #if DISTINCT_RMS
-    HT_destruct(ri->distinct_rms); 
+    #if INPUT_METRIC == RVMS
+    HT_destruct(ri->rvms_map);
     #endif
+    
+    #endif // CCT
     
     VG_(free)(ri);
 
@@ -76,10 +80,6 @@ RoutineInfo * APROF_(new_routine_info)(ThreadData * tdata,
     
     rtn_info->routine_id = tdata->next_routine_id++;
 
-    #if DISTINCT_RMS
-    rtn_info->distinct_rms = HT_construct(VG_(free));
-    #endif
-
     #if CCT
     
     /* elements of this ht are freed when we generate the report */
@@ -96,7 +96,13 @@ RoutineInfo * APROF_(new_routine_info)(ThreadData * tdata,
     #else
     
     /* elements of this ht are freed when we generate the report */
+    #if INPUT_METRIC == RMS || DISTINCT_RMS
     rtn_info->rms_map = HT_construct(NULL);
+    #endif
+    #if INPUT_METRIC == RVMS
+    rtn_info->rvms_map = HT_construct(NULL);
+    #endif
+    
     #if DEBUG
     AP_ASSERT(rtn_info->rms_map != NULL, "sms_map not allocable");
     #endif
@@ -155,7 +161,6 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
     rtn_info->recursion_pending++;
     act->rtn_info            = rtn_info;
     act->entry_time          = start;
-    act->rms                 = 0;
     act->total_children_time = 0;
     
     #if INPUT_METRIC == RVMS 
@@ -164,29 +169,21 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
                 APROF_(global_counter) + 1, act->rtn_info->fn->name);
     */
     act->rvms                = 0;
-    act->aid                 = ++APROF_(global_counter);
+    act->aid_rvms            = ++APROF_(global_counter);
     if (APROF_(global_counter) == 0) {  // check & fix timestamp overflow
         tdata->stack_depth--; // because 
-        act->aid = APROF_(global_counter) = APROF_(overflow_handler)();
+        act->aid_rvms = APROF_(global_counter) = APROF_(overflow_handler)();
         tdata->stack_depth++;
     }
     
-    #else
-    
-    act->aid                 = tdata->next_aid++;
-    if (tdata->next_aid == 0)  // check & fix timestamp overflow
-        tdata->next_aid = APROF_(overflow_handler)();
-    
     #endif
+    #if DISTINCT_RMS || INPUT_METRIC == RMS
     
-    #if DEBUG_DRMS
+    act->rms                     = 0;
     act->aid_rms                 = tdata->next_aid++;
-    /*
-    VG_(umsg)("L: Stack depth %d aid %u %s\n", tdata->stack_depth, 
-                tdata->next_aid - 1, act->rtn_info->fn->name);
-    */
     if (tdata->next_aid == 0)  // check & fix timestamp overflow
         tdata->next_aid = APROF_(overflow_handler_rms)();
+    
     #endif
     
     #if DISCARD_UNKNOWN
@@ -306,8 +303,8 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
         
         #if INPUT_METRIC == RMS
         info_access = HT_lookup(rms_map, act->rms);
-        #else
-        info_access = HT_lookup(rms_map, act->rvms);
+        #elif INPUT_METRIC == RVMS
+        info_access = HT_lookup(rvms_map, act->rvms);
         #endif
         
     }
@@ -315,8 +312,8 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
     
     #if INPUT_METRIC == RMS
     info_access = HT_lookup(rtn_info->rms_map, act->rms);
-    #else
-    info_access = HT_lookup(rtn_info->rms_map, act->rvms);
+    #elif INPUT_METRIC == RVMS
+    info_access = HT_lookup(rtn_info->rvms_map, act->rvms);
     #endif
     
     #endif
@@ -325,7 +322,7 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
     if (info_access == NULL) {
         
         //VG_(printf)("New sms info\n");
-        info_access = (RMSInfo * ) VG_(calloc)("sms_info", 1, sizeof(RMSInfo));
+        info_access = (RMSInfo * ) VG_(calloc)("rms_info", 1, sizeof(RMSInfo));
         #if DEBUG
         AP_ASSERT(info_access != NULL, "rms_info not allocable in function exit");
         #endif
@@ -352,7 +349,12 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
         #endif
         
         #else
+        
+        #if INPUT_METRIC == RMS
         HT_add_node(rtn_info->rms_map, info_access->key, info_access);
+        #elif INPUT_METRIC == RVMS
+        HT_add_node(rtn_info->rvms_map, info_access->key, info_access);
+        #endif
         
         #if DEBUG_ALLOCATION
         APROF_(add_alloc)(HTN);
@@ -366,13 +368,13 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
     
     AP_ASSERT(act->rms <= act->rvms, "Wrong!");
     
-    RMSValue * node = (RMSValue *) HT_lookup(rtn_info->distinct_rms, act->rms);
+    RMSValue * node = (RMSValue *) HT_lookup(rtn_info->rms_map, act->rms);
     if (node == NULL) {
     
         node = (RMSValue *) VG_(calloc)("distinct rms node", sizeof(RMSValue), 1);
         node->key = act->rms;
         node->calls = 1;
-        HT_add_node(rtn_info->distinct_rms, node->key, node);
+        HT_add_node(rtn_info->rms_map, node->key, node);
     
     } else
         node->calls++;
@@ -407,7 +409,7 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
     if (info_access->self_time_min > partial_self) 
         info_access->self_time_min = partial_self;
     
-    #if INPUT_METRIC == RVMS
+    #if INPUT_METRIC == RVMS && DISTINCT_RMS
     info_access->rms_input_sum += act->rms;
     info_access->rms_input_sum_sqr += (act->rms * act->rms);
     #endif
@@ -439,7 +441,10 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
         if (!tdata->skip) {
         #endif
 
+            #if DISTINCT_RMS || INPUT_METRIC == RMS
             parent_activation->rms                 += act->rms;
+            #endif
+            
             #if INPUT_METRIC == RVMS
             parent_activation->rvms                += act->rvms;
             #endif

@@ -240,8 +240,7 @@ UInt LK_lookup(LookupTable * suf, UWord addr) {
 
 #if INPUT_METRIC == RVMS
 
-static UInt binary_search(UInt * array, UInt init, UInt size, UInt ts, 
-                                UInt t){
+static UInt binary_search(UInt * array, UInt init, UInt size, UInt ts){
     
     /*
      * t == 0: ignore thread
@@ -252,16 +251,8 @@ static UInt binary_search(UInt * array, UInt init, UInt size, UInt ts,
     if (array[1] > ts) return 0;
     
     Int q = size - 1;
-    if (t == 0) {
-        while (q >= 0) {
-            if (array[q--] <= ts) { q++; return q; }
-        }
-    } else {
-        while (q >= 0) {
-            if (array[q--] <= ts && t == array[size + q + 1]) {
-                q++; return q;
-            }
-        }
+    while (q >= 0) {
+        if (array[q--] <= ts) { q++; break; }
     }
     //VG_(printf)("binary[val=%u, init=%u, size=%u]:\n", ts, init, size);
     AP_ASSERT(q >= 0, "value not found [1]");
@@ -269,41 +260,22 @@ static UInt binary_search(UInt * array, UInt init, UInt size, UInt ts,
     UInt l = init;
     UInt h = size - 1;
     UInt k;
-    if (t == 0) {
-        
-        while(l != (h - 1)){
+    while(l != (h - 1)){
 
-            k = (l + h) / 2;
-            
-            if(array[k] == ts)
-                return k;
+        k = (l + h) / 2;
         
-            else if(array[k] < ts)
-                l = k;
-
-            else
-                h = k;
-        
-        }
+        if(array[k] == ts)
+            return k;
     
-    } else {
-        
-        while(l != (h - 1)){
+        else if(array[k] < ts)
+            l = k;
 
-            k = (l + h) / 2;
-            
-            if(array[k] == ts && array[size + k] == t)
-                return k;
-        
-            else if(array[k] < ts)
-                l = k;
-
-            else
-                h = k;
-        
-        }
-        
+        else
+            h = k;
+    
     }
+    
+    AP_ASSERT(l == q, "Invalid binary search");
     return l;
 }
 
@@ -355,15 +327,11 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
             
             } 
             
-        #else
+        #elif COMPRESS_DEBUG
         UInt j = 0;
-        #if COMPRESS_DEBUG
-        UInt j = 0;
-        #endif
         #endif
             
             UInt * local[count_thread];
-            UInt thread_tid[count_thread];
             UInt q = 0;
             for(t = 0; t < count_thread; t++){
                 
@@ -378,7 +346,6 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
                 #endif
             
                 local[q] = local_chunk;
-                thread_tid[q++] = t + 1;
                 
             }
             
@@ -402,7 +369,7 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
                     
                     gts = global_chunk[k];
                     if (gts > 0) 
-                        ts = binary_search(array, 0, size, gts, 0);
+                        ts = binary_search(array, 0, size, gts);
                     else
                         ts = 0;
                     
@@ -414,8 +381,10 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
                     #endif
                 }
                 
+                #if COMPRESS_DEBUG 
                 if (global_chunk == NULL)
                     AP_ASSERT(gts == 0 && ts == 0, "Invalid gts/ts");
+                #endif
                 
                 // for each thread, access the relative chunk
                 for(t = 0; t < q; t++){
@@ -423,24 +392,8 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
                     UInt * local_chunk = local[t];
 
                     if(local_chunk[k] < gts) {
-                        
-                        #if COMPRESS_DEBUG
-                        APROF_(fprintf)(f, "[%d] TS: %u => %u ~ GTS: %u - [%u:%u:%u]\n", 
-                            t, local_chunk[k], 0, gts, i, j, k);
-                        APROF_(fflush)(f);
-                        #endif
-                        
-                        UInt old = local_chunk[k];
-                        local_chunk[k] = binary_search(array, 0, 
-                                                        size, 
-                                                        local_chunk[k], 
-                                                        thread_tid[t]);
-                        if (local_chunk[k] >= ts) {
-                            VG_(umsg)("gts: %u - lts: %u => %u [%u:%u:%u]\n", 
-                                            gts, old, local_chunk[k],
-                                            i, j, k);
-                        }
-                        AP_ASSERT(local_chunk[k] < ts, "Invalid assignment");
+
+                        local_chunk[k] = 0;
                         
                     } else if(local_chunk[k] == gts) {
                         
@@ -462,12 +415,12 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
                         #endif
                         
                         /* 
-                         * thread t read this value so we have to reassign 
+                         * thread t reads this value so we have to reassign 
                          * the ts to the greater activation-ts that satisfies 
                          * wts[x] <= ats
                          */
                         local_chunk[k] = binary_search(array, ts, 
-                                                    size, local_chunk[k], 0);
+                                                    size, local_chunk[k]);
                         
                         
                         #if COMPRESS_DEBUG
@@ -504,7 +457,7 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
 
 #endif
 
-#if INPUT_METRIC == RMS || DEBUG_DRMS
+#if INPUT_METRIC == RMS || DISTINCT_RMS
 
 void LK_compress_rms(LookupTable * uf, UInt * arr_rid, UInt size_arr) {
     

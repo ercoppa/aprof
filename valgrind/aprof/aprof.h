@@ -145,8 +145,6 @@
 #define BUFFER_SIZE         32000   // FILE buffer size
 #define NAME_SIZE           4096    // function/object name buffer size 
 
-#define DEBUG_DRMS          0
-
 /* some config check */
 
 #if defined(VG_BIGENDIAN)
@@ -246,9 +244,12 @@ void APROF_(fprintf)(FILE * f, const HChar * format, ...);
 void APROF_(thread_switch)(ThreadId tid, ULong blocks_dispatched);
 void APROF_(thread_exit)(ThreadId tid);
 void APROF_(kill_threads)(void);
-UInt APROF_(overflow_handler)(void);
 
-#if DEBUG_DRMS
+#if INPUT_METRIC == RVMS
+UInt APROF_(overflow_handler)(void);
+#endif
+
+#if INPUT_METRIC == RMS || DISTINCT_RMS
 UInt APROF_(overflow_handler_rms)(void);
 #endif
 
@@ -293,9 +294,11 @@ void APROF_(addEvent_Dr)(IRSB* sb, IRAtom* daddr, Int dsize);
 void APROF_(addEvent_Dw)(IRSB* sb, IRAtom* daddr, Int dsize);
 #endif
 
-/* Callstack management (callstack.c) */
-Activation * APROF_(get_activation_by_aid)(ThreadData * tdata, UInt aid);
-#if DEBUG_DRMS
+/* Callstack management (callstack.c */
+#if INPUT_METRIC == RVMS
+Activation * APROF_(get_activation_by_aid_rvms)(ThreadData * tdata, UInt aid);
+#endif
+#if INPUT_METRIC == RMS || DISTINCT_RMS
 Activation * APROF_(get_activation_by_aid_rms)(ThreadData * tdata, UInt aid);
 #endif
 
@@ -305,7 +308,7 @@ Activation * APROF_(get_activation_by_aid_rms)(ThreadData * tdata, UInt aid);
                                         (tdata->stack + depth - 1))
                                         
 //Activation * APROF_(get_activation)(ThreadData * tdata, unsigned int depth);
-Activation * APROF_(resize_stack)(ThreadData * tdata, unsigned int depth);
+Activation * APROF_(resize_stack)(ThreadData * tdata, UInt depth);
 UInt APROF_(str_hash)(const Char *s);
 
 #if TRACE_FUNCTION

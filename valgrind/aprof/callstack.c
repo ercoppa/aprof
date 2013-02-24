@@ -114,8 +114,13 @@ Activation * APROF_(resize_stack)(ThreadData * tdata, unsigned int depth) {
 
 }
 
-#if DEBUG_DRMS
+#if INPUT_METRIC == RMS || DISTINCT_RMS
 Activation * APROF_(get_activation_by_aid_rms)(ThreadData * tdata, UInt aid) {
+    
+    #if DEBUG
+    AP_ASSERT(tdata != NULL, "Invalid tdata");
+    AP_ASSERT(aid > 0, "Invalid aid");
+    #endif
     
     Activation * a = &tdata->stack[tdata->stack_depth - 2];
     while (a->aid_rms > aid) {
@@ -131,106 +136,16 @@ Activation * APROF_(get_activation_by_aid_rms)(ThreadData * tdata, UInt aid) {
 }
 #endif
 
-Activation * APROF_(get_activation_by_aid)(ThreadData * tdata, UInt aid) {
+#if INPUT_METRIC == RVMS
+Activation * APROF_(get_activation_by_aid_rvms)(ThreadData * tdata, UInt aid) {
     
     #if DEBUG
     AP_ASSERT(tdata != NULL, "Invalid tdata");
     AP_ASSERT(aid > 0, "Invalid aid");
     #endif
     
-    #if SUF2_SEARCH == BACKLOG
-    
-    //VG_(printf)("\nSearch for %u [%u]\n", aid, tdata->stack_depth);
-    
-    Activation * act = &tdata->stack[tdata->stack_depth - 2];
-    //VG_(printf)("Analyse %u\n", act->aid);
-    if (act->aid <= aid) {
-        //VG_(printf)("Return %u\n", act->aid);
-        return act;
-    }
-
-    /* try one step back */
-    #if DEBUG
-    AP_ASSERT(tdata->stack_depth - 2 > 0, "Invalid depth");
-    #endif
-    act--;
-    //VG_(printf)("Analyse %u\n", act->aid);
-    if (act->aid <= aid) {
-        //VG_(printf)("Return %u\n", act->aid);
-        return act;
-    }
-    
-    /* 
-     * ok, now try 2^i steps back, remember min and max act 
-     * and then do binary search between them...
-     */
-    int max = tdata->stack_depth - 3;
-    int min = tdata->stack_depth - 3;
-    int step = 2;
-    while (1) {
-        
-        act -= step;
-        if (act < &tdata->stack[0]) {
-            //VG_(printf)("underflow\n");
-            min = 0;
-            break;
-        }
-        
-        //VG_(printf)("Analyse exp %u\n", act->aid);
-        if (act->aid == aid) return act;
-        
-        max = min;
-        min -= step;
-        if (act->aid < aid) break;
-        
-        step = step<<1;
-    }
-    
-    //VG_(printf)("Min: %d - Max: %d\n", min, max);
-    #if DEBUG
-    AP_ASSERT(min >= 0, "Invalid min");
-    AP_ASSERT(max >= 0, "Invalid max");
-    #endif
-    
-    if (min == max) return act;
-    
-    /* binary search */
-    do {
-        
-        Word index = (min + max) / 2;
-        //VG_(printf)("Index %d\n", index);
-        
-        if (tdata->stack[index].aid == aid) {
-            //VG_(printf)("return %d\n", tdata->stack[index].aid);
-            return &tdata->stack[index];
-        }
-        
-        else if (tdata->stack[index].aid > aid) 
-            max = index - 1; 
-            
-        else {
-            
-            if (tdata->stack[index + 1].aid >= aid) {
-                //VG_(printf)("return %d\n", tdata->stack[index].aid);
-                return &tdata->stack[index];
-            }
-            min = index + 1;
-            
-        }
-        
-    } while(min <= max);
-    
-    AP_ASSERT(0,"backlog search fail");
-    return NULL;
-    
-    #elif SUF2_SEARCH == LINEAR /* Linear search */
-    
-    #if DEBUG
-    AP_ASSERT(tdata->stack_depth - 2 >= 0, "Invalid depth");
-    #endif
-    
     Activation * a = &tdata->stack[tdata->stack_depth - 2];
-    while (a->aid > aid) {
+    while (a->aid_rvms > aid) {
         
         a--;
         #if DEBUG
@@ -239,54 +154,9 @@ Activation * APROF_(get_activation_by_aid)(ThreadData * tdata, UInt aid) {
         
     }
     return a;
-    
-    #elif SUF2_SEARCH == BINARY
-    
-    Word min = 0;
-    Word max = tdata->stack_depth - 2;
-    
-    do {
-        
-        Word index = (min + max) / 2;
-        
-        if (tdata->stack[index].aid == aid) {
-            return &tdata->stack[index];
-        }
-        
-        else if (tdata->stack[index].aid > aid) 
-            max = index - 1; 
-            
-        else {
-            
-            if (tdata->stack[index + 1].aid >= aid) {
-                return &tdata->stack[index];
-            }
-            min = index + 1;
-            
-        }
-        
-    } while(min <= max);
-    
-    AP_ASSERT(0,"Binary search fail");
-    return NULL;
-
-    #elif SUF2_SEARCH == STATS
-    
-    tdata->ops++;
-    tdata->avg_depth += tdata->stack_depth;
-    tdata->avg_iteration++;
-    
-    Activation * a = get_activation(tdata, tdata->stack_depth - 1);
-    while (a->aid > aid) {
-        a--;
-        avg_iteration++;
-        AP_ASSERT(a >= tdata->stack, "Requested aid not found in stack!");
-    }
-    return a;
-    
-    #endif
 
 }
+#endif
 
 UInt APROF_(str_hash)(const Char *s) {
     
