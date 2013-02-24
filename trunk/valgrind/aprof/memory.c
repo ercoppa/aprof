@@ -144,7 +144,7 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
         
         UInt ts = APROF_(global_counter);
         UInt old_ts;
-        UInt wts;
+        UInt wts = 0;
         
         /*
          * We are writing a new input value. So, this is a new "version"
