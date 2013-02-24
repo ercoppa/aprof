@@ -269,8 +269,13 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
         #else
 
         // iterate over rms records of current routine
+        #if INPUT_METRIC == RMS
         HT_ResetIter(rtn_info->rms_map);
         RMSInfo * info_access = HT_RemoveNext(rtn_info->rms_map);
+        #elif INPUT_METRIC == RVMS
+        HT_ResetIter(rtn_info->rvms_map);
+        RMSInfo * info_access = HT_RemoveNext(rtn_info->rvms_map);
+        #endif
         
         while (info_access != NULL) {
             
@@ -300,20 +305,25 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
                             );
 
             VG_(free)(info_access);
+            
+            #if INPUT_METRIC == RMS
             info_access = HT_RemoveNext(rtn_info->rms_map);
+            #elif INPUT_METRIC == RVMS
+            info_access = HT_RemoveNext(rtn_info->rvms_map);;
+            #endif
         }
         #endif
         
         #if DISTINCT_RMS
-        HT_ResetIter(rtn_info->distinct_rms);
-        RMSValue * node = (RMSValue *) HT_RemoveNext(rtn_info->distinct_rms);
+        HT_ResetIter(rtn_info->rms_map);
+        RMSValue * node = (RMSValue *) HT_RemoveNext(rtn_info->rms_map);
         while(node != NULL) {
             
             APROF_(fprintf)(report, "g %llu %lu %llu\n", 
                                 rtn_info->routine_id, node->key,
                                 node->calls);
             VG_(free)(node);
-            node = HT_RemoveNext(rtn_info->distinct_rms);
+            node = HT_RemoveNext(rtn_info->rms_map);
         
         }
         #endif
