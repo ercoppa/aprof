@@ -130,7 +130,7 @@ static Bool merge_runs = False;
 static Bool merge_threads = False;
 static HChar * directory = NULL;
 static HChar * logs[SLOT] = {NULL, NULL}; // only for compare
-static HChar * rtn_skip[] = { "madwise" };
+//static HChar * rtn_skip[] = { "madvise" };
 
 typedef struct aprof_report {
     
@@ -466,6 +466,7 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         
         ASSERT(*rid == id, "Routine id mismatch: %s", line_orig);
         
+        /*
         UInt i;
         for (i = 0; i < sizeof(rtn_skip)/sizeof(HChar *); i++) {
             if (VG_(strcmp)(rtn_skip[i], curr->fn->name) == 0) {
@@ -473,7 +474,7 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
                 return curr;
             }
         }
-        
+        */
         // RMS
         token = VG_(strtok)(NULL, DELIM_DQ);
         ASSERT(token != NULL, "Invalid rms: %s", line_orig);
@@ -718,6 +719,7 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         
         ASSERT(*rid == id, "Routine id mismatch: %s", line_orig);
         
+        /*
         UInt i;
         for (i = 0; i < sizeof(rtn_skip)/sizeof(HChar *); i++) {
             if (VG_(strcmp)(rtn_skip[i], curr->fn->name) == 0) {
@@ -725,6 +727,7 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
                 return curr;
             }
         }
+        */
         
         // RMS
         token = VG_(strtok)(NULL, DELIM_DQ);
