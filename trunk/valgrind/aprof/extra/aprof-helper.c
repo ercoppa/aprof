@@ -130,7 +130,7 @@ static Bool merge_runs = False;
 static Bool merge_threads = False;
 static HChar * directory = NULL;
 static HChar * logs[SLOT] = {NULL, NULL}; // only for compare
-static HChar * rtn_skip[1] = { "madwise" };
+static HChar * rtn_skip[] = { "madwise" };
 
 typedef struct aprof_report {
     
@@ -467,7 +467,7 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         ASSERT(*rid == id, "Routine id mismatch: %s", line_orig);
         
         UInt i;
-        for (i = 0; i < sizeof(rtn_skip); i++) {
+        for (i = 0; i < sizeof(rtn_skip)/sizeof(HChar *); i++) {
             if (VG_(strcmp)(rtn_skip[i], curr->fn->name) == 0) {
                 VG_(free)(line);
                 return curr;
@@ -719,7 +719,7 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         ASSERT(*rid == id, "Routine id mismatch: %s", line_orig);
         
         UInt i;
-        for (i = 0; i < sizeof(rtn_skip); i++) {
+        for (i = 0; i < sizeof(rtn_skip)/sizeof(HChar *); i++) {
             if (VG_(strcmp)(rtn_skip[i], curr->fn->name) == 0) {
                 VG_(free)(line);
                 return curr;
