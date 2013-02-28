@@ -264,6 +264,7 @@ static UInt binary_search(UInt * array, UInt init, UInt size, UInt ts){
     if (array[1] > ts) return 0;
     if (array[size - 1] <= ts) return size - 1;
     
+    /*
     Int q = size - 1;
     while (q >= 0) {
         if (array[q--] <= ts) { 
@@ -272,7 +273,7 @@ static UInt binary_search(UInt * array, UInt init, UInt size, UInt ts){
         }
     }
     AP_ASSERT(q >= 0, "value not found [1]");
-
+    */
     Int min = init;
     Int max = size - 1;
     
