@@ -12,8 +12,8 @@
 #                           Macros
 #                           -------------------------------------
 LL_PATH =                   ../ll/
-C  =                        gcc -lm -I$(LL_PATH)include -Iinclude -I../include
-LL =                        $(LL_PATH)src/core/common/*.c $(LL_PATH)src/core/posix/*.c
+C  =                        gcc  -I$(LL_PATH)include -Iinclude -I../include -lm
+LL =                        $(LL_PATH)src/core/common/*.c $(LL_PATH)src/core/posix/*.c -lm
 
 #                           -------------------------------------
 #                           Rules
