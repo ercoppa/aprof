@@ -122,6 +122,7 @@
 #define DIR_MERGE_BOTH   "merge_by_pid_cmd"
 #define DIR_MERGE_ALL    "merge_all"
 
+
 static Bool consistency = False;
 static Bool compare = False;
 static Bool merge_all = False;
@@ -129,6 +130,7 @@ static Bool merge_runs = False;
 static Bool merge_threads = False;
 static HChar * directory = NULL;
 static HChar * logs[SLOT] = {NULL, NULL}; // only for compare
+static HChar * rtn_skip[1] = { "madwise" };
 
 typedef struct aprof_report {
     
@@ -464,6 +466,14 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         
         ASSERT(*rid == id, "Routine id mismatch: %s", line_orig);
         
+        UInt i;
+        for (i = 0; i < sizeof(rtn_skip); i++) {
+            if (VG_(strcmp)(rtn_skip[i], curr->fn->name) == 0) {
+                VG_(free)(line);
+                return curr;
+            }
+        }
+        
         // RMS
         token = VG_(strtok)(NULL, DELIM_DQ);
         ASSERT(token != NULL, "Invalid rms: %s", line_orig);
@@ -707,6 +717,14 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         UOF_LONG(id, line_orig);
         
         ASSERT(*rid == id, "Routine id mismatch: %s", line_orig);
+        
+        UInt i;
+        for (i = 0; i < sizeof(rtn_skip); i++) {
+            if (VG_(strcmp)(rtn_skip[i], curr->fn->name) == 0) {
+                VG_(free)(line);
+                return curr;
+            }
+        }
         
         // RMS
         token = VG_(strtok)(NULL, DELIM_DQ);
@@ -1801,7 +1819,8 @@ static void reset_data(aprof_report * rep) {
 static HChar ** merge_by_run(HChar ** reports, UInt * size, 
                                 Bool merged_by_thread) {
     
-    printf("Merging reports with same command...\n");
+    if (merge_all) printf("Merging all reports...\n");
+    else printf("Merging reports with same command...\n");
     if (*size == 0) return reports;
     
     UInt size_post = 0; UInt i = 0;
@@ -1853,7 +1872,7 @@ static HChar ** merge_by_run(HChar ** reports, UInt * size,
         } else {
             
             ASSERT(merged > 0, "Impossible");
-            
+             
             /*
             printf("Current: %s [%u:%u] - Checking: %s [%u:%u]\n", 
                         reports[curr], curr_pid, curr_pid, reports[i],
