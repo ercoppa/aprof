@@ -67,8 +67,6 @@
 
 #include "aprof.h"
 
-#if SYSCALL_WRAPPING == 1 && INPUT_METRIC == RVMS
-  
 void APROF_(pre_syscall)(ThreadId tid, UInt syscallno, 
                             UWord * args, UInt nArgs) {}
   
@@ -82,10 +80,14 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
     /*
      * This is an undocumented behavior of Valgrind 
      */
+    #if INPUT_METRIC == RVMS
     Bool forced_switch = False;
+    #endif
     if (tid != APROF_(current_TID)) {
         APROF_(thread_switch)(tid, 0);
-        forced_switch = True; 
+        #if INPUT_METRIC == RVMS
+        forced_switch = True; // a thread switch increase the global counter
+        #endif
     } 
 
     #if defined(VGO_linux)
@@ -119,6 +121,7 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
 
         ){
             
+            #if INPUT_METRIC == RVMS && SYSCALL_WRAPPING
             Addr addr = args[1];
             APROF_(fix_access_size)(addr, size);
             
@@ -137,6 +140,7 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
                 size -= APROF_(addr_multiple);
                 addr += APROF_(addr_multiple);
             }
+            #endif
 
     } else if (
     
@@ -146,6 +150,8 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
             #endif
             
             ){
+            
+            #if INPUT_METRIC == RVMS && SYSCALL_WRAPPING
             
             struct vki_iovec * base = (struct  vki_iovec *) args[1];
             UWord iovcnt = args[2];
@@ -183,6 +189,7 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
                 }
                 
             }
+            #endif
 
     } else if (
                 syscallno == __NR_write
@@ -261,6 +268,8 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
             False
             #endif
             ){
+                
+        #if INPUT_METRIC == RVMS && SYSCALL_WRAPPING
         
         Addr addr = args[1];
         size = size + sizeof(long int);
@@ -281,6 +290,8 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
             size -= APROF_(addr_multiple);
             addr += APROF_(addr_multiple);
         }
+        
+        #endif
 
     } else if (
                 #if !defined(VGP_x86_linux)
@@ -308,5 +319,3 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
     
     }
 }
-
-#endif

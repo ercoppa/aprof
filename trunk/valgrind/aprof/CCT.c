@@ -81,6 +81,9 @@ void APROF_(free_CCT)(CCTNode * root) {
 
     // deallocate CCT node
     VG_(free)(root);
+    #if DEBUG_ALLOCATION
+    APROF_(remove_alloc)(CCT_S);
+    #endif
 
 }
 

@@ -119,14 +119,16 @@
 
 #define DIR_MERGE_THREAD "merge_by_pid"
 #define DIR_MERGE_RUNS   "merge_by_cmd"
-#define DIR_MERGE_ALL    "merge_by_pid_cmd"
+#define DIR_MERGE_BOTH   "merge_by_pid_cmd"
+#define DIR_MERGE_ALL    "merge_all"
 
-Bool consistency = False;
-Bool compare = False;
-Bool merge_runs = False;
-Bool merge_threads = False;
-HChar * directory = NULL;
-HChar * logs[SLOT] = {NULL, NULL}; // only for compare
+static Bool consistency = False;
+static Bool compare = False;
+static Bool merge_all = False;
+static Bool merge_runs = False;
+static Bool merge_threads = False;
+static HChar * directory = NULL;
+static HChar * logs[SLOT] = {NULL, NULL}; // only for compare
 
 typedef struct aprof_report {
     
@@ -171,7 +173,7 @@ static void obj_destroy(void * obj) {
 static void destroy_routine_info(void * rtn) {
     
     RoutineInfo * ri = (RoutineInfo *) rtn;
-    HT_destruct(ri->rms_map);
+    HT_destruct(ri->rvms_map);
     HT_destruct(ri->distinct_rms);
     
     VG_(free)(rtn);
@@ -260,11 +262,11 @@ static RoutineInfo * new_routine_info(Function * fn, UWord target,
     rtn_info->distinct_rms = 0;
 
     /* elements of this ht are freed when we generate the report */
-    rtn_info->rms_map = HT_construct(free);
-    DASSERT(rtn_info->rms_map != NULL, "rms_map not allocable");
+    rtn_info->rvms_map = HT_construct(free);
+    DASSERT(rtn_info->rvms_map != NULL, "rvms_map not allocable");
     
     rtn_info->distinct_rms = HT_construct(free);
-    DASSERT(rtn_info->distinct_rms != NULL, "rms_map not allocable");
+    DASSERT(rtn_info->distinct_rms != NULL, "rvms_map not allocable");
     
     HT_add_node(r->routine_hash_table, rtn_info->key, rtn_info);
     
@@ -587,7 +589,7 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         }
 
         ASSERT(curr != NULL, "Invalid routine: %s", line_orig);
-        RMSInfo * info_access = HT_lookup(curr->rms_map, rms); 
+        RMSInfo * info_access = HT_lookup(curr->rvms_map, rms); 
         if (info_access == NULL) {
             
             info_access = (RMSInfo * ) VG_(calloc)("rms_info", 1, sizeof(RMSInfo));
@@ -596,7 +598,7 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
             info_access->min_cumulative_time = min;
             info_access->self_time_min = self_min;
             info_access->key = rms;
-            HT_add_node(curr->rms_map, info_access->key, info_access);
+            HT_add_node(curr->rvms_map, info_access->key, info_access);
             
         }
         
@@ -757,11 +759,12 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         
         } else {
             
-            if (VG_(strcmp)(app, r->app) != 0) {
+            if (!merge_all && VG_(strcmp)(app, r->app) != 0) {
                 *invalid = True;
                 VG_(free)(line);
                 return NULL;
             }
+            
             /*
             ASSERT(VG_(strcmp)(app, r->app) == 0, 
                 "different app");
@@ -808,10 +811,12 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
             } else {
                 
                 if (r->version != ver) {
+                    if (merge_all) EMSG("reports with different versions");
                     *invalid = True;
                     VG_(free)(line);
                     return NULL;
                 }
+                
                 /*
                 ASSERT(r->version == ver, 
                 "You are elaborating reports of different versions: %s", 
@@ -861,11 +866,13 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
             "Invalid memory resolution: %s", line_orig);
     
         if (r->memory_resolution != m_res) {
+            if (merge_all) 
+                EMSG("reports with different memory resolutions");
             *invalid = True;
             VG_(free)(line);
             return NULL;
         }
-    
+        
     } else if (token[0] == 'f') {
         
         token = VG_(strtok)(NULL, DELIM_DQ);
@@ -893,11 +900,12 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         
         } else {
             
-            if (VG_(strcmp)(app, r->cmd) != 0) {
+            if (!merge_all && VG_(strcmp)(app, r->cmd) != 0) {
                 *invalid = True;
                 VG_(free)(line);
                 return NULL;
             }
+            
             /*
             ASSERT(VG_(strcmp)(app, r->cmd) == 0, 
                 "different command");
@@ -952,8 +960,8 @@ static void post_merge_consistency(aprof_report * r, HChar * report) {
         ULong sum_rms = 0;
         ULong sum_rvms = 0;
         
-        HT_ResetIter(rtn->rms_map);
-        RMSInfo * i = (RMSInfo *) HT_Next(rtn->rms_map);
+        HT_ResetIter(rtn->rvms_map);
+        RMSInfo * i = (RMSInfo *) HT_Next(rtn->rvms_map);
         while (i != NULL) {
             
             if (r->version == REPORT_VERSION) {
@@ -962,7 +970,7 @@ static void post_merge_consistency(aprof_report * r, HChar * report) {
             }
             
             ADD(cumul_real, i->cumul_real_time_sum);
-            i = (RMSInfo *) HT_Next(rtn->rms_map);
+            i = (RMSInfo *) HT_Next(rtn->rvms_map);
         }
         
         ASSERT(cumul_real > 0, "Invalid cumul real: %s:%s", 
@@ -972,7 +980,7 @@ static void post_merge_consistency(aprof_report * r, HChar * report) {
             
             check_rvms(sum_rms, sum_rvms, 
                         HT_count_nodes(rtn->distinct_rms),
-                        HT_count_nodes(rtn->rms_map),
+                        HT_count_nodes(rtn->rvms_map),
                         rtn->fn->name, report);
         
             ULong sum_rms_distinct = 0;
@@ -1002,10 +1010,10 @@ static Bool merge_report(HChar * report, aprof_report * rep_data) {
     UInt m_res = get_memory_resolution_report(report);
     ASSERT(m_res == 1 || m_res == 2 || m_res == 4 || m_res == 8 || m_res == 16,
             "Invalid memory resolution: %s", report);
-            
+    
     if (rep_data->memory_resolution > 0 && rep_data->memory_resolution != m_res) 
         return False;
-        
+
     rep_data->memory_resolution = m_res;
     
     Int file = VG_(open)(report, O_RDONLY, S_IRUSR|S_IWUSR);
@@ -1230,8 +1238,8 @@ static void compare_distinct_rms(RoutineInfo * rtn, RoutineInfo * rtn2,
     
     HChar b[1024];
     
-    HashTable * ht1 = rtn->rms_map;
-    HashTable * ht2 = rtn2->rms_map;
+    HashTable * ht1 = rtn->rvms_map;
+    HashTable * ht2 = rtn2->rvms_map;
     
     if (r->input_metric == RVMS)
         ht1 = rtn->distinct_rms;
@@ -1353,11 +1361,11 @@ static void compare_routine(RoutineInfo * rtn, RoutineInfo * rtn2,
     }
 
     /* we check for missing RVMS later one by one...
-    if (HT_count_nodes(rtn->rms_map) != HT_count_nodes(rtn2->rms_map)) {
+    if (HT_count_nodes(rtn->rvms_map) != HT_count_nodes(rtn2->rvms_map)) {
     
         STR(b, "# RVMS [%s]", rtn->fn->name);
         printf("%-*s", STR_ALIGN, b);
-        print_diff(HT_count_nodes(rtn->rms_map), HT_count_nodes(rtn2->rms_map));
+        print_diff(HT_count_nodes(rtn->rvms_map), HT_count_nodes(rtn2->rvms_map));
         
     }
     */
@@ -1375,40 +1383,40 @@ static void compare_routine(RoutineInfo * rtn, RoutineInfo * rtn2,
     
     UInt k = 0; UInt j = 0;
     
-    ULong * rms_1 = malloc(HT_count_nodes(rtn->rms_map) * sizeof(ULong));
-    ULong * rms_2 = malloc(HT_count_nodes(rtn2->rms_map) * sizeof(ULong));
+    ULong * rms_1 = malloc(HT_count_nodes(rtn->rvms_map) * sizeof(ULong));
+    ULong * rms_2 = malloc(HT_count_nodes(rtn2->rvms_map) * sizeof(ULong));
 
     // Collect RMS of rtn
-    HT_ResetIter(rtn->rms_map);
+    HT_ResetIter(rtn->rvms_map);
     RMSInfo * i = NULL;
     while (1) {
         
-        i = (RMSInfo *) HT_Next(rtn->rms_map);
+        i = (RMSInfo *) HT_Next(rtn->rvms_map);
         if (i == NULL) break;
         
         rms_1[k++] = i->key;
     }
     
     // Collect RMS of rtn2
-    HT_ResetIter(rtn2->rms_map);
+    HT_ResetIter(rtn2->rvms_map);
     i = NULL; k = 0;
     while (1) {
         
-        i = (RMSInfo *) HT_Next(rtn2->rms_map);
+        i = (RMSInfo *) HT_Next(rtn2->rvms_map);
         if (i == NULL) break;
         
         rms_2[k++] = i->key;
     }
     
     // sort
-    qsort(rms_1, HT_count_nodes(rtn->rms_map), sizeof(ULong), compar);
-    qsort(rms_2, HT_count_nodes(rtn2->rms_map), sizeof(ULong), compar);
+    qsort(rms_1, HT_count_nodes(rtn->rvms_map), sizeof(ULong), compar);
+    qsort(rms_2, HT_count_nodes(rtn2->rvms_map), sizeof(ULong), compar);
 
     ULong call = 0;
     ULong call2 = 0;
-    for (k = 0, j = 0; k < HT_count_nodes(rtn->rms_map); k++) {
+    for (k = 0, j = 0; k < HT_count_nodes(rtn->rvms_map); k++) {
         
-        i = (RMSInfo *) HT_lookup(rtn->rms_map, rms_1[k]);
+        i = (RMSInfo *) HT_lookup(rtn->rvms_map, rms_1[k]);
         if (i == NULL) ASSERT(0, "Impossible");
         
         ADD(sum_rvms, i->key * i->calls_number);
@@ -1420,9 +1428,9 @@ static void compare_routine(RoutineInfo * rtn, RoutineInfo * rtn2,
         if (r->input_metric != r2->input_metric) continue;
         
         RMSInfo * i2 = NULL;
-        if (j < HT_count_nodes(rtn2->rms_map)) {
+        if (j < HT_count_nodes(rtn2->rvms_map)) {
         
-            i2 = (RMSInfo *) HT_lookup(rtn2->rms_map, rms_2[j]);
+            i2 = (RMSInfo *) HT_lookup(rtn2->rvms_map, rms_2[j]);
             ASSERT(i2 != NULL, "Impossible");
         
         }
@@ -1460,9 +1468,9 @@ static void compare_routine(RoutineInfo * rtn, RoutineInfo * rtn2,
     call2 = 0;
     
     // Missing tuples in rtn
-    for (k = 0, j = 0; k < HT_count_nodes(rtn2->rms_map); k++) {
+    for (k = 0, j = 0; k < HT_count_nodes(rtn2->rvms_map); k++) {
         
-        i = (RMSInfo *) HT_lookup(rtn2->rms_map, rms_2[k]);
+        i = (RMSInfo *) HT_lookup(rtn2->rvms_map, rms_2[k]);
         if (i == NULL) ASSERT(0, "Impossible");
         
         ADD(sum_rvms2, i->key * i->calls_number);
@@ -1474,9 +1482,9 @@ static void compare_routine(RoutineInfo * rtn, RoutineInfo * rtn2,
         if (r->input_metric != r2->input_metric) continue;
         
         RMSInfo * i2 = NULL;
-        if (j < HT_count_nodes(rtn->rms_map)) {
+        if (j < HT_count_nodes(rtn->rvms_map)) {
             
-            i2 = (RMSInfo *) HT_lookup(rtn->rms_map, rms_1[j]);
+            i2 = (RMSInfo *) HT_lookup(rtn->rvms_map, rms_1[j]);
             ASSERT(i2 != NULL, "Impossible");
             
         }
@@ -1689,8 +1697,8 @@ static void save_report(aprof_report * r, HChar * report_name) {
         }
 
         // tuples 
-        HT_ResetIter(rtn_info->rms_map);
-        RMSInfo * info_access = HT_Next(rtn_info->rms_map);
+        HT_ResetIter(rtn_info->rvms_map);
+        RMSInfo * info_access = HT_Next(rtn_info->rvms_map);
         while (info_access != NULL) {
             
             if (r->input_metric == RVMS) {
@@ -1734,7 +1742,7 @@ static void save_report(aprof_report * r, HChar * report_name) {
             }
             
             
-            info_access = HT_Next(rtn_info->rms_map);
+            info_access = HT_Next(rtn_info->rvms_map);
         }
         
         HT_ResetIter(rtn_info->distinct_rms);
@@ -1808,10 +1816,14 @@ static HChar ** merge_by_run(HChar ** reports, UInt * size,
     STR(buf, "%s", reports[0]); 
     if (merge_threads)
         res = sprintf(merge_dir, "%s/../%s", dirname(buf),
-                        DIR_MERGE_ALL);
-    else
+                        DIR_MERGE_BOTH);
+    else if (merge_runs)
         res = sprintf(merge_dir, "%s/%s", dirname(buf),
                         DIR_MERGE_RUNS);
+    else
+        res = sprintf(merge_dir, "%s/%s", dirname(buf),
+                        DIR_MERGE_ALL);
+    
     ASSERT(res < 1024, "path too long");
     res = mkdir(merge_dir, 0777);
     ASSERT(errno != EEXIST, "directory %s already exists", merge_dir);
@@ -1841,20 +1853,21 @@ static HChar ** merge_by_run(HChar ** reports, UInt * size,
         } else {
             
             ASSERT(merged > 0, "Impossible");
+            
             /*
             printf("Current: %s [%u:%u] - Checking: %s [%u:%u]\n", 
                         reports[curr], curr_pid, curr_pid, reports[i],
                         get_pid_report(reports[i]), get_tid_report(reports[i]));
             */
-            if (curr_pid != get_pid_report(reports[i]) &&
-                    (merge_threads || curr_tid == get_tid_report(reports[i])) ) {
+            if (merge_all || (curr_pid != get_pid_report(reports[i]) &&
+                    (merge_threads || curr_tid == get_tid_report(reports[i]))) ) {
 
                 /*
                 printf("Current: %s [%u:%u] - Checking: %s [%u:%u]\n", 
                             reports[curr], curr_pid, curr_tid, reports[i],
                             get_pid_report(reports[i]), get_tid_report(reports[i]));
-                
                 */
+                
                 Bool res = merge_report(reports[i], &ap_rep[0]);
                 if (res) {
                     if (merged == 1) 
@@ -1882,12 +1895,15 @@ next:
                 //printf("saving %s\n", reports[curr]);
                 if (merge_threads)
                     sprintf(new_rep, "%s/../%s/%s", dirname(buf),
-                            DIR_MERGE_ALL, basename(reports[curr]));
-                else
+                            DIR_MERGE_BOTH, basename(reports[curr]));
+                else if (merge_runs)
                     sprintf(new_rep, "%s/%s/%s", dirname(buf),
                             DIR_MERGE_RUNS, basename(reports[curr]));
+                else
+                    sprintf(new_rep, "%s/%s/%s", dirname(buf),
+                            DIR_MERGE_ALL, basename(reports[curr]));
                 
-                if (merged > 1) printf("into %s\n", new_rep);
+                if (merged > 1) printf("into "YELLOW("%s")"\n", new_rep);
                 save_report(&ap_rep[0], new_rep);
                 reports_post[size_post++] = new_rep;
                 
@@ -1995,7 +2011,7 @@ next:
                 sprintf(new_rep, "%s/%s/%s", dirname(buf),
                             DIR_MERGE_THREAD, basename(reports[curr]));
                 
-                printf("into %s\n", new_rep);
+                printf("into "YELLOW("%s")"\n", new_rep);
                 //printf("saving %s to %s\n", reports[curr], new_rep);
                 
                 save_report(&ap_rep[0], new_rep);
@@ -2055,6 +2071,8 @@ static void cmd_options(HChar * binary_name) {
     
     printf("    -t         merge reports of different threads of the same program's run (same PID)\n");
     
+    printf("    -i         merge reports (no criteria)\n");
+    
     printf("    -c         compare two reports; required -a and -b arguments.\n");
     
     printf("\n  Other options:\n");
@@ -2084,9 +2102,13 @@ Int main(Int argc, HChar *argv[]) {
     Int opt;
     UInt i;
      
-    while ((opt = getopt(argc, argv, "rtkca:b:d:")) != -1) {
+    while ((opt = getopt(argc, argv, "rtkcia:b:d:")) != -1) {
         
         switch(opt) {
+            
+            case 'i':
+                merge_all = True;
+                break;
             
             case 'a':
                 logs[0] = optarg;
@@ -2149,7 +2171,8 @@ Int main(Int argc, HChar *argv[]) {
         
     }
     
-    if (!merge_runs && !merge_threads && !consistency && !compare) {
+    if (!merge_all && !merge_runs && !merge_threads 
+                            && !consistency && !compare) {
         cmd_options(argv[0]);
         return 1;
     }
@@ -2157,14 +2180,14 @@ Int main(Int argc, HChar *argv[]) {
     if (logs[0] != NULL && 
             strcmp(".aprof", logs[0] + strlen(logs[0]) - 6) != 0) {
         
-        //EMSG("Invalid first report\n");
+        EMSG("Invalid first report\n");
         return 1;
     }
     
     if (logs[1] != NULL && 
             strcmp(".aprof", logs[1] + strlen(logs[1]) - 6) != 0) {
         
-        //EMSG("Invalid second report\n");
+        EMSG("Invalid second report\n");
         return 1;
     }
     
@@ -2183,13 +2206,20 @@ Int main(Int argc, HChar *argv[]) {
         return 1;
     }
     
-    if (merge_runs || merge_threads || compare) {
+    if (merge_runs || merge_threads || compare || merge_all) {
         consistency = False;
     }
     
-    if ((merge_runs || merge_threads) && compare) {
+    if ((merge_runs || merge_threads || merge_all) && compare) {
         
         EMSG("Too many actions\n");
+        cmd_options(argv[0]);
+        return 1;
+    }
+    
+    if (merge_all && (merge_runs || merge_threads)) {
+        
+        EMSG("-i conflicts with -t or -r\n");
         cmd_options(argv[0]);
         return 1;
     }
@@ -2271,7 +2301,10 @@ Int main(Int argc, HChar *argv[]) {
         if (merge_threads)
             reports = merge_by_thread(reports, &size);
         
-        if (merge_runs)
+        if (merge_all)
+            ASSERT(!merge_threads, "Invalid");
+        
+        if (merge_runs || merge_all)
             reports = merge_by_run(reports, &size, merge_threads);
 
     }

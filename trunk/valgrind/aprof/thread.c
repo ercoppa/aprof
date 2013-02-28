@@ -49,6 +49,11 @@ ThreadData * APROF_(current_tdata) = NULL;
 
 static ThreadData * APROF_(thread_start)(ThreadId tid){
 
+    #if DEBUG_ALLOCATION
+    VG_(umsg)("\nThread start:\n");
+    APROF_(print_alloc)();
+    #endif
+
     #if VERBOSE
     VG_(printf)("start thread %d\n", tid);
     #endif
@@ -59,7 +64,7 @@ static ThreadData * APROF_(thread_start)(ThreadId tid){
     #endif
     
     #if DEBUG_ALLOCATION
-    APROF_(add_alloc)(TS);
+    APROF_(add_alloc)(T_S);
     #endif
     
     #if DEBUG
@@ -71,20 +76,13 @@ static ThreadData * APROF_(thread_start)(ThreadId tid){
     tdata->routine_hash_table = HT_construct(NULL);
     AP_ASSERT(tdata->routine_hash_table != NULL, "rtn ht not allocable");
     
-    #if DEBUG_ALLOCATION
-    APROF_(add_alloc)(HT);
-    #endif
-    
     tdata->stack_depth = 0;
     tdata->max_stack_size = STACK_SIZE;
     tdata->stack = VG_(calloc)("stack", STACK_SIZE * sizeof(Activation), 1);
-    #if DEBUG
-    AP_ASSERT(tdata->stack != NULL, "stack not allocable");
-    #endif
     
     #if DEBUG_ALLOCATION
-    int j = 0;
-    for (j = 0; j < STACK_SIZE; j++) APROF_(add_alloc)(ACT);
+    UInt j = 0;
+    for (j = 0; j < STACK_SIZE; j++) APROF_(add_alloc)(ACT_S);
     #endif
     
     #if TRACE_FUNCTION
@@ -95,7 +93,7 @@ static ThreadData * APROF_(thread_start)(ThreadId tid){
     return tdata;
     #endif
     
-    #if INPUT_METRIC == RMS || DISTINCT_RMS
+    #if INPUT_METRIC == RMS || DEBUG_DRMS
     tdata->next_aid = 1;
     tdata->accesses_rms = LK_create();
     #endif
@@ -106,11 +104,9 @@ static ThreadData * APROF_(thread_start)(ThreadId tid){
     
     #if CCT
     
+    tdata->next_context_id = 1;
     // allocate dummy CCT root
     tdata->root = (CCTNode*) VG_(calloc)("CCT", sizeof(CCTNode), 1);
-    #if DEBUG
-    AP_ASSERT(tdata->root != NULL, "Can't allocate CCT root node");
-    #endif
 
     #if CCT_GRAPHIC
     char * n = VG_(calloc)("nome root", 32, 1);
@@ -119,13 +115,10 @@ static ThreadData * APROF_(thread_start)(ThreadId tid){
     #endif
 
     #if DEBUG_ALLOCATION
-    APROF_(add_alloc)(CCTS);
+    APROF_(add_alloc)(CCT_S);
     #endif
-
-    //tdata->root->context_id = 0;
-    
-    tdata->next_context_id = 1;
-    #endif
+ 
+    #endif // CCT
     
     #if TIME == RDTSC
     tdata->entry_time = APROF_(time)();
@@ -139,6 +132,11 @@ static ThreadData * APROF_(thread_start)(ThreadId tid){
 
 void APROF_(thread_exit)(ThreadId tid){
 
+    #if DEBUG_ALLOCATION
+    VG_(umsg)("\nThread exit:\n");
+    APROF_(print_alloc)();
+    #endif
+    
     APROF_(current_TID) = VG_INVALID_THREADID;
     APROF_(current_tdata) = NULL;
 
@@ -172,13 +170,6 @@ void APROF_(thread_exit)(ThreadId tid){
                                                     );
     #endif
     
-    #if SUF2_SEARCH == STATS
-    VG_(printf)("[TID=%d] Average stack depth: %llu / %llu = %llu\n", 
-                    tid, tdata->avg_depth, ops, tdata->avg_depth/ops);
-    VG_(printf)("[TID=%d] Average # iterations: %llu / %llu = %llu\n", 
-                    tid, tdata->avg_iteration, ops, tdata->avg_iteration/ops);
-    #endif
-    
     #if EMPTY_ANALYSIS 
     HT_destruct(tdata->routine_hash_table);
     VG_(free)(tdata->stack);
@@ -191,12 +182,11 @@ void APROF_(thread_exit)(ThreadId tid){
     #endif
     
     APROF_(generate_report)(tdata, tid);
-    
     APROF_(running_threads)--;
     
     /* destroy all thread data data */
     
-    #if INPUT_METRIC == RMS || DISTINCT_RMS
+    #if INPUT_METRIC == RMS || DEBUG_DRMS
     LK_destroy(tdata->accesses_rms);
     #endif
     
@@ -211,6 +201,13 @@ void APROF_(thread_exit)(ThreadId tid){
     
     HT_destruct(tdata->routine_hash_table);
     
+    #if DEBUG_ALLOCATION
+    APROF_(remove_alloc)(T_S);
+    UInt i;
+    for (i = 0; i < tdata->max_stack_size; i++) 
+        APROF_(remove_alloc)(ACT_S);
+    #endif
+
     VG_(free)(tdata->stack);
     VG_(free)(tdata);
 
@@ -228,7 +225,6 @@ void APROF_(thread_switch)(ThreadId tid, ULong blocks_dispatched) {
         ------
      * Why? Investigate! 
      */
-     
      
     #if DEBUG
     AP_ASSERT(tid == VG_(get_running_tid)(), "TID mismatch");
@@ -291,22 +287,19 @@ void APROF_(kill_threads)(void) {
 #if INPUT_METRIC == RVMS
 /*
  * global_counter is 32 bit integer so it can overflow. To overcome this
- * issue we compress our set of valid timestamps (e.g., after an overflow).
- * 
- * !!! This comment is not very accurate
+ * issue we periodically compress our set of valid timestamps 
+ * (e.g., after an overflow).
  * 
  * 1) scan all shadow thread stacks (in parallel): collect the (sorted) 
- *    set of used timestamps by all activations.
+ *    set of used timestamps by all activations (active_ts).
  * 
- * 2) After and before each activation ts insert a (unknown... for now) ts:
- *    all writes between two activations will be assigned to this ts.
- * 
- * 3) element i-th of the set is associated to the new timestamp i.
- *    re-assign ts to all activations.
+ * 3) element i-th of the set is associated to the new timestamp 
+ *    i * 3. Re-assign ts to all activations.
  *
  * 4) re-assign ts in all shadow memories (see LK_compress)
  * 
- * Return the new starting value for the global counter.
+ * Return the new starting value for the global counter: 
+ *      3 * size(active_ts).
  */
 #if OVERFLOW_DEBUG
 static UInt round = 0;
@@ -331,7 +324,8 @@ UInt APROF_(overflow_handler)(void) {
                                             sizeof(LookupTable *));
     
     // current stack depth of each thread
-    UInt * stack_depths = VG_(calloc)("index for merge", count_thread, sizeof(UInt));
+    UInt * stack_depths = VG_(calloc)("index for merge", 
+                                    count_thread, sizeof(UInt));
     
     #if OVERFLOW_DEBUG
     VG_(umsg)("Estimating # valid ts\n");
@@ -349,7 +343,8 @@ UInt APROF_(overflow_handler)(void) {
         } else {
         
             #if OVERFLOW_DEBUG
-            APROF_(fprintf)(f, "Thread: %u ~ depth: %d\n", j, threads[j]->stack_depth);
+            APROF_(fprintf)(f, "Thread: %u ~ depth: %d\n", j, 
+                                    threads[j]->stack_depth);
             APROF_(fflush)(f);
             #endif
         
@@ -434,7 +429,7 @@ UInt APROF_(overflow_handler)(void) {
         
         // next time we check for the max the caller of this act
         stack_depths[max_ind]--; 
-        act_max->aid_rvms = i; // re-assign ts
+        act_max->aid_rvms = i*3; // re-assign ts
     
     }
     
@@ -469,11 +464,11 @@ UInt APROF_(overflow_handler)(void) {
     //VG_(umsg)("Global counter overflow handler end\n");
     //AP_ASSERT(0, "test");
     
-    return sum + 1;
+    return 3 * (sum + 1);
 }
 #endif
 
-#if INPUT_METRIC == RMS || DISTINCT_RMS
+#if INPUT_METRIC == RMS || DEBUG_DRMS
 UInt APROF_(overflow_handler_rms)(void) {
 
     VG_(umsg)("Local counter overflow\n");

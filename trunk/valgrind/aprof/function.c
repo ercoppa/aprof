@@ -36,20 +36,31 @@
 void APROF_(destroy_routine_info)(RoutineInfo * ri) {
     
     #if CCT
-    HT_destruct(ri->context_rms_map);
-    #else
     
-    #if INPUT_METRIC == RMS || DISTINCT_RMS
+    HT_destruct(ri->context_rms_map);
+    
+    #else // !CCT
+    
+    #if INPUT_METRIC == RMS || DEBUG_DRMS
     HT_destruct(ri->rms_map);
-    #endif
+    #endif // INPUT_METRIC == RMS || DEBUG_DRMS
     
     #if INPUT_METRIC == RVMS
-    HT_destruct(ri->rvms_map);
-    #endif
     
-    #endif // CCT
+    HT_destruct(ri->rvms_map);
+    
+    #if DISTINCT_RMS
+    HT_destruct(ri->distinct_rms);
+    #endif // DISTINCT_RMS
+    
+    #endif // INPUT_METRIC == RVMS
+    
+    #endif // !CCT
     
     VG_(free)(ri);
+    #if DEBUG_ALLOCATION
+    APROF_(remove_alloc)(RT_S);
+    #endif // DEBUG_ALLOCATION
 
 }
 
@@ -63,12 +74,9 @@ RoutineInfo * APROF_(new_routine_info)(ThreadData * tdata,
     #endif
     
     RoutineInfo * rtn_info = VG_(calloc)("rtn_info", 1, sizeof(RoutineInfo));
-    #if DEBUG
-    AP_ASSERT(rtn_info != NULL, "rtn info not allocable");
-    #endif
     
     #if DEBUG_ALLOCATION
-    APROF_(add_alloc)(RTS);
+    APROF_(add_alloc)(RT_S);
     #endif
     
     rtn_info->key = target;
@@ -81,43 +89,32 @@ RoutineInfo * APROF_(new_routine_info)(ThreadData * tdata,
     rtn_info->routine_id = tdata->next_routine_id++;
 
     #if CCT
-    
     /* elements of this ht are freed when we generate the report */
     rtn_info->context_rms_map = HT_construct(NULL);
+    #else // CCT == 0
     
-    #if DEBUG
-    AP_ASSERT(rtn_info->context_rms_map != NULL, "context_sms_map not allocable");
-    #endif
-    
-    #if DEBUG_ALLOCATION
-    APROF_(add_alloc)(HT);
-    #endif
-    
-    #else
-    
+    #if INPUT_METRIC == RMS || DEBUG_DRMS
     /* elements of this ht are freed when we generate the report */
-    #if INPUT_METRIC == RMS || DISTINCT_RMS
     rtn_info->rms_map = HT_construct(NULL);
-    #endif
+    #endif 
+    
     #if INPUT_METRIC == RVMS
+    
     rtn_info->rvms_map = HT_construct(NULL);
+    
+    #if DISTINCT_RMS
+    rtn_info->distinct_rms = HT_construct(NULL);    
     #endif
     
-    #if DEBUG_ALLOCATION
-    APROF_(add_alloc)(HT);
-    #endif
+    #endif // INPUT_METRIC == RVMS
     
-    #endif
+    #endif // CCT == 0
     
     #if DISCARD_UNKNOWN
     }
     #endif
     
     HT_add_node(tdata->routine_hash_table, rtn_info->key, rtn_info);
-    
-    #if DEBUG_ALLOCATION
-    APROF_(add_alloc)(HTN);
-    #endif
     
     return rtn_info;
 }
@@ -159,28 +156,30 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
     act->entry_time          = start;
     act->total_children_time = 0;
     
-    #if INPUT_METRIC == RVMS 
-    /*
-    VG_(umsg)("G: Stack depth %d aid %u %s\n", tdata->stack_depth, 
-                APROF_(global_counter) + 1, act->rtn_info->fn->name);
-    */
-    act->rvms                = 0;
-    act->aid_rvms            = ++APROF_(global_counter);
-    if (APROF_(global_counter) == 0) {  // check & fix timestamp overflow
-        tdata->stack_depth--; // because 
-        act->aid_rvms = APROF_(global_counter) = APROF_(overflow_handler)();
-        tdata->stack_depth++;
-    }
-    
-    #endif
-    #if DISTINCT_RMS || INPUT_METRIC == RMS
+    #if INPUT_METRIC == RMS || DEBUG_DRMS
     
     act->rms                     = 0;
     act->aid_rms                 = tdata->next_aid++;
     if (tdata->next_aid == 0)  // check & fix timestamp overflow
         tdata->next_aid = APROF_(overflow_handler_rms)();
     
-    #endif
+    #endif // INPUT_METRIC == RMS || DEBUG_DRMS
+    
+    #if INPUT_METRIC == RVMS
+
+    act->rvms                = 0;
+    act->aid_rvms            = ++APROF_(global_counter);
+    if (APROF_(global_counter) == 0) {  // check & fix timestamp overflow
+        tdata->stack_depth--;
+        act->aid_rvms = APROF_(global_counter) = APROF_(overflow_handler)();
+        tdata->stack_depth++;
+    }
+    
+    #if DISTINCT_RMS
+    act->d_rms = 0;
+    #endif // DISTINCT_RMS
+    
+    #endif // INPUT_METRIC == RVMS
     
     #if DISCARD_UNKNOWN
     if (!rtn_info->fn->discard_info) {
@@ -212,7 +211,7 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
         #endif
 
         #if DEBUG_ALLOCATION
-        APROF_(add_alloc)(CCTS);
+        APROF_(add_alloc)(CCT_S);
         #endif
 
         // add node to tree
@@ -231,7 +230,7 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
 
     // store context node into current activation record
     act->node = cnode;
-    #endif
+    #endif // CCT
     
     #if DISCARD_UNKNOWN
     }
@@ -273,38 +272,27 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
     
     // check if routine has ever been called with this RMS
     RMSInfo * info_access = NULL;
+    
     #if CCT
-    HashTable * rms_map  = HT_lookup(rtn_info->context_rms_map, 
+    HashTable * map = HT_lookup(rtn_info->context_rms_map, 
                                             act->node->context_id);
     
     if (rms_map == NULL) {
         
-        rms_map = HT_construct(NULL);
+        map = HT_construct(NULL);
         #if DEBUG
-        AP_ASSERT(rms_map != NULL, "sms_map not allocable");
+        AP_ASSERT(map != NULL, "sms_map not allocable");
         #endif
         
-        #if DEBUG_ALLOCATION
-        APROF_(add_alloc)(HT);
-        #endif
-        
-        rms_map->key = act->node->context_id;
-        HT_add_node(rtn_info->context_rms_map, rms_map->key, rms_map);
-
-        #if DEBUG_ALLOCATION
-        APROF_(add_alloc)(HTN);
-        #endif
+        map->key = act->node->context_id;
+        HT_add_node(rtn_info->context_rms_map, map->key, map);
 
     } else {
-        
-        #if INPUT_METRIC == RMS
-        info_access = HT_lookup(rms_map, act->rms);
-        #elif INPUT_METRIC == RVMS
-        info_access = HT_lookup(rvms_map, act->rvms);
-        #endif
+
+        info_access = HT_lookup(map, act->rms);
         
     }
-    #else
+    #else // CCT == 0
     
     #if INPUT_METRIC == RMS
     info_access = HT_lookup(rtn_info->rms_map, act->rms);
@@ -312,19 +300,18 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
     info_access = HT_lookup(rtn_info->rvms_map, act->rvms);
     #endif
     
-    #endif
+    #endif // CCT == 0
     
     // make new unique RMS entry
     if (info_access == NULL) {
         
-        //VG_(printf)("New sms info\n");
         info_access = (RMSInfo * ) VG_(calloc)("rms_info", 1, sizeof(RMSInfo));
         #if DEBUG
         AP_ASSERT(info_access != NULL, "rms_info not allocable in function exit");
         #endif
         
         #if DEBUG_ALLOCATION
-        APROF_(add_alloc)(RMS);
+        APROF_(add_alloc)(RMS_S);
         #endif
         
         // init minimum cumulative time for sms entry
@@ -333,16 +320,13 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
         
         #if INPUT_METRIC == RMS
         info_access->key = act->rms;
-        #else
+        #elif INPUT_METRIC == RVMS
         info_access->key = act->rvms;
         #endif
         
         #if CCT
-        HT_add_node(rms_map, info_access->key, info_access);
         
-        #if DEBUG_ALLOCATION
-        APROF_(add_alloc)(HTN);
-        #endif
+        HT_add_node(map, info_access->key, info_access);
         
         #else
         
@@ -352,25 +336,25 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
         HT_add_node(rtn_info->rvms_map, info_access->key, info_access);
         #endif
         
-        #if DEBUG_ALLOCATION
-        APROF_(add_alloc)(HTN);
-        #endif
-        
         #endif
 
     }
 
     #if DISTINCT_RMS
     
-    AP_ASSERT(act->rms <= act->rvms, "Wrong!");
+    AP_ASSERT(act->d_rms <= act->rvms, "Wrong!");
     
-    RMSValue * node = (RMSValue *) HT_lookup(rtn_info->rms_map, act->rms);
+    RMSValue * node = (RMSValue *) HT_lookup(rtn_info->distinct_rms, act->d_rms);
     if (node == NULL) {
     
         node = (RMSValue *) VG_(calloc)("distinct rms node", sizeof(RMSValue), 1);
-        node->key = act->rms;
+        node->key = act->d_rms;
         node->calls = 1;
-        HT_add_node(rtn_info->rms_map, node->key, node);
+        HT_add_node(rtn_info->distinct_rms, node->key, node);
+        
+        #if DEBUG_ALLOCATION
+        APROF_(add_alloc)(HTN_S);
+        #endif
     
     } else
         node->calls++;
@@ -406,8 +390,8 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
         info_access->self_time_min = partial_self;
     
     #if INPUT_METRIC == RVMS && DISTINCT_RMS
-    info_access->rms_input_sum += act->rms;
-    info_access->rms_input_sum_sqr += (act->rms * act->rms);
+    info_access->rms_input_sum += act->d_rms;
+    info_access->rms_input_sum_sqr += (act->d_rms * act->d_rms);
     #endif
     
     #if DEBUG
@@ -437,12 +421,17 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
         if (!tdata->skip) {
         #endif
 
-            #if DISTINCT_RMS || INPUT_METRIC == RMS
+            #if DEBUG_DRMS || INPUT_METRIC == RMS
             parent_activation->rms                 += act->rms;
             #endif
             
             #if INPUT_METRIC == RVMS
             parent_activation->rvms                += act->rvms;
+            
+            #if DISTINCT_RMS
+            parent_activation->d_rms               += act->d_rms;
+            #endif
+            
             #endif
         
             parent_activation->total_children_time += partial_cumulative;

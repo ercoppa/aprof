@@ -259,6 +259,11 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
                             );
 
                 VG_(free)(info_access);
+                
+                #if DEBUG_ALLOCATION
+                APROF_(remove_alloc)(RMS_S);
+                #endif
+                
                 info_access = HT_RemoveNext(ht);
 
             }
@@ -305,6 +310,9 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
                             );
 
             VG_(free)(info_access);
+            #if DEBUG_ALLOCATION
+            APROF_(remove_alloc)(RMS_S);
+            #endif
             
             #if INPUT_METRIC == RMS
             info_access = HT_RemoveNext(rtn_info->rms_map);
@@ -315,19 +323,24 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
         #endif
         
         #if DISTINCT_RMS
-        HT_ResetIter(rtn_info->rms_map);
-        RMSValue * node = (RMSValue *) HT_RemoveNext(rtn_info->rms_map);
+        HT_ResetIter(rtn_info->distinct_rms);
+        RMSValue * node = (RMSValue *) HT_RemoveNext(rtn_info->distinct_rms);
         while(node != NULL) {
             
             APROF_(fprintf)(report, "g %llu %lu %llu\n", 
                                 rtn_info->routine_id, node->key,
                                 node->calls);
+            
             VG_(free)(node);
-            node = HT_RemoveNext(rtn_info->rms_map);
+            #if DEBUG_ALLOCATION
+            APROF_(remove_alloc)(HTN_S);
+            #endif
+            
+            node = HT_RemoveNext(rtn_info->distinct_rms);
         
         }
         #endif
-        
+
         #if DISCARD_UNKNOWN
         }
         #endif

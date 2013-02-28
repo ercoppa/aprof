@@ -95,13 +95,28 @@ void LK_destroy(LookupTable * lk) {
             UInt j = 0;
             while (j < ILT_SIZE) {
                 
-                if (lk->table[i]->table[j] != NULL)
+                if (lk->table[i]->table[j] != NULL) {
+                
                     VG_(free)(lk->table[i]->table[j]);
-            
+                    #if DEBUG_ALLOCATION
+                    APROF_(remove_alloc)(SEG_LK_S);
+                    #endif
+                }
                 j++;
             
             }
+            
+            #if DEBUG_ALLOCATION
+            APROF_(remove_alloc)(ILT_LK_S);
             #endif
+            
+            #else // i386
+            
+            #if DEBUG_ALLOCATION
+            APROF_(remove_alloc)(SEG_LK_S);
+            #endif
+            
+            #endif // i386
             
             VG_(free)(lk->table[i]);
         }
@@ -147,7 +162,7 @@ UInt LK_insert(LookupTable * suf, UWord addr, UInt ts) {
         #endif
         
         #if DEBUG_ALLOCATION
-        APROF_(add_alloc)(SEG_SUF);
+        APROF_(add_alloc)(ILT_LK_S);
         #endif
         /*
         if (suf == APROF_(global_shadow_memory))
@@ -177,7 +192,7 @@ UInt LK_insert(LookupTable * suf, UWord addr, UInt ts) {
         #endif
         
         #if DEBUG_ALLOCATION
-        APROF_(add_alloc)(SEG_SUF);
+        APROF_(add_alloc)(SEG_LK_S);
         #endif
         
         #ifdef __i386__
@@ -248,7 +263,7 @@ static UInt binary_search(UInt * array, UInt init, UInt size, UInt ts){
     if (size == 1) return 0;
     if (array[1] > ts) return 0;
     if (array[size - 1] <= ts) return size - 1;
-/*    
+    
     Int q = size - 1;
     while (q >= 0) {
         if (array[q--] <= ts) { 
@@ -257,7 +272,7 @@ static UInt binary_search(UInt * array, UInt init, UInt size, UInt ts){
         }
     }
     AP_ASSERT(q >= 0, "value not found [1]");
-*/
+
     Int min = init;
     Int max = size - 1;
     
@@ -295,6 +310,30 @@ static UInt binary_search(UInt * array, UInt init, UInt size, UInt ts){
     return 0;
 }
 
+/*
+ * Compress global and local (thread) shadow memories.
+ * 
+ * array: set of valid/active ts-activations on the stacks
+ * size: size of the prev array
+ * shamem: pointers to active local shadow memories
+ * [file]: file for debug output
+ * 
+ * For each memory location x:
+ * - find its ts (gts) in the global shadow memory (global[x])
+ * - find the index (i) in array of max activation-ts that is <= gts
+ * - for active thread, check local ts (lts) of x (local[x]):
+ *      - if (lts < array[i]) 
+ *              then local[x] = 3 * (index max act-ts that is <= lts)
+ *      - elif (lts >= array[i+1]) 
+ *              then local[x] = 3 * (index max act-ts that is <= lts)
+ *      - elif gts == lts  then local[x] = 3 * i + 1
+ *      - elif gts > lts then local[x] = 3 * i
+ *      - elif gts < lts then local[x] = 3 * i + 2
+ *    finally: global[x] = 3 * i + 1.
+ * 
+ * Our goal is to preserve the relantionship between gts, lts and
+ * all active-ts.
+ */
 #if COMPRESS_DEBUG
 void LK_compress(UInt * array, UInt size, LookupTable ** shamem, void * file) {
 #else
@@ -391,7 +430,7 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
                     
                     #if COMPRESS_DEBUG
                     if (gts > 0) {
-                        APROF_(fprintf)(f, "GTS[%u] => ACTIVE_TS[%u]\n", gts, ts);
+                        APROF_(fprintf)(f, "GTS[%u] => ACTIVE_TS[%u] = %u\n", gts, ts, array[ts]);
                         APROF_(fflush)(f);
                     }
                     #endif
@@ -407,35 +446,61 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
                     
                     UInt * local_chunk = local[t];
 
-                    if(local_chunk[k] < gts) {
+                    if (local_chunk[k] < array[ts]) {
+                        
+                        UInt new = binary_search(array, 0, ts, local_chunk[k]);
+                        
+                        #if COMPRESS_DEBUG
+                        APROF_(fprintf)(f, "[%d] TS: %u => %u ~ GTS: %u - [%u:%u:%u]\n", 
+                            t, local_chunk[k], 3 * new, gts, i, j, k);
+                        APROF_(fflush)(f);
+                        #endif
+
+                        local_chunk[k] = 3 * new;
+                        
+                    } else if (local_chunk[k] >= array[ts + 1]) {
+                        
+                        UInt new = binary_search(array, ts, size, local_chunk[k]);
+                        
+                        #if COMPRESS_DEBUG
+                        APROF_(fprintf)(f, "[%d] TS: %u => %u ~ GTS: %u - [%u:%u:%u]\n", 
+                            t, local_chunk[k], 3 * new, gts, i, j, k);
+                        APROF_(fflush)(f);
+                        #endif
+
+                        local_chunk[k] = 3 * new;
+                        
+                    } else if(local_chunk[k] < gts) {
 
                         #if COMPRESS_DEBUG
                         if (1 || gts > 0) {
                             APROF_(fprintf)(f, "[%d] TS: %u => %u ~ GTS: %u - [%u:%u:%u]\n", 
-                                t, local_chunk[k], ts, 0, i, j, k);
+                                t, local_chunk[k], 3 * ts, gts, i, j, k);
                             APROF_(fflush)(f);
                         }
                         #endif
 
-                        local_chunk[k] = 0;
+                        local_chunk[k] = 3 * ts;
                         
                     } else if(local_chunk[k] == gts) {
                         
                         #if COMPRESS_DEBUG
                         if (1 || gts > 0) {
                             APROF_(fprintf)(f, "[%d] TS: %u => %u ~ GTS: %u - [%u:%u:%u]\n", 
-                                t, local_chunk[k], ts, gts, i, j, k);
+                                t, local_chunk[k], 3 * ts + 1, gts, i, j, k);
                             APROF_(fflush)(f);
                         }
                         #endif
                         
                         /* thread t wrote this value */
-                        local_chunk[k] = ts;
+                        local_chunk[k] = 3 * ts + 1;
 
-                    } else { 
+                    } else { // local_chunk[k] > gts
                         
                         #if COMPRESS_DEBUG
-                        UInt old = local_chunk[k];
+                        APROF_(fprintf)(f, "[%d] TS: %u => %u ~ GTS: %u (binary) - [%u:%u:%u]\n", 
+                            t, local_chunk[k], 3 * ts + 2, gts, i, j, k);
+                        APROF_(fflush)(f);
                         #endif
                         
                         /* 
@@ -443,16 +508,7 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
                          * the ts to the greater activation-ts that satisfies 
                          * wts[x] <= ats
                          */
-                        local_chunk[k] = binary_search(array, ts, 
-                                                    size, local_chunk[k]);
-                        
-                        
-                        AP_ASSERT(local_chunk[k] >= ts, "Invalid re-assignment");
-                        #if COMPRESS_DEBUG
-                        APROF_(fprintf)(f, "[%d] TS: %u => %u ~ GTS: %u (binary) - [%u:%u:%u]\n", 
-                            t, old, local_chunk[k], gts, i, j, k);
-                        APROF_(fflush)(f);
-                        #endif
+                        local_chunk[k] = 3 * ts + 2;
                         
                     }
                 }
@@ -461,12 +517,12 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
                     
                     #if COMPRESS_DEBUG
                     if (gts > 0) {
-                        APROF_(fprintf)(f, "GTS: %u => %u\n", global_chunk[k], ts);
+                        APROF_(fprintf)(f, "GTS: %u => %u\n", global_chunk[k], 3 * ts + 1);
                         APROF_(fflush)(f);
                     }
                     #endif
                     
-                    global_chunk[k] = ts;
+                    global_chunk[k] = 3 * ts + 1;
                 
                 }
             }
@@ -481,7 +537,7 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
 
 #endif
 
-#if INPUT_METRIC == RMS || DISTINCT_RMS
+#if INPUT_METRIC == RMS || DEBUG_DRMS
 
 void LK_compress_rms(LookupTable * uf, UInt * arr_rid, UInt size_arr) {
     

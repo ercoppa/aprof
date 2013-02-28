@@ -112,33 +112,42 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
         VG_(umsg)("addr: %u:%u:%u\n", i, k, j);
         */
         
-        #if INPUT_METRIC == RMS || DISTINCT_RMS
+        #if DEBUG_DRMS
+        Bool inc_rms = False;
+        Activation * dec_rms = NULL;
+        #endif
+        
+        #if INPUT_METRIC == RMS || DEBUG_DRMS
         Activation * act = APROF_(get_activation_noresize)(tdata, tdata->stack_depth);
-        #endif
-        
-        #if DISTINCT_RMS
-        if (!kernel_access) {
-        #endif
-        
-        #if INPUT_METRIC == RMS || DISTINCT_RMS
-        UInt old_aid = LK_insert(tdata->accesses_rms, addr, act->aid_rms);
-        if (old_aid < act->aid_rms && (type == LOAD || type == MODIFY)) {
-            
-            act->rms++;
-            //VG_(umsg)("RMS++\n");
-            if (old_aid > 0 && old_aid >= APROF_(get_activation_noresize)(tdata, 1)->aid_rms) {
+        if (!kernel_access || type != STORE) {
+
+            UInt old_aid = LK_insert(tdata->accesses_rms, addr, act->aid_rms);
+            if (old_aid < act->aid_rms && (type == LOAD || type == MODIFY)) {
                 
-                APROF_(get_activation_by_aid_rms)(tdata, old_aid)->rms--;
+                #if DEBUG_DRMS
+                inc_rms = True;
+                //VG_(umsg)("RMS++\n");
+                #endif
+                act->rms++;
+                
+                if (old_aid > 0 && 
+                    old_aid >= APROF_(get_activation_noresize)(tdata, 1)->aid_rms) {
+                    
+                    Activation * a = APROF_(get_activation_by_aid_rms)(tdata, old_aid);
+                    a->rms--;
+                    
+                    #if DEBUG_DRMS
+                    dec_rms = a;
+                    #endif
+
+                }
 
             }
+            //VG_(umsg)("old_aid %u - act->aid_rms: %u\n", 
+            //                old_aid, act->aid_rms);
 
-        }
-        //VG_(umsg)("old_aid %u - act->aid_rms: %u\n", old_aid, act->aid_rms);
-        #endif
-        
-        #if DISTINCT_RMS
         } 
-        #endif
+        #endif // INPUT_METRIC == RMS || DEBUG_DRMS
         
         #if INPUT_METRIC == RVMS
         
@@ -160,6 +169,11 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
                 
                 #if THREAD_INPUT == 0
                 wts = LK_insert(APROF_(global_shadow_memory), addr, ts);
+                #endif
+                           
+                #if DEBUG_DRMS
+                AP_ASSERT(!inc_rms, "Invalid rvms/d_rms [1]");
+                AP_ASSERT(dec_rms == NULL, "Invalid d_rms [2]");
                 #endif
                                 
                 #if !COSTANT_MEM_ACCESS
@@ -189,6 +203,11 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
 
         if(type == STORE) {
             
+            #if DEBUG_DRMS
+            AP_ASSERT(!inc_rms, "Invalid rvms/d_rms [3]");
+            AP_ASSERT(dec_rms == NULL, "Invalid d_rms [4]");
+            #endif
+            
             #if COSTANT_MEM_ACCESS
             return;
             #else
@@ -198,31 +217,79 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
             #endif
         }
 
-        #if DISTINCT_RMS == 0
+        #if DEBUG_DRMS == 0
         Activation * act = APROF_(get_activation_noresize)(tdata, tdata->stack_depth);
         #endif
+        
+        #if DEBUG_DRMS
+        Bool inc_rvms = False;
+        Bool dec_rvms = False;
+        #endif
+       
+                
+        //VG_(umsg)("old_ts %u - act->aid_rvms: %u\n", old_ts, act->aid_rvms);
        
         if(old_ts < wts){
-            //VG_(umsg)("RVMS++ [1]\n");
             act->rvms++;
+            #if DEBUG_DRMS
+            //VG_(umsg)("RVMS++ [1]\n");
+            inc_rvms = True;
+            #endif
         }
  
         else if (old_ts < act->aid_rvms) {
             
-            //VG_(umsg)("RVMS++ [2]\n");
             act->rvms++;
+            #if DEBUG_DRMS
+            //VG_(umsg)("RVMS++ [2]\n");
+            inc_rvms = True;
+            #endif
             if (old_ts > 0 && old_ts >= APROF_(get_activation_noresize)(tdata, 1)->aid_rvms) {
                 
                 APROF_(get_activation_by_aid_rvms)(tdata, old_ts)->rvms--;
-
+                #if DEBUG_DRMS
+                dec_rvms = True;
+                #endif
             }
 
         }
         
-        //VG_(umsg)("old_ts %u - act->aid_rvms: %u\n", old_ts, act->aid_rvms);
-        
         #if DISTINCT_RMS
-        AP_ASSERT(act->rms <= act->rvms, "Wrong!");
+        if (old_ts < act->aid_rvms) {
+            
+            act->d_rms++;
+            #if DEBUG_DRMS
+            //VG_(umsg)("D_RMS++\n");
+            AP_ASSERT(inc_rms, "Invalid d_rms");
+            AP_ASSERT(inc_rvms, "Invalid d_rms");
+            #endif
+            if (old_ts > 0 && old_ts >= APROF_(get_activation_noresize)(tdata, 1)->aid_rvms) {
+                
+                Activation * a = APROF_(get_activation_by_aid_rvms)(tdata, old_ts);
+                a->d_rms--;
+                #if DEBUG_DRMS
+                AP_ASSERT(dec_rms == a, "Invalid d_rms");
+                #endif
+            } 
+            #if DEBUG_DRMS
+            else {
+                AP_ASSERT(!dec_rvms, "Invalid d_rms [3]");
+                AP_ASSERT(dec_rms == NULL, "Invalid d_rms");
+            }
+            #endif
+        } 
+        #if DEBUG_DRMS
+        else {
+            AP_ASSERT(!inc_rms, "Invalid d_rms [4]");
+            AP_ASSERT(dec_rms == NULL && !inc_rms, "Invalid d_rms");
+        }
+        #endif
+        
+        #endif
+
+        #if DEBUG_DRMS
+        AP_ASSERT(act->rms == act->d_rms, "Invalid d_rms");
+        AP_ASSERT(act->d_rms <= act->rvms, "Invalid RVMS");
         #endif
         
         #endif
