@@ -99,8 +99,8 @@
 #define MEM_TRACE           1   // if 0 disable mem instrumentation
 #define THREAD_INPUT        1   // if 1, every write creates a new
                                 // version of an input
-#define SYSCALL_WRAPPING    1   // if 1, I/O syscall are wrapped in 
-                                // order to catch external I/O
+#define SYSCALL_WRAPPING    1   // if 1, I/O syscall stores are 
+                                // considered as external I/O
 
 #define DEBUG_ALLOCATION    0   // if 1, check every allocation made by aprof
 #define IGNORE_DL_RUNTIME   0   // if 1, disable analysis for dl_
@@ -128,17 +128,6 @@
 
 #define CHECK_OVERFLOW      0   // On 64bit machine, we map only 2048GB...
 
-/*
- * We need to search an activation ts in the shadow stack...
- */
-#define LINEAR              1   // Linear search (backward into stack)
-#define BINARY              2   // Binary search
-#define STATS               3   // Compute some stats about searching 
-                                // into the stack when doing liner search
-#define BACKLOG             4   // Backwarding with exponential jump, 
-                                // then binary search
-#define SUF2_SEARCH         LINEAR 
-
 /* Some constants */
 #define MAX_STACK_SIZE      15000   // max stack size
 #define STACK_SIZE          64      // Initial stack size
@@ -157,6 +146,14 @@
 
 #if INPUT_METRIC == RVMS
 #define DISTINCT_RMS 1
+#else
+#define DISTINCT_RMS 0
+#endif
+
+#if DISTINCT_RMS
+#define DEBUG_DRMS 0
+#else
+#define DEBUG_DRMS 0
 #endif
 
 #if THREAD_INPUT && INPUT_METRIC != RVMS
@@ -169,6 +166,10 @@
 
 #if INPUT_METRIC == RVMS && IGNORE_REPEAT_ACC
 #error "With IGNORE_REPEAT_ACC you're ignoring a store after a load. This is not ok with RVMS"
+#endif
+
+#if INPUT_METRIC == RVMS && !THREAD_INPUT && !SYSCALL_WRAPPING
+#error "RVMS need at one between THREAD_INPUT and SYSCALL_WRAPPING"
 #endif
 
 #if INPUT_METRIC == RMS
@@ -249,7 +250,7 @@ void APROF_(kill_threads)(void);
 UInt APROF_(overflow_handler)(void);
 #endif
 
-#if INPUT_METRIC == RMS || DISTINCT_RMS
+#if INPUT_METRIC == RMS || DEBUG_DRMS
 UInt APROF_(overflow_handler_rms)(void);
 #endif
 
@@ -298,7 +299,7 @@ void APROF_(addEvent_Dw)(IRSB* sb, IRAtom* daddr, Int dsize);
 #if INPUT_METRIC == RVMS
 Activation * APROF_(get_activation_by_aid_rvms)(ThreadData * tdata, UInt aid);
 #endif
-#if INPUT_METRIC == RMS || DISTINCT_RMS
+#if INPUT_METRIC == RMS || DEBUG_DRMS
 Activation * APROF_(get_activation_by_aid_rms)(ThreadData * tdata, UInt aid);
 #endif
 
@@ -335,13 +336,10 @@ void APROF_(print_info_mem_usage)(void);
 Bool VG_(get_fnname_no_cxx_demangle) (Addr a, Char* buf, Int nbuf);
 
 /* Syscall wrappers (syscall.c) */
-#if INPUT_METRIC == RVMS && SYSCALL_WRAPPING == 1
 void APROF_(pre_syscall)(ThreadId tid, UInt syscallno, UWord * args, 
                          UInt nArgs);
 void APROF_(post_syscall)(ThreadId tid, UInt syscallno, UWord * args, 
                           UInt nArgs, SysRes res);
-#endif
-
 
 #define vgAprof_fix_access_size(a, s) \
                     do{ \

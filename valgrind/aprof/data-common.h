@@ -25,12 +25,24 @@ typedef enum jump_t {
 // Used for debugging of memory usage of aprof
 typedef enum alloc_type {
 
-    BBS, RTS, FNS, 
-    TS, FN_NAME, ACT,
-    OBJ_NAME, POOL_PAGE, HTN,
-    SEG_SUF, RMS, HT, HTNC,
-    CCTS, OBJ, MANGLED,
-    A_NONE
+    BB_S, /* BB */ 
+    RT_S, /* Routine */
+    FN_S, /* Function */ 
+    T_S,  /* thread */  
+    FN_NAME_S, /* Function name */ 
+    ACT_S, /* Activation */ 
+    OBJ_NAME_S, /* Object name */ 
+    POOL_PAGE_S, /* Pool page */
+    HTN_S, /* ht node */
+    ILT_LK_S, /* intermediate table LK */
+    SEG_LK_S, /* LK segment */
+    RMS_S, /* Read memory size*/
+    HT_S, /* Hash Table */
+    HTC_S, /* element array ht */
+    CCT_S, /* CCT */
+    OBJ_S, /* Object */ 
+    MANGLED_S, /* Mangled name */
+    A_NONE /* unsed */
 
 } alloc_type;
 #endif // DEBUG_ALLOCATION
@@ -121,6 +133,7 @@ typedef struct CCTNode {
 
 #endif // APROF_TOOL
 
+#if DISTINCT_RMS
 typedef struct {
     
     UWord         key;
@@ -128,6 +141,7 @@ typedef struct {
     ULong         calls;
     
 } RMSValue;
+#endif
 
 // Info about a routine, not shared btw threads 
 typedef struct {
@@ -138,7 +152,7 @@ typedef struct {
     Function *   fn;                     // Info (name, file, etc) about this routine
     Int          recursion_pending;      // number of pending activations (> 1 means recursive)
     
-    #if DISTINCT_RMS || INPUT_METRIC == RMS
+    #if DEBUG_DRMS || INPUT_METRIC == RMS
     HashTable *  rms_map;                // set of unique RMSInfo records for this routine
     #endif
     
@@ -152,6 +166,10 @@ typedef struct {
     
     #if EXTERNAL
     ULong       total_calls;
+    #endif
+
+    #if DISTINCT_RMS
+    HashTable *  distinct_rms;    
     #endif
 
 } RoutineInfo;
@@ -212,11 +230,14 @@ typedef struct {
     ULong          entry_time;           // time stamp at activation entry
     ULong          total_children_time;  // total time spent in children
     
-    #if INPUT_METRIC == RMS || DISTINCT_RMS
+    #if INPUT_METRIC == RMS || DEBUG_DRMS
     UInt           rms;                  // RMS of activation 
     #endif
     #if INPUT_METRIC == RVMS             
     UInt           rvms;                 // RVMS of activation
+    #endif
+    #if DISTINCT_RMS
+    UInt           d_rms;
     #endif
     
     RoutineInfo *  rtn_info;             // pointer to info record of 
@@ -227,7 +248,7 @@ typedef struct {
                                          // (value of the global counter
                                          // when this act started)
     #endif
-    #if DISTINCT_RMS || INPUT_METRIC == RMS
+    #if DEBUG_DRMS || INPUT_METRIC == RMS
     UInt           aid_rms;
     #endif
 
@@ -257,7 +278,7 @@ typedef struct ThreadData {
     #if INPUT_METRIC == RVMS
     LookupTable *   accesses_rvms;         // stack of sets of addresses
     #endif
-    #if DISTINCT_RMS || INPUT_METRIC == RMS
+    #if DEBUG_DRMS || INPUT_METRIC == RMS
     LookupTable *   accesses_rms;         // stack of sets of addresses
     #endif
     
@@ -269,7 +290,7 @@ typedef struct ThreadData {
                                          // assigned to the next routine_info
     ULong           other_metric;        // needed when merging reports
     
-    #if INPUT_METRIC == RMS || DISTINCT_RMS
+    #if INPUT_METRIC == RMS || DEBUG_DRMS
     UInt            next_aid;            // Activation ID that will be assigned 
                                          // to the next Activation
     #endif

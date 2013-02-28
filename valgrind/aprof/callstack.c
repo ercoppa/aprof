@@ -88,7 +88,8 @@ Activation * APROF_(resize_stack)(ThreadData * tdata, unsigned int depth) {
         
         #if DEBUG_ALLOCATION
         int j = 0;
-        for (j = 0; j < tdata->max_stack_size; j++) APROF_(add_alloc)(ACT);
+        for (j = 0; j < tdata->max_stack_size; j++) 
+            APROF_(add_alloc)(ACT_S);
         #endif
         
         tdata->max_stack_size = tdata->max_stack_size * 2; 
@@ -114,7 +115,7 @@ Activation * APROF_(resize_stack)(ThreadData * tdata, unsigned int depth) {
 
 }
 
-#if INPUT_METRIC == RMS || DISTINCT_RMS
+#if INPUT_METRIC == RMS || DEBUG_DRMS
 Activation * APROF_(get_activation_by_aid_rms)(ThreadData * tdata, UInt aid) {
     
     #if DEBUG
@@ -205,7 +206,7 @@ BB * APROF_(get_BB)(UWord target) {
         #endif
         
         #if DEBUG_ALLOCATION
-        APROF_(add_alloc)(BBS);
+        APROF_(add_alloc)(BB_S);
         #endif
         
     }
@@ -507,7 +508,7 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
         #endif
         
         #if DEBUG_ALLOCATION
-        APROF_(add_alloc)(FN_NAME);
+        APROF_(add_alloc)(FN_NAME_S);
         #endif
         
         /* 
@@ -582,9 +583,8 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
                     HT_add_node(APROF_(obj_ht), obj->key, obj);
                     
                     #if DEBUG_ALLOCATION
-                    APROF_(add_alloc)(HTN);
-                    APROF_(add_alloc)(OBJ_NAME);
-                    APROF_(add_alloc)(OBJ);
+                    APROF_(add_alloc)(OBJ_NAME_S);
+                    APROF_(add_alloc)(OBJ_S);
                     #endif
                     
                 }
@@ -677,7 +677,7 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
                 #endif
                 
                 #if DEBUG_ALLOCATION
-                APROF_(add_alloc)(FNS);
+                APROF_(add_alloc)(FN_S);
                 #endif
                 
                 f->key = hash;
@@ -700,6 +700,9 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
                 #if DEBUG
                 AP_ASSERT(mangled != NULL, "mangled name not allocable");
                 #endif
+                #if DEBUG_ALLOCATION
+                APROF_(add_alloc)(MANGLED_S);
+                #endif
                 
                 if(    VG_(get_fnname_no_cxx_demangle)(bb->key, (Char *)mangled, NAME_SIZE)) {
                     if (VG_(strcmp)(mangled, "(below main)") == 0) {
@@ -714,20 +717,25 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
                         
                         f->mangled = mangled;
                         
+                    } else {
+                        
+                        VG_(free)(mangled);
                         #if DEBUG_ALLOCATION
-                        APROF_(add_alloc)(MANGLED);
+                        APROF_(remove_alloc)(MANGLED_S);
                         #endif
                         
-                    } else
-                        VG_(free)(mangled);
+                    }
+                
+                } else {
+                    
+                    #if DEBUG_ALLOCATION
+                    APROF_(remove_alloc)(MANGLED_S);
+                    #endif
+                    VG_(free)(mangled);
+                
                 }
-                else VG_(free)(mangled);
                 
                 HT_add_node(APROF_(fn_ht), f->key, f);
-                #if DEBUG_ALLOCATION
-                APROF_(add_alloc)(HTN);
-                #endif
-                
                 f->obj = obj;
             
             } else {
@@ -735,7 +743,7 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
                 VG_(free)(fn);
                 
                 #if DEBUG_ALLOCATION
-                APROF_(remove_alloc)(FN_NAME);
+                APROF_(remove_alloc)(FN_NAME_S);
                 #endif
             }
             
@@ -743,7 +751,7 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
                 
                 VG_(free)(fn);
                 #if DEBUG_ALLOCATION
-                APROF_(remove_alloc)(FN_NAME);
+                APROF_(remove_alloc)(FN_NAME_S);
                 #endif
             
             }
@@ -752,7 +760,7 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
             
             VG_(free)(fn);
             #if DEBUG_ALLOCATION
-            APROF_(remove_alloc)(FN_NAME);
+            APROF_(remove_alloc)(FN_NAME_S);
             #endif
             
         }
@@ -767,10 +775,6 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
         #if DEBUG
         BB * bb_t = HT_lookup(APROF_(bb_ht), bb->key);
         if (bb_t == NULL) AP_ASSERT(0, "BB inserted not found");
-        #endif
-        
-        #if DEBUG_ALLOCATION
-        APROF_(add_alloc)(HTN);
         #endif
     
     }
@@ -1138,7 +1142,6 @@ Bool APROF_(trace_function)(ThreadId tid, UWord * arg, UWord * ret) {
                     #if DEBUG_ALLOCATION
                     APROF_(add_alloc)(OBJ_NAME);
                     APROF_(add_alloc)(OBJ);
-                    APROF_(add_alloc)(HTN);
                     #endif
                     
                     obj->name = obj_name;
@@ -1153,10 +1156,6 @@ Bool APROF_(trace_function)(ThreadId tid, UWord * arg, UWord * ret) {
                 fn->obj = obj;
                 
                 HT_add_node(APROF_(fn_ht), fn->key, fn);
-                
-                #if DEBUG_ALLOCATION
-                APROF_(add_alloc)(HTN);
-                #endif
             
             }
             

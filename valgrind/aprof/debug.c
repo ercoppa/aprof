@@ -36,24 +36,39 @@
 #if DEBUG_ALLOCATION
 
 static UInt alloc_type_size[A_NONE] = {
-    #if TRACE_FUNCTION
-    sizeof(BB), 
+
+    sizeof(BB), /* BB */
+    sizeof(RoutineInfo), /* Routine */
+    sizeof(Function), /* Function */ 
+    sizeof(ThreadData),  /* thread */  
+    NAME_SIZE, /* Function name */ 
+    sizeof(Activation), /* Activation */ 
+    NAME_SIZE, /* Object name */ 
+    0, /* Pool page */
+    sizeof(HashNode), /* ht node */
+    
+    #ifndef __i386__
+    sizeof(ILT), /* intermediate table LK */
     #else
     0,
     #endif
-    sizeof(RoutineInfo), sizeof(Function), 
-    sizeof(ThreadData), NAME_SIZE, sizeof(Activation),
-    NAME_SIZE, 0, sizeof(HashNode),
-    sizeof(SSM),  sizeof(RMSInfo),  sizeof(HashTable), sizeof(void *),
-    sizeof(CCTS), sizeof(Object), NAME_SIZE
+    
+    16384 * 4, /* LK segment (memory resol. 4) */
+    sizeof(RMSInfo), /* Read memory size*/
+    sizeof(HashTable), /* Hash Table */
+    sizeof(void *), /* element array ht */
+    sizeof(CCT), /* CCT */
+    sizeof(Object), /* Object */ 
+    NAME_SIZE /* Mangled name */
+
 };
 
 static char * alloc_type_name[A_NONE] = {
-    "BasicBlock", "Routine", "Funzione", 
-    "Thread", "FunctionName", "Activation",
-    "ObjectName", "PoolPage", "HashNode",
-    "SUF2Segment",  "SMSInfo",  "HashTable", "HT chain",
-    "CCT", "Object", "Mangled"
+    "BasicBlock", "Routine", "Function", 
+    "ThreadData", "FunctionName", "Activation",
+    "ObjectName", "PoolPage", "HashNode", "IntermediateTableLK",
+    "SegmentLK",  "RMSInfo",  "HashTable", "HT chain",
+    "CCT", "Object", "MangledName"
 };
 
 
@@ -84,19 +99,19 @@ void APROF_(print_alloc)(void) {
     
     UInt est = 0;
     
-    VG_(printf)("Report allocations of aprof:\n\n");
+    VG_(umsg)("Report allocations of aprof:\n\n");
     
-    int i = 0;
+    UInt i = 0;
     for (i = 0; i < A_NONE; i++) {
-        VG_(printf)("Allocated %u %s ~ %u kb (%u mb)\n", 
+        VG_(umsg)("Allocated %u %s ~ %u kb (%u mb)\n", 
             alloc_counter[i], alloc_type_name[i],
             (alloc_counter[i] * alloc_type_size[i]) / 1024,
             (alloc_counter[i] * alloc_type_size[i]) / 1024 / 1024);
         est += alloc_counter[i] * alloc_type_size[i];
     }
     
-    VG_(printf)("\n");
-    VG_(printf)("Estimated space usage: %u kb (%u mb)\n\n", est/1024, est/1024/1024);
+    VG_(umsg)("\n");
+    VG_(umsg)("Estimated space usage: %u kb (%u mb)\n\n", est/1024, est/1024/1024);
 }
 
 #endif

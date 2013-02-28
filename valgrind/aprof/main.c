@@ -492,31 +492,11 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
 static void APROF_(post_clo_init)(void) {
     
     #if TRACE_FUNCTION
-    
     APROF_(bb_ht) = HT_construct(VG_(free));
-    #if DEBUG
-    AP_ASSERT(APROF_(bb_ht) != NULL, "bb ht not allocable");
     #endif
     
-    #if DEBUG_ALLOCATION
-    APROF_(add_alloc)(HT);
-    #endif
-    
-    #endif
-    
-    APROF_(fn_ht) = HT_construct(VG_(free));
-    #if DEBUG
-    AP_ASSERT(APROF_(fn_ht) != NULL, "fn ht not allocable");
-    #endif
-    
-    APROF_(obj_ht) = HT_construct(VG_(free));
-    #if DEBUG
-    AP_ASSERT(APROF_(obj_ht) != NULL, "fn ht not allocable");
-    #endif
-    
-    #if DEBUG_ALLOCATION
-    APROF_(add_alloc)(HT);
-    #endif
+    APROF_(fn_ht) = HT_construct(NULL);    
+    APROF_(obj_ht) = HT_construct(NULL);
     
     #if INPUT_METRIC == RVMS
     APROF_(global_shadow_memory) = LK_create();
@@ -590,12 +570,20 @@ void APROF_(print_info_mem_usage)(void) {
 static void APROF_(fini)(Int exitcode) {
     
     #if DEBUG_ALLOCATION
-    APROF_(print_alloc)();
+    //VG_(printf)("Before clean:\n");
+    //APROF_(print_alloc)();
     #endif
     
     APROF_(kill_threads)();
     
     #if TRACE_FUNCTION 
+        
+    #if DEBUG_ALLOCATION
+    UInt j = 0;
+    for (j = 0; j < HT_count_nodes(APROF_(bb_ht)); j++)
+        APROF_(remove_alloc)(BB_S);
+    #endif
+    
     HT_destruct(APROF_(bb_ht));
     #endif
     
@@ -603,10 +591,18 @@ static void APROF_(fini)(Int exitcode) {
     HT_ResetIter(APROF_(fn_ht));
     Function * f = HT_RemoveNext(APROF_(fn_ht));
     while (f != NULL) {
+        
+        #if DEBUG_ALLOCATION
+        APROF_(remove_alloc)(FN_NAME_S);
+        if (f->mangled) APROF_(remove_alloc)(MANGLED_S);
+        APROF_(remove_alloc)(FN_S);
+        #endif
+        
         VG_(free)(f->name);
         VG_(free)(f->mangled);
         VG_(free)(f);
         f = HT_RemoveNext(APROF_(fn_ht));
+        
     }
     HT_destruct(APROF_(fn_ht));
     
@@ -614,15 +610,25 @@ static void APROF_(fini)(Int exitcode) {
     HT_ResetIter(APROF_(obj_ht));
     Object * o = HT_RemoveNext(APROF_(obj_ht));
     while (o != NULL) {
+        
         VG_(free)(o->name);
-        //VG_(free)(o->file);
         VG_(free)(o);
         o = HT_RemoveNext(APROF_(obj_ht));
+    
+        #if DEBUG_ALLOCATION
+        APROF_(remove_alloc)(OBJ_NAME_S);
+        APROF_(remove_alloc)(OBJ_S);
+        #endif
     }
     HT_destruct(APROF_(obj_ht));
     
     #if INPUT_METRIC == RVMS
     LK_destroy(APROF_(global_shadow_memory));
+    #endif
+    
+    #if DEBUG_ALLOCATION
+    VG_(printf)("\nAfter clean:\n");
+    APROF_(print_alloc)();
     #endif
 
 }
@@ -688,7 +694,7 @@ static void APROF_(pre_clo_init)(void) {
     VG_(needs_client_requests)      (APROF_(trace_function));
     #endif
     
-    #if SYSCALL_WRAPPING == 1 && INPUT_METRIC == RVMS
+    #if INPUT_METRIC == RVMS
     VG_(needs_syscall_wrapper)      (
                                         APROF_(pre_syscall), 
                                         APROF_(post_syscall)

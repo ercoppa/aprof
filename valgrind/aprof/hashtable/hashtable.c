@@ -75,9 +75,10 @@ HashTable * HT_construct(void * func)
    table->free_func     = func;
      
    #if DEBUG_ALLOCATION
-   int i = 0;
-   for (i = 0; i < n_chains; i++)
-      APROF_(add_alloc)(HTNC);
+   UInt i;
+   for (i = 0; i < n_chains; i++) APROF_(add_alloc)(HTC_S);
+   APROF_(add_alloc)(HT_S);
+   //VG_(umsg)("Creating %lu chains\n", n_chains);
    #endif
 
    return table;
@@ -116,9 +117,10 @@ static void resize (HashTable * table)
              && new_chains <= primes[N_HASH_PRIMES-1]);
 
    #if DEBUG_ALLOCATION
-   int q = 0;
+   UInt q;
    for (q = 0; q < (new_chains - table->n_chains); q++)
-      APROF_(add_alloc)(HTNC);
+      APROF_(add_alloc)(HTC_S);
+   //VG_(umsg)("Adding %lu chains\n", new_chains - table->n_chains);
    #endif
 
    table->n_chains = new_chains;
@@ -274,7 +276,12 @@ void HT_destruct(HashTable * table)
              table->free_func(node);
           }
        }
-   //VG_(printf)("I will free %p for %p\n", table->chains, table);
+   
+   #if DEBUG_ALLOCATION
+   APROF_(remove_alloc)(HT_S);
+   for (i = 0; i < table->n_chains; i++) APROF_(remove_alloc)(HTC_S);
+   #endif
+   
    VG_(free)(table->chains);
    VG_(free)(table);
 }
