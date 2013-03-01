@@ -130,7 +130,7 @@ static Bool merge_runs = False;
 static Bool merge_threads = False;
 static HChar * directory = NULL;
 static HChar * logs[SLOT] = {NULL, NULL}; // only for compare
-//static HChar * rtn_skip[] = { "madvise" };
+static HChar * rtn_skip[] = { "madvise" };
 
 typedef struct aprof_report {
     
@@ -466,15 +466,15 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         
         ASSERT(*rid == id, "Routine id mismatch: %s", line_orig);
         
-        /*
         UInt i;
         for (i = 0; i < sizeof(rtn_skip)/sizeof(HChar *); i++) {
             if (VG_(strcmp)(rtn_skip[i], curr->fn->name) == 0) {
                 VG_(free)(line);
+                r->tmp = 1;
                 return curr;
             }
         }
-        */
+
         // RMS
         token = VG_(strtok)(NULL, DELIM_DQ);
         ASSERT(token != NULL, "Invalid rms: %s", line_orig);
@@ -719,7 +719,6 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         
         ASSERT(*rid == id, "Routine id mismatch: %s", line_orig);
         
-        /*
         UInt i;
         for (i = 0; i < sizeof(rtn_skip)/sizeof(HChar *); i++) {
             if (VG_(strcmp)(rtn_skip[i], curr->fn->name) == 0) {
@@ -727,7 +726,6 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
                 return curr;
             }
         }
-        */
         
         // RMS
         token = VG_(strtok)(NULL, DELIM_DQ);
@@ -980,6 +978,14 @@ static void post_merge_consistency(aprof_report * r, HChar * report) {
         ULong cumul_real = 0;
         ULong sum_rms = 0;
         ULong sum_rvms = 0;
+        
+        UInt k;
+        for (k = 0; k < sizeof(rtn_skip)/sizeof(HChar *); k++) {
+            if (VG_(strcmp)(rtn_skip[k], rtn->fn->name) == 0) {
+                rtn = (RoutineInfo *) HT_Next(r->routine_hash_table);
+                continue;
+            }
+        }
         
         HT_ResetIter(rtn->rvms_map);
         RMSInfo * i = (RMSInfo *) HT_Next(rtn->rvms_map);
