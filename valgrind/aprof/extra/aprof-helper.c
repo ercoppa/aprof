@@ -710,6 +710,8 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
     
     } else if (token[0] == 'g') {
     
+        ASSERT(r->input_metric == RVMS, "Invalid report: rms but g - %s", line_orig);
+    
         // routine ID
         token = VG_(strtok)(NULL, DELIM_DQ);
         ASSERT(token != NULL, "Invalid id: %s", line_orig);
@@ -859,17 +861,27 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
             token = VG_(strtok)(NULL, DELIM_DQ);
             ASSERT(token != NULL, "Invalid input metric: %s", line_orig);
             
-            if (VG_(strcmp)("rms", token) == 0)
+            if (VG_(strcmp)("rms", token) == 0) {
+                
+                if (r->input_metric > 0)
+                    ASSERT(r->input_metric == RMS, "Invalid metric")
+                    
                 r->input_metric = RMS;
-            else if (VG_(strcmp)("rvms", token) == 0)
+                
+            } else if (VG_(strcmp)("rvms", token) == 0) {
+                
+                if (r->input_metric > 0)
+                    ASSERT(r->input_metric == RVMS, "Invalid metric")
+                
                 r->input_metric = RVMS;
-            else
+            
+            } else
                 ASSERT(0, "Invalid input metric: %s", line_orig);
         
         } else if (r->version == REPORT_VERSION_OLD)
             r->input_metric = RMS;
         else
-            ASSERT(0, "Invalid version: %s", line_orig);
+            ASSERT(0, "Invalid metric: %s", line_orig);
     
     } else if (token[0] == 'c' || token[0] == 'e' || token[0] == 'm'
                     || token[0] == 'u'){ 
