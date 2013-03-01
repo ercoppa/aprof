@@ -255,7 +255,7 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
         }
         
         #if DISTINCT_RMS
-        if (old_ts < act->aid_rvms) {
+        if (!kernel_access && old_ts < act->aid_rvms) {
             
             act->d_rms++;
             #if DEBUG_DRMS

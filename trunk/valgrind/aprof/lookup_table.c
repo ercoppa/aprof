@@ -263,7 +263,6 @@ static UInt binary_search(UInt * array, UInt init, UInt size, UInt ts){
     if (size == 1) return 0;
     if (array[1] > ts) return 0;
     if (array[size - 1] <= ts) return size - 1;
-    
     /*
     Int q = size - 1;
     while (q >= 0) {
