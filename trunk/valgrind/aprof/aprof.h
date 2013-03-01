@@ -102,6 +102,8 @@
 #define SYSCALL_WRAPPING    1   // if 1, I/O syscall stores are 
                                 // considered as external I/O
 
+#define IGNORE_LOAD_SYS     0   // ignore load due to syscall
+
 #define DEBUG_ALLOCATION    0   // if 1, check every allocation made by aprof
 #define IGNORE_DL_RUNTIME   0   // if 1, disable analysis for dl_
                                 // runtime_resolve (and its children)

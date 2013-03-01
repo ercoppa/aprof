@@ -119,7 +119,12 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
         
         #if INPUT_METRIC == RMS || DEBUG_DRMS
         Activation * act = APROF_(get_activation_noresize)(tdata, tdata->stack_depth);
+        
+        #if IGNORE_LOAD_SYS
+        if (!kernel_access) {
+        #else
         if (!kernel_access || type != STORE) {
+        #endif
 
             UInt old_aid = LK_insert(tdata->accesses_rms, addr, act->aid_rms);
             if (old_aid < act->aid_rms && (type == LOAD || type == MODIFY)) {
@@ -255,7 +260,7 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
         }
         
         #if DISTINCT_RMS
-        if (!kernel_access && old_ts < act->aid_rvms) {
+        if (old_ts < act->aid_rvms) {
             
             act->d_rms++;
             #if DEBUG_DRMS
