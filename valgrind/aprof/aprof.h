@@ -104,6 +104,8 @@
 
 #define IGNORE_LOAD_SYS     0   // ignore load due to syscall
 
+#define INPUT_STATS         1   //
+
 #define DEBUG_ALLOCATION    0   // if 1, check every allocation made by aprof
 #define IGNORE_DL_RUNTIME   0   // if 1, disable analysis for dl_
                                 // runtime_resolve (and its children)
@@ -135,6 +137,25 @@
 #define STACK_SIZE          64      // Initial stack size
 #define BUFFER_SIZE         32000   // FILE buffer size
 #define NAME_SIZE           4096    // function/object name buffer size 
+
+
+#if INPUT_STATS
+
+#define SET_THREAD(x)  ((x) &  0x7FFFFFFF) // clear 31th bit
+#define SET_SYSCALL(x) ((x) |  0x80000000) // set 31th bit
+#define SYSCALL(x)     ((x) &  0x80000000) // mask 0-30th bits
+#define TS(x)          ((x) &  0x7FFFFFFF) // mask 31th bit
+#define MAX_COUNT_VAL  0x80000000
+
+#else
+
+#define SET_THREAD(x)  ; // do nothing
+#define SET_SYSCALL(x) ; // do nothing
+#define SYSCALL(x)     (False) // False
+#define TS(x)          (x) // do nothing
+#define MAX_COUNT_VAL  0x0
+
+#endif
 
 /* some config check */
 

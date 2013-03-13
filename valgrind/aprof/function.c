@@ -169,7 +169,7 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
 
     act->rvms                = 0;
     act->aid_rvms            = ++APROF_(global_counter);
-    if (APROF_(global_counter) == 0) {  // check & fix timestamp overflow
+    if (APROF_(global_counter) == MAX_COUNT_VAL) {  // check & fix timestamp overflow
         tdata->stack_depth--;
         act->aid_rvms = APROF_(global_counter) = APROF_(overflow_handler)();
         tdata->stack_depth++;
@@ -178,6 +178,11 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
     #if DISTINCT_RMS
     act->d_rms = 0;
     #endif // DISTINCT_RMS
+    
+    #if INPUT_STATS
+    act->rvms_syscall = 0;
+    act->rvms_thread = 0;
+    #endif
     
     #endif // INPUT_METRIC == RVMS
     
@@ -392,6 +397,11 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
     #if INPUT_METRIC == RVMS && DISTINCT_RMS
     info_access->rms_input_sum += act->d_rms;
     info_access->rms_input_sum_sqr += (act->d_rms * act->d_rms);
+    #endif
+    
+    #if INPUT_STATS
+    info_access->rvms_syscall_sum += act->rvms_syscall;
+    info_access->rvms_thread_sum  += act->rvms_thread;
     #endif
     
     #if DEBUG
