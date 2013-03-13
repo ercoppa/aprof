@@ -86,7 +86,7 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
     if (tid != APROF_(current_TID)) {
         APROF_(thread_switch)(tid, 0);
         #if INPUT_METRIC == RVMS
-        forced_switch = True; // a thread switch increase the global counter
+        forced_switch = True; // a thread switch increased the global counter
         #endif
     } 
 
@@ -127,7 +127,7 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
             
             if (!forced_switch) {
                 APROF_(global_counter)++;
-                if(APROF_(global_counter) == 0)
+                if(APROF_(global_counter) == MAX_COUNT_VAL)
                     APROF_(global_counter) = APROF_(overflow_handler)();
             }
             
@@ -160,7 +160,7 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
             
             if (!forced_switch) {
                 APROF_(global_counter)++;
-                if(APROF_(global_counter) == 0)
+                if(APROF_(global_counter) == MAX_COUNT_VAL)
                     APROF_(global_counter) = APROF_(overflow_handler)();
             }
             
@@ -277,7 +277,7 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
         
         if (!forced_switch) {
             APROF_(global_counter)++;
-            if(APROF_(global_counter) == 0)
+            if(APROF_(global_counter) == MAX_COUNT_VAL)
                 APROF_(global_counter) = APROF_(overflow_handler)();
         }
         

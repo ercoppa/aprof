@@ -239,7 +239,7 @@ void APROF_(thread_switch)(ThreadId tid, ULong blocks_dispatched) {
     
     #if INPUT_METRIC == RVMS
     APROF_(global_counter)++;
-    if(APROF_(global_counter) == 0)
+    if(APROF_(global_counter) == MAX_COUNT_VAL)
         APROF_(global_counter) = APROF_(overflow_handler)();
     #endif
     

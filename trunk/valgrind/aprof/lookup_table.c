@@ -404,12 +404,14 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
                 
             }
             
+            #if COMPRESS_DEBUG
             if (q == 0 && global_chunk == NULL) {
                 
                 for(t = 0; t < q; t++)
                     AP_ASSERT(local[t] == NULL, "local chunk is not null")
                 continue;
             }
+            #endif
             
             #ifndef __i386__
             #if COMPRESS_DEBUG
@@ -422,7 +424,7 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
                 
                 if (global_chunk != NULL) {
                     
-                    gts = global_chunk[k];
+                    gts = TS(global_chunk[k]);
                     if (gts > 0) 
                         ts = binary_search(array, 0, size, gts);
                     else
@@ -458,7 +460,7 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
 
                         local_chunk[k] = 3 * new;
                         
-                    } else if (local_chunk[k] >= array[ts + 1]) {
+                    } else if (ts + 1 < size && local_chunk[k] >= array[ts + 1]) {
                         
                         UInt new = binary_search(array, ts, size, local_chunk[k]);
                         
@@ -522,7 +524,17 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
                     }
                     #endif
                     
+                    #if INPUT_STATS
+                    Bool source_io = False;
+                    if (SYSCALL(global_chunk[k])) source_io = True;
+                    #endif
+                    
                     global_chunk[k] = 3 * ts + 1;
+                    
+                    #if INPUT_STATS
+                    if (source_io) 
+                        global_chunk[k] = SET_SYSCALL(global_chunk[k]);
+                    #endif
                 
                 }
             }

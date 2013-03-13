@@ -167,13 +167,23 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
          if (type == STORE || type == MODIFY) {
             
             #if THREAD_INPUT == 1
+            
+            #if INPUT_STATS
+            
+            if (kernel_access)
+                wts = LK_insert(APROF_(global_shadow_memory), addr, SET_SYSCALL(ts));
+            else // 31th bit is already cleared, avoid SET_THREAD
+                wts = LK_insert(APROF_(global_shadow_memory), addr, ts);
+            
+            #else
             wts = LK_insert(APROF_(global_shadow_memory), addr, ts);
+            #endif
             #endif
 
             if (kernel_access) {
                 
                 #if THREAD_INPUT == 0
-                wts = LK_insert(APROF_(global_shadow_memory), addr, ts);
+                wts = LK_insert(APROF_(global_shadow_memory), addr, SET_SYSCALL(ts));
                 #endif
                            
                 #if DEBUG_DRMS
@@ -234,8 +244,15 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
                 
         //VG_(umsg)("old_ts %u - act->aid_rvms: %u\n", old_ts, act->aid_rvms);
        
-        if(old_ts < wts){
+        if(old_ts < TS(wts)){
+            
             act->rvms++;
+            
+            #if INPUT_STATS
+            if (SYSCALL(wts)) act->rvms_syscall++;
+            else act->rvms_thread++;
+            #endif
+            
             #if DEBUG_DRMS
             //VG_(umsg)("RVMS++ [1]\n");
             inc_rvms = True;

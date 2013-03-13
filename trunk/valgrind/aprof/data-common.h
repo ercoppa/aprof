@@ -213,11 +213,18 @@ typedef struct {
 
     #if INPUT_METRIC == RVMS
     ULong       rms_input_sum;            // sum of RMS
+    
     #if EXTERNAL
-    double       rms_input_sum_sqr;        // sum of squares of RMS
+    double      rms_input_sum_sqr;        // sum of squares of RMS
     #else
     ULong       rms_input_sum_sqr;        // sum of squares of RMS
     #endif
+    
+    #if INPUT_STATS
+    ULong        rvms_syscall_sum;
+    ULong        rvms_thread_sum;
+    #endif
+    
     #endif
 
 } RMSInfo;
@@ -247,6 +254,12 @@ typedef struct {
     UInt           aid_rvms;             // Activation ID Activation ID 
                                          // (value of the global counter
                                          // when this act started)
+    
+    #if INPUT_STATS
+    ULong       rvms_syscall;
+    ULong       rvms_thread;
+    #endif                                     
+    
     #endif
     #if DEBUG_DRMS || INPUT_METRIC == RMS
     UInt           aid_rms;
