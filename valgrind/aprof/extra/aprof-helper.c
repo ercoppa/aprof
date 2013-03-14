@@ -14,6 +14,8 @@
 #define RVMS                2    // Read Versioned Memory Size
 #define INPUT_METRIC        RVMS
 
+#define INPUT_STATS         1
+
 #define EXTERNAL 1
 
 #include <stdio.h>
@@ -580,6 +582,8 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         
         ULong rms_sum = 0;
         double rms_sqr = 0;
+        ULong rvms_syscall_sum = 0;
+        ULong rvms_thread_sum = 0;
         if (r->version == REPORT_VERSION && r->input_metric == RVMS) {
         
             // rms sum
@@ -596,6 +600,27 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
             UOF_DOUBLE(rms_sqr, line_orig);
             ASSERT(rms_sqr <= ((double)rms) * ((double)rms) 
                         * ((double)occ), "invalid rms sqr: %s", line_orig);
+
+            // rvms syscall sum
+            token = VG_(strtok)(NULL, DELIM_DQ);
+            if (token != NULL) {
+                
+                rvms_syscall_sum = VG_(strtoull10) (token, NULL);
+                UOF_LONG(rvms_syscall_sum, line_orig);
+                ASSERT(rvms_syscall_sum <= rms, "invalid rvms syscall: %s", line_orig);
+            
+                // rvms thread sum
+                token = VG_(strtok)(NULL, DELIM_DQ);
+                ASSERT(token != NULL, "Invalid rvms thread: %s", line_orig);
+                token = VG_(strtok)(NULL, DELIM_DQ);
+                rvms_thread_sum = VG_(strtoull10) (token, NULL);
+                UOF_LONG(rvms_thread_sum, line_orig);
+                ASSERT(rvms_thread_sum <= rms, "invalid rvms thread: %s", line_orig);
+            
+                ASSERT(rvms_thread_sum + rvms_syscall_sum <= rms * occ,
+                            "invalid rvms syscall/thread: %s", line_orig);
+            
+            }          
 
         }
 
@@ -705,6 +730,14 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
                         ((double)rms) * ((double)rms) 
                         * ((double)info_access->calls_number), 
                         "invalid rms sqr");
+        
+            ADD(info_access->rvms_thread_sum, rvms_thread_sum);
+            ADD(info_access->rvms_syscall_sum, rvms_syscall_sum);
+            
+            ASSERT( info_access->rvms_thread_sum + 
+                    info_access->rvms_syscall_sum <= 
+                    rms * info_access->calls_number,
+                    "invalid rvms syscall/thread: %s", line_orig);
         
         }
     
