@@ -55,6 +55,16 @@ public class RmsTableModel extends AbstractTableModel {
             columnNames.add("Ext. input");
             columnTypes.add(Double.class);
         }
+        
+        if (main != null && main.hasRvmsStats()) {
+            
+            columnNames.add("%Thread");
+            columnTypes.add(Double.class);
+            
+            columnNames.add("%Syscall");
+            columnTypes.add(Double.class);
+        
+        }
     }
 
 	public void setData(Routine r) {
@@ -102,6 +112,8 @@ public class RmsTableModel extends AbstractTableModel {
 			case 3: return te.getMaxCost();
 			case 4: return te.getOcc();
             case 5: return (1 - te.getRatioSumRmsRvms()) * 100;
+            case 6: return te.getRatioSumRvmsSyscall() * 100;
+            case 7: return te.getRatioSumRvmsThread() * 100;
 			//case 5: return te.getVar();
 			//case 6: return rtn.getMcc(te.getRms());
 			default: return null;

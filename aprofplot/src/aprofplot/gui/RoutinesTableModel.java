@@ -88,8 +88,18 @@ public class RoutinesTableModel extends AbstractTableModel {
         
         // dii # RMS - # RVMS
         if (main != null && main.hasDistinctRms()) {
-            columnNames.add("Diff. #RVMS %");
+            columnNames.add("#RVMS - #RMS");
             columnTypes.add(Long.class);
+        }
+        
+        if (main != null && main.hasRvmsStats()) {
+            
+            columnNames.add("%Syscall");
+            columnTypes.add(Double.class);
+            
+            columnNames.add("%Thread");
+            columnTypes.add(Double.class);
+        
         }
         
 		if (hasContext) {
@@ -235,19 +245,30 @@ public class RoutinesTableModel extends AbstractTableModel {
                             (double)report.getTotalCalls()) * 100 * 100) / 100;
             case 8:
                     // sum(RMS) / sum (RVMS) 
-                    if (!main.isInputMetricRms())
+                    if (!main.isInputMetricRms()) {
+                        //System.out.println(rtn_info.getName()+ " " 
+                        //                + rtn_info.getRatioSumRmsRvms());
                         return (1 - rtn_info.getRatioSumRmsRvms()) * 100;
-                
-            case 9:
-                    // # RMS
-                    if (main.hasDistinctRms()) {
-                        //System.out.println(rtn_info.getSizeRmsList() + " " + 
-                        //                     rtn_info.getCountRms());
-                        return (Math.ceil((((double)(rtn_info.getSizeRmsList() 
-                                    - rtn_info.getCountRms()) ) /
-                                    rtn_info.getCountRms()) * 100) / 100) * 100;
-			
                     }
+                        
+            case 9:
+                    // # RVMS - # RVMS
+                    if (main.hasDistinctRms()) {
+                        return rtn_info.getSizeRmsList() - rtn_info.getCountRms();
+                    }
+                
+            case 10:
+                    // % syscall
+                    if (main.hasRvmsStats()) {
+                        return rtn_info.getRatioSumRvmsSyscall() * 100;
+                    }
+                
+            case 11:
+                    // % thread
+                    if (main.hasRvmsStats()) {
+                        return rtn_info.getRatioSumRvmsThread() * 100;
+                    }
+                
 		}
 		
 		//System.out.println("Index requested: " + columnIndex + " over " + columnNames.length);
