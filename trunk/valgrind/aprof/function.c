@@ -442,6 +442,11 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
             parent_activation->d_rms               += act->d_rms;
             #endif
             
+            #if INPUT_STATS
+            parent_activation->rvms_syscall        += act->rvms_syscall;
+            parent_activation->rvms_thread         += act->rvms_thread;
+            #endif
+            
             #endif
         
             parent_activation->total_children_time += partial_cumulative;
