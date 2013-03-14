@@ -19,6 +19,8 @@ public abstract class Routine implements Comparable<Routine> {
 	private long max_rms;
     private long sum_rms;
     private long sum_rvms;
+    private long rvms_syscall;
+    private long rvms_thread;
     private long num_rms;
 	// Read memory size elements for this routine
 	private ArrayList<Rms> rms_list;
@@ -80,6 +82,9 @@ public abstract class Routine implements Comparable<Routine> {
 	
         sum_rvms += r.getOcc() * r.getRms();
         sum_rms += r.getSumRms();
+        
+        rvms_syscall += r.getSumRvmsSyscall();
+        rvms_thread += r.getSumRvmsThread();
         
 		// Invalid mcc cache
 		last_mcc_n = -1;
@@ -210,7 +215,11 @@ public abstract class Routine implements Comparable<Routine> {
 		Collections.sort(rms_list, new Comparator<Rms> () {
 			@Override
 			public int compare(Rms t1, Rms t2) {
-				if (t1.getRms() == t2.getRms()) return 0;
+				if (t1.getRms() == t2.getRms()) {
+                    if (t1.getOcc() == t2.getOcc()) return 0;
+                    if (t1.getOcc() > t2.getOcc()) return -1;
+                    return 1;
+                }
 				if (t1.getRms() > t2.getRms()) return 1;
 				return -1;
 			}
@@ -323,6 +332,22 @@ public abstract class Routine implements Comparable<Routine> {
     public double getRatioRvmsRms() {
         return (((double)getSizeRmsList()) /
                 ((double)getCountRms()));
+    }
+    
+    public double getRatioSumRvmsSyscall() {
+        
+         if (this.rvms_syscall > 0)
+            return (((double)this.rvms_syscall) / ((double)this.sum_rvms)); 
+        
+        return 0;
+    }
+    
+    public double getRatioSumRvmsThread() {
+        
+         if (this.rvms_thread > 0)
+            return (((double)this.rvms_thread) / ((double)this.sum_rvms)); 
+        
+        return 0;
     }
     
 }

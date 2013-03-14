@@ -1850,6 +1850,7 @@ public class MainWindow extends javax.swing.JFrame {
         if (jCheckBoxMenuItem6.isSelected()) TotalCostGraphPanel.setRoutine(r);
         if (jCheckBoxMenuItem7.isSelected()) MccGraphPanel.setRoutine(r);
 
+        r.sortRmsListByAccesses();
         Iterator i = r.getRmsListIterator();
         while (i.hasNext()) {
 
@@ -2235,8 +2236,8 @@ public class MainWindow extends javax.swing.JFrame {
 			chooser.setFileFilter(filter);
 			chooser.setAcceptAllFileFilterUsed(false);
 			chooser.setSelectedFile(tmp);
-			int choice = chooser.showSaveDialog(this.getParent());
-			
+			int choice = chooser.showSaveDialog(this);
+            
 			if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
 				
 				tmp = chooser.getSelectedFile();
@@ -3693,6 +3694,14 @@ public class MainWindow extends javax.swing.JFrame {
     public boolean hasDistinctRms() {
         
         if (report != null && report.hasDistinctRms())
+            return true;
+        
+        return false;
+    }
+    
+    public boolean hasRvmsStats() {
+        
+        if (report != null && report.hasRvmsStats())
             return true;
         
         return false;

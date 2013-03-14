@@ -31,6 +31,7 @@ public class AprofReport {
 	private HashSet<String> favorites;
 	private File file;
 	private HashSet<String> libset;
+    boolean has_rvms_stats = false;
 
 	// Global stats about routines
 	private int max_class = 30;
@@ -271,6 +272,8 @@ public class AprofReport {
                 
                 long sum_rms = 0;
                 long sum_sqr_rms = 0;
+                long rvms_syscall = 0;
+                long rvms_thread = 0;
                 if (this.version >= 5 && this.input_metric == RVMS) {
                     
                     sum_rms = Long.parseLong(tokenizer.nextToken());
@@ -278,12 +281,21 @@ public class AprofReport {
                     this.sum_rms += sum_rms;
                     this.sum_rvms += rms * occ;
                     
+                    if (tokenizer.hasMoreTokens()) {
+                    
+                        rvms_syscall = Long.parseLong(tokenizer.nextToken());
+                        rvms_thread = Long.parseLong(tokenizer.nextToken());
+                        
+                        has_rvms_stats = true;
+                    }
+                    
                 }
                 
                 Rms te = new Rms(rms, min_cost, max_cost, cost_sum, 
                                     real, self, occ, self_min, self_max,
                                     cumul_sqr, self_sqr, sum_rms,
-                                    sum_sqr_rms);
+                                    sum_sqr_rms, rvms_syscall,
+                                    rvms_thread);
                 
 				RoutineInfo r = null;
 				try {
@@ -334,17 +346,28 @@ public class AprofReport {
                 
                 long sum_rms = 0;
                 long sum_sqr_rms = 0;
+                long rvms_syscall = 0;
+                long rvms_thread = 0;
                 if (this.version >= 5 && this.input_metric == RVMS) {
                     sum_rms = Long.parseLong(tokenizer.nextToken());
                     sum_sqr_rms = Long.parseLong(tokenizer.nextToken());
                     this.sum_rms += sum_rms;
                     this.sum_rvms += rms * occ;
+                    
+                    if (tokenizer.hasMoreTokens()) {
+                    
+                        rvms_syscall = Long.parseLong(tokenizer.nextToken());
+                        rvms_thread = Long.parseLong(tokenizer.nextToken());
+                        
+                        has_rvms_stats = true;
+                    }
                 }
                 
 				Rms te = new Rms(rms, min_cost, max_cost, tot_cost, 
 									real, self, occ, self_min, self_max,
                                     cumul_sqr, self_sqr, sum_rms,
-                                    sum_sqr_rms);
+                                    sum_sqr_rms, rvms_syscall,
+                                    rvms_thread);
 				
 				RoutineContext c = null;
 				try {
@@ -772,7 +795,13 @@ public class AprofReport {
     }
     
     public boolean hasDistinctRms() {
+        if (input_metric == RMS) return false;
         return (num_rms > 0);
     }
- 
+
+    public boolean hasRvmsStats() {
+        return has_rvms_stats;
+    }
+    
 }
+
