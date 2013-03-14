@@ -607,15 +607,14 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
                 
                 rvms_syscall_sum = VG_(strtoull10) (token, NULL);
                 UOF_LONG(rvms_syscall_sum, line_orig);
-                ASSERT(rvms_syscall_sum <= rms, "invalid rvms syscall: %s", line_orig);
+                ASSERT(rvms_syscall_sum <= rms*occ, "invalid rvms syscall: %s", line_orig);
             
                 // rvms thread sum
                 token = VG_(strtok)(NULL, DELIM_DQ);
                 ASSERT(token != NULL, "Invalid rvms thread: %s", line_orig);
-                token = VG_(strtok)(NULL, DELIM_DQ);
                 rvms_thread_sum = VG_(strtoull10) (token, NULL);
                 UOF_LONG(rvms_thread_sum, line_orig);
-                ASSERT(rvms_thread_sum <= rms, "invalid rvms thread: %s", line_orig);
+                ASSERT(rvms_thread_sum <= rms*occ, "invalid rvms thread: %s", line_orig);
             
                 ASSERT(rvms_thread_sum + rvms_syscall_sum <= rms * occ,
                             "invalid rvms syscall/thread: %s", line_orig);
@@ -1776,7 +1775,7 @@ static void save_report(aprof_report * r, HChar * report_name) {
             if (r->input_metric == RVMS) {
                 
                 fprintf(report,
-                            "p %llu %lu %llu %llu %llu %.0f %llu %llu %llu %llu %llu %.0f %llu %.0f\n", 
+                            "p %llu %lu %llu %llu %llu %.0f %llu %llu %llu %llu %llu %.0f %llu %.0f %llu %llu\n", 
                             rtn_info->routine_id,
                             info_access->key,
                             info_access->min_cumulative_time,
@@ -1790,7 +1789,9 @@ static void save_report(aprof_report * r, HChar * report_name) {
                             info_access->self_time_max,
                             info_access->self_sum_sqr,
                             info_access->rms_input_sum,
-                            info_access->rms_input_sum_sqr
+                            info_access->rms_input_sum_sqr,
+                            info_access->rvms_syscall_sum,
+                            info_access->rvms_thread_sum
                             );
             
             } else {
