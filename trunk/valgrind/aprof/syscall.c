@@ -99,8 +99,6 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
         return;
     
     }
-
-    Int size = (Int) sr_Res(res);
     
     if(    
         syscallno == __NR_read 
@@ -123,6 +121,7 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
             
             #if INPUT_METRIC == RVMS && SYSCALL_WRAPPING
             Addr addr = args[1];
+            Int size = (Int) sr_Res(res);
             APROF_(fix_access_size)(addr, size);
             
             if (!forced_switch) {
@@ -155,6 +154,7 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
             
             struct vki_iovec * base = (struct  vki_iovec *) args[1];
             UWord iovcnt = args[2];
+            Int size = (Int) sr_Res(res);
             UWord i;
             Int iov_len;
             
@@ -211,6 +211,7 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
                 ){
         
         Addr addr = args[1];
+        Int size = (Int) sr_Res(res);
 
         APROF_(fix_access_size)(addr, size);
         while (size > 0) {
@@ -229,7 +230,8 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
                 || syscallno == __NR_pwritev
                 #endif
                 ){
-                
+        
+        Int size = (Int) sr_Res(res);
         struct vki_iovec * base = (struct vki_iovec *) args[1];
         UWord iovcnt = args[2];
         UWord i;
@@ -271,6 +273,7 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
                 
         #if INPUT_METRIC == RVMS && SYSCALL_WRAPPING
         
+        Int size = (Int) sr_Res(res);
         Addr addr = args[1];
         size = size + sizeof(long int);
         APROF_(fix_access_size)(addr, size);
@@ -300,11 +303,12 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
                 False
                 #endif
                 ){
-                                
+              
+        
         Addr addr = args[1];
         SizeT s = args[2];
         
-        size = s + sizeof(long int);
+        Int size = s + sizeof(long int);
         APROF_(fix_access_size)(addr, size);
             
         while(size > 0) {
@@ -317,5 +321,41 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
             addr += APROF_(addr_multiple);
         }
     
+    } else if ( 
+                syscallno == __NR_mmap 
+                #if defined(VGP_x86_linux)
+                || syscallno == __NR_mmap2
+                #endif
+                ) {
+                    
+        #if INPUT_METRIC == RVMS && SYSCALL_WRAPPING
+        
+        Addr addr = (Addr) sr_Res(res);
+        Int size= args[1];
+        
+        //VG_(umsg)("mmap(%lu, %d, ?, ?) = %lu\n", args[0], size, addr);
+        
+        APROF_(fix_access_size)(addr, size);
+        
+        //VG_(umsg)("> mmap(%lu, %d, ?, ?) = %lu\n", args[0], size, addr);
+        
+        if (!forced_switch) {
+            APROF_(global_counter)++;
+            if(APROF_(global_counter) == MAX_COUNT_VAL)
+                APROF_(global_counter) = APROF_(overflow_handler)();
+        }
+        
+        while(size > 0) {
+            
+            APROF_(trace_access)(   STORE, 
+                                    addr, 
+                                    APROF_(addr_multiple), True);
+            
+            size -= APROF_(addr_multiple);
+            addr += APROF_(addr_multiple);
+        }
+        
+        #endif
+                    
     }
 }
