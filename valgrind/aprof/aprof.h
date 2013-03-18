@@ -195,6 +195,10 @@
 #error "RVMS need at one between THREAD_INPUT and SYSCALL_WRAPPING"
 #endif
 
+#if INPUT_METRIC == RMS && INPUT_STATS
+#error "INPUT_STATS requires RVMS"
+#endif
+
 #if INPUT_METRIC == RMS
 #undef DEBUG_DRMS
 #endif
