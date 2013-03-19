@@ -53,6 +53,8 @@
     pwritev     LOAD        * - {x86_darwin, amd64_darwin}
     msgrcv      SYS_STORE   * - {x86_linux}
     msgsnd      LOAD        * - {x86_linux}
+    mmap        STORE       *
+    mmap2       STORE      {x86_linux}
    ---------------------------------------------------------
 
     '*' := all architectures

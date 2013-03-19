@@ -113,8 +113,8 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
         */
         
         #if DEBUG_DRMS
-        Bool inc_rms = False;
-        Activation * dec_rms = NULL;
+        //Bool inc_rms = False;
+        //Activation * dec_rms = NULL;
         #endif
         
         #if INPUT_METRIC == RMS || DEBUG_DRMS
@@ -130,7 +130,7 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
             if (old_aid < act->aid_rms && (type == LOAD || type == MODIFY)) {
                 
                 #if DEBUG_DRMS
-                inc_rms = True;
+                //inc_rms = True;
                 //VG_(umsg)("RMS++\n");
                 #endif
                 act->rms++;
@@ -142,7 +142,7 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
                     a->rms--;
                     
                     #if DEBUG_DRMS
-                    dec_rms = a;
+                    //dec_rms = a;
                     #endif
 
                 }
@@ -187,8 +187,8 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
                 #endif
                            
                 #if DEBUG_DRMS
-                AP_ASSERT(!inc_rms, "Invalid rvms/d_rms [1]");
-                AP_ASSERT(dec_rms == NULL, "Invalid d_rms [2]");
+                //AP_ASSERT(!inc_rms, "Invalid rvms/d_rms [1]");
+                //AP_ASSERT(dec_rms == NULL, "Invalid d_rms [2]");
                 #endif
                                 
                 #if !COSTANT_MEM_ACCESS
@@ -219,8 +219,8 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
         if(type == STORE) {
             
             #if DEBUG_DRMS
-            AP_ASSERT(!inc_rms, "Invalid rvms/d_rms [3]");
-            AP_ASSERT(dec_rms == NULL, "Invalid d_rms [4]");
+            //AP_ASSERT(!inc_rms, "Invalid rvms/d_rms [3]");
+            //AP_ASSERT(dec_rms == NULL, "Invalid d_rms [4]");
             #endif
             
             #if COSTANT_MEM_ACCESS
@@ -237,8 +237,8 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
         #endif
         
         #if DEBUG_DRMS
-        Bool inc_rvms = False;
-        Bool dec_rvms = False;
+        //Bool inc_rvms = False;
+        //Bool dec_rvms = False;
         #endif
        
                 
@@ -255,7 +255,7 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
             
             #if DEBUG_DRMS
             //VG_(umsg)("RVMS++ [1]\n");
-            inc_rvms = True;
+            //inc_rvms = True;
             #endif
         }
  
@@ -264,19 +264,19 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
             act->rvms++;
             #if DEBUG_DRMS
             //VG_(umsg)("RVMS++ [2]\n");
-            inc_rvms = True;
+            //inc_rvms = True;
             #endif
             if (old_ts > 0 && old_ts >= APROF_(get_activation_noresize)(tdata, 1)->aid_rvms) {
                 
                 APROF_(get_activation_by_aid_rvms)(tdata, old_ts)->rvms--;
                 #if DEBUG_DRMS
-                dec_rvms = True;
+                //dec_rvms = True;
                 #endif
             }
 
         }
         
-        #if DISTINCT_RMS
+        #if 0 && DISTINCT_RMS
         if (old_ts < act->aid_rvms) {
             
             act->d_rms++;
@@ -309,7 +309,7 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
         
         #endif
 
-        #if DEBUG_DRMS
+        #if DEBUG_DRMS & 0
         AP_ASSERT(act->rms == act->d_rms, "Invalid d_rms");
         AP_ASSERT(act->d_rms <= act->rvms, "Invalid RVMS");
         #endif
