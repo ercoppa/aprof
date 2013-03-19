@@ -102,7 +102,7 @@
 #define SYSCALL_WRAPPING    1   // if 1, I/O syscall stores are 
                                 // considered as external I/O
 
-#define IGNORE_LOAD_SYS     0   // ignore load due to syscall
+#define IGNORE_LOAD_SYS     1   // ignore load due to syscall
 
 #define INPUT_STATS         1   //
 
@@ -174,7 +174,7 @@
 #endif
 
 #if DISTINCT_RMS
-#define DEBUG_DRMS 0
+#define DEBUG_DRMS 1
 #else
 #define DEBUG_DRMS 0
 #endif
