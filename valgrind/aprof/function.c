@@ -400,6 +400,8 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
     #endif
     
     #if INPUT_STATS
+    AP_ASSERT(act->rvms_syscall <= act->rvms, "Wrong");
+    AP_ASSERT(act->rvms_thread <= act->rvms, "Wrong");
     info_access->rvms_syscall_sum += act->rvms_syscall;
     info_access->rvms_thread_sum  += act->rvms_thread;
     #endif
