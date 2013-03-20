@@ -423,6 +423,13 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
             DASSERT(curr != NULL, "Invalid routine info");
         
         } 
+        
+        UInt i;
+        for (i = 0; i < sizeof(rtn_skip)/sizeof(HChar *); i++) {
+            if (VG_(strcmp)(rtn_skip[i], curr->fn->name) == 0) {
+                r->tmp = 1;
+            }
+        }
 
     } else if (token[0] == 'd') { 
         
