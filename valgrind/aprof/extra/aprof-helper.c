@@ -1039,6 +1039,7 @@ static void post_merge_consistency(aprof_report * r, HChar * report) {
             }
         }
         
+        ASSERT(rtn != NULL, "Invalid routine");
         ASSERT(rtn->rvms_map != NULL, "Invalid map");
         HT_ResetIter(rtn->rvms_map);
         RMSInfo * i = (RMSInfo *) HT_Next(rtn->rvms_map);
