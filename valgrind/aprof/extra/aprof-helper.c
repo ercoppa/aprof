@@ -1035,12 +1035,11 @@ static void post_merge_consistency(aprof_report * r, HChar * report) {
         for (k = 0; k < sizeof(rtn_skip)/sizeof(HChar *); k++) {
             if (VG_(strcmp)(rtn_skip[k], rtn->fn->name) == 0) {
                 rtn = (RoutineInfo *) HT_Next(r->routine_hash_table);
-                continue;
+                break;
             }
         }
         
-        ASSERT(rtn != NULL, "Invalid routine");
-        ASSERT(rtn->rvms_map != NULL, "Invalid map");
+        if (rtn == NULL) break;
         HT_ResetIter(rtn->rvms_map);
         RMSInfo * i = (RMSInfo *) HT_Next(rtn->rvms_map);
         while (i != NULL) {
