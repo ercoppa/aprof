@@ -428,6 +428,7 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         for (i = 0; i < sizeof(rtn_skip)/sizeof(HChar *); i++) {
             if (VG_(strcmp)(rtn_skip[i], curr->fn->name) == 0) {
                 r->tmp = 1;
+                break;
             }
         }
 
@@ -1038,6 +1039,7 @@ static void post_merge_consistency(aprof_report * r, HChar * report) {
             }
         }
         
+        ASSERT(rtn->rvms_map != NULL, "Invalid map");
         HT_ResetIter(rtn->rvms_map);
         RMSInfo * i = (RMSInfo *) HT_Next(rtn->rvms_map);
         while (i != NULL) {
