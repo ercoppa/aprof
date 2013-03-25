@@ -182,6 +182,8 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
     #if INPUT_STATS
     act->rvms_syscall = 0;
     act->rvms_thread = 0;
+    act->rvms_syscall_self = 0;
+    act->rvms_thread_self = 0;
     #endif
     
     #endif // INPUT_METRIC == RVMS
@@ -404,8 +406,8 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
     AP_ASSERT(act->rvms_thread <= act->rvms, "Wrong");
     info_access->rvms_syscall_sum += act->rvms_syscall;
     info_access->rvms_thread_sum  += act->rvms_thread;
-    info_access->rvms_syscall_real += act->rvms_syscall_real;
-    info_access->rvms_thread_real  += act->rvms_thread_real;
+    info_access->rvms_syscall_self += act->rvms_syscall_self;
+    info_access->rvms_thread_self  += act->rvms_thread_self;
     #endif
     
     #if DEBUG

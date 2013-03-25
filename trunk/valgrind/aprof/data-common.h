@@ -223,8 +223,8 @@ typedef struct {
     #if INPUT_STATS
     ULong        rvms_syscall_sum;
     ULong        rvms_thread_sum;
-    ULong        rvms_syscall_real;
-    ULong        rvms_thread_real;
+    ULong        rvms_syscall_self;
+    ULong        rvms_thread_self;
     #endif
     
     #endif
@@ -260,8 +260,8 @@ typedef struct {
     #if INPUT_STATS
     ULong       rvms_syscall;
     ULong       rvms_thread;
-    ULong       rvms_syscall_real;
-    ULong       rvms_thread_real;
+    ULong       rvms_syscall_self;
+    ULong       rvms_thread_self;
     #endif                                     
     
     #endif
