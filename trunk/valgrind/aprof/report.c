@@ -292,7 +292,7 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
             
             APROF_(fprintf)(report,
                             #if INPUT_METRIC == RVMS
-                            "p %llu %lu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu\n", 
+                            "p %llu %lu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu\n", 
                             #else
                             "p %llu %lu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu\n",
                             #endif
@@ -314,7 +314,9 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
                             
                             #if INPUT_STATS
                             , info_access->rvms_syscall_sum,
-                            info_access->rvms_thread_sum
+                            info_access->rvms_thread_sum,
+                            info_access->rvms_syscall_real,
+                            info_access->rvms_thread_real
                             #endif
                             
                             #endif

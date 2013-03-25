@@ -249,8 +249,13 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
             act->rvms++;
             
             #if INPUT_STATS
-            if (SYSCALL(wts)) act->rvms_syscall++;
-            else act->rvms_thread++;
+            if (SYSCALL(wts)) {
+                act->rvms_syscall++;
+                act->rvms_syscall_real++;
+            } else {
+                act->rvms_thread++;
+                act->rvms_thread_real++;
+            }
             #endif
             
             #if DEBUG_DRMS
