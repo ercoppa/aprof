@@ -251,10 +251,10 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
             #if INPUT_STATS
             if (SYSCALL(wts)) {
                 act->rvms_syscall++;
-                act->rvms_syscall_real++;
+                act->rvms_syscall_self++;
             } else {
                 act->rvms_thread++;
-                act->rvms_thread_real++;
+                act->rvms_thread_self++;
             }
             #endif
             
@@ -267,6 +267,7 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
         else if (old_ts < act->aid_rvms) {
             
             act->rvms++;
+            
             #if DEBUG_DRMS
             //VG_(umsg)("RVMS++ [2]\n");
             //inc_rvms = True;
