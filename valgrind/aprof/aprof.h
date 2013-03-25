@@ -168,7 +168,7 @@
 #endif
 
 #if INPUT_METRIC == RVMS
-#define DISTINCT_RMS 1
+#define DISTINCT_RMS 0
 #else
 #define DISTINCT_RMS 0
 #endif
