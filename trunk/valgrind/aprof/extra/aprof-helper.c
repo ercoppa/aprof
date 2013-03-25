@@ -592,6 +592,8 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         double rms_sqr = 0;
         ULong rvms_syscall_sum = 0;
         ULong rvms_thread_sum = 0;
+        ULong rvms_syscall_self = 0;
+        ULong rvms_thread_self = 0;
         if (r->version == REPORT_VERSION && r->input_metric == RVMS) {
         
             // rms sum
@@ -626,6 +628,23 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
             
                 ASSERT(rvms_thread_sum + rvms_syscall_sum <= rms * occ,
                             "invalid rvms syscall/thread: %s", line_orig);
+                            
+                // rvms syscall self
+                token = VG_(strtok)(NULL, DELIM_DQ);
+                ASSERT(token != NULL, "Invalid rvms syscall self: %s", line_orig);
+                rvms_syscall_self = VG_(strtoull10) (token, NULL);
+                UOF_LONG(rvms_syscall_self, line_orig);
+                ASSERT(rvms_syscall_self <= rms*occ, "invalid rvms syscall self: %s", line_orig);
+                            
+                // rvms thread self
+                token = VG_(strtok)(NULL, DELIM_DQ);
+                ASSERT(token != NULL, "Invalid rvms thread: %s", line_orig);
+                rvms_thread_self = VG_(strtoull10) (token, NULL);
+                UOF_LONG(rvms_thread_self, line_orig);
+                ASSERT(rvms_thread_self <= rms*occ, "invalid rvms thread self: %s", line_orig);
+            
+                ASSERT(rvms_thread_self + rvms_syscall_self <= rms * occ,
+                            "invalid rvms syscall/thread self: %s", line_orig);
             
             }          
 
@@ -743,6 +762,14 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
             
             ASSERT( info_access->rvms_thread_sum + 
                     info_access->rvms_syscall_sum <= 
+                    rms * info_access->calls_number,
+                    "invalid rvms syscall/thread: %s", line_orig);
+            
+            ADD(info_access->rvms_thread_real, rvms_thread_self);
+            ADD(info_access->rvms_syscall_real, rvms_syscall_self);
+        
+            ASSERT( info_access->rvms_thread_real + 
+                    info_access->rvms_syscall_real <= 
                     rms * info_access->calls_number,
                     "invalid rvms syscall/thread: %s", line_orig);
         
@@ -1784,7 +1811,7 @@ static void save_report(aprof_report * r, HChar * report_name) {
             if (r->input_metric == RVMS) {
                 
                 fprintf(report,
-                            "p %llu %lu %llu %llu %llu %.0f %llu %llu %llu %llu %llu %.0f %llu %.0f %llu %llu\n", 
+                            "p %llu %lu %llu %llu %llu %.0f %llu %llu %llu %llu %llu %.0f %llu %.0f %llu %llu %llu %llu\n", 
                             rtn_info->routine_id,
                             info_access->key,
                             info_access->min_cumulative_time,
@@ -1800,7 +1827,9 @@ static void save_report(aprof_report * r, HChar * report_name) {
                             info_access->rms_input_sum,
                             info_access->rms_input_sum_sqr,
                             info_access->rvms_syscall_sum,
-                            info_access->rvms_thread_sum
+                            info_access->rvms_thread_sum,
+                            info_access->rvms_syscall_real,
+                            info_access->rvms_thread_real
                             );
             
             } else {
