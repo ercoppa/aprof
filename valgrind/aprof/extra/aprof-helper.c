@@ -768,8 +768,8 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
             ADD(info_access->rvms_thread_real, rvms_thread_self);
             ADD(info_access->rvms_syscall_real, rvms_syscall_self);
         
-            ASSERT( info_access->rvms_thread_real + 
-                    info_access->rvms_syscall_real <= 
+            ASSERT( info_access->rvms_thread_self + 
+                    info_access->rvms_syscall_self <= 
                     rms * info_access->calls_number,
                     "invalid rvms syscall/thread: %s", line_orig);
         
