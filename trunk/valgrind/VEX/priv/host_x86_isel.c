@@ -117,12 +117,12 @@ static Bool isZeroU32 ( IRExpr* e )
           && e->Iex.Const.con->Ico.U32 == 0;
 }
 
-static Bool isZeroU64 ( IRExpr* e )
-{
-   return e->tag == Iex_Const
-          && e->Iex.Const.con->tag == Ico_U64
-          && e->Iex.Const.con->Ico.U64 == 0ULL;
-}
+//static Bool isZeroU64 ( IRExpr* e )
+//{
+//   return e->tag == Iex_Const
+//          && e->Iex.Const.con->tag == Ico_U64
+//          && e->Iex.Const.con->Ico.U64 == 0ULL;
+//}
 
 
 /*---------------------------------------------------------*/
@@ -201,7 +201,7 @@ static void lookupIRTemp64 ( HReg* vrHI, HReg* vrLO, ISelEnv* env, IRTemp tmp )
 {
    vassert(tmp >= 0);
    vassert(tmp < env->n_vregmap);
-   vassert(env->vregmapHI[tmp] != INVALID_HREG);
+   vassert(! hregIsInvalid(env->vregmapHI[tmp]));
    *vrLO = env->vregmap[tmp];
    *vrHI = env->vregmapHI[tmp];
 }
@@ -366,7 +366,8 @@ static Int pushArg ( ISelEnv* env, IRExpr* arg )
 
 static 
 void callHelperAndClearArgs ( ISelEnv* env, X86CondCode cc, 
-                              IRCallee* cee, Int n_arg_ws )
+                              IRCallee* cee, Int n_arg_ws,
+                              RetLoc rloc )
 {
    /* Complication.  Need to decide which reg to use as the fn address
       pointer, in a way that doesn't trash regparm-passed
@@ -374,7 +375,7 @@ void callHelperAndClearArgs ( ISelEnv* env, X86CondCode cc,
    vassert(sizeof(void*) == 4);
 
    addInstr(env, X86Instr_Call( cc, toUInt(Ptr_to_ULong(cee->addr)),
-                                    cee->regparms));
+                                cee->regparms, rloc));
    if (n_arg_ws > 0)
       add_to_esp(env, 4*n_arg_ws);
 }
@@ -404,7 +405,8 @@ Bool mightRequireFixedRegs ( IRExpr* e )
 static
 void doHelperCall ( ISelEnv* env, 
                     Bool passBBP, 
-                    IRExpr* guard, IRCallee* cee, IRExpr** args )
+                    IRExpr* guard, IRCallee* cee, IRExpr** args,
+                    RetLoc rloc )
 {
    X86CondCode cc;
    HReg        argregs[3];
@@ -583,7 +585,7 @@ void doHelperCall ( ISelEnv* env,
    }
 
    /* call the helper, and get the args off the stack afterwards. */
-   callHelperAndClearArgs( env, cc, cee, n_arg_ws );
+   callHelperAndClearArgs( env, cc, cee, n_arg_ws, rloc );
 }
 
 
@@ -1304,7 +1306,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             iselInt64Expr(&xHi, &xLo, env, e->Iex.Unop.arg);
             addInstr(env, X86Instr_Push(X86RMI_Reg(xHi)));
             addInstr(env, X86Instr_Push(X86RMI_Reg(xLo)));
-            addInstr(env, X86Instr_Call( Xcc_ALWAYS, (UInt)fn, 0 ));
+            addInstr(env, X86Instr_Call( Xcc_ALWAYS, (UInt)fn,
+                                         0, RetLocInt ));
             add_to_esp(env, 2*4);
             addInstr(env, mk_iMOVsd_RR(hregX86_EAX(), dst));
             return dst;
@@ -1361,13 +1364,15 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       HReg    dst = newVRegI(env);
       vassert(ty == e->Iex.CCall.retty);
 
-      /* be very restrictive for now.  Only 32/64-bit ints allowed
-         for args, and 32 bits for return type. */
+      /* be very restrictive for now.  Only 32/64-bit ints allowed for
+         args, and 32 bits for return type.  Don't forget to change
+         the RetLoc if more return types are allowed in future. */
       if (e->Iex.CCall.retty != Ity_I32)
          goto irreducible;
 
       /* Marshal args, do the call, clear stack. */
-      doHelperCall( env, False, NULL, e->Iex.CCall.cee, e->Iex.CCall.args );
+      doHelperCall( env, False, NULL, e->Iex.CCall.cee,
+                    e->Iex.CCall.args, RetLocInt );
 
       addInstr(env, mk_iMOVsd_RR(hregX86_EAX(), dst));
       return dst;
@@ -1383,17 +1388,15 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    }
 
    /* --------- MULTIPLEX --------- */
-   case Iex_Mux0X: {
+   case Iex_ITE: { // VFD
      if ((ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8)
-         && typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond) == Ity_I8) {
-        X86RM* r8;
-        HReg   rX  = iselIntExpr_R(env, e->Iex.Mux0X.exprX);
-        X86RM* r0  = iselIntExpr_RM(env, e->Iex.Mux0X.expr0);
+         && typeOfIRExpr(env->type_env,e->Iex.ITE.cond) == Ity_I1) {
+        HReg   r1  = iselIntExpr_R(env, e->Iex.ITE.iftrue);
+        X86RM* r0  = iselIntExpr_RM(env, e->Iex.ITE.iffalse);
         HReg   dst = newVRegI(env);
-        addInstr(env, mk_iMOVsd_RR(rX,dst));
-        r8 = iselIntExpr_RM(env, e->Iex.Mux0X.cond);
-        addInstr(env, X86Instr_Test32(0xFF, r8));
-        addInstr(env, X86Instr_CMov32(Xcc_Z,r0,dst));
+        addInstr(env, mk_iMOVsd_RR(r1,dst));
+        X86CondCode cc = iselCondCode(env, e->Iex.ITE.cond);
+        addInstr(env, X86Instr_CMov32(cc ^ 1, r0, dst));
         return dst;
       }
       break;
@@ -1428,7 +1431,7 @@ static Bool sane_AMode ( X86AMode* am )
          return 
             toBool( hregClass(am->Xam.IR.reg) == HRcInt32
                     && (hregIsVirtual(am->Xam.IR.reg)
-                        || am->Xam.IR.reg == hregX86_EBP()) );
+                        || sameHReg(am->Xam.IR.reg, hregX86_EBP())) );
       case Xam_IRRS:
          return 
             toBool( hregClass(am->Xam.IRRS.base) == HRcInt32
@@ -1887,7 +1890,8 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       vassert(cal->Iex.CCall.retty == Ity_I32); /* else ill-typed IR */
       vassert(con->Iex.Const.con->tag == Ico_U32);
       /* Marshal args, do the call. */
-      doHelperCall( env, False, NULL, cal->Iex.CCall.cee, cal->Iex.CCall.args );
+      doHelperCall( env, False, NULL, cal->Iex.CCall.cee,
+                    cal->Iex.CCall.args, RetLocInt );
       addInstr(env, X86Instr_Alu32R(Xalu_CMP,
                                     X86RMI_Imm(con->Iex.Const.con->Ico.U32),
                                     hregX86_EAX()));
@@ -2047,63 +2051,20 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       return;
    }
 
-   /* 64-bit Mux0X: Mux0X(g, expr, 0:I64) */
-   if (e->tag == Iex_Mux0X && isZeroU64(e->Iex.Mux0X.exprX)) {
-      X86RM* r8;
-      HReg e0Lo, e0Hi;
+   /* 64-bit ITE: ITE(g, expr, expr) */ // VFD
+   if (e->tag == Iex_ITE) {
+      HReg e0Lo, e0Hi, e1Lo, e1Hi;
       HReg tLo = newVRegI(env);
       HReg tHi = newVRegI(env);
-      X86AMode* zero_esp = X86AMode_IR(0, hregX86_ESP());
-      iselInt64Expr(&e0Hi, &e0Lo, env, e->Iex.Mux0X.expr0);
-      r8 = iselIntExpr_RM(env, e->Iex.Mux0X.cond);
-      addInstr(env, mk_iMOVsd_RR( e0Hi, tHi ) );
-      addInstr(env, mk_iMOVsd_RR( e0Lo, tLo ) );
-      addInstr(env, X86Instr_Push(X86RMI_Imm(0)));
-      addInstr(env, X86Instr_Test32(0xFF, r8));
-      addInstr(env, X86Instr_CMov32(Xcc_NZ,X86RM_Mem(zero_esp),tHi));
-      addInstr(env, X86Instr_CMov32(Xcc_NZ,X86RM_Mem(zero_esp),tLo));
-      add_to_esp(env, 4);
-      *rHi = tHi;
-      *rLo = tLo;
-      return;
-   }
-   /* 64-bit Mux0X: Mux0X(g, 0:I64, expr) */
-   if (e->tag == Iex_Mux0X && isZeroU64(e->Iex.Mux0X.expr0)) {
-      X86RM* r8;
-      HReg e0Lo, e0Hi;
-      HReg tLo = newVRegI(env);
-      HReg tHi = newVRegI(env);
-      X86AMode* zero_esp = X86AMode_IR(0, hregX86_ESP());
-      iselInt64Expr(&e0Hi, &e0Lo, env, e->Iex.Mux0X.exprX);
-      r8 = iselIntExpr_RM(env, e->Iex.Mux0X.cond);
-      addInstr(env, mk_iMOVsd_RR( e0Hi, tHi ) );
-      addInstr(env, mk_iMOVsd_RR( e0Lo, tLo ) );
-      addInstr(env, X86Instr_Push(X86RMI_Imm(0)));
-      addInstr(env, X86Instr_Test32(0xFF, r8));
-      addInstr(env, X86Instr_CMov32(Xcc_Z,X86RM_Mem(zero_esp),tHi));
-      addInstr(env, X86Instr_CMov32(Xcc_Z,X86RM_Mem(zero_esp),tLo));
-      add_to_esp(env, 4);
-      *rHi = tHi;
-      *rLo = tLo;
-      return;
-   }
-
-   /* 64-bit Mux0X: Mux0X(g, expr, expr) */
-   if (e->tag == Iex_Mux0X) {
-      X86RM* r8;
-      HReg e0Lo, e0Hi, eXLo, eXHi;
-      HReg tLo = newVRegI(env);
-      HReg tHi = newVRegI(env);
-      iselInt64Expr(&e0Hi, &e0Lo, env, e->Iex.Mux0X.expr0);
-      iselInt64Expr(&eXHi, &eXLo, env, e->Iex.Mux0X.exprX);
-      addInstr(env, mk_iMOVsd_RR(eXHi, tHi));
-      addInstr(env, mk_iMOVsd_RR(eXLo, tLo));
-      r8 = iselIntExpr_RM(env, e->Iex.Mux0X.cond);
-      addInstr(env, X86Instr_Test32(0xFF, r8));
+      iselInt64Expr(&e0Hi, &e0Lo, env, e->Iex.ITE.iffalse);
+      iselInt64Expr(&e1Hi, &e1Lo, env, e->Iex.ITE.iftrue);
+      addInstr(env, mk_iMOVsd_RR(e1Hi, tHi));
+      addInstr(env, mk_iMOVsd_RR(e1Lo, tLo));
+      X86CondCode cc = iselCondCode(env, e->Iex.ITE.cond);
       /* This assumes the first cmov32 doesn't trash the condition
          codes, so they are still available for the second cmov32 */
-      addInstr(env, X86Instr_CMov32(Xcc_Z,X86RM_Reg(e0Hi),tHi));
-      addInstr(env, X86Instr_CMov32(Xcc_Z,X86RM_Reg(e0Lo),tLo));
+      addInstr(env, X86Instr_CMov32(cc ^ 1, X86RM_Reg(e0Hi), tHi));
+      addInstr(env, X86Instr_CMov32(cc ^ 1, X86RM_Reg(e0Lo), tLo));
       *rHi = tHi;
       *rLo = tLo;
       return;
@@ -2470,7 +2431,8 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
             iselInt64Expr(&xHi, &xLo, env, e->Iex.Binop.arg1);
             addInstr(env, X86Instr_Push(X86RMI_Reg(xHi)));
             addInstr(env, X86Instr_Push(X86RMI_Reg(xLo)));
-            addInstr(env, X86Instr_Call( Xcc_ALWAYS, (UInt)fn, 0 ));
+            addInstr(env, X86Instr_Call( Xcc_ALWAYS, (UInt)fn,
+                                         0, RetLoc2Int ));
             add_to_esp(env, 4*4);
             addInstr(env, mk_iMOVsd_RR(hregX86_EDX(), tHi));
             addInstr(env, mk_iMOVsd_RR(hregX86_EAX(), tLo));
@@ -2509,7 +2471,8 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
             iselInt64Expr(&xHi, &xLo, env, e->Iex.Binop.arg1);
             addInstr(env, X86Instr_Push(X86RMI_Reg(xHi)));
             addInstr(env, X86Instr_Push(X86RMI_Reg(xLo)));
-            addInstr(env, X86Instr_Call( Xcc_ALWAYS, (UInt)fn, 0 ));
+            addInstr(env, X86Instr_Call( Xcc_ALWAYS, (UInt)fn,
+                                         0, RetLoc2Int ));
             add_to_esp(env, 3*4);
             addInstr(env, mk_iMOVsd_RR(hregX86_EDX(), tHi));
             addInstr(env, mk_iMOVsd_RR(hregX86_EAX(), tLo));
@@ -2747,7 +2710,8 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
             iselInt64Expr(&xHi, &xLo, env, e->Iex.Unop.arg);
             addInstr(env, X86Instr_Push(X86RMI_Reg(xHi)));
             addInstr(env, X86Instr_Push(X86RMI_Reg(xLo)));
-            addInstr(env, X86Instr_Call( Xcc_ALWAYS, (UInt)fn, 0 ));
+            addInstr(env, X86Instr_Call( Xcc_ALWAYS, (UInt)fn,
+                                         0, RetLoc2Int ));
             add_to_esp(env, 2*4);
             addInstr(env, mk_iMOVsd_RR(hregX86_EDX(), tHi));
             addInstr(env, mk_iMOVsd_RR(hregX86_EAX(), tLo));
@@ -2768,7 +2732,8 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       HReg tHi = newVRegI(env);
 
       /* Marshal args, do the call, clear stack. */
-      doHelperCall( env, False, NULL, e->Iex.CCall.cee, e->Iex.CCall.args );
+      doHelperCall( env, False, NULL, e->Iex.CCall.cee,
+                    e->Iex.CCall.args, RetLoc2Int );
 
       addInstr(env, mk_iMOVsd_RR(hregX86_EDX(), tHi));
       addInstr(env, mk_iMOVsd_RR(hregX86_EAX(), tLo));
@@ -3084,8 +3049,8 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
          HReg res = newVRegF(env);
          HReg src = iselDblExpr(env, e->Iex.Unop.arg);
          addInstr(env, X86Instr_FpUnary(fpop,src,res));
-	 if (fpop != Xfp_NEG && fpop != Xfp_ABS)
-            roundToF64(env, res);
+         /* No need to do roundToF64(env,res) for Xfp_NEG or Xfp_ABS,
+            but might need to do that for other unary ops. */
          return res;
       }
    }
@@ -3130,16 +3095,15 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
    }
 
    /* --------- MULTIPLEX --------- */
-   if (e->tag == Iex_Mux0X) {
+   if (e->tag == Iex_ITE) { // VFD
      if (ty == Ity_F64
-         && typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond) == Ity_I8) {
-        X86RM* r8 = iselIntExpr_RM(env, e->Iex.Mux0X.cond);
-        HReg rX  = iselDblExpr(env, e->Iex.Mux0X.exprX);
-        HReg r0  = iselDblExpr(env, e->Iex.Mux0X.expr0);
+         && typeOfIRExpr(env->type_env,e->Iex.ITE.cond) == Ity_I1) {
+        HReg r1  = iselDblExpr(env, e->Iex.ITE.iftrue);
+        HReg r0  = iselDblExpr(env, e->Iex.ITE.iffalse);
         HReg dst = newVRegF(env);
-        addInstr(env, X86Instr_FpUnary(Xfp_MOV,rX,dst));
-        addInstr(env, X86Instr_Test32(0xFF, r8));
-        addInstr(env, X86Instr_FpCMov(Xcc_Z,r0,dst));
+        addInstr(env, X86Instr_FpUnary(Xfp_MOV,r1,dst));
+        X86CondCode cc = iselCondCode(env, e->Iex.ITE.cond);
+        addInstr(env, X86Instr_FpCMov(cc ^ 1, r0, dst));
         return dst;
       }
    }
@@ -3692,7 +3656,8 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          addInstr(env, X86Instr_SseLdSt(False/*!isLoad*/, argR,
                                         X86AMode_IR(0, hregX86_ECX())));
          /* call the helper */
-         addInstr(env, X86Instr_Call( Xcc_ALWAYS, (Addr32)fn, 3 ));
+         addInstr(env, X86Instr_Call( Xcc_ALWAYS, (Addr32)fn,
+                                      3, RetLocNone ));
          /* fetch the result from memory, using %r_argp, which the
             register allocator will keep alive across the call. */
          addInstr(env, X86Instr_SseLdSt(True/*isLoad*/, dst,
@@ -3707,14 +3672,13 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
    } /* switch (e->Iex.Binop.op) */
    } /* if (e->tag == Iex_Binop) */
 
-   if (e->tag == Iex_Mux0X) {
-      X86RM* r8 = iselIntExpr_RM(env, e->Iex.Mux0X.cond);
-      HReg rX  = iselVecExpr(env, e->Iex.Mux0X.exprX);
-      HReg r0  = iselVecExpr(env, e->Iex.Mux0X.expr0);
+   if (e->tag == Iex_ITE) { // VFD
+      HReg r1  = iselVecExpr(env, e->Iex.ITE.iftrue);
+      HReg r0  = iselVecExpr(env, e->Iex.ITE.iffalse);
       HReg dst = newVRegV(env);
-      addInstr(env, mk_vMOVsd_RR(rX,dst));
-      addInstr(env, X86Instr_Test32(0xFF, r8));
-      addInstr(env, X86Instr_SseCMov(Xcc_Z,r0,dst));
+      addInstr(env, mk_vMOVsd_RR(r1,dst));
+      X86CondCode cc = iselCondCode(env, e->Iex.ITE.cond);
+      addInstr(env, X86Instr_SseCMov(cc ^ 1, r0, dst));
       return dst;
    }
 
@@ -3960,7 +3924,6 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
    /* --------- Call to DIRTY helper --------- */
    case Ist_Dirty: {
-      IRType   retty;
       IRDirty* d = stmt->Ist.Dirty.details;
       Bool     passBBP = False;
 
@@ -3969,15 +3932,38 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
       passBBP = toBool(d->nFxState > 0 && d->needsBBP);
 
+      /* Figure out the return type, if any. */
+      IRType retty = Ity_INVALID;
+      if (d->tmp != IRTemp_INVALID)
+         retty = typeOfIRTemp(env->type_env, d->tmp);
+
+      /* Marshal args, do the call, clear stack, set the return value
+         to 0x555..555 if this is a conditional call that returns a
+         value and the call is skipped.  We need to set the ret-loc
+         correctly in order to implement the IRDirty semantics that
+         the return value is 0x555..555 if the call doesn't happen. */
+      RetLoc rloc = RetLocINVALID;
+      switch (retty) {
+         case Ity_INVALID: /* function doesn't return anything */
+            rloc = RetLocNone; break;
+         case Ity_I64:
+            rloc = RetLoc2Int; break;
+         case Ity_I32: case Ity_I16: case Ity_I8:
+            rloc = RetLocInt; break;
+         default:
+            break;
+      }
+      if (rloc == RetLocINVALID)
+         break; /* will go to stmt_fail: */
+
       /* Marshal args, do the call, clear stack. */
-      doHelperCall( env, passBBP, d->guard, d->cee, d->args );
+      doHelperCall( env, passBBP, d->guard, d->cee, d->args, rloc );
 
       /* Now figure out what to do with the returned value, if any. */
       if (d->tmp == IRTemp_INVALID)
          /* No return value.  Nothing to do. */
          return;
 
-      retty = typeOfIRTemp(env->type_env, d->tmp);
       if (retty == Ity_I64) {
          HReg dstHi, dstLo;
          /* The returned value is in %edx:%eax.  Park it in the

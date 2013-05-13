@@ -3,12 +3,50 @@ Release 3.9.0 (?? ?????? 201?)
 
 * ================== PLATFORM CHANGES =================
 
+  mips64-linux support
+
 * ==================== TOOL CHANGES ====================
+* Memcheck:
+
+  - Using the options --show-leak-kinds=kind1,kind2,.. and
+    --errors-for-leak-kinds=kind1,kind2,.., each leak kind (definite, indirect,
+    possible, reachable) can now be individually reported and/or counted as
+    an error.
+    In a leak suppression entry, an optional line 'match-leak-kinds:'
+    controls which leak kinds are suppressed by this entry.
+    This is a.o. useful to avoid definite leaks being "catched"
+    by a suppression entry aimed at suppressing possibly lost blocks.
+
+  - The option --keep-stacktraces controls which stack trace(s) to keep for
+    malloc'd and/or free'd blocks. This can be used to obtain more information
+    for 'use after free' errors or to decrease Valgrind memory and/or cpu usage
+    by recording less information for heap blocks.
 
 * ==================== OTHER CHANGES ====================
 
+  - Option --merge-recursive-frames=<number> tells Valgrind to
+    detect and merge (collapse) recursive calls when recording stack traces.
+    When your program has recursive algorithms, this limits
+    the memory used by Valgrind for recorded stack traces and avoid
+    recording uninteresting repeated calls.
+    The value is changeable using the monitor command
+    'v.set merge-recursive-frames'.
+
+  - valgrind.h has a new request VALGRIND_MONITOR_COMMAND.
+    This can be used to execute gdbserver monitor commands from
+    the client program.
+
   - Addition of GDB server monitor command 'v.info open_fds' that gives the
     list of open file descriptors and additional details.
+
+  - Addition of GDB server monitor command 'v.info execontext' that shows
+    information about the stack traces recorded by Valgrind.
+    This can be used to analyse one possible cause of Valgrind high
+    memory usage for some programs.
+
+  - Addition of GDB server monitor command
+    'v.do expensive_sanity_check_general' that checks the sanity
+    of various Valgrind aspects, including the Valgrind heap.
 
 * ==================== FIXED BUGS ====================
 
@@ -30,21 +68,282 @@ m = merged into 3_8_BRANCH
 [382] = fixed in trunk and needs to be made available for 3.8.2 too
 
 123837    [390] semctl system call: 4rth argument is optional, depending on cmd
+135425    [390] memcheck should tell you where Freed blocks were Mallocd
 252955    [390] Impossible to compile with ccache
+253519  Memcheck reports auxv pointer accesses as invalid reads.
+        FIXED r13109
+
 274695    [390] s390x: Support "compare to/from logical" instructions (z196)
 275800    [390] s390x: Add support for the ecag instruction (part 1)
 275800    [390] s390x: Autodetect cache info (part 2)
+284540    [390] Memcheck shouldn't count suppressions matching still-reachable allocations
+296311    [390] Wrong stack traces due to -fomit-frame-pointer (x86) 
+
+305431  Use find_buildid shdr fallback for separate .debug files
+        FIXED r13160
+
 305948    [390] ppc64: code generation for ShlD64 / ShrD64 asserts
+306035    [390] s390x: Fix IR generation for LAAG and friends
 306054    [390] s390x: Condition code computation for convert-to-int/logical
+
+306098  s390x: alternate opcode form for convert to/from fixed
+   FIXED, 2501/12935, but not yet closed
+306310  3.8.0 release tarball missing some files
+   FIXED 12964/12983.
+
+306783  Mips unhandled syscall :  4025  /  4079  / 4182
+   FIXED r12995.
+
+307038  DWARF2 CFI reader: unhandled DW_OP_ opcode 0x8 (DW_OP_const1u et al)
+        FIXED r13010
+
+307101  sys_capget second argument can be NULL
+        FIXED r13021
+307103  sys_openat: If pathname is absolute, then dirfd is ignored.
+        FIXED r13159
+307103  sys_openat If pathname is absolute, then dirfd is ignored
+        FIXED r13159
+
+307106  amd64->IR: f0 0f c0 02 (lock xadd byte)
+        == 308333
+        FIXED r2581
+
+307141  valgrind does't work in mips-linux system
+        FIXED (no action on our part?  unclear)
+
+
+
 307155    [390] filter_gdb should filter out syscall-template.S T_PSEUDO
+307285  x86_amd64 feature test for avx in test suite is wrong
+        FIXED, r13161
+
+307290  memcheck overlap testcase needs memcpy version filter
+        FIXED r13020
+
+307463  Please add "&limit=0" to the "all open bugs" link
+        FIXED
+
+307465    [390] --show-possibly-lost=no should bring down the error count / exit code
+307729  pkgconfig support broken valgrind.pc
+        valt_load_address=@VALT_LOAD_ADDRESS@
+        FIXED r13018
+
+307828  SSE optimized wcscpy, wcscmp, wcsrchr and wcschr trigger
+        uninitialised value and/or invalid read warnings
+        FIXED r13162
+
+307955  Building valgrind 3.7.0-r4 fails in Gentoo AMD64 when
+        using clang instead of gcc
+        FIXED (long since)
+
 308321    [390] testsuite memcheck filter interferes with gdb_filter 
 308341    [390] vgdb should report process exit (or fatal signal)
+308427  s390 memcheck reports  tsearch conditional jump or move
+        depends on uninitialized value
+        FIXED r2551
+
+308495  Remove build dependency on installed Xen headers
+        FIXED r13081
+
+308573  Internal Valgrind error on 64-bit instruction executed in
+        32-bit mode
+        FIXED r2558, r13091
+
+308627  pmovmskb validity bit propagation is imprecise
+        == 308626
+        FIXED r2559, r13108, r13129
+
 308644    [390] vgdb command for having the info for the track-fds option
 308711    [390] give more info about aspacemgr and arenas in out_of_memory
 308886    [390] Missing support for PTRACE_SET/GETREGSET 
+308886  Missing support for PTRACE_SET/GETREGSET
+        FIXED r13112, r13115 (??)
+
+309229  V-bit tester does not report number of tests generated
+        FIXED r13124
+
+309425  Provide a --sigill-diagnostics flag to suppress illegal
+        instruction reporting
+        FIXED r13164, r2582
+
+309600  valgrind is a bit confused about 0-sized sections
+        FIXED r13109
+
+309823    [390] Generate errors for still reachable blocks
+309921  PCMPISTRI validity bit propagation is imprecise
+        FIXED r2562, r13132
+
+309922  none/tests/ppc64/test_dfp5 sometimes fails
+        FIXED r2563
+
+310169  The Iop_CmpORD class of Iops is currently not supported
+        by the vbit checker.
+        FIXED r13123
+
+310424    [390] --read-var-info does not properly describe static variables 
+310792  [PATCH v2] search additional path for debug symbols
+        FIXED r13154,13169
+
+310931    [390] s390x: Message-security assist (MSA) instruction extension not implemented
+311100  PPC DFP implementation of the integer operands is not
+        consistent with the Iop definitions
+        FIXED r2562, r13260
+
+311407  ssse3 bcopy (actually converted memcpy) causes invalid read of
+        size 8 under Debian GNU/Linux 32 bits
+        FIXED r13253
+
+
+311880  x86_64: make regtest hangs at shell_valid1
+        FIXED r2597
+
+312571  Rounding mode call wrong for the DFP  Iops: Iop_AddD128, 
+        Iop_SubD128, Iop_MulD128, Iop_DivD128, Iop_D128toI64
+        FIXED r2627
+
+312620  Recent change to Iop_D32toD64 and Iop_D64toD32 for s390 DFP
+        support broke ppc implementation of the Iops
+        FIXED r2650
+
+312913    [390] Dangling pointers error should also report the alloc stack trace
+312980    [390] Building on Mountain Lion generates some compiler warnings
+313267  Adding MIPS64/Linux port to Valgrind
+        FIXED (mostly -- still DW64 outstandings) r13292, r2687
+
+313811    [390] Buffer overflow in assert_fail
+314099  coverity pointed out error in VEX guest_ppc_toIR.c insn_suffix
+        FIXED 2671 
+
+315441  sendmsg syscall should ignore unset msghdr msg_flags
+        FIXED 13294
+
+315545    [390] (find_TTEntry_from_hcode): Assertion '(UChar*)sec->tt[tteNo].tcptr <= (UChar*)hcode' failed
+316535    [390] Use of |signed int| instead of (unsigned) |size_t| in valgrind messages...
+315959    [390] valgrind man page has bogus SGCHECK (and no BBV) OPTIONS section
+316144    [390] valgrind.1 manpage contains unknown ??? strings for some core option references
+316145    [390] callgrind command line options in manpage reference (unknown) callgrind manual
+319235    [390] --db-attach=yes is broken with Yama ptrace scoping enabled
 n-i-bz    [390] report error for vgdb snapshot requested before execution
 n-i-bz    [390] Some wrong command line options could be ignored
 n-i-bz    [390] same as 303624 (fixed in 3.8.0), but for x86 android
+
+304832  ppc32: build failure
+  FIXED (not sure what happened.  Seems bogus to me.)
+
+n-i-bz  patch to allow fair-sched on android
+        FIXED r13186
+
+315738  disInstr(arm): unhandled instruction: 0xEEBE0BEE (vcvt.s32.f64)
+        FIXED 2695 13313
+
+311669  disInstr(arm): unhandled instruction: 0xEE07CFBA
+        FIXED in 3.8.1 (hence, basically, invalid)
+
+311318  ARM: "128-bit constant is not implemented" error message
+        FIXED 2693
+
+309427  SSE optimized stpncpy trigger uninitialised value and/or
+        invalid read warnings
+        FIXED, r13163
+
+308718  ARM implement SMLALBB family of instructions
+        FIXED 2692, 13311
+
+308717  ARM: implement fixed-point VCVT.F64.[SU]32
+        FIXED 2694 13312
+
+316144  valgrind.1 manpage contains unknown ??? strings for some
+        core option references
+        FIXED 13314
+
+316145  callgrind command line options in manpage reference
+        (unknown) callgrind manual
+        FIXED 13324
+
+316181  x264 program of parsec 2.1 stuck (do not finish)
+        FIXED 13315
+
+316535  Use of |signed int| instead of (unsigned) |size_t| in
+        valgrind messages...
+        FIXED 13326
+
+317091  Use -Wl,-Ttext-segment when static linking if possible to
+        keep build-ids
+        FIXED 13331
+
+317186  "Impossible happends" when occurs VCVT instruction on ARM
+        FIXED 2698
+
+315959  valgrind man page has bogus SGCHECK (and no BBV) OPTIONS section
+        FIXED 13323
+        312907 ==
+
+312171  ppc: insn selection for DFP
+        FIXED r?????
+
+315534  msgrcv inside a thread causes valgrind to hang (block)
+        FIXED 13289
+
+316503  Valgrind does not support SSE4 "movntdqa" instruction
+        FIXED 2700 13336
+
+311690  V crashes because it redirects branches inside of a redirected function
+        FIXED (kinda; not really) 13190
+
+314269  ppc: dead code in insn selection
+        FIXED 2697
+
+315345  cl-format.xml and callgrind/dump.c don't agree on
+        using cfl= or cfi= for the called function source file
+        FIXED 13310
+
+251569  vex amd64->IR: 0xF 0x1 0xF9 0xBF 0x90 0xD0 0x3 0x0 (RDTSCP)
+        311933 ==
+        313348 ==
+        313354 ==
+        FIXED 2701 13337
+
+305728  Add support for AVX2 instructions
+        FIXED r2702, r13338, r13339, r13340
+
+317318  Support for Threading Building Blocks "scalable_malloc"
+        WORKSFORME
+
+308089  Unhandled syscall on ppc64: prctl
+        FIXED 13350
+
+263034  Crash when loading some PPC64 binaries
+        FIXED 13351
+
+307082  HG false positive: pthread_cond_destroy: destruction of
+        unknown cond var, w/ patch
+        FIXED 13332
+
+135425  memcheck should tell you where Freed blocks were Mallocd
+        FIXED 13223
+
+269599] Increase deepest backtrace
+FIXED r??
+
+317444  amd64->IR: 0xC4 0x41 0x2C 0xC2 0xD2 0x8 (vcmpeq_uqps)
+        FIXED 2703 13342
+
+317461  Fix BMI assembler configure check and avx2/bmi/fma vgtest prereqs
+        FIXED 13343
+
+317463  bmi testcase IR SANITY CHECK FAILURE
+        FIXED 2704
+
+314718  ARM: implement integer divide instruction (sdiv and udiv)
+        FIXED 2706 13365
+
+315689  disInstr(thumb): unhandled instruction: 0xF852 0x0E10 (LDRT)
+        FIXED 2705 13364
+
+317506  memcheck/tests/vbit-test fails with unknown opcode after
+        introduction of new Iops for AVX2, BMI, FMA support
+        FIXED 13347
+
 
 Release 3.8.1 (19 September 2012)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

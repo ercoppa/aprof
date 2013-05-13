@@ -34,6 +34,7 @@
 #include "pub_core_libcassert.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcfile.h"
+#include "pub_core_libcprint.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_machine.h"
 #include "pub_core_cpuid.h"
@@ -112,6 +113,15 @@ void VG_(get_UnwindStartRegs) ( /*OUT*/UnwindStartRegs* regs,
       = VG_(threads)[tid].arch.vex.guest_r31;
    regs->misc.MIPS32.r28
       = VG_(threads)[tid].arch.vex.guest_r28;
+#  elif defined(VGA_mips64)
+   regs->r_pc = VG_(threads)[tid].arch.vex.guest_PC;
+   regs->r_sp = VG_(threads)[tid].arch.vex.guest_r29;
+   regs->misc.MIPS64.r30
+      = VG_(threads)[tid].arch.vex.guest_r30;
+   regs->misc.MIPS64.r31
+      = VG_(threads)[tid].arch.vex.guest_r31;
+   regs->misc.MIPS64.r28
+      = VG_(threads)[tid].arch.vex.guest_r28;
 #  else
 #    error "Unknown arch"
 #  endif
@@ -141,7 +151,7 @@ void VG_(set_syscall_return_shadows) ( ThreadId tid,
 #  elif defined(VGP_s390x_linux)
    VG_(threads)[tid].arch.vex_shadow1.guest_r2 = s1res;
    VG_(threads)[tid].arch.vex_shadow2.guest_r2 = s2res;
-#  elif defined(VGP_mips32_linux)
+#  elif defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
    VG_(threads)[tid].arch.vex_shadow1.guest_r2 = s1res;
    VG_(threads)[tid].arch.vex_shadow2.guest_r2 = s2res;
 #  else
@@ -198,7 +208,8 @@ VG_(set_shadow_regs_area) ( ThreadId tid,
 }
 
 
-static void apply_to_GPs_of_tid(ThreadId tid, void (*f)(ThreadId, HChar*, Addr))
+static void apply_to_GPs_of_tid(ThreadId tid, void (*f)(ThreadId,
+                                                        const HChar*, Addr))
 {
    VexGuestArchState* vex = &(VG_(get_ThreadState)(tid)->arch.vex);
 #if defined(VGA_x86)
@@ -294,7 +305,7 @@ static void apply_to_GPs_of_tid(ThreadId tid, void (*f)(ThreadId, HChar*, Addr))
    (*f)(tid, "r13", vex->guest_r13);
    (*f)(tid, "r14", vex->guest_r14);
    (*f)(tid, "r15", vex->guest_r15);
-#elif defined(VGA_mips32)
+#elif defined(VGA_mips32) || defined(VGA_mips64)
    (*f)(tid, "r0" , vex->guest_r0 );
    (*f)(tid, "r1" , vex->guest_r1 );
    (*f)(tid, "r2" , vex->guest_r2 );
@@ -333,7 +344,7 @@ static void apply_to_GPs_of_tid(ThreadId tid, void (*f)(ThreadId, HChar*, Addr))
 }
 
 
-void VG_(apply_to_GP_regs)(void (*f)(ThreadId, HChar*, UWord))
+void VG_(apply_to_GP_regs)(void (*f)(ThreadId, const HChar*, UWord))
 {
    ThreadId tid;
 
@@ -429,7 +440,6 @@ ULong VG_(machine_ppc64_has_VMX) = 0;
 Int VG_(machine_arm_archlevel) = 4;
 #endif
 
-/* fixs390: anything for s390x here ? */
 
 /* For hwcaps detection on ppc32/64, s390x, and arm we'll need to do SIGILL
    testing, so we need a VG_MINIMAL_JMP_BUF. */
@@ -614,13 +624,14 @@ static UInt VG_(get_machine_model)(void)
 
 #endif /* VGA_s390x */
 
-#ifdef VGA_mips32
+#if defined(VGA_mips32) || defined(VGA_mips64)
 
 /* Read /proc/cpuinfo and return the machine model. */
 static UInt VG_(get_machine_model)(void)
 {
-   char *search_MIPS_str = "MIPS";
-   char *search_Broadcom_str = "Broadcom";
+   const char *search_MIPS_str = "MIPS";
+   const char *search_Broadcom_str = "Broadcom";
+   const char *search_Netlogic_str = "Netlogic";
    Int    n, fh;
    SysRes fd;
    SizeT  num_bytes, file_buf_size;
@@ -663,6 +674,8 @@ static UInt VG_(get_machine_model)(void)
    /* Parse file */
    if (VG_(strstr) (file_buf, search_Broadcom_str) != NULL)
        return VEX_PRID_COMP_BROADCOM;
+   if (VG_(strstr) (file_buf, search_Netlogic_str) != NULL)
+       return VEX_PRID_COMP_NETLOGIC;
    if (VG_(strstr) (file_buf, search_MIPS_str) != NULL)
        return VEX_PRID_COMP_MIPS;
 
@@ -689,7 +702,7 @@ Bool VG_(machine_get_hwcaps)( void )
 #if defined(VGA_x86)
    { Bool have_sse1, have_sse2, have_cx8, have_lzcnt;
      UInt eax, ebx, ecx, edx, max_extended;
-     UChar vstr[13];
+     HChar vstr[13];
      vstr[0] = 0;
 
      if (!VG_(has_cpuid)())
@@ -754,8 +767,9 @@ Bool VG_(machine_get_hwcaps)( void )
 
 #elif defined(VGA_amd64)
    { Bool have_sse3, have_cx8, have_cx16;
-     Bool have_lzcnt, have_avx /*, have_fma*/;
-     UInt eax, ebx, ecx, edx, max_extended;
+     Bool have_lzcnt, have_avx, have_bmi, have_avx2;
+     Bool have_rdtscp;
+     UInt eax, ebx, ecx, edx, max_basic, max_extended;
      HChar vstr[13];
      vstr[0] = 0;
 
@@ -764,7 +778,8 @@ Bool VG_(machine_get_hwcaps)( void )
         return False;
 
      VG_(cpuid)(0, 0, &eax, &ebx, &ecx, &edx);
-     if (eax < 1)
+     max_basic = eax;
+     if (max_basic < 1)
         /* we can't ask for cpuid(x) for x > 0.  Give up. */
         return False;
 
@@ -821,19 +836,37 @@ Bool VG_(machine_get_hwcaps)( void )
      /* on amd64 we tolerate older cpus, which don't have cmpxchg16b */
      have_cx16 = (ecx & (1<<13)) != 0; /* True => have cmpxchg16b */
 
-     /* Figure out if this is an AMD that can do LZCNT. */
+     /* Figure out if this CPU can do LZCNT. */
      have_lzcnt = False;
-     if (0 == VG_(strcmp)(vstr, "AuthenticAMD")
-         && max_extended >= 0x80000001) {
+     if (max_extended >= 0x80000001) {
         VG_(cpuid)(0x80000001, 0, &eax, &ebx, &ecx, &edx);
         have_lzcnt = (ecx & (1<<5)) != 0; /* True => have LZCNT */
      }
 
+     /* Can we do RDTSCP? */
+     have_rdtscp = False;
+     if (max_extended >= 0x80000001) {
+        VG_(cpuid)(0x80000001, 0, &eax, &ebx, &ecx, &edx);
+        have_rdtscp = (edx & (1<<27)) != 0; /* True => have RDTSVCP */
+     }
+
+     /* Check for BMI1 and AVX2. */
+     have_bmi = False;
+     have_avx2 = False;
+     if (max_basic >= 7) {
+        VG_(cpuid)(7, 0, &eax, &ebx, &ecx, &edx);
+        have_bmi = (ebx & (1<<3)) != 0; /* True => have BMI1 */
+        have_avx2 = have_avx && ((ebx & (1<<5)) != 0); /* True => have AVX2 */
+     }
+
      va         = VexArchAMD64;
-     vai.hwcaps = (have_sse3  ? VEX_HWCAPS_AMD64_SSE3  : 0)
-                | (have_cx16  ? VEX_HWCAPS_AMD64_CX16  : 0)
-                | (have_lzcnt ? VEX_HWCAPS_AMD64_LZCNT : 0)
-                | (have_avx   ? VEX_HWCAPS_AMD64_AVX   : 0);
+     vai.hwcaps = (have_sse3   ? VEX_HWCAPS_AMD64_SSE3   : 0)
+                | (have_cx16   ? VEX_HWCAPS_AMD64_CX16   : 0)
+                | (have_lzcnt  ? VEX_HWCAPS_AMD64_LZCNT  : 0)
+                | (have_avx    ? VEX_HWCAPS_AMD64_AVX    : 0)
+                | (have_bmi    ? VEX_HWCAPS_AMD64_BMI    : 0)
+                | (have_avx2   ? VEX_HWCAPS_AMD64_AVX2   : 0)
+                | (have_rdtscp ? VEX_HWCAPS_AMD64_RDTSCP : 0);
 
      VG_(machine_get_cache_info)(&vai);
 
@@ -1115,15 +1148,22 @@ Bool VG_(machine_get_hwcaps)( void )
    }
 
 #elif defined(VGA_s390x)
+
+#include "libvex_s390x_common.h"
+
    {
      /* Instruction set detection code borrowed from ppc above. */
      vki_sigset_t          saved_set, tmp_set;
      vki_sigaction_fromK_t saved_sigill_act;
      vki_sigaction_toK_t     tmp_sigill_act;
 
-     volatile Bool have_LDISP, have_EIMM, have_GIE, have_DFP, have_FGX;
-     volatile Bool have_STFLE, have_ETF2, have_ETF3, have_STCKF, have_FPEXT;
-     Int r, model;
+     volatile Bool have_LDISP, have_STFLE;
+     Int i, r, model;
+
+     /* If the model is "unknown" don't treat this as an error. Assume
+        this is a brand-new machine model for which we don't have the 
+        identification yet. Keeping fingers crossed. */
+     model = VG_(get_machine_model)();
 
      /* Unblock SIGILL and stash away the old action for that signal */
      VG_(sigemptyset)(&tmp_set);
@@ -1159,63 +1199,22 @@ Bool VG_(machine_get_hwcaps)( void )
                              ".short 0x0057" : : : "r0", "r1", "cc", "memory");
      }
 
-     have_EIMM = True;
-     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
-        have_EIMM = False;
-     } else {
-        __asm__ __volatile__(".long  0xc0090000\n\t"  /* iilf r0,0 */
-                             ".short 0x0000" : : : "r0", "memory");
-     }
+     /* Check availability og STFLE. If available store facility bits
+        in hoststfle. */
+     ULong hoststfle[S390_NUM_FACILITY_DW];
 
-     have_GIE = True;
-     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
-        have_GIE = False;
-     } else {
-        __asm__ __volatile__(".long  0xc2010000\n\t"  /* msfi r0,0 */
-                             ".short 0x0000" : : : "r0", "memory");
-     }
+     for (i = 0; i < S390_NUM_FACILITY_DW; ++i)
+        hoststfle[i] = 0;
 
-     have_DFP = True;
-     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
-        have_DFP = False;
-     } else {
-        __asm__ __volatile__(".long 0xb3d20000"
-                               : : : "r0", "cc", "memory");  /* adtr r0,r0,r0 */
-     }
-
-     have_FGX = True;
-     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
-        have_FGX = False;
-     } else {
-        __asm__ __volatile__(".long 0xb3cd0000" : : : "r0");  /* lgdr r0,f0 */
-     }
-
-     /* Detect presence of certain facilities using the STFLE insn.
-        Note, that these facilities were introduced at the same time or later
-        as STFLE, so the absence of STLFE implies the absence of the facility
-        we're trying to detect. */
      have_STFLE = True;
-     have_ETF2 = False;
-     have_ETF3 = False;
-     have_STCKF = False;
-     have_FPEXT = False;
      if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_STFLE = False;
      } else {
-         ULong hoststfle[1];
-         register ULong reg0 asm("0") = 0; /* one double word available */
+         register ULong reg0 asm("0") = S390_NUM_FACILITY_DW - 1;
 
          __asm__ __volatile__(" .insn s,0xb2b00000,%0\n"   /* stfle */
                               : "=m" (hoststfle), "+d"(reg0)
                               : : "cc", "memory");
-         if (hoststfle[0] & (1ULL << (63 - 24)))
-             have_ETF2 = True;
-         if (hoststfle[0] & (1ULL << (63 - 30)))
-             have_ETF3 = True;
-         if (hoststfle[0] & (1ULL << (63 - 25)))
-             have_STCKF = True;
-         if (hoststfle[0] & (1ULL << (63 - 37)))
-             have_FPEXT = True;
      }
 
      /* Restore signals */
@@ -1225,34 +1224,60 @@ Bool VG_(machine_get_hwcaps)( void )
      vg_assert(r == 0);
      va = VexArchS390X;
 
-     model = VG_(get_machine_model)();
-
-     /* If the model is "unknown" don't treat this as an error. Assume
-        this is a brand-new machine model for which we don't have the 
-        identification yet. Keeping fingers crossed. */
-
-     VG_(debugLog)(1, "machine", "machine %d  LDISP %d EIMM %d GIE %d DFP %d "
-                   "FGX %d STFLE %d ETF2 %d ETF3 %d STCKF %d\n",
-                   model, have_LDISP, have_EIMM, have_GIE, have_DFP, have_FGX,
-                   have_STFLE, have_ETF2, have_ETF3, have_STCKF);
-
      vai.hwcaps = model;
+     if (have_STFLE) vai.hwcaps |= VEX_HWCAPS_S390X_STFLE;
      if (have_LDISP) {
-        /* Use long displacement only on machines >= z990. For all other machines
-           it is millicoded and therefore slow. */
+        /* Use long displacement only on machines >= z990. For all other
+           machines it is millicoded and therefore slow. */
         if (model >= VEX_S390X_MODEL_Z990)
            vai.hwcaps |= VEX_HWCAPS_S390X_LDISP;
      }
-     if (have_EIMM)  vai.hwcaps |= VEX_HWCAPS_S390X_EIMM;
-     if (have_GIE)   vai.hwcaps |= VEX_HWCAPS_S390X_GIE;
-     if (have_DFP)   vai.hwcaps |= VEX_HWCAPS_S390X_DFP;
-     if (have_FGX)   vai.hwcaps |= VEX_HWCAPS_S390X_FGX;
-     if (have_ETF2)  vai.hwcaps |= VEX_HWCAPS_S390X_ETF2;
-     if (have_ETF3)  vai.hwcaps |= VEX_HWCAPS_S390X_ETF3;
-     if (have_STFLE) vai.hwcaps |= VEX_HWCAPS_S390X_STFLE;
-     if (have_STCKF) vai.hwcaps |= VEX_HWCAPS_S390X_STCKF;
-     if (have_FPEXT) vai.hwcaps |= VEX_HWCAPS_S390X_FPEXT;
 
+     /* Detect presence of certain facilities using the STFLE insn.
+        Note, that these facilities were introduced at the same time or later
+        as STFLE, so the absence of STLFE implies the absence of the facility
+        we're trying to detect. */
+     struct fac_hwcaps_map {
+        UInt installed;
+        UInt facility_bit;
+        UInt hwcaps_bit;
+        const HChar name[6];   // may need adjustment for new facility names
+     } fac_hwcaps[] = {
+        { False, S390_FAC_EIMM,  VEX_HWCAPS_S390X_EIMM,  "EIMM"  },
+        { False, S390_FAC_GIE,   VEX_HWCAPS_S390X_GIE,   "GIE"   },
+        { False, S390_FAC_DFP,   VEX_HWCAPS_S390X_DFP,   "DFP"   },
+        { False, S390_FAC_FPSE,  VEX_HWCAPS_S390X_FGX,   "FGX"   },
+        { False, S390_FAC_ETF2,  VEX_HWCAPS_S390X_ETF2,  "ETF2"  },
+        { False, S390_FAC_ETF3,  VEX_HWCAPS_S390X_ETF3,  "ETF3"  },
+        { False, S390_FAC_STCKF, VEX_HWCAPS_S390X_STCKF, "STCKF" },
+        { False, S390_FAC_FPEXT, VEX_HWCAPS_S390X_FPEXT, "FPEXT" },
+        { False, S390_FAC_LSC,   VEX_HWCAPS_S390X_LSC,   "LSC"   },
+        { False, S390_FAC_PFPO,  VEX_HWCAPS_S390X_PFPO,  "PFPO"  },
+     };
+
+     /* Set hwcaps according to the detected facilities */
+     for (i=0; i < sizeof fac_hwcaps / sizeof fac_hwcaps[0]; ++i) {
+        vg_assert(fac_hwcaps[i].facility_bit <= 63);  // for now
+        if (hoststfle[0] & (1ULL << (63 - fac_hwcaps[i].facility_bit))) {
+           fac_hwcaps[i].installed = True;
+           vai.hwcaps |= fac_hwcaps[i].hwcaps_bit;
+        }
+     }
+
+     /* Build up a string showing the probed-for facilities */
+     HChar fac_str[(sizeof fac_hwcaps / sizeof fac_hwcaps[0]) *
+                   (sizeof fac_hwcaps[0].name + 3) + //  %s %d
+                   7 + 1 + 4 + 2  // machine %4d
+                   + 1];  // \0
+     HChar *p = fac_str;
+     p += VG_(sprintf)(p, "machine %4d  ", model);
+     for (i=0; i < sizeof fac_hwcaps / sizeof fac_hwcaps[0]; ++i) {
+        p += VG_(sprintf)(p, " %s %1d", fac_hwcaps[i].name,
+                          fac_hwcaps[i].installed);
+     }
+     *p++ = '\0';
+
+     VG_(debugLog)(1, "machine", "%s\n", fac_str);
      VG_(debugLog)(1, "machine", "hwcaps = 0x%x\n", vai.hwcaps);
 
      VG_(machine_get_cache_info)(&vai);
@@ -1374,6 +1399,20 @@ Bool VG_(machine_get_hwcaps)( void )
 #elif defined(VGA_mips32)
    {
      va = VexArchMIPS32;
+     UInt model = VG_(get_machine_model)();
+     if (model== -1)
+         return False;
+
+     vai.hwcaps = model;
+
+     VG_(machine_get_cache_info)(&vai);
+
+     return True;
+   }
+
+#elif defined(VGA_mips64)
+   {
+     va = VexArchMIPS64;
      UInt model = VG_(get_machine_model)();
      if (model== -1)
          return False;
@@ -1511,6 +1550,9 @@ Int VG_(machine_get_size_of_largest_guest_register) ( void )
       it? */
    return 8;
 
+#  elif defined(VGA_mips64)
+   return 8;
+
 #  else
 #    error "Unknown arch"
 #  endif
@@ -1524,7 +1566,8 @@ void* VG_(fnptr_to_fnentry)( void* f )
 #  if defined(VGP_x86_linux) || defined(VGP_amd64_linux)  \
       || defined(VGP_arm_linux)                           \
       || defined(VGP_ppc32_linux) || defined(VGO_darwin)  \
-      || defined(VGP_s390x_linux) || defined(VGP_mips32_linux)
+      || defined(VGP_s390x_linux) || defined(VGP_mips32_linux) \
+      || defined(VGP_mips64_linux)
    return f;
 #  elif defined(VGP_ppc64_linux)
    /* ppc64-linux uses the AIX scheme, in which f is a pointer to a

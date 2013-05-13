@@ -69,7 +69,7 @@ void DRD_(clientreq_init)(void)
  * DRD's handler for Valgrind client requests. The code below handles both
  * DRD's public and tool-internal client requests.
  */
-#if defined(VGP_mips32_linux)
+#if defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
  /* There is a cse related issue in gcc for MIPS. Optimization level
     has to be lowered, so cse related optimizations are not
     included. */
@@ -373,7 +373,7 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
 
    case VG_USERREQ__POST_COND_DESTROY:
       if (DRD_(thread_leave_synchr)(drd_tid) == 0)
-         DRD_(cond_post_destroy)(arg[1]);
+         DRD_(cond_post_destroy)(arg[1], arg[2]);
       break;
 
    case VG_USERREQ__PRE_COND_WAIT:

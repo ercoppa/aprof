@@ -36,30 +36,17 @@
 // last modification time of the current program
 static ULong APROF_(binary_time) = 0;
 
-static HChar * report_name(HChar * filename_priv, UInt tid, UInt postfix_c) {
+static HChar * report_name(HChar * filename_priv, UInt tid, 
+                                UInt postfix_c, HChar * prog_name) {
 
+
+    UInt offset = 0;
     #if REPORT_NAME == 1
-    
-    if ((APROF_(merge_report_runs) || APROF_(merge_report_threads)) 
-        && APROF_(running_threads) > 1) {
-        
-        VG_(sprintf)(filename_priv, "%d_%u_%d", VG_(getpid)(), 
-                                    tid - 1, APROF_(addr_multiple));
-        
-    } else {
-    
-        if (tid > 1)
-            VG_(sprintf)(filename_priv, "%s_%u", 
-                    VG_(basename)(prog_name), tid - 1);
-        else
-            VG_(sprintf)(filename_priv, "%s", 
-                VG_(basename)(prog_name));
-    }
-    
-    #elif REPORT_NAME >= 2
-    VG_(sprintf)(filename_priv, "%d_%u_%d", VG_(getpid)(), 
-                                    tid - 1, APROF_(addr_multiple));
+    offset += VG_(sprintf)(filename_priv, "%s_", VG_(basename)(prog_name));
     #endif
+
+    VG_(sprintf)(filename_priv + offset, "%d_%u_%d", VG_(getpid)(), 
+                                    tid - 1, APROF_(addr_multiple));
 
     char postfix[128];
     if (postfix_c > 0) VG_(sprintf)(postfix, "_%u.aprof", postfix_c);
@@ -94,12 +81,12 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
         
         filename = VG_(calloc)("log", 2048, 1);
         VG_(sprintf)(filename, "%s/%s", APROF_(log_dir), 
-                    report_name(filename_priv, tid, 0));
+                    report_name(filename_priv, tid, 0, prog_name));
                     
     } else {
         
         filename = VG_(expand_file_name)("aprof log", 
-                            report_name(filename_priv, tid, 0));
+                            report_name(filename_priv, tid, 0, prog_name));
     
     }
 
@@ -108,18 +95,16 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
     UInt attempt = 0;
     while (report == NULL && attempt < 1024) {
 
-        //VG_(umsg)("File %s already exists\n", filename);
-
         if (APROF_(log_dir) != NULL) {
         
             VG_(sprintf)(filename, "%s/%s", APROF_(log_dir), 
-                        report_name(filename_priv, tid, attempt));
+                        report_name(filename_priv, tid, attempt, prog_name));
         
         } else {
 
             VG_(free)(filename);
             filename = VG_(expand_file_name)("aprof log", 
-                report_name(filename_priv, tid, attempt));
+                report_name(filename_priv, tid, attempt, prog_name));
         
         }
         
@@ -209,7 +194,7 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
         if (!rtn_info->fn->discard_info) {
         #endif
         
-        char * obj_name = "NONE";
+        const HChar * obj_name = "NONE";
         if (rtn_info->fn->obj != NULL) obj_name = rtn_info->fn->obj->name; 
         
         APROF_(fprintf)(report, "r \"%s\" \"%s\" %llu\n", 
@@ -251,8 +236,8 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
                                 info_access->self_time_min,
                                 info_access->self_time_max,
                                 info_access->self_sum_sqr
-                                #if INPUT_METRIC == RVMS
                                 
+                                #if INPUT_METRIC == RVMS
                                 , info_access->rms_input_sum,
                                 info_access->rms_input_sum_sqr
                                 

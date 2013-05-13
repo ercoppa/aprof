@@ -100,6 +100,7 @@
 /*--- fwdses                                               ---*/
 /*------------------------------------------------------------*/
 
+static UInt CF_info_generation = 0;
 static void cfsi_cache__invalidate ( void );
 
 
@@ -298,7 +299,7 @@ static void free_DebugInfo ( DebugInfo* di )
 */
 static void discard_DebugInfo ( DebugInfo* di )
 {
-   HChar* reason = "munmap";
+   const HChar* reason = "munmap";
 
    DebugInfo** prev_next_ptr = &debugInfo_list;
    DebugInfo*  curr          =  debugInfo_list;
@@ -725,7 +726,7 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
       return 0;
 
    /* If the file doesn't have a name, we're hosed.  Give up. */
-   filename = VG_(am_get_filename)( (NSegment*)seg );
+   filename = VG_(am_get_filename)( seg );
    if (!filename)
       return 0;
 
@@ -818,7 +819,8 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    is_rw_map = False;
    is_ro_map = False;
 
-#  if defined(VGA_x86) || defined(VGA_ppc32) || defined(VGA_mips32)
+#  if defined(VGA_x86) || defined(VGA_ppc32) || defined(VGA_mips32) \
+      || defined(VGA_mips64)
    is_rx_map = seg->hasR && seg->hasX;
    is_rw_map = seg->hasR && seg->hasW;
 #  elif defined(VGA_amd64) || defined(VGA_ppc64) || defined(VGA_arm)
@@ -1765,7 +1767,7 @@ Bool VG_(get_filename_linenum) ( Addr a,
    Therefore specify "*" to search all the objects.  On TOC-afflicted
    platforms, a symbol is deemed to be found only if it has a nonzero
    TOC pointer.  */
-Bool VG_(lookup_symbol_SLOW)(HChar* sopatt, HChar* name, 
+Bool VG_(lookup_symbol_SLOW)(const HChar* sopatt, HChar* name, 
                              Addr* pEnt, Addr* pToc)
 {
    Bool     require_pToc = False;
@@ -1909,8 +1911,8 @@ HChar* VG_(describe_IP)(Addr eip, HChar* buf, Int n_buf)
    if (VG_(clo_xml)) {
 
       Bool   human_readable = True;
-      HChar* maybe_newline  = human_readable ? "\n      " : "";
-      HChar* maybe_newline2 = human_readable ? "\n    "   : "";
+      const HChar* maybe_newline  = human_readable ? "\n      " : "";
+      const HChar* maybe_newline2 = human_readable ? "\n    "   : "";
 
       /* Print in XML format, dumping in as much info as we know.
          Ensure all tags are balanced even if the individual strings
@@ -2104,7 +2106,7 @@ UWord evalCfiExpr ( XArray* exprs, Int ix,
             case Creg_IA_SP: return eec->uregs->sp;
             case Creg_IA_BP: return eec->uregs->fp;
             case Creg_S390_R14: return eec->uregs->lr;
-#           elif defined(VGA_mips32)
+#           elif defined(VGA_mips32) || defined(VGA_mips64)
             case Creg_IA_IP: return eec->uregs->pc;
             case Creg_IA_SP: return eec->uregs->sp;
             case Creg_IA_BP: return eec->uregs->fp;
@@ -2245,7 +2247,8 @@ static void find_DiCfSI ( /*OUT*/DebugInfo** diP,
    records are added all at once, when the debuginfo for an object is
    read, and is not changed ever thereafter. */
 
-#define N_CFSI_CACHE 511
+// Prime number, giving about 3K cache on 32 bits, 6K cache on 64 bits.
+#define N_CFSI_CACHE 509
 
 typedef
    struct { Addr ip; DebugInfo* di; Word ix; }
@@ -2255,8 +2258,13 @@ static CFSICacheEnt cfsi_cache[N_CFSI_CACHE];
 
 static void cfsi_cache__invalidate ( void ) {
    VG_(memset)(&cfsi_cache, 0, sizeof(cfsi_cache));
+   CF_info_generation++;
 }
 
+UInt VG_(CF_info_generation) (void)
+{
+   return CF_info_generation;
+}
 
 static inline CFSICacheEnt* cfsi_cache__find ( Addr ip )
 {
@@ -2337,7 +2345,7 @@ static Addr compute_cfa ( D3UnwindRegs* uregs,
       case CFIC_IA_BPREL:
          cfa = cfsi->cfa_off + uregs->fp;
          break;
-#     elif defined(VGA_mips32)
+#     elif defined(VGA_mips32) || defined(VGA_mips64)
       case CFIC_IA_SPREL:
          cfa = cfsi->cfa_off + uregs->sp;
          break;
@@ -2441,7 +2449,7 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
    ipHere = uregsHere->r15;
 #  elif defined(VGA_s390x)
    ipHere = uregsHere->ia;
-#  elif defined(VGA_mips32)
+#  elif defined(VGA_mips32) || defined(VGA_mips64)
    ipHere = uregsHere->pc;
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64)
 #  else
@@ -2519,7 +2527,7 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
    COMPUTE(uregsPrev.ia, uregsHere->ia, cfsi->ra_how, cfsi->ra_off);
    COMPUTE(uregsPrev.sp, uregsHere->sp, cfsi->sp_how, cfsi->sp_off);
    COMPUTE(uregsPrev.fp, uregsHere->fp, cfsi->fp_how, cfsi->fp_off);
-#  elif defined(VGA_mips32)
+#  elif defined(VGA_mips32) || defined(VGA_mips64)
    COMPUTE(uregsPrev.pc, uregsHere->pc, cfsi->ra_how, cfsi->ra_off);
    COMPUTE(uregsPrev.sp, uregsHere->sp, cfsi->sp_how, cfsi->sp_off);
    COMPUTE(uregsPrev.fp, uregsHere->fp, cfsi->fp_how, cfsi->fp_off);
@@ -3171,7 +3179,7 @@ Bool consider_vars_in_frame ( /*MOD*/XArray* /* of HChar */ dname1,
 }
 
 /* Try to form some description of DATA_ADDR by looking at the DWARF3
-   debug info we have.  This considers all global variables, and all
+   debug info we have.  This considers all global variables, and 8
    frames in the stacks of all threads.  Result is written at the ends
    of DNAME{1,2}V, which are XArray*s of HChar, that have been
    initialised by the caller, and True is returned.  If no description
@@ -3282,28 +3290,6 @@ Bool VG_(get_data_description)(
       in the stacks of all the threads.  First try to figure out which
       thread's stack data_addr is in. */
 
-   /* --- KLUDGE --- Try examining the top frame of all thread stacks.
-      This finds variables which are not stack allocated but are not
-      globally visible either; specifically it appears to pick up
-      variables which are visible only within a compilation unit.
-      These will have the address range of the compilation unit and
-      tend to live at Scope level 1. */
-   VG_(thread_stack_reset_iter)(&tid);
-   while ( VG_(thread_stack_next)(&tid, &stack_min, &stack_max) ) {
-      if (stack_min >= stack_max)
-         continue; /* ignore obviously stupid cases */
-      if (consider_vars_in_frame( dname1, dname2,
-                                  data_addr,
-                                  VG_(get_IP)(tid),
-                                  VG_(get_SP)(tid), 
-                                  VG_(get_FP)(tid), tid, 0 )) {
-         zterm_XA( dname1 );
-         zterm_XA( dname2 );
-         return True;
-      }
-   }
-   /* --- end KLUDGE --- */
-
    /* Perhaps it's on a thread's stack? */
    found = False;
    VG_(thread_stack_reset_iter)(&tid);
@@ -3328,9 +3314,6 @@ Bool VG_(get_data_description)(
    n_frames = VG_(get_StackTrace)( tid, ips, N_FRAMES,
                                    sps, fps, 0/*first_ip_delta*/ );
 
-   /* As a result of KLUDGE above, starting the loop at j = 0
-      duplicates examination of the top frame and so isn't necessary.
-      Oh well. */
    vg_assert(n_frames >= 0 && n_frames <= N_FRAMES);
    for (j = 0; j < n_frames; j++) {
       if (consider_vars_in_frame( dname1, dname2,

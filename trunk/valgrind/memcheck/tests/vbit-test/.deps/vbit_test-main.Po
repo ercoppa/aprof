@@ -1,5 +1,5 @@
 vbit_test-main.o: main.c /usr/include/assert.h /usr/include/features.h \
- /usr/include/x86_64-linux-gnu/bits/predefs.h \
+ /usr/include/stdc-predef.h /usr/include/x86_64-linux-gnu/bits/predefs.h \
  /usr/include/x86_64-linux-gnu/sys/cdefs.h \
  /usr/include/x86_64-linux-gnu/bits/wordsize.h \
  /usr/include/x86_64-linux-gnu/gnu/stubs.h \
@@ -11,7 +11,8 @@ vbit_test-main.o: main.c /usr/include/assert.h /usr/include/features.h \
  /usr/lib/gcc/x86_64-linux-gnu/4.7/include/stdarg.h \
  /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
  /usr/include/x86_64-linux-gnu/bits/sys_errlist.h /usr/include/stdlib.h \
- /usr/include/string.h ../../../include/valgrind.h vtest.h \
+ /usr/include/x86_64-linux-gnu/bits/stdlib-float.h /usr/include/string.h \
+ ../../../include/valgrind.h vtest.h \
  /usr/lib/gcc/x86_64-linux-gnu/4.7/include/stdint.h /usr/include/stdint.h \
  /usr/include/x86_64-linux-gnu/bits/wchar.h ../../../VEX/pub/libvex.h \
  ../../../VEX/pub/libvex_basictypes.h ../../../VEX/pub/libvex_ir.h \
@@ -20,6 +21,8 @@ vbit_test-main.o: main.c /usr/include/assert.h /usr/include/features.h \
 /usr/include/assert.h:
 
 /usr/include/features.h:
+
+/usr/include/stdc-predef.h:
 
 /usr/include/x86_64-linux-gnu/bits/predefs.h:
 
@@ -52,6 +55,8 @@ vbit_test-main.o: main.c /usr/include/assert.h /usr/include/features.h \
 /usr/include/x86_64-linux-gnu/bits/sys_errlist.h:
 
 /usr/include/stdlib.h:
+
+/usr/include/x86_64-linux-gnu/bits/stdlib-float.h:
 
 /usr/include/string.h:
 

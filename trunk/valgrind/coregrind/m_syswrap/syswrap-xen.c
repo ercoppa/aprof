@@ -71,7 +71,7 @@ static void bad_subop ( ThreadId              tid,
                         /*MOD*/SyscallArgs*   args,
                         /*OUT*/SyscallStatus* status,
                         /*OUT*/UWord*         flags,
-                        const char*           hypercall,
+                        const HChar*           hypercall,
                         UWord                 subop)
 {
    VG_(dmsg)("WARNING: unhandled %s subop: %ld\n",
@@ -107,7 +107,7 @@ PRE(memory_op)
    case VKI_XENMEM_populate_physmap: {
       struct xen_memory_reservation *memory_reservation =
          (struct xen_memory_reservation *)ARG2;
-      char *which;
+      const HChar *which;
 
       switch (ARG1) {
       case VKI_XENMEM_increase_reservation:
@@ -822,6 +822,7 @@ POST(sysctl)
                      sizeof(uint64_t) * sysctl->u.numainfo.max_node_index);
       POST_MEM_WRITE((Addr)sysctl->u.numainfo.node_to_node_distance.p,
                      sizeof(uint32_t) * sysctl->u.numainfo.max_node_index);
+      break;
    }
 #undef POST_XEN_SYSCTL_WRITE
 #undef __POST_XEN_SYSCTL_WRITE
@@ -861,6 +862,7 @@ POST(domctl){
 
    case VKI_XEN_DOMCTL_max_vcpus:
       POST_XEN_DOMCTL_WRITE(max_vcpus, max);
+      break;
 
    case VKI_XEN_DOMCTL_get_address_size:
       __POST_XEN_DOMCTL_WRITE(get_address_size, address_size, size);
@@ -924,6 +926,7 @@ POST(domctl){
 	 POST_XEN_DOMCTL_WRITE(getdomaininfo_00000007, ssidref);
 	 POST_XEN_DOMCTL_WRITE(getdomaininfo_00000007, handle);
 	 POST_XEN_DOMCTL_WRITE(getdomaininfo_00000007, cpupool);
+      break;
       case 0x00000008:
 	 POST_XEN_DOMCTL_WRITE(getdomaininfo_00000008, domain);
 	 POST_XEN_DOMCTL_WRITE(getdomaininfo_00000008, flags);

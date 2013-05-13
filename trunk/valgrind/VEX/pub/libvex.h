@@ -58,7 +58,8 @@ typedef
       VexArchPPC32,
       VexArchPPC64,
       VexArchS390X,
-      VexArchMIPS32
+      VexArchMIPS32,
+      VexArchMIPS64
    }
    VexArch;
 
@@ -78,10 +79,13 @@ typedef
 
 /* amd64: baseline capability is SSE2, with cmpxchg8b but not
    cmpxchg16b. */
-#define VEX_HWCAPS_AMD64_SSE3  (1<<5)  /* SSE3 support */
-#define VEX_HWCAPS_AMD64_CX16  (1<<6)  /* cmpxchg16b support */
-#define VEX_HWCAPS_AMD64_LZCNT (1<<7)  /* SSE4a LZCNT insn */
-#define VEX_HWCAPS_AMD64_AVX   (1<<8)  /* AVX instructions */
+#define VEX_HWCAPS_AMD64_SSE3   (1<<5)  /* SSE3 support */
+#define VEX_HWCAPS_AMD64_CX16   (1<<6)  /* cmpxchg16b support */
+#define VEX_HWCAPS_AMD64_LZCNT  (1<<7)  /* SSE4a LZCNT insn */
+#define VEX_HWCAPS_AMD64_AVX    (1<<8)  /* AVX instructions */
+#define VEX_HWCAPS_AMD64_RDTSCP (1<<9)  /* RDTSCP instruction */
+#define VEX_HWCAPS_AMD64_BMI    (1<<10) /* BMI1 instructions */
+#define VEX_HWCAPS_AMD64_AVX2   (1<<11) /* AVX2 instructions */
 
 /* ppc32: baseline capability is integer only */
 #define VEX_HWCAPS_PPC32_F     (1<<8)  /* basic (non-optional) FP */
@@ -133,6 +137,8 @@ typedef
 #define VEX_HWCAPS_S390X_ETF3  (1<<13)  /* ETF3-enhancement facility */
 #define VEX_HWCAPS_S390X_STCKF (1<<14)  /* STCKF facility */
 #define VEX_HWCAPS_S390X_FPEXT (1<<15)  /* Floating point extension facility */
+#define VEX_HWCAPS_S390X_LSC   (1<<16)  /* Conditional load/store facility */
+#define VEX_HWCAPS_S390X_PFPO  (1<<17)  /* Perform floating point ops facility */
 
 /* Special value representing all available s390x hwcaps */
 #define VEX_HWCAPS_S390X_ALL   (VEX_HWCAPS_S390X_LDISP | \
@@ -143,8 +149,10 @@ typedef
                                 VEX_HWCAPS_S390X_STFLE | \
                                 VEX_HWCAPS_S390X_STCKF | \
                                 VEX_HWCAPS_S390X_FPEXT | \
+                                VEX_HWCAPS_S390X_LSC   | \
                                 VEX_HWCAPS_S390X_ETF3  | \
-                                VEX_HWCAPS_S390X_ETF2)
+                                VEX_HWCAPS_S390X_ETF2  | \
+                                VEX_HWCAPS_S390X_PFPO)
 
 #define VEX_HWCAPS_S390X(x)  ((x) & ~VEX_S390X_MODEL_MASK)
 #define VEX_S390X_MODEL(x)   ((x) &  VEX_S390X_MODEL_MASK)
@@ -175,6 +183,7 @@ typedef
 
 #define VEX_PRID_COMP_MIPS      0x00010000
 #define VEX_PRID_COMP_BROADCOM  0x00020000
+#define VEX_PRID_COMP_NETLOGIC  0x000c0000
 
 /* These return statically allocated strings. */
 
@@ -672,6 +681,9 @@ typedef
 
       /* IN: debug: trace vex activity at various points */
       Int     traceflags;
+
+      /* IN: debug: print diagnostics when an illegal instr is detected */
+      Bool    sigill_diag;
 
       /* IN: profiling: add a 64 bit profiler counter increment to the
          translation? */

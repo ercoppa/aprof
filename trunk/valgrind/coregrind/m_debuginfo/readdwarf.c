@@ -370,7 +370,7 @@ Word process_extended_line_op( struct _DebugInfo* di,
          if (state_machine_regs.is_stmt) {
             if (state_machine_regs.last_address) {
                Bool inRange = False;
-               HChar* filename
+               const HChar* filename
                   = (HChar*)index_WordArray( &inRange, filenames, 
                                              state_machine_regs.last_file);
                if (!inRange || !filename)
@@ -527,9 +527,9 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
       goto out;
    }
 
-   info.li_header_length = ui->dw64 ? ML_(read_ULong)(external) 
-                                    : (ULong)(ML_(read_UInt)(external));
-   external += ui->dw64 ? 8 : 4;
+   info.li_header_length = is64 ? ML_(read_ULong)(external) 
+                                : (ULong)(ML_(read_UInt)(external));
+   external += is64 ? 8 : 4;
    if (di->ddump_line)
       VG_(printf)("  Prologue Length:             %llu\n", 
                   info.li_header_length);
@@ -965,12 +965,14 @@ static UChar* lookup_abbrev( UChar* p, UInt acode )
 }
 
 /* Read general information for a particular compile unit block in
- * the .debug_info section.
+ * the .debug_info section. In particular read the name, compdir and
+ * stmt_list needed to parse the line number information.
  * 
  * Input: - unitblock is the start of a compilation
  *          unit block in .debuginfo section
  *        - debugabbrev is start of .debug_abbrev section
  *        - debugstr is start of .debug_str section
+ *        - debugstr_alt_img is start of .debug_str section in alt debug file
  *        
  * Output: Fill members of ui pertaining to the compilation unit:
  *         - ui->name is the name of the compilation unit
@@ -990,8 +992,7 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
 {
    UInt   acode, abcode;
    ULong  atoffs, blklen;
-   Int    level;
-   /* UShort ver; */
+   UShort ver;
 
    UChar addr_size;
    UChar* p = unitblock_img;
@@ -1008,7 +1009,7 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
    p += ui->dw64 ? 12 : 4;
 
    /* version should be 2, 3 or 4 */
-   /* ver = ML_(read_UShort)(p); */
+   ver = ML_(read_UShort)(p);
    p += 2;
 
    /* get offset in abbrev */
@@ -1021,39 +1022,32 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
 
    end_img     = unitblock_img 
                  + blklen + (ui->dw64 ? 12 : 4); /* End of this block */
-   level       = 0;                        /* Level in the abbrev tree */
    abbrev_img  = debugabbrev_img 
                  + atoffs; /* Abbreviation data for this block */
    
-   /* Read the compilation unit entries */
-   while ( p < end_img ) {
-      Bool has_child;
+   /* Read the compilation unit entry - this is always the first DIE.
+    * See DWARF4 para 7.5. */
+   if ( p < end_img ) {
       UInt tag;
 
       acode = read_leb128U( &p ); /* abbreviation code */
-      if ( acode == 0 ) {
-         /* NULL entry used for padding - or last child for a sequence
-            - see para 7.5.3 */
-         level--;
-         continue;
-      }
       
       /* Read abbreviation header */
       abcode = read_leb128U( &abbrev_img ); /* abbreviation code */
       if ( acode != abcode ) {
-         /* We are in in children list, and must rewind to a
-          * previously declared abbrev code.  This code works but is
-          * not triggered since we shortcut the parsing once we have
-          * read the compile_unit block.  This should only occur when
-          * level > 0 */
+         /* This isn't illegal, but somewhat unlikely. Normally the
+          * first abbrev describes the first DIE, the compile_unit.
+          * But maybe this abbrevation data is shared with another
+          * or it is a NULL entry used for padding. See para 7.5.3. */
          abbrev_img = lookup_abbrev( debugabbrev_img + atoffs, acode );
       }
 
       tag = read_leb128U( &abbrev_img );
-      has_child = *(abbrev_img++) == 1; /* DW_CHILDREN_yes */
 
-      if ( has_child )
-         level++;
+      if ( tag != 0x0011 /*TAG_compile_unit*/ )
+         return; /* Not a compile unit (might be partial) or broken DWARF. */
+
+      abbrev_img++; /* DW_CHILDREN_yes or DW_CHILDREN_no */
 
       /* And loop on entries */
       for ( ; ; ) {
@@ -1122,7 +1116,7 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
             case 0x0c: /* FORM_flag */      p++; break;
             case 0x0d: /* FORM_sdata */     read_leb128S( &p ); break;
             case 0x0f: /* FORM_udata */     read_leb128U( &p ); break;
-            case 0x10: /* FORM_ref_addr */  p += ui->dw64 ? 8 : 4; break;
+            case 0x10: /* FORM_ref_addr */  p += (ver == 2) ? addr_size : (ui->dw64 ? 8 : 4); break;
             case 0x11: /* FORM_ref1 */      p++; break;
             case 0x12: /* FORM_ref2 */      p += 2; break;
             case 0x13: /* FORM_ref4 */      p += 4; break;
@@ -1151,16 +1145,9 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
             else if ( name == 0x10 ) ui->stmt_list = cval; /* DW_AT_stmt_list */
          }
       }
-      /* Shortcut the parsing once we have read the compile_unit block
-       * That's enough info for us, and we are not gdb ! */
-      if ( tag == 0x0011 /*TAG_compile_unit*/ )
-         break;
-   } /* Loop on each sub block */
-
-   /* This test would be valid if we were not shortcutting the parsing
-   if (level != 0)
-      VG_(printf)( "#### Exiting debuginfo block at level %d !!!\n", level );
-   */
+   } /* Just read the first DIE, if that wasn't the compile_unit then
+      * this might have been a partial unit or broken DWARF info.
+      * That's enough info for us, and we are not gdb ! */
 }
 
 
@@ -1859,6 +1846,10 @@ void ML_(read_debuginfo_dwarf1) (
 #  define FP_REG         30
 #  define SP_REG         29
 #  define RA_REG_DEFAULT 31
+#elif defined(VGP_mips64_linux)
+#  define FP_REG         30
+#  define SP_REG         29
+#  define RA_REG_DEFAULT 31
 #else
 #  error "Unknown platform"
 #endif
@@ -1868,7 +1859,7 @@ void ML_(read_debuginfo_dwarf1) (
    7 (DWARF for the ARM Architecture) specifies that values up to 320
    might exist, for Neon/VFP-v3. */
 #if defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux) \
-    || defined(VGP_mips32_linux)
+    || defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
 # define N_CFI_REGS 72
 #elif defined(VGP_arm_linux)
 # define N_CFI_REGS 320
@@ -2173,7 +2164,7 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
    if (ctxs->cfa_is_regoff && ctxs->cfa_reg == SP_REG) {
       si->cfa_off = ctxs->cfa_off;
 #     if defined(VGA_x86) || defined(VGA_amd64) || defined(VGA_s390x) \
-         || defined(VGA_mips32)
+         || defined(VGA_mips32) || defined(VGA_mips64)
       si->cfa_how = CFIC_IA_SPREL;
 #     elif defined(VGA_arm)
       si->cfa_how = CFIC_ARM_R13REL;
@@ -2185,7 +2176,7 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
    if (ctxs->cfa_is_regoff && ctxs->cfa_reg == FP_REG) {
       si->cfa_off = ctxs->cfa_off;
 #     if defined(VGA_x86) || defined(VGA_amd64) || defined(VGA_s390x) \
-         || defined(VGA_mips32)
+         || defined(VGA_mips32) || defined(VGA_mips64)
       si->cfa_how = CFIC_IA_BPREL;
 #     elif defined(VGA_arm)
       si->cfa_how = CFIC_ARM_R12REL;
@@ -2386,7 +2377,7 @@ static Bool summarise_context( /*OUT*/DiCfSI* si,
    return True;
 
 
-#  elif defined(VGA_mips32)
+#  elif defined(VGA_mips32) || defined(VGA_mips64)
  
    /* --- entire tail of this fn specialised for mips --- */
  
@@ -2512,7 +2503,7 @@ static Int copy_convert_CfiExpr_tree ( XArray*        dstxa,
             return ML_(CfiExpr_CfiReg)( dstxa, Creg_IA_BP );
          if (dwreg == srcuc->ra_reg)
             return ML_(CfiExpr_CfiReg)( dstxa, Creg_IA_IP ); /* correct? */
-#        elif defined(VGA_mips32)
+#        elif defined(VGA_mips32) || defined(VGA_mips64)
          if (dwreg == SP_REG)
             return ML_(CfiExpr_CfiReg)( dstxa, Creg_IA_SP );
          if (dwreg == FP_REG)
@@ -2734,7 +2725,7 @@ static Int dwarfexpr_to_dag ( UnwindContext* ctx,
    UWord    uw;
    CfiUnop  uop;
    CfiBinop bop;
-   HChar*   opname;
+   const HChar* opname;
 
    Int sp; /* # of top element: valid is -1 .. N_EXPR_STACK-1 */
    Int stack[N_EXPR_STACK];  /* indices into ctx->exprs */
@@ -3724,7 +3715,7 @@ static void init_CIE ( CIE* cie )
    cie->saw_z_augmentation = False;
 }
 
-#define N_CIEs 4000
+#define N_CIEs 5000
 static CIE the_CIEs[N_CIEs];
 
 
@@ -3737,7 +3728,7 @@ void ML_(read_callframe_info_dwarf3)
           Bool is_ehframe )
 {
    Int    nbytes;
-   HChar* how = NULL;
+   const HChar* how = NULL;
    Int    n_CIEs = 0;
    UChar* data = frame_image;
    UWord  cfsi_used_orig;

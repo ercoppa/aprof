@@ -81,7 +81,7 @@
    specific code and/or some OS specific code. */
 #if defined(VGA_arm) || defined(VGA_x86) || defined(VGA_amd64) \
     || defined(VGA_ppc32) || defined(VGA_ppc64) || defined(VGA_s390x) \
-    || defined(VGP_mips32_linux)
+    || defined(VGP_mips32_linux) || defined(VGA_mips64)
 #define PTRACEINVOKER
 #else
 I_die_here : (PTRACEINVOKER) architecture missing in vgdb.c
@@ -101,14 +101,12 @@ I_die_here : (PTRACEINVOKER) architecture missing in vgdb.c
 #if defined(PTRACEINVOKER)
 #include <sys/user.h>
 #if defined(VGO_linux)
-#  include <sys/prctl.h>
 #  include <linux/ptrace.h>
 #endif
 #endif
 
 
-// Outputs information for the user about ptrace_scope protection
-// or ptrace not working.
+// Outputs information for the user about ptrace not working.
 static void ptrace_restrictions_msg(void);
 
 static int debuglevel;
@@ -362,7 +360,7 @@ int ptrace_write_memory (pid_t inferior_pid, CORE_ADDR memaddr,
    if (debuglevel >= 1) {
       DEBUG (1, "Writing ");
       for (i = 0; i < len; i++)
-         PDEBUG (1, "%02x", ((unsigned char*)myaddr)[i]);
+         PDEBUG (1, "%02x", ((const unsigned char*)myaddr)[i]);
       PDEBUG(1, " to %p\n", (void *) memaddr);
    }
    
@@ -459,7 +457,7 @@ char *status_image (int status)
    If pid is reported as being dead/exited, waitstopped will return False.
 */
 static
-Bool waitstopped (int pid, int signal_expected, char *msg)
+Bool waitstopped (int pid, int signal_expected, const char *msg)
 {
    pid_t p;
    int status = 0;
@@ -505,7 +503,7 @@ Bool waitstopped (int pid, int signal_expected, char *msg)
    Returns True if succesful, False otherwise.
    msg is used in tracing and error reporting. */
 static
-Bool stop (int pid, char *msg)
+Bool stop (int pid, const char *msg)
 {
    long res;
 
@@ -524,7 +522,7 @@ Bool stop (int pid, char *msg)
    Returns True if succesful, False otherwise.
    msg is used in tracing and error reporting. */
 static
-Bool attach (int pid, char *msg)
+Bool attach (int pid, const char *msg)
 {
    long res;
    static Bool output_error = True;
@@ -869,11 +867,7 @@ Bool invoke_gdbserver (int pid)
    // address pushed on the stack should ensure this is detected.
 
    /* Not yet attached. If problem, vgdb can abort,
-      no cleanup needed.
-
-      On Ubuntu>= 10.10, a /proc setting can disable ptrace.
-      So, Valgrind has to SET_PTRACER this vgdb. Once this
-      is done, this vgdb can ptrace the valgrind process. */
+      no cleanup needed. */
 
    DEBUG(1, "attach to 'main' pid %d\n", pid);
    if (!attach(pid, "attach main pid")) {
@@ -926,6 +920,8 @@ Bool invoke_gdbserver (int pid)
    sp = user_mod.regs.gprs[15];
 #elif defined(VGA_mips32)
    sp = user_mod.regs[29*2];
+#elif defined(VGA_mips64)
+   sp = user_mod.regs[29];
 #else
    I_die_here : (sp) architecture missing in vgdb.c
 #endif
@@ -1011,6 +1007,8 @@ Bool invoke_gdbserver (int pid)
       user_mod.regs[34*2+1] = 0;
       user_mod.regs[25*2] = shared32->invoke_gdbserver;
       user_mod.regs[25*2+1] = 0;
+#elif defined(VGA_mips64)
+      assert(0); // cannot vgdb a 32 bits executable with a 64 bits exe
 #else
       I_die_here : architecture missing in vgdb.c
 #endif
@@ -1092,6 +1090,13 @@ Bool invoke_gdbserver (int pid)
       user_mod.regs.psw.addr = shared64->invoke_gdbserver;
 #elif defined(VGA_mips32)
       assert(0); // cannot vgdb a 64 bits executable with a 32 bits exe
+#elif defined(VGA_mips64)
+      /* put check arg in register 4 */
+      user_mod.regs[4] = check;
+      /* put NULL return address in ra */
+      user_mod.regs[31] = bad_return;
+      user_mod.regs[34] = shared64->invoke_gdbserver;
+      user_mod.regs[25] = shared64->invoke_gdbserver;
 #else
       I_die_here: architecture missing in vgdb.c
 #endif
@@ -1267,7 +1272,7 @@ void *invoke_gdbserver_in_valgrind(void *v_pid)
 }
 
 static
-int open_fifo (char* name, int flags, char* desc)
+int open_fifo (const char* name, int flags, const char* desc)
 {
    int fd;
    DEBUG(1, "opening %s %s\n", name, desc);
@@ -1319,7 +1324,7 @@ void acquire_lock (int fd, int valgrind_pid)
    Returns the nr of characters read, -1 if error.
    desc is a string used in tracing */
 static
-int read_buf (int fd, char* buf, char* desc)
+int read_buf (int fd, char* buf, const char* desc)
 {
    int nrread;
    DEBUG(2, "reading %s\n", desc);
@@ -1339,7 +1344,7 @@ int read_buf (int fd, char* buf, char* desc)
    valgrind process that there is new data.
    Returns True if write is ok, False if there was a problem. */
 static
-Bool write_buf(int fd, char* buf, int size, char* desc, Bool notify)
+Bool write_buf(int fd, char* buf, int size, const char* desc, Bool notify)
 {
    int nrwritten;
    int nrw;
@@ -1366,7 +1371,7 @@ typedef enum {
    TO_PID } ConnectionKind;
 static const int NumConnectionKind = TO_PID+1;
 static 
-char *ppConnectionKind (ConnectionKind con)
+const char *ppConnectionKind (ConnectionKind con)
 {
    switch (con) {
    case FROM_GDB: return "FROM_GDB";
@@ -2014,13 +2019,19 @@ void report_pid (int pid, Bool on_stdout)
    if (fd == -1) {
       DEBUG(1, "error opening cmdline file %s %s\n", 
             cmdline_file, strerror(errno));
-      sprintf(cmdline, "(could not obtain process command line)");
+      sprintf(cmdline, "(could not open process command line)");
    } else {
       sz = read(fd, cmdline, 1000);
       for (i = 0; i < sz; i++)
          if (cmdline[i] == 0)
             cmdline[i] = ' ';
-      cmdline[sz] = 0;
+      if (sz >= 0)
+         cmdline[sz] = 0;
+      else {
+         DEBUG(1, "error reading cmdline file %s %s\n", 
+               cmdline_file, strerror(errno));
+         sprintf(cmdline, "(could not read process command line)");
+      }
       close (fd);
    }  
    fprintf((on_stdout ? stdout : stderr), "use --pid=%d for %s\n", pid, cmdline);
@@ -2032,27 +2043,6 @@ void report_pid (int pid, Bool on_stdout)
 static
 void ptrace_restrictions_msg(void)
 {
-#  ifdef PR_SET_PTRACER
-   char *ptrace_scope_setting_file = "/proc/sys/kernel/yama/ptrace_scope";
-   int fd = -1;
-   char ptrace_scope = 'X';
-   fd = open (ptrace_scope_setting_file, O_RDONLY, 0);
-   if (fd >= 0 && (read (fd, &ptrace_scope, 1) == 1) && (ptrace_scope != '0')) {
-      fprintf (stderr,
-               "Note: your kernel restricts ptrace invoker using %s\n"
-               "vgdb will only be able to attach to a Valgrind process\n"
-               "blocked in a system call *after* an initial successful attach\n",
-               ptrace_scope_setting_file);
-   } else if (ptrace_scope == 'X') {
-      DEBUG (1, 
-             "PR_SET_PTRACER defined"
-             " but could not determine ptrace scope from %s\n",
-             ptrace_scope_setting_file);
-   }
-   if (fd >= 0)
-      close (fd);
-#  endif
-
 #  ifndef PTRACEINVOKER
    fprintf(stderr, 
            "Note: ptrace invoker not implemented\n"
@@ -2279,7 +2269,7 @@ Bool numeric_val(char* arg, int *value)
 
 /* true if arg matches the provided option */
 static
-Bool is_opt(char* arg, char *option)
+Bool is_opt(char* arg, const char *option)
 {
    int option_len = strlen(option);
    if (option[option_len-1] == '=')

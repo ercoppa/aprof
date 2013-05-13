@@ -50,7 +50,8 @@ DisResult disInstr_S390 ( IRSB*        irbb,
                           VexArch      guest_arch,
                           VexArchInfo* archinfo,
                           VexAbiInfo*  abiinfo,
-                          Bool         host_bigendian );
+                          Bool         host_bigendian,
+                          Bool         sigill_diag );
 
 /* Used by the optimiser to specialise calls to helpers. */
 IRExpr* guest_s390x_spechelper ( const HChar *function_name,
@@ -91,6 +92,7 @@ ULong s390_do_cu42(UInt srcvalue);
 UInt  s390_do_cvb(ULong decimal);
 ULong s390_do_cvd(ULong binary);
 ULong s390_do_ecag(ULong op2addr);
+UInt  s390_do_pfpo(UInt gpr0);
 
 /* The various ways to compute the condition code. */
 enum {
@@ -136,7 +138,24 @@ enum {
    S390_CC_OP_BFP_32_TO_UINT_64 = 39,
    S390_CC_OP_BFP_64_TO_UINT_64 = 40,
    S390_CC_OP_BFP_128_TO_UINT_64 = 41,
-   S390_CC_OP_DFP_RESULT_64 = 42
+   S390_CC_OP_DFP_RESULT_64 = 42,
+   S390_CC_OP_DFP_RESULT_128 = 43,
+   S390_CC_OP_DFP_TDC_32 = 44,
+   S390_CC_OP_DFP_TDC_64 = 45,
+   S390_CC_OP_DFP_TDC_128 = 46,
+   S390_CC_OP_DFP_TDG_32 = 47,
+   S390_CC_OP_DFP_TDG_64 = 48,
+   S390_CC_OP_DFP_TDG_128 = 49,
+   S390_CC_OP_DFP_64_TO_UINT_32 = 50,
+   S390_CC_OP_DFP_128_TO_UINT_32 = 51,
+   S390_CC_OP_DFP_64_TO_UINT_64 = 52,
+   S390_CC_OP_DFP_128_TO_UINT_64 = 53,
+   S390_CC_OP_DFP_64_TO_INT_32 = 54,
+   S390_CC_OP_DFP_128_TO_INT_32 = 55,
+   S390_CC_OP_DFP_64_TO_INT_64 = 56,
+   S390_CC_OP_DFP_128_TO_INT_64 = 57,
+   S390_CC_OP_PFPO_64 = 58,
+   S390_CC_OP_PFPO_128 = 59
 };
 
 /*------------------------------------------------------------*/
@@ -147,6 +166,7 @@ enum {
    Z -- value is zero extended to 32 / 64 bit
    S -- value is sign extended to 32 / 64 bit
    F -- a binary floating point value
+   D -- a decimal floating point value
 
    +--------------------------------+-----------------------+----------------------+-----------------+
    | op                             |   cc_dep1             |   cc_dep2            |   cc_ndep       |
@@ -193,6 +213,24 @@ enum {
    | S390_CC_OP_BFP_32_TO_UINT_64   | F source              | Z rounding mode      |                 |
    | S390_CC_OP_BFP_64_TO_UINT_64   | F source              | Z rounding mode      |                 |
    | S390_CC_OP_BFP_128_TO_UINT_64  | F source hi 64 bits   | F source low 64 bits | Z rounding mode |
+   | S390_CC_OP_DFP_RESULT_64       | D result              |                      |                 |
+   | S390_CC_OP_DFP_RESULT_128      | D result hi 64 bits   | D result low 64 bits |                 |
+   | S390_CC_OP_DFP_TDC_32          | D value               | Z class              |                 |
+   | S390_CC_OP_DFP_TDC_64          | D value               | Z class              |                 |
+   | S390_CC_OP_DFP_TDC_128         | D value hi 64 bits    | D value low 64 bits  | Z class         |
+   | S390_CC_OP_DFP_TDG_32          | D value               | Z group              |                 |
+   | S390_CC_OP_DFP_TDG_64          | D value               | Z group              |                 |
+   | S390_CC_OP_DFP_TDG_128         | D value hi 64 bits    | D value low 64 bits  | Z group         |
+   | S390_CC_OP_DFP_64_TO_UINT_32   | D source              | Z rounding mode      |                 |
+   | S390_CC_OP_DFP_128_TO_UINT_32  | D source hi 64 bits   | D source low 64 bits | Z rounding mode |
+   | S390_CC_OP_DFP_64_TO_UINT_64   | D source              | Z rounding mode      |                 |
+   | S390_CC_OP_DFP_128_TO_UINT_64  | D source hi 64 bits   | D source low 64 bits | Z rounding mode |
+   | S390_CC_OP_DFP_64_TO_INT_32    | D source              | Z rounding mode      |                 |
+   | S390_CC_OP_DFP_128_TO_INT_32   | D source hi 64 bits   | D source low 64 bits | Z rounding mode |
+   | S390_CC_OP_DFP_64_TO_INT_64    | D source              | Z rounding mode      |                 |
+   | S390_CC_OP_DFP_128_TO_INT_64   | D source hi 64 bits   | D source low 64 bits | Z rounding mode |
+   | S390_CC_OP_PFPO_64             | F|D source            | Z GR0 low 32 bits    |                 |
+   | S390_CC_OP_PFPO_128            | F|D source hi 64 bits | F|D src low 64 bits  | Z GR0 low 32 bits |
    +--------------------------------+-----------------------+----------------------+-----------------+
 */
 

@@ -235,7 +235,7 @@ static void fill_prstatus(const ThreadState *tst,
 			  const vki_siginfo_t *si)
 {
    struct vki_user_regs_struct *regs;
-   ThreadArchState* arch = (ThreadArchState*)&tst->arch;
+   const ThreadArchState* arch = &tst->arch;
 
    VG_(memset)(prs, 0, sizeof(*prs));
 
@@ -280,7 +280,7 @@ static void fill_prstatus(const ThreadState *tst,
    regs->gs     = arch->vex.guest_GS;
 
 #elif defined(VGP_amd64_linux)
-   regs->eflags = LibVEX_GuestAMD64_get_rflags( &((ThreadArchState*)arch)->vex );
+   regs->eflags = LibVEX_GuestAMD64_get_rflags( &arch->vex );
    regs->rsp    = arch->vex.guest_RSP;
    regs->rip    = arch->vex.guest_RIP;
 
@@ -317,8 +317,8 @@ static void fill_prstatus(const ThreadState *tst,
    regs->orig_gpr3 = arch->vex.guest_GPR3;
    regs->ctr = arch->vex.guest_CTR;
    regs->link = arch->vex.guest_LR;
-   regs->xer = LibVEX_GuestPPC32_get_XER( &((ThreadArchState*)arch)->vex );
-   regs->ccr = LibVEX_GuestPPC32_get_CR( &((ThreadArchState*)arch)->vex );
+   regs->xer = LibVEX_GuestPPC32_get_XER( &arch->vex );
+   regs->ccr = LibVEX_GuestPPC32_get_CR( &arch->vex );
    regs->mq = 0;
    regs->trap = 0;
    regs->dar = 0; /* should be fault address? */
@@ -338,8 +338,8 @@ static void fill_prstatus(const ThreadState *tst,
    regs->orig_gpr3 = arch->vex.guest_GPR3;
    regs->ctr = arch->vex.guest_CTR;
    regs->link = arch->vex.guest_LR;
-   regs->xer = LibVEX_GuestPPC64_get_XER( &((ThreadArchState*)arch)->vex );
-   regs->ccr = LibVEX_GuestPPC64_get_CR( &((ThreadArchState*)arch)->vex );
+   regs->xer = LibVEX_GuestPPC64_get_XER( &arch->vex );
+   regs->ccr = LibVEX_GuestPPC64_get_CR( &arch->vex );
    /* regs->mq = 0; */
    regs->trap = 0;
    regs->dar = 0; /* should be fault address? */
@@ -363,7 +363,7 @@ static void fill_prstatus(const ThreadState *tst,
    regs->ARM_sp   = arch->vex.guest_R13;
    regs->ARM_lr   = arch->vex.guest_R14;
    regs->ARM_pc   = arch->vex.guest_R15T;
-   regs->ARM_cpsr = LibVEX_GuestARM_get_cpsr( &((ThreadArchState*)arch)->vex );
+   regs->ARM_cpsr = LibVEX_GuestARM_get_cpsr( &arch->vex );
 
 #elif defined(VGP_s390x_linux)
 #  define DO(n)  regs->gprs[n] = arch->vex.guest_r##n
@@ -384,6 +384,15 @@ static void fill_prstatus(const ThreadState *tst,
 #  undef DO
    regs->MIPS_hi   = arch->vex.guest_HI;
    regs->MIPS_lo   = arch->vex.guest_LO;
+#elif defined(VGP_mips64_linux)
+#  define DO(n)  regs->MIPS_r##n = arch->vex.guest_r##n
+   DO(0);  DO(1);  DO(2);  DO(3);  DO(4);  DO(5);  DO(6);  DO(7);
+   DO(8);  DO(9);  DO(10); DO(11); DO(12); DO(13); DO(14); DO(15);
+   DO(16); DO(17); DO(18); DO(19); DO(20); DO(21); DO(22); DO(23);
+   DO(24); DO(25); DO(26); DO(27); DO(28); DO(29); DO(30); DO(31);
+#  undef DO
+   regs->MIPS_hi   = arch->vex.guest_HI;
+   regs->MIPS_lo   = arch->vex.guest_LO;
 #else
 #  error Unknown ELF platform
 #endif
@@ -392,7 +401,7 @@ static void fill_prstatus(const ThreadState *tst,
 static void fill_fpu(const ThreadState *tst, vki_elf_fpregset_t *fpu)
 {
    __attribute__((unused))
-   ThreadArchState* arch = (ThreadArchState*)&tst->arch;
+   const ThreadArchState* arch = &tst->arch;
 
 #if defined(VGP_x86_linux)
 //:: static void fill_fpu(vki_elf_fpregset_t *fpu, const HChar *from)
@@ -471,6 +480,13 @@ static void fill_fpu(const ThreadState *tst, vki_elf_fpregset_t *fpu)
    DO(16); DO(17); DO(18); DO(19); DO(20); DO(21); DO(22); DO(23);
    DO(24); DO(25); DO(26); DO(27); DO(28); DO(29); DO(30); DO(31);
 #  undef DO
+#elif defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
+#  define DO(n)  (*fpu)[n] = *(double*)(&arch->vex.guest_f##n)
+   DO(0);  DO(1);  DO(2);  DO(3);  DO(4);  DO(5);  DO(6);  DO(7);
+   DO(8);  DO(9);  DO(10); DO(11); DO(12); DO(13); DO(14); DO(15);
+   DO(16); DO(17); DO(18); DO(19); DO(20); DO(21); DO(22); DO(23);
+   DO(24); DO(25); DO(26); DO(27); DO(28); DO(29); DO(30); DO(31);
+#  undef DO
 #else
 #  error Unknown ELF platform
 #endif
@@ -479,7 +495,7 @@ static void fill_fpu(const ThreadState *tst, vki_elf_fpregset_t *fpu)
 #if defined(VGP_x86_linux) && !defined(VGPV_x86_linux_android)
 static void fill_xfpu(const ThreadState *tst, vki_elf_fpxregset_t *xfpu)
 {
-   ThreadArchState* arch = (ThreadArchState*)&tst->arch;
+   const ThreadArchState* arch = &tst->arch;
 
 //::    xfpu->cwd = ?;
 //::    xfpu->swd = ?;

@@ -83,7 +83,7 @@ static Event events[N_EVENTS];
 void APROF_(flushEvents)(IRSB* sb) {
     
     Int        i;
-    HChar*     helperName = NULL;
+    const HChar *    helperName = NULL;
     void*      helperAddr = NULL;
     IRExpr**   argv = NULL;
     IRDirty*   di;
@@ -98,7 +98,7 @@ void APROF_(flushEvents)(IRSB* sb) {
         
             case Event_Ir: break;
             
-            case Event_Dr:    helperName = "trace_load";
+            case Event_Dr:  helperName = "trace_load";
                             argv = mkIRExprVec_4(   mkIRExpr_HWord(LOAD), 
                                                     ev->addr, 
                                                     mkIRExpr_HWord( ev->size ),

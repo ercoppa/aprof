@@ -47,7 +47,7 @@
 void ppHRegPPC ( HReg reg ) 
 {
    Int r;
-   static HChar* ireg32_names[32] 
+   static const HChar* ireg32_names[32] 
       = { "%r0",  "%r1",  "%r2",  "%r3",
           "%r4",  "%r5",  "%r6",  "%r7",
           "%r8",  "%r9",  "%r10", "%r11",
@@ -273,7 +273,7 @@ void getAllocableRegs_PPC ( Int* nregs, HReg** arr, Bool mode64 )
 
 /* --------- Condition codes, Intel encoding. --------- */
 
-HChar* showPPCCondCode ( PPCCondCode cond )
+const HChar* showPPCCondCode ( PPCCondCode cond )
 {
    if (cond.test == Pct_ALWAYS) return "always";
 
@@ -572,7 +572,7 @@ static void mapRegs_PPCVI5s ( HRegRemap* m, PPCVI5s* dst ) {
 
 /* --------- Instructions. --------- */
 
-HChar* showPPCUnaryOp ( PPCUnaryOp op ) {
+const HChar* showPPCUnaryOp ( PPCUnaryOp op ) {
    switch (op) {
    case Pun_NOT:   return "not";
    case Pun_NEG:   return "neg";
@@ -583,7 +583,7 @@ HChar* showPPCUnaryOp ( PPCUnaryOp op ) {
    }
 }
 
-HChar* showPPCAluOp ( PPCAluOp op, Bool immR ) {
+const HChar* showPPCAluOp ( PPCAluOp op, Bool immR ) {
    switch (op) {
       case Palu_ADD: return immR ? "addi"  : "add";
       case Palu_SUB: return immR ? "subi"  : "sub";
@@ -594,7 +594,7 @@ HChar* showPPCAluOp ( PPCAluOp op, Bool immR ) {
    }
 }
 
-HChar* showPPCShftOp ( PPCShftOp op, Bool immR, Bool sz32 ) {
+const HChar* showPPCShftOp ( PPCShftOp op, Bool immR, Bool sz32 ) {
    switch (op) {
       case Pshft_SHL: return sz32 ? (immR ? "slwi"  : "slw") : 
                                     (immR ? "sldi"  : "sld");
@@ -606,7 +606,7 @@ HChar* showPPCShftOp ( PPCShftOp op, Bool immR, Bool sz32 ) {
    }
 }
 
-HChar* showPPCFpOp ( PPCFpOp op ) {
+const HChar* showPPCFpOp ( PPCFpOp op ) {
    switch (op) {
       case Pfp_ADDD:   return "fadd";
       case Pfp_SUBD:   return "fsub";
@@ -655,7 +655,7 @@ HChar* showPPCFpOp ( PPCFpOp op ) {
    }
 }
 
-HChar* showPPCAvOp ( PPCAvOp op ) {
+const HChar* showPPCAvOp ( PPCAvOp op ) {
    switch (op) {
 
    /* Unary */
@@ -722,7 +722,7 @@ HChar* showPPCAvOp ( PPCAvOp op ) {
    }
 }
 
-HChar* showPPCAvFpOp ( PPCAvFpOp op ) {
+const HChar* showPPCAvFpOp ( PPCAvFpOp op ) {
    switch (op) {
    /* Floating Point Binary */
    case Pavfp_ADDF:      return "vaddfp";
@@ -839,16 +839,18 @@ PPCInstr* PPCInstr_Div ( Bool extended, Bool syned, Bool sz32,
    return i;
 }
 PPCInstr* PPCInstr_Call ( PPCCondCode cond, 
-                          Addr64 target, UInt argiregs ) {
+                          Addr64 target, UInt argiregs, RetLoc rloc ) {
    UInt mask;
    PPCInstr* i          = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag               = Pin_Call;
    i->Pin.Call.cond     = cond;
    i->Pin.Call.target   = target;
    i->Pin.Call.argiregs = argiregs;
+   i->Pin.Call.rloc     = rloc;
    /* Only r3 .. r10 inclusive may be used as arg regs. Hence: */
    mask = (1<<3)|(1<<4)|(1<<5)|(1<<6)|(1<<7)|(1<<8)|(1<<9)|(1<<10);
    vassert(0 == (argiregs & ~mask));
+   vassert(rloc != RetLocINVALID);
    return i;
 }
 PPCInstr* PPCInstr_XDirect ( Addr64 dstGA, PPCAMode* amCIA,
@@ -1449,7 +1451,7 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
       /* special-case "mr" */
       if (i->Pin.Alu.op == Palu_OR &&   // or Rd,Rs,Rs == mr Rd,Rs
           rh_srcR->tag == Prh_Reg &&
-          rh_srcR->Prh.Reg.reg == r_srcL) {
+          sameHReg(rh_srcR->Prh.Reg.reg, r_srcL)) {
          vex_printf("mr ");
          ppHRegPPC(i->Pin.Alu.dst);
          vex_printf(",");
@@ -1553,6 +1555,8 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
                vex_printf(",");
          }
       }
+      vex_printf(",");
+      ppRetLoc(i->Pin.Call.rloc);
       vex_printf("] }");
       break;
    }
@@ -1742,7 +1746,7 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
       ppHRegPPC(i->Pin.FpRSP.src);
       return;
    case Pin_FpCftI: {
-      HChar* str = "fc?????";
+      const HChar* str = "fc?????";
       /* Note that "fcfids" is missing from below. That instruction would
        * satisfy the predicate:
        *    (i->Pin.FpCftI.fromI == True && i->Pin.FpCftI.int32 == False)
@@ -1820,10 +1824,10 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
 
    case Pin_AvLdSt: {
       UChar  sz = i->Pin.AvLdSt.sz;
-      HChar* str_size;
+      const HChar* str_size;
       if (i->Pin.AvLdSt.addr->tag == Pam_IR) {
          ppLoadImm(hregPPC_GPR30(mode64),
-                   i->Pin.AvLdSt.addr->Pam.RR.index, mode64);
+                   i->Pin.AvLdSt.addr->Pam.IR.index, mode64);
          vex_printf(" ; ");
       }
       str_size = sz==1 ? "eb" : sz==2 ? "eh" : sz==4 ? "ew" : "";
@@ -2334,8 +2338,8 @@ void getRegUsage_PPCInstr ( HRegUsage* u, PPCInstr* i, Bool mode64 )
       return;
    case Pin_AvBinary:
       if (i->Pin.AvBinary.op == Pav_XOR
-          && i->Pin.AvBinary.dst == i->Pin.AvBinary.srcL
-          && i->Pin.AvBinary.dst == i->Pin.AvBinary.srcR) {
+          && sameHReg(i->Pin.AvBinary.dst, i->Pin.AvBinary.srcL)
+          && sameHReg(i->Pin.AvBinary.dst, i->Pin.AvBinary.srcR)) {
          /* reg-alloc needs to understand 'xor r,r,r' as a write of r */
          /* (as opposed to a rite of passage :-) */
          addHRegUse(u, HRmWrite, i->Pin.AvBinary.dst);
@@ -2822,7 +2826,7 @@ Bool isMove_PPCInstr ( PPCInstr* i, HReg* src, HReg* dst )
          return False;
       if (i->Pin.Alu.srcR->tag != Prh_Reg)
          return False;
-      if (i->Pin.Alu.srcR->Prh.Reg.reg != i->Pin.Alu.srcL)
+      if (! sameHReg(i->Pin.Alu.srcR->Prh.Reg.reg, i->Pin.Alu.srcL))
          return False;
       *src = i->Pin.Alu.srcL;
       *dst = i->Pin.Alu.dst;
@@ -3908,6 +3912,16 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
    }
 
    case Pin_Call: {
+      if (i->Pin.Call.cond.test != Pct_ALWAYS
+          && i->Pin.Call.rloc != RetLocNone) {
+         /* The call might not happen (it isn't unconditional) and it
+            returns a result.  In this case we will need to generate a
+            control flow diamond to put 0x555..555 in the return
+            register(s) in the case where the call doesn't happen.  If
+            this ever becomes necessary, maybe copy code from the ARM
+            equivalent.  Until that day, just give up. */
+         goto bad;
+      }
       PPCCondCode cond  = i->Pin.Call.cond;
       UInt        r_dst = 10;
       /* As per detailed comment for Pin_Call in

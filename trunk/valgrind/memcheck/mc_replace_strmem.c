@@ -97,6 +97,11 @@
    20350 STRCASESTR
    20360 MEMRCHR
    20370 WCSLEN
+   20380 WCSCMP
+   20390 WCSCPY
+   20400 WCSCHR
+   20410 WCSRCHR
+   20420 STPNCPY
 */
 
 
@@ -536,8 +541,8 @@ static inline void my_exit ( int x )
          if (*s1 == 0) return -1; \
          if (*s2 == 0) return 1; \
          \
-         if (*(UChar*)s1 < *(UChar*)s2) return -1; \
-         if (*(UChar*)s1 > *(UChar*)s2) return 1; \
+         if (*(const UChar*)s1 < *(const UChar*)s2) return -1; \
+         if (*(const UChar*)s1 > *(const UChar*)s2) return 1; \
          \
          s1++; s2++; n++; \
       } \
@@ -567,8 +572,8 @@ static inline void my_exit ( int x )
       register UChar c1; \
       register UChar c2; \
       while (True) { \
-         c1 = tolower(*(UChar *)s1); \
-         c2 = tolower(*(UChar *)s2); \
+         c1 = tolower(*(const UChar *)s1); \
+         c2 = tolower(*(const UChar *)s2); \
          if (c1 != c2) break; \
          if (c1 == 0) break; \
          s1++; s2++; \
@@ -606,10 +611,10 @@ static inline void my_exit ( int x )
          if (*s1 == 0) return -1; \
          if (*s2 == 0) return 1; \
          \
-         if (tolower(*(UChar *)s1) \
-             < tolower(*(UChar*)s2)) return -1; \
-         if (tolower(*(UChar *)s1) \
-             > tolower(*(UChar *)s2)) return 1; \
+         if (tolower(*(const UChar *)s1) \
+             < tolower(*(const UChar*)s2)) return -1; \
+         if (tolower(*(const UChar *)s1) \
+             > tolower(*(const UChar *)s2)) return 1; \
          \
          s1++; s2++; n++; \
       } \
@@ -640,8 +645,8 @@ static inline void my_exit ( int x )
       register UChar c1; \
       register UChar c2; \
       while (True) { \
-         c1 = tolower_l(*(UChar *)s1, locale); \
-         c2 = tolower_l(*(UChar *)s2, locale); \
+         c1 = tolower_l(*(const UChar *)s1, locale); \
+         c2 = tolower_l(*(const UChar *)s2, locale); \
          if (c1 != c2) break; \
          if (c1 == 0) break; \
          s1++; s2++; \
@@ -678,10 +683,10 @@ static inline void my_exit ( int x )
          if (*s1 == 0) return -1; \
          if (*s2 == 0) return 1; \
          \
-         if (tolower_l(*(UChar *)s1, locale) \
-             < tolower_l(*(UChar *)s2, locale)) return -1; \
-         if (tolower_l(*(UChar *)s1, locale) \
-             > tolower_l(*(UChar *)s2, locale)) return 1; \
+         if (tolower_l(*(const UChar *)s1, locale) \
+             < tolower_l(*(const UChar *)s2, locale)) return -1; \
+         if (tolower_l(*(const UChar *)s1, locale) \
+             > tolower_l(*(const UChar *)s2, locale)) return 1; \
          \
          s1++; s2++; n++; \
       } \
@@ -710,8 +715,8 @@ static inline void my_exit ( int x )
       register UChar c1; \
       register UChar c2; \
       while (True) { \
-         c1 = *(UChar *)s1; \
-         c2 = *(UChar *)s2; \
+         c1 = *(const UChar *)s1; \
+         c2 = *(const UChar *)s2; \
          if (c1 != c2) break; \
          if (c1 == 0) break; \
          s1++; s2++; \
@@ -909,8 +914,8 @@ static inline void my_exit ( int x )
       int res; \
       UChar a0; \
       UChar b0; \
-      UChar* s1 = (UChar*)s1V; \
-      UChar* s2 = (UChar*)s2V; \
+      const UChar* s1 = s1V; \
+      const UChar* s2 = s2V; \
       \
       while (n != 0) { \
          a0 = s1[0]; \
@@ -979,6 +984,34 @@ static inline void my_exit ( int x )
 #endif
 
 
+/*---------------------- stpncpy ----------------------*/
+
+#define STPNCPY(soname, fnname) \
+   char* VG_REPLACE_FUNCTION_EZU(20420,soname,fnname) \
+            ( char* dst, const char* src, SizeT n ); \
+   char* VG_REPLACE_FUNCTION_EZU(20420,soname,fnname) \
+            ( char* dst, const char* src, SizeT n ) \
+   { \
+      const HChar* src_orig = src; \
+            HChar* dst_str  = dst; \
+      SizeT m = 0; \
+      \
+      while (m   < n && *src) { m++; *dst++ = *src++; } \
+      /* Check for overlap after copying; all n bytes of dst are relevant, */ \
+      /* but only m+1 bytes of src if terminator was found */ \
+      if (is_overlap(dst_str, src_orig, n, (m < n) ? m+1 : n)) \
+         RECORD_OVERLAP_ERROR("stpncpy", dst, src, n); \
+      dst_str = dst; \
+      while (m++ < n) *dst++ = 0;         /* must pad remainder with nulls */ \
+      \
+      return dst_str; \
+   }
+
+#if defined(VGO_linux)
+ STPNCPY(VG_Z_LIBC_SONAME, stpncpy)
+#endif
+
+
 /*---------------------- memset ----------------------*/
 
 /* Why are we bothering to intercept this?  It seems entirely
@@ -990,17 +1023,32 @@ static inline void my_exit ( int x )
    void* VG_REPLACE_FUNCTION_EZU(20210,soname,fnname) \
             (void *s, Int c, SizeT n) \
    { \
-      Addr a  = (Addr)s;   \
-      UInt c4 = (c & 0xFF); \
-      c4 = (c4 << 8) | c4; \
-      c4 = (c4 << 16) | c4; \
-      while ((a & 3) != 0 && n >= 1) \
-         { *(UChar*)a = (UChar)c; a += 1; n -= 1; } \
-      while (n >= 4) \
-         { *(UInt*)a = c4; a += 4; n -= 4; } \
-      while (n >= 1) \
-         { *(UChar*)a = (UChar)c; a += 1; n -= 1; } \
-      return s; \
+      if (sizeof(void*) == 8) { \
+         Addr  a  = (Addr)s;   \
+         ULong c8 = (c & 0xFF); \
+         c8 = (c8 << 8) | c8; \
+         c8 = (c8 << 16) | c8; \
+         c8 = (c8 << 32) | c8; \
+         while ((a & 7) != 0 && n >= 1) \
+            { *(UChar*)a = (UChar)c; a += 1; n -= 1; } \
+         while (n >= 8) \
+            { *(ULong*)a = c8; a += 8; n -= 8; } \
+         while (n >= 1) \
+            { *(UChar*)a = (UChar)c; a += 1; n -= 1; } \
+         return s; \
+      } else { \
+         Addr a  = (Addr)s;   \
+         UInt c4 = (c & 0xFF); \
+         c4 = (c4 << 8) | c4; \
+         c4 = (c4 << 16) | c4; \
+         while ((a & 3) != 0 && n >= 1) \
+            { *(UChar*)a = (UChar)c; a += 1; n -= 1; } \
+         while (n >= 4) \
+            { *(UInt*)a = c4; a += 4; n -= 4; } \
+         while (n >= 1) \
+            { *(UChar*)a = (UChar)c; a += 1; n -= 1; } \
+         return s; \
+      } \
    }
 
 #if defined(VGO_linux)
@@ -1055,6 +1103,7 @@ static inline void my_exit ( int x )
    }
 
 #if defined(VGO_linux)
+ BCOPY(VG_Z_LIBC_SONAME, bcopy)
 
 #elif defined(VGO_darwin)
  //BCOPY(VG_Z_LIBC_SONAME, bcopy)
@@ -1459,8 +1508,8 @@ static inline void my_exit ( int x )
    SizeT VG_REPLACE_FUNCTION_EZU(20340,soname,fnname) \
          (const char* sV, const char* acceptV) \
    { \
-      UChar* s = (UChar*)sV; \
-      UChar* accept = (UChar*)acceptV; \
+      const UChar* s = (const UChar *)sV;        \
+      const UChar* accept = (const UChar *)acceptV;     \
       \
       /* find the length of 'accept', not including terminating zero */ \
       UWord nacc = 0; \
@@ -1570,6 +1619,114 @@ static inline void my_exit ( int x )
 
 #endif
 
+/*---------------------- wcscmp ----------------------*/
+
+// This is a wchar_t equivalent to strcmp.  We don't
+// have wchar_t available here, but in the GNU C Library
+// wchar_t is always 32 bits wide and wcscmp uses signed
+// comparison, not unsigned as in strcmp function.
+
+#define WCSCMP(soname, fnname) \
+   int VG_REPLACE_FUNCTION_EZU(20380,soname,fnname) \
+          ( const Int* s1, const Int* s2 ); \
+   int VG_REPLACE_FUNCTION_EZU(20380,soname,fnname) \
+          ( const Int* s1, const Int* s2 ) \
+   { \
+      register Int c1; \
+      register Int c2; \
+      while (True) { \
+         c1 = *s1; \
+         c2 = *s2; \
+         if (c1 != c2) break; \
+         if (c1 == 0) break; \
+         s1++; s2++; \
+      } \
+      if (c1 < c2) return -1; \
+      if (c1 > c2) return 1; \
+      return 0; \
+   }
+
+#if defined(VGO_linux)
+ WCSCMP(VG_Z_LIBC_SONAME,          wcscmp)
+#endif
+
+/*---------------------- wcscpy ----------------------*/
+
+// This is a wchar_t equivalent to strcpy.  We don't
+// have wchar_t available here, but in the GNU C Library
+// wchar_t is always 32 bits wide.
+
+#define WCSCPY(soname, fnname) \
+   Int* VG_REPLACE_FUNCTION_EZU(20390,soname,fnname) \
+      ( Int* dst, const Int* src ); \
+   Int* VG_REPLACE_FUNCTION_EZU(20390,soname,fnname) \
+      ( Int* dst, const Int* src ) \
+   { \
+      const Int* src_orig = src; \
+            Int* dst_orig = dst; \
+      \
+      while (*src) *dst++ = *src++; \
+      *dst = 0; \
+      \
+      /* This checks for overlap after copying, unavoidable without */ \
+      /* pre-counting length... should be ok */ \
+      if (is_overlap(dst_orig,  \
+                     src_orig,  \
+                     (Addr)dst-(Addr)dst_orig+1, \
+                     (Addr)src-(Addr)src_orig+1)) \
+         RECORD_OVERLAP_ERROR("wcscpy", dst_orig, src_orig, 0); \
+      \
+      return dst_orig; \
+   }
+
+#if defined(VGO_linux)
+ WCSCPY(VG_Z_LIBC_SONAME, wcscpy)
+#endif
+
+
+/*---------------------- wcschr ----------------------*/
+
+// This is a wchar_t equivalent to strchr.  We don't
+// have wchar_t available here, but in the GNU C Library
+// wchar_t is always 32 bits wide.
+
+#define WCSCHR(soname, fnname) \
+   Int* VG_REPLACE_FUNCTION_EZU(20400,soname,fnname) ( const Int* s, Int c ); \
+   Int* VG_REPLACE_FUNCTION_EZU(20400,soname,fnname) ( const Int* s, Int c ) \
+   { \
+      Int* p  = (Int*)s; \
+      while (True) { \
+         if (*p == c) return p; \
+         if (*p == 0) return NULL; \
+         p++; \
+      } \
+   }
+
+#if defined(VGO_linux)
+ WCSCHR(VG_Z_LIBC_SONAME,          wcschr)
+#endif
+/*---------------------- wcsrchr ----------------------*/
+
+// This is a wchar_t equivalent to strrchr.  We don't
+// have wchar_t available here, but in the GNU C Library
+// wchar_t is always 32 bits wide.
+
+#define WCSRCHR(soname, fnname) \
+   Int* VG_REPLACE_FUNCTION_EZU(20410,soname,fnname)( const Int* s, Int c ); \
+   Int* VG_REPLACE_FUNCTION_EZU(20410,soname,fnname)( const Int* s, Int c ) \
+   { \
+      Int* p    = (Int*) s; \
+      Int* last = NULL; \
+      while (True) { \
+         if (*p == c) last = p; \
+         if (*p == 0) return last; \
+         p++; \
+      } \
+   }
+
+#if defined(VGO_linux)
+ WCSRCHR(VG_Z_LIBC_SONAME, wcsrchr)
+#endif
 
 /*------------------------------------------------------------*/
 /*--- Improve definedness checking of process environment  ---*/

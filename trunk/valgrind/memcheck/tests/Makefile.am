@@ -43,6 +43,7 @@ dist_noinst_SCRIPTS = \
 	filter_allocs \
 	filter_leak_cases_possible \
 	filter_stderr filter_xml \
+	filter_strchr \
 	filter_varinfo3 \
 	filter_memcheck \
 	filter_memcpy
@@ -68,7 +69,8 @@ EXTRA_DIST = \
 	badrw.stderr.exp badrw.vgtest badrw.stderr.exp-s390x-mvc \
 	big_blocks_freed_list.stderr.exp big_blocks_freed_list.vgtest \
 	brk2.stderr.exp brk2.vgtest \
-	buflen_check.stderr.exp buflen_check.vgtest buflen_check.stderr.exp-kfail \
+	buflen_check.stderr.exp buflen_check.vgtest \
+		buflen_check.stderr.exp-kfail \
 	bug287260.stderr.exp bug287260.vgtest \
 	calloc-overflow.stderr.exp calloc-overflow.vgtest\
 	clientperm.stderr.exp \
@@ -77,7 +79,12 @@ EXTRA_DIST = \
 	clireq_nofill.stdout.exp clireq_nofill.vgtest \
 	clo_redzone_default.vgtest clo_redzone_128.vgtest \
 	clo_redzone_default.stderr.exp clo_redzone_128.stderr.exp \
-	custom_alloc.stderr.exp custom_alloc.vgtest custom_alloc.stderr.exp-s390x-mvc \
+	cond_ld.vgtest cond_ld.stdout.exp cond_ld-stderr.exp-arm \
+		cond_ld-stderr.exp-non-arm \
+	cond_st.vgtest cond_st.stdout.exp cond_st-stderr.exp-arm \
+		cond_st-stderr.exp-non-arm \
+	custom_alloc.stderr.exp custom_alloc.vgtest \
+		custom_alloc.stderr.exp-s390x-mvc \
 	custom-overlap.stderr.exp custom-overlap.vgtest \
 	deep-backtrace.vgtest deep-backtrace.stderr.exp \
 	deep_templates.vgtest \
@@ -116,6 +123,7 @@ EXTRA_DIST = \
 	leak-pool-5.vgtest leak-pool-5.stderr.exp \
 	leak-tree.vgtest leak-tree.stderr.exp \
 	leak-segv-jmp.vgtest leak-segv-jmp.stderr.exp \
+	lks.vgtest lks.stdout.exp lks.supp lks.stderr.exp \
 	long_namespace_xml.vgtest long_namespace_xml.stdout.exp \
 	long_namespace_xml.stderr.exp \
 	long-supps.vgtest long-supps.stderr.exp long-supps.supp \
@@ -124,10 +132,15 @@ EXTRA_DIST = \
 	malloc_free_fill.stderr.exp \
 	malloc_usable.stderr.exp malloc_usable.vgtest \
 	malloc1.stderr.exp malloc1.vgtest \
+	malloc1_ks_none.stderr.exp malloc1_ks_none.vgtest \
+	malloc1_ks_alloc.stderr.exp malloc1_ks_alloc.vgtest \
+	malloc1_ks_free.stderr.exp malloc1_ks_free.vgtest \
+	malloc1_ks_alloc_and_free.stderr.exp malloc1_ks_alloc_and_free.vgtest \
 	malloc2.stderr.exp malloc2.vgtest \
 	malloc3.stderr.exp malloc3.stdout.exp malloc3.vgtest \
 	manuel1.stderr.exp manuel1.stdout.exp manuel1.vgtest \
-	manuel2.stderr.exp manuel2.stderr.exp64 manuel2.stdout.exp manuel2.vgtest \
+	manuel2.stderr.exp manuel2.stderr.exp64 manuel2.stdout.exp \
+		manuel2.vgtest \
 	manuel3.stderr.exp manuel3.vgtest \
 	match-overrun.stderr.exp match-overrun.vgtest match-overrun.supp \
 	memalign_test.stderr.exp memalign_test.vgtest \
@@ -167,8 +180,10 @@ EXTRA_DIST = \
 	partiallydefinedeq.stderr.exp3 \
 	partiallydefinedeq.stderr.exp2 \
 	partiallydefinedeq.stdout.exp \
-	partial_load_ok.vgtest partial_load_ok.stderr.exp partial_load_ok.stderr.exp64 \
-	partial_load_dflt.vgtest partial_load_dflt.stderr.exp partial_load_dflt.stderr.exp64 \
+	partial_load_ok.vgtest partial_load_ok.stderr.exp \
+		partial_load_ok.stderr.exp64 \
+	partial_load_dflt.vgtest partial_load_dflt.stderr.exp \
+		partial_load_dflt.stderr.exp64 \
 	partial_load_dflt.stderr.expr-s390x-mvc \
 	pdb-realloc.stderr.exp pdb-realloc.vgtest \
 	pdb-realloc2.stderr.exp pdb-realloc2.stdout.exp pdb-realloc2.vgtest \
@@ -179,8 +194,10 @@ EXTRA_DIST = \
 	realloc1.stderr.exp realloc1.vgtest \
 	realloc2.stderr.exp realloc2.vgtest \
 	realloc3.stderr.exp realloc3.vgtest \
+	recursive-merge.stderr.exp recursive-merge.vgtest \
 	sbfragment.stdout.exp sbfragment.stderr.exp sbfragment.vgtest \
 	sem.stderr.exp sem.vgtest \
+	sendmsg.stderr.exp sendmsg.vgtest \
 	sh-mem.stderr.exp sh-mem.vgtest \
 	sh-mem-random.stderr.exp sh-mem-random.stdout.exp64 \
 	sh-mem-random.stdout.exp sh-mem-random.vgtest \
@@ -190,6 +207,7 @@ EXTRA_DIST = \
 	signal2.stderr.exp signal2.stdout.exp signal2.vgtest \
 	sigprocmask.stderr.exp sigprocmask.stderr.exp2 sigprocmask.vgtest \
 	static_malloc.stderr.exp static_malloc.vgtest \
+	stpncpy.vgtest stpncpy.stderr.exp stpncpy.stdout.exp \
 	strchr.stderr.exp strchr.stderr.exp2 strchr.stderr.exp-darwin \
 	    strchr.stderr.exp3 strchr.vgtest \
 	str_tester.stderr.exp str_tester.vgtest \
@@ -206,18 +224,26 @@ EXTRA_DIST = \
 	    test-plo-yes.stderr.exp-le64 test-plo-yes.stderr.exp-le32 \
 	    test-plo-no.stderr.exp-s390x-mvc \
 	trivialleak.stderr.exp trivialleak.vgtest trivialleak.stderr.exp2 \
+	undef_malloc_args.stderr.exp undef_malloc_args.vgtest \
 	unit_libcbase.stderr.exp unit_libcbase.vgtest \
 	unit_oset.stderr.exp unit_oset.stdout.exp unit_oset.vgtest \
-	varinfo1.vgtest varinfo1.stdout.exp varinfo1.stderr.exp varinfo1.stderr.exp-ppc64 \
-	varinfo2.vgtest varinfo2.stdout.exp varinfo2.stderr.exp varinfo2.stderr.exp-ppc64 \
-	varinfo3.vgtest varinfo3.stdout.exp varinfo3.stderr.exp varinfo3.stderr.exp-ppc64 \
-	varinfo4.vgtest varinfo4.stdout.exp varinfo4.stderr.exp varinfo4.stderr.exp-ppc64 \
-	varinfo5.vgtest varinfo5.stdout.exp varinfo5.stderr.exp varinfo5.stderr.exp-ppc64 \
-	varinfo6.vgtest varinfo6.stdout.exp varinfo6.stderr.exp varinfo6.stderr.exp-ppc64 \
+	varinfo1.vgtest varinfo1.stdout.exp varinfo1.stderr.exp \
+		varinfo1.stderr.exp-ppc64 \
+	varinfo2.vgtest varinfo2.stdout.exp varinfo2.stderr.exp \
+		varinfo2.stderr.exp-ppc64 \
+	varinfo3.vgtest varinfo3.stdout.exp varinfo3.stderr.exp \
+		varinfo3.stderr.exp-ppc64 \
+	varinfo4.vgtest varinfo4.stdout.exp varinfo4.stderr.exp \
+		varinfo4.stderr.exp-ppc64 \
+	varinfo5.vgtest varinfo5.stdout.exp varinfo5.stderr.exp \
+		varinfo5.stderr.exp-ppc64 \
+	varinfo6.vgtest varinfo6.stdout.exp varinfo6.stderr.exp \
+		varinfo6.stderr.exp-ppc64 \
 	vcpu_bz2.stdout.exp vcpu_bz2.stderr.exp vcpu_bz2.vgtest \
 	vcpu_fbench.stdout.exp vcpu_fbench.stderr.exp vcpu_fbench.vgtest \
 	vcpu_fnfns.stdout.exp vcpu_fnfns.stdout.exp-glibc28-amd64 \
 	vcpu_fnfns.stdout.exp-darwin vcpu_fnfns.stderr.exp vcpu_fnfns.vgtest \
+	wcs.vgtest wcs.stderr.exp wcs.stdout.exp \
 	wrap1.vgtest wrap1.stdout.exp wrap1.stderr.exp \
 	wrap2.vgtest wrap2.stdout.exp wrap2.stderr.exp \
 	wrap3.vgtest wrap3.stdout.exp wrap3.stderr.exp \
@@ -246,6 +272,7 @@ check_PROGRAMS = \
 	clientperm \
 	clireq_nofill \
 	clo_redzone \
+	cond_ld_st \
 	custom_alloc \
 	custom-overlap \
 	deep-backtrace \
@@ -282,7 +309,9 @@ check_PROGRAMS = \
 	pipe pointer-trace \
 	post-syscall \
 	realloc1 realloc2 realloc3 \
+	recursive-merge \
 	sbfragment \
+	sendmsg \
 	sh-mem sh-mem-random \
 	sigaltstack signal2 sigprocmask static_malloc sigkill \
 	strchr \
@@ -290,16 +319,22 @@ check_PROGRAMS = \
 	supp_unknown supp1 supp2 suppfree \
 	test-plo \
 	trivialleak \
+	undef_malloc_args \
 	unit_libcbase unit_oset \
 	varinfo1 varinfo2 varinfo3 varinfo4 \
 	varinfo5 varinfo5so.so varinfo6 \
 	vcpu_fbench vcpu_fnfns \
+	wcs \
 	xml1 \
 	wrap1 wrap2 wrap3 wrap4 wrap5 wrap6 wrap7 wrap7so.so wrap8 \
 	writev1
 
 if DWARF4
 check_PROGRAMS += dw4
+endif
+
+if HAVE_GNU_STPNCPY
+check_PROGRAMS += stpncpy
 endif
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)

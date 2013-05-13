@@ -427,6 +427,42 @@ static UInt local_sys_getpid ( void )
    return __res;
 }
 
+#elif defined(VGP_mips64_linux)
+static UInt local_sys_write_stderr ( const HChar* buf, Int n )
+{
+   volatile Long block[2];
+   block[0] = (Long)buf;
+   block[1] = n;
+   __asm__ volatile (
+      "li   $4, 2\n\t"      /* std output*/
+      "ld   $5, 0(%0)\n\t"  /*$5 = buf*/
+      "ld   $6, 8(%0)\n\t"  /*$6 = n */
+      "move $7, $0\n\t"
+      "li   $2, %1\n\t"     /* set v0 = __NR_write */
+      "\tsyscall\n"
+      "\tnop\n"
+      : /*wr*/
+      : /*rd*/  "r" (block), "n" (__NR_write)
+      : "2", "4", "5", "6", "7"
+   );
+   if (block[0] < 0)
+      block[0] = -1;
+   return (UInt)(Int)block[0];
+}
+ 
+static UInt local_sys_getpid ( void )
+{
+   ULong __res;
+   __asm__ volatile (
+      "li   $2, %1\n\t"  /* set v0 = __NR_getpid */
+      "syscall\n\t"      /* getpid() */
+      "nop\n\t"
+      "move  %0, $2\n"
+      : "=r" (__res)
+      : "n" (__NR_getpid)
+      : "$2" );
+   return (UInt)(__res);
+}
 
 #else
 # error Unknown platform
@@ -762,14 +798,14 @@ VG_(debugLog_vprintf) (
                i++;
                /* %pS, like %s but escaping chars for XML safety */
                /* Note: simplistic; ignores field width and flags */
-               HChar *str = va_arg (vargs, HChar *);
+               const HChar *str = va_arg (vargs, HChar *);
                if (str == NULL)
                   str = "(null)";
                ret += myvprintf_str_XML_simplistic(send, send_arg2, str);
             } else if (format[i+1] == 's') {
                i++;
                /* %ps, synonym for %s with --xml=no / %pS with --xml=yes */
-               HChar *str = va_arg (vargs, HChar *);
+               const HChar *str = va_arg (vargs, HChar *);
                if (str == NULL)
                   str = "(null)";
                if (clo_xml)
@@ -806,7 +842,7 @@ VG_(debugLog_vprintf) (
             send(va_arg (vargs, int), send_arg2);
             break;
          case 's': case 'S': { /* %s */
-            HChar *str = va_arg (vargs, HChar *);
+            const HChar *str = va_arg (vargs, HChar *);
             if (str == NULL) str = "(null)";
             ret += myvprintf_str(send, send_arg2, 
                                  flags, width, str, format[i]=='S');

@@ -311,7 +311,7 @@ static void init_alloc_fns(void)
    // Create the list, and add the default elements.
    alloc_fns = VG_(newXA)(VG_(malloc), "ms.main.iaf.1",
                                        VG_(free), sizeof(HChar*));
-   #define DO(x)  { HChar* s = x; VG_(addToXA)(alloc_fns, &s); }
+   #define DO(x)  { const HChar* s = x; VG_(addToXA)(alloc_fns, &s); }
 
    // Ordered roughly according to (presumed) frequency.
    // Nb: The C++ "operator new*" ones are overloadable.  We include them
@@ -361,7 +361,7 @@ static void init_ignore_fns(void)
 }
 
 // Determines if the named function is a member of the XArray.
-static Bool is_member_fn(XArray* fns, HChar* fnname)
+static Bool is_member_fn(XArray* fns, const HChar* fnname)
 {
    HChar** fn_ptr;
    Int i;
@@ -591,34 +591,12 @@ struct _SXPt {
 // parent node to all top-XPts.
 static XPt* alloc_xpt;
 
-// Cheap allocation for blocks that never need to be freed.  Saves about 10%
-// for Konqueror startup with --depth=40.
-static void* perm_malloc(SizeT n_bytes)
-{
-   static Addr hp     = 0;    // current heap pointer
-   static Addr hp_lim = 0;    // maximum usable byte in current block
-
-   #define SUPERBLOCK_SIZE  (1 << 20)         // 1 MB
-
-   if (hp + n_bytes > hp_lim) {
-      hp = (Addr)VG_(am_shadow_alloc)(SUPERBLOCK_SIZE);
-      if (0 == hp)
-         VG_(out_of_memory_NORETURN)( "massif:perm_malloc",
-                                      SUPERBLOCK_SIZE);
-      hp_lim = hp + SUPERBLOCK_SIZE - 1;
-   }
-
-   hp += n_bytes;
-
-   return (void*)(hp - n_bytes);
-}
-
 static XPt* new_XPt(Addr ip, XPt* parent)
 {
-   // XPts are never freed, so we can use perm_malloc to allocate them.
-   // Note that we cannot use perm_malloc for the 'children' array, because
+   // XPts are never freed, so we can use VG_(perm_malloc) to allocate them.
+   // Note that we cannot use VG_(perm_malloc) for the 'children' array, because
    // that needs to be resizable.
-   XPt* xpt    = perm_malloc(sizeof(XPt));
+   XPt* xpt    = VG_(perm_malloc)(sizeof(XPt), vg_alignof(XPt));
    xpt->ip     = ip;
    xpt->szB    = 0;
    xpt->parent = parent;
@@ -660,10 +638,10 @@ static void add_child_xpt(XPt* parent, XPt* child)
 }
 
 // Reverse comparison for a reverse sort -- biggest to smallest.
-static Int SXPt_revcmp_szB(void* n1, void* n2)
+static Int SXPt_revcmp_szB(const void* n1, const void* n2)
 {
-   SXPt* sxpt1 = *(SXPt**)n1;
-   SXPt* sxpt2 = *(SXPt**)n2;
+   const SXPt* sxpt1 = *(const SXPt *const *)n1;
+   const SXPt* sxpt2 = *(const SXPt *const *)n2;
    return ( sxpt1->szB < sxpt2->szB ?  1
           : sxpt1->szB > sxpt2->szB ? -1
           :                            0);
@@ -2172,7 +2150,7 @@ static void pp_snapshot_SXPt(Int fd, SXPt* sxpt, Int depth, HChar* depth_str,
    // of the stack frame -- this function is recursive.  Obviously this
    // now means its contents are trashed across the recursive call.
    static HChar ip_desc_array[BUF_LEN];
-   HChar* ip_desc = ip_desc_array;
+   const HChar* ip_desc = ip_desc_array;
 
    switch (sxpt->tag) {
     case SigSXPt:
@@ -2186,6 +2164,10 @@ static void pp_snapshot_SXPt(Int fd, SXPt* sxpt, Int depth, HChar* depth_str,
                );
          } else {
             // XXX: --alloc-fns?
+
+            // Nick thinks this case cannot happen. ip_desc_array would be
+            // conceptually uninitialised here. Therefore:
+            tl_assert2(0, "pp_snapshot_SXPt: unexpected");
          }
       } else {
          // If it's main-or-below-main, we (if appropriate) ignore everything
@@ -2198,7 +2180,7 @@ static void pp_snapshot_SXPt(Int fd, SXPt* sxpt, Int depth, HChar* depth_str,
          }
 
          // We need the -1 to get the line number right, But I'm not sure why.
-         ip_desc = VG_(describe_IP)(sxpt->Sig.ip-1, ip_desc, BUF_LEN);
+         ip_desc = VG_(describe_IP)(sxpt->Sig.ip-1, ip_desc_array, BUF_LEN);
       }
       
       // Do the non-ip_desc part first...

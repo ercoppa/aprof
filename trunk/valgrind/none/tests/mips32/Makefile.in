@@ -71,10 +71,12 @@ DIST_COMMON = $(dist_noinst_SCRIPTS) $(srcdir)/Makefile.am \
 @VGCONF_HAVE_PLATFORM_SEC_TRUE@am__append_2 = -DVGA_SEC_@VGCONF_ARCH_SEC@=1  \
 @VGCONF_HAVE_PLATFORM_SEC_TRUE@		-DVGP_SEC_@VGCONF_ARCH_PRI@_@VGCONF_OS@=1
 
-check_PROGRAMS = allexec$(EXEEXT) branches$(EXEEXT) \
-	FPUarithmetic$(EXEEXT) LoadStore$(EXEEXT) LoadStore1$(EXEEXT) \
-	MemCpyTest$(EXEEXT) MIPS32int$(EXEEXT) MoveIns$(EXEEXT) \
-	round$(EXEEXT) vfp$(EXEEXT) SignalException$(EXEEXT)
+@HAS_WRITE_STRINGS_WARNING_TRUE@am__append_3 = -Wno-write-strings
+check_PROGRAMS = allexec$(EXEEXT) block_size$(EXEEXT) \
+	branches$(EXEEXT) FPUarithmetic$(EXEEXT) LoadStore$(EXEEXT) \
+	LoadStore1$(EXEEXT) MemCpyTest$(EXEEXT) MIPS32int$(EXEEXT) \
+	MoveIns$(EXEEXT) round$(EXEEXT) vfp$(EXEEXT) \
+	SignalException$(EXEEXT)
 subdir = none/tests/mips32
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.in
@@ -110,6 +112,9 @@ allexec_OBJECTS = allexec-allexec.$(OBJEXT)
 allexec_LDADD = $(LDADD)
 allexec_LINK = $(CCLD) $(allexec_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
+block_size_SOURCES = block_size.c
+block_size_OBJECTS = block_size.$(OBJEXT)
+block_size_LDADD = $(LDADD)
 branches_SOURCES = branches.c
 branches_OBJECTS = branches.$(OBJEXT)
 branches_LDADD = $(LDADD)
@@ -129,11 +134,11 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = FPUarithmetic.c LoadStore.c LoadStore1.c MIPS32int.c \
-	MemCpyTest.c MoveIns.c SignalException.c allexec.c branches.c \
-	round.c vfp.c
+	MemCpyTest.c MoveIns.c SignalException.c allexec.c \
+	block_size.c branches.c round.c vfp.c
 DIST_SOURCES = FPUarithmetic.c LoadStore.c LoadStore1.c MIPS32int.c \
-	MemCpyTest.c MoveIns.c SignalException.c allexec.c branches.c \
-	round.c vfp.c
+	MemCpyTest.c MoveIns.c SignalException.c allexec.c \
+	block_size.c branches.c round.c vfp.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -156,7 +161,7 @@ CCAS = @CCAS@
 CCASDEPMODE = @CCASDEPMODE@
 CCASFLAGS = @CCASFLAGS@
 CCDEPMODE = @CCDEPMODE@
-CFLAGS = @CFLAGS@
+CFLAGS = @CFLAGS@ $(am__append_3)
 CFLAGS_MPI = @CFLAGS_MPI@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
@@ -179,6 +184,7 @@ FLAG_M64 = @FLAG_M64@
 FLAG_MMMX = @FLAG_MMMX@
 FLAG_MSSE = @FLAG_MSSE@
 FLAG_NO_BUILD_ID = @FLAG_NO_BUILD_ID@
+FLAG_T_TEXT = @FLAG_T_TEXT@
 FLAG_UNLIMITED_INLINE_UNIT_GROWTH = @FLAG_UNLIMITED_INLINE_UNIT_GROWTH@
 FLAG_W_EXTRA = @FLAG_W_EXTRA@
 FLAG_W_NO_EMPTY_BODY = @FLAG_W_NO_EMPTY_BODY@
@@ -377,6 +383,9 @@ AM_CCASFLAGS_S390X_LINUX = @FLAG_M64@ -g -mzarch -march=z900
 AM_FLAG_M3264_MIPS32_LINUX = @FLAG_M32@
 AM_CFLAGS_MIPS32_LINUX = @FLAG_M32@ $(AM_CFLAGS_BASE) -mips32
 AM_CCASFLAGS_MIPS32_LINUX = @FLAG_M32@ -mips32 -g
+AM_FLAG_M3264_MIPS64_LINUX = @FLAG_M64@
+AM_CFLAGS_MIPS64_LINUX = @FLAG_M64@ $(AM_CFLAGS_BASE) -mips64
+AM_CCASFLAGS_MIPS64_LINUX = @FLAG_M64@ -mips64 -g
 
 # Flags for the primary target.  These must be used to build the
 # regtests and performance tests.  In fact, these must be used to
@@ -403,6 +412,7 @@ PRELOAD_LDFLAGS_X86_DARWIN = $(PRELOAD_LDFLAGS_COMMON_DARWIN) -arch i386
 PRELOAD_LDFLAGS_AMD64_DARWIN = $(PRELOAD_LDFLAGS_COMMON_DARWIN) -arch x86_64
 PRELOAD_LDFLAGS_S390X_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M64@
 PRELOAD_LDFLAGS_MIPS32_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M32@
+PRELOAD_LDFLAGS_MIPS64_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M64@
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
 	-I$(top_srcdir)/coregrind -I$(top_builddir)/include \
 	-I$(top_srcdir)/VEX/pub -DVGA_@VGCONF_ARCH_PRI@=1 \
@@ -420,6 +430,7 @@ AM_CCASFLAGS = $(AM_CPPFLAGS) @FLAG_M32@
 @VGCONF_OS_IS_DARWIN_TRUE@noinst_DSYMS = $(check_PROGRAMS)
 dist_noinst_SCRIPTS = filter_stderr
 EXTRA_DIST = \
+	block_size.stdout.exp block_size.stderr.exp block_size.vgtest \
 	branches.stdout.exp branches.stderr.exp branches.vgtest \
 	FPUarithmetic.stdout.exp FPUarithmetic.stdout.exp-mips32 \
 	FPUarithmetic.stderr.exp FPUarithmetic.vgtest \
@@ -499,6 +510,9 @@ SignalException$(EXEEXT): $(SignalException_OBJECTS) $(SignalException_DEPENDENC
 allexec$(EXEEXT): $(allexec_OBJECTS) $(allexec_DEPENDENCIES) $(EXTRA_allexec_DEPENDENCIES) 
 	@rm -f allexec$(EXEEXT)
 	$(allexec_LINK) $(allexec_OBJECTS) $(allexec_LDADD) $(LIBS)
+block_size$(EXEEXT): $(block_size_OBJECTS) $(block_size_DEPENDENCIES) $(EXTRA_block_size_DEPENDENCIES) 
+	@rm -f block_size$(EXEEXT)
+	$(LINK) $(block_size_OBJECTS) $(block_size_LDADD) $(LIBS)
 branches$(EXEEXT): $(branches_OBJECTS) $(branches_DEPENDENCIES) $(EXTRA_branches_DEPENDENCIES) 
 	@rm -f branches$(EXEEXT)
 	$(LINK) $(branches_OBJECTS) $(branches_LDADD) $(LIBS)
@@ -523,6 +537,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MoveIns.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SignalException.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/allexec-allexec.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/block_size.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/branches.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/round.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vfp.Po@am__quote@

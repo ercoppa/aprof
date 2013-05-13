@@ -41,6 +41,7 @@ EXTRA_DIST =                                        \
 	annotate_smart_pointer.stderr.exp	    \
 	annotate_smart_pointer.vgtest		    \
 	annotate_smart_pointer2.stderr.exp	    \
+	annotate_smart_pointer2.stderr.exp-darwin   \
 	annotate_smart_pointer2.vgtest		    \
 	annotate_spinlock.stderr.exp		    \
 	annotate_spinlock.vgtest		    \
@@ -156,6 +157,8 @@ EXTRA_DIST =                                        \
 	pth_cancel_locked.vgtest		    \
 	pth_cleanup_handler.stderr.exp		    \
 	pth_cleanup_handler.vgtest		    \
+	pth_cond_destroy_busy.stderr.exp            \
+	pth_cond_destroy_busy.vgtest                \
 	pth_cond_race.stderr.exp                    \
 	pth_cond_race.vgtest                        \
 	pth_cond_race2.stderr.exp                   \
@@ -315,6 +318,7 @@ check_PROGRAMS =      \
   pth_broadcast       \
   pth_cancel_locked   \
   pth_cleanup_handler \
+  pth_cond_destroy_busy \
   pth_cond_race       \
   pth_create_chain    \
   pth_detached        \
@@ -330,7 +334,6 @@ check_PROGRAMS =      \
   rwlock_type_checking \
   sem_as_mutex        \
   sem_open            \
-  sem_wait            \
   sigalrm             \
   thread_name         \
   threaded-fork       \
@@ -381,6 +384,10 @@ endif
 
 if HAVE_PTHREAD_SPINLOCK
 check_PROGRAMS += pth_spinlock
+endif
+
+if !VGCONF_OS_IS_DARWIN
+check_PROGRAMS += sem_wait
 endif
 
 

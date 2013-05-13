@@ -584,6 +584,7 @@ void ppIROp ( IROp op )
       case Iop_Reverse64_32x2: vex_printf("Reverse64_32x2"); return;
       case Iop_Abs32Fx2: vex_printf("Abs32Fx2"); return;
       case Iop_GetMSBs8x8: vex_printf("GetMSBs8x8"); return;
+      case Iop_GetMSBs8x16: vex_printf("GetMSBs8x16"); return;
 
       case Iop_CmpNEZ32x2: vex_printf("CmpNEZ32x2"); return;
       case Iop_CmpNEZ16x4: vex_printf("CmpNEZ16x4"); return;
@@ -964,12 +965,30 @@ void ppIROp ( IROp op )
       case Iop_DivD64:  vex_printf("DivD64");   return;
       case Iop_ShlD64:  vex_printf("ShlD64"); return;
       case Iop_ShrD64:  vex_printf("ShrD64"); return;
+      case Iop_D64toI32S:  vex_printf("D64toI32S");  return;
+      case Iop_D64toI32U:  vex_printf("D64toI32U");  return;
       case Iop_D64toI64S:  vex_printf("D64toI64S");  return;
+      case Iop_D64toI64U:  vex_printf("D64toI64U");  return;
+      case Iop_I32StoD64:  vex_printf("I32StoD64");  return;
+      case Iop_I32UtoD64:  vex_printf("I32UtoD64");  return;
       case Iop_I64StoD64:  vex_printf("I64StoD64");  return;
+      case Iop_I64UtoD64:  vex_printf("I64UtoD64");  return;
+      case Iop_I32StoD128: vex_printf("I32StoD128"); return;
+      case Iop_I32UtoD128: vex_printf("I32UtoD128"); return;
       case Iop_I64StoD128: vex_printf("I64StoD128"); return;
+      case Iop_I64UtoD128: vex_printf("I64UtoD128"); return;
       case Iop_D64toD128:  vex_printf("D64toD128");  return;
       case Iop_D128toD64:  vex_printf("D128toD64");  return;
+      case Iop_D128toI32S: vex_printf("D128toI32S"); return;
+      case Iop_D128toI32U: vex_printf("D128toI32U"); return;
       case Iop_D128toI64S: vex_printf("D128toI64S"); return;
+      case Iop_D128toI64U: vex_printf("D128toI64U"); return;
+      case Iop_F64toD64:   vex_printf("F64toD64");   return;
+      case Iop_D64toF64:   vex_printf("D64toF64");   return;
+      case Iop_F64toD128:  vex_printf("F64toD128");  return;
+      case Iop_D128toF64:  vex_printf("D128toF64");  return;
+      case Iop_F128toD128: vex_printf("F128toD128"); return;
+      case Iop_D128toF128: vex_printf("D128toF128"); return;
       case Iop_AddD128: vex_printf("AddD128");  return;
       case Iop_SubD128: vex_printf("SubD128");  return;
       case Iop_MulD128: vex_printf("MulD128");  return;
@@ -982,13 +1001,17 @@ void ppIROp ( IROp op )
       case Iop_QuantizeD128:   vex_printf("Iop_QuantizeD128");   return;
       case Iop_ExtractExpD64:  vex_printf("Iop_ExtractExpD64");  return;
       case Iop_ExtractExpD128: vex_printf("Iop_ExtractExpD128"); return;
+      case Iop_ExtractSigD64:  vex_printf("Iop_ExtractSigD64");  return;
+      case Iop_ExtractSigD128: vex_printf("Iop_ExtractSigD128"); return;
       case Iop_InsertExpD64:   vex_printf("Iop_InsertExpD64");   return;
       case Iop_InsertExpD128:  vex_printf("Iop_InsertExpD128");  return;
-      case Iop_CmpD64:         vex_printf("CmpD64");    return;
-      case Iop_CmpD128:        vex_printf("CmpD128");   return;
-      case Iop_D64HLtoD128: vex_printf("D64HLtoD128");  return;
-      case Iop_D128HItoD64: vex_printf("D128HItoD64");  return;
-      case Iop_D128LOtoD64: vex_printf("D128LOtoD64");  return;
+      case Iop_CmpD64:         vex_printf("CmpD64");     return;
+      case Iop_CmpD128:        vex_printf("CmpD128");    return;
+      case Iop_CmpExpD64:      vex_printf("CmpExpD64");  return;
+      case Iop_CmpExpD128:     vex_printf("CmpExpD128"); return;
+      case Iop_D64HLtoD128: vex_printf("D64HLtoD128");   return;
+      case Iop_D128HItoD64: vex_printf("D128HItoD64");   return;
+      case Iop_D128LOtoD64: vex_printf("D128LOtoD64");   return;
       case Iop_SignificanceRoundD64: vex_printf("Iop_SignificanceRoundD64");
          return;
       case Iop_SignificanceRoundD128: vex_printf("Iop_SignificanceRoundD128");
@@ -1019,6 +1042,68 @@ void ppIROp ( IROp op )
       case Iop_NotV256: vex_printf("NotV256"); return;
       case Iop_CmpNEZ64x4: vex_printf("CmpNEZ64x4"); return;
       case Iop_CmpNEZ32x8: vex_printf("CmpNEZ32x8"); return;
+      case Iop_CmpNEZ16x16: vex_printf("CmpNEZ16x16"); return;
+      case Iop_CmpNEZ8x32: vex_printf("CmpNEZ8x32"); return;
+
+      case Iop_Add8x32:   vex_printf("Add8x32"); return;
+      case Iop_Add16x16:  vex_printf("Add16x16"); return;
+      case Iop_Add32x8:   vex_printf("Add32x8"); return;
+      case Iop_Add64x4:   vex_printf("Add64x4"); return;
+      case Iop_Sub8x32:   vex_printf("Sub8x32"); return;
+      case Iop_Sub16x16:  vex_printf("Sub16x16"); return;
+      case Iop_Sub32x8:   vex_printf("Sub32x8"); return;
+      case Iop_Sub64x4:   vex_printf("Sub64x4"); return;
+      case Iop_QAdd8Ux32: vex_printf("QAdd8Ux32"); return;
+      case Iop_QAdd16Ux16: vex_printf("QAdd16Ux16"); return;
+      case Iop_QAdd8Sx32: vex_printf("QAdd8Sx32"); return;
+      case Iop_QAdd16Sx16: vex_printf("QAdd16Sx16"); return;
+      case Iop_QSub8Ux32: vex_printf("QSub8Ux32"); return;
+      case Iop_QSub16Ux16: vex_printf("QSub16Ux16"); return;
+      case Iop_QSub8Sx32: vex_printf("QSub8Sx32"); return;
+      case Iop_QSub16Sx16: vex_printf("QSub16Sx16"); return;
+
+      case Iop_Mul16x16:    vex_printf("Mul16x16"); return;
+      case Iop_Mul32x8:     vex_printf("Mul32x8"); return;
+      case Iop_MulHi16Ux16: vex_printf("MulHi16Ux16"); return;
+      case Iop_MulHi16Sx16: vex_printf("MulHi16Sx16"); return;
+
+      case Iop_Avg8Ux32:  vex_printf("Avg8Ux32"); return;
+      case Iop_Avg16Ux16: vex_printf("Avg16Ux16"); return;
+
+      case Iop_Max8Sx32:  vex_printf("Max8Sx32"); return;
+      case Iop_Max16Sx16: vex_printf("Max16Sx16"); return;
+      case Iop_Max32Sx8:  vex_printf("Max32Sx8"); return;
+      case Iop_Max8Ux32:  vex_printf("Max8Ux32"); return;
+      case Iop_Max16Ux16: vex_printf("Max16Ux16"); return;
+      case Iop_Max32Ux8:  vex_printf("Max32Ux8"); return;
+
+      case Iop_Min8Sx32:  vex_printf("Min8Sx32"); return;
+      case Iop_Min16Sx16: vex_printf("Min16Sx16"); return;
+      case Iop_Min32Sx8:  vex_printf("Min32Sx8"); return;
+      case Iop_Min8Ux32:  vex_printf("Min8Ux32"); return;
+      case Iop_Min16Ux16: vex_printf("Min16Ux16"); return;
+      case Iop_Min32Ux8:  vex_printf("Min32Ux8"); return;
+
+      case Iop_CmpEQ8x32:   vex_printf("CmpEQ8x32"); return;
+      case Iop_CmpEQ16x16:  vex_printf("CmpEQ16x16"); return;
+      case Iop_CmpEQ32x8:   vex_printf("CmpEQ32x8"); return;
+      case Iop_CmpEQ64x4:   vex_printf("CmpEQ64x4"); return;
+      case Iop_CmpGT8Sx32:  vex_printf("CmpGT8Sx32"); return;
+      case Iop_CmpGT16Sx16: vex_printf("CmpGT16Sx16"); return;
+      case Iop_CmpGT32Sx8:  vex_printf("CmpGT32Sx8"); return;
+      case Iop_CmpGT64Sx4:  vex_printf("CmpGT64Sx4"); return;
+
+      case Iop_ShlN16x16:  vex_printf("ShlN16x16"); return;
+      case Iop_ShlN32x8:   vex_printf("ShlN32x8"); return;
+      case Iop_ShlN64x4:   vex_printf("ShlN64x4"); return;
+      case Iop_ShrN16x16:  vex_printf("ShrN16x16"); return;
+      case Iop_ShrN32x8:   vex_printf("ShrN32x8"); return;
+      case Iop_ShrN64x4:   vex_printf("ShrN64x4"); return;
+      case Iop_SarN16x16:  vex_printf("SarN16x16"); return;
+      case Iop_SarN32x8:   vex_printf("SarN32x8"); return;
+
+      case Iop_Perm32x8:   vex_printf("Perm32x8"); return;
+
       default: vpanic("ppIROp(1)");
    }
 
@@ -1115,13 +1200,13 @@ void ppIRExpr ( IRExpr* e )
       vex_printf("):");
       ppIRType(e->Iex.CCall.retty);
       break;
-    case Iex_Mux0X:
-      vex_printf("Mux0X(");
-      ppIRExpr(e->Iex.Mux0X.cond);
+    case Iex_ITE:
+      vex_printf("ITE(");
+      ppIRExpr(e->Iex.ITE.cond);
       vex_printf(",");
-      ppIRExpr(e->Iex.Mux0X.expr0);
+      ppIRExpr(e->Iex.ITE.iftrue);
       vex_printf(",");
-      ppIRExpr(e->Iex.Mux0X.exprX);
+      ppIRExpr(e->Iex.ITE.iffalse);
       vex_printf(")");
       break;
     default:
@@ -1217,6 +1302,42 @@ void ppIRPutI ( IRPutI* puti )
    ppIRExpr(puti->data);
 }
 
+void ppIRStoreG ( IRStoreG* sg )
+{
+   vex_printf("if (");
+   ppIRExpr(sg->guard);
+   vex_printf(") ST%s(", sg->end==Iend_LE ? "le" : "be");
+   ppIRExpr(sg->addr);
+   vex_printf(") = ");
+   ppIRExpr(sg->data);
+}
+
+void ppIRLoadGOp ( IRLoadGOp cvt )
+{
+   switch (cvt) {
+      case ILGop_INVALID: vex_printf("ILGop_INVALID"); break;      
+      case ILGop_Ident32: vex_printf("Ident32"); break;      
+      case ILGop_16Uto32: vex_printf("16Uto32"); break;      
+      case ILGop_16Sto32: vex_printf("16Sto32"); break;      
+      case ILGop_8Uto32:  vex_printf("8Uto32"); break;      
+      case ILGop_8Sto32:  vex_printf("8Sto32"); break;      
+      default: vpanic("ppIRLoadGOp");
+   }
+}
+
+void ppIRLoadG ( IRLoadG* lg )
+{
+   ppIRTemp(lg->dst);
+   vex_printf(" = if-strict (");
+   ppIRExpr(lg->guard);
+   vex_printf(") ");
+   ppIRLoadGOp(lg->cvt);
+   vex_printf("(LD%s(", lg->end==Iend_LE ? "le" : "be");
+   ppIRExpr(lg->addr);
+   vex_printf(")) else ");
+   ppIRExpr(lg->alt);
+}
+
 void ppIRJumpKind ( IRJumpKind kind )
 {
    switch (kind) {
@@ -1297,6 +1418,12 @@ void ppIRStmt ( IRStmt* s )
          ppIRExpr(s->Ist.Store.addr);
          vex_printf( ") = ");
          ppIRExpr(s->Ist.Store.data);
+         break;
+      case Ist_StoreG:
+         ppIRStoreG(s->Ist.StoreG.details);
+         break;
+      case Ist_LoadG:
+         ppIRLoadG(s->Ist.LoadG.details);
          break;
       case Ist_CAS:
          ppIRCAS(s->Ist.CAS.details);
@@ -1585,12 +1712,12 @@ IRExpr* IRExpr_CCall ( IRCallee* cee, IRType retty, IRExpr** args ) {
    e->Iex.CCall.args  = args;
    return e;
 }
-IRExpr* IRExpr_Mux0X ( IRExpr* cond, IRExpr* expr0, IRExpr* exprX ) {
+IRExpr* IRExpr_ITE ( IRExpr* cond, IRExpr* iftrue, IRExpr* iffalse ) {
    IRExpr* e          = LibVEX_Alloc(sizeof(IRExpr));
-   e->tag             = Iex_Mux0X;
-   e->Iex.Mux0X.cond  = cond;
-   e->Iex.Mux0X.expr0 = expr0;
-   e->Iex.Mux0X.exprX = exprX;
+   e->tag             = Iex_ITE;
+   e->Iex.ITE.cond    = cond;
+   e->Iex.ITE.iftrue  = iftrue;
+   e->Iex.ITE.iffalse = iffalse;
    return e;
 }
 
@@ -1738,6 +1865,33 @@ IRPutI* mkIRPutI ( IRRegArray* descr, IRExpr* ix,
 }
 
 
+/* Constructors -- IRStoreG and IRLoadG */
+
+IRStoreG* mkIRStoreG ( IREndness end,
+                       IRExpr* addr, IRExpr* data, IRExpr* guard )
+{
+   IRStoreG* sg = LibVEX_Alloc(sizeof(IRStoreG));
+   sg->end      = end;
+   sg->addr     = addr;
+   sg->data     = data;
+   sg->guard    = guard;
+   return sg;
+}
+
+IRLoadG* mkIRLoadG ( IREndness end, IRLoadGOp cvt,
+                     IRTemp dst, IRExpr* addr, IRExpr* alt, IRExpr* guard )
+{
+   IRLoadG* lg = LibVEX_Alloc(sizeof(IRLoadG));
+   lg->end     = end;
+   lg->cvt     = cvt;
+   lg->dst     = dst;
+   lg->addr    = addr;
+   lg->alt     = alt;
+   lg->guard   = guard;
+   return lg;
+}
+
+
 /* Constructors -- IRStmt */
 
 IRStmt* IRStmt_NoOp ( void )
@@ -1790,6 +1944,21 @@ IRStmt* IRStmt_Store ( IREndness end, IRExpr* addr, IRExpr* data ) {
    s->Ist.Store.addr = addr;
    s->Ist.Store.data = data;
    vassert(end == Iend_LE || end == Iend_BE);
+   return s;
+}
+IRStmt* IRStmt_StoreG ( IREndness end, IRExpr* addr, IRExpr* data,
+                        IRExpr* guard ) {
+   IRStmt* s             = LibVEX_Alloc(sizeof(IRStmt));
+   s->tag                = Ist_StoreG;
+   s->Ist.StoreG.details = mkIRStoreG(end, addr, data, guard);
+   vassert(end == Iend_LE || end == Iend_BE);
+   return s;
+}
+IRStmt* IRStmt_LoadG ( IREndness end, IRLoadGOp cvt, IRTemp dst,
+                       IRExpr* addr, IRExpr* alt, IRExpr* guard ) {
+   IRStmt* s            = LibVEX_Alloc(sizeof(IRStmt));
+   s->tag               = Ist_LoadG;
+   s->Ist.LoadG.details = mkIRLoadG(end, cvt, dst, addr, alt, guard);
    return s;
 }
 IRStmt* IRStmt_CAS ( IRCAS* cas ) {
@@ -1973,10 +2142,10 @@ IRExpr* deepCopyIRExpr ( IRExpr* e )
                              e->Iex.CCall.retty,
                              deepCopyIRExprVec(e->Iex.CCall.args));
 
-      case Iex_Mux0X: 
-         return IRExpr_Mux0X(deepCopyIRExpr(e->Iex.Mux0X.cond),
-                             deepCopyIRExpr(e->Iex.Mux0X.expr0),
-                             deepCopyIRExpr(e->Iex.Mux0X.exprX));
+      case Iex_ITE: 
+         return IRExpr_ITE(deepCopyIRExpr(e->Iex.ITE.cond),
+                           deepCopyIRExpr(e->Iex.ITE.iftrue),
+                           deepCopyIRExpr(e->Iex.ITE.iffalse));
       default:
          vpanic("deepCopyIRExpr");
    }
@@ -2043,6 +2212,20 @@ IRStmt* deepCopyIRStmt ( IRStmt* s )
          return IRStmt_Store(s->Ist.Store.end,
                              deepCopyIRExpr(s->Ist.Store.addr),
                              deepCopyIRExpr(s->Ist.Store.data));
+      case Ist_StoreG: {
+         IRStoreG* sg = s->Ist.StoreG.details;
+         return IRStmt_StoreG(sg->end,
+                              deepCopyIRExpr(sg->addr),
+                              deepCopyIRExpr(sg->data),
+                              deepCopyIRExpr(sg->guard));
+      }
+      case Ist_LoadG: {
+         IRLoadG* lg = s->Ist.LoadG.details;
+         return IRStmt_LoadG(lg->end, lg->cvt, lg->dst,
+                             deepCopyIRExpr(lg->addr),
+                             deepCopyIRExpr(lg->alt),
+                             deepCopyIRExpr(lg->guard));
+      }
       case Ist_CAS:
          return IRStmt_CAS(deepCopyIRCAS(s->Ist.CAS.details));
       case Ist_LLSC:
@@ -2299,7 +2482,9 @@ void typeOfPrimop ( IROp op,
       case Iop_Left16: UNARY(Ity_I16,Ity_I16);
       case Iop_CmpwNEZ32: case Iop_Left32: UNARY(Ity_I32,Ity_I32);
       case Iop_CmpwNEZ64: case Iop_Left64: UNARY(Ity_I64,Ity_I64);
-      case Iop_GetMSBs8x8: UNARY(Ity_I64, Ity_I8);
+
+      case Iop_GetMSBs8x8:  UNARY(Ity_I64, Ity_I8);
+      case Iop_GetMSBs8x16: UNARY(Ity_V128, Ity_I16);
 
       case Iop_MullU8: case Iop_MullS8:
          BINARY(Ity_I8,Ity_I8, Ity_I16);
@@ -2737,17 +2922,25 @@ void typeOfPrimop ( IROp op,
       case Iop_F128toF64: BINARY(ity_RMode,Ity_F128, Ity_F64);
 
       case Iop_D32toD64:
+         UNARY(Ity_D32, Ity_D64);
+
       case Iop_ExtractExpD64:
-         UNARY(Ity_D64, Ity_D64);
+         UNARY(Ity_D64, Ity_I64);
+
+      case Iop_ExtractSigD64:
+         UNARY(Ity_D64, Ity_I64);
 
       case Iop_InsertExpD64:
-         BINARY(Ity_D64,Ity_D64, Ity_D64);
+         BINARY(Ity_I64,Ity_D64, Ity_D64);
 
       case Iop_ExtractExpD128:
-         UNARY(Ity_D128, Ity_D64);
+         UNARY(Ity_D128, Ity_I64);
+
+      case Iop_ExtractSigD128:
+        UNARY(Ity_D128, Ity_I64);
 
       case Iop_InsertExpD128:
-         BINARY(Ity_D64,Ity_D128, Ity_D128);
+         BINARY(Ity_I64,Ity_D128, Ity_D128);
 
       case Iop_D64toD128:
          UNARY(Ity_D64, Ity_D128);
@@ -2764,8 +2957,15 @@ void typeOfPrimop ( IROp op,
       case Iop_RoundD128toInt:
          BINARY(ity_RMode,Ity_D128, Ity_D128);
 
-      case Iop_I64StoD128:    /* I64 bit pattern stored in Float register */
-         UNARY(Ity_D64, Ity_D128);
+      case Iop_I32StoD128:
+      case Iop_I32UtoD128:
+         UNARY(Ity_I32, Ity_D128);
+
+      case Iop_I64StoD128:
+         UNARY(Ity_I64, Ity_D128);
+
+      case Iop_I64UtoD128:
+         UNARY(Ity_I64, Ity_D128);
 
       case Iop_DPBtoBCD:
       case Iop_BCDtoDPB:
@@ -2776,7 +2976,14 @@ void typeOfPrimop ( IROp op,
          UNARY(Ity_D128, Ity_D64);
 
       case Iop_D128toI64S:
-         BINARY(ity_RMode, Ity_D128, Ity_D64);
+         BINARY(ity_RMode, Ity_D128, Ity_I64);
+
+      case Iop_D128toI64U:
+         BINARY(ity_RMode, Ity_D128, Ity_I64);
+
+      case Iop_D128toI32S:
+      case Iop_D128toI32U:
+         BINARY(ity_RMode, Ity_D128, Ity_I32);
 
       case Iop_D64HLtoD128:
          BINARY(Ity_D64, Ity_D64, Ity_D128);
@@ -2785,26 +2992,66 @@ void typeOfPrimop ( IROp op,
       case Iop_ShrD64:
          BINARY(Ity_D64, Ity_I8, Ity_D64 );
 
-      case Iop_D64toD32:  
-      case Iop_D64toI64S:
-         BINARY(ity_RMode, Ity_D64, Ity_D64);
+      case Iop_D64toD32:
+         BINARY(ity_RMode, Ity_D64, Ity_D32);
 
-      case Iop_I64StoD64:  /* I64 bit pattern stored in Float register */
-         BINARY(ity_RMode, Ity_D64, Ity_D64);
+      case Iop_D64toI32S:
+      case Iop_D64toI32U:
+         BINARY(ity_RMode, Ity_D64, Ity_I32);
+
+      case Iop_D64toI64S:
+         BINARY(ity_RMode, Ity_D64, Ity_I64);
+
+      case Iop_D64toI64U:
+         BINARY(ity_RMode, Ity_D64, Ity_I64);
+
+      case Iop_I32StoD64:
+      case Iop_I32UtoD64:
+         UNARY(Ity_I32, Ity_D64);
+
+      case Iop_I64StoD64:
+         BINARY(ity_RMode, Ity_I64, Ity_D64);
+
+      case Iop_I64UtoD64:
+         BINARY(ity_RMode, Ity_I64, Ity_D64);
+
+      case Iop_F64toD64:
+         BINARY(ity_RMode, Ity_F64, Ity_D64);
+
+      case Iop_D64toF64:
+         BINARY(ity_RMode, Ity_D64, Ity_F64);
+
+      case Iop_F64toD128:
+         BINARY(ity_RMode, Ity_F64, Ity_D128);
+
+      case Iop_D128toF64:
+         BINARY(ity_RMode, Ity_D128, Ity_F64);
+
+      case Iop_F128toD128:
+         BINARY(ity_RMode, Ity_F128, Ity_D128);
+
+      case Iop_D128toF128:
+         BINARY(ity_RMode, Ity_D128, Ity_F128);
 
       case Iop_CmpD64:
+      case Iop_CmpExpD64:
          BINARY(Ity_D64,Ity_D64, Ity_I32);
 
       case Iop_CmpD128:
+      case Iop_CmpExpD128:
          BINARY(Ity_D128,Ity_D128, Ity_I32);
 
       case Iop_QuantizeD64:
-      case Iop_SignificanceRoundD64:
          TERNARY(ity_RMode,Ity_D64,Ity_D64, Ity_D64);
 
+      case Iop_SignificanceRoundD64:
+         TERNARY(ity_RMode, Ity_I8,Ity_D64, Ity_D64);
+
       case Iop_QuantizeD128:
-      case Iop_SignificanceRoundD128:
          TERNARY(ity_RMode,Ity_D128,Ity_D128, Ity_D128);
+
+      case Iop_SignificanceRoundD128:
+         TERNARY(ity_RMode, Ity_I8,Ity_D128, Ity_D128);
 
       case Iop_ShlD128:
       case Iop_ShrD128:
@@ -2840,6 +3087,26 @@ void typeOfPrimop ( IROp op,
       case Iop_XorV256:
       case Iop_Max32Fx8: case Iop_Min32Fx8:
       case Iop_Max64Fx4: case Iop_Min64Fx4:
+      case Iop_Add8x32:  case Iop_Add16x16:
+      case Iop_Add32x8:  case Iop_Add64x4:
+      case Iop_Sub8x32:  case Iop_Sub16x16:
+      case Iop_Sub32x8:  case Iop_Sub64x4:
+      case Iop_Mul16x16: case Iop_Mul32x8:
+      case Iop_MulHi16Ux16: case Iop_MulHi16Sx16:
+      case Iop_Avg8Ux32: case Iop_Avg16Ux16:
+      case Iop_Max8Sx32: case Iop_Max16Sx16: case Iop_Max32Sx8:
+      case Iop_Max8Ux32: case Iop_Max16Ux16: case Iop_Max32Ux8:
+      case Iop_Min8Sx32: case Iop_Min16Sx16: case Iop_Min32Sx8:
+      case Iop_Min8Ux32: case Iop_Min16Ux16: case Iop_Min32Ux8:
+      case Iop_CmpEQ8x32:  case Iop_CmpEQ16x16:
+      case Iop_CmpEQ32x8:  case Iop_CmpEQ64x4:
+      case Iop_CmpGT8Sx32: case Iop_CmpGT16Sx16:
+      case Iop_CmpGT32Sx8: case Iop_CmpGT64Sx4:
+      case Iop_QAdd8Ux32: case Iop_QAdd16Ux16:
+      case Iop_QAdd8Sx32: case Iop_QAdd16Sx16:
+      case Iop_QSub8Ux32: case Iop_QSub16Ux16:
+      case Iop_QSub8Sx32: case Iop_QSub16Sx16:
+      case Iop_Perm32x8:
          BINARY(Ity_V256,Ity_V256, Ity_V256);
 
       case Iop_V256toV128_1: case Iop_V256toV128_0:
@@ -2853,8 +3120,16 @@ void typeOfPrimop ( IROp op,
       case Iop_Sqrt32Fx8:
       case Iop_Sqrt64Fx4:
       case Iop_Recip32Fx8:
+      case Iop_CmpNEZ8x32: case Iop_CmpNEZ16x16:
       case Iop_CmpNEZ64x4: case Iop_CmpNEZ32x8:
          UNARY(Ity_V256, Ity_V256);
+
+      case Iop_ShlN16x16: case Iop_ShlN32x8:
+      case Iop_ShlN64x4:
+      case Iop_ShrN16x16: case Iop_ShrN32x8:
+      case Iop_ShrN64x4:
+      case Iop_SarN16x16: case Iop_SarN32x8:
+         BINARY(Ity_V256,Ity_I8, Ity_V256);
 
       default:
          ppIROp(op);
@@ -2929,7 +3204,6 @@ IRType typeOfIRTemp ( IRTypeEnv* env, IRTemp tmp )
    return env->types[tmp];
 }
 
-
 IRType typeOfIRConst ( IRConst* con )
 {
    switch (con->tag) {
@@ -2945,6 +3219,21 @@ IRType typeOfIRConst ( IRConst* con )
       case Ico_V128:  return Ity_V128;
       case Ico_V256:  return Ity_V256;
       default: vpanic("typeOfIRConst");
+   }
+}
+
+void typeOfIRLoadGOp ( IRLoadGOp cvt,
+                       /*OUT*/IRType* t_res, /*OUT*/IRType* t_arg )
+{
+   switch (cvt) {
+      case ILGop_Ident32:
+         *t_res = Ity_I32; *t_arg = Ity_I32; break;
+      case ILGop_16Uto32: case ILGop_16Sto32:
+         *t_res = Ity_I32; *t_arg = Ity_I16; break;
+      case ILGop_8Uto32: case ILGop_8Sto32:
+         *t_res = Ity_I32; *t_arg = Ity_I8; break;
+      default:
+         vpanic("typeOfIRLoadGOp");
    }
 }
 
@@ -2981,10 +3270,10 @@ IRType typeOfIRExpr ( IRTypeEnv* tyenv, IRExpr* e )
          return t_dst;
       case Iex_CCall:
          return e->Iex.CCall.retty;
-      case Iex_Mux0X:
-         e = e->Iex.Mux0X.expr0;
+      case Iex_ITE:
+         e = e->Iex.ITE.iffalse;
          goto start;
-         /* return typeOfIRExpr(tyenv, e->Iex.Mux0X.expr0); */
+         /* return typeOfIRExpr(tyenv, e->Iex.ITE.iffalse); */
       case Iex_Binder:
          vpanic("typeOfIRExpr: Binder is not a valid expression");
       default:
@@ -3075,10 +3364,10 @@ Bool isFlatIRStmt ( IRStmt* st )
                                 if (!isIRAtom(e->Iex.CCall.args[i])) 
                                    return False;
                              return True;
-            case Iex_Mux0X:  return toBool (
-                                    isIRAtom(e->Iex.Mux0X.cond) 
-                                    && isIRAtom(e->Iex.Mux0X.expr0) 
-                                    && isIRAtom(e->Iex.Mux0X.exprX));
+            case Iex_ITE:    return toBool (
+                                    isIRAtom(e->Iex.ITE.cond) 
+                                    && isIRAtom(e->Iex.ITE.iftrue) 
+                                    && isIRAtom(e->Iex.ITE.iffalse));
             default:         vpanic("isFlatIRStmt(e)");
          }
          /*notreached*/
@@ -3086,6 +3375,16 @@ Bool isFlatIRStmt ( IRStmt* st )
       case Ist_Store:
          return toBool( isIRAtom(st->Ist.Store.addr) 
                         && isIRAtom(st->Ist.Store.data) );
+      case Ist_StoreG: {
+         IRStoreG* sg = st->Ist.StoreG.details;
+         return toBool( isIRAtom(sg->addr)
+                        && isIRAtom(sg->data) && isIRAtom(sg->guard) );
+      }
+      case Ist_LoadG: {
+         IRLoadG* lg = st->Ist.LoadG.details;
+         return toBool( isIRAtom(lg->addr)
+                        && isIRAtom(lg->alt) && isIRAtom(lg->guard) );
+      }
       case Ist_CAS:
          cas = st->Ist.CAS.details;
          return toBool( isIRAtom(cas->addr)
@@ -3245,10 +3544,10 @@ void useBeforeDef_Expr ( IRSB* bb, IRStmt* stmt, IRExpr* expr, Int* def_counts )
          for (i = 0; expr->Iex.CCall.args[i]; i++)
             useBeforeDef_Expr(bb,stmt,expr->Iex.CCall.args[i],def_counts);
          break;
-      case Iex_Mux0X:
-         useBeforeDef_Expr(bb,stmt,expr->Iex.Mux0X.cond,def_counts);
-         useBeforeDef_Expr(bb,stmt,expr->Iex.Mux0X.expr0,def_counts);
-         useBeforeDef_Expr(bb,stmt,expr->Iex.Mux0X.exprX,def_counts);
+      case Iex_ITE:
+         useBeforeDef_Expr(bb,stmt,expr->Iex.ITE.cond,def_counts);
+         useBeforeDef_Expr(bb,stmt,expr->Iex.ITE.iftrue,def_counts);
+         useBeforeDef_Expr(bb,stmt,expr->Iex.ITE.iffalse,def_counts);
          break;
       default:
          vpanic("useBeforeDef_Expr");
@@ -3258,10 +3557,12 @@ void useBeforeDef_Expr ( IRSB* bb, IRStmt* stmt, IRExpr* expr, Int* def_counts )
 static
 void useBeforeDef_Stmt ( IRSB* bb, IRStmt* stmt, Int* def_counts )
 {
-   Int      i;
-   IRDirty* d;
-   IRCAS*   cas;
-   IRPutI*  puti;
+   Int       i;
+   IRDirty*  d;
+   IRCAS*    cas;
+   IRPutI*   puti;
+   IRLoadG*  lg;
+   IRStoreG* sg;
    switch (stmt->tag) {
       case Ist_IMark:
          break;
@@ -3283,6 +3584,18 @@ void useBeforeDef_Stmt ( IRSB* bb, IRStmt* stmt, Int* def_counts )
       case Ist_Store:
          useBeforeDef_Expr(bb,stmt,stmt->Ist.Store.addr,def_counts);
          useBeforeDef_Expr(bb,stmt,stmt->Ist.Store.data,def_counts);
+         break;
+      case Ist_StoreG:
+         sg = stmt->Ist.StoreG.details;
+         useBeforeDef_Expr(bb,stmt,sg->addr,def_counts);
+         useBeforeDef_Expr(bb,stmt,sg->data,def_counts);
+         useBeforeDef_Expr(bb,stmt,sg->guard,def_counts);
+         break;
+      case Ist_LoadG:
+         lg = stmt->Ist.LoadG.details;
+         useBeforeDef_Expr(bb,stmt,lg->addr,def_counts);
+         useBeforeDef_Expr(bb,stmt,lg->alt,def_counts);
+         useBeforeDef_Expr(bb,stmt,lg->guard,def_counts);
          break;
       case Ist_CAS:
          cas = stmt->Ist.CAS.details;
@@ -3506,15 +3819,15 @@ void tcExpr ( IRSB* bb, IRStmt* stmt, IRExpr* expr, IRType gWordTy )
          if (!saneIRConst(expr->Iex.Const.con))
             sanityCheckFail(bb,stmt,"Iex.Const.con: invalid const");
          break;
-      case Iex_Mux0X:
-         tcExpr(bb,stmt, expr->Iex.Mux0X.cond, gWordTy);
-         tcExpr(bb,stmt, expr->Iex.Mux0X.expr0, gWordTy);
-         tcExpr(bb,stmt, expr->Iex.Mux0X.exprX, gWordTy);
-         if (typeOfIRExpr(tyenv, expr->Iex.Mux0X.cond) != Ity_I8)
-            sanityCheckFail(bb,stmt,"Iex.Mux0X.cond: cond :: Ity_I8");
-         if (typeOfIRExpr(tyenv, expr->Iex.Mux0X.expr0)
-             != typeOfIRExpr(tyenv, expr->Iex.Mux0X.exprX))
-            sanityCheckFail(bb,stmt,"Iex.Mux0X: expr0/exprX mismatch");
+      case Iex_ITE:
+         tcExpr(bb,stmt, expr->Iex.ITE.cond, gWordTy);
+         tcExpr(bb,stmt, expr->Iex.ITE.iftrue, gWordTy);
+         tcExpr(bb,stmt, expr->Iex.ITE.iffalse, gWordTy);
+         if (typeOfIRExpr(tyenv, expr->Iex.ITE.cond) != Ity_I1)
+            sanityCheckFail(bb,stmt,"Iex.ITE.cond: cond :: Ity_I1");
+         if (typeOfIRExpr(tyenv, expr->Iex.ITE.iftrue)
+             != typeOfIRExpr(tyenv, expr->Iex.ITE.iffalse))
+            sanityCheckFail(bb,stmt,"Iex.ITE: iftrue/iffalse mismatch");
          break;
        default: 
          vpanic("tcExpr");
@@ -3571,18 +3884,54 @@ void tcStmt ( IRSB* bb, IRStmt* stmt, IRType gWordTy )
          tcExpr( bb, stmt, stmt->Ist.WrTmp.data, gWordTy );
          if (typeOfIRTemp(tyenv, stmt->Ist.WrTmp.tmp)
              != typeOfIRExpr(tyenv, stmt->Ist.WrTmp.data))
-            sanityCheckFail(bb,stmt,"IRStmt.Put.Tmp: tmp and expr do not match");
+            sanityCheckFail(bb,stmt,
+                            "IRStmt.Put.Tmp: tmp and expr do not match");
          break;
       case Ist_Store:
          tcExpr( bb, stmt, stmt->Ist.Store.addr, gWordTy );
          tcExpr( bb, stmt, stmt->Ist.Store.data, gWordTy );
          if (typeOfIRExpr(tyenv, stmt->Ist.Store.addr) != gWordTy)
-            sanityCheckFail(bb,stmt,"IRStmt.Store.addr: not :: guest word type");
+            sanityCheckFail(bb,stmt,
+                            "IRStmt.Store.addr: not :: guest word type");
          if (typeOfIRExpr(tyenv, stmt->Ist.Store.data) == Ity_I1)
-            sanityCheckFail(bb,stmt,"IRStmt.Store.data: cannot Store :: Ity_I1");
+            sanityCheckFail(bb,stmt,
+                            "IRStmt.Store.data: cannot Store :: Ity_I1");
          if (stmt->Ist.Store.end != Iend_LE && stmt->Ist.Store.end != Iend_BE)
             sanityCheckFail(bb,stmt,"Ist.Store.end: bogus endianness");
          break;
+      case Ist_StoreG: {
+         IRStoreG* sg = stmt->Ist.StoreG.details;
+         tcExpr( bb, stmt, sg->addr, gWordTy );
+         tcExpr( bb, stmt, sg->data, gWordTy );
+         tcExpr( bb, stmt, sg->guard, gWordTy );
+         if (typeOfIRExpr(tyenv, sg->addr) != gWordTy)
+            sanityCheckFail(bb,stmt,"IRStmtG...addr: not :: guest word type");
+         if (typeOfIRExpr(tyenv, sg->data) == Ity_I1)
+            sanityCheckFail(bb,stmt,"IRStmtG...data: cannot Store :: Ity_I1");
+         if (typeOfIRExpr(tyenv, sg->guard) != Ity_I1)
+            sanityCheckFail(bb,stmt,"IRStmtG...guard: not :: Ity_I1");
+         if (sg->end != Iend_LE && sg->end != Iend_BE)
+            sanityCheckFail(bb,stmt,"IRStmtG...end: bogus endianness");
+         break;
+      }
+      case Ist_LoadG: {
+         IRLoadG* lg = stmt->Ist.LoadG.details;
+         tcExpr( bb, stmt, lg->addr, gWordTy );
+         tcExpr( bb, stmt, lg->alt, gWordTy );
+         tcExpr( bb, stmt, lg->guard, gWordTy );
+         if (typeOfIRExpr(tyenv, lg->guard) != Ity_I1)
+            sanityCheckFail(bb,stmt,"IRStmt.LoadG.guard: not :: Ity_I1");
+         if (typeOfIRExpr(tyenv, lg->addr) != gWordTy)
+              sanityCheckFail(bb,stmt,"IRStmt.LoadG.addr: not "
+                                      ":: guest word type");
+         if (typeOfIRExpr(tyenv, lg->alt) != typeOfIRTemp(tyenv, lg->dst))
+             sanityCheckFail(bb,stmt,"IRStmt.LoadG: dst/alt type mismatch");
+         IRTemp cvtRes = Ity_INVALID, cvtArg = Ity_INVALID;
+         typeOfIRLoadGOp(lg->cvt, &cvtRes, &cvtArg);
+         if (cvtRes != typeOfIRTemp(tyenv, lg->dst))
+            sanityCheckFail(bb,stmt,"IRStmt.LoadG: dst/loaded type mismatch");
+         break;
+      }
       case Ist_CAS:
          cas = stmt->Ist.CAS.details;
          /* make sure it's definitely either a CAS or a DCAS */
@@ -3692,15 +4041,6 @@ void tcStmt ( IRSB* bb, IRStmt* stmt, IRType gWordTy )
          tcExpr( bb, stmt, d->guard, gWordTy );
          if (typeOfIRExpr(tyenv, d->guard) != Ity_I1)
             sanityCheckFail(bb,stmt,"IRStmt.Dirty.guard not :: Ity_I1");
-         /* A dirty helper that is executed conditionally (or not at
-            all) may not return a value.  Hence if .tmp is not
-            IRTemp_INVALID, .guard must be manifestly True at JIT
-            time. */
-         if (d->tmp != IRTemp_INVALID
-             && (d->guard->tag != Iex_Const 
-                 || d->guard->Iex.Const.con->Ico.U1 == 0))
-            sanityCheckFail(bb,stmt,"IRStmt.Dirty with a return value"
-                            " is executed under a condition");
          /* check types, minimally */
          if (d->tmp != IRTemp_INVALID
              && typeOfIRTemp(tyenv, d->tmp) == Ity_I1)
@@ -3793,6 +4133,7 @@ void sanityCheckIRSB ( IRSB* bb,          const HChar* caller,
    for (i = 0; i < bb->stmts_used; i++) {
       IRDirty* d;
       IRCAS*   cas;
+      IRLoadG* lg;
       stmt = bb->stmts[i];
       /* Check any temps used by this statement. */
       useBeforeDef_Stmt(bb,stmt,def_counts);
@@ -3808,11 +4149,19 @@ void sanityCheckIRSB ( IRSB* bb,          const HChar* caller,
             sanityCheckFail(bb, stmt, 
                "IRStmt.Tmp: destination tmp is assigned more than once");
          break;
-      case Ist_Store:
+      case Ist_LoadG:
+         lg = stmt->Ist.LoadG.details;
+         if (lg->dst < 0 || lg->dst >= n_temps)
+             sanityCheckFail(bb, stmt, 
+                "IRStmt.LoadG: destination tmp is out of range");
+         def_counts[lg->dst]++;
+         if (def_counts[lg->dst] > 1)
+             sanityCheckFail(bb, stmt, 
+                "IRStmt.LoadG: destination tmp is assigned more than once");
          break;
       case Ist_Dirty:
-         if (stmt->Ist.Dirty.details->tmp != IRTemp_INVALID) {
-            d = stmt->Ist.Dirty.details;
+         d = stmt->Ist.Dirty.details;
+         if (d->tmp != IRTemp_INVALID) {
             if (d->tmp < 0 || d->tmp >= n_temps)
                sanityCheckFail(bb, stmt, 
                   "IRStmt.Dirty: destination tmp is out of range");

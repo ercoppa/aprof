@@ -155,7 +155,7 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
     #endif
    
     #if MEM_TRACE && IGNORE_REPEAT_ACC
-    HChar * helperNameA;
+    const HChar * helperNameA;
     void * helperAddrA;
     IRExpr * * argvA;
     IRDirty * diA;
@@ -302,8 +302,9 @@ IRSB* APROF_(instrument) (  VgCallbackClosure* closure,
                                         argvA );
                             addStmtToIRSB( sbOut, IRStmt_Dirty(diA) );
                         }
-                    }
-                    else if (d->mFx == Ifx_Write) {
+                        
+                    } else if (d->mFx == Ifx_Write) {
+                        
                         if (APROF_(do_access)(a)) {
                             helperNameA = "trace_store";
                             argvA = mkIRExprVec_4(    mkIRExpr_HWord(STORE),
@@ -673,7 +674,7 @@ static void APROF_(print_usage)(void) {
 static void APROF_(pre_clo_init)(void) {
 
     VG_(details_name)             ("aprof");
-    VG_(details_version)          ("0.2_alpha");
+    VG_(details_version)          (APROF_VERSION);
     VG_(details_description)      ("Input-sensitive Profiler - http://code.google.com/p/aprof/");
     VG_(details_copyright_author) ("by Emilio Coppa, Camil Demetrescu, Irene Finocchi, Romolo Marotta");
     VG_(details_bug_reports_to)   ("ercoppa@gmail.com");

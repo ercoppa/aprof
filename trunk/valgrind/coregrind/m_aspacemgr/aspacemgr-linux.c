@@ -1209,12 +1209,12 @@ NSegment const * VG_(am_find_nsegment) ( Addr a )
 
 /* Given a pointer to a seg, tries to figure out which one it is in
    nsegments[..].  Very paranoid. */
-static Int segAddr_to_index ( NSegment* seg )
+static Int segAddr_to_index ( const NSegment* seg )
 {
    Int i;
    if (seg < &nsegments[0] || seg >= &nsegments[nsegments_used])
       return -1;
-   i = ((UChar*)seg - (UChar*)(&nsegments[0])) / sizeof(NSegment);
+   i = ((const UChar*)seg - (const UChar*)(&nsegments[0])) / sizeof(NSegment);
    if (i < 0 || i >= nsegments_used)
       return -1;
    if (seg == &nsegments[i])
@@ -1225,7 +1225,7 @@ static Int segAddr_to_index ( NSegment* seg )
 
 /* Find the next segment along from 'here', if it is a file/anon/resvn
    segment. */
-NSegment const * VG_(am_next_nsegment) ( NSegment* here, Bool fwds )
+NSegment const * VG_(am_next_nsegment) ( const NSegment* here, Bool fwds )
 {
    Int i = segAddr_to_index(here);
    if (i < 0 || i >= nsegments_used)
@@ -1649,7 +1649,7 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
    aspacem_minAddr = (Addr) 0x04000000; // 64M
 
 #  if VG_WORDSIZE == 8
-     aspacem_maxAddr = (Addr)0x800000000 - 1; // 32G
+     aspacem_maxAddr = (Addr)0x1000000000ULL - 1; // 64G
 #    ifdef ENABLE_INNER
      { Addr cse = VG_PGROUNDDN( sp_at_startup ) - 1;
        if (aspacem_maxAddr > cse)
@@ -2533,7 +2533,7 @@ static SysRes VG_(am_mmap_file_float_valgrind_flags) ( SizeT length, UInt prot,
    /* Ask for an advisory.  If it's negative, fail immediately. */
    req.rkind = MAny;
    req.start = 0;
-   #if defined(VGA_arm) || defined(VGA_mips32)
+   #if defined(VGA_arm) || defined(VGA_mips32) || defined(VGA_mips64)
    aspacem_assert(VKI_SHMLBA >= VKI_PAGE_SIZE);
    #else
    aspacem_assert(VKI_SHMLBA == VKI_PAGE_SIZE);
@@ -2732,7 +2732,7 @@ Bool VG_(am_change_ownership_v_to_c)( Addr start, SizeT len )
    (is-client-heap) flag for that area.  Otherwise do nothing.
    (Bizarre interface so that the same code works for both Linux and
    AIX and does not impose inefficiencies on the Linux version.) */
-void VG_(am_set_segment_isCH_if_SkAnonC)( NSegment* seg )
+void VG_(am_set_segment_isCH_if_SkAnonC)( const NSegment* seg )
 {
    Int i = segAddr_to_index( seg );
    aspacem_assert(i >= 0 && i < nsegments_used);
@@ -2746,7 +2746,7 @@ void VG_(am_set_segment_isCH_if_SkAnonC)( NSegment* seg )
 /* Same idea as VG_(am_set_segment_isCH_if_SkAnonC), except set the
    segment's hasT bit (has-cached-code) if this is SkFileC or SkAnonC
    segment. */
-void VG_(am_set_segment_hasT_if_SkFileC_or_SkAnonC)( NSegment* seg )
+void VG_(am_set_segment_hasT_if_SkFileC_or_SkAnonC)( const NSegment* seg )
 {
    Int i = segAddr_to_index( seg );
    aspacem_assert(i >= 0 && i < nsegments_used);
@@ -2830,7 +2830,7 @@ Bool VG_(am_create_reservation) ( Addr start, SizeT length,
    the reservation segment after the operation must be at least one
    page long. */
 
-Bool VG_(am_extend_into_adjacent_reservation_client) ( NSegment* seg, 
+Bool VG_(am_extend_into_adjacent_reservation_client) ( const NSegment* seg, 
                                                        SSizeT    delta )
 {
    Int    segA, segR;
@@ -2943,7 +2943,7 @@ Bool VG_(am_extend_into_adjacent_reservation_client) ( NSegment* seg,
    immediately discard translations from the new area. */
 
 Bool VG_(am_extend_map_client)( /*OUT*/Bool* need_discard,
-                                NSegment* seg, SizeT delta )
+                                const NSegment* seg, SizeT delta )
 {
    Addr     xStart;
    SysRes   sres;

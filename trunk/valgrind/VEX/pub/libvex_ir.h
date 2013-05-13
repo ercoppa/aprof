@@ -218,7 +218,7 @@
    float, or a vector (SIMD) value. */
 typedef 
    enum { 
-      Ity_INVALID=0x11000,
+      Ity_INVALID=0x1100,
       Ity_I1, 
       Ity_I8, 
       Ity_I16, 
@@ -248,7 +248,7 @@ extern Int sizeofIRType ( IRType );
 /* IREndness is used in load IRExprs and store IRStmts. */
 typedef
    enum { 
-      Iend_LE=0x12000, /* little endian */
+      Iend_LE=0x1200, /* little endian */
       Iend_BE          /* big endian */
    }
    IREndness;
@@ -261,7 +261,7 @@ typedef
 /* The various kinds of constant. */
 typedef
    enum { 
-      Ico_U1=0x13000,
+      Ico_U1=0x1300,
       Ico_U8, 
       Ico_U16, 
       Ico_U32, 
@@ -412,7 +412,7 @@ typedef
       /* -- Do not change this ordering.  The IR generators rely on
             (eg) Iop_Add64 == IopAdd8 + 3. -- */
 
-      Iop_INVALID=0x14000,
+      Iop_INVALID=0x1400,
       Iop_Add8,  Iop_Add16,  Iop_Add32,  Iop_Add64,
       Iop_Sub8,  Iop_Sub16,  Iop_Sub32,  Iop_Sub64,
       /* Signless mul.  MullS/MullU is elsewhere. */
@@ -953,7 +953,6 @@ typedef
       Iop_InterleaveOddLanes8x8, Iop_InterleaveEvenLanes8x8,
       Iop_InterleaveOddLanes16x4, Iop_InterleaveEvenLanes16x4,
 
-
       /* CONCATENATION -- build a new value by concatenating either
          the even or odd lanes of both operands.  Note that
          Cat{Odd,Even}Lanes32x2 are identical to Interleave{HI,LO}32x2
@@ -1039,8 +1038,17 @@ typedef
       /*   D64 -> D128 */
       Iop_D64toD128, 
 
+      /*   I32S -> D128 */
+      Iop_I32StoD128,
+
+      /*   I32U -> D128 */
+      Iop_I32UtoD128,
+
       /*   I64S -> D128 */
       Iop_I64StoD128, 
+
+      /*   I64U -> D128 */
+      Iop_I64UtoD128,
 
       /*   IRRoundingModeDFP(I32) x D64 -> D32 */
       Iop_D64toD32,
@@ -1048,18 +1056,64 @@ typedef
       /*   IRRoundingModeDFP(I32) x D128 -> D64 */
       Iop_D128toD64,
 
+      /*   I32S -> D64 */
+      Iop_I32StoD64,
+
+      /*   I32U -> D64 */
+      Iop_I32UtoD64,
+
       /*   IRRoundingModeDFP(I32) x I64 -> D64 */
       Iop_I64StoD64,
+
+      /*   IRRoundingModeDFP(I32) x I64 -> D64 */
+      Iop_I64UtoD64,
+
+      /*   IRRoundingModeDFP(I32) x D64 -> I32 */
+      Iop_D64toI32S,
+
+      /*   IRRoundingModeDFP(I32) x D64 -> I32 */
+      Iop_D64toI32U,
 
       /*   IRRoundingModeDFP(I32) x D64 -> I64 */
       Iop_D64toI64S,
 
+      /*   IRRoundingModeDFP(I32) x D64 -> I64 */
+      Iop_D64toI64U,
+
+      /*   IRRoundingModeDFP(I32) x D128 -> I32 */
+      Iop_D128toI32S,
+
+      /*   IRRoundingModeDFP(I32) x D128 -> I32 */
+      Iop_D128toI32U,
+
       /*   IRRoundingModeDFP(I32) x D128 -> I64 */
       Iop_D128toI64S,
 
+      /*   IRRoundingModeDFP(I32) x D128 -> I64 */
+      Iop_D128toI64U,
+
+      /*   IRRoundingModeDFP(I32) x F64 -> D64 */
+      Iop_F64toD64,
+
+      /*   IRRoundingModeDFP(I32) x D64 -> F64 */
+      Iop_D64toF64,
+
+      /*   IRRoundingModeDFP(I32) x F64 -> D128 */
+      Iop_F64toD128,
+
+      /*   IRRoundingModeDFP(I32) x D128 -> F64 */
+      Iop_D128toF64,
+
+      /*   IRRoundingModeDFP(I32) x F128 -> D128 */
+      Iop_F128toD128,
+
+      /*   IRRoundingModeDFP(I32) x D128 -> F128 */
+      Iop_D128toF128,
+
       /* ROUNDING INSTRUCTIONS
        * IRRoundingMode(I32) x D64 -> D64
-       * The D64 operand, if a finite number, is rounded to an integer value.
+       * The D64 operand, if a finite number, it is rounded to a
+       * floating point integer value, i.e. no fractional part.
        */
       Iop_RoundD64toInt,
 
@@ -1070,8 +1124,15 @@ typedef
        * D64 x D64 -> IRCmpD64Result(I32) */
       Iop_CmpD64,
 
-      /* D128 x D128 -> IRCmpD64Result(I32) */
+      /* D128 x D128 -> IRCmpD128Result(I32) */
       Iop_CmpD128,
+
+      /* COMPARE BIASED EXPONENET INSTRUCTIONS
+       * D64 x D64 -> IRCmpD64Result(I32) */
+      Iop_CmpExpD64,
+
+      /* D128 x D128 -> IRCmpD128Result(I32) */
+      Iop_CmpExpD128,
 
       /* QUANTIZE AND ROUND INSTRUCTIONS
        * The source operand is converted and rounded to the form with the 
@@ -1107,7 +1168,16 @@ typedef
       /* D128 -> I64 */
       Iop_ExtractExpD128,
 
-      /* I64 x I64  -> D64 
+      /* D64 -> I64
+       * The number of significand digits of the D64 operand is extracted.
+       * The number is stored as a 64-bit signed binary integer.
+       */
+      Iop_ExtractSigD64,
+
+      /* D128 -> I64 */
+      Iop_ExtractSigD128,
+
+      /* I64 x D64  -> D64
        *    The exponent is specified by the first I64 operand the signed
        *    significand is given by the second I64 value.  The result is a D64
        *    value consisting of the specified significand and exponent whose 
@@ -1115,7 +1185,7 @@ typedef
        */
       Iop_InsertExpD64,
 
-      /* I64 x I128 -> D128 */
+      /* I64 x D128 -> D128 */
       Iop_InsertExpD128,
 
       /* Support for 128-bit DFP type */
@@ -1178,7 +1248,6 @@ typedef
          Note, that of one of the arguments is zero and another one is infiinty
          of arbitrary sign the result of the operation is 1.5. */
       Iop_Rsqrts32Fx4,
-
 
       /* --- Int to/from FP conversion --- */
       /* Unlike the standard fp conversions, these irops take no
@@ -1433,6 +1502,10 @@ typedef
       Iop_Perm8x16,
       Iop_Perm32x4, /* ditto, except argR values are restricted to 0 .. 3 */
 
+      /* MISC CONVERSION -- get high bits of each byte lane, a la
+         x86/amd64 pmovmskb */
+      Iop_GetMSBs8x16, /* V128 -> I16 */
+
       /* Vector Reciprocal Estimate and Vector Reciprocal Square Root Estimate
          See floating-point equiwalents for details. */
       Iop_Recip32x4, Iop_Rsqrte32x4,
@@ -1458,7 +1531,34 @@ typedef
       Iop_NotV256,
 
       /* MISC (vector integer cmp != 0) */
-      Iop_CmpNEZ32x8, Iop_CmpNEZ64x4,
+      Iop_CmpNEZ8x32, Iop_CmpNEZ16x16, Iop_CmpNEZ32x8, Iop_CmpNEZ64x4,
+
+      Iop_Add8x32,    Iop_Add16x16,    Iop_Add32x8,    Iop_Add64x4,
+      Iop_Sub8x32,    Iop_Sub16x16,    Iop_Sub32x8,    Iop_Sub64x4,
+
+      Iop_CmpEQ8x32,  Iop_CmpEQ16x16,  Iop_CmpEQ32x8,  Iop_CmpEQ64x4,
+      Iop_CmpGT8Sx32, Iop_CmpGT16Sx16, Iop_CmpGT32Sx8, Iop_CmpGT64Sx4,
+
+      Iop_ShlN16x16, Iop_ShlN32x8, Iop_ShlN64x4,
+      Iop_ShrN16x16, Iop_ShrN32x8, Iop_ShrN64x4,
+      Iop_SarN16x16, Iop_SarN32x8,
+
+      Iop_Max8Sx32, Iop_Max16Sx16, Iop_Max32Sx8,
+      Iop_Max8Ux32, Iop_Max16Ux16, Iop_Max32Ux8,
+      Iop_Min8Sx32, Iop_Min16Sx16, Iop_Min32Sx8,
+      Iop_Min8Ux32, Iop_Min16Ux16, Iop_Min32Ux8,
+
+      Iop_Mul16x16, Iop_Mul32x8,
+      Iop_MulHi16Ux16, Iop_MulHi16Sx16,
+
+      Iop_QAdd8Ux32, Iop_QAdd16Ux16,
+      Iop_QAdd8Sx32, Iop_QAdd16Sx16,
+      Iop_QSub8Ux32, Iop_QSub16Ux16,
+      Iop_QSub8Sx32, Iop_QSub16Sx16,
+
+      Iop_Avg8Ux32, Iop_Avg16Ux16,
+
+      Iop_Perm32x8,
 
       /* ------------------ 256-bit SIMD FP. ------------------ */
       Iop_Add64Fx4,
@@ -1519,7 +1619,7 @@ typedef
    }
    IRRoundingModeDFP;
 
-/* Floating point comparison result values, as created by Iop_CmpF64.
+/* Binary floating point comparison result values.
    This is also derived from what IA32 does. */
 typedef
    enum {
@@ -1528,10 +1628,16 @@ typedef
       Ircr_GT = 0x00,
       Ircr_EQ = 0x40
    }
-   IRCmpF64Result;
+   IRCmpFResult;
 
-typedef IRCmpF64Result IRCmpF32Result;
-typedef IRCmpF64Result IRCmpF128Result;
+typedef IRCmpFResult IRCmpF32Result;
+typedef IRCmpFResult IRCmpF64Result;
+typedef IRCmpFResult IRCmpF128Result;
+
+/* Decimal floating point result values. */
+typedef IRCmpFResult IRCmpDResult;
+typedef IRCmpDResult IRCmpD64Result;
+typedef IRCmpDResult IRCmpD128Result;
 
 /* ------------------ Expressions ------------------ */
 
@@ -1543,7 +1649,7 @@ typedef struct _IRTriop IRTriop; /* forward declaration */
    in the comments for IRExpr. */
 typedef
    enum { 
-      Iex_Binder=0x15000,
+      Iex_Binder=0x1900,
       Iex_Get,
       Iex_GetI,
       Iex_RdTmp,
@@ -1553,7 +1659,7 @@ typedef
       Iex_Unop,
       Iex_Load,
       Iex_Const,
-      Iex_Mux0X,
+      Iex_ITE,
       Iex_CCall
    }
    IRExprTag;
@@ -1737,22 +1843,22 @@ struct _IRExpr {
          IRExpr**  args;   /* Vector of argument expressions. */
       }  CCall;
 
-      /* A ternary if-then-else operator.  It returns expr0 if cond is
-         zero, exprX otherwise.  Note that it is STRICT, ie. both
-         expr0 and exprX are evaluated in all cases.
+      /* A ternary if-then-else operator.  It returns iftrue if cond is
+         nonzero, iffalse otherwise.  Note that it is STRICT, ie. both
+         iftrue and iffalse are evaluated in all cases.
 
-         ppIRExpr output: Mux0X(<cond>,<expr0>,<exprX>),
-                         eg. Mux0X(t6,t7,t8)
+         ppIRExpr output: ITE(<cond>,<iftrue>,<iffalse>),
+                         eg. ITE(t6,t7,t8)
       */
       struct {
          IRExpr* cond;     /* Condition */
-         IRExpr* expr0;    /* True expression */
-         IRExpr* exprX;    /* False expression */
-      } Mux0X;
+         IRExpr* iftrue;   /* True expression */
+         IRExpr* iffalse;  /* False expression */
+      } ITE;
    } Iex;
 };
 
-/* ------------------ A ternary expression ---------------------- */
+/* Expression auxiliaries: a ternary expression. */
 struct _IRTriop {
    IROp op;          /* op-code   */
    IRExpr* arg1;     /* operand 1 */
@@ -1760,7 +1866,7 @@ struct _IRTriop {
    IRExpr* arg3;     /* operand 3 */
 };
 
-/* ------------------ A quarternary expression ------------------ */
+/* Expression auxiliaries: a quarternary expression. */
 struct _IRQop {
    IROp op;          /* op-code   */
    IRExpr* arg1;     /* operand 1 */
@@ -1783,7 +1889,7 @@ extern IRExpr* IRExpr_Unop   ( IROp op, IRExpr* arg );
 extern IRExpr* IRExpr_Load   ( IREndness end, IRType ty, IRExpr* addr );
 extern IRExpr* IRExpr_Const  ( IRConst* con );
 extern IRExpr* IRExpr_CCall  ( IRCallee* cee, IRType retty, IRExpr** args );
-extern IRExpr* IRExpr_Mux0X  ( IRExpr* cond, IRExpr* expr0, IRExpr* exprX );
+extern IRExpr* IRExpr_ITE    ( IRExpr* cond, IRExpr* iftrue, IRExpr* iffalse );
 
 /* Deep-copy an IRExpr. */
 extern IRExpr* deepCopyIRExpr ( IRExpr* );
@@ -1865,7 +1971,7 @@ extern Bool eqIRAtom ( IRExpr*, IRExpr* );
 */
 typedef
    enum {
-      Ijk_INVALID=0x16000, 
+      Ijk_INVALID=0x1A00, 
       Ijk_Boring,         /* not interesting; just goto next */
       Ijk_Call,           /* guest is doing a call */
       Ijk_Ret,            /* guest is doing a return */
@@ -1912,19 +2018,20 @@ extern void ppIRJumpKind ( IRJumpKind );
 
    Dirty calls are statements rather than expressions for obvious
    reasons.  If a dirty call is marked as writing guest state, any
-   values derived from the written parts of the guest state are
-   invalid.  Similarly, if the dirty call is stated as writing
-   memory, any loaded values are invalidated by it.
+   pre-existing values derived from the written parts of the guest
+   state are invalid.  Similarly, if the dirty call is stated as
+   writing memory, any pre-existing loaded values are invalidated by
+   it.
 
    In order that instrumentation is possible, the call must state, and
    state correctly:
 
-   * whether it reads, writes or modifies memory, and if so where
-     (only one chunk can be stated)
+   * Whether it reads, writes or modifies memory, and if so where.
 
-   * whether it reads, writes or modifies guest state, and if so which
-     pieces (several pieces may be stated, and currently their extents
-     must be known at translation-time).
+   * Whether it reads, writes or modifies guest state, and if so which
+     pieces.  Several pieces may be stated, and their extents must be
+     known at translation-time.  Each piece is allowed to repeat some
+     number of times at a fixed interval, if required.
 
    Normally, code is generated to pass just the args to the helper.
    However, if .needsBBP is set, then an extra first argument is
@@ -1934,9 +2041,11 @@ extern void ppIRJumpKind ( IRJumpKind );
    call does not access guest state.
 
    IMPORTANT NOTE re GUARDS: Dirty calls are strict, very strict.  The
-   arguments are evaluated REGARDLESS of the guard value.  The order of
-   argument evaluation is unspecified. The guard expression is evaluated
-   AFTER the arguments have been evaluated.
+   arguments and 'mFx' are evaluated REGARDLESS of the guard value.
+   The order of argument evaluation is unspecified.  The guard
+   expression is evaluated AFTER the arguments and 'mFx' have been
+   evaluated.  'mFx' is expected (by Memcheck) to be a defined value
+   even if the guard evaluates to false.
 */
 
 #define VEX_N_FXSTATE  7   /* enough for FXSAVE/FXRSTOR on x86 */
@@ -1944,7 +2053,7 @@ extern void ppIRJumpKind ( IRJumpKind );
 /* Effects on resources (eg. registers, memory locations) */
 typedef
    enum {
-      Ifx_None = 0x1700,    /* no effect */
+      Ifx_None=0x1B00,      /* no effect */
       Ifx_Read,             /* reads the resource */
       Ifx_Write,            /* writes the resource */
       Ifx_Modify,           /* modifies the resource */
@@ -1954,14 +2063,13 @@ typedef
 /* Pretty-print an IREffect */
 extern void ppIREffect ( IREffect );
 
-
 typedef
    struct _IRDirty {
       /* What to call, and details of args/results.  .guard must be
-         non-NULL.  If .tmp is not IRTemp_INVALID (that is, the call
-         returns a result) then .guard must be demonstrably (at
-         JIT-time) always true, that is, the call must be
-         unconditional.  Conditional calls that assign .tmp are not
+         non-NULL.  If .tmp is not IRTemp_INVALID, then the call
+         returns a result which is placed in .tmp.  If at runtime the
+         guard evaluates to false, .tmp has an 0x555..555 bit pattern
+         written to it.  Hence conditional calls that assign .tmp are
          allowed. */
       IRCallee* cee;    /* where to call */
       IRExpr*   guard;  /* :: Ity_Bit.  Controls whether call happens */
@@ -2031,7 +2139,7 @@ IRDirty* unsafeIRDirty_1_N ( IRTemp dst,
 
 typedef
    enum { 
-      Imbe_Fence=0x18000, 
+      Imbe_Fence=0x1C00, 
       /* Needed only on ARM.  It cancels a reservation made by a
          preceding Linked-Load, and needs to be handed through to the
          back end, just as LL and SC themselves are. */
@@ -2131,6 +2239,7 @@ extern IRCAS* deepCopyIRCAS ( IRCAS* );
 
 
 /* ------------------ Circular Array Put ------------------ */
+
 typedef
    struct {
       IRRegArray* descr; /* Part of guest state treated as circular */
@@ -2147,6 +2256,85 @@ extern IRPutI* mkIRPutI ( IRRegArray* descr, IRExpr* ix,
 extern IRPutI* deepCopyIRPutI ( IRPutI* );
 
 
+/* --------------- Guarded loads and stores --------------- */
+
+/* Conditional stores are straightforward.  They are the same as
+   normal stores, with an extra 'guard' field :: Ity_I1 that
+   determines whether or not the store actually happens.  If not,
+   memory is unmodified.
+
+   The semantics of this is that 'addr' and 'data' are fully evaluated
+   even in the case where 'guard' evaluates to zero (false).
+*/
+typedef
+   struct {
+      IREndness end;    /* Endianness of the store */
+      IRExpr*   addr;   /* store address */
+      IRExpr*   data;   /* value to write */
+      IRExpr*   guard;  /* Guarding value */
+   }
+   IRStoreG;
+
+/* Conditional loads are a little more complex.  'addr' is the
+   address, 'guard' is the guarding condition.  If the load takes
+   place, the loaded value is placed in 'dst'.  If it does not take
+   place, 'alt' is copied to 'dst'.  However, the loaded value is not
+   placed directly in 'dst' -- it is first subjected to the conversion
+   specified by 'cvt'.
+
+   For example, imagine doing a conditional 8-bit load, in which the
+   loaded value is zero extended to 32 bits.  Hence:
+   * 'dst' and 'alt' must have type I32
+   * 'cvt' must be a unary op which converts I8 to I32.  In this 
+     example, it would be ILGop_8Uto32.
+
+   There is no explicit indication of the type at which the load is
+   done, since that is inferrable from the arg type of 'cvt'.  Note
+   that the types of 'alt' and 'dst' and the result type of 'cvt' must
+   all be the same.
+
+   Semantically, 'addr' is evaluated even in the case where 'guard'
+   evaluates to zero (false), and 'alt' is evaluated even when 'guard'
+   evaluates to one (true).  That is, 'addr' and 'alt' are always
+   evaluated.
+*/
+typedef
+   enum {
+      ILGop_INVALID=0x1D00,
+      ILGop_Ident32,   /* 32 bit, no conversion */
+      ILGop_16Uto32,   /* 16 bit load, Z-widen to 32 */
+      ILGop_16Sto32,   /* 16 bit load, S-widen to 32 */
+      ILGop_8Uto32,    /* 8 bit load, Z-widen to 32 */
+      ILGop_8Sto32     /* 8 bit load, S-widen to 32 */
+   }
+   IRLoadGOp;
+
+typedef
+   struct {
+      IREndness end;    /* Endianness of the load */
+      IRLoadGOp cvt;    /* Conversion to apply to the loaded value */
+      IRTemp    dst;    /* Destination (LHS) of assignment */
+      IRExpr*   addr;   /* Address being loaded from */
+      IRExpr*   alt;    /* Value if load is not done. */
+      IRExpr*   guard;  /* Guarding value */
+   }
+   IRLoadG;
+
+extern void ppIRStoreG ( IRStoreG* sg );
+
+extern void ppIRLoadGOp ( IRLoadGOp cvt );
+
+extern void ppIRLoadG ( IRLoadG* lg );
+
+extern IRStoreG* mkIRStoreG ( IREndness end,
+                              IRExpr* addr, IRExpr* data,
+                              IRExpr* guard );
+
+extern IRLoadG* mkIRLoadG ( IREndness end, IRLoadGOp cvt,
+                            IRTemp dst, IRExpr* addr, IRExpr* alt, 
+                            IRExpr* guard );
+
+
 /* ------------------ Statements ------------------ */
 
 /* The different kinds of statements.  Their meaning is explained
@@ -2161,17 +2349,19 @@ extern IRPutI* deepCopyIRPutI ( IRPutI* );
 
 typedef 
    enum {
-      Ist_NoOp=0x19000,
+      Ist_NoOp=0x1E00,
       Ist_IMark,     /* META */
       Ist_AbiHint,   /* META */
       Ist_Put,
       Ist_PutI,
       Ist_WrTmp,
       Ist_Store,
+      Ist_LoadG,
+      Ist_StoreG,
       Ist_CAS,
       Ist_LLSC,
       Ist_Dirty,
-      Ist_MBE,       /* META (maybe) */
+      Ist_MBE,
       Ist_Exit
    } 
    IRStmtTag;
@@ -2287,6 +2477,24 @@ typedef
             IRExpr*   addr;   /* store address */
             IRExpr*   data;   /* value to write */
          } Store;
+
+         /* Guarded store.  Note that this is defined to evaluate all
+            expression fields (addr, data) even if the guard evaluates
+            to false.
+            ppIRStmt output:
+              if (<guard>) ST<end>(<addr>) = <data> */
+         struct {
+            IRStoreG* details;
+         } StoreG;
+
+         /* Guarded load.  Note that this is defined to evaluate all
+            expression fields (addr, alt) even if the guard evaluates
+            to false.
+            ppIRStmt output:
+              t<tmp> = if (<guard>) <cvt>(LD<end>(<addr>)) else <alt> */
+         struct {
+            IRLoadG* details;
+         } LoadG;
 
          /* Do an atomic compare-and-swap operation.  Semantics are
             described above on a comment at the definition of IRCAS.
@@ -2407,6 +2615,10 @@ extern IRStmt* IRStmt_Put     ( Int off, IRExpr* data );
 extern IRStmt* IRStmt_PutI    ( IRPutI* details );
 extern IRStmt* IRStmt_WrTmp   ( IRTemp tmp, IRExpr* data );
 extern IRStmt* IRStmt_Store   ( IREndness end, IRExpr* addr, IRExpr* data );
+extern IRStmt* IRStmt_StoreG  ( IREndness end, IRExpr* addr, IRExpr* data,
+                                IRExpr* guard );
+extern IRStmt* IRStmt_LoadG   ( IREndness end, IRLoadGOp cvt, IRTemp dst,
+                                IRExpr* addr, IRExpr* alt, IRExpr* guard );
 extern IRStmt* IRStmt_CAS     ( IRCAS* details );
 extern IRStmt* IRStmt_LLSC    ( IREndness end, IRTemp result,
                                 IRExpr* addr, IRExpr* storedata );
@@ -2503,6 +2715,11 @@ extern IRTypeEnv* emptyIRTypeEnv  ( void );
 extern IRType typeOfIRConst ( IRConst* );
 extern IRType typeOfIRTemp  ( IRTypeEnv*, IRTemp );
 extern IRType typeOfIRExpr  ( IRTypeEnv*, IRExpr* );
+
+/* What are the arg and result type for this IRLoadGOp? */
+extern void typeOfIRLoadGOp ( IRLoadGOp cvt,
+                              /*OUT*/IRType* t_res,
+                              /*OUT*/IRType* t_arg );
 
 /* Sanity check a BB of IR */
 extern void sanityCheckIRSB ( IRSB*  bb, 

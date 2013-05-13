@@ -167,10 +167,10 @@ static void ocache_sarp_Clear_Origins ( Addr, UWord ); /* fwds */
 
 #else
 
-/* Just handle the first 32G fast and the rest via auxiliary
+/* Just handle the first 64G fast and the rest via auxiliary
    primaries.  If you change this, Memcheck will assert at startup.
    See the definition of UNALIGNED_OR_HIGH for extensive comments. */
-#  define N_PRIMARY_BITS  19
+#  define N_PRIMARY_BITS  20
 
 #endif
 
@@ -1622,10 +1622,16 @@ void make_mem_undefined_w_tid_and_okind ( Addr a, SizeT len,
 }
 
 static
-void make_mem_undefined_w_tid ( Addr a, SizeT len, ThreadId tid ) {
+void mc_new_mem_w_tid_make_ECU  ( Addr a, SizeT len, ThreadId tid )
+{
    make_mem_undefined_w_tid_and_okind ( a, len, tid, MC_OKIND_UNKNOWN );
 }
 
+static
+void mc_new_mem_w_tid_no_ECU  ( Addr a, SizeT len, ThreadId tid )
+{
+   MC_(make_mem_undefined_w_otag) ( a, len, MC_OKIND_UNKNOWN );
+}
 
 void MC_(make_mem_defined) ( Addr a, SizeT len )
 {
@@ -4825,21 +4831,24 @@ static Bool mc_expensive_sanity_check ( void )
 /*--- Command line args                                    ---*/
 /*------------------------------------------------------------*/
 
+
 Bool          MC_(clo_partial_loads_ok)       = False;
 Long          MC_(clo_freelist_vol)           = 20*1000*1000LL;
 Long          MC_(clo_freelist_big_blocks)    =  1*1000*1000LL;
 LeakCheckMode MC_(clo_leak_check)             = LC_Summary;
 VgRes         MC_(clo_leak_resolution)        = Vg_HighRes;
-Bool          MC_(clo_show_reachable)         = False;
-Bool          MC_(clo_show_possibly_lost)     = True;
+UInt          MC_(clo_show_leak_kinds)        = R2S(Possible) | R2S(Unreached);
+UInt          MC_(clo_error_for_leak_kinds)   = R2S(Possible) | R2S(Unreached);
 Bool          MC_(clo_workaround_gcc296_bugs) = False;
 Int           MC_(clo_malloc_fill)            = -1;
 Int           MC_(clo_free_fill)              = -1;
+KeepStacktraces MC_(clo_keep_stacktraces)     = KS_alloc_then_free;
 Int           MC_(clo_mc_level)               = 2;
 
 static Bool mc_process_cmd_line_options(const HChar* arg)
 {
    const HChar* tmp_str;
+   Int   tmp_show;
 
    tl_assert( MC_(clo_mc_level) >= 1 && MC_(clo_mc_level) <= 3 );
 
@@ -4879,10 +4888,29 @@ static Bool mc_process_cmd_line_options(const HChar* arg)
       }
    }
 
-	if VG_BOOL_CLO(arg, "--partial-loads-ok", MC_(clo_partial_loads_ok)) {}
-   else if VG_BOOL_CLO(arg, "--show-reachable",   MC_(clo_show_reachable))   {}
-   else if VG_BOOL_CLO(arg, "--show-possibly-lost",
-                                            MC_(clo_show_possibly_lost))     {}
+        if VG_BOOL_CLO(arg, "--partial-loads-ok", MC_(clo_partial_loads_ok)) {}
+   else if VG_STR_CLO(arg, "--errors-for-leak-kinds" , tmp_str) {
+      if (!MC_(parse_leak_kinds)(tmp_str, &MC_(clo_error_for_leak_kinds)))
+         return False;
+   }
+   else if VG_STR_CLO(arg, "--show-leak-kinds", tmp_str) {
+      if (!MC_(parse_leak_kinds)(tmp_str, &MC_(clo_show_leak_kinds)))
+         return False;
+   }
+   else if (VG_BOOL_CLO(arg, "--show-reachable", tmp_show)) {
+      if (tmp_show) {
+         MC_(clo_show_leak_kinds) = RallS;
+      } else {
+         MC_(clo_show_leak_kinds) &= ~R2S(Reachable);
+      }
+   }
+   else if VG_BOOL_CLO(arg, "--show-possibly-lost", tmp_show) {
+      if (tmp_show) {
+         MC_(clo_show_leak_kinds) |= R2S(Possible);
+      } else {
+         MC_(clo_show_leak_kinds) &= ~R2S(Possible);
+      }
+   }
    else if VG_BOOL_CLO(arg, "--workaround-gcc296-bugs",
                                             MC_(clo_workaround_gcc296_bugs)) {}
 
@@ -4940,6 +4968,17 @@ static Bool mc_process_cmd_line_options(const HChar* arg)
    else if VG_BHEX_CLO(arg, "--malloc-fill", MC_(clo_malloc_fill), 0x00,0xFF) {}
    else if VG_BHEX_CLO(arg, "--free-fill",   MC_(clo_free_fill),   0x00,0xFF) {}
 
+   else if VG_XACT_CLO(arg, "--keep-stacktraces=alloc",
+                       MC_(clo_keep_stacktraces), KS_alloc) {}
+   else if VG_XACT_CLO(arg, "--keep-stacktraces=free",
+                       MC_(clo_keep_stacktraces), KS_free) {}
+   else if VG_XACT_CLO(arg, "--keep-stacktraces=alloc-and-free",
+                       MC_(clo_keep_stacktraces), KS_alloc_and_free) {}
+   else if VG_XACT_CLO(arg, "--keep-stacktraces=alloc-then-free",
+                       MC_(clo_keep_stacktraces), KS_alloc_then_free) {}
+   else if VG_XACT_CLO(arg, "--keep-stacktraces=none",
+                       MC_(clo_keep_stacktraces), KS_none) {}
+
    else
       return VG_(replacement_malloc_process_cmd_line_option)(arg);
 
@@ -4956,18 +4995,27 @@ static void mc_print_usage(void)
    VG_(printf)(
 "    --leak-check=no|summary|full     search for memory leaks at exit?  [summary]\n"
 "    --leak-resolution=low|med|high   differentiation of leak stack traces [high]\n"
-"    --show-reachable=no|yes          show reachable blocks in leak check? [no]\n"
-"    --show-possibly-lost=no|yes      show possibly lost blocks in leak check?\n"
-"                                     [yes]\n"
+"    --show-leak-kinds=kind1,kind2,.. which leak kinds to show?\n"
+"                                            [definite,possible]\n"
+"    --errors-for-leak-kinds=kind1,kind2,..  which leak kinds are errors?\n"
+"                                            [definite,possible]\n"
+"        where kind is one of definite indirect possible reachable all none\n"
+"    --show-reachable=yes             same as --show-leak-kinds=all\n"
+"    --show-reachable=no --show-possibly-lost=yes\n"
+"                                     same as --show-leak-kinds=definite,possible\n"
+"    --show-reachable=no --show-possibly-lost=no\n"
+"                                     same as --show-leak-kinds=definite\n"
 "    --undef-value-errors=no|yes      check for undefined value errors [yes]\n"
 "    --track-origins=no|yes           show origins of undefined values? [no]\n"
 "    --partial-loads-ok=no|yes        too hard to explain here; see manual [no]\n"
-"    --freelist-vol=<number>          volume of freed blocks queue      [20000000]\n"
-"    --freelist-big-blocks=<number>   releases first blocks with size >= [1000000]\n"
+"    --freelist-vol=<number>          volume of freed blocks queue     [20000000]\n"
+"    --freelist-big-blocks=<number>   releases first blocks with size>= [1000000]\n"
 "    --workaround-gcc296-bugs=no|yes  self explanatory [no]\n"
 "    --ignore-ranges=0xPP-0xQQ[,0xRR-0xSS]   assume given addresses are OK\n"
 "    --malloc-fill=<hexnumber>        fill malloc'd areas with given value\n"
 "    --free-fill=<hexnumber>          fill free'd areas with given value\n"
+"    --keep-stacktraces=alloc|free|alloc-and-free|alloc-then-free|none\n"
+"        stack trace(s) to keep for malloc'd/free'd areas       [alloc-then-free]\n"
    );
 }
 
@@ -5081,12 +5129,15 @@ static void print_monitor_help ( void )
 "  check_memory [addressable|defined] <addr> [<len>]\n"
 "        check that <len> (or 1) bytes at <addr> have the given accessibility\n"
 "            and outputs a description of <addr>\n"
-"  leak_check [full*|summary] [reachable|possibleleak*|definiteleak]\n"
+"  leak_check [full*|summary]\n"
+"                [kinds kind1,kind2,...|reachable|possibleleak*|definiteleak]\n"
 "                [increased*|changed|any]\n"
 "                [unlimited*|limited <max_loss_records_output>]\n"
 "            * = defaults\n"
+"        where kind is one of definite indirect possible reachable all none\n"
 "        Examples: leak_check\n"
 "                  leak_check summary any\n"
+"                  leak_check full kinds indirect,possible\n"
 "                  leak_check full reachable any limited 100\n"
 "  block_list <loss_record_nr>\n"
 "        after a leak search, shows the list of blocks of <loss_record_nr>\n"
@@ -5163,8 +5214,8 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
       HChar* kw;
       
       lcp.mode               = LC_Full;
-      lcp.show_reachable     = False;
-      lcp.show_possibly_lost = True;
+      lcp.show_leak_kinds    = R2S(Possible) | R2S(Unreached);
+      lcp.errors_for_leak_kinds = 0; /* no errors for interactive leak search. */
       lcp.deltamode          = LCD_Increased;
       lcp.max_loss_records_output = 999999999;
       lcp.requested_by_monitor_command = True;
@@ -5174,7 +5225,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
            kw = VG_(strtok_r) (NULL, " ", &ssaveptr)) {
          switch (VG_(keyword_id) 
                  ("full summary "
-                  "reachable possibleleak definiteleak "
+                  "kinds reachable possibleleak definiteleak "
                   "increased changed any "
                   "unlimited limited ",
                   kw, kwd_report_all)) {
@@ -5184,33 +5235,45 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
             lcp.mode = LC_Full; break;
          case  1: /* summary */
             lcp.mode = LC_Summary; break;
-         case  2: /* reachable */
-            lcp.show_reachable = True; 
-            lcp.show_possibly_lost = True; break;
-         case  3: /* possibleleak */
-            lcp.show_reachable = False;
-            lcp.show_possibly_lost = True; break;
-         case  4: /* definiteleak */
-            lcp.show_reachable = False;
-            lcp.show_possibly_lost = False; break;
-         case  5: /* increased */
+         case  2: { /* kinds */
+            wcmd = VG_(strtok_r) (NULL, " ", &ssaveptr);
+            if (wcmd == NULL || !MC_(parse_leak_kinds)(wcmd,
+                                                       &lcp.show_leak_kinds)) {
+               VG_(gdb_printf) ("missing or malformed leak kinds set\n");
+               err++;
+            }
+            break;
+         }
+         case  3: /* reachable */
+            lcp.show_leak_kinds = RallS;
+            break;
+         case  4: /* possibleleak */
+            lcp.show_leak_kinds 
+               = R2S(Possible) | R2S(IndirectLeak) | R2S(Unreached);
+            break;
+         case  5: /* definiteleak */
+            lcp.show_leak_kinds = R2S(Unreached);
+            break;
+         case  6: /* increased */
             lcp.deltamode = LCD_Increased; break;
-         case  6: /* changed */
+         case  7: /* changed */
             lcp.deltamode = LCD_Changed; break;
-         case  7: /* any */
+         case  8: /* any */
             lcp.deltamode = LCD_Any; break;
-         case  8: /* unlimited */
+         case  9: /* unlimited */
             lcp.max_loss_records_output = 999999999; break;
-         case  9: { /* limited */
+         case 10: { /* limited */
             Int int_value;
-            HChar* endptr;
+            const HChar* endptr;
 
             wcmd = VG_(strtok_r) (NULL, " ", &ssaveptr);
             if (wcmd == NULL) {
                int_value = 0;
                endptr = "empty"; /* to report an error below */
             } else {
-               int_value = VG_(strtoll10) (wcmd, &endptr);
+               HChar *the_end;
+               int_value = VG_(strtoll10) (wcmd, &the_end);
+               endptr = the_end;
             }
             if (*endptr != '\0')
                VG_(gdb_printf) ("missing or malformed integer value\n");
@@ -5256,7 +5319,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
       SizeT szB = 1;
       Addr bad_addr;
       UInt okind;
-      HChar* src;
+      const HChar* src;
       UInt otag;
       UInt ecu;
       ExeContext* origin_ec;
@@ -5323,9 +5386,10 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
       HChar *endptr;
       UInt lr_nr = 0;
       wl = VG_(strtok_r) (NULL, " ", &ssaveptr);
-      lr_nr = VG_(strtoull10) (wl, &endptr);
-      if (wl != NULL && *endptr != '\0') {
-         VG_(gdb_printf) ("malformed integer\n");
+      if (wl != NULL)
+         lr_nr = VG_(strtoull10) (wl, &endptr);
+      if (wl == NULL || *endptr != '\0') {
+         VG_(gdb_printf) ("malformed or missing integer\n");
       } else {
          // lr_nr-1 as what is shown to the user is 1 more than the index in lr_array.
          if (lr_nr == 0 || ! MC_(print_block_list) (lr_nr-1))
@@ -5431,8 +5495,8 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
             lcp.mode = LC_Full;
          }
           
-         lcp.show_reachable = MC_(clo_show_reachable);
-         lcp.show_possibly_lost = MC_(clo_show_possibly_lost);
+         lcp.show_leak_kinds = MC_(clo_show_leak_kinds);
+         lcp.errors_for_leak_kinds = MC_(clo_error_for_leak_kinds);
 
          if (arg[2] == 0)
             lcp.deltamode = LCD_Any;
@@ -6072,7 +6136,6 @@ static void mc_post_clo_init ( void )
       options so as to constrain the output somewhat. */
    if (VG_(clo_xml)) {
       /* Extract as much info as possible from the leak checker. */
-      /* MC_(clo_show_reachable) = True; */
       MC_(clo_leak_check) = LC_Full;
    }
 
@@ -6099,6 +6162,7 @@ static void mc_post_clo_init ( void )
       VG_(track_new_mem_stack_160_w_ECU) ( mc_new_mem_stack_160_w_ECU );
 #     endif
       VG_(track_new_mem_stack_w_ECU)     ( mc_new_mem_stack_w_ECU     );
+      VG_(track_new_mem_stack_signal)    ( mc_new_mem_w_tid_make_ECU );
    } else {
       /* Not doing origin tracking */
 #     ifdef PERF_FAST_STACK
@@ -6113,7 +6177,63 @@ static void mc_post_clo_init ( void )
       VG_(track_new_mem_stack_160) ( mc_new_mem_stack_160 );
 #     endif
       VG_(track_new_mem_stack)     ( mc_new_mem_stack     );
+      VG_(track_new_mem_stack_signal) ( mc_new_mem_w_tid_no_ECU );
    }
+
+   // We assume that brk()/sbrk() does not initialise new memory.  Is this
+   // accurate?  John Reiser says:
+   //
+   //   0) sbrk() can *decrease* process address space.  No zero fill is done
+   //   for a decrease, not even the fragment on the high end of the last page
+   //   that is beyond the new highest address.  For maximum safety and
+   //   portability, then the bytes in the last page that reside above [the
+   //   new] sbrk(0) should be considered to be uninitialized, but in practice
+   //   it is exceedingly likely that they will retain their previous
+   //   contents.
+   //
+   //   1) If an increase is large enough to require new whole pages, then
+   //   those new whole pages (like all new pages) are zero-filled by the
+   //   operating system.  So if sbrk(0) already is page aligned, then
+   //   sbrk(PAGE_SIZE) *does* zero-fill the new memory.
+   //
+   //   2) Any increase that lies within an existing allocated page is not
+   //   changed.  So if (x = sbrk(0)) is not page aligned, then
+   //   sbrk(PAGE_SIZE) yields ((PAGE_SIZE -1) & -x) bytes which keep their
+   //   existing contents, and an additional PAGE_SIZE bytes which are zeroed.
+   //   ((PAGE_SIZE -1) & x) of them are "covered" by the sbrk(), and the rest
+   //   of them come along for the ride because the operating system deals
+   //   only in whole pages.  Again, for maximum safety and portability, then
+   //   anything that lives above [the new] sbrk(0) should be considered
+   //   uninitialized, but in practice will retain previous contents [zero in
+   //   this case.]"
+   //
+   // In short: 
+   //
+   //   A key property of sbrk/brk is that new whole pages that are supplied
+   //   by the operating system *do* get initialized to zero.
+   //
+   // As for the portability of all this:
+   //
+   //   sbrk and brk are not POSIX.  However, any system that is a derivative
+   //   of *nix has sbrk and brk because there are too many softwares (such as
+   //   the Bourne shell) which rely on the traditional memory map (.text,
+   //   .data+.bss, stack) and the existence of sbrk/brk.
+   //
+   // So we should arguably observe all this.  However:
+   // - The current inaccuracy has caused maybe one complaint in seven years(?)
+   // - Relying on the zeroed-ness of whole brk'd pages is pretty grotty... I
+   //   doubt most programmers know the above information.
+   // So I'm not terribly unhappy with marking it as undefined. --njn.
+   //
+   // [More:  I think most of what John said only applies to sbrk().  It seems
+   // that brk() always deals in whole pages.  And since this event deals
+   // directly with brk(), not with sbrk(), perhaps it would be reasonable to
+   // just mark all memory it allocates as defined.]
+   //
+   if (MC_(clo_mc_level) == 3)
+      VG_(track_new_mem_brk)         ( mc_new_mem_w_tid_make_ECU );
+   else
+      VG_(track_new_mem_brk)         ( mc_new_mem_w_tid_no_ECU );
 
    /* This origin tracking cache is huge (~100M), so only initialise
       if we need it. */
@@ -6125,6 +6245,13 @@ static void mc_post_clo_init ( void )
       tl_assert(ocacheL1 == NULL);
       tl_assert(ocacheL2 == NULL);
    }
+
+   MC_(chunk_poolalloc) = VG_(newPA)
+      (sizeof(MC_Chunk) + MC_(n_where_pointers)() * sizeof(ExeContext*),
+       1000,
+       VG_(malloc),
+       "mc.cMC.1 (MC_Chunk pools)",
+       VG_(free));
 
    /* Do not check definedness of guest state if --undef-value-errors=no */
    if (MC_(clo_mc_level) >= 2)
@@ -6148,8 +6275,8 @@ static void mc_fini ( Int exitcode )
    if (MC_(clo_leak_check) != LC_Off) {
       LeakCheckParams lcp;
       lcp.mode = MC_(clo_leak_check);
-      lcp.show_reachable = MC_(clo_show_reachable);
-      lcp.show_possibly_lost = MC_(clo_show_possibly_lost);
+      lcp.show_leak_kinds = MC_(clo_show_leak_kinds);
+      lcp.errors_for_leak_kinds = MC_(clo_error_for_leak_kinds);
       lcp.deltamode = LCD_Any;
       lcp.max_loss_records_output = 999999999;
       lcp.requested_by_monitor_command = False;
@@ -6341,58 +6468,6 @@ static void mc_pre_clo_init(void)
    VG_(needs_xml_output)          ();
 
    VG_(track_new_mem_startup)     ( mc_new_mem_startup );
-   VG_(track_new_mem_stack_signal)( make_mem_undefined_w_tid );
-   // We assume that brk()/sbrk() does not initialise new memory.  Is this
-   // accurate?  John Reiser says:
-   //
-   //   0) sbrk() can *decrease* process address space.  No zero fill is done
-   //   for a decrease, not even the fragment on the high end of the last page
-   //   that is beyond the new highest address.  For maximum safety and
-   //   portability, then the bytes in the last page that reside above [the
-   //   new] sbrk(0) should be considered to be uninitialized, but in practice
-   //   it is exceedingly likely that they will retain their previous
-   //   contents.
-   //
-   //   1) If an increase is large enough to require new whole pages, then
-   //   those new whole pages (like all new pages) are zero-filled by the
-   //   operating system.  So if sbrk(0) already is page aligned, then
-   //   sbrk(PAGE_SIZE) *does* zero-fill the new memory.
-   //
-   //   2) Any increase that lies within an existing allocated page is not
-   //   changed.  So if (x = sbrk(0)) is not page aligned, then
-   //   sbrk(PAGE_SIZE) yields ((PAGE_SIZE -1) & -x) bytes which keep their
-   //   existing contents, and an additional PAGE_SIZE bytes which are zeroed.
-   //   ((PAGE_SIZE -1) & x) of them are "covered" by the sbrk(), and the rest
-   //   of them come along for the ride because the operating system deals
-   //   only in whole pages.  Again, for maximum safety and portability, then
-   //   anything that lives above [the new] sbrk(0) should be considered
-   //   uninitialized, but in practice will retain previous contents [zero in
-   //   this case.]"
-   //
-   // In short: 
-   //
-   //   A key property of sbrk/brk is that new whole pages that are supplied
-   //   by the operating system *do* get initialized to zero.
-   //
-   // As for the portability of all this:
-   //
-   //   sbrk and brk are not POSIX.  However, any system that is a derivative
-   //   of *nix has sbrk and brk because there are too many softwares (such as
-   //   the Bourne shell) which rely on the traditional memory map (.text,
-   //   .data+.bss, stack) and the existence of sbrk/brk.
-   //
-   // So we should arguably observe all this.  However:
-   // - The current inaccuracy has caused maybe one complaint in seven years(?)
-   // - Relying on the zeroed-ness of whole brk'd pages is pretty grotty... I
-   //   doubt most programmers know the above information.
-   // So I'm not terribly unhappy with marking it as undefined. --njn.
-   //
-   // [More:  I think most of what John said only applies to sbrk().  It seems
-   // that brk() always deals in whole pages.  And since this event deals
-   // directly with brk(), not with sbrk(), perhaps it would be reasonable to
-   // just mark all memory it allocates as defined.]
-   //
-   VG_(track_new_mem_brk)         ( make_mem_undefined_w_tid );
 
    // Handling of mmap and mprotect isn't simple (well, it is simple,
    // but the justification isn't.)  See comments above, just prior to
@@ -6436,11 +6511,8 @@ static void mc_pre_clo_init(void)
    VG_(needs_watchpoint)          ( mc_mark_unaddressable_for_watchpoint );
 
    init_shadow_memory();
-   MC_(chunk_poolalloc) = VG_(newPA) (sizeof(MC_Chunk),
-                                      1000,
-                                      VG_(malloc),
-                                      "mc.cMC.1 (MC_Chunk pools)",
-                                      VG_(free));
+   // MC_(chunk_poolalloc) must be allocated in post_clo_init
+   tl_assert(MC_(chunk_poolalloc) == NULL);
    MC_(malloc_list)  = VG_(HT_construct)( "MC_(malloc_list)" );
    MC_(mempool_list) = VG_(HT_construct)( "MC_(mempool_list)" );
    init_prof_mem();
@@ -6482,11 +6554,11 @@ static void mc_pre_clo_init(void)
    tl_assert(sizeof(Addr)  == 8);
    tl_assert(sizeof(UWord) == 8);
    tl_assert(sizeof(Word)  == 8);
-   tl_assert(MAX_PRIMARY_ADDRESS == 0x7FFFFFFFFULL);
-   tl_assert(MASK(1) == 0xFFFFFFF800000000ULL);
-   tl_assert(MASK(2) == 0xFFFFFFF800000001ULL);
-   tl_assert(MASK(4) == 0xFFFFFFF800000003ULL);
-   tl_assert(MASK(8) == 0xFFFFFFF800000007ULL);
+   tl_assert(MAX_PRIMARY_ADDRESS == 0xFFFFFFFFFULL);
+   tl_assert(MASK(1) == 0xFFFFFFF000000000ULL);
+   tl_assert(MASK(2) == 0xFFFFFFF000000001ULL);
+   tl_assert(MASK(4) == 0xFFFFFFF000000003ULL);
+   tl_assert(MASK(8) == 0xFFFFFFF000000007ULL);
 #  endif
 }
 

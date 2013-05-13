@@ -56,7 +56,7 @@ void ppHRegClass ( HRegClass hrc )
 /* Generic printing for registers. */
 void ppHReg ( HReg r ) 
 {
-   HChar* maybe_v = hregIsVirtual(r) ? "v" : "";
+   const HChar* maybe_v = hregIsVirtual(r) ? "v" : "";
    Int    regNo   = hregNumber(r);
    switch (hregClass(r)) {
       case HRcInt32:   vex_printf("%%%sr%d", maybe_v, regNo); return;
@@ -77,7 +77,7 @@ void ppHReg ( HReg r )
 void ppHRegUsage ( HRegUsage* tab )
 {
    Int    i;
-   HChar* str;
+   const HChar* str;
    vex_printf("HRegUsage {\n");
    for (i = 0; i < tab->n_used; i++) {
       switch (tab->mode[i]) {
@@ -103,7 +103,7 @@ void addHRegUse ( HRegUsage* tab, HRegMode mode, HReg reg )
    Int i;
    /* Find it ... */
    for (i = 0; i < tab->n_used; i++)
-      if (tab->hreg[i] == reg)
+      if (sameHReg(tab->hreg[i], reg))
          break;
    if (i == tab->n_used) {
       /* Not found, add new entry. */
@@ -161,7 +161,7 @@ void addToHRegRemap ( HRegRemap* map, HReg orig, HReg replacement )
 {
    Int i;
    for (i = 0; i < map->n_used; i++)
-      if (map->orig[i] == orig)
+      if (sameHReg(map->orig[i], orig))
          vpanic("addToHRegMap: duplicate entry");
    if (!hregIsVirtual(orig))
       vpanic("addToHRegMap: orig is not a vreg");
@@ -181,7 +181,7 @@ HReg lookupHRegRemap ( HRegRemap* map, HReg orig )
    if (!hregIsVirtual(orig))
       return orig;
    for (i = 0; i < map->n_used; i++)
-      if (map->orig[i] == orig)
+      if (sameHReg(map->orig[i], orig))
          return map->replacement[i];
    vpanic("lookupHRegRemap: not found");
 }
@@ -214,6 +214,22 @@ void addHInstr ( HInstrArray* ha, HInstr* instr )
       ha->arr_size *= 2;
       ha->arr = arr2;
       addHInstr(ha, instr);
+   }
+}
+
+
+/*---------------------------------------------------------*/
+/*--- C-Call return-location actions                    ---*/
+/*---------------------------------------------------------*/
+
+void ppRetLoc ( RetLoc ska )
+{
+   switch (ska) {
+      case RetLocINVALID: vex_printf("RetLocINVALID"); return;
+      case RetLocNone:    vex_printf("RetLocNone");    return;
+      case RetLocInt:     vex_printf("RetLocInt");     return;
+      case RetLoc2Int:    vex_printf("RetLoc2Int");    return;
+      default:            vpanic("ppRetLoc");
    }
 }
 

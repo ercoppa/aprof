@@ -53,6 +53,12 @@ extern Bool VG_(gdbserver_activity) (ThreadId tid);
 // gdbserver is then stopped (using VG_(gdbserver) (0))
 void VG_(gdbserver_exit) (ThreadId tid, VgSchedReturnCode tids_schedretcode);
 
+/* On systems that defines PR_SET_PTRACER, verify if ptrace_scope is
+   is permissive enough for vgdb or --db-attach=yes.
+   Otherwise, call set_ptracer.
+   This is especially aimed at Ubuntu >= 10.10 which has added
+   the ptrace_scope context. */
+void VG_(set_ptracer)(void);
 
 /* Called by low level to insert or remove a break or watch point.
    Break or watch point implementation is done using help from the tool.
@@ -76,6 +82,9 @@ void VG_(gdbserver_exit) (ThreadId tid, VgSchedReturnCode tids_schedretcode);
 Bool VG_(gdbserver_point) (PointKind kind, Bool insert, 
                            Addr addr, int len);
 
+/* True if there is a breakpoint at addr. */
+Bool VG_(has_gdbserver_breakpoint) (Addr addr);
+
 /* Entry point invoked by vgdb when it uses ptrace to cause a gdbserver
    invocation. A magic value is passed by vgdb in check as a verification
    that the call has been properly pushed by vgdb. */
@@ -87,6 +96,11 @@ extern void VG_(invoke_gdbserver) ( int check );
 // still be ignored if this is the action desired by the
 // guest program.
 extern Bool VG_(gdbserver_report_signal) (Int signo, ThreadId tid);
+
+/* Entry point invoked by scheduler.c to execute the request 
+   VALGRIND_CLIENT_MONITOR_COMMAND.
+   Returns True if command was not recognised. */
+extern Bool VG_(client_monitor_command) (HChar* cmd);
 
 /* software_breakpoint, single step and jump support ------------------------*/
 /* VG_(instrument_for_gdbserver_if_needed) allows to do "standard and easy"

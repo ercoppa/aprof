@@ -149,7 +149,7 @@ void show_raw_elf_symbol ( Int i,
                            ElfXX_Sym* sym, const HChar* sym_name, Addr sym_svma,
                            Bool ppc64_linux_format )
 {
-   HChar* space = ppc64_linux_format ? "                  " : "";
+   const HChar* space = ppc64_linux_format ? "                  " : "";
    VG_(printf)("raw symbol [%4d]: ", i);
    switch (ELFXX_ST_BIND(sym->st_info)) {
       case STB_LOCAL:  VG_(printf)("LOC "); break;
@@ -902,7 +902,7 @@ void read_elf_symtab__ppc64_linux(
  * http://fedoraproject.org/wiki/RolandMcGrath/BuildID
  */
 static
-HChar *find_buildid(Addr image, UWord n_image, Bool rel_ok)
+HChar *find_buildid(Addr image, UWord n_image, Bool rel_ok, Bool search_shdrs)
 {
    HChar* buildid = NULL;
    __attribute__((unused)) /* on Android, at least */
@@ -944,7 +944,11 @@ HChar *find_buildid(Addr image, UWord n_image, Bool rel_ok)
          }
       }
 
-      if (buildid || !rel_ok)
+      /* Normally we would only search shdrs for ET_REL files, but when
+         we search for a separate .debug file phdrs might not be there
+         (they are never loaded) or have been corrupted, so try again
+         against shdrs. */
+      if (buildid || (!rel_ok && !search_shdrs))
          return buildid;
 
       for (i = 0; i < ehdr->e_shnum; i++) {
@@ -1088,7 +1092,7 @@ Addr open_debug_file( const HChar* name, const HChar* buildid, UInt crc,
       return 0;
 
    if (buildid) {
-      HChar* debug_buildid = find_buildid(sr_Res(sres), *size, rel_ok);
+      HChar* debug_buildid = find_buildid(sr_Res(sres), *size, rel_ok, True);
       if (debug_buildid == NULL || VG_(strcmp)(buildid, debug_buildid) != 0) {
          SysRes res = VG_(am_munmap_valgrind)(sr_Res(sres), *size);
          vg_assert(!sr_isError(res));
@@ -1212,6 +1216,7 @@ void find_debug_file( struct _DebugInfo* di,
                       /*OUT*/SizeT* n_dimage )
 {
    HChar* debugpath = NULL;
+   const HChar* extrapath = VG_(clo_extra_debuginfo_path);
    Addr  addr = 0;
    UWord size = 0;
 
@@ -1241,7 +1246,8 @@ void find_debug_file( struct _DebugInfo* di,
 
       debugpath = ML_(dinfo_zalloc)(
                      "di.fdf.3",
-                     VG_(strlen)(objdir) + VG_(strlen)(debugname) + 32);
+                     VG_(strlen)(objdir) + VG_(strlen)(debugname) + 32 +
+                     (extrapath ? VG_(strlen)(extrapath) : 0));
 
       VG_(sprintf)(debugpath, "%s/%s", objdir, debugname);
 
@@ -1250,6 +1256,13 @@ void find_debug_file( struct _DebugInfo* di,
          if ((addr = open_debug_file(debugpath, NULL, crc, rel_ok, &size)) == 0) {
             VG_(sprintf)(debugpath, "/usr/lib/debug%s/%s", objdir, debugname);
             addr = open_debug_file(debugpath, NULL, crc, rel_ok, &size);
+            if ((addr = open_debug_file(debugpath, NULL, crc, rel_ok, &size)) == 0) {
+               if (extrapath) {
+                  VG_(sprintf)(debugpath, "%s%s/%s", extrapath,
+                              objdir, debugname);
+                  addr = open_debug_file(debugpath, NULL, crc, rel_ok, &size);
+               }
+            }
          }
       }
 
@@ -2029,7 +2042,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       /* PLT is different on different platforms, it seems. */
 #     if defined(VGP_x86_linux) || defined(VGP_amd64_linux) \
          || defined(VGP_arm_linux) || defined (VGP_s390x_linux) \
-         || defined(VGP_mips32_linux)
+         || defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
       /* Accept .plt where mapped as rx (code) */
       if (0 == VG_(strcmp)(name, ".plt")) {
          if (inrx && !di->plt_present) {
@@ -2294,7 +2307,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       vg_assert(dimage == 0 && n_dimage == 0);
 
       /* Look for a build-id */
-      buildid = find_buildid(oimage, n_oimage, False);
+      buildid = find_buildid(oimage, n_oimage, False, False);
 
       /* Look for a debug image */
       if (buildid != NULL || debuglink_img != NULL) {
@@ -2680,7 +2693,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          && !defined(VGP_s390x_linux) \
          && !defined(VGP_ppc64_linux) \
          && !defined(VGPV_arm_linux_android) \
-         && !defined(VGPV_x86_linux_android)
+         && !defined(VGPV_x86_linux_android) \
+         && !defined(VGP_mips64_linux)
       if (stab_img && stabstr_img) {
          ML_(read_debuginfo_stabs) ( di, stab_img, stab_sz, 
                                          stabstr_img, stabstr_sz );

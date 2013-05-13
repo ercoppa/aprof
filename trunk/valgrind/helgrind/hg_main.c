@@ -1951,9 +1951,9 @@ static void evh__HG_PTHREAD_MUTEX_LOCK_PRE ( ThreadId tid,
          this is a real lock operation (not a speculative "tryLock"
          kind of thing).  Duh.  Deadlock coming up; but at least
          produce an error message. */
-      HChar* errstr = "Attempt to re-lock a "
-                      "non-recursive lock I already hold";
-      HChar* auxstr = "Lock was previously acquired";
+      const HChar* errstr = "Attempt to re-lock a "
+                            "non-recursive lock I already hold";
+      const HChar* auxstr = "Lock was previously acquired";
       if (lk->acquired_at) {
          HG_(record_error_Misc_w_aux)( thr, errstr, auxstr, lk->acquired_at );
       } else {
@@ -2156,7 +2156,7 @@ static void map_cond_to_CVInfo_delete ( ThreadId tid, void* cond ) {
    tl_assert(thr); /* cannot fail - Thread* must already exist */
 
    map_cond_to_CVInfo_INIT();
-   if (VG_(delFromFM)( map_cond_to_CVInfo, &keyW, &valW, (UWord)cond )) {
+   if (VG_(lookupFM)( map_cond_to_CVInfo, &keyW, &valW, (UWord)cond )) {
       CVInfo* cvi = (CVInfo*)valW;
       tl_assert(keyW == (UWord)cond);
       tl_assert(cvi);
@@ -2165,7 +2165,12 @@ static void map_cond_to_CVInfo_delete ( ThreadId tid, void* cond ) {
          HG_(record_error_Misc)(thr,
                                 "pthread_cond_destroy:"
                                 " destruction of condition variable being waited upon");
+         /* Destroying a cond var being waited upon outcome is EBUSY and
+            variable is not destroyed. */
+         return;
       }
+      if (!VG_(delFromFM)( map_cond_to_CVInfo, &keyW, &valW, (UWord)cond ))
+         tl_assert(0); // cond var found above, and not here ???
       libhb_so_dealloc(cvi->so);
       cvi->mx_ga = 0;
       HG_(free)(cvi);
@@ -2371,6 +2376,22 @@ static void evh__HG_PTHREAD_COND_WAIT_POST ( ThreadId tid,
 
    cvi->nWaiters--;
 }
+
+static void evh__HG_PTHREAD_COND_INIT_POST ( ThreadId tid,
+                                             void* cond, void* cond_attr )
+{
+   CVInfo* cvi;
+
+   if (SHOW_EVENTS >= 1)
+      VG_(printf)("evh__HG_PTHREAD_COND_INIT_POST"
+                  "(ctid=%d, cond=%p, cond_attr=%p)\n", 
+                  (Int)tid, (void*)cond, (void*) cond_attr );
+
+   cvi = map_cond_to_CVInfo_lookup_or_alloc( cond );
+   tl_assert (cvi);
+   tl_assert (cvi->so);
+}
+
 
 static void evh__HG_PTHREAD_COND_DESTROY_PRE ( ThreadId tid,
                                                void* cond )
@@ -3721,9 +3742,54 @@ static void laog__pre_thread_acquires_lock (
                  found->src_ec, found->dst_ec, other->acquired_at );
       } else {
          /* Hmm.  This can't happen (can it?) */
+         /* Yes, it can happen: see tests/tc14_laog_dinphils.
+            Imagine we have 3 philosophers A B C, and the forks
+            between them:
+
+                           C
+
+                       fCA   fBC
+
+                      A   fAB   B
+
+            Let's have the following actions:
+                   A takes    fCA,fAB
+                   A releases fCA,fAB
+                   B takes    fAB,fBC
+                   B releases fAB,fBC
+                   C takes    fBC,fCA
+                   C releases fBC,fCA
+
+            Helgrind will report a lock order error when C takes fCA.
+            Effectively, we have a deadlock if the following
+            sequence is done:
+                A takes fCA
+                B takes fAB
+                C takes fBC
+
+            The error reported is:
+              Observed (incorrect) order fBC followed by fCA
+            but the stack traces that have established the required order
+            are not given.
+
+            This is because there is no pair (fCA, fBC) in laog exposition :
+            the laog_exposition records all pairs of locks between a new lock
+            taken by a thread and all the already taken locks.
+            So, there is no laog_exposition (fCA, fBC) as no thread ever
+            first locked fCA followed by fBC.
+
+            In other words, when the deadlock cycle involves more than
+            two locks, then helgrind does not report the sequence of
+            operations that created the cycle.
+
+            However, we can report the current stack trace (where
+            lk is being taken), and the stack trace where other was acquired:
+            Effectively, the variable 'other' contains a lock currently
+            held by this thread, with its 'acquired_at'. */
+                    
          HG_(record_error_LockOrder)(
             thr, lk->guestaddr, other->guestaddr,
-                 NULL, NULL, NULL );
+                 NULL, NULL, other->acquired_at );
       }
    }
 
@@ -4126,18 +4192,40 @@ Bool HG_(mm_find_containing_block)( /*OUT*/ExeContext** where,
 /*--- Instrumentation                                        ---*/
 /*--------------------------------------------------------------*/
 
+#define unop(_op, _arg1)         IRExpr_Unop((_op),(_arg1))
 #define binop(_op, _arg1, _arg2) IRExpr_Binop((_op),(_arg1),(_arg2))
 #define mkexpr(_tmp)             IRExpr_RdTmp((_tmp))
 #define mkU32(_n)                IRExpr_Const(IRConst_U32(_n))
 #define mkU64(_n)                IRExpr_Const(IRConst_U64(_n))
 #define assign(_t, _e)           IRStmt_WrTmp((_t), (_e))
 
+/* This takes and returns atoms, of course.  Not full IRExprs. */
+static IRExpr* mk_And1 ( IRSB* sbOut, IRExpr* arg1, IRExpr* arg2 )
+{
+   tl_assert(arg1 && arg2);
+   tl_assert(isIRAtom(arg1));
+   tl_assert(isIRAtom(arg2));
+   /* Generate 32to1(And32(1Uto32(arg1), 1Uto32(arg2))).  Appalling
+      code, I know. */
+   IRTemp wide1 = newIRTemp(sbOut->tyenv, Ity_I32);
+   IRTemp wide2 = newIRTemp(sbOut->tyenv, Ity_I32);
+   IRTemp anded = newIRTemp(sbOut->tyenv, Ity_I32);
+   IRTemp res   = newIRTemp(sbOut->tyenv, Ity_I1);
+   addStmtToIRSB(sbOut, assign(wide1, unop(Iop_1Uto32, arg1)));
+   addStmtToIRSB(sbOut, assign(wide2, unop(Iop_1Uto32, arg2)));
+   addStmtToIRSB(sbOut, assign(anded, binop(Iop_And32, mkexpr(wide1),
+                                                       mkexpr(wide2))));
+   addStmtToIRSB(sbOut, assign(res, unop(Iop_32to1, mkexpr(anded))));
+   return mkexpr(res);
+}
+
 static void instrument_mem_access ( IRSB*   sbOut, 
                                     IRExpr* addr,
                                     Int     szB,
                                     Bool    isStore,
                                     Int     hWordTy_szB,
-                                    Int     goff_sp )
+                                    Int     goff_sp,
+                                    IRExpr* guard ) /* NULL => True */
 {
    IRType   tyAddr   = Ity_INVALID;
    const HChar* hName    = NULL;
@@ -4273,15 +4361,23 @@ static void instrument_mem_access ( IRSB*   sbOut,
                    : binop(Iop_Add64, mkexpr(addr_minus_sp), mkU64(rz_szB)))
       );
 
-      IRTemp guard = newIRTemp(sbOut->tyenv, Ity_I1);
+      /* guardA == "guard on the address" */
+      IRTemp guardA = newIRTemp(sbOut->tyenv, Ity_I1);
       addStmtToIRSB(
          sbOut,
-         assign(guard,
+         assign(guardA,
                 tyAddr == Ity_I32 
                    ? binop(Iop_CmpLT32U, mkU32(THRESH), mkexpr(diff))
                    : binop(Iop_CmpLT64U, mkU64(THRESH), mkexpr(diff)))
       );
-      di->guard = mkexpr(guard);
+      di->guard = mkexpr(guardA);
+   }
+
+   /* If there's a guard on the access itself (as supplied by the
+      caller of this routine), we need to AND that in to any guard we
+      might already have. */
+   if (guard) {
+      di->guard = mk_And1(sbOut, di->guard, guard);
    }
 
    /* Add the helper. */
@@ -4428,7 +4524,8 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                   (isDCAS ? 2 : 1)
                      * sizeofIRType(typeOfIRExpr(bbIn->tyenv, cas->dataLo)),
                   False/*!isStore*/,
-                  sizeofIRType(hWordTy), goff_sp
+                  sizeofIRType(hWordTy), goff_sp,
+                  NULL/*no-guard*/
                );
             }
             break;
@@ -4448,7 +4545,8 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                      st->Ist.LLSC.addr,
                      sizeofIRType(dataTy),
                      False/*!isStore*/,
-                     sizeofIRType(hWordTy), goff_sp
+                     sizeofIRType(hWordTy), goff_sp,
+                     NULL/*no-guard*/
                   );
                }
             } else {
@@ -4459,22 +4557,46 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
          }
 
          case Ist_Store:
-            /* It seems we pretend that store-conditionals don't
-               exist, viz, just ignore them ... */
             if (!inLDSO) {
                instrument_mem_access( 
                   bbOut, 
                   st->Ist.Store.addr, 
                   sizeofIRType(typeOfIRExpr(bbIn->tyenv, st->Ist.Store.data)),
                   True/*isStore*/,
-                  sizeofIRType(hWordTy), goff_sp
+                  sizeofIRType(hWordTy), goff_sp,
+                  NULL/*no-guard*/
                );
             }
             break;
 
+         case Ist_StoreG: {
+            IRStoreG* sg   = st->Ist.StoreG.details;
+            IRExpr*   data = sg->data;
+            IRExpr*   addr = sg->addr;
+            IRType    type = typeOfIRExpr(bbIn->tyenv, data);
+            tl_assert(type != Ity_INVALID);
+            instrument_mem_access( bbOut, addr, sizeofIRType(type),
+                                   True/*isStore*/,
+                                   sizeofIRType(hWordTy),
+                                   goff_sp, sg->guard );
+            break;
+         }
+
+         case Ist_LoadG: {
+            IRLoadG* lg       = st->Ist.LoadG.details;
+            IRType   type     = Ity_INVALID; /* loaded type */
+            IRType   typeWide = Ity_INVALID; /* after implicit widening */
+            IRExpr*  addr     = lg->addr;
+            typeOfIRLoadGOp(lg->cvt, &typeWide, &type);
+            tl_assert(type != Ity_INVALID);
+            instrument_mem_access( bbOut, addr, sizeofIRType(type),
+                                   False/*!isStore*/,
+                                   sizeofIRType(hWordTy),
+                                   goff_sp, lg->guard );
+            break;
+         }
+
          case Ist_WrTmp: {
-            /* ... whereas here we don't care whether a load is a
-               vanilla one or a load-linked. */
             IRExpr* data = st->Ist.WrTmp.data;
             if (data->tag == Iex_Load) {
                if (!inLDSO) {
@@ -4483,7 +4605,8 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                      data->Iex.Load.addr,
                      sizeofIRType(data->Iex.Load.ty),
                      False/*!isStore*/,
-                     sizeofIRType(hWordTy), goff_sp
+                     sizeofIRType(hWordTy), goff_sp,
+                     NULL/*no-guard*/
                   );
                }
             }
@@ -4503,7 +4626,7 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                   if (!inLDSO) {
                      instrument_mem_access( 
                         bbOut, d->mAddr, dataSize, False/*!isStore*/,
-                        sizeofIRType(hWordTy), goff_sp
+                        sizeofIRType(hWordTy), goff_sp, NULL/*no-guard*/
                      );
                   }
                }
@@ -4511,7 +4634,7 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                   if (!inLDSO) {
                      instrument_mem_access( 
                         bbOut, d->mAddr, dataSize, True/*isStore*/,
-                        sizeofIRType(hWordTy), goff_sp
+                        sizeofIRType(hWordTy), goff_sp, NULL/*no-guard*/
                      );
                   }
                }
@@ -4734,6 +4857,13 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
          *ret = mutex_is_valid ? 1 : 0;
          break;
       }
+
+      /* Thread successfully completed pthread_cond_init:
+         cond=arg[1], cond_attr=arg[2] */
+      case _VG_USERREQ__HG_PTHREAD_COND_INIT_POST:
+         evh__HG_PTHREAD_COND_INIT_POST( tid,
+                                         (void*)args[1], (void*)args[2] );
+	 break;
 
       /* cond=arg[1] */
       case _VG_USERREQ__HG_PTHREAD_COND_DESTROY_PRE:
