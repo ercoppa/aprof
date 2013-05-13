@@ -8,7 +8,7 @@ To start a profile run for a program, execute:
 cd aprof-X.Y.Z
 ./inst/bin/valgrind --tool=aprof your-program [program options]
 }}}
-aprof will produce, in the working directory, a report for each thread of your program. Each report is a text file that has a name of the form `command_PID_TID_MEM-RES.aprof` (MEM-RSS, see [aprof_manual#aprof_command-line_options memory resolution]) and contains profile data in [ReportFileFormat aprof's file format]. Report files can be visualized with [Aprofplot aprof-plot].
+aprof will produce, in the working directory, a report for each thread of your program. Each report is a text file that has a name of the form `command_PID_TID_MEM-RES.aprof` (MEM-RES: see [aprof_manual#aprof_command-line_options memory resolution]) and contains profile data in [ReportFileFormat aprof's file format]. Report files can be visualized with [Aprofplot aprof-plot].
 
 === Visualize profile reports ===
 
