@@ -188,27 +188,28 @@ static UInt get_memory_resolution_report(HChar * report) {
     HChar * rep = basename(report);
     ASSERT(rep != NULL && strlen(rep) > 0, "Invalid report");
     
-    // report: PID_TID_RES[_N].aprof
+    // start from the end
+    char * p = report + strlen(rep) - 1;
     
-    // skip PID_
-    UInt pos = 0;
-    while (rep[pos] != '_' && rep[pos] != '\0') pos++;
-    ASSERT(pos > 0, "Invalid report name: %s", report);
+    // skip ".aprof"
+    ASSERT(*p == 'f' && --p > rep, "Invalid report");
+    ASSERT(*p == 'o' && --p > rep, "Invalid report");
+    ASSERT(*p == 'r' && --p > rep, "Invalid report");
+    ASSERT(*p == 'p' && --p > rep, "Invalid report");
+    ASSERT(*p == 'a' && --p > rep, "Invalid report");
+    ASSERT(*p == '.' && p > rep, "Invalid report");
     
-    // skip TID_
-    UInt t_pos = pos + 1;
-    while (rep[t_pos] != '_' && rep[t_pos] != '\0') t_pos++;
-    ASSERT(t_pos > pos + 1, "Invalid report name: %s", report);
+    // get memory resolution
+    UInt pos = p - rep;
+    while (p > rep && *p != '_') p--;
+    ASSERT(p > rep, "Invalid report name: %s", report);
     
-    UInt r_pos = t_pos + 1;
-    while (rep[r_pos] != '.' && rep[r_pos] != '_' && rep[t_pos] != '\0') r_pos++;
-    ASSERT(r_pos > t_pos + 1, "Invalid report name: %s", report);
+    p++;
+    HChar * tid_s = strndup(p, pos - (p - rep)); 
+    UInt tid = strtol(tid_s, NULL, 10);
     
-    HChar res_s[16];
-    strncpy(res_s, rep + t_pos + 1, r_pos - t_pos); 
-    UInt res = strtol(res_s, NULL, 10);
-    
-    return res;
+    free(tid_s);
+    return tid;
 }
 
 static UInt get_tid_report(HChar * report) {
@@ -216,22 +217,31 @@ static UInt get_tid_report(HChar * report) {
     HChar * rep = basename(report);
     ASSERT(rep != NULL && strlen(rep) > 0, "Invalid report");
     
-    // report: PID_TID_RES[_N].aprof
+    // start from the end
+    char * p = report + strlen(rep) - 1;
     
-    // skip PID_
-    UInt pos = 0;
-    while (rep[pos] != '_' && rep[pos] != '\0') pos++;
-    ASSERT(pos > 0, "Invalid report name: %s", report);
+    // skip ".aprof"
+    ASSERT(*p == 'f' && --p > rep, "Invalid report");
+    ASSERT(*p == 'o' && --p > rep, "Invalid report");
+    ASSERT(*p == 'r' && --p > rep, "Invalid report");
+    ASSERT(*p == 'p' && --p > rep, "Invalid report");
+    ASSERT(*p == 'a' && --p > rep, "Invalid report");
+    ASSERT(*p == '.' && --p > rep, "Invalid report");
     
-    UInt t_pos = pos + 1;
-    while (rep[t_pos] != '_' && rep[t_pos] != '\0') t_pos++;
-    ASSERT(t_pos > pos + 1, "Invalid report name: %s", report);
+    // skip memory resolution and "_"
+    while (p > rep && *p != '_') p--;
+    ASSERT(p-- > rep, "Invalid report name: %s", report);
     
-    HChar tid_s[16];
-    strncpy(tid_s, rep + pos + 1, t_pos - pos);  
+    // skip TID
+    UInt pos = p - rep + 1;
+    while (p > rep && *p != '_') p--;
+    ASSERT(p > rep, "Invalid report name: %s", report);
+    
+    p++;
+    HChar * tid_s = strndup(p, pos - (p - rep)); 
     UInt tid = strtol(tid_s, NULL, 10);
-
-    //printf("Tid = %u report %s\n", tid, report);
+    
+    free(tid_s);
     return tid;
 }
 
@@ -240,11 +250,33 @@ static UInt get_pid_report(HChar * report) {
     HChar * rep = basename(report);
     ASSERT(rep != NULL && strlen(rep) > 0, "Invalid report");
     
-    UInt pos = 0;
-    while (rep[pos] != '_' && rep[pos] != '\0') pos++;
-    ASSERT(pos > 0, "Invalid report name: %s", report);
+    // start from the end
+    char * p = report + strlen(rep) - 1;
     
-    HChar * pid_s = strndup(rep, pos); 
+    // skip ".aprof"
+    ASSERT(*p == 'f' && --p > rep, "Invalid report");
+    ASSERT(*p == 'o' && --p > rep, "Invalid report");
+    ASSERT(*p == 'r' && --p > rep, "Invalid report");
+    ASSERT(*p == 'p' && --p > rep, "Invalid report");
+    ASSERT(*p == 'a' && --p > rep, "Invalid report");
+    ASSERT(*p == '.' && --p > rep, "Invalid report");
+    
+    // skip memory resolution and "_"
+    while (p > rep && *p != '_') p--;
+    ASSERT(p-- > rep, "Invalid report name: %s", report);
+    
+    // skip TID and "_"
+    while (p > rep && *p != '_') p--;
+    ASSERT(p-- > rep, "Invalid report name: %s", report);
+    
+    // get PID
+    UInt pos = p - rep + 1;
+    ASSERT(pos > 0, "Invalid report name: %s", report);
+    while (p >= rep && *p != '_') p--;
+    ASSERT(p < rep + pos, "Invalid report name: %s", report);
+    
+    p++;
+    HChar * pid_s = strndup(p, pos - (p - rep)); 
     UInt pid = strtol(pid_s, NULL, 10);
     
     free(pid_s);
@@ -2386,6 +2418,14 @@ Int main(Int argc, HChar *argv[]) {
         
         i = 0;
         while (i < size) {
+            
+            /*
+            printf("pid: %d\n", get_pid_report(reports[i]));
+            printf("tid: %d\n", get_tid_report(reports[i]));
+            printf("resolution: %d \n", get_memory_resolution_report(reports[i]));
+            
+            return 0;
+            */
             reset_data(&ap_rep[0]);
             merge_report(reports[i++], &ap_rep[0]);
         }

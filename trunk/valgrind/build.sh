@@ -6,7 +6,7 @@ echo $DIR
 ./autogen.sh
 ./configure --prefix=$DIR/inst && make && make install && \
 cd $DIR/aprof/extra/ && \
-make && cp aprof-helper ../../inst/bin/ || exit -1
+make && make install || exit -1
 
 echo ""
 echo "################################################################"

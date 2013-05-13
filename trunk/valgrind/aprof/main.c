@@ -666,7 +666,7 @@ static void APROF_(print_usage)(void) {
     
     VG_(printf)(
         "    --memory-resolution=<n>        Memory resolution of the shadow memory {1, 2, 4, 8, 16} [4]\n"
-        "    --log-dir=<PATH>               Report will be saved in this directory\n"
+        "    --log-dir=<PATH>               Reports will be saved in this directory\n"
     );
 }
 
