@@ -67,9 +67,24 @@ typedef
       Addr         data;            // Address of the actual block.
       SizeT        szB : (sizeof(SizeT)*8)-2; // Size requested; 30 or 62 bits.
       MC_AllocKind allockind : 2;   // Which operation did the allocation.
-      ExeContext*  where;           // Where it was allocated.
+      ExeContext*  where[0];
+      /* Variable-length array. The size depends on MC_(clo_keep_stacktraces).
+         This array optionally stores the alloc and/or free stack trace. */
    }
    MC_Chunk;
+
+/* Returns the execontext where the MC_Chunk was allocated/freed.
+   Returns VG_(null_ExeContext)() if the execontext has not been recorded (due
+   to MC_(clo_keep_stacktraces) and/or because block not yet freed). */
+ExeContext* MC_(allocated_at) (MC_Chunk*);
+ExeContext* MC_(freed_at) (MC_Chunk*);
+
+/* Records and sets execontext according to MC_(clo_keep_stacktraces) */
+void  MC_(set_allocated_at) (ThreadId, MC_Chunk*);
+void  MC_(set_freed_at) (ThreadId, MC_Chunk*);
+
+/* number of pointers needed according to MC_(clo_keep_stacktraces). */
+UInt MC_(n_where_pointers) (void);
 
 /* Memory pool.  Nb: first two fields must match core's VgHashNode. */
 typedef
@@ -260,6 +275,13 @@ typedef
   }
   Reachedness;
 
+// Build mask to check or set Reachedness r membership
+#define R2S(r) (1 << (r))
+// Reachedness r is member of the Set s ?
+#define RiS(r,s) ((s) & R2S(r))
+// A set with all Reachedness:
+#define RallS \
+   (R2S(Reachable) | R2S(Possible) | R2S(IndirectLeak) | R2S(Unreached))
 
 /* For VALGRIND_COUNT_LEAKS client request */
 extern SizeT MC_(bytes_leaked);
@@ -318,8 +340,8 @@ typedef
 typedef
    struct _LeakCheckParams {
       LeakCheckMode mode;
-      Bool show_reachable;
-      Bool show_possibly_lost;
+      UInt show_leak_kinds;
+      UInt errors_for_leak_kinds;
       LeakCheckDeltaMode deltamode;
       UInt max_loss_records_output;       // limit on the nr of loss records output.
       Bool requested_by_monitor_command; // True when requested by gdb/vgdb.
@@ -411,6 +433,12 @@ Bool MC_(record_leak_error)     ( ThreadId tid,
                                   Bool print_record,
                                   Bool count_error );
 
+/* Parses a set of leak kinds (separated by ,).
+   and give the resulting set in *lks.
+   If parsing is succesful, returns True and *lks contains the resulting set.
+   else return False. */
+extern Bool MC_(parse_leak_kinds) ( const HChar* str0, UInt* lks );
+
 /* prints a description of address a */
 void MC_(pp_describe_addr) (Addr a);
 
@@ -458,11 +486,13 @@ extern LeakCheckMode MC_(clo_leak_check);
 /* How closely should we compare ExeContexts in leak records? default: 2 */
 extern VgRes MC_(clo_leak_resolution);
 
-/* In leak check, show reachable-but-not-freed blocks?  default: NO */
-extern Bool MC_(clo_show_reachable);
+/* In leak check, show loss records if their R2S(reachedness) is set.
+   Default : R2S(Possible) | R2S(Unreached). */
+extern UInt MC_(clo_show_leak_kinds);
 
-/* In leak check, show possibly-lost blocks?  default: YES */
-extern Bool MC_(clo_show_possibly_lost);
+/* In leak check, a loss record is an error if its R2S(reachedness) is set.
+   Default : R2S(Possible) | R2S(Unreached). */
+extern UInt MC_(clo_errors_for_leak_kinds);
 
 /* Assume accesses immediately below %esp are due to gcc-2.96 bugs.
  * default: NO */
@@ -476,6 +506,20 @@ extern Bool MC_(clo_workaround_gcc296_bugs);
    causes them to contain the specified values. */
 extern Int MC_(clo_malloc_fill);
 extern Int MC_(clo_free_fill);
+
+/* Which stack trace(s) to keep for malloc'd/free'd client blocks?
+   For each client block, the stack traces where it was allocated
+   and/or freed are optionally kept depending on MC_(clo_keep_stacktraces). */
+typedef
+   enum {                 // keep alloc stack trace ?  keep free stack trace ?
+      KS_none,            // never                     never
+      KS_alloc,           // always                    never
+      KS_free,            // never                     always
+      KS_alloc_then_free, // when still malloc'd       when free'd
+      KS_alloc_and_free,  // always                    always
+   }
+   KeepStacktraces;
+extern KeepStacktraces MC_(clo_keep_stacktraces);
 
 /* Indicates the level of instrumentation/checking done by Memcheck.
 

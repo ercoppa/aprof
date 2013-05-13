@@ -661,12 +661,12 @@ IRExpr* guest_arm_spechelper ( const HChar* function_name,
             --> oldC ? (argR <=u argL) : (argR <u argL)
          */
          return
-            IRExpr_Mux0X(
-               unop(Iop_32to8, cc_ndep),
-               /* case oldC == 0 */
-               unop(Iop_1Uto32, binop(Iop_CmpLT32U, cc_dep2, cc_dep1)),
+            IRExpr_ITE(
+               binop(Iop_CmpNE32, cc_ndep, mkU32(0)),
                /* case oldC != 0 */
-               unop(Iop_1Uto32, binop(Iop_CmpLE32U, cc_dep2, cc_dep1))
+               unop(Iop_1Uto32, binop(Iop_CmpLE32U, cc_dep2, cc_dep1)),
+               /* case oldC == 0 */
+               unop(Iop_1Uto32, binop(Iop_CmpLT32U, cc_dep2, cc_dep1))
             );
       }
 
@@ -797,12 +797,12 @@ IRExpr* guest_arm_spechelper ( const HChar* function_name,
             --> oldC ? (argR <=u argL) : (argR <u argL)
          */
          return
-            IRExpr_Mux0X(
-               unop(Iop_32to8, cc_ndep),
-               /* case oldC == 0 */
-               unop(Iop_1Uto32, binop(Iop_CmpLT32U, cc_dep2, cc_dep1)),
+            IRExpr_ITE(
+               binop(Iop_CmpNE32, cc_ndep, mkU32(0)),
                /* case oldC != 0 */
-               unop(Iop_1Uto32, binop(Iop_CmpLE32U, cc_dep2, cc_dep1))
+               unop(Iop_1Uto32, binop(Iop_CmpLE32U, cc_dep2, cc_dep1)),
+               /* case oldC == 0 */
+               unop(Iop_1Uto32, binop(Iop_CmpLT32U, cc_dep2, cc_dep1))
             );
       }
 
@@ -910,7 +910,7 @@ void LibVEX_GuestARM_put_flags ( UInt flags_native,
 #endif
 
 /* VISIBLE TO LIBVEX CLIENT */
-UInt LibVEX_GuestARM_get_cpsr ( /*IN*/VexGuestARMState* vex_state )
+UInt LibVEX_GuestARM_get_cpsr ( /*IN*/const VexGuestARMState* vex_state )
 {
    UInt cpsr = 0;
    // NZCV

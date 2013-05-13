@@ -14,7 +14,7 @@ TOOLS =		memcheck \
 
 EXP_TOOLS = 	exp-sgcheck \
 		exp-bbv \
-		exp-dhat \
+		exp-dhat \ 
 		aprof
 
 # Put docs last because building the HTML is slow and we want to get

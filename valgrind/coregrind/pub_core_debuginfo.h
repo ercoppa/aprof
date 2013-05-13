@@ -120,7 +120,7 @@ typedef
 typedef
    struct { Addr ia; Addr sp; Addr fp; Addr lr;}
    D3UnwindRegs;
-#elif defined(VGA_mips32)
+#elif defined(VGA_mips32) || defined(VGA_mips64)
 typedef
    struct { Addr pc; Addr sp; Addr fp; Addr ra; }
    D3UnwindRegs;
@@ -131,6 +131,13 @@ typedef
 extern Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregs,
                                Addr min_accessible,
                                Addr max_accessible );
+
+/* returns the "generation" of the CF info.
+   Each time some debuginfo is changed (e.g. loaded or unloaded),
+   the VG_(CF_info_generation) value returned will be increased.
+   This can be used to flush cached information derived from the CF info. */
+extern UInt VG_(CF_info_generation) (void);
+
 
 
 /* Use MSVC FPO data to do one step of stack unwinding. */
@@ -153,7 +160,8 @@ extern Addr VG_(get_tocptr) ( Addr guest_code_addr );
    platforms, a symbol is deemed to be found only if it has a nonzero
    TOC pointer.  */
 extern
-Bool VG_(lookup_symbol_SLOW)(HChar* sopatt, HChar* name, Addr* pEnt, Addr* pToc);
+Bool VG_(lookup_symbol_SLOW)(const HChar* sopatt, HChar* name, Addr* pEnt,
+                             Addr* pToc);
 
 #endif   // __PUB_CORE_DEBUGINFO_H
 

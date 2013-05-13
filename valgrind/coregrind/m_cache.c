@@ -539,7 +539,7 @@ get_cache_info(VexArchInfo *vai)
 }
 
 #elif defined(VGA_arm) || defined(VGA_ppc32) || defined(VGA_ppc64) || \
-      defined(VGA_mips32)
+      defined(VGA_mips32) || defined(VGA_mips64)
 
 static Bool
 get_cache_info(VexArchInfo *vai)
@@ -606,7 +606,7 @@ get_cache_info(VexArchInfo *vai)
 
    ci->icaches_maintain_coherence = True;
 
-   if (! vai->hwcaps & VEX_HWCAPS_S390X_GIE) {
+   if (! (vai->hwcaps & VEX_HWCAPS_S390X_GIE)) {
       // ECAG is not available
       return False;
    }

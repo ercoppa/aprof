@@ -186,7 +186,7 @@ typedef
    }
    PPCCondCode;
 
-extern HChar* showPPCCondCode ( PPCCondCode );
+extern const HChar* showPPCCondCode ( PPCCondCode );
 
 /* constructor */
 extern PPCCondCode mk_PPCCondCode ( PPCCondTest, PPCCondFlag );
@@ -326,7 +326,7 @@ typedef
    }
    PPCUnaryOp;
 
-extern HChar* showPPCUnaryOp ( PPCUnaryOp );
+extern const HChar* showPPCUnaryOp ( PPCUnaryOp );
 
 
 /* --------- */
@@ -339,8 +339,8 @@ typedef
    PPCAluOp;
 
 extern 
-HChar* showPPCAluOp ( PPCAluOp, 
-                      Bool /* is the 2nd operand an immediate? */);
+const HChar* showPPCAluOp ( PPCAluOp, 
+                            Bool /* is the 2nd operand an immediate? */);
 
 
 /* --------- */
@@ -352,9 +352,9 @@ typedef
    PPCShftOp;
 
 extern 
-HChar* showPPCShftOp ( PPCShftOp, 
-                       Bool /* is the 2nd operand an immediate? */,
-                       Bool /* is this a 32bit or 64bit op? */ );
+const HChar* showPPCShftOp ( PPCShftOp, 
+                             Bool /* is the 2nd operand an immediate? */,
+                             Bool /* is this a 32bit or 64bit op? */ );
 
 
 /* --------- */
@@ -375,7 +375,7 @@ typedef
       Pfp_ADDD, Pfp_SUBD, Pfp_MULD, Pfp_DIVD,
       Pfp_ADDS, Pfp_SUBS, Pfp_MULS, Pfp_DIVS,
       Pfp_DRSP, Pfp_DRDPQ, Pfp_DCTFIX, Pfp_DCTFIXQ, Pfp_DCFFIX, 
-      Pfp_DQUA, Pfp_RRDTR, Pfp_DIEX, Pfp_DIEXQ, 
+      Pfp_DQUA, Pfp_RRDTR, Pfp_DIEX, Pfp_DIEXQ, Pfp_DRINTN,
 
       /* Unary */
       Pfp_SQRT, Pfp_ABS, Pfp_NEG, Pfp_MOV, Pfp_RES, Pfp_RSQRTE,
@@ -386,7 +386,7 @@ typedef
    }
    PPCFpOp;
 
-extern HChar* showPPCFpOp ( PPCFpOp );
+extern const HChar* showPPCFpOp ( PPCFpOp );
 
 
 /* --------- */
@@ -425,7 +425,7 @@ typedef
    }
    PPCAvOp;
 
-extern HChar* showPPCAvOp ( PPCAvOp );
+extern const HChar* showPPCAvOp ( PPCAvOp );
 
 
 /* --------- */
@@ -445,7 +445,7 @@ typedef
    }
    PPCAvFpOp;
 
-extern HChar* showPPCAvFpOp ( PPCAvFpOp );
+extern const HChar* showPPCAvFpOp ( PPCAvFpOp );
 
 
 /* --------- */
@@ -616,6 +616,7 @@ typedef
             PPCCondCode cond;
             Addr64      target;
             UInt        argiregs;
+            RetLoc      rloc;     /* where the return value will be */
          } Call;
          /* Update the guest CIA value, then exit requesting to chain
             to it.  May be conditional.  Use of Addr64 in order to cope
@@ -971,7 +972,7 @@ extern PPCInstr* PPCInstr_Cmp        ( Bool, Bool, UInt, HReg, PPCRH* );
 extern PPCInstr* PPCInstr_Unary      ( PPCUnaryOp op, HReg dst, HReg src );
 extern PPCInstr* PPCInstr_MulL       ( Bool syned, Bool hi32, Bool sz32, HReg, HReg, HReg );
 extern PPCInstr* PPCInstr_Div        ( Bool extended, Bool syned, Bool sz32, HReg dst, HReg srcL, HReg srcR );
-extern PPCInstr* PPCInstr_Call       ( PPCCondCode, Addr64, UInt );
+extern PPCInstr* PPCInstr_Call       ( PPCCondCode, Addr64, UInt, RetLoc );
 extern PPCInstr* PPCInstr_XDirect    ( Addr64 dstGA, PPCAMode* amCIA,
                                        PPCCondCode cond, Bool toFastEP );
 extern PPCInstr* PPCInstr_XIndir     ( HReg dstGA, PPCAMode* amCIA,

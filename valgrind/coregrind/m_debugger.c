@@ -35,6 +35,7 @@
 #include "pub_core_xarray.h"
 #include "pub_core_clientstate.h"
 #include "pub_core_debugger.h"
+#include "pub_core_gdbserver.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"
@@ -307,7 +308,7 @@ static Int ptrace_setregs(Int pid, VexGuestArchState* vex)
 
    return VG_(ptrace)(VKI_PTRACE_POKEUSR_AREA, pid,  &pa, NULL);
 
-#elif defined(VGP_mips32_linux)
+#elif defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
    struct vki_user_regs_struct regs;
    VG_(memset)(&regs, 0, sizeof(regs));
    regs.MIPS_r0     = vex->guest_r0;
@@ -363,6 +364,7 @@ void VG_(start_debugger) ( ThreadId tid )
 
    if (pid == 0) {
       /* child */
+      VG_(set_ptracer)();
       rc = VG_(ptrace)(VKI_PTRACE_TRACEME, 0, NULL, NULL);
       vg_assert(rc == 0);
       rc = VG_(kill)(VG_(getpid)(), VKI_SIGSTOP);

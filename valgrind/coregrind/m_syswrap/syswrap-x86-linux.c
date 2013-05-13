@@ -549,7 +549,7 @@ SysRes read_ldt ( ThreadId tid, UChar* ptr, UInt bytecount )
    vg_assert(sizeof(HWord) == sizeof(VexGuestX86SegDescr*));
    vg_assert(8 == sizeof(VexGuestX86SegDescr));
 
-   ldt = (Char*)(VG_(threads)[tid].arch.vex.guest_LDT);
+   ldt = (UChar*)(VG_(threads)[tid].arch.vex.guest_LDT);
    res = VG_(mk_SysRes_Success)( 0 );
    if (ldt == NULL)
       /* LDT not allocated, meaning all entries are null */
@@ -1814,7 +1814,7 @@ static SyscallTableEntry syscall_table[] = {
 //   LINX_(__NR_fanotify_mark,     sys_ni_syscall),       // 339
 
    LINXY(__NR_prlimit64,         sys_prlimit64),        // 340
-//   LINX_(__NR_name_to_handle_at, sys_ni_syscall),       // 341
+   LINXY(__NR_name_to_handle_at, sys_name_to_handle_at),// 341
 //   LINX_(__NR_open_by_handle_at, sys_ni_syscall),       // 342
 //   LINX_(__NR_clock_adjtime,     sys_ni_syscall),       // 343
 //   LINX_(__NR_syncfs,            sys_ni_syscall),       // 344

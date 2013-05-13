@@ -137,6 +137,8 @@ am__objects_1 =  \
 	libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_regs.$(OBJEXT) \
 	libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_simd64.$(OBJEXT) \
 	libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_simd128.$(OBJEXT) \
+	libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_simd256.$(OBJEXT) \
+	libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_maddf.$(OBJEXT) \
 	libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_reg_alloc2.$(OBJEXT) \
 	libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_x86_defs.$(OBJEXT) \
 	libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_x86_isel.$(OBJEXT) \
@@ -167,7 +169,8 @@ am__libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_SOURCES_DIST =  \
 	priv/guest_s390_helpers.c priv/guest_s390_toIR.c \
 	priv/guest_mips_helpers.c priv/guest_mips_toIR.c \
 	priv/host_generic_regs.c priv/host_generic_simd64.c \
-	priv/host_generic_simd128.c priv/host_generic_reg_alloc2.c \
+	priv/host_generic_simd128.c priv/host_generic_simd256.c \
+	priv/host_generic_maddf.c priv/host_generic_reg_alloc2.c \
 	priv/host_x86_defs.c priv/host_x86_isel.c \
 	priv/host_amd64_defs.c priv/host_amd64_isel.c \
 	priv/host_ppc_defs.c priv/host_ppc_isel.c priv/host_arm_defs.c \
@@ -199,6 +202,8 @@ am__objects_2 =  \
 	libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_regs.$(OBJEXT) \
 	libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_simd64.$(OBJEXT) \
 	libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_simd128.$(OBJEXT) \
+	libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_simd256.$(OBJEXT) \
+	libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_maddf.$(OBJEXT) \
 	libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_reg_alloc2.$(OBJEXT) \
 	libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_x86_defs.$(OBJEXT) \
 	libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_x86_isel.$(OBJEXT) \
@@ -275,6 +280,7 @@ FLAG_M64 = @FLAG_M64@
 FLAG_MMMX = @FLAG_MMMX@
 FLAG_MSSE = @FLAG_MSSE@
 FLAG_NO_BUILD_ID = @FLAG_NO_BUILD_ID@
+FLAG_T_TEXT = @FLAG_T_TEXT@
 FLAG_UNLIMITED_INLINE_UNIT_GROWTH = @FLAG_UNLIMITED_INLINE_UNIT_GROWTH@
 FLAG_W_EXTRA = @FLAG_W_EXTRA@
 FLAG_W_NO_EMPTY_BODY = @FLAG_W_NO_EMPTY_BODY@
@@ -473,6 +479,9 @@ AM_CCASFLAGS_S390X_LINUX = @FLAG_M64@ -g -mzarch -march=z900
 AM_FLAG_M3264_MIPS32_LINUX = @FLAG_M32@
 AM_CFLAGS_MIPS32_LINUX = @FLAG_M32@ $(AM_CFLAGS_BASE) -mips32
 AM_CCASFLAGS_MIPS32_LINUX = @FLAG_M32@ -mips32 -g
+AM_FLAG_M3264_MIPS64_LINUX = @FLAG_M64@
+AM_CFLAGS_MIPS64_LINUX = @FLAG_M64@ $(AM_CFLAGS_BASE) -mips64
+AM_CCASFLAGS_MIPS64_LINUX = @FLAG_M64@ -mips64 -g
 
 # Flags for the primary target.  These must be used to build the
 # regtests and performance tests.  In fact, these must be used to
@@ -499,6 +508,7 @@ PRELOAD_LDFLAGS_X86_DARWIN = $(PRELOAD_LDFLAGS_COMMON_DARWIN) -arch i386
 PRELOAD_LDFLAGS_AMD64_DARWIN = $(PRELOAD_LDFLAGS_COMMON_DARWIN) -arch x86_64
 PRELOAD_LDFLAGS_S390X_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M64@
 PRELOAD_LDFLAGS_MIPS32_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M32@
+PRELOAD_LDFLAGS_MIPS64_LINUX = $(PRELOAD_LDFLAGS_COMMON_LINUX) @FLAG_M64@
 
 #----------------------------------------------------------------------------
 # Headers, etc
@@ -543,12 +553,15 @@ noinst_HEADERS = \
 	priv/host_generic_regs.h \
 	priv/host_generic_simd64.h \
 	priv/host_generic_simd128.h \
+	priv/host_generic_simd256.h \
+	priv/host_generic_maddf.h \
 	priv/host_x86_defs.h \
 	priv/host_amd64_defs.h \
 	priv/host_ppc_defs.h \
 	priv/host_arm_defs.h \
 	priv/host_s390_defs.h \
 	priv/s390_disasm.h \
+	priv/s390_defs.h \
 	priv/host_mips_defs.h
 
 BUILT_SOURCES = pub/libvex_guest_offsets.h
@@ -584,6 +597,8 @@ LIBVEX_SOURCES_COMMON = \
 	priv/host_generic_regs.c \
 	priv/host_generic_simd64.c \
 	priv/host_generic_simd128.c \
+	priv/host_generic_simd256.c \
+	priv/host_generic_maddf.c \
 	priv/host_generic_reg_alloc2.c \
 	priv/host_x86_defs.c \
 	priv/host_x86_isel.c \
@@ -719,9 +734,11 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_amd64_isel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_arm_defs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_arm_isel.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_maddf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_reg_alloc2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_regs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_simd128.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_simd256.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_simd64.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_mips_defs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_mips_isel.Po@am__quote@
@@ -757,9 +774,11 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_amd64_isel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_arm_defs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_arm_isel.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_maddf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_reg_alloc2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_regs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_simd128.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_simd256.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_simd64.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_mips_defs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_mips_isel.Po@am__quote@
@@ -1127,6 +1146,34 @@ libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_simd128.obj: priv/host_gener
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='priv/host_generic_simd128.c' object='libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_simd128.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CPPFLAGS) $(CPPFLAGS) $(libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CFLAGS) $(CFLAGS) -c -o libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_simd128.obj `if test -f 'priv/host_generic_simd128.c'; then $(CYGPATH_W) 'priv/host_generic_simd128.c'; else $(CYGPATH_W) '$(srcdir)/priv/host_generic_simd128.c'; fi`
+
+libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_simd256.o: priv/host_generic_simd256.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CPPFLAGS) $(CPPFLAGS) $(libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CFLAGS) $(CFLAGS) -MT libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_simd256.o -MD -MP -MF $(DEPDIR)/libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_simd256.Tpo -c -o libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_simd256.o `test -f 'priv/host_generic_simd256.c' || echo '$(srcdir)/'`priv/host_generic_simd256.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_simd256.Tpo $(DEPDIR)/libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_simd256.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='priv/host_generic_simd256.c' object='libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_simd256.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CPPFLAGS) $(CPPFLAGS) $(libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CFLAGS) $(CFLAGS) -c -o libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_simd256.o `test -f 'priv/host_generic_simd256.c' || echo '$(srcdir)/'`priv/host_generic_simd256.c
+
+libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_simd256.obj: priv/host_generic_simd256.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CPPFLAGS) $(CPPFLAGS) $(libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CFLAGS) $(CFLAGS) -MT libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_simd256.obj -MD -MP -MF $(DEPDIR)/libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_simd256.Tpo -c -o libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_simd256.obj `if test -f 'priv/host_generic_simd256.c'; then $(CYGPATH_W) 'priv/host_generic_simd256.c'; else $(CYGPATH_W) '$(srcdir)/priv/host_generic_simd256.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_simd256.Tpo $(DEPDIR)/libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_simd256.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='priv/host_generic_simd256.c' object='libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_simd256.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CPPFLAGS) $(CPPFLAGS) $(libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CFLAGS) $(CFLAGS) -c -o libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_simd256.obj `if test -f 'priv/host_generic_simd256.c'; then $(CYGPATH_W) 'priv/host_generic_simd256.c'; else $(CYGPATH_W) '$(srcdir)/priv/host_generic_simd256.c'; fi`
+
+libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_maddf.o: priv/host_generic_maddf.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CPPFLAGS) $(CPPFLAGS) $(libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CFLAGS) $(CFLAGS) -MT libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_maddf.o -MD -MP -MF $(DEPDIR)/libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_maddf.Tpo -c -o libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_maddf.o `test -f 'priv/host_generic_maddf.c' || echo '$(srcdir)/'`priv/host_generic_maddf.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_maddf.Tpo $(DEPDIR)/libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_maddf.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='priv/host_generic_maddf.c' object='libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_maddf.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CPPFLAGS) $(CPPFLAGS) $(libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CFLAGS) $(CFLAGS) -c -o libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_maddf.o `test -f 'priv/host_generic_maddf.c' || echo '$(srcdir)/'`priv/host_generic_maddf.c
+
+libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_maddf.obj: priv/host_generic_maddf.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CPPFLAGS) $(CPPFLAGS) $(libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CFLAGS) $(CFLAGS) -MT libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_maddf.obj -MD -MP -MF $(DEPDIR)/libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_maddf.Tpo -c -o libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_maddf.obj `if test -f 'priv/host_generic_maddf.c'; then $(CYGPATH_W) 'priv/host_generic_maddf.c'; else $(CYGPATH_W) '$(srcdir)/priv/host_generic_maddf.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_maddf.Tpo $(DEPDIR)/libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_maddf.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='priv/host_generic_maddf.c' object='libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_maddf.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CPPFLAGS) $(CPPFLAGS) $(libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CFLAGS) $(CFLAGS) -c -o libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_maddf.obj `if test -f 'priv/host_generic_maddf.c'; then $(CYGPATH_W) 'priv/host_generic_maddf.c'; else $(CYGPATH_W) '$(srcdir)/priv/host_generic_maddf.c'; fi`
 
 libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_reg_alloc2.o: priv/host_generic_reg_alloc2.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CPPFLAGS) $(CPPFLAGS) $(libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CFLAGS) $(CFLAGS) -MT libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_reg_alloc2.o -MD -MP -MF $(DEPDIR)/libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_reg_alloc2.Tpo -c -o libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a-host_generic_reg_alloc2.o `test -f 'priv/host_generic_reg_alloc2.c' || echo '$(srcdir)/'`priv/host_generic_reg_alloc2.c
@@ -1659,6 +1706,34 @@ libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_simd128.obj: priv/host_gener
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='priv/host_generic_simd128.c' object='libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_simd128.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CPPFLAGS) $(CPPFLAGS) $(libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CFLAGS) $(CFLAGS) -c -o libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_simd128.obj `if test -f 'priv/host_generic_simd128.c'; then $(CYGPATH_W) 'priv/host_generic_simd128.c'; else $(CYGPATH_W) '$(srcdir)/priv/host_generic_simd128.c'; fi`
+
+libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_simd256.o: priv/host_generic_simd256.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CPPFLAGS) $(CPPFLAGS) $(libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CFLAGS) $(CFLAGS) -MT libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_simd256.o -MD -MP -MF $(DEPDIR)/libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_simd256.Tpo -c -o libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_simd256.o `test -f 'priv/host_generic_simd256.c' || echo '$(srcdir)/'`priv/host_generic_simd256.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_simd256.Tpo $(DEPDIR)/libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_simd256.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='priv/host_generic_simd256.c' object='libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_simd256.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CPPFLAGS) $(CPPFLAGS) $(libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CFLAGS) $(CFLAGS) -c -o libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_simd256.o `test -f 'priv/host_generic_simd256.c' || echo '$(srcdir)/'`priv/host_generic_simd256.c
+
+libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_simd256.obj: priv/host_generic_simd256.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CPPFLAGS) $(CPPFLAGS) $(libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CFLAGS) $(CFLAGS) -MT libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_simd256.obj -MD -MP -MF $(DEPDIR)/libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_simd256.Tpo -c -o libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_simd256.obj `if test -f 'priv/host_generic_simd256.c'; then $(CYGPATH_W) 'priv/host_generic_simd256.c'; else $(CYGPATH_W) '$(srcdir)/priv/host_generic_simd256.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_simd256.Tpo $(DEPDIR)/libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_simd256.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='priv/host_generic_simd256.c' object='libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_simd256.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CPPFLAGS) $(CPPFLAGS) $(libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CFLAGS) $(CFLAGS) -c -o libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_simd256.obj `if test -f 'priv/host_generic_simd256.c'; then $(CYGPATH_W) 'priv/host_generic_simd256.c'; else $(CYGPATH_W) '$(srcdir)/priv/host_generic_simd256.c'; fi`
+
+libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_maddf.o: priv/host_generic_maddf.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CPPFLAGS) $(CPPFLAGS) $(libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CFLAGS) $(CFLAGS) -MT libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_maddf.o -MD -MP -MF $(DEPDIR)/libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_maddf.Tpo -c -o libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_maddf.o `test -f 'priv/host_generic_maddf.c' || echo '$(srcdir)/'`priv/host_generic_maddf.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_maddf.Tpo $(DEPDIR)/libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_maddf.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='priv/host_generic_maddf.c' object='libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_maddf.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CPPFLAGS) $(CPPFLAGS) $(libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CFLAGS) $(CFLAGS) -c -o libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_maddf.o `test -f 'priv/host_generic_maddf.c' || echo '$(srcdir)/'`priv/host_generic_maddf.c
+
+libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_maddf.obj: priv/host_generic_maddf.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CPPFLAGS) $(CPPFLAGS) $(libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CFLAGS) $(CFLAGS) -MT libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_maddf.obj -MD -MP -MF $(DEPDIR)/libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_maddf.Tpo -c -o libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_maddf.obj `if test -f 'priv/host_generic_maddf.c'; then $(CYGPATH_W) 'priv/host_generic_maddf.c'; else $(CYGPATH_W) '$(srcdir)/priv/host_generic_maddf.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_maddf.Tpo $(DEPDIR)/libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_maddf.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='priv/host_generic_maddf.c' object='libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_maddf.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CPPFLAGS) $(CPPFLAGS) $(libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CFLAGS) $(CFLAGS) -c -o libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_maddf.obj `if test -f 'priv/host_generic_maddf.c'; then $(CYGPATH_W) 'priv/host_generic_maddf.c'; else $(CYGPATH_W) '$(srcdir)/priv/host_generic_maddf.c'; fi`
 
 libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_reg_alloc2.o: priv/host_generic_reg_alloc2.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CPPFLAGS) $(CPPFLAGS) $(libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CFLAGS) $(CFLAGS) -MT libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_reg_alloc2.o -MD -MP -MF $(DEPDIR)/libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_reg_alloc2.Tpo -c -o libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a-host_generic_reg_alloc2.o `test -f 'priv/host_generic_reg_alloc2.c' || echo '$(srcdir)/'`priv/host_generic_reg_alloc2.c

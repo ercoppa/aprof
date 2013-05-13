@@ -91,6 +91,12 @@
 #  define VG_CLREQ_SZB             20
 #  define VG_STACK_REDZONE_SZB      0
 
+#elif defined(VGP_mips64_linux)
+#  define VG_MIN_INSTR_SZB          4
+#  define VG_MAX_INSTR_SZB          4 
+#  define VG_CLREQ_SZB             20
+#  define VG_STACK_REDZONE_SZB      0
+
 #else
 #  error Unknown platform
 #endif
@@ -130,7 +136,7 @@ void VG_(set_syscall_return_shadows) ( ThreadId tid,
 // This is very Memcheck-specific -- it's used to find the roots when
 // doing leak checking.
 extern void VG_(apply_to_GP_regs)(void (*f)(ThreadId tid,
-                                            HChar* regname, UWord val));
+                                            const HChar* regname, UWord val));
 
 // This iterator lets you inspect each live thread's stack bounds.
 // Returns False at the end.  'tid' is the iterator and you can only

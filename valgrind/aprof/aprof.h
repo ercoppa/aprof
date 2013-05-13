@@ -57,7 +57,8 @@
 #include "lookup_table.h"
 
 #define APROF_(str)         VGAPPEND(vgAprof_,str)
-#define APROF_TOOL          1 // useful for data-common.h
+#define APROF_TOOL          1   // useful for data-common.h
+#define APROF_VERSION       "1.2"
 
 /* Behaviour macro */
 #define EMPTY_ANALYSIS      0   // if 1, analysis routines are empty 
@@ -89,7 +90,7 @@
                                  // Input estimation metric:
 #define RMS                 1    // Read Memory Size
 #define RVMS                2    // Read Versioned Memory Size
-#define INPUT_METRIC        RVMS
+#define INPUT_METRIC        RMS
 
 #define TRACE_FUNCTION      1   // if 1, aprof traces functions by itself, 
                                 // otherwise the program must be 
@@ -97,17 +98,17 @@
                                 // with -finstrument-functions
                                 
 #define MEM_TRACE           1   // if 0 disable mem instrumentation
-#define THREAD_INPUT        1   // if 1, every write creates a new
+#define THREAD_INPUT        0   // if 1, every write creates a new
                                 // version of an input
-#define SYSCALL_WRAPPING    1   // if 1, I/O syscall stores are 
+#define SYSCALL_WRAPPING    0   // if 1, I/O syscall stores are 
                                 // considered as external I/O
 
 #define IGNORE_LOAD_SYS     1   // ignore load due to syscall
 
-#define INPUT_STATS         1   //
+#define INPUT_STATS         0   // stats about thread input & external input
 
 #define DEBUG_ALLOCATION    0   // if 1, check every allocation made by aprof
-#define IGNORE_DL_RUNTIME   0   // if 1, disable analysis for dl_
+#define IGNORE_DL_RUNTIME   1   // if 1, disable analysis for dl_
                                 // runtime_resolve (and its children)
 
 #define REPORT_VERSION      6   // see documentation on our site: 
@@ -117,10 +118,10 @@
                                 // function (but this does not imply to
                                 // discard info about its children)
                                 
-#define IGNORE_REPEAT_ACC   0   // if 1, ignore repeated accesses to 
+#define IGNORE_REPEAT_ACC   1   // if 1, ignore repeated accesses to 
                                 // the same address within a BB
                                 
-#define REPORT_NAME         2   // if 1 report name is prog_TID.aprof, 
+#define REPORT_NAME         1   // if 1 report name is prog_TID.aprof, 
                                 // if 2 is PID_TID_ADDRMULTIPLE.aprof
                                 
 #define CCT_GRAPHIC         0   // output CCT as dot language in an 

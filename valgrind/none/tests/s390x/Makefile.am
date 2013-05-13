@@ -17,24 +17,35 @@ INSN_TESTS = clc clcle cvb cvd icm lpr tcxb lam_stam xc mvst add sub mul \
 	     spechelper-cr  spechelper-clr  \
 	     spechelper-ltr spechelper-or   \
 	     spechelper-icm-1  spechelper-icm-2 spechelper-tmll \
-	     spechelper-tm
+	     spechelper-tm laa
 if BUILD_DFP_TESTS
-  INSN_TESTS += dfp-1
+  INSN_TESTS += dfp-1 dfp-2 dfp-3 dfp-4 dfptest dfpext dfpconv srnmt pfpo
 endif
 
 check_PROGRAMS = $(INSN_TESTS) \
 		 allexec \
 		 op00
 
+DIST_INSN_TESTS = $(INSN_TESTS) dfp-1
+
 EXTRA_DIST = \
-	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
-	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
-	$(addsuffix .vgtest,$(INSN_TESTS)) \
-	ecag.stdout.exp-z10ec ecag.stdout.exp-z196 \
+	$(addsuffix .stderr.exp,$(DIST_INSN_TESTS)) \
+	$(addsuffix .stdout.exp,$(DIST_INSN_TESTS)) \
+	$(addsuffix .vgtest,$(DIST_INSN_TESTS)) \
+	ecag.stdout.exp-z10ec ecag.stdout.exp-z196 ecag.stdout.exp-zec12 \
 	op00.stderr.exp1 op00.stderr.exp2 op00.vgtest \
 	fpext_fail.vgtest fpext_fail.stderr.exp fpext_fail.stdout.exp \
 	test.h opcodes.h add.h  and.h  div.h  insert.h \
-	mul.h  or.h  sub.h  xor.h table.h svc.h rounding.h
+	mul.h  or.h  sub.h  xor.h table.h svc.h rounding.h \
+	dfp-1.stderr.exp dfp-1.stdout.exp dfp-1.vgtest \
+	dfp-2.stderr.exp dfp-2.stdout.exp dfp-2.vgtest \
+	dfp-3.stderr.exp dfp-3.stdout.exp dfp-3.vgtest \
+	dfp-4.stderr.exp dfp-4.stdout.exp dfp-4.vgtest \
+	dfptest.stderr.exp dfptest.stdout.exp dfptest.vgtest \
+	dfpext.stderr.exp dfpext.stdout.exp dfpext.vgtest \
+	dfpconv.stderr.exp dfpconv.stdout.exp dfpconv.vgtest \
+	srnmt.stderr.exp srnmt.stdout.exp srnmt.vgtest \
+	pfpo.stderr.exp pfpo.stdout.exp pfpo.vgtest
 
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@

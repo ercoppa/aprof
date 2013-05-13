@@ -1,4 +1,4 @@
-prefix=/home/ercoppa/Desktop/code/development/valgrind/inst
+prefix=/home/ercoppa/Desktop/code/aprof-dev-rvms/valgrind/inst
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include/valgrind

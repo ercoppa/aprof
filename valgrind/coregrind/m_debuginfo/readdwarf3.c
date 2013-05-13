@@ -169,8 +169,8 @@ typedef
       UChar* region_start_img;
       UWord  region_szB;
       UWord  region_next;
-      void (*barf)( HChar* ) __attribute__((noreturn));
-      HChar* barfstr;
+      void (*barf)( const HChar* ) __attribute__((noreturn));
+      const HChar* barfstr;
    }
    Cursor;
 
@@ -185,8 +185,8 @@ static void init_Cursor ( Cursor* c,
                           UChar*  region_start_img,
                           UWord   region_szB,
                           UWord   region_next,
-                          __attribute__((noreturn)) void (*barf)( HChar* ),
-                          HChar*  barfstr )
+                          __attribute__((noreturn)) void (*barf)( const HChar* ),
+                          const HChar* barfstr )
 {
    vg_assert(c);
    VG_(memset)(c, 0, sizeof(*c));
@@ -343,7 +343,7 @@ static UWord get_UWord ( Cursor* c ) {
 /* Read a DWARF3 'Initial Length' field */
 static ULong get_Initial_Length ( /*OUT*/Bool* is64,
                                   Cursor* c, 
-                                  HChar* barfMsg )
+                                  const HChar* barfMsg )
 {
    ULong w64;
    UInt  w32;
@@ -377,7 +377,7 @@ static ULong get_Initial_Length ( /*OUT*/Bool* is64,
 typedef
    struct {
       /* Call here if anything goes wrong */
-      void (*barf)( HChar* ) __attribute__((noreturn));
+      void (*barf)( const HChar* ) __attribute__((noreturn));
       /* Is this 64-bit DWARF ? */
       Bool   is_dw64;
       /* Which DWARF version ?  (2, 3 or 4) */
@@ -1045,7 +1045,7 @@ static void record_signatured_type ( VgHashTable tab,
    BARF.  */
 static UWord lookup_signatured_type ( VgHashTable tab,
                                       ULong type_signature,
-                                      void (*barf)( HChar* ) __attribute__((noreturn)) )
+                                      void (*barf)( const HChar* ) __attribute__((noreturn)) )
 {
    D3SignatureType *dstype = VG_(HT_lookup) ( tab, (UWord) type_signature );
    /* This may be unwarranted chumminess with the hash table
@@ -1439,7 +1439,7 @@ typedef
    }
    D3VarParser;
 
-static void varstack_show ( D3VarParser* parser, HChar* str ) {
+static void varstack_show ( D3VarParser* parser, const HChar* str ) {
    Word i, j;
    VG_(printf)("  varstack (%s) {\n", str);
    for (i = 0; i <= parser->sp; i++) {
@@ -1853,7 +1853,7 @@ static void parse_var_DIE (
    if (dtag == DW_TAG_variable || dtag == DW_TAG_formal_parameter) {
       HChar* name        = NULL;
       UWord  typeR       = D3_INVALID_CUOFF;
-      Bool   external    = False;
+      Bool   global      = False;
       GExpr* gexpr       = NULL;
       Int    n_attrs     = 0;
       UWord  abs_ori     = (UWord)D3_INVALID_CUOFF;
@@ -1880,7 +1880,7 @@ static void parse_var_DIE (
             typeR = cook_die_using_form( cc, (UWord)cts, form );
          }
          if (attr == DW_AT_external && ctsSzB > 0 && cts > 0) {
-            external = True;
+            global = True;
          }
          if (attr == DW_AT_abstract_origin && ctsSzB > 0) {
             abs_ori = (UWord)cts;
@@ -1902,6 +1902,14 @@ static void parse_var_DIE (
             if (0) VG_(printf)("XXX filename = %s\n", fileName);
          }
       }
+      if (!global && dtag == DW_TAG_variable && level == 1) {
+         /* Case of a static variable. It is better to declare
+            it global as the variable is not really related to
+            a PC range, as its address can be used by program
+            counters outside of the ranges where it is visible . */
+         global = True;
+      }
+
       /* We'll collect it under if one of the following three
          conditions holds:
          (1) has location and type    -> completed
@@ -1927,7 +1935,7 @@ static void parse_var_DIE (
             this CU. */
          vg_assert(parser->sp >= 0);
 
-         /* If this is a local variable (non-external), try to find
+         /* If this is a local variable (non-global), try to find
             the GExpr for the DW_AT_frame_base of the containing
             function.  It should have been pushed on the stack at the
             time we encountered its DW_TAG_subprogram DIE, so the way
@@ -1939,7 +1947,7 @@ static void parse_var_DIE (
             if the containing DT_TAG_subprogram didn't supply a
             DW_AT_frame_base -- that's OK, but there must actually be
             a containing DW_TAG_subprogram. */
-         if (!external) {
+         if (!global) {
             Bool found = False;
             for (i = parser->sp; i >= 0; i--) {
                if (parser->isFunc[i]) {
@@ -1951,7 +1959,7 @@ static void parse_var_DIE (
             if (!found) {
                if (0 && VG_(clo_verbosity) >= 0) {
                   VG_(message)(Vg_DebugMsg, 
-                     "warning: parse_var_DIE: non-external variable "
+                     "warning: parse_var_DIE: non-global variable "
                      "outside DW_TAG_subprogram\n");
                }
                /* goto bad_DIE; */
@@ -1964,18 +1972,18 @@ static void parse_var_DIE (
             }
          }
 
-         /* re "external ? 0 : parser->sp" (twice), if the var is
-            marked 'external' then we must put it at the global scope,
+         /* re "global ? 0 : parser->sp" (twice), if the var is
+            marked 'global' then we must put it at the global scope,
             as only the global scope (level 0) covers the entire PC
             address space.  It is asserted elsewhere that level 0 
             always covers the entire address space. */
-         xa = parser->ranges[external ? 0 : parser->sp];
+         xa = parser->ranges[global ? 0 : parser->sp];
          nRanges = VG_(sizeXA)(xa);
          vg_assert(nRanges >= 0);
 
          tv = ML_(dinfo_zalloc)( "di.readdwarf3.pvD.1", sizeof(TempVar) );
          tv->name   = name;
-         tv->level  = external ? 0 : parser->sp;
+         tv->level  = global ? 0 : parser->sp;
          tv->typeR  = typeR;
          tv->gexpr  = gexpr;
          tv->fbGX   = fbGX;
@@ -2164,7 +2172,7 @@ typedef
    }
    D3TypeParser;
 
-static void typestack_show ( D3TypeParser* parser, HChar* str ) {
+static void typestack_show ( D3TypeParser* parser, const HChar* str ) {
    Word i;
    VG_(printf)("  typestack (%s) {\n", str);
    for (i = 0; i <= parser->sp; i++) {
@@ -3292,10 +3300,7 @@ void dedup_types ( Bool td3,
 
    /* First we must sort .ents by its .cuOff fields, so we
       can index into it. */
-   VG_(setCmpFnXA)(
-      ents,
-      (Int(*)(void*,void*)) ML_(TyEnt__cmp_by_cuOff_only)
-   );
+   VG_(setCmpFnXA)( ents, (XACmpFn_t) ML_(TyEnt__cmp_by_cuOff_only) );
    VG_(sortXA)( ents );
 
    /* Now repeatedly do commoning and substitution passes over
@@ -3344,7 +3349,7 @@ void dedup_types ( Bool td3,
 
 __attribute__((noinline))
 static void resolve_variable_types (
-               void (*barf)( HChar* ) __attribute__((noreturn)),
+               void (*barf)( const HChar* ) __attribute__((noreturn)),
                /*R-O*/XArray* /* of TyEnt */ ents,
                /*MOD*/TyEntIndexCache* ents_cache,
                /*MOD*/XArray* /* of TempVar* */ vars
@@ -3396,9 +3401,9 @@ static void resolve_variable_types (
 /*---                                                      ---*/
 /*------------------------------------------------------------*/
 
-static Int cmp_TempVar_by_dioff ( void* v1, void* v2 ) {
-   TempVar* t1 = *(TempVar**)v1;
-   TempVar* t2 = *(TempVar**)v2;
+static Int cmp_TempVar_by_dioff ( const void* v1, const void* v2 ) {
+   const TempVar* t1 = *(const TempVar *const *)v1;
+   const TempVar* t2 = *(const TempVar *const *)v2;
    if (t1->dioff < t2->dioff) return -1;
    if (t1->dioff > t2->dioff) return 1;
    return 0;
@@ -3518,7 +3523,7 @@ static void read_DIE (
 static
 void new_dwarf3_reader_wrk ( 
    struct _DebugInfo* di,
-   __attribute__((noreturn)) void (*barf)( HChar* ),
+   __attribute__((noreturn)) void (*barf)( const HChar* ),
    UChar* debug_info_img,   SizeT debug_info_sz,
    UChar* debug_types_img,  SizeT debug_types_sz,
    UChar* debug_abbv_img,   SizeT debug_abbv_sz,
@@ -4048,10 +4053,7 @@ void new_dwarf3_reader_wrk (
       minor) waste of time, since tyents itself is sorted, but
       necessary since VG_(lookupXA) refuses to cooperate if we
       don't. */
-   VG_(setCmpFnXA)(
-      tyents_to_keep,
-      (Int(*)(void*,void*)) ML_(TyEnt__cmp_by_cuOff_only)
-   );
+   VG_(setCmpFnXA)( tyents_to_keep, (XACmpFn_t) ML_(TyEnt__cmp_by_cuOff_only) );
    VG_(sortXA)( tyents_to_keep );
 
    /* Enable cacheing on tyents_to_keep */
@@ -4337,10 +4339,10 @@ void new_dwarf3_reader_wrk (
 /*------------------------------------------------------------*/
 
 static Bool               d3rd_jmpbuf_valid  = False;
-static HChar*             d3rd_jmpbuf_reason = NULL;
+static const HChar*       d3rd_jmpbuf_reason = NULL;
 static VG_MINIMAL_JMP_BUF(d3rd_jmpbuf);
 
-static __attribute__((noreturn)) void barf ( HChar* reason ) {
+static __attribute__((noreturn)) void barf ( const HChar* reason ) {
    vg_assert(d3rd_jmpbuf_valid);
    d3rd_jmpbuf_reason = reason;
    VG_MINIMAL_LONGJMP(d3rd_jmpbuf);

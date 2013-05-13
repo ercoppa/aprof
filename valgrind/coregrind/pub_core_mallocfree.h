@@ -71,7 +71,8 @@ typedef Int ArenaId;
 // greater than 8.
 #if   defined(VGP_x86_linux)   || \
       defined(VGP_arm_linux)   || \
-      defined(VGP_mips32_linux)
+      defined(VGP_mips32_linux) || \
+      defined(VGP_mips64_linux)
 #  define VG_MIN_MALLOC_SZB        8
 // Nb: We always use 16 bytes for Darwin, even on 32-bits, so it can be used
 // for any AltiVec- or SSE-related type.  This matches the Darwin libc.
@@ -117,6 +118,11 @@ extern HChar* VG_(arena_strdup)  ( ArenaId aid, const HChar* cc,
 extern SizeT VG_(arena_malloc_usable_size) ( ArenaId aid, void* payload );
 
 extern void  VG_(mallinfo) ( ThreadId tid, struct vg_mallinfo* mi );
+
+// VG_(arena_perm_malloc) is for permanent allocation of small blocks.
+// See VG_(perm_malloc) in pub_tool_mallocfree.h for more details.
+// Do not call any VG_(arena_*) functions with these permanent blocks.
+extern void* VG_(arena_perm_malloc) ( ArenaId aid, SizeT nbytes, Int align );
 
 extern void  VG_(sanity_check_malloc_all) ( void );
 

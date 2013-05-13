@@ -717,7 +717,7 @@ int pthread_cond_destroy_intercept(pthread_cond_t* cond)
                                    cond, 0, 0, 0, 0);
    CALL_FN_W_W(ret, fn, cond);
    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_COND_DESTROY,
-                                   cond, 0, 0, 0, 0);
+                                   cond, ret==0, 0, 0, 0);
    return ret;
 }
 
@@ -803,7 +803,8 @@ int pthread_cond_broadcast_intercept(pthread_cond_t* cond)
 PTH_FUNCS(int, pthreadZucondZubroadcast, pthread_cond_broadcast_intercept,
           (pthread_cond_t* cond), (cond));
 
-#if defined(HAVE_PTHREAD_SPIN_LOCK)
+#if defined(HAVE_PTHREAD_SPIN_LOCK) \
+    && !defined(DISABLE_PTHREAD_SPINLOCK_INTERCEPT)
 static __always_inline
 int pthread_spin_init_intercept(pthread_spinlock_t *spinlock, int pshared)
 {

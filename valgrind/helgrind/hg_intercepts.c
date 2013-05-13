@@ -631,10 +631,8 @@ PTH_FUNC(int, pthreadZumutexZuunlock, // pthread_mutex_unlock
 
 /* Handled:   pthread_cond_wait pthread_cond_timedwait
               pthread_cond_signal pthread_cond_broadcast
+              pthread_cond_init
               pthread_cond_destroy
-
-   Unhandled: pthread_cond_init
-              -- is this important?
 */
 
 //-----------------------------------------------------------
@@ -917,6 +915,55 @@ static int pthread_cond_broadcast_WRK(pthread_cond_t* cond)
 #   error "Unsupported OS"
 #endif
 
+// glibc:  pthread_cond_init@GLIBC_2.0
+// glibc:  pthread_cond_init@GLIBC_2.2.5
+// glibc:  pthread_cond_init@@GLIBC_2.3.2
+// darwin: pthread_cond_init
+// Easy way out: Handling of attr could have been messier.
+// It turns out that pthread_cond_init under linux ignores
+// all information in cond_attr, so do we.
+// FIXME: MacOS X?
+__attribute__((noinline))
+static int pthread_cond_init_WRK(pthread_cond_t* cond, pthread_condattr_t *cond_attr)
+{
+   int ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, "<< pthread_cond_init %p", cond);
+      fflush(stderr);
+   }
+
+   CALL_FN_W_WW(ret, fn, cond, cond_attr);
+
+   if (ret == 0) {
+      DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_COND_INIT_POST,
+                   pthread_cond_t*,cond, pthread_condattr_t*, cond_attr);
+   } else {
+      DO_PthAPIerror( "pthread_cond_init", ret );
+   }
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, " coinit -> %d >>\n", ret);
+   }
+
+   return ret;
+}
+#if defined(VGO_linux)
+   PTH_FUNC(int, pthreadZucondZuinitZAZa, // pthread_cond_init@*
+	    pthread_cond_t* cond, pthread_condattr_t* cond_attr) {
+     return pthread_cond_init_WRK(cond, cond_attr);
+   }
+#elif defined(VGO_darwin)
+   PTH_FUNC(int, pthreadZucondZuinit, // pthread_cond_init
+	    pthread_cond_t* cond, pthread_condattr_t * cond_attr) {
+     return pthread_cond_init_WRK(cond, cond_attr);
+   }
+#else
+#  error "Unsupported OS"
+#endif
+
 
 //-----------------------------------------------------------
 // glibc:  pthread_cond_destroy@@GLIBC_2.3.2
@@ -1095,7 +1142,8 @@ PTH_FUNC(int, pthreadZubarrierZudestroy, // pthread_barrier_destroy
 /*--- pthread_spinlock_t functions                             ---*/
 /*----------------------------------------------------------------*/
 
-#if defined(HAVE_PTHREAD_SPIN_LOCK)
+#if defined(HAVE_PTHREAD_SPIN_LOCK) \
+    && !defined(DISABLE_PTHREAD_SPINLOCK_INTERCEPT)
 
 /* Handled:   pthread_spin_init pthread_spin_destroy
               pthread_spin_lock pthread_spin_trylock
@@ -2033,9 +2081,15 @@ PTH_FUNC(int, sem_close, sem_t* sem)
    ret_ty I_WRAP_SONAME_FNNAME_ZU(libQtCoreZdsoZa,f)(args); \
    ret_ty I_WRAP_SONAME_FNNAME_ZU(libQtCoreZdsoZa,f)(args)
 
+// soname is libQt5Core.so.4 ; match against libQt5Core.so*
+#define QT5_FUNC(ret_ty, f, args...) \
+   ret_ty I_WRAP_SONAME_FNNAME_ZU(libQt5CoreZdsoZa,f)(args); \
+   ret_ty I_WRAP_SONAME_FNNAME_ZU(libQt5CoreZdsoZa,f)(args)
+
 //-----------------------------------------------------------
 // QMutex::lock()
-QT4_FUNC(void, _ZN6QMutex4lockEv, void* self)
+__attribute__((noinline))
+static void QMutex_lock_WRK(void* self)
 {
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
@@ -2056,9 +2110,17 @@ QT4_FUNC(void, _ZN6QMutex4lockEv, void* self)
    }
 }
 
+QT4_FUNC(void, _ZN6QMutex4lockEv, void* self) {
+    QMutex_lock_WRK(self);
+}
+QT5_FUNC(void, _ZN6QMutex4lockEv, void* self) {
+    QMutex_lock_WRK(self);
+}
+
 //-----------------------------------------------------------
 // QMutex::unlock()
-QT4_FUNC(void, _ZN6QMutex6unlockEv, void* self)
+__attribute__((noinline))
+static void QMutex_unlock_WRK(void* self)
 {
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
@@ -2080,10 +2142,18 @@ QT4_FUNC(void, _ZN6QMutex6unlockEv, void* self)
    }
 }
 
+QT4_FUNC(void, _ZN6QMutex6unlockEv, void* self) {
+    QMutex_unlock_WRK(self);
+}
+QT5_FUNC(void, _ZN6QMutex6unlockEv, void* self) {
+    QMutex_unlock_WRK(self);
+}
+
 //-----------------------------------------------------------
 // bool QMutex::tryLock()
 // using 'long' to mimic C++ 'bool'
-QT4_FUNC(long, _ZN6QMutex7tryLockEv, void* self)
+__attribute__((noinline))
+static long QMutex_tryLock_WRK(void* self)
 {
    OrigFn fn;
    long   ret;
@@ -2110,10 +2180,18 @@ QT4_FUNC(long, _ZN6QMutex7tryLockEv, void* self)
    return ret;
 }
 
+QT4_FUNC(long, _ZN6QMutex7tryLockEv, void* self) {
+    return QMutex_tryLock_WRK(self);
+}
+QT5_FUNC(long, _ZN6QMutex7tryLockEv, void* self) {
+    return QMutex_tryLock_WRK(self);
+}
+
 //-----------------------------------------------------------
 // bool QMutex::tryLock(int)
 // using 'long' to mimic C++ 'bool'
-QT4_FUNC(long, _ZN6QMutex7tryLockEi, void* self, long arg2)
+__attribute__((noinline))
+static long QMutex_tryLock_int_WRK(void* self, long arg2)
 {
    OrigFn fn;
    long   ret;
@@ -2141,6 +2219,12 @@ QT4_FUNC(long, _ZN6QMutex7tryLockEi, void* self, long arg2)
    return ret;
 }
 
+QT4_FUNC(long, _ZN6QMutex7tryLockEi, void* self, long arg2) {
+    return QMutex_tryLock_int_WRK(self, arg2);
+}
+QT5_FUNC(long, _ZN6QMutex7tryLockEi, void* self, long arg2) {
+    return QMutex_tryLock_int_WRK(self, arg2);
+}
 
 //-----------------------------------------------------------
 // It's not really very clear what the args are here.  But from
@@ -2151,9 +2235,8 @@ QT4_FUNC(long, _ZN6QMutex7tryLockEi, void* self, long arg2)
 // is that of the mutex and the second is either zero or one,
 // probably being the recursion mode, therefore.
 // QMutex::QMutex(QMutex::RecursionMode)  ("C1ENS" variant)
-QT4_FUNC(void*, _ZN6QMutexC1ENS_13RecursionModeE,
-         void* mutex,
-         long  recmode)
+__attribute__((noinline))
+static void* QMutex_constructor_WRK(void* mutex, long recmode)
 {
    OrigFn fn;
    long   ret;
@@ -2165,9 +2248,17 @@ QT4_FUNC(void*, _ZN6QMutexC1ENS_13RecursionModeE,
    return (void*)ret;
 }
 
+QT4_FUNC(void*, _ZN6QMutexC1ENS_13RecursionModeE, void* self, long recmode) {
+    return QMutex_constructor_WRK(self, recmode);
+}
+QT5_FUNC(void*, _ZN6QMutexC1ENS_13RecursionModeE, void* self, long recmode) {
+    return QMutex_constructor_WRK(self, recmode);
+}
+
 //-----------------------------------------------------------
 // QMutex::~QMutex()  ("D1Ev" variant)
-QT4_FUNC(void*, _ZN6QMutexD1Ev, void* mutex)
+__attribute__((noinline))
+static void* QMutex_destructor_WRK(void* mutex)
 {
    OrigFn fn;
    long   ret;
@@ -2178,6 +2269,12 @@ QT4_FUNC(void*, _ZN6QMutexD1Ev, void* mutex)
    return (void*)ret;
 }
 
+QT4_FUNC(void*, _ZN6QMutexD1Ev, void* self) {
+    return QMutex_destructor_WRK(self);
+}
+QT5_FUNC(void*, _ZN6QMutexD1Ev, void* self) {
+    return QMutex_destructor_WRK(self);
+}
 
 //-----------------------------------------------------------
 // QMutex::QMutex(QMutex::RecursionMode)  ("C2ENS" variant)
@@ -2192,6 +2289,12 @@ QT4_FUNC(void*, _ZN6QMutexC2ENS_13RecursionModeE,
    return NULL;
 }
 
+QT5_FUNC(void*, _ZN6QMutexC2ENS_13RecursionModeE, void* self, long recmode)
+{
+   assert(0);
+   /*NOTREACHED*/
+   return NULL;
+}
 
 //-----------------------------------------------------------
 // QMutex::~QMutex()  ("D2Ev" variant)
@@ -2203,6 +2306,12 @@ QT4_FUNC(void*, _ZN6QMutexD2Ev, void* mutex)
    return NULL;
 }
 
+QT5_FUNC(void*, _ZN6QMutexD2Ev, void* self)
+{
+   assert(0);
+   /*NOTREACHED*/
+   return NULL;
+}
 
 // QReadWriteLock is not intercepted directly.  See comments
 // above.
@@ -2401,39 +2510,67 @@ QT4_FUNC(void*, _ZN6QMutexD2Ev, void* mutex)
    void* VG_REPLACE_FUNCTION_ZU(soname,fnname) \
             ( void *dst, const void *src, SizeT len ) \
    { \
-      register char *d; \
-      register char *s; \
+      const Addr WS = sizeof(UWord); /* 8 or 4 */ \
+      const Addr WM = WS - 1;        /* 7 or 3 */ \
       \
-      if (len == 0) \
-         return dst; \
-      \
-      if ( dst > src ) { \
-         d = (char *)dst + len - 1; \
-         s = (char *)src + len - 1; \
-         while ( len >= 4 ) { \
-            *d-- = *s--; \
-            *d-- = *s--; \
-            *d-- = *s--; \
-            *d-- = *s--; \
-            len -= 4; \
-         } \
-         while ( len-- ) { \
-            *d-- = *s--; \
-         } \
-      } else if ( dst < src ) { \
-         d = (char *)dst; \
-         s = (char *)src; \
-         while ( len >= 4 ) { \
-            *d++ = *s++; \
-            *d++ = *s++; \
-            *d++ = *s++; \
-            *d++ = *s++; \
-            len -= 4; \
-         } \
-         while ( len-- ) { \
-            *d++ = *s++; \
+      if (len > 0) { \
+         if (dst < src) { \
+         \
+            /* Copying backwards. */ \
+            SizeT n = len; \
+            Addr  d = (Addr)dst; \
+            Addr  s = (Addr)src; \
+            \
+            if (((s^d) & WM) == 0) { \
+               /* s and d have same UWord alignment. */ \
+               /* Pull up to a UWord boundary. */ \
+               while ((s & WM) != 0 && n >= 1) \
+                  { *(UChar*)d = *(UChar*)s; s += 1; d += 1; n -= 1; } \
+               /* Copy UWords. */ \
+               while (n >= WS) \
+                  { *(UWord*)d = *(UWord*)s; s += WS; d += WS; n -= WS; } \
+               if (n == 0) \
+                  return dst; \
+            } \
+            if (((s|d) & 1) == 0) { \
+               /* Both are 16-aligned; copy what we can thusly. */ \
+               while (n >= 2) \
+                  { *(UShort*)d = *(UShort*)s; s += 2; d += 2; n -= 2; } \
+            } \
+            /* Copy leftovers, or everything if misaligned. */ \
+            while (n >= 1) \
+               { *(UChar*)d = *(UChar*)s; s += 1; d += 1; n -= 1; } \
+         \
+         } else if (dst > src) { \
+         \
+            SizeT n = len; \
+            Addr  d = ((Addr)dst) + n; \
+            Addr  s = ((Addr)src) + n; \
+            \
+            /* Copying forwards. */ \
+            if (((s^d) & WM) == 0) { \
+               /* s and d have same UWord alignment. */ \
+               /* Back down to a UWord boundary. */ \
+               while ((s & WM) != 0 && n >= 1) \
+                  { s -= 1; d -= 1; *(UChar*)d = *(UChar*)s; n -= 1; } \
+               /* Copy UWords. */ \
+               while (n >= WS) \
+                  { s -= WS; d -= WS; *(UWord*)d = *(UWord*)s; n -= WS; } \
+               if (n == 0) \
+                  return dst; \
+            } \
+            if (((s|d) & 1) == 0) { \
+               /* Both are 16-aligned; copy what we can thusly. */ \
+               while (n >= 2) \
+                  { s -= 2; d -= 2; *(UShort*)d = *(UShort*)s; n -= 2; } \
+            } \
+            /* Copy leftovers, or everything if misaligned. */ \
+            while (n >= 1) \
+               { s -= 1; d -= 1; *(UChar*)d = *(UChar*)s; n -= 1; } \
+            \
          } \
       } \
+      \
       return dst; \
    }
 

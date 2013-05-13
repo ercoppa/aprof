@@ -22,6 +22,9 @@
 /* Darwin / Mac OS X version */
 /* #undef DARWIN_VERS */
 
+/* Disable intercept pthread_spin_lock() on MIPS32. */
+/* #undef DISABLE_PTHREAD_SPINLOCK_INTERCEPT */
+
 /* configured to run as an inner Valgrind */
 /* #undef ENABLE_INNER */
 
@@ -44,10 +47,13 @@
 /* #undef GLIBC_2_14 */
 
 /* Define to 1 if you're using glibc 2.15.x */
-#define GLIBC_2_15 1
+/* #undef GLIBC_2_15 */
 
 /* Define to 1 if you're using glibc 2.16.x */
 /* #undef GLIBC_2_16 */
+
+/* Define to 1 if you're using glibc 2.17.x */
+#define GLIBC_2_17 1
 
 /* Define to 1 if you're using glibc 2.2.x */
 /* #undef GLIBC_2_2 */
@@ -330,9 +336,6 @@
 
 /* Define to the version of this package. */
 #define PACKAGE_VERSION "3.9.0.SVN"
-
-/* configured memory alignment 2*PAGE_SIZE */
-#define SHM_ALIGNMENT 2*(1UL << MIPS_PAGE_SHIFT)
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1

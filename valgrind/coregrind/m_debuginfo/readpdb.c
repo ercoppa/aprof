@@ -1525,16 +1525,16 @@ static ULong DEBUG_SnarfLinetab(
    //VG_(printf)("DEBUG_SnarfLinetab %p %p %p %d\n", di, sectp, linetab, size);
    Int                file_segcount;
    HChar              filename[WIN32_PATH_MAX];
-   UInt               * filetab;
-   UChar              * fn;
+   const UInt         * filetab;
+   const UChar        * fn;
    Int                i;
    Int                k;
-   UInt               * lt_ptr;
+   const UInt         * lt_ptr;
    Int                nfile;
    Int                nseg;
    union any_size     pnt;
    union any_size     pnt2;
-   struct startend    * start;
+   const struct startend * start;
    Int                this_seg;
 
    Bool  debug = di->trace_symtab;
@@ -1552,14 +1552,14 @@ static ULong DEBUG_SnarfLinetab(
    nfile = *pnt.s++;
    nseg  = *pnt.s++;
 
-   filetab = (unsigned int *) pnt.c;
+   filetab = pnt.ui;
 
    /*
     * Now count up the number of segments in the file.
     */
    nseg = 0;
    for (i = 0; i < nfile; i++) {
-     pnt2.c = (HChar *)linetab + filetab[i];
+      pnt2.c = (HChar *)linetab + filetab[i];
       nseg += *pnt2.s;
    }
 
@@ -1575,13 +1575,13 @@ static ULong DEBUG_SnarfLinetab(
       file_segcount = *pnt2.s;
 
       pnt2.ui++;
-      lt_ptr = (unsigned int *) pnt2.c;
-      start = (struct startend *) (lt_ptr + file_segcount);
+      lt_ptr = pnt2.ui;
+      start = (const struct startend *) (lt_ptr + file_segcount);
 
       /*
        * Now snarf the filename for all of the segments for this file.
        */
-      fn = (UChar*) (start + file_segcount);
+      fn = (const UChar*) (start + file_segcount);
       /* fn now points at a Pascal-style string, that is, the first
          byte is the length, and the remaining up to 255 (presumably)
          are the contents. */
@@ -1626,11 +1626,11 @@ static ULong DEBUG_SnarfLinetab(
                if (debug)
                   VG_(message)(Vg_UserMsg,
                      "  Adding line %d addr=%#lx end=%#lx\n", 
-                        ((unsigned short *)(pnt2.ui + linecount))[j],
+                        ((const unsigned short *)(pnt2.ui + linecount))[j],
                         startaddr, endaddr );
                   ML_(addLineInfo)(
                      di, fnmstr, dirstr, startaddr, endaddr,
-                     ((unsigned short *)(pnt2.ui + linecount))[j], j );
+                     ((const unsigned short *)(pnt2.ui + linecount))[j], j );
                   n_lines_read++;
                }
             }
@@ -1800,13 +1800,14 @@ static ULong codeview_dump_linetab2(
 /*---                                                      ---*/
 /*------------------------------------------------------------*/
 
-static Int cmp_FPO_DATA_for_canonicalisation ( void* f1V, void* f2V )
+static Int cmp_FPO_DATA_for_canonicalisation ( const void* f1V,
+                                               const void* f2V )
 {
    /* Cause FPO data to be sorted first in ascending order of range
       starts, and for entries with the same range start, with the
       shorter range (length) first. */
-   FPO_DATA* f1 = (FPO_DATA*)f1V;
-   FPO_DATA* f2 = (FPO_DATA*)f2V;
+   const FPO_DATA* f1 = f1V;
+   const FPO_DATA* f2 = f2V;
    if (f1->ulOffStart < f2->ulOffStart) return -1;
    if (f1->ulOffStart > f2->ulOffStart) return  1;
    if (f1->cbProcSize < f2->cbProcSize) return -1;
@@ -2428,9 +2429,9 @@ HChar* ML_(find_name_of_pdb_file)( HChar* pename )
    /* Make up the command to run, essentially:
       sh -c "strings (pename) | egrep '\.pdb|\.PDB' > (tmpname)"
    */
-   HChar* sh      = "/bin/sh";
-   HChar* strings = "/usr/bin/strings";
-   HChar* egrep   = "/usr/bin/egrep";
+   const HChar* sh      = "/bin/sh";
+   const HChar* strings = "/usr/bin/strings";
+   const HChar* egrep   = "/usr/bin/egrep";
 
    /* (sh) -c "(strings) (pename) | (egrep) 'pdb' > (tmpname) */
    Int cmdlen = VG_(strlen)(strings) + VG_(strlen)(pename)

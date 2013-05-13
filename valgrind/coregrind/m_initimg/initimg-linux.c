@@ -557,7 +557,7 @@ Addr setup_client_stack( void*  init_sp,
         res = VG_(am_mmap_anon_fixed_client)(
                  anon_start -inner_HACK,
                  anon_size +inner_HACK,
-	         VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC
+	         info->stack_prot
 	      );
      }
      if ((!ok) || sr_isError(res)) {
@@ -1105,6 +1105,20 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
    /* Zero out the shadow areas. */
    VG_(memset)(&arch->vex_shadow1, 0, sizeof(VexGuestMIPS32State));
    VG_(memset)(&arch->vex_shadow2, 0, sizeof(VexGuestMIPS32State));
+
+   arch->vex.guest_r29 = iifii.initial_client_SP;
+   arch->vex.guest_PC = iifii.initial_client_IP;
+   arch->vex.guest_r31 = iifii.initial_client_SP;
+
+#   elif defined(VGP_mips64_linux)
+   vg_assert(0 == sizeof(VexGuestMIPS64State) % 16);
+   /* Zero out the initial state, and set up the simulated FPU in a
+      sane way. */
+   LibVEX_GuestMIPS64_initialise(&arch->vex);
+
+   /* Zero out the shadow areas. */
+   VG_(memset)(&arch->vex_shadow1, 0, sizeof(VexGuestMIPS64State));
+   VG_(memset)(&arch->vex_shadow2, 0, sizeof(VexGuestMIPS64State));
 
    arch->vex.guest_r29 = iifii.initial_client_SP;
    arch->vex.guest_PC = iifii.initial_client_IP;

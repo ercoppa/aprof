@@ -81,6 +81,7 @@
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
 #include "pub_core_replacemalloc.h"
+#include "pub_core_sbprofile.h"
 #include "pub_core_signals.h"
 #include "pub_core_stacks.h"
 #include "pub_core_stacktrace.h"    // For VG_(get_and_pp_StackTrace)()
@@ -177,18 +178,19 @@ void print_sched_event ( ThreadId tid, const HChar* what )
    VG_(message)(Vg_DebugMsg, "  SCHED[%d]: %s\n", tid, what );
 }
 
-/* For showing SB counts, if the user asks to see them. */
-#define SHOW_SBCOUNT_EVERY (20ULL * 1000 * 1000)
-static ULong bbs_done_lastcheck = 0;
-
+/* For showing SB profiles, if the user asks to see them. */
 static
-void maybe_show_sb_counts ( void )
+void maybe_show_sb_profile ( void )
 {
-   Long delta = bbs_done - bbs_done_lastcheck;
+   /* DO NOT MAKE NON-STATIC */
+   static ULong bbs_done_lastcheck = 0;
+   /* */
+   vg_assert(VG_(clo_profyle_interval) > 0);
+   Long delta = (Long)(bbs_done - bbs_done_lastcheck);
    vg_assert(delta >= 0);
-   if (UNLIKELY(delta >= SHOW_SBCOUNT_EVERY)) {
-      VG_(umsg)("%'lld superblocks executed\n", bbs_done);
+   if ((ULong)delta >= VG_(clo_profyle_interval)) {
       bbs_done_lastcheck = bbs_done;
+      VG_(get_and_show_SB_profile)(bbs_done);
    }
 }
 
@@ -283,7 +285,10 @@ void VG_(acquire_BigLock)(ThreadId tid, const HChar* who)
    VG_(running_tid) = tid;
 
    { Addr gsp = VG_(get_SP)(tid);
-     VG_(unknown_SP_update)(gsp, gsp, 0/*unknown origin*/);
+      if (NULL != VG_(tdict).track_new_mem_stack_w_ECU)
+         VG_(unknown_SP_update_w_ECU)(gsp, gsp, 0/*unknown origin*/);
+      else
+         VG_(unknown_SP_update)(gsp, gsp);
    }
 
    if (VG_(clo_trace_sched)) {
@@ -785,7 +790,7 @@ static void do_pre_run_checks ( ThreadState* tst )
    /* no special requirements */
 #  endif
 
-#  if defined(VGA_mips32)
+#  if defined(VGA_mips32) || defined(VGA_mips64)
   /* no special requirements */
 #  endif
 }
@@ -1349,8 +1354,8 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
             before swapping to another.  That means that short term
             spins waiting for hardware to poke memory won't cause a
             thread swap. */
-	 if (dispatch_ctr > 2000) 
-            dispatch_ctr = 2000;
+	 if (dispatch_ctr > 1000) 
+            dispatch_ctr = 1000;
 	 break;
 
       case VG_TRC_INNER_COUNTERZERO:
@@ -1439,9 +1444,10 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
       case VEX_TRC_JMP_NODECODE: {
          Addr addr = VG_(get_IP)(tid);
 
-         VG_(umsg)(
-            "valgrind: Unrecognised instruction at address %#lx.\n", addr);
-         VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
+         if (VG_(clo_sigill_diag)) {
+            VG_(umsg)(
+               "valgrind: Unrecognised instruction at address %#lx.\n", addr);
+            VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
 #define M(a) VG_(umsg)(a "\n");
    M("Your program just tried to execute an instruction that Valgrind" );
    M("did not recognise.  There are two possible reasons for this."    );
@@ -1454,6 +1460,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
    M("Either way, Valgrind will now raise a SIGILL signal which will"  );
    M("probably kill your program."                                     );
 #undef M
+         }
 
 #if defined(VGA_s390x)
          /* Now that the complaint is out we need to adjust the guest_IA. The
@@ -1531,8 +1538,8 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 
       } /* switch (trc) */
 
-      if (0)
-         maybe_show_sb_counts();
+      if (UNLIKELY(VG_(clo_profyle_sbs)) && VG_(clo_profyle_interval) > 0)
+         maybe_show_sb_profile();
    }
 
    if (VG_(clo_trace_sched))
@@ -1590,7 +1597,7 @@ void VG_(nuke_all_threads_except) ( ThreadId me, VgSchedReturnCode src )
 #elif defined (VGA_s390x)
 #  define VG_CLREQ_ARGS       guest_r2
 #  define VG_CLREQ_RET        guest_r3
-#elif defined(VGA_mips32)
+#elif defined(VGA_mips32) || defined(VGA_mips64)
 #  define VG_CLREQ_ARGS       guest_r12
 #  define VG_CLREQ_RET        guest_r11
 #else
@@ -1874,6 +1881,13 @@ void do_client_request ( ThreadId tid )
          break;
       }
 
+      case VG_USERREQ__GDB_MONITOR_COMMAND: {
+         UWord ret;
+         ret = (UWord) VG_(client_monitor_command) ((HChar*)arg[1]);
+         SET_CLREQ_RETVAL(tid, ret);
+         break;
+      }
+
       case VG_USERREQ__MALLOCLIKE_BLOCK:
       case VG_USERREQ__RESIZEINPLACE_BLOCK:
       case VG_USERREQ__FREELIKE_BLOCK:
@@ -1959,8 +1973,6 @@ static
 void scheduler_sanity ( ThreadId tid )
 {
    Bool bad = False;
-   static UInt lasttime = 0;
-   UInt now;
    Int lwpid = VG_(gettid)();
 
    if (!VG_(is_running_thread)(tid)) {
@@ -1985,14 +1997,18 @@ void scheduler_sanity ( ThreadId tid )
       bad = True;
    }
 
-   /* Periodically show the state of all threads, for debugging
-      purposes. */
-   now = VG_(read_millisecond_timer)();
-   if (0 && (!bad) && (lasttime + 4000/*ms*/ <= now)) {
-      lasttime = now;
-      VG_(printf)("\n------------ Sched State at %d ms ------------\n",
-                  (Int)now);
-      VG_(show_sched_status)();
+   if (0) {
+      /* Periodically show the state of all threads, for debugging
+         purposes. */
+      static UInt lasttime = 0;
+      UInt now;
+      now = VG_(read_millisecond_timer)();
+      if ((!bad) && (lasttime + 4000/*ms*/ <= now)) {
+         lasttime = now;
+         VG_(printf)("\n------------ Sched State at %d ms ------------\n",
+                     (Int)now);
+         VG_(show_sched_status)();
+      }
    }
 
    /* core_panic also shows the sched status, which is why we don't

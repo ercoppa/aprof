@@ -106,7 +106,7 @@ typedef
    }
    X86CondCode;
 
-extern HChar* showX86CondCode ( X86CondCode );
+extern const HChar* showX86CondCode ( X86CondCode );
 
 
 /* --------- Memory address expressions (amodes). --------- */
@@ -249,7 +249,7 @@ typedef
    }
    X86UnaryOp;
 
-extern HChar* showX86UnaryOp ( X86UnaryOp );
+extern const HChar* showX86UnaryOp ( X86UnaryOp );
 
 
 /* --------- */
@@ -264,7 +264,7 @@ typedef
    }
    X86AluOp;
 
-extern HChar* showX86AluOp ( X86AluOp );
+extern const HChar* showX86AluOp ( X86AluOp );
 
 
 /* --------- */
@@ -275,7 +275,7 @@ typedef
    }
    X86ShiftOp;
 
-extern HChar* showX86ShiftOp ( X86ShiftOp );
+extern const HChar* showX86ShiftOp ( X86ShiftOp );
 
 
 /* --------- */
@@ -291,7 +291,7 @@ typedef
    }
    X86FpOp;
 
-extern HChar* showX86FpOp ( X86FpOp );
+extern const HChar* showX86FpOp ( X86FpOp );
 
 
 /* --------- */
@@ -334,7 +334,7 @@ typedef
    }
    X86SseOp;
 
-extern HChar* showX86SseOp ( X86SseOp );
+extern const HChar* showX86SseOp ( X86SseOp );
 
 
 /* --------- */
@@ -450,6 +450,7 @@ typedef
             X86CondCode cond;
             Addr32      target;
             Int         regparms; /* 0 .. 3 */
+            RetLoc      rloc;     /* where the return value will be */
          } Call;
          /* Update the guest EIP value, then exit requesting to chain
             to it.  May be conditional.  Urr, use of Addr32 implicitly
@@ -664,7 +665,7 @@ extern X86Instr* X86Instr_MulL      ( Bool syned, X86RM* );
 extern X86Instr* X86Instr_Div       ( Bool syned, X86RM* );
 extern X86Instr* X86Instr_Sh3232    ( X86ShiftOp, UInt amt, HReg src, HReg dst );
 extern X86Instr* X86Instr_Push      ( X86RMI* );
-extern X86Instr* X86Instr_Call      ( X86CondCode, Addr32, Int );
+extern X86Instr* X86Instr_Call      ( X86CondCode, Addr32, Int, RetLoc );
 extern X86Instr* X86Instr_XDirect   ( Addr32 dstGA, X86AMode* amEIP,
                                       X86CondCode cond, Bool toFastEP );
 extern X86Instr* X86Instr_XIndir    ( HReg dstGA, X86AMode* amEIP,

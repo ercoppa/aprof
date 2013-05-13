@@ -120,6 +120,7 @@
 // Also, --show-reachable is a bad name because it also turns on the showing
 // of indirectly leaked blocks(!)  It would be better named --show-all or
 // --show-all-heap-blocks, because that's the end result.
+// We now have the option --show-leak-kinds=... which allows to specify =all.
 //
 // ----
 //
@@ -167,7 +168,8 @@
 // 
 // ==20397== 16 bytes in 1 blocks are definitely lost in loss record 14
 // of 15 (and 16 bytes in 1 block are indirectly lost as a result;  they
-// are mentioned elsewhere (if --show-reachable=yes is given!))
+// are mentioned elsewhere (if --show-reachable=yes or indirect is given
+// in --show-leak-kinds=... !))
 // ==20397==    at 0x4C2694E: malloc (vg_replace_malloc.c:177)
 // ==20397==    by 0x400521: mk (leak-cases.c:49)
 // ==20397==    by 0x400580: main (leak-cases.c:72)
@@ -244,10 +246,10 @@
 /*------------------------------------------------------------*/
 
 // Compare the MC_Chunks by 'data' (i.e. the address of the block).
-static Int compare_MC_Chunks(void* n1, void* n2)
+static Int compare_MC_Chunks(const void* n1, const void* n2)
 {
-   MC_Chunk* mc1 = *(MC_Chunk**)n1;
-   MC_Chunk* mc2 = *(MC_Chunk**)n2;
+   const MC_Chunk* mc1 = *(const MC_Chunk *const *)n1;
+   const MC_Chunk* mc2 = *(const MC_Chunk *const *)n2;
    if (mc1->data < mc2->data) return -1;
    if (mc1->data > mc2->data) return  1;
    return 0;
@@ -604,7 +606,7 @@ lc_push_without_clique_if_a_chunk_ptr(Addr ptr, Bool is_prior_definite)
 }
 
 static void
-lc_push_if_a_chunk_ptr_register(ThreadId tid, HChar* regname, Addr ptr)
+lc_push_if_a_chunk_ptr_register(ThreadId tid, const HChar* regname, Addr ptr)
 {
    lc_push_without_clique_if_a_chunk_ptr(ptr, /*is_prior_definite*/True);
 }
@@ -834,8 +836,8 @@ static void lc_process_markstack(Int clique)
 
 static Word cmp_LossRecordKey_LossRecord(const void* key, const void* elem)
 {
-   LossRecordKey* a = (LossRecordKey*)key;
-   LossRecordKey* b = &(((LossRecord*)elem)->key);
+   const LossRecordKey* a = key;
+   const LossRecordKey* b = &(((const LossRecord*)elem)->key);
 
    // Compare on states first because that's fast.
    if (a->state < b->state) return -1;
@@ -850,10 +852,10 @@ static Word cmp_LossRecordKey_LossRecord(const void* key, const void* elem)
    VG_(tool_panic)("bad LossRecord comparison");
 }
 
-static Int cmp_LossRecords(void* va, void* vb)
+static Int cmp_LossRecords(const void* va, const void* vb)
 {
-   LossRecord* lr_a = *(LossRecord**)va;
-   LossRecord* lr_b = *(LossRecord**)vb;
+   const LossRecord* lr_a = *(const LossRecord *const *)va;
+   const LossRecord* lr_b = *(const LossRecord *const *)vb;
    SizeT total_szB_a = lr_a->szB + lr_a->indirect_szB;
    SizeT total_szB_b = lr_b->szB + lr_b->indirect_szB;
 
@@ -906,14 +908,8 @@ static void get_printing_rules(LeakCheckParams* lcp,
    // Rules for printing:
    // - We don't show suppressed loss records ever (and that's controlled
    //   within the error manager).
-   // - We show non-suppressed loss records that are not "reachable" if 
-   //   --leak-check=yes.
-   // - We show all non-suppressed loss records if --leak-check=yes and
-   //   --show-reachable=yes.
-   //
-   // Nb: here "reachable" means Reachable *or* IndirectLeak;  note that
-   // this is different to "still reachable" used elsewhere because it
-   // includes indirectly lost blocks!
+   // - We show non-suppressed loss records that are specified in
+   //   --show-leak-kinds=... if --leak-check=yes.
 
    Bool delta_considered;
 
@@ -936,20 +932,14 @@ static void get_printing_rules(LeakCheckParams* lcp,
       tl_assert(0);
    }
 
-   *print_record = lcp->mode == LC_Full && delta_considered &&
-      ( lcp->show_reachable ||
-        Unreached == lr->key.state || 
-        ( lcp->show_possibly_lost && 
-          Possible  == lr->key.state ) );
+   *print_record = lcp->mode == LC_Full && delta_considered 
+      && RiS(lr->key.state,lcp->show_leak_kinds);
    // We don't count a leaks as errors with lcp->mode==LC_Summary.
    // Otherwise you can get high error counts with few or no error
-   // messages, which can be confusing.  Also, you could argue that
-   // indirect leaks should be counted as errors, but it seems better to
-   // make the counting criteria similar to the printing criteria.  So we
-   // don't count them.
-   *count_as_error = lcp->mode == LC_Full && delta_considered &&
-      ( Unreached == lr->key.state || 
-        Possible  == lr->key.state );
+   // messages, which can be confusing.  Otherwise, we count as errors
+   // the leak kinds requested by --errors-for-leak-kinds=...
+   *count_as_error = lcp->mode == LC_Full && delta_considered 
+      && RiS(lr->key.state,lcp->errors_for_leak_kinds);
 }
 
 static void print_results(ThreadId tid, LeakCheckParams* lcp)
@@ -1011,7 +1001,7 @@ static void print_results(ThreadId tid, LeakCheckParams* lcp)
       LossRecord*   old_lr;
       LossRecordKey lrkey;
       lrkey.state        = ex->state;
-      lrkey.allocated_at = ch->where;
+      lrkey.allocated_at = MC_(allocated_at)(ch);
 
       old_lr = VG_(OSetGen_Lookup)(lr_table, &lrkey);
       if (old_lr) {
@@ -1155,7 +1145,7 @@ static void print_results(ThreadId tid, LeakCheckParams* lcp)
                       "of leaked memory\n");
       }
       if (lcp->mode == LC_Full &&
-          MC_(blocks_reachable) > 0 && !lcp->show_reachable)
+          MC_(blocks_reachable) > 0 && !RiS(Reachable,lcp->show_leak_kinds))
       {
          VG_(umsg)("Reachable blocks (those to which a pointer "
                    "was found) are not shown.\n");
@@ -1163,7 +1153,7 @@ static void print_results(ThreadId tid, LeakCheckParams* lcp)
             VG_(umsg)("To see them, add 'reachable any' args to leak_check\n");
          else
             VG_(umsg)("To see them, rerun with: --leak-check=full "
-                      "--show-reachable=yes\n");
+                      "--show-leak-kinds=all\n");
       }
       VG_(umsg)("\n");
    }
@@ -1185,7 +1175,7 @@ static void print_clique (Int clique, UInt level)
          LossRecordKey ind_lrkey;
          Int lr_i;
          ind_lrkey.state = ind_ex->state;
-         ind_lrkey.allocated_at = ind_ch->where;
+         ind_lrkey.allocated_at = MC_(allocated_at)(ind_ch);
          ind_lr = VG_(OSetGen_Lookup)(lr_table, &ind_lrkey);
          for (lr_i = 0; lr_i < n_lossrecords; lr_i++)
             if (ind_lr == lr_array[lr_i])
@@ -1237,7 +1227,7 @@ Bool MC_(print_block_list) ( UInt loss_record_nr)
       LossRecord*   old_lr;
       LossRecordKey lrkey;
       lrkey.state        = ex->state;
-      lrkey.allocated_at = ch->where;
+      lrkey.allocated_at = MC_(allocated_at)(ch);
 
       old_lr = VG_(OSetGen_Lookup)(lr_table, &lrkey);
       if (old_lr) {
@@ -1294,7 +1284,7 @@ static void scan_memory_root_set(Addr searched, SizeT szB)
       // memory by explicitly mapping /dev/zero.
       if (seg->kind == SkFileC 
           && (VKI_S_ISCHR(seg->mode) || VKI_S_ISBLK(seg->mode))) {
-         HChar* dev_name = VG_(am_get_filename)( (NSegment*)seg );
+         HChar* dev_name = VG_(am_get_filename)( seg );
          if (dev_name && 0 == VG_(strcmp)(dev_name, "/dev/zero")) {
             // Don't skip /dev/zero.
          } else {
@@ -1430,9 +1420,9 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckParams* lcp)
          VG_(umsg)("Block 0x%lx..0x%lx overlaps with block 0x%lx..0x%lx\n",
                    start1, end1, start2, end2);
          VG_(umsg)("Blocks allocation contexts:\n"),
-         VG_(pp_ExeContext)( ch1->where);
+         VG_(pp_ExeContext)( MC_(allocated_at)(ch1));
          VG_(umsg)("\n"),
-         VG_(pp_ExeContext)( ch2->where);
+         VG_(pp_ExeContext)(  MC_(allocated_at)(ch2));
          VG_(umsg)("This is usually caused by using VALGRIND_MALLOCLIKE_BLOCK");
          VG_(umsg)("in an inappropriate way.\n");
          tl_assert (0);
@@ -1522,7 +1512,7 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckParams* lcp)
 static Addr searched_wpa;
 static SizeT searched_szB;
 static void
-search_address_in_GP_reg(ThreadId tid, HChar* regname, Addr addr_in_reg)
+search_address_in_GP_reg(ThreadId tid, const HChar* regname, Addr addr_in_reg)
 {
    if (addr_in_reg >= searched_wpa 
        && addr_in_reg < searched_wpa + searched_szB) {

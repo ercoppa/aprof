@@ -664,6 +664,12 @@ BUILD_IFUNC_TESTS_FALSE
 BUILD_IFUNC_TESTS_TRUE
 BUILD_MOVBE_TESTS_FALSE
 BUILD_MOVBE_TESTS_TRUE
+BUILD_FMA_TESTS_FALSE
+BUILD_FMA_TESTS_TRUE
+BUILD_BMI_TESTS_FALSE
+BUILD_BMI_TESTS_TRUE
+BUILD_AVX2_TESTS_FALSE
+BUILD_AVX2_TESTS_TRUE
 BUILD_AVX_TESTS_FALSE
 BUILD_AVX_TESTS_TRUE
 BUILD_SSE42_TESTS_FALSE
@@ -679,6 +685,7 @@ BUILD_SSSE3_TESTS_TRUE
 BUILD_SSE3_TESTS_FALSE
 BUILD_SSE3_TESTS_TRUE
 FLAG_NO_BUILD_ID
+FLAG_T_TEXT
 DWARF4_FALSE
 DWARF4_TRUE
 FLAG_UNLIMITED_INLINE_UNIT_GROWTH
@@ -689,6 +696,8 @@ FLAG_W_NO_OVERFLOW
 FLAG_W_NO_NONNULL
 FLAG_W_NO_FORMAT_ZERO_LENGTH
 FLAG_W_NO_EMPTY_BODY
+HAS_WRITE_STRINGS_WARNING_FALSE
+HAS_WRITE_STRINGS_WARNING_TRUE
 HAS_POINTER_SIGN_WARNING_FALSE
 HAS_POINTER_SIGN_WARNING_TRUE
 PREFERRED_STACK_BOUNDARY
@@ -706,6 +715,10 @@ HAS_VSX_FALSE
 HAS_VSX_TRUE
 HAS_ALTIVEC_FALSE
 HAS_ALTIVEC_TRUE
+HAVE_GNU_STPNCPY_FALSE
+HAVE_GNU_STPNCPY_TRUE
+HAVE_AT_FDCWD_FALSE
+HAVE_AT_FDCWD_TRUE
 VGCONF_PLATVARIANT_IS_ANDROID_FALSE
 VGCONF_PLATVARIANT_IS_ANDROID_TRUE
 VGCONF_PLATVARIANT_IS_VANILLA_FALSE
@@ -727,6 +740,8 @@ VGCONF_PLATFORMS_INCLUDE_AMD64_DARWIN_FALSE
 VGCONF_PLATFORMS_INCLUDE_AMD64_DARWIN_TRUE
 VGCONF_PLATFORMS_INCLUDE_X86_DARWIN_FALSE
 VGCONF_PLATFORMS_INCLUDE_X86_DARWIN_TRUE
+VGCONF_PLATFORMS_INCLUDE_MIPS64_LINUX_FALSE
+VGCONF_PLATFORMS_INCLUDE_MIPS64_LINUX_TRUE
 VGCONF_PLATFORMS_INCLUDE_MIPS32_LINUX_FALSE
 VGCONF_PLATFORMS_INCLUDE_MIPS32_LINUX_TRUE
 VGCONF_PLATFORMS_INCLUDE_S390X_LINUX_FALSE
@@ -741,6 +756,8 @@ VGCONF_PLATFORMS_INCLUDE_AMD64_LINUX_FALSE
 VGCONF_PLATFORMS_INCLUDE_AMD64_LINUX_TRUE
 VGCONF_PLATFORMS_INCLUDE_X86_LINUX_FALSE
 VGCONF_PLATFORMS_INCLUDE_X86_LINUX_TRUE
+VGCONF_ARCHS_INCLUDE_MIPS64_FALSE
+VGCONF_ARCHS_INCLUDE_MIPS64_TRUE
 VGCONF_ARCHS_INCLUDE_MIPS32_FALSE
 VGCONF_ARCHS_INCLUDE_MIPS32_TRUE
 VGCONF_ARCHS_INCLUDE_S390X_FALSE
@@ -877,7 +894,6 @@ enable_only64bit
 enable_only32bit
 enable_inner
 with_pagesize
-with_alignment
 with_tmpdir
 enable_tls
 with_mpicc
@@ -1528,7 +1544,6 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-pagesize=        override detected page size (4, 16 or 64)
-  --with-alignment=       shared memory alignment for MIPS
   --with-tmpdir=PATH      Specify path for temporary files
   --with-mpicc=           Specify name of MPI2-ised C compiler
 
@@ -5368,23 +5383,34 @@ $as_echo "ok (${host_cpu})" >&6; }
 	;;
 
      mips)
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: ok (${host_cpu})" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok (${host_cpu})" >&5
 $as_echo "ok (${host_cpu})" >&6; }
-	ARCH_MAX="mips32"
-	;;
+        ARCH_MAX="mips32"
+        ;;
 
      mipsel)
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: ok (${host_cpu})" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok (${host_cpu})" >&5
 $as_echo "ok (${host_cpu})" >&6; }
-	ARCH_MAX="mips32"
-	;;
+        ARCH_MAX="mips32"
+        ;;
 
      mipsisa32r2)
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: ok (${host_cpu})" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok (${host_cpu})" >&5
 $as_echo "ok (${host_cpu})" >&6; }
-	ARCH_MAX="mips32"
-	;;
+        ARCH_MAX="mips32"
+        ;;
 
+     mips64*)
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok (${host_cpu})" >&5
+$as_echo "ok (${host_cpu})" >&6; }
+        ARCH_MAX="mips64"
+        ;;
+
+     mipsisa64*)
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok (${host_cpu})" >&5
+$as_echo "ok (${host_cpu})" >&6; }
+        ARCH_MAX="mips64"
+        ;;
      *)
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no (${host_cpu})" >&5
 $as_echo "no (${host_cpu})" >&6; }
@@ -5829,8 +5855,17 @@ $as_echo "ok (${ARCH_MAX}-${VGCONF_OS})" >&6; }
         valt_load_address_sec_inner="0xUNSET"
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok (${ARCH_MAX}-${VGCONF_OS})" >&5
 $as_echo "ok (${ARCH_MAX}-${VGCONF_OS})" >&6; }
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok (${host_cpu}-${host_os})" >&5
-$as_echo "ok (${host_cpu}-${host_os})" >&6; }
+        ;;
+     mips64-linux)
+        VGCONF_ARCH_PRI="mips64"
+        VGCONF_PLATFORM_PRI_CAPS="MIPS64_LINUX"
+        VGCONF_PLATFORM_SEC_CAPS=""
+        valt_load_address_pri_norml="0x38000000"
+        valt_load_address_pri_inner="0x28000000"
+        valt_load_address_sec_norml="0xUNSET"
+        valt_load_address_sec_inner="0xUNSET"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok (${ARCH_MAX}-${VGCONF_OS})" >&5
+$as_echo "ok (${ARCH_MAX}-${VGCONF_OS})" >&6; }
         ;;
     *)
         VGCONF_ARCH_PRI="unknown"
@@ -5912,6 +5947,14 @@ else
   VGCONF_ARCHS_INCLUDE_MIPS32_FALSE=
 fi
 
+ if test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX ; then
+  VGCONF_ARCHS_INCLUDE_MIPS64_TRUE=
+  VGCONF_ARCHS_INCLUDE_MIPS64_FALSE='#'
+else
+  VGCONF_ARCHS_INCLUDE_MIPS64_TRUE='#'
+  VGCONF_ARCHS_INCLUDE_MIPS64_FALSE=
+fi
+
 
 # Set up VGCONF_PLATFORMS_INCLUDE_<platform>.  Either one or two of these
 # become defined.
@@ -5974,6 +6017,14 @@ else
   VGCONF_PLATFORMS_INCLUDE_MIPS32_LINUX_FALSE=
 fi
 
+ if test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX; then
+  VGCONF_PLATFORMS_INCLUDE_MIPS64_LINUX_TRUE=
+  VGCONF_PLATFORMS_INCLUDE_MIPS64_LINUX_FALSE='#'
+else
+  VGCONF_PLATFORMS_INCLUDE_MIPS64_LINUX_TRUE='#'
+  VGCONF_PLATFORMS_INCLUDE_MIPS64_LINUX_FALSE=
+fi
+
 
  if test x$VGCONF_PLATFORM_PRI_CAPS = xX86_DARWIN \
                  -o x$VGCONF_PLATFORM_SEC_CAPS = xX86_DARWIN; then
@@ -6003,7 +6054,8 @@ fi
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_LINUX \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xARM_LINUX \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xS390X_LINUX \
-                 -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX; then
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX \
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX; then
   VGCONF_OS_IS_LINUX_TRUE=
   VGCONF_OS_IS_LINUX_FALSE='#'
 else
@@ -6107,46 +6159,6 @@ $as_echo "#define MIPS_PAGE_SHIFT 12" >>confdefs.h
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: checking for Pagesize... ${psize}k" >&5
 $as_echo "checking for Pagesize... ${psize}k" >&6; }
-
-#----------------------------------------------------------------------------
-# Define shm_align for MIPS (--shared-memory-alignment)
-#----------------------------------------------------------------------------
-
-# Check whether --with-alignment was given.
-if test "${with_alignment+set}" = set; then :
-  withval=$with_alignment; align=$withval
-else
-  align=-1
-
-fi
-
-
-mod=`expr $align % 1024`
-
-let "psz=psize*1024*2"
-
-if test "$align" = "-1"; then
-
-$as_echo "#define SHM_ALIGNMENT 2*(1UL << MIPS_PAGE_SHIFT)" >>confdefs.h
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: checking for shared memory alignment... 2*PAGE_SIZE" >&5
-$as_echo "checking for shared memory alignment... 2*PAGE_SIZE" >&6; }
-elif test "$mod" = "0"; then
-    if test $align -lt $psz;
-    then
-        as_fn_error $? "Alignment must be >= PAGE_SIZE" "$LINENO" 5
-    else
-
-cat >>confdefs.h <<_ACEOF
-#define SHM_ALIGNMENT ${align}
-_ACEOF
-
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: checking for shared memory alignment... ${align}" >&5
-$as_echo "checking for shared memory alignment... ${align}" >&6; }
-    fi
-else
-    as_fn_error $? "Alignment % 1024 must be zero" "$LINENO" 5
-fi
 
 
 #----------------------------------------------------------------------------
@@ -6642,6 +6654,16 @@ $as_echo "#define GLIBC_2_16 1" >>confdefs.h
 	DEFAULT_SUPP="glibc-2.34567-NPTL-helgrind.supp ${DEFAULT_SUPP}"
 	DEFAULT_SUPP="glibc-2.X-drd.supp ${DEFAULT_SUPP}"
 	;;
+     2.17)
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: 2.17 family" >&5
+$as_echo "2.17 family" >&6; }
+
+$as_echo "#define GLIBC_2_17 1" >>confdefs.h
+
+	DEFAULT_SUPP="glibc-2.X.supp ${DEFAULT_SUPP}"
+	DEFAULT_SUPP="glibc-2.34567-NPTL-helgrind.supp ${DEFAULT_SUPP}"
+	DEFAULT_SUPP="glibc-2.X-drd.supp ${DEFAULT_SUPP}"
+	;;
      darwin)
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Darwin" >&5
 $as_echo "Darwin" >&6; }
@@ -6662,7 +6684,7 @@ $as_echo "#define BIONIC_LIBC 1" >>confdefs.h
      *)
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: unsupported version ${GLIBC_VERSION}" >&5
 $as_echo "unsupported version ${GLIBC_VERSION}" >&6; }
-	as_fn_error $? "Valgrind requires glibc version 2.2 - 2.16" "$LINENO" 5
+	as_fn_error $? "Valgrind requires glibc version 2.2 - 2.17" "$LINENO" 5
 	as_fn_error $? "or Darwin libc" "$LINENO" 5
 	;;
 esac
@@ -6751,6 +6773,102 @@ fi
 #----------------------------------------------------------------------------
 # Checking for various library functions and other definitions
 #----------------------------------------------------------------------------
+
+# Check for AT_FDCWD
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for AT_FDCWD" >&5
+$as_echo_n "checking for AT_FDCWD... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define _GNU_SOURCE
+#include <fcntl.h>
+#include <unistd.h>
+
+int
+main ()
+{
+
+  int a = AT_FDCWD;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+ac_have_at_fdcwd=yes
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+
+ac_have_at_fdcwd=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+ if test x$ac_have_at_fdcwd = xyes; then
+  HAVE_AT_FDCWD_TRUE=
+  HAVE_AT_FDCWD_FALSE='#'
+else
+  HAVE_AT_FDCWD_TRUE='#'
+  HAVE_AT_FDCWD_FALSE=
+fi
+
+
+# Check for stpncpy function definition in string.h
+# This explicitly checks with _GNU_SOURCE defined since that is also
+# used in the test case (some systems might define it without anyway
+# since stpncpy is part of The Open Group Base Specifications Issue 7
+# IEEE Std 1003.1-2008.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for stpncpy" >&5
+$as_echo_n "checking for stpncpy... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define _GNU_SOURCE
+#include <string.h>
+
+int
+main ()
+{
+
+  char *d;
+  char *s;
+  size_t n = 0;
+  char *r = stpncpy(d, s, n);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+ac_have_gnu_stpncpy=yes
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+
+ac_have_gnu_stpncpy=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+ if test x$ac_have_gnu_stpncpy = xyes; then
+  HAVE_GNU_STPNCPY_TRUE=
+  HAVE_GNU_STPNCPY_FALSE='#'
+else
+  HAVE_GNU_STPNCPY_TRUE='#'
+  HAVE_GNU_STPNCPY_FALSE=
+fi
+
 
 # Check for CLOCK_MONOTONIC
 
@@ -7590,6 +7708,55 @@ fi
 
 
 
+# does this compiler support -Wno-write-strings ?
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if gcc accepts -Wwrite-strings" >&5
+$as_echo_n "checking if gcc accepts -Wwrite-strings... " >&6; }
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-Wwrite-strings"
+
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  return 0;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+no_write_strings=yes
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+
+no_write_strings=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+CFLAGS=$safe_CFLAGS
+
+if test x$no_write_strings = xyes; then
+  CFLAGS="$CFLAGS -Wwrite-strings"
+fi
+
+ if test x$no_write_strings = xyes; then
+  HAS_WRITE_STRINGS_WARNING_TRUE=
+  HAS_WRITE_STRINGS_WARNING_FALSE='#'
+else
+  HAS_WRITE_STRINGS_WARNING_TRUE='#'
+  HAS_WRITE_STRINGS_WARNING_FALSE=
+fi
+
+
 # does this compiler support -Wno-empty-body ?
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking if gcc accepts -Wno-empty-body" >&5
@@ -7981,14 +8148,66 @@ fi
 CFLAGS=$safe_CFLAGS
 
 
+# We want to use use the -Ttext-segment option to the linker.
+# GNU (bfd) ld supports this directly. Newer GNU gold linkers
+# support it as an alias of -Ttext. Sadly GNU (bfd) ld's -Ttext
+# semantics are NOT what we want (GNU gold -Ttext is fine).
+#
+# For GNU (bfd) ld -Ttext-segment chooses the base at which ELF headers
+# will reside. -Ttext aligns just the .text section start (but not any
+# other section).
+#
+# So test for -Ttext-segment which is supported by all bfd ld versions
+# and use that if it exists. If it doesn't exist it must be an older
+# version of gold and we can fall back to using -Ttext which has the
+# right semantics.
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if the linker accepts -Wl,-Ttext-segment" >&5
+$as_echo_n "checking if the linker accepts -Wl,-Ttext-segment... " >&6; }
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-static -nodefaultlibs -nostartfiles -Wl,-Ttext-segment=$valt_load_address_pri_norml"
+
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+int _start () { return 0; }
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+  linker_using_t_text="no"
+  FLAG_T_TEXT="-Ttext-segment"
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+
+  linker_using_t_text="yes"
+  FLAG_T_TEXT="-Ttext"
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+CFLAGS=$safe_CFLAGS
+
+# If the linker only supports -Ttext (not -Ttext-segment) then we will
+# have to strip any build-id ELF NOTEs from the staticly linked tools.
+# Otherwise the build-id NOTE might end up at the default load address.
+# (Pedantically if the linker is gold then -Ttext is fine, but newer
+# gold versions also support -Ttext-segment. So just assume that unless
+# we can use -Ttext-segment we need to strip the build-id NOTEs.
+if test "x${linker_using_t_text}" == "xyes"; then
+{ $as_echo "$as_me:${as_lineno-$LINENO}: ld -Ttext used, need to strip build-id NOTEs." >&5
+$as_echo "$as_me: ld -Ttext used, need to strip build-id NOTEs." >&6;}
 # does the linker support -Wl,--build-id=none ?  Note, it's
 # important that we test indirectly via whichever C compiler
 # is selected, rather than testing /usr/bin/ld or whatever
 # directly.
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking if the linker accepts -Wl,--build-id=none" >&5
 $as_echo_n "checking if the linker accepts -Wl,--build-id=none... " >&6; }
-
 safe_CFLAGS=$CFLAGS
 CFLAGS="-Wl,--build-id=none"
 
@@ -8020,8 +8239,13 @@ $as_echo "no" >&6; }
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-CFLAGS=$safe_CFLAGS
+else
+{ $as_echo "$as_me:${as_lineno-$LINENO}: ld -Ttext-segment used, no need to strip build-id NOTEs." >&5
+$as_echo "$as_me: ld -Ttext-segment used, no need to strip build-id NOTEs." >&6;}
+FLAG_NO_BUILD_ID=""
 
+fi
+CFLAGS=$safe_CFLAGS
 
 # does the ppc assembler support "mtocrf" et al?
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking if ppc32/64 as supports mtocrf/mfocrf" >&5
@@ -8403,6 +8627,155 @@ fi
 
 
 
+# does the x86/amd64 assembler understand AVX2 instructions?
+# Note, this doesn't generate a C-level symbol.  It generates a
+# automake-level symbol (BUILD_AVX2_TESTS), used in test Makefile.am's
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if x86/amd64 assembler speaks AVX2" >&5
+$as_echo_n "checking if x86/amd64 assembler speaks AVX2... " >&6; }
+
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  do { long long int x;
+   __asm__ __volatile__(
+      "vpsravd (%%rsp), %%ymm8, %%ymm7" : : : "xmm7", "xmm8" );
+   __asm__ __volatile__(
+      "vpaddb %%ymm6,%%ymm7,%%ymm8" : : : "xmm6","xmm7","xmm8"); }
+  while (0)
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+ac_have_as_avx2=yes
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+
+ac_have_as_avx2=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+ if test x$ac_have_as_avx2 = xyes; then
+  BUILD_AVX2_TESTS_TRUE=
+  BUILD_AVX2_TESTS_FALSE='#'
+else
+  BUILD_AVX2_TESTS_TRUE='#'
+  BUILD_AVX2_TESTS_FALSE=
+fi
+
+
+
+# does the x86/amd64 assembler understand BMI1 and BMI2 instructions?
+# Note, this doesn't generate a C-level symbol.  It generates a
+# automake-level symbol (BUILD_BMI_TESTS), used in test Makefile.am's
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if x86/amd64 assembler speaks BMI1 and BMI2" >&5
+$as_echo_n "checking if x86/amd64 assembler speaks BMI1 and BMI2... " >&6; }
+
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  do { unsigned int h, l;
+   __asm__ __volatile__(
+      "andn %2, %1, %0" : "=r" (h) : "r" (0x1234567), "r" (0x7654321) );
+   __asm__ __volatile__(
+      "movl %2, %%edx; mulx %3, %1, %0" : "=r" (h), "=r" (l) : "g" (0x1234567), "rm" (0x7654321) : "edx" ); }
+  while (0)
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+ac_have_as_bmi=yes
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+
+ac_have_as_bmi=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+ if test x$ac_have_as_bmi = xyes; then
+  BUILD_BMI_TESTS_TRUE=
+  BUILD_BMI_TESTS_FALSE='#'
+else
+  BUILD_BMI_TESTS_TRUE='#'
+  BUILD_BMI_TESTS_FALSE=
+fi
+
+
+
+# does the x86/amd64 assembler understand FMA instructions?
+# Note, this doesn't generate a C-level symbol.  It generates a
+# automake-level symbol (BUILD_FMA_TESTS), used in test Makefile.am's
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if x86/amd64 assembler speaks FMA" >&5
+$as_echo_n "checking if x86/amd64 assembler speaks FMA... " >&6; }
+
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  do { unsigned int h, l;
+   __asm__ __volatile__(
+      "vfmadd132ps (%%rsp), %%ymm8, %%ymm7" : : : "xmm7", "xmm8" );
+   __asm__ __volatile__(
+      "vfnmsub231sd (%%rsp), %%xmm8, %%xmm7" : : : "xmm7", "xmm8" );
+   __asm__ __volatile__(
+      "vfmsubadd213pd (%%rsp), %%xmm8, %%xmm7" : : : "xmm7", "xmm8" ); }
+  while (0)
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+ac_have_as_fma=yes
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+
+ac_have_as_fma=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+ if test x$ac_have_as_fma = xyes; then
+  BUILD_FMA_TESTS_TRUE=
+  BUILD_FMA_TESTS_FALSE='#'
+else
+  BUILD_FMA_TESTS_TRUE='#'
+  BUILD_FMA_TESTS_FALSE=
+fi
+
+
+
 # does the x86/amd64 assembler understand MOVBE?
 # Note, this doesn't generate a C-level symbol.  It generates a
 # automake-level symbol (BUILD_MOVBE_TESTS), used in test Makefile.am's
@@ -8720,6 +9093,8 @@ done
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking if <linux/futex.h> is usable" >&5
 $as_echo_n "checking if <linux/futex.h> is usable... " >&6; }
 
+save_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -D__user="
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -8752,6 +9127,8 @@ $as_echo "no" >&6; }
 
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+CFLAGS="$save_CFLAGS"
+
 
 #----------------------------------------------------------------------------
 # Checks for typedefs, structures, and compiler characteristics.
@@ -9277,6 +9654,11 @@ else
 fi
 
 
+if test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX ; then
+
+$as_echo "#define DISABLE_PTHREAD_SPINLOCK_INTERCEPT 1" >>confdefs.h
+
+fi
 
 #----------------------------------------------------------------------------
 # MPI checks
@@ -9292,7 +9674,8 @@ mflag_primary=
 if test x$VGCONF_PLATFORM_PRI_CAPS = xX86_LINUX \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_LINUX \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xARM_LINUX \
-     -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX ; then
+     -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX \
+     -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX ; then
   mflag_primary=$FLAG_M32
 elif test x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_LINUX \
        -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_LINUX \
@@ -10000,7 +10383,7 @@ fi
 #----------------------------------------------------------------------------
 
 # Nb: VEX/Makefile is generated from Makefile.vex.in.
-ac_config_files="$ac_config_files Makefile VEX/Makefile:Makefile.vex.in valgrind.spec valgrind.pc glibc-2.X.supp docs/Makefile tests/Makefile tests/vg_regtest perf/Makefile perf/vg_perf gdbserver_tests/Makefile include/Makefile auxprogs/Makefile mpi/Makefile coregrind/Makefile memcheck/Makefile memcheck/tests/Makefile memcheck/tests/amd64/Makefile memcheck/tests/x86/Makefile memcheck/tests/linux/Makefile memcheck/tests/darwin/Makefile memcheck/tests/amd64-linux/Makefile memcheck/tests/x86-linux/Makefile memcheck/tests/ppc32/Makefile memcheck/tests/ppc64/Makefile memcheck/tests/s390x/Makefile memcheck/tests/vbit-test/Makefile cachegrind/Makefile cachegrind/tests/Makefile cachegrind/tests/x86/Makefile cachegrind/cg_annotate cachegrind/cg_diff callgrind/Makefile callgrind/callgrind_annotate callgrind/callgrind_control callgrind/tests/Makefile helgrind/Makefile helgrind/tests/Makefile massif/Makefile massif/tests/Makefile massif/ms_print lackey/Makefile lackey/tests/Makefile none/Makefile none/tests/Makefile none/tests/amd64/Makefile none/tests/ppc32/Makefile none/tests/ppc64/Makefile none/tests/x86/Makefile none/tests/arm/Makefile none/tests/s390x/Makefile none/tests/mips32/Makefile none/tests/linux/Makefile none/tests/darwin/Makefile none/tests/x86-linux/Makefile exp-sgcheck/Makefile exp-sgcheck/tests/Makefile drd/Makefile drd/scripts/download-and-build-splash2 drd/tests/Makefile exp-bbv/Makefile exp-bbv/tests/Makefile exp-bbv/tests/x86/Makefile exp-bbv/tests/x86-linux/Makefile exp-bbv/tests/amd64-linux/Makefile exp-bbv/tests/ppc32-linux/Makefile exp-bbv/tests/arm-linux/Makefile exp-dhat/Makefile exp-dhat/tests/Makefile aprof/Makefile aprof/tests/Makefile"
+ac_config_files="$ac_config_files Makefile VEX/Makefile:Makefile.vex.in valgrind.spec valgrind.pc glibc-2.X.supp docs/Makefile tests/Makefile tests/vg_regtest perf/Makefile perf/vg_perf gdbserver_tests/Makefile include/Makefile auxprogs/Makefile mpi/Makefile coregrind/Makefile memcheck/Makefile memcheck/tests/Makefile memcheck/tests/amd64/Makefile memcheck/tests/x86/Makefile memcheck/tests/linux/Makefile memcheck/tests/darwin/Makefile memcheck/tests/amd64-linux/Makefile memcheck/tests/x86-linux/Makefile memcheck/tests/ppc32/Makefile memcheck/tests/ppc64/Makefile memcheck/tests/s390x/Makefile memcheck/tests/vbit-test/Makefile cachegrind/Makefile cachegrind/tests/Makefile cachegrind/tests/x86/Makefile cachegrind/cg_annotate cachegrind/cg_diff callgrind/Makefile callgrind/callgrind_annotate callgrind/callgrind_control callgrind/tests/Makefile helgrind/Makefile helgrind/tests/Makefile massif/Makefile massif/tests/Makefile massif/ms_print lackey/Makefile lackey/tests/Makefile none/Makefile none/tests/Makefile none/tests/amd64/Makefile none/tests/ppc32/Makefile none/tests/ppc64/Makefile none/tests/x86/Makefile none/tests/arm/Makefile none/tests/s390x/Makefile none/tests/mips32/Makefile none/tests/mips64/Makefile none/tests/linux/Makefile none/tests/darwin/Makefile none/tests/x86-linux/Makefile exp-sgcheck/Makefile exp-sgcheck/tests/Makefile drd/Makefile drd/scripts/download-and-build-splash2 drd/tests/Makefile exp-bbv/Makefile exp-bbv/tests/Makefile exp-bbv/tests/x86/Makefile exp-bbv/tests/x86-linux/Makefile exp-bbv/tests/amd64-linux/Makefile exp-bbv/tests/ppc32-linux/Makefile exp-bbv/tests/arm-linux/Makefile exp-dhat/Makefile exp-dhat/tests/Makefile aprof/Makefile aprof/tests/Makefile"
 
 ac_config_files="$ac_config_files coregrind/link_tool_exe_linux"
 
@@ -10171,6 +10554,10 @@ if test -z "${VGCONF_ARCHS_INCLUDE_MIPS32_TRUE}" && test -z "${VGCONF_ARCHS_INCL
   as_fn_error $? "conditional \"VGCONF_ARCHS_INCLUDE_MIPS32\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${VGCONF_ARCHS_INCLUDE_MIPS64_TRUE}" && test -z "${VGCONF_ARCHS_INCLUDE_MIPS64_FALSE}"; then
+  as_fn_error $? "conditional \"VGCONF_ARCHS_INCLUDE_MIPS64\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${VGCONF_PLATFORMS_INCLUDE_X86_LINUX_TRUE}" && test -z "${VGCONF_PLATFORMS_INCLUDE_X86_LINUX_FALSE}"; then
   as_fn_error $? "conditional \"VGCONF_PLATFORMS_INCLUDE_X86_LINUX\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -10197,6 +10584,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${VGCONF_PLATFORMS_INCLUDE_MIPS32_LINUX_TRUE}" && test -z "${VGCONF_PLATFORMS_INCLUDE_MIPS32_LINUX_FALSE}"; then
   as_fn_error $? "conditional \"VGCONF_PLATFORMS_INCLUDE_MIPS32_LINUX\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${VGCONF_PLATFORMS_INCLUDE_MIPS64_LINUX_TRUE}" && test -z "${VGCONF_PLATFORMS_INCLUDE_MIPS64_LINUX_FALSE}"; then
+  as_fn_error $? "conditional \"VGCONF_PLATFORMS_INCLUDE_MIPS64_LINUX\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${VGCONF_PLATFORMS_INCLUDE_X86_DARWIN_TRUE}" && test -z "${VGCONF_PLATFORMS_INCLUDE_X86_DARWIN_FALSE}"; then
@@ -10227,6 +10618,14 @@ if test -z "${VGCONF_PLATVARIANT_IS_ANDROID_TRUE}" && test -z "${VGCONF_PLATVARI
   as_fn_error $? "conditional \"VGCONF_PLATVARIANT_IS_ANDROID\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${HAVE_AT_FDCWD_TRUE}" && test -z "${HAVE_AT_FDCWD_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_AT_FDCWD\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_GNU_STPNCPY_TRUE}" && test -z "${HAVE_GNU_STPNCPY_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_GNU_STPNCPY\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${HAS_ALTIVEC_TRUE}" && test -z "${HAS_ALTIVEC_FALSE}"; then
   as_fn_error $? "conditional \"HAS_ALTIVEC\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -10249,6 +10648,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${HAS_POINTER_SIGN_WARNING_TRUE}" && test -z "${HAS_POINTER_SIGN_WARNING_FALSE}"; then
   as_fn_error $? "conditional \"HAS_POINTER_SIGN_WARNING\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAS_WRITE_STRINGS_WARNING_TRUE}" && test -z "${HAS_WRITE_STRINGS_WARNING_FALSE}"; then
+  as_fn_error $? "conditional \"HAS_WRITE_STRINGS_WARNING\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${DWARF4_TRUE}" && test -z "${DWARF4_FALSE}"; then
@@ -10281,6 +10684,18 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${BUILD_AVX_TESTS_TRUE}" && test -z "${BUILD_AVX_TESTS_FALSE}"; then
   as_fn_error $? "conditional \"BUILD_AVX_TESTS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${BUILD_AVX2_TESTS_TRUE}" && test -z "${BUILD_AVX2_TESTS_FALSE}"; then
+  as_fn_error $? "conditional \"BUILD_AVX2_TESTS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${BUILD_BMI_TESTS_TRUE}" && test -z "${BUILD_BMI_TESTS_FALSE}"; then
+  as_fn_error $? "conditional \"BUILD_BMI_TESTS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${BUILD_FMA_TESTS_TRUE}" && test -z "${BUILD_FMA_TESTS_FALSE}"; then
+  as_fn_error $? "conditional \"BUILD_FMA_TESTS\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${BUILD_MOVBE_TESTS_TRUE}" && test -z "${BUILD_MOVBE_TESTS_FALSE}"; then
@@ -10993,6 +11408,7 @@ do
     "none/tests/arm/Makefile") CONFIG_FILES="$CONFIG_FILES none/tests/arm/Makefile" ;;
     "none/tests/s390x/Makefile") CONFIG_FILES="$CONFIG_FILES none/tests/s390x/Makefile" ;;
     "none/tests/mips32/Makefile") CONFIG_FILES="$CONFIG_FILES none/tests/mips32/Makefile" ;;
+    "none/tests/mips64/Makefile") CONFIG_FILES="$CONFIG_FILES none/tests/mips64/Makefile" ;;
     "none/tests/linux/Makefile") CONFIG_FILES="$CONFIG_FILES none/tests/linux/Makefile" ;;
     "none/tests/darwin/Makefile") CONFIG_FILES="$CONFIG_FILES none/tests/darwin/Makefile" ;;
     "none/tests/x86-linux/Makefile") CONFIG_FILES="$CONFIG_FILES none/tests/x86-linux/Makefile" ;;

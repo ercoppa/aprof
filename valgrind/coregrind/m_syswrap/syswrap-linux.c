@@ -274,7 +274,7 @@ static void run_a_thread_NORETURN ( Word tidW )
          : "d" (VgTs_Empty), "n" (__NR_exit), "m" (tst->os_state.exitcode)
          : "2"
       );
-#elif defined(VGP_mips32_linux)
+#elif defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
       asm volatile (
          "sw   %1, %0\n\t"     /* set tst->status = VgTs_Empty */
          "li  	$2, %2\n\t"     /* set v0 = __NR_exit */
@@ -428,7 +428,8 @@ SysRes ML_(do_fork_clone) ( ThreadId tid, UInt flags,
       VG_(clone) stuff */
 #if defined(VGP_x86_linux) \
     || defined(VGP_ppc32_linux) || defined(VGP_ppc64_linux) \
-    || defined(VGP_arm_linux) || defined(VGP_mips32_linux)
+    || defined(VGP_arm_linux) || defined(VGP_mips32_linux) \
+    || defined(VGP_mips64_linux)
    res = VG_(do_syscall5)( __NR_clone, flags, 
                            (UWord)NULL, (UWord)parent_tidptr, 
                            (UWord)NULL, (UWord)child_tidptr );
@@ -3294,7 +3295,7 @@ ML_(linux_POST_sys_msgctl) ( ThreadId tid,
    are either direct system calls, or are all implemented via sys_ipc.
    ------------------------------------------------------------------ */
 #ifdef __NR_ipc
-static Addr deref_Addr ( ThreadId tid, Addr a, Char* s )
+static Addr deref_Addr ( ThreadId tid, Addr a, const HChar* s )
 {
    Addr* a_p = (Addr*)a;
    PRE_MEM_READ( s, (Addr)a_p, sizeof(Addr) );
@@ -3500,6 +3501,186 @@ POST(sys_ipc)
    }
 }
 #endif
+
+PRE(sys_semget)
+{
+   PRINT("sys_semget ( %ld, %ld, %ld )",ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "semget", vki_key_t, key, int, nsems, int, semflg);
+}
+
+PRE(sys_semop)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_semop ( %ld, %#lx, %lu )",ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "semop",
+                 int, semid, struct sembuf *, sops, unsigned, nsoops);
+   ML_(generic_PRE_sys_semop)(tid, ARG1,ARG2,ARG3);
+}
+
+PRE(sys_semctl)
+{
+   switch (ARG3 & ~VKI_IPC_64) {
+   case VKI_IPC_INFO:
+   case VKI_SEM_INFO:
+      PRINT("sys_semctl ( %ld, %ld, %ld, %#lx )",ARG1,ARG2,ARG3,ARG4);
+      PRE_REG_READ4(long, "semctl",
+                    int, semid, int, semnum, int, cmd, struct seminfo *, arg);
+      break;
+   case VKI_IPC_STAT:
+   case VKI_SEM_STAT:
+   case VKI_IPC_SET:
+      PRINT("sys_semctl ( %ld, %ld, %ld, %#lx )",ARG1,ARG2,ARG3,ARG4);
+      PRE_REG_READ4(long, "semctl",
+                    int, semid, int, semnum, int, cmd, struct semid_ds *, arg);
+      break;
+   case VKI_GETALL:
+   case VKI_SETALL:
+      PRINT("sys_semctl ( %ld, %ld, %ld, %#lx )",ARG1,ARG2,ARG3,ARG4);
+      PRE_REG_READ4(long, "semctl",
+                    int, semid, int, semnum, int, cmd, unsigned short *, arg);
+      break;
+   default:
+      PRINT("sys_semctl ( %ld, %ld, %ld )",ARG1,ARG2,ARG3);
+      PRE_REG_READ3(long, "semctl",
+                    int, semid, int, semnum, int, cmd);
+      break;
+   }
+#ifdef VGP_amd64_linux
+   ML_(generic_PRE_sys_semctl)(tid, ARG1,ARG2,ARG3|VKI_IPC_64,ARG4);
+#else
+   ML_(generic_PRE_sys_semctl)(tid, ARG1,ARG2,ARG3,ARG4);
+#endif
+}
+
+POST(sys_semctl)
+{
+#ifdef VGP_amd64_linux
+   ML_(generic_POST_sys_semctl)(tid, RES,ARG1,ARG2,ARG3|VKI_IPC_64,ARG4);
+#else
+   ML_(generic_POST_sys_semctl)(tid, RES,ARG1,ARG2,ARG3,ARG4);
+#endif
+}
+
+PRE(sys_semtimedop)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_semtimedop ( %ld, %#lx, %lu, %#lx )",ARG1,ARG2,ARG3,ARG4);
+   PRE_REG_READ4(long, "semtimedop",
+                 int, semid, struct sembuf *, sops, unsigned, nsoops,
+                 struct timespec *, timeout);
+   ML_(generic_PRE_sys_semtimedop)(tid, ARG1,ARG2,ARG3,ARG4);
+}
+
+PRE(sys_msgget)
+{
+   PRINT("sys_msgget ( %ld, %ld )",ARG1,ARG2);
+   PRE_REG_READ2(long, "msgget", vki_key_t, key, int, msgflg);
+}
+
+PRE(sys_msgsnd)
+{
+   PRINT("sys_msgsnd ( %ld, %#lx, %ld, %ld )",ARG1,ARG2,ARG3,ARG4);
+   PRE_REG_READ4(long, "msgsnd",
+                 int, msqid, struct msgbuf *, msgp, vki_size_t, msgsz, int, msgflg);
+   ML_(linux_PRE_sys_msgsnd)(tid, ARG1,ARG2,ARG3,ARG4);
+   if ((ARG4 & VKI_IPC_NOWAIT) == 0)
+      *flags |= SfMayBlock;
+}
+
+PRE(sys_msgrcv)
+{
+   PRINT("sys_msgrcv ( %ld, %#lx, %ld, %ld, %ld )",ARG1,ARG2,ARG3,ARG4,ARG5);
+   PRE_REG_READ5(long, "msgrcv",
+                 int, msqid, struct msgbuf *, msgp, vki_size_t, msgsz,
+                 long, msgytp, int, msgflg);
+   ML_(linux_PRE_sys_msgrcv)(tid, ARG1,ARG2,ARG3,ARG4,ARG5);
+   if ((ARG5 & VKI_IPC_NOWAIT) == 0)
+      *flags |= SfMayBlock;
+}
+POST(sys_msgrcv)
+{
+   ML_(linux_POST_sys_msgrcv)(tid, RES,ARG1,ARG2,ARG3,ARG4,ARG5);
+}
+
+PRE(sys_msgctl)
+{
+   PRINT("sys_msgctl ( %ld, %ld, %#lx )",ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "msgctl",
+                 int, msqid, int, cmd, struct msqid_ds *, buf);
+   ML_(linux_PRE_sys_msgctl)(tid, ARG1,ARG2,ARG3);
+}
+
+POST(sys_msgctl)
+{
+   ML_(linux_POST_sys_msgctl)(tid, RES,ARG1,ARG2,ARG3);
+}
+
+PRE(sys_shmget)
+{
+   PRINT("sys_shmget ( %ld, %ld, %ld )",ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "shmget", vki_key_t, key, vki_size_t, size, int, shmflg);
+}
+
+PRE(wrap_sys_shmat)
+{
+   UWord arg2tmp;
+   PRINT("wrap_sys_shmat ( %ld, %#lx, %ld )",ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "shmat",
+                 int, shmid, const void *, shmaddr, int, shmflg);
+#if defined(VGP_arm_linux)
+   /* Round the attach address down to an VKI_SHMLBA boundary if the
+      client requested rounding.  See #222545.  This is necessary only
+      on arm-linux because VKI_SHMLBA is 4 * VKI_PAGE size; on all
+      other linux targets it is the same as the page size. */
+   if (ARG3 & VKI_SHM_RND)
+      ARG2 = VG_ROUNDDN(ARG2, VKI_SHMLBA);
+#endif
+   arg2tmp = ML_(generic_PRE_sys_shmat)(tid, ARG1,ARG2,ARG3);
+   if (arg2tmp == 0)
+      SET_STATUS_Failure( VKI_EINVAL );
+   else
+      ARG2 = arg2tmp;  // used in POST
+}
+
+POST(wrap_sys_shmat)
+{
+   ML_(generic_POST_sys_shmat)(tid, RES,ARG1,ARG2,ARG3);
+}
+
+PRE(sys_shmdt)
+{
+   PRINT("sys_shmdt ( %#lx )",ARG1);
+   PRE_REG_READ1(long, "shmdt", const void *, shmaddr);
+   if (!ML_(generic_PRE_sys_shmdt)(tid, ARG1))
+      SET_STATUS_Failure( VKI_EINVAL );
+}
+
+POST(sys_shmdt)
+{
+   ML_(generic_POST_sys_shmdt)(tid, RES,ARG1);
+}
+
+PRE(sys_shmctl)
+{
+   PRINT("sys_shmctl ( %ld, %ld, %#lx )",ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "shmctl",
+                 int, shmid, int, cmd, struct shmid_ds *, buf);
+#ifdef VGP_amd64_linux
+   ML_(generic_PRE_sys_shmctl)(tid, ARG1,ARG2|VKI_IPC_64,ARG3);
+#else
+   ML_(generic_PRE_sys_shmctl)(tid, ARG1,ARG2,ARG3);
+#endif
+}
+
+POST(sys_shmctl)
+{
+#ifdef VGP_amd64_linux
+   ML_(generic_POST_sys_shmctl)(tid, RES,ARG1,ARG2|VKI_IPC_64,ARG3);
+#else
+   ML_(generic_POST_sys_shmctl)(tid, RES,ARG1,ARG2,ARG3);
+#endif
+}
+
 
 /* ---------------------------------------------------------------------
    Generic handler for sys_socketcall
@@ -3773,6 +3954,223 @@ POST(sys_socketcall)
 }
 #endif
 
+PRE(sys_socket)
+{
+   PRINT("sys_socket ( %ld, %ld, %ld )",ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "socket", int, domain, int, type, int, protocol);
+}
+POST(sys_socket)
+{
+   SysRes r;
+   vg_assert(SUCCESS);
+   r = ML_(generic_POST_sys_socket)(tid, VG_(mk_SysRes_Success)(RES));
+   SET_STATUS_from_SysRes(r);
+}
+
+PRE(sys_setsockopt)
+{
+   PRINT("sys_setsockopt ( %ld, %ld, %ld, %#lx, %ld )",ARG1,ARG2,ARG3,ARG4,ARG5);
+   PRE_REG_READ5(long, "setsockopt",
+                 int, s, int, level, int, optname,
+                 const void *, optval, int, optlen);
+   ML_(generic_PRE_sys_setsockopt)(tid, ARG1,ARG2,ARG3,ARG4,ARG5);
+}
+
+PRE(sys_getsockopt)
+{
+   PRINT("sys_getsockopt ( %ld, %ld, %ld, %#lx, %#lx )",ARG1,ARG2,ARG3,ARG4,ARG5);
+   PRE_REG_READ5(long, "getsockopt",
+                 int, s, int, level, int, optname,
+                 void *, optval, int, *optlen);
+   ML_(linux_PRE_sys_getsockopt)(tid, ARG1,ARG2,ARG3,ARG4,ARG5);
+}
+POST(sys_getsockopt)
+{
+   vg_assert(SUCCESS);
+   ML_(linux_POST_sys_getsockopt)(tid, VG_(mk_SysRes_Success)(RES),
+                                       ARG1,ARG2,ARG3,ARG4,ARG5);
+}
+
+PRE(sys_connect)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_connect ( %ld, %#lx, %ld )",ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "connect",
+                 int, sockfd, struct sockaddr *, serv_addr, int, addrlen);
+   ML_(generic_PRE_sys_connect)(tid, ARG1,ARG2,ARG3);
+}
+
+PRE(sys_accept)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_accept ( %ld, %#lx, %ld )",ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "accept",
+                 int, s, struct sockaddr *, addr, int, *addrlen);
+   ML_(generic_PRE_sys_accept)(tid, ARG1,ARG2,ARG3);
+}
+POST(sys_accept)
+{
+   SysRes r;
+   vg_assert(SUCCESS);
+   r = ML_(generic_POST_sys_accept)(tid, VG_(mk_SysRes_Success)(RES),
+                                         ARG1,ARG2,ARG3);
+   SET_STATUS_from_SysRes(r);
+}
+
+PRE(sys_accept4)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_accept4 ( %ld, %#lx, %ld, %ld )",ARG1,ARG2,ARG3,ARG4);
+   PRE_REG_READ4(long, "accept4",
+                 int, s, struct sockaddr *, addr, int, *addrlen, int, flags);
+   ML_(generic_PRE_sys_accept)(tid, ARG1,ARG2,ARG3);
+}
+POST(sys_accept4)
+{
+   SysRes r;
+   vg_assert(SUCCESS);
+   r = ML_(generic_POST_sys_accept)(tid, VG_(mk_SysRes_Success)(RES),
+                                         ARG1,ARG2,ARG3);
+   SET_STATUS_from_SysRes(r);
+}
+
+PRE(sys_send)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_send ( %ld, %#lx, %ld, %lu )",ARG1,ARG2,ARG3,ARG4);
+   PRE_REG_READ4(long, "send",
+                 int, s, const void *, msg, int, len, 
+                 unsigned int, flags);
+
+   ML_(generic_PRE_sys_send)( tid, ARG1, ARG2, ARG3 );
+}
+
+PRE(sys_sendto)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_sendto ( %ld, %#lx, %ld, %lu, %#lx, %ld )",ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
+   PRE_REG_READ6(long, "sendto",
+                 int, s, const void *, msg, int, len, 
+                 unsigned int, flags, 
+                 const struct sockaddr *, to, int, tolen);
+   ML_(generic_PRE_sys_sendto)(tid, ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
+}
+
+PRE (sys_recv) 
+{
+  *flags |= SfMayBlock;
+  PRINT ("sys_recv ( %ld, %#lx, %ld, %lu )", ARG1, ARG2, ARG3, ARG4);
+  PRE_REG_READ4 (long, "recv", int, s, void *, buf, int, len,
+                 unsigned int, flags);
+  ML_ (generic_PRE_sys_recv) (tid, ARG1, ARG2, ARG3);
+} 
+
+POST (sys_recv) 
+{
+  ML_ (generic_POST_sys_recv) (tid, RES, ARG1, ARG2, ARG3);
+} 
+
+PRE(sys_recvfrom)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_recvfrom ( %ld, %#lx, %ld, %lu, %#lx, %#lx )",ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
+   PRE_REG_READ6(long, "recvfrom",
+                 int, s, void *, buf, int, len, unsigned int, flags,
+                 struct sockaddr *, from, int *, fromlen);
+   ML_(generic_PRE_sys_recvfrom)(tid, ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
+}
+POST(sys_recvfrom)
+{
+   vg_assert(SUCCESS);
+   ML_(generic_POST_sys_recvfrom)(tid, VG_(mk_SysRes_Success)(RES),
+                                       ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
+}
+
+PRE(sys_sendmsg)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_sendmsg ( %ld, %#lx, %ld )",ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "sendmsg",
+                 int, s, const struct msghdr *, msg, int, flags);
+   ML_(generic_PRE_sys_sendmsg)(tid, "msg", (struct vki_msghdr *)ARG2);
+}
+
+PRE(sys_recvmsg)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_recvmsg ( %ld, %#lx, %ld )",ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "recvmsg", int, s, struct msghdr *, msg, int, flags);
+   ML_(generic_PRE_sys_recvmsg)(tid, "msg", (struct vki_msghdr *)ARG2);
+}
+POST(sys_recvmsg)
+{
+   ML_(generic_POST_sys_recvmsg)(tid, "msg", (struct vki_msghdr *)ARG2, RES);
+}
+
+PRE(sys_shutdown)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_shutdown ( %ld, %ld )",ARG1,ARG2);
+   PRE_REG_READ2(int, "shutdown", int, s, int, how);
+}
+
+PRE(sys_bind)
+{
+   PRINT("sys_bind ( %ld, %#lx, %ld )",ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "bind",
+                 int, sockfd, struct sockaddr *, my_addr, int, addrlen);
+   ML_(generic_PRE_sys_bind)(tid, ARG1,ARG2,ARG3);
+}
+
+PRE(sys_listen)
+{
+   PRINT("sys_listen ( %ld, %ld )",ARG1,ARG2);
+   PRE_REG_READ2(long, "listen", int, s, int, backlog);
+}
+
+PRE(sys_getsockname)
+{
+   PRINT("sys_getsockname ( %ld, %#lx, %#lx )",ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "getsockname",
+                 int, s, struct sockaddr *, name, int *, namelen);
+   ML_(generic_PRE_sys_getsockname)(tid, ARG1,ARG2,ARG3);
+}
+POST(sys_getsockname)
+{
+   vg_assert(SUCCESS);
+   ML_(generic_POST_sys_getsockname)(tid, VG_(mk_SysRes_Success)(RES),
+                                          ARG1,ARG2,ARG3);
+}
+
+PRE(sys_getpeername)
+{
+   PRINT("sys_getpeername ( %ld, %#lx, %#lx )",ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "getpeername",
+                 int, s, struct sockaddr *, name, int *, namelen);
+   ML_(generic_PRE_sys_getpeername)(tid, ARG1,ARG2,ARG3);
+}
+POST(sys_getpeername)
+{
+   vg_assert(SUCCESS);
+   ML_(generic_POST_sys_getpeername)(tid, VG_(mk_SysRes_Success)(RES),
+                                          ARG1,ARG2,ARG3);
+}
+
+PRE(sys_socketpair)
+{
+   PRINT("sys_socketpair ( %ld, %ld, %ld, %#lx )",ARG1,ARG2,ARG3,ARG4);
+   PRE_REG_READ4(long, "socketpair",
+                 int, d, int, type, int, protocol, int*, sv);
+   ML_(generic_PRE_sys_socketpair)(tid, ARG1,ARG2,ARG3,ARG4);
+}
+POST(sys_socketpair)
+{
+   vg_assert(SUCCESS);
+   ML_(generic_POST_sys_socketpair)(tid, VG_(mk_SysRes_Success)(RES),
+                                         ARG1,ARG2,ARG3,ARG4);
+}
+
+
 /* ---------------------------------------------------------------------
    *at wrappers
    ------------------------------------------------------------------ */
@@ -3794,10 +4192,15 @@ PRE(sys_openat)
                     int, dfd, const char *, filename, int, flags);
    }
 
-   if (ARG1 != VKI_AT_FDCWD && !ML_(fd_allowed)(ARG1, "openat", tid, False))
+   PRE_MEM_RASCIIZ( "openat(filename)", ARG2 );
+
+   /* For absolute filenames, dfd is ignored.  If dfd is AT_FDCWD,
+      filename is relative to cwd.  */
+   if (ML_(safe_to_deref)( (void*)ARG2, 1 )
+       && *(Char *)ARG2 != '/'
+       && ARG1 != VKI_AT_FDCWD
+       && !ML_(fd_allowed)(ARG1, "openat", tid, False))
       SET_STATUS_Failure( VKI_EBADF );
-   else
-      PRE_MEM_RASCIIZ( "openat(filename)", ARG2 );
 
    /* Handle the case where the open is of /proc/self/cmdline or
       /proc/<pid>/cmdline, and just give it a copy of the fd for the
@@ -3998,6 +4401,24 @@ PRE(sys_faccessat)
    PRE_REG_READ3(long, "faccessat",
                  int, dfd, const char *, pathname, int, mode);
    PRE_MEM_RASCIIZ( "faccessat(pathname)", ARG2 );
+}
+
+PRE(sys_name_to_handle_at)
+{
+   PRINT("sys_name_to_handle_at ( %ld, %#lx(%s), %#lx, %#lx, %ld )", ARG1, ARG2, (char*)ARG2, ARG3, ARG4, ARG5);
+   PRE_REG_READ5(int, "name_to_handle_at",
+                 int, dfd, const char *, name,
+                 struct vki_file_handle, handle,
+                 int *, mnt_id, int, flag);
+   PRE_MEM_RASCIIZ( "name_to_handle_at(name)", ARG2 );
+   PRE_MEM_WRITE( "name_to_handle_at(handle)", ARG3, sizeof(struct vki_file_handle) + ((struct vki_file_handle*)ARG3)->handle_bytes );
+   PRE_MEM_WRITE( "name_to_handle_at(mnt_id)", ARG4, sizeof(int) );
+}
+
+POST(sys_name_to_handle_at)
+{
+   POST_MEM_WRITE( ARG3, sizeof(struct vki_file_handle) + ((struct vki_file_handle*)ARG3)->handle_bytes );
+   POST_MEM_WRITE( ARG4, sizeof(int) );
 }
 
 /* ---------------------------------------------------------------------
@@ -4489,10 +4910,10 @@ PRE(sys_vmsplice)
       for (iov = (struct vki_iovec *)ARG2;
            iov < (struct vki_iovec *)ARG2 + ARG3; iov++) 
       {
-         if ((fdfl & (VKI_O_WRONLY|VKI_O_RDWR)) != 0)
-            PRE_MEM_READ( "vmsplice(iov[...])", (Addr)iov->iov_base, iov->iov_len );
-         else if ((fdfl & VKI_O_RDONLY) != 0)
+         if ((fdfl & VKI_O_ACCMODE) == VKI_O_RDONLY)
             PRE_MEM_WRITE( "vmsplice(iov[...])", (Addr)iov->iov_base, iov->iov_len );
+         else
+            PRE_MEM_READ( "vmsplice(iov[...])", (Addr)iov->iov_base, iov->iov_len );
       }
    }
 }
@@ -4503,7 +4924,7 @@ POST(sys_vmsplice)
    if (RES > 0) {
       Int fdfl = VG_(fcntl)(ARG1, VKI_F_GETFL, 0);
       vg_assert(fdfl >= 0);
-      if ((fdfl & VKI_O_RDONLY) != 0)
+      if ((fdfl & VKI_O_ACCMODE) == VKI_O_RDONLY)
       {
          const struct vki_iovec *iov;
          for (iov = (struct vki_iovec *)ARG2;
@@ -4594,7 +5015,7 @@ PRE(sys_fcntl)
    case VKI_F_GETLK:
    case VKI_F_SETLK:
    case VKI_F_SETLKW:
-#  if defined(VGP_x86_linux)
+#  if defined(VGP_x86_linux) || defined(VGP_mips64_linux)
    case VKI_F_GETLK64:
    case VKI_F_SETLK64:
    case VKI_F_SETLKW64:
@@ -4789,9 +5210,16 @@ PRE(sys_ioctl)
    case VKI_KVM_S390_ENABLE_SIE:
    case VKI_KVM_S390_INITIAL_RESET:
 
+   /* vhost without parameter */
+   case VKI_VHOST_SET_OWNER:
+   case VKI_VHOST_RESET_OWNER:
+
    /* User input device creation */
    case VKI_UI_DEV_CREATE:
    case VKI_UI_DEV_DESTROY:
+
+   /* InfiniBand */
+   case VKI_IB_USER_MAD_ENABLE_PKEY:
       PRINT("sys_ioctl ( %ld, 0x%lx )",ARG1,ARG2);
       PRE_REG_READ2(long, "ioctl",
                     unsigned int, fd, unsigned int, request);
@@ -5129,6 +5557,23 @@ PRE(sys_ioctl)
    case VKI_SIOCDELRT:           /* delete routing table entry   */
       PRE_MEM_READ( "ioctl(SIOCADDRT/DELRT)", ARG3, 
 		    sizeof(struct vki_rtentry));
+      break;
+
+      /* tun/tap related ioctls */
+   case VKI_TUNSETIFF:
+      PRE_MEM_RASCIIZ( "ioctl(TUNSETIFF)",
+                     (Addr)((struct vki_ifreq *)ARG3)->vki_ifr_name );
+      PRE_MEM_READ( "ioctl(TUNSETIFF)",
+                     (Addr)&((struct vki_ifreq *)ARG3)->vki_ifr_flags,
+                     sizeof(((struct vki_ifreq *)ARG3)->vki_ifr_flags) );
+      PRE_MEM_WRITE( "ioctl(TUNSETIFF)", ARG3, 
+		     sizeof(struct vki_ifreq));
+      break;
+   case VKI_TUNSETOFFLOAD:
+      break; 
+   case VKI_TUNGETIFF:
+      PRE_MEM_WRITE( "ioctl(TUNGETIFF)", ARG3, 
+		     sizeof(struct vki_ifreq));
       break;
 
       /* RARP cache control calls. */
@@ -6232,6 +6677,7 @@ POST(sys_ioctl)
    case VKI_TCSETS:
    case VKI_TCSETSW:
    case VKI_TCSETSF:
+   case VKI_IB_USER_MAD_ENABLE_PKEY:
       break; 
    case VKI_TCGETS:
       POST_MEM_WRITE( ARG3, sizeof(struct vki_termios) );
@@ -6385,6 +6831,19 @@ POST(sys_ioctl)
                 (Addr)&((struct vki_mii_ioctl_data *)&((struct vki_ifreq *)ARG3)->vki_ifr_data)->val_out,
                 sizeof(((struct vki_mii_ioctl_data *)&((struct vki_ifreq *)ARG3)->vki_ifr_data)->val_out) );
       break;
+
+      /* tun/tap related ioctls */
+   case VKI_TUNSETIFF:
+      POST_MEM_WRITE( (Addr)&((struct vki_ifreq *)ARG3)->vki_ifr_name,
+                      sizeof(((struct vki_ifreq *)ARG3)->vki_ifr_name) );
+      break;
+   case VKI_TUNGETIFF:
+      POST_MEM_WRITE( (Addr)&((struct vki_ifreq *)ARG3)->vki_ifr_name,
+                      sizeof(((struct vki_ifreq *)ARG3)->vki_ifr_name) );
+      POST_MEM_WRITE( (Addr)&((struct vki_ifreq *)ARG3)->vki_ifr_flags,
+                      sizeof(((struct vki_ifreq *)ARG3)->vki_ifr_flags) );
+      break;
+
    case VKI_SIOCGIFCONF:         /* get iface list               */
       /* WAS:
 	 PRE_MEM_WRITE("ioctl(SIOCGIFCONF)", ARG3, sizeof(struct ifconf));

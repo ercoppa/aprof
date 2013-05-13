@@ -64,15 +64,17 @@ dxr,"divide (ext.)","won't do","hfp instruction"
 ear,"extract access",implemented,
 ed,edit,"not implemented",
 edmk,"edit and mark","not implemented",
-epar,"extract primary ASN","not implemented",
+epar,"extract primary ASN",N/A,"privileged instruction"
+epair,"extract primary ASN and instance",N/A,"privileged instruction"
 ereg,"extract stacked registers","not implemented",
-esar,"extract secondary ASN",N/A,"privileged instruction"
+esar,"extract secondary ASN",N/A,"privileged instruction",
+esair,"extract secondary ASN and instance,N/A,"privileged instruction",
 esta,"extract stacked state","not implemented",
 ex,execute,implemented,
 hdr,"halve (long)","won't do","hfp instruction"
 her,"halve (short)","won't do","hfp instruction"
 hsch,"halt subchannel",N/A,"privileged instruction"
-iac,"insert address space control","not implemented",
+iac,"insert address space control",N/A,"privileged instruction"
 ic,"insert character",implemented,
 icm,"insert characters under mask",implemented,
 ipk,"insert PSW key",N/A,"privileged instruction"
@@ -148,9 +150,10 @@ oi,OR,implemented,
 or,OR,implemented,
 pack,pack,"not implemented",
 palb,"purge ALB",N/A,"privileged instruction"
-pc,"program call","not implemented",
+pc,"program call",N/A,"privileged instruction"
 pr,"program return","not implemented",
-pt,"program transfer","not implemented",
+pt,"program transfer",N/A,"privileged instruction",
+pti,"program transfer with instance",N/A,"privileged instruction",
 ptlb,"purge TLB",N/A,"privileged instruction"
 rchp,"reset channel path",N/A,"privileged instruction"
 rrbe,"reset reference bit extended",N/A,"privileged instruction"
@@ -191,6 +194,7 @@ srl,"shift right single logical",implemented,
 srp,"shift and round decimal","not implemented",
 srst,"search string",implemented,
 ssar,"set secondary ASN","not implemented",
+ssair,"set secondary ASN with instance","not implemented",
 ssch,"start subchannel",N/A,"privileged instruction"
 sske,"set storage key extended",N/A,"privileged instruction"
 ssm,"set system mask",N/A,"privileged instruction"
@@ -617,6 +621,10 @@ mser,"mutliply and subtract short hfp","won't do","hfp instruction"
 mse,"multiply and subttract short hfp","won't do","hfp instruction"
 km,"cipher message","not implemented",
 kmc,"cipher message with chaining","not implemented",
+kmf,"cipher message with CFB","not implemented",
+kmo,"cipher message with OFB","not implemented",
+kmctr,"cipher message with counter","not implemented",
+pcc,"perform cryptographic computation","not implemented",
 kimd,"compute intermediate message digest","not implemented",
 klmd,"compute last message digest","not implemented",
 kmac,"compute message authentication code","not implemented",
@@ -717,7 +725,7 @@ ltdtr,"load and test long dfp","not implemented",
 ltxtr,"load and test extended dfp","not implemented",
 fidtr,"load fp integer long dfp","not implemented",
 fixtr,"load fp integer extended dfp","not implemented",
-lfas,"load fpd and signal","not implemented",
+lfas,"load fpc and signal","not implemented",
 ldetr,"load lengthened long dfp","not implemented",
 lxdtr,"load lengthened extended dfp","not implemented",
 ledtr,"load rounded long dfp","not implemented",
@@ -818,7 +826,7 @@ strl,"store relative long (32)",implemented,
 stgrl,"store relative long (64)",implemented,
 sthrl,"store halfword relative long",implemented,
 exrl,"execute relative long",implemented,
-ptf,"perform topology function","not implemented",
+ptf,"perform topology function",N/A,"privileged instruction"
 pfmf,"perform frame management function",N/A,"privileged instruction"
 trte,"translate and test extended","not implemented",
 trtre,"translate and test reverse extended","not implemented",
@@ -833,6 +841,7 @@ qsi,"query sampling information",N/A,"privileged instruction"
 scctr,"set cpu counter",N/A,"privileged instruction"
 spctr,"set peripheral counter",N/A,"privileged instruction"
 lpp,"load program parameter",N/A,"privileged instruction"
+pckmo,"perform cryptographic key management operation",N/A,"privileged instruction"
 ahhhr,"add high high",implemented,
 ahhlr,"add high low",implemented,
 aih,"add immediate high",implemented,
@@ -863,16 +872,16 @@ shhhr,"subtract high high",implemented,
 shhlr,"subtract high low",implemented,
 slhhhr,"subtract logical high high",implemented,
 slhhlr,"subtract logical high low",implemented,
-laa,"load and add 32 bit",semi-implemented,"bugzilla #306035"
-laag,"load and add 64 bit",semi-implemented,"bugzilla #306035"
-laal,"load and add logical 32 bit",semi-implemented,"bugzilla #306035"
-laalg,"load and add logical 64 bit",semi-implemented,"bugzilla #306035"
-lan,"load and and 32 bit",semi-implemented,"bugzilla #306035"
-lang,"load and and 64 bit",semi-implemented,"bugzilla #306035"
-lax,"load and exclusive or 32 bit",semi-implemented,"bugzilla #306035"
-laxg,"load and exclusive or 64 bit",semi-implemented,"bugzilla #306035"
-lao,"load and or 32 bit",semi-implemented,"bugzilla #306035"
-laog,"load and or 64 bit",semi-implemented,"bugzilla #306035"
+laa,"load and add 32 bit",implemented,
+laag,"load and add 64 bit",implemented,
+laal,"load and add logical 32 bit",implemented,
+laalg,"load and add logical 64 bit",implemented,
+lan,"load and and 32 bit",implemented,
+lang,"load and and 64 bit",implemented,
+lax,"load and exclusive or 32 bit",implemented,
+laxg,"load and exclusive or 64 bit",implemented,
+lao,"load and or 32 bit",implemented,
+laog,"load and or 64 bit",implemented,
 lpd,"load pair disjoint 32 bit","not implemented",
 lpdg,"load pair disjoint 64 bit","not implemented",
 locr,"load on condition 32 bit",implemented,
@@ -960,3 +969,26 @@ mxtra,"multiply extended dfp with rounding mode","not implemented","new to z196"
 sdtra,"subtract long dfp with rounding mode","not implemented","new to z196"
 sxtra,"subtract extended dfp with rounding mode","not implemented","new to z196"
 srnmb,"set 3 bit bfp rounding mode",implemented,
+etnd,"extract transaction nesting depth","not implemented",zEC12,
+ntstg,"nontransactional store","not implemented",zEC12,
+tabort,"transaction abort","not implemented",zEC12,
+tbegin,"transaction begin","not implemented",zEC12,
+tbeginc,"constrained transaction begin","not implemented",zEC12,
+tend,"transaction end","not implemented",zEC12,
+bpp,"branch prediction preload","not implemented",zEC12,
+bprp,"branch prediction relative preload","not implemented",zEC12,
+ppa,"perform processor assist","not implemented",zEC12,
+niai,"next instruction access intent","not implemented",zEC12,
+crdte,"compare and replace DAT table entry",N/A,"privileged instruction"
+lat,"load and trap 32 bit","not implemented",zEC12,
+lgat,"load and trap 64 bit","not implemented",zEC12,
+lfhat,"load high and trap","not implemented",zEC12,
+llgfat,"load logical and trap 32>64","not implemented",zEC12,
+llgtat,"load logical thirty one bits and trap 31>64","not implemented",zEC12,
+clt,"compare logical and trap 32 bit reg-mem","not implemented",zEC12,
+clgt,"compare logical and trap 64 bit reg-mem","not implemented",zEC12,
+risbgn,"rotate then insert selected bits nocc","not implemented",zEC12,
+cdzt,"convert from zoned long","not implemented",zEC12,
+cxzt,"convert from zoned extended","not implemented",zEC12,
+czdt,"convert to zoned long","not implemented",zEC12,
+czxt,"convert to zoned extended","not implemented",zEC12,

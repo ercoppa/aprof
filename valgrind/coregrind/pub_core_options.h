@@ -126,10 +126,25 @@ extern const HChar* VG_(clo_suppressions)[VG_CLO_MAX_SFILES];
 extern Int   VG_(clo_n_fullpath_after);
 extern const HChar* VG_(clo_fullpath_after)[VG_CLO_MAX_FULLPATH_AFTER];
 
+/* Full path to additional path to search for debug symbols */
+extern const HChar* VG_(clo_extra_debuginfo_path);
+
 /* DEBUG: print generated code?  default: 00000000 ( == NO ) */
 extern UChar VG_(clo_trace_flags);
-/* DEBUG: do bb profiling?  default: 00000000 ( == NO ) */
-extern UChar VG_(clo_profile_flags);
+
+/* DEBUG: do SB profiling? default: False (== NO).  NOTE: does not
+   have an associated command line flag.  Is set to True whenever
+   --profile-flags= is specified. */
+extern Bool  VG_(clo_profyle_sbs);
+/* DEBUG: if doing SB profiling, provides bits for which JIT stages
+   are shown.  Same meaning as for clo_trace_flags.  default: zero (==
+   show block counts only) */
+extern UChar VG_(clo_profyle_flags);
+/* DEBUG: if doing SB profiling, dump blocks and zero counters after
+   this-many back edges (event checks).  default: zero (== show
+   profiling results only at the end of the run. */
+extern ULong VG_(clo_profyle_interval);
+
 /* DEBUG: if tracing codegen, be quiet until after this bb */
 extern Int   VG_(clo_trace_notbelow);
 /* DEBUG: if tracing codegen, be quiet after this bb  */
@@ -237,6 +252,14 @@ extern Word VG_(clo_max_stackframe);
    be? */
 extern Word VG_(clo_main_stacksize);
 
+/* If the same IP is found twice in a backtrace in a sequence of max
+   VG_(clo_merge_recursive_frames) frames, then the recursive call
+   is merged in the backtrace.
+   Note also that the merge is done during unwinding, to obtain
+   an much as possible significant backtrace.
+   Note that the value is changeable by a gdbsrv command. */
+extern Int VG_(clo_merge_recursive_frames);
+
 /* Delay startup to allow GDB to be attached?  Default: NO */
 extern Bool VG_(clo_wait_for_gdb);
 
@@ -274,6 +297,11 @@ extern Bool VG_(clo_dsymutil);
    for the child. */
 extern Bool VG_(should_we_trace_this_child) ( HChar* child_exe_name,
                                               HChar** child_argv );
+
+/* Whether illegal instructions should be reported/diagnosed.
+   Can be explicitly set through --sigill-diagnostics otherwise
+   depends on verbosity (False if -q). */
+extern Bool VG_(clo_sigill_diag);
 
 #endif   // __PUB_CORE_OPTIONS_H
 

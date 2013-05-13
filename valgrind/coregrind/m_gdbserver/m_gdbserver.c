@@ -394,6 +394,15 @@ Bool VG_(gdbserver_point) (PointKind kind, Bool insert,
    return True;
 }
 
+Bool VG_(has_gdbserver_breakpoint) (Addr addr)
+{
+   GS_Address *g;
+   if (!gdbserver_called)
+      return False;
+   g = VG_(HT_lookup) (gs_addresses, (UWord)HT_addr(addr));
+   return (g != NULL && g->kind == GS_break);
+}
+
 Bool VG_(is_watched)(PointKind kind, Addr addr, Int szB)
 {
    Word n_elems;
@@ -1269,7 +1278,8 @@ UInt VG_(gdb_printf) ( const HChar *format, ... )
    return b.ret;
 }
 
-Int VG_(keyword_id) (HChar* keywords, HChar* input_word, kwd_report_error report)
+Int VG_(keyword_id) (const HChar* keywords, const HChar* input_word,
+                     kwd_report_error report)
 {
    const Int il = (input_word == NULL ? 0 : VG_(strlen) (input_word));
    HChar  iw[il+1];
