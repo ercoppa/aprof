@@ -1,12 +1,14 @@
 # `aprof` user manual
 
-= `aprof`: an input-sensitive perfomance profiler =
+Table of contents:
 
   * [aprof_manual#Overview Overview]
   * [aprof_manual#Usage Usage]
   * [aprof_manual#aprof_command-line_options Command Line Options]
   * [aprof_manual#aprof-helper aprof-helper]
   * [aprof_manual#Report_file_format Report File Format]
+
+= `aprof`: an input-sensitive perfomance profiler =
 
 `aprof` is a [http://valgrind.org/ Valgrind] tool. You can find a more [http://valgrind.org/docs/manual/manual.html general user manual] about this binary instrumentation framework on its official site.
 
