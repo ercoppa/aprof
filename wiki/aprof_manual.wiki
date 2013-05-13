@@ -2,6 +2,8 @@
 
 = `aprof`: an input-sensitive perfomance profiler =
 
+<wiki:toc max_depth="2" />
+
 `aprof` is a [http://valgrind.org/ Valgrind] tool. You can find a more [http://valgrind.org/docs/manual/manual.html general user manual] about this binary instrumentation framework on its official site.
 
 == Overview ==
