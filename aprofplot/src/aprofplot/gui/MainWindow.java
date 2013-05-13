@@ -152,7 +152,7 @@ public class MainWindow extends javax.swing.JFrame {
         jTextField2 = new javax.swing.JTextField();
         jButton11 = new javax.swing.JButton();
         jSeparator8 = new javax.swing.JToolBar.Separator();
-        jComboBox1 = new javax.swing.JComboBox();
+        jComboBox1 = new javax.swing.JComboBox<String>();
         jSeparator10 = new javax.swing.JToolBar.Separator();
         jSplitPane2 = new javax.swing.JSplitPane();
         jPanel6 = new javax.swing.JPanel();
@@ -2573,7 +2573,7 @@ public class MainWindow extends javax.swing.JFrame {
 						@Override
 						public void run() { 
 							
-							jComboBox1.setModel(new ListFilesEditorModel(files));
+							jComboBox1.setModel(new ListFilesEditorModel<String>(files));
 							jComboBox1.setEnabled(true);
 
 							if (!jLabel7.getText().equals("")) {
@@ -3801,7 +3801,7 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem7;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem8;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem9;
-    private javax.swing.JComboBox jComboBox1;
+    private javax.swing.JComboBox<String> jComboBox1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
