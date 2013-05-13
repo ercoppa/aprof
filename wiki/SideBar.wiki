@@ -2,6 +2,12 @@
  * [BasicUsage Basic usage]
  * [Install Install]
  * [aprof_manual aprof manual]
+   * [aprof_manual#Overview Overview]
+   * [aprof_manual#Usage Usage]
+   * [aprof_manual#aprof_command-line_options Command Line Options]
+   * [aprof_manual#aprof-helper aprof-helper]
+   * [aprof_manual#Report_file_format Report File Format]
+
  * [aprof_plot_manual aprof-plot manual]
  * [Tutorial1 Tutorial]
  * [PlotExamples Gallery]
