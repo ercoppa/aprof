@@ -16,7 +16,7 @@ cd aprof-X.Y.Z
 }}}
 last stable version includes Valgrind 3.9.0 - svn rev. 13392. 
 
-aprof will be installed locally under the `aprof-X.Y.Z/inst` directory. 
+aprof will be installed locally under the `aprof-X.Y.Z/inst` directory. See [BasicUsage Basic usage]. 
 
 *Please note* that the `README` and `INSTALL` files in the source directory are the ones provided by Valgrind developers and they can give you different instructions (goal: system installation).
 
