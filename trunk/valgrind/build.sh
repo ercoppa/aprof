@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DIR=`pwd`
-
+echo $DIR
 #make clean
 ./autogen.sh
 ./configure --prefix=$DIR/inst
