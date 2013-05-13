@@ -1,3 +1,0 @@
-make instrument
-cd bin
-time ./dsp-ins < ../scripts/test.txt

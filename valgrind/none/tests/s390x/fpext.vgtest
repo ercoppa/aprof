@@ -1,2 +1,0 @@
-prog: fpext
-prereq: ../../../tests/s390x_features s390x-fpext
