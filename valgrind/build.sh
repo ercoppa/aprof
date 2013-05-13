@@ -3,9 +3,9 @@
 DIR=`pwd`
 
 #make clean
-#./autogen.sh
-#./configure --prefix=$DIR/inst
-#make && make install
+./autogen.sh
+./configure --prefix=$DIR/inst
+make && make install
 cd $DIR/aprof/extra/
 make && cp aprof-helper ../../inst/bin/
 
