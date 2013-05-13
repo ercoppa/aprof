@@ -4,6 +4,9 @@
    * [BasicUsage#Visualize_profile_reports Visualize a report]
 
  * [Install Install]
+   * [Install#Install_aprof aprof]
+   * [Install#Install_aprof-plot aprof-plot]
+
  * [aprof_manual aprof manual]
    * [aprof_manual#Overview Overview]
    * [aprof_manual#Usage Usage]
