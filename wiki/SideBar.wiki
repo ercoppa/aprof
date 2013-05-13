@@ -1,5 +1,8 @@
  * [UserGuide Introduction]
  * [BasicUsage Basic usage]
+   * [BasicUsage#Profile_a_program Profile a program]
+   * [BasicUsage#Visualize_profile_reports Visualize a report]
+
  * [Install Install]
  * [aprof_manual aprof manual]
    * [aprof_manual#Overview Overview]
