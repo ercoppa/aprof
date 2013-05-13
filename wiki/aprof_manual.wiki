@@ -2,7 +2,11 @@
 
 = `aprof`: an input-sensitive perfomance profiler =
 
-<wiki:toc max_depth="2" />
+  * [aprof_manual#Overview Overview]
+  * [aprof_manual#Usage Usage]
+  * [aprof_manual#aprof_command-line_options Command Line Options]
+  * [aprof_manual#aprof-helper aprof-helper]
+  * [aprof_manual#Report_file_format Report File Format]
 
 `aprof` is a [http://valgrind.org/ Valgrind] tool. You can find a more [http://valgrind.org/docs/manual/manual.html general user manual] about this binary instrumentation framework on its official site.
 
@@ -136,6 +140,7 @@ See the [BasicUsage#Profile_a_program basic usage page]
 
   Merge reports of the current program with reports of previous program runs. Reports must be in the current working directory. This option implies `--merge-report-threads=yes` and it is available only on GNU/Linux.
 
+<wiki:comment>
 == aprof specific client requests ==
 
 In the stable version of `aprof`, client requests are used only for external function entry/exit point tracing. See [AprofOnARM_PPC this page] for more details. Two client requests are parsed by `aprof`:
@@ -147,6 +152,7 @@ where:
   * `<dummy_var>` is an int variable (not used)
   * `<function_identifier>` is an identifier of the function (e.g., the routine address)
   * `<function_status>`: one if entry point; two if exit point
+</wiki:comment>
 
 == Report file format ==
 
