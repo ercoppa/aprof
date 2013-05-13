@@ -146,6 +146,42 @@ where:
 
 == `aprof-helper` ==
 
+`aprof-helper` can be easily used for merging reports and for checking their consistency. Basic usage:
+
+{{{
+aprof-X.Y.Z/inst/bin/aprof-helper <action> [<action>] [<options>]
+}}}
+
+Valid actions are:
+
+`-k`
+   Check consistency of one or more reports.
+
+`-r`
+   Merge reports of different program's runs (different PID). If no -t option is specified then this will not merge reports of different threads.
+
+`-t`
+
+   Merge reports of different threads of the same program's run (same PID).
+
+`-i`
+
+   Merge reports (no criteria).
+
+`-c` (experimental feature)
+   Compare two reports; required -a and -b arguments.
+
+Other options:
+
+`-d <PATH> [default: working directory]`
+   Report's directory.
+
+`-a <PATH>`
+   Perform an action on a specific report.
+
+`-b <PATH>`
+   Compare report specified with -a with this report.
+
 == Report file format ==
 
 See the [ReportFileFormat report file format page].
