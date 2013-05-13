@@ -9,21 +9,18 @@ Alternatively, if you want to try the latest version under development, you can 
 svn checkout http://aprof.googlecode.com/svn/trunk/valgrind aprof
 }}}
 
-Uncompress the tgz package (if stable version) and compile it (automake tools are needed):
+Uncompress the tgz package (if stable version) and compile it (*automake tools are needed*):
 {{{
 cd aprof-X.Y.Z
-./autogen.sh
-./configure --prefix=`pwd`/inst
-make
+./build.sh
 }}}
-last stable version includes Valgrind 3.8.0 - svn rev. 12556. Using the `--prefix` param of the `configure` command we avoid any collision with other installations of Valgrind in your system. aprof will be installed locally under the `aprof_valgrind/inst` directory. You can install it with:
-{{{
-make install
-}}}
+last stable version includes Valgrind 3.9.0 - svn rev. 13392. 
+
+aprof will be installed locally under the `aprof-X.Y.Z/inst` directory. 
+
 *Please note* that the `README` and `INSTALL` files in the source directory are the ones provided by Valgrind developers and they can give you different instructions (goal: system installation).
 
 If you are on an ARM/PPC architecture please read [AprofOnARM_PPC this] first.
-
 
 === Install aprof-plot ===
 
