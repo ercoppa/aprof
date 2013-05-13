@@ -1,1 +1,0 @@
-../../../none/tests/ppc32/test_isa_2_06_part1.c
