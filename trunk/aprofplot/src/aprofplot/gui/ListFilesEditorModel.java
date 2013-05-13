@@ -4,7 +4,7 @@ import java.util.*;
 import javax.swing.*;
 import javax.swing.event.*;
 
-public class ListFilesEditorModel implements ComboBoxModel {
+public class ListFilesEditorModel<String> implements ComboBoxModel<String> {
 
 	private int selectedIndex;
 	private ArrayList<String> elements;
@@ -26,7 +26,7 @@ public class ListFilesEditorModel implements ComboBoxModel {
 	}
 
 	@Override
-	public Object getElementAt(int index) {
+	public String getElementAt(int index) {
 		if (elements == null || index >= elements.size()) return null;
 		return elements.get(index);
 	}
