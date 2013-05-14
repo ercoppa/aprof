@@ -14,3 +14,6 @@ hashtable.o: ../hashtable/hashtable.h ../hashtable/hashtable.c
 
 clean:
 	rm aprof-helper hashtable.o
+
+sync:
+	cp ../../../aprof-dev-rvms/valgrind/aprof/extra/aprof-helper.c ./
