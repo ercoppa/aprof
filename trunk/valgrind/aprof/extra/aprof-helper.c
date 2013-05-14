@@ -189,11 +189,11 @@ static UInt get_memory_resolution_report(HChar * report) {
     ASSERT(rep != NULL && strlen(rep) > 0, "Invalid report");
     
     // start from the end
-    char * p = report + strlen(rep) - 1;
+    char * p = rep + strlen(rep) - 1;
     
     // skip ".aprof"
-    ASSERT(*p == 'f' && --p > rep, "Invalid report");
-    ASSERT(*p == 'o' && --p > rep, "Invalid report");
+    ASSERT(*p == 'f' && --p > rep, "Invalid report: %s", report);
+    ASSERT(*p == 'o' && --p > rep, "Invalid report: %s", report);
     ASSERT(*p == 'r' && --p > rep, "Invalid report");
     ASSERT(*p == 'p' && --p > rep, "Invalid report");
     ASSERT(*p == 'a' && --p > rep, "Invalid report");
@@ -251,7 +251,7 @@ static UInt get_pid_report(HChar * report) {
     ASSERT(rep != NULL && strlen(rep) > 0, "Invalid report");
     
     // start from the end
-    char * p = report + strlen(rep) - 1;
+    char * p = rep + strlen(rep) - 1;
     
     // skip ".aprof"
     ASSERT(*p == 'f' && --p > rep, "Invalid report");
