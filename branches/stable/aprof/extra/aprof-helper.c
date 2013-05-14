@@ -218,7 +218,7 @@ static UInt get_tid_report(HChar * report) {
     ASSERT(rep != NULL && strlen(rep) > 0, "Invalid report");
     
     // start from the end
-    char * p = report + strlen(rep) - 1;
+    char * p = rep + strlen(rep) - 1;
     
     // skip ".aprof"
     ASSERT(*p == 'f' && --p > rep, "Invalid report");
