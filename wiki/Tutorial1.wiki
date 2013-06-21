@@ -120,7 +120,7 @@ Let's focus on our quick sort implementation. Select `quick_sort_ric` function i
 
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-3.png]
 
-On x axis we have the [aprof_manual#Input_size_estimation:_Read_Memory_Size_(RMS) RMS metric]. This can be seen as an estimation of input sizes on which your function was executed. Instead on y axis we find an execution cost metric (by default `aprof` counts the number of executed [aprof_manual#Performance_Metric basic blocks]). Points of the chart are colored based on their frequency (number of times your routine was executed on a specific RMS). The legend on top of chart specifies the exact frequency value of each color:
+On x axis we have the [aprof_manual#Input_size_estimation:_Read_Memory_Size_(RMS) RMS metric]. This can be seen as an estimate of input sizes on which your function was executed. Instead, on y axis we find an execution cost metric (by default `aprof` counts the number of executed [aprof_manual#Performance_Metric basic blocks]). Points of the chart are colored based on their frequency (number of times your routine was executed on a specific RMS). The legend on the top specifies the frequency value of each color:
 
 [http://aprof.googlecode.com/svn/trunk/wiki_images/Color-scale.png]
 
@@ -130,14 +130,14 @@ Select an area of the chart with your mouse in order to zoom in and better analy
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-3b.png]
 
 This chart reveals two things:
-  * the trend of `quick_sort_ric` is not quadratic, maybe linear or `n*log(n)`;
+  * the trend of `quick_sort_ric` does not appear to be quadratic; perhaps linear or `n*log(n)`;
   * `quick_sort_ric` is executed on small input sizes most of the times (the smaller is the RMS, the higher is the frequency): this is expected as quick sort is a divide-and-conquer sorting algorithm.
 
 We can analyze in more detail our input workload using the `RMS frequency plot` (the second one; the chart is zoomed in):
 
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-10.png] [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-15.png]
 
-This chart confirms our observation on the frequency of input sizes. On the right we can see the `routine profile`, this can be useful if we want to know the exact frequency (or cost) for each RMS value.
+This chart confirms our observation on the frequency of input sizes. The `routine profile`, shown on the right, can be useful if we want to know the exact frequency (or cost) of each RMS value.
 
 Now, enable the `curve bounding plot`:
 
@@ -149,12 +149,12 @@ By scrolling down the charts' area, you should see this new chart:
 
 This chart allows us to simply apply the `guess ratio rule`. This is a simple method for evaluating the growth rate of a function by considering a guess function `H(n)` and analyzing the trend of ratio `T(n)/H(n)` (where `T(n)` is the function cost of our routine and `n` the RMS values). If `T ∈ O(H)`, then the ratio will stabilize to a non-negative constant, while if `T ∉ O(H)` it (eventually) increases.
 
-In the last screenshot, we can observe that the trend of ratio `T(n)/n` (where `T(n)` is cost of our routine and `n` is the value of RMS) does not stabilize to a constant. Our next guess should be `n * log(n)`:
+In the last screenshot, we observe that the trend of ratio `T(n)/n` (where `T(n)` is cost of our routine and `n` is the value of RMS) does not stabilize to a constant. Our next guess should be `n * log(n)`:
 
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-6.png] [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-7.png]
 
 The trend stabilizes to a constant :)
-And if we try with `n^2`:
+If we try with `n^2`:
 
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-8.png] 
 
@@ -163,7 +163,7 @@ Zoom in:
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-9.png]
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-11.png]
 
-The trend slowly decreases. In conclusion, we have a confirmation that our implementation of quick sort and in particular `quick_sort_ric` is `O(n * log(n) )` (this can be assumed to be true only for the tested workload!).
+The trend slowly decreases. In conclusion, the visualized profiles seem to confirm that our implementation of quick sort (and in particular of `quick_sort_ric`) is bounded by `O(n * log(n))`.
 
 Now, select in the routine table the `partition` function. Its curve bounding plot is:
 
@@ -205,7 +205,7 @@ If we profile the program and open the new report, we can see that `quick_sort_r
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-16.png]
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-17.png]
 
-This is the result of our pivot choice. Of course the trend of `partition` does not change: it remains linear but the trend is a lot more neat:
+This is the result of our pivot choice. Of course the trend of `partition` does not change: it remains linear but the trend is a lot neater:
 
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-18.png]
 [http://aprof.googlecode.com/svn/trunk/wiki_images/tutorial-19.png]
