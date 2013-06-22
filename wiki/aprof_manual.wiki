@@ -1,4 +1,4 @@
-# `aprof` user manual
+#summary aprof user manual
 
 = `aprof`: an input-sensitive perfomance profiler =
 
