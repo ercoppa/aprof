@@ -1,4 +1,4 @@
-# `aprof-plot` user manual
+#summary `aprof-plot` user manual
 
 =`aprof-plot`: a Java tool for visualizing `aprof`'s reports=
 
