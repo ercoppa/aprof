@@ -9,6 +9,7 @@ public abstract class Routine implements Comparable<Routine> {
 	private double max_cost; // cumulative
 	private double max_avg_cost; // cumulative
     
+    private double total_cumulative_cost;
     private double total_cost;
     private double total_self;
     private double self_min; 
@@ -50,6 +51,7 @@ public abstract class Routine implements Comparable<Routine> {
         self_max = 0;
         self_max_avg = 0;
         this.num_rms = num_rms;
+        total_cumulative_cost = 0;
 		rms_list = new ArrayList<Rms>();
 	
 	}
@@ -76,6 +78,7 @@ public abstract class Routine implements Comparable<Routine> {
         if (r.getRms() > max_rms) max_rms = r.getRms();
 		if (r.getRms() < min_rms) min_rms = r.getRms();
 		
+        total_cumulative_cost += r.getTotalCumulativeCost();
         total_cost += r.getTotalRealCost();
         total_self += r.getTotalSelfCost();
 		total_calls += r.getOcc();
@@ -348,6 +351,10 @@ public abstract class Routine implements Comparable<Routine> {
             return (((double)this.rvms_thread) / ((double)this.sum_rvms)); 
         
         return 0;
+    }
+    
+    public double getCumulativeCost() {
+        return total_cumulative_cost;
     }
     
 }
