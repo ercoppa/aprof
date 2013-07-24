@@ -1024,6 +1024,7 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
 
 void APROF_(unwind_stack)(ThreadData * tdata) {
     
+    AP_ASSERT(tdata != NULL, "Invalid stack");
     while (tdata->stack_depth > 0)  {
 
         Activation * current = APROF_(get_activation_noresize)(tdata, tdata->stack_depth);

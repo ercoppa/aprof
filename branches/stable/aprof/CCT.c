@@ -90,13 +90,12 @@ void APROF_(free_CCT)(CCTNode * root) {
 /*
  * Output a CCT in a report file
  */
-void APROF_(print_report_CCT)(FILE * f, CCTNode* root, UInt parent_id) {
+void APROF_(print_report_CCT)(FILE * report, CCTNode* root, UInt parent_id) {
     
     // skip empty subtrees
     if (root == NULL) return;
     if (root->context_id > 0) {
         
-        char msg[256];
         if (parent_id > 0)
             APROF_(fprintf)(report, "x %llu %u %u\n", root->routine_id, root->context_id, parent_id);
         else
@@ -109,7 +108,7 @@ void APROF_(print_report_CCT)(FILE * f, CCTNode* root, UInt parent_id) {
     for (theNodePtr = root->firstChild;
         theNodePtr != NULL;
         theNodePtr = theNodePtr->nextSibling)
-            APROF_(print_report_CCT)(f, theNodePtr, root->context_id);
+            APROF_(print_report_CCT)(report, theNodePtr, root->context_id);
 }
 
 

@@ -284,7 +284,7 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
     HashTable * map = HT_lookup(rtn_info->context_rms_map, 
                                             act->node->context_id);
     
-    if (rms_map == NULL) {
+    if (map == NULL) {
         
         map = HT_construct(NULL);
         #if DEBUG
