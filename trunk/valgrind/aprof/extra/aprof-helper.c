@@ -1082,6 +1082,9 @@ static void check_rvms(double sum_rms, double sum_rvms,
 
 static void post_merge_consistency(aprof_report * r, HChar * report) {
     
+    ULong sum_thread_input = 0;
+    ULong sum_syscall_input = 0;
+    
     HT_ResetIter(r->routine_hash_table);
     RoutineInfo * rtn = (RoutineInfo *) HT_Next(r->routine_hash_table);
     while (rtn != NULL) {
@@ -1107,6 +1110,9 @@ static void post_merge_consistency(aprof_report * r, HChar * report) {
                 ADD(sum_rms, i->rms_input_sum);
                 ADD(sum_rvms, i->key*i->calls_number);
             }
+            
+            ADD(sum_syscall_input, i->rvms_syscall_self);
+            ADD(sum_thread_input, i->rvms_thread_self);
             
             ADD(cumul_real, i->cumul_real_time_sum);
             i = (RMSInfo *) HT_Next(rtn->rvms_map);
@@ -1139,6 +1145,9 @@ static void post_merge_consistency(aprof_report * r, HChar * report) {
         rtn = (RoutineInfo *) HT_Next(r->routine_hash_table);
     }
     
+    
+    VG_(printf)("Sum thread input: %llu\n", sum_thread_input);
+    VG_(printf)("Sum syscall input: %llu\n", sum_syscall_input);
 }
 
 static Bool merge_report(HChar * report, aprof_report * rep_data) {
