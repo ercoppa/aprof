@@ -37,23 +37,23 @@
 static ULong APROF_(binary_time) = 0;
 
 static HChar * report_name(HChar * filename_priv, UInt tid, 
-                                UInt postfix_c, HChar * prog_name) {
+                                UInt attempt, HChar * prog_name) {
 
 
     UInt offset = 0;
     #if REPORT_NAME == 1
     offset += VG_(sprintf)(filename_priv, "%s_", VG_(basename)(prog_name));
     #endif
-
-    VG_(sprintf)(filename_priv + offset, "%d_%u_%d", VG_(getpid)(), 
-                                    tid - 1, APROF_(addr_multiple));
-
+    
+    if (attempt > 0) attempt += 1024;
+    VG_(sprintf)(filename_priv + offset, "%d_%u_%d.aprof", VG_(getpid)(), 
+                                    tid - 1 + attempt, APROF_(addr_multiple));
+/*
     char postfix[128];
     if (postfix_c > 0) VG_(sprintf)(postfix, "_%u.aprof", postfix_c);
     else VG_(sprintf)(postfix, ".aprof");
-    
     VG_(strcat)(filename_priv, postfix);
-
+*/
     return filename_priv;
 
 }
@@ -279,7 +279,14 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
             
             APROF_(fprintf)(report,
                             #if INPUT_METRIC == RVMS
-                            "p %llu %lu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu\n", 
+                            "p %llu %lu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu"
+                            
+                            #if INPUT_STATS
+                            " %llu %llu %llu %llu"
+                            #endif
+                            
+                            "\n",
+                            
                             #else
                             "p %llu %lu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu\n",
                             #endif
