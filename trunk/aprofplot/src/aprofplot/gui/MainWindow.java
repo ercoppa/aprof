@@ -228,6 +228,13 @@ public class MainWindow extends javax.swing.JFrame {
         jMenuItem11 = new javax.swing.JMenuItem();
         jMenuItem12 = new javax.swing.JMenuItem();
         jMenuItem13 = new javax.swing.JMenuItem();
+        jMenuItem14 = new javax.swing.JMenuItem();
+        jMenuItem15 = new javax.swing.JMenuItem();
+        jMenuItem16 = new javax.swing.JMenuItem();
+        jMenuItem17 = new javax.swing.JMenuItem();
+        jMenuItem19 = new javax.swing.JMenuItem();
+        jMenuItem20 = new javax.swing.JMenuItem();
+        jMenuItem18 = new javax.swing.JMenuItem();
         jMenuItem7 = new javax.swing.JMenuItem();
         jSeparator4 = new javax.swing.JSeparator();
         jMenuItem2 = new javax.swing.JMenuItem();
@@ -988,6 +995,62 @@ public class MainWindow extends javax.swing.JFrame {
             }
         });
         jMenu6.add(jMenuItem13);
+
+        jMenuItem14.setText("Input volume...");
+        jMenuItem14.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem14ActionPerformed(evt);
+            }
+        });
+        jMenu6.add(jMenuItem14);
+
+        jMenuItem15.setText("Routine profile richness...");
+        jMenuItem15.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem15ActionPerformed(evt);
+            }
+        });
+        jMenu6.add(jMenuItem15);
+
+        jMenuItem16.setText("Thread input...");
+        jMenuItem16.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem16ActionPerformed(evt);
+            }
+        });
+        jMenu6.add(jMenuItem16);
+
+        jMenuItem17.setText("External input...");
+        jMenuItem17.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem17ActionPerformed(evt);
+            }
+        });
+        jMenu6.add(jMenuItem17);
+
+        jMenuItem19.setText("Induced accesses...");
+        jMenuItem19.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem19ActionPerformed(evt);
+            }
+        });
+        jMenu6.add(jMenuItem19);
+
+        jMenuItem20.setText("Self induced accesses...");
+        jMenuItem20.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem20ActionPerformed(evt);
+            }
+        });
+        jMenu6.add(jMenuItem20);
+
+        jMenuItem18.setText("All input stats...");
+        jMenuItem18.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem18ActionPerformed(evt);
+            }
+        });
+        jMenu6.add(jMenuItem18);
 
         jMenu1.add(jMenu6);
 
@@ -2304,9 +2367,9 @@ public class MainWindow extends javax.swing.JFrame {
 				for (int i = 0; i < els.size(); i++) {
 					Routine el = els.get(i);
 					out.println(el.getID() + " " +
-								(int) el.getSizeRmsList() + " " +
-								(int) el.getTotalCost() + " " +
-								(int) el.getTotalCalls() + " " +
+								(long) el.getSizeRmsList() + " " +
+								(long) el.getTotalCost() + " " +
+								(long) el.getTotalCalls() + " " +
 								el.getName()
 								);
 				}
@@ -2732,6 +2795,335 @@ public class MainWindow extends javax.swing.JFrame {
 		else removeGraph(ExternalInputGraphPanel);
         
     }//GEN-LAST:event_jCheckBoxMenuItem23ActionPerformed
+
+    private void jMenuItem14ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem14ActionPerformed
+        
+        // Menu: File > Export > Input volume...
+		
+        if (report == null) return;
+        report.sortRoutinesByExternalInput();
+        ArrayList<Routine> rr = report.getRoutines();
+        
+        try {
+			
+			File tmp = new File(this.report.getName() + "_input_volume.dat");
+			
+			JFileChooser chooser = new javax.swing.JFileChooser();
+			String lastReportPath = Main.getLastReportPath();
+			if (!lastReportPath.equals("")) 
+				chooser.setCurrentDirectory(new File(lastReportPath));
+			
+			FileNameExtensionFilter filter = new FileNameExtensionFilter("Program profile", "dat");
+			chooser.setFileFilter(filter);
+			chooser.setAcceptAllFileFilterUsed(false);
+			chooser.setSelectedFile(tmp);
+			int choice = chooser.showSaveDialog(this.getParent());
+			
+			if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
+				
+				tmp = chooser.getSelectedFile();
+				tmp.createNewFile();
+				PrintWriter out = new PrintWriter(new FileWriter(tmp));
+		
+                out.format("# Percent Input_Valume*100 %n");
+				for (int i = 0; i < rr.size(); i++) {
+					
+                    Routine r = rr.get(i);
+                    double x = ((double)i + 1) / (((double)rr.size())/100);
+                    double y = (1 - r.getRatioSumRmsRvms()) * 100;
+                    
+					out.format("%.1f %.1f%n", x, y);
+				}
+				out.close();
+				
+			}
+			
+		} catch(java.io.IOException e) {
+			
+			JOptionPane.showMessageDialog(this, "Error during export :(",
+					"Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+		
+		}
+        
+    }//GEN-LAST:event_jMenuItem14ActionPerformed
+
+    private void jMenuItem15ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem15ActionPerformed
+        
+        // Menu: File > Export > profile routine richness...
+		
+        if (report == null) return;
+        report.sortRoutinesByRatioTuples();
+        ArrayList<Routine> rr = report.getRoutines();
+        
+        try {
+			
+			File tmp = new File(this.report.getName() + "_profile_richness.dat");
+			
+			JFileChooser chooser = new javax.swing.JFileChooser();
+			String lastReportPath = Main.getLastReportPath();
+			if (!lastReportPath.equals("")) 
+				chooser.setCurrentDirectory(new File(lastReportPath));
+			
+			FileNameExtensionFilter filter = new FileNameExtensionFilter("Program profile", "dat");
+			chooser.setFileFilter(filter);
+			chooser.setAcceptAllFileFilterUsed(false);
+			chooser.setSelectedFile(tmp);
+			int choice = chooser.showSaveDialog(this.getParent());
+			
+			if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
+				
+				tmp = chooser.getSelectedFile();
+				tmp.createNewFile();
+				PrintWriter out = new PrintWriter(new FileWriter(tmp));
+		
+                out.format("# Percent Routine_Profile_Richness%n");
+                //out.format("0 100%n");
+				for (int i = 0; i < rr.size(); i++) {
+					
+                    Routine r = rr.get(i);
+                    double x = ((double)i + 1) / (((double)rr.size())/100);
+                    double y = r.getRatioRvmsRms() * 100;
+                    
+					out.format("%.1f %.1f%n", x, y);
+				}
+				out.close();
+				
+			}
+			
+		} catch(java.io.IOException e) {
+			
+			JOptionPane.showMessageDialog(this, "Error during export :(",
+					"Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+		
+		}
+    }//GEN-LAST:event_jMenuItem15ActionPerformed
+
+    private void jMenuItem16ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem16ActionPerformed
+        
+        // Menu: File > Export > thread input...
+		
+        if (report == null) return;
+        report.sortRoutinesByRatioRvmsThread();
+        ArrayList<Routine> rr = report.getRoutines();
+        
+        try {
+			
+			File tmp = new File(this.report.getName() + "_thread_input.dat");
+			
+			JFileChooser chooser = new javax.swing.JFileChooser();
+			String lastReportPath = Main.getLastReportPath();
+			if (!lastReportPath.equals("")) 
+				chooser.setCurrentDirectory(new File(lastReportPath));
+			
+			FileNameExtensionFilter filter = new FileNameExtensionFilter("Program profile", "dat");
+			chooser.setFileFilter(filter);
+			chooser.setAcceptAllFileFilterUsed(false);
+			chooser.setSelectedFile(tmp);
+			int choice = chooser.showSaveDialog(this.getParent());
+			
+			if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
+				
+				tmp = chooser.getSelectedFile();
+				tmp.createNewFile();
+				PrintWriter out = new PrintWriter(new FileWriter(tmp));
+		
+                out.format("# Percent Thread_Input%n");
+                out.format("0 100%n");
+				for (int i = 0; i < rr.size(); i++) {
+					
+                    Routine r = rr.get(i);
+                    double x = ((double)i + 1) / (((double)rr.size())/100);
+                    double y = r.getRatioSumRvmsThread() * 100;
+                    
+					out.format("%.1f %.1f%n", x, y);
+				}
+				out.close();
+				
+			}
+			
+		} catch(java.io.IOException e) {
+			
+			JOptionPane.showMessageDialog(this, "Error during export :(",
+					"Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+		
+		}
+    }//GEN-LAST:event_jMenuItem16ActionPerformed
+
+    private void extractInputStats() {                                            
+        
+        
+    } 
+    
+    private void jMenuItem17ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem17ActionPerformed
+        
+        // Menu: File > Export > external input...
+		
+        if (report == null) return;
+        report.sortRoutinesByRatioRvmsSyscall();
+        ArrayList<Routine> rr = report.getRoutines();
+        
+        try {
+			
+			File tmp = new File(this.report.getName() + "_external_input.dat");
+			
+			JFileChooser chooser = new javax.swing.JFileChooser();
+			String lastReportPath = Main.getLastReportPath();
+			if (!lastReportPath.equals("")) 
+				chooser.setCurrentDirectory(new File(lastReportPath));
+			
+			FileNameExtensionFilter filter = new FileNameExtensionFilter("Program profile", "dat");
+			chooser.setFileFilter(filter);
+			chooser.setAcceptAllFileFilterUsed(false);
+			chooser.setSelectedFile(tmp);
+			int choice = chooser.showSaveDialog(this.getParent());
+			
+			if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
+				
+				tmp = chooser.getSelectedFile();
+				tmp.createNewFile();
+				PrintWriter out = new PrintWriter(new FileWriter(tmp));
+		
+                out.format("# Percent External_input%n");
+                out.format("0 100%n");
+				for (int i = 0; i < rr.size(); i++) {
+					
+                    Routine r = rr.get(i);
+                    double x = ((double)i + 1) / (((double)rr.size())/100);
+                    double y =  r.getRatioSumRvmsSyscall() * 100;
+                    
+					out.format("%.1f %.1f%n", x, y);
+				}
+				out.close();
+				
+			}
+			
+		} catch(java.io.IOException e) {
+			
+			JOptionPane.showMessageDialog(this, "Error during export :(",
+					"Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+		
+		}
+    }//GEN-LAST:event_jMenuItem17ActionPerformed
+
+    private void jMenuItem18ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem18ActionPerformed
+        
+        this.jMenuItem14ActionPerformed(evt);
+        this.jMenuItem15ActionPerformed(evt);
+        this.jMenuItem16ActionPerformed(evt);
+        this.jMenuItem17ActionPerformed(evt);
+        this.jMenuItem19ActionPerformed(evt);
+        
+    }//GEN-LAST:event_jMenuItem18ActionPerformed
+
+    private void jMenuItem19ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem19ActionPerformed
+        
+        // Menu: File > Export > induced accesses...
+		
+        if (report == null) return;
+        report.sortRoutinesByInducedAccesses();
+        ArrayList<Routine> rr = report.getRoutines();
+        
+        try {
+			
+			File tmp = new File(this.report.getName() + "_induced_accesses.dat");
+			
+			JFileChooser chooser = new javax.swing.JFileChooser();
+			String lastReportPath = Main.getLastReportPath();
+			if (!lastReportPath.equals("")) 
+				chooser.setCurrentDirectory(new File(lastReportPath));
+			
+			FileNameExtensionFilter filter = new FileNameExtensionFilter("Program profile", "dat");
+			chooser.setFileFilter(filter);
+			chooser.setAcceptAllFileFilterUsed(false);
+			chooser.setSelectedFile(tmp);
+			int choice = chooser.showSaveDialog(this.getParent());
+			
+			if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
+				
+				tmp = chooser.getSelectedFile();
+				tmp.createNewFile();
+				PrintWriter out = new PrintWriter(new FileWriter(tmp));
+		
+                out.format("# Percent External_input Thread_input%n");
+                
+                int k = 1;
+				for (int i = 0; i < rr.size(); i++) {
+                    
+                    Routine r = rr.get(i);
+                    if (r.getSizeRmsList() < 5) continue;
+                    /*
+                    System.out.println("Routine " 
+                            + i + " tuples " + r.getSizeRmsList());
+                    
+                    */
+                    double x = k++;
+                    double y =  r.getRatioSumRvmsSyscall() * 100;
+                    double z =  r.getRatioSumRvmsThread() * 100;
+                    
+					out.format("%.1f %.1f %.1f%n", x, y, z);
+				}
+				out.close();
+				
+			}
+			
+		} catch(java.io.IOException e) {
+			
+			JOptionPane.showMessageDialog(this, "Error during export :(",
+					"Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+		
+		}
+        
+    }//GEN-LAST:event_jMenuItem19ActionPerformed
+
+    private void jMenuItem20ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem20ActionPerformed
+
+        // Menu: File > Export > self induced accesses...
+		
+        if (report == null) return;
+        
+        try {
+			
+			File tmp = new File(this.report.getName() + "_self_induced_accesses.dat");
+			
+			JFileChooser chooser = new javax.swing.JFileChooser();
+			String lastReportPath = Main.getLastReportPath();
+			if (!lastReportPath.equals("")) 
+				chooser.setCurrentDirectory(new File(lastReportPath));
+			
+			FileNameExtensionFilter filter = new FileNameExtensionFilter("Program profile", "dat");
+			chooser.setFileFilter(filter);
+			chooser.setAcceptAllFileFilterUsed(false);
+			chooser.setSelectedFile(tmp);
+			int choice = chooser.showSaveDialog(this.getParent());
+			
+			if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
+				
+				tmp = chooser.getSelectedFile();
+				tmp.createNewFile();
+				PrintWriter out = new PrintWriter(new FileWriter(tmp));
+		
+                out.format("#Self_External_input Self_Thread_input%n");
+                
+                out.println(report.getSumRvmsSyscallSelf() + " " +
+                                    report.getSumRvmsThreadSelf());
+                
+                double x = report.getSumRvmsSyscallSelf() + report.getSumRvmsThreadSelf();
+                double y = (report.getSumRvmsSyscallSelf() / x) * 100;
+                double z = (report.getSumRvmsThreadSelf() / x) * 100;
+                
+                out.format("%.1f %.1f%n", y, z);
+                
+				out.close();
+				
+			}
+			
+		} catch(java.io.IOException e) {
+			
+			JOptionPane.showMessageDialog(this, "Error during export :(",
+					"Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+		
+		}
+    }//GEN-LAST:event_jMenuItem20ActionPerformed
 
 	private void resetRoutineTableFilter() {
 		
@@ -3823,7 +4215,14 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JMenuItem jMenuItem11;
     private javax.swing.JMenuItem jMenuItem12;
     private javax.swing.JMenuItem jMenuItem13;
+    private javax.swing.JMenuItem jMenuItem14;
+    private javax.swing.JMenuItem jMenuItem15;
+    private javax.swing.JMenuItem jMenuItem16;
+    private javax.swing.JMenuItem jMenuItem17;
+    private javax.swing.JMenuItem jMenuItem18;
+    private javax.swing.JMenuItem jMenuItem19;
     private javax.swing.JMenuItem jMenuItem2;
+    private javax.swing.JMenuItem jMenuItem20;
     private javax.swing.JMenuItem jMenuItem3;
     private javax.swing.JMenuItem jMenuItem4;
     private javax.swing.JMenuItem jMenuItem5;

@@ -74,6 +74,8 @@ public class ContextualizedRoutineInfo extends RoutineInfo {
         long sum_sqr_rms = 0;
         long rvms_syscall = 0;
         long rvms_thread = 0;
+        long rvms_syscall_self = 0;
+        long rvms_thread_self = 0;
         
 		while (i.hasNext()) {
 			
@@ -84,7 +86,8 @@ public class ContextualizedRoutineInfo extends RoutineInfo {
 									total_real_cost, total_self, occ, 
                                     self_min, self_max, cumul_sqr, self_sqr,
                                     sum_rms, sum_sqr_rms, rvms_syscall,
-                                    rvms_thread);
+                                    rvms_thread, rvms_syscall_self,
+                                    rvms_thread_self);
 				
 				addRms(rr);
 				
@@ -103,6 +106,8 @@ public class ContextualizedRoutineInfo extends RoutineInfo {
                 sum_sqr_rms = 0;
                 rvms_syscall = 0;
                 rvms_thread = 0;
+                rvms_syscall_self = 0;
+                rvms_thread_self = 0;
 				current_rms = r.getRms();
 				
 			}
@@ -122,6 +127,8 @@ public class ContextualizedRoutineInfo extends RoutineInfo {
             sum_sqr_rms += r.getSumSqrRms();
             rvms_syscall += r.getSumRvmsSyscall();
             rvms_thread += r.getSumRvmsThread();
+            rvms_syscall_self += r.getSumRvmsSyscallSelf();
+            rvms_thread_self += r.getSumRvmsThreadSelf();
 			
 		}
 		
@@ -129,7 +136,8 @@ public class ContextualizedRoutineInfo extends RoutineInfo {
 									total_real_cost, total_self, occ,
                                     self_min, self_max, cumul_sqr, self_sqr,
                                     sum_rms, sum_sqr_rms, rvms_syscall,
-                                    rvms_thread);
+                                    rvms_thread, rvms_syscall_self,
+                                    rvms_thread_self);
 				
 		addRms(rr);
 		

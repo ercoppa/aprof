@@ -25,6 +25,8 @@ public class AprofReport {
 	private long total_contexts;
     private long sum_rms;
     private long sum_rvms;
+    private long sum_rvms_syscall_self;
+    private long sum_rvms_thread_self;
     private long num_rms;
 	private ArrayList<RoutineInfo> routines;
 	private ArrayList<RoutineContext> contexts;
@@ -32,6 +34,7 @@ public class AprofReport {
 	private File file;
 	private HashSet<String> libset;
     boolean has_rvms_stats = false;
+    boolean has_distinct_rms = false;
 
 	// Global stats about routines
 	private int max_class = 30;
@@ -171,6 +174,8 @@ public class AprofReport {
                 if (!tokenizer.hasMoreTokens()) continue;
                 long rms = Long.parseLong(tokenizer.nextToken());
                 
+                has_distinct_rms = true;
+                
                 long calls = 0;
                 if (tokenizer.hasMoreTokens()) {
                     
@@ -274,12 +279,16 @@ public class AprofReport {
                 long sum_sqr_rms = 0;
                 long rvms_syscall = 0;
                 long rvms_thread = 0;
+                long rvms_syscall_self = 0;
+                long rvms_thread_self = 0;
                 if (this.version >= 5 && this.input_metric == RVMS) {
                     
                     sum_rms = Long.parseLong(tokenizer.nextToken());
                     sum_sqr_rms = Long.parseLong(tokenizer.nextToken());
                     this.sum_rms += sum_rms;
                     this.sum_rvms += rms * occ;
+                    
+                    has_distinct_rms = true;
                     
                     if (tokenizer.hasMoreTokens()) {
                     
@@ -289,13 +298,23 @@ public class AprofReport {
                         has_rvms_stats = true;
                     }
                     
+                    if (tokenizer.hasMoreTokens()) {
+                    
+                        rvms_syscall_self = Long.parseLong(tokenizer.nextToken());
+                        rvms_thread_self = Long.parseLong(tokenizer.nextToken());
+                        
+                        this.sum_rvms_syscall_self += rvms_syscall_self;
+                        this.sum_rvms_thread_self += rvms_thread_self;
+                        
+                    }
                 }
                 
                 Rms te = new Rms(rms, min_cost, max_cost, cost_sum, 
                                     real, self, occ, self_min, self_max,
                                     cumul_sqr, self_sqr, sum_rms,
                                     sum_sqr_rms, rvms_syscall,
-                                    rvms_thread);
+                                    rvms_thread, rvms_syscall_self,
+                                    rvms_thread_self);
                 
 				RoutineInfo r = null;
 				try {
@@ -348,11 +367,14 @@ public class AprofReport {
                 long sum_sqr_rms = 0;
                 long rvms_syscall = 0;
                 long rvms_thread = 0;
+                long rvms_syscall_self = 0;
+                long rvms_thread_self = 0;
                 if (this.version >= 5 && this.input_metric == RVMS) {
                     sum_rms = Long.parseLong(tokenizer.nextToken());
                     sum_sqr_rms = Long.parseLong(tokenizer.nextToken());
                     this.sum_rms += sum_rms;
                     this.sum_rvms += rms * occ;
+                    has_distinct_rms = true;
                     
                     if (tokenizer.hasMoreTokens()) {
                     
@@ -361,13 +383,24 @@ public class AprofReport {
                         
                         has_rvms_stats = true;
                     }
+                
+                    if (tokenizer.hasMoreTokens()) {
+                    
+                        rvms_syscall_self = Long.parseLong(tokenizer.nextToken());
+                        rvms_thread_self = Long.parseLong(tokenizer.nextToken());
+                        
+                        this.sum_rvms_syscall_self += rvms_syscall_self;
+                        this.sum_rvms_thread_self += rvms_thread_self;
+                        
+                    }
                 }
                 
 				Rms te = new Rms(rms, min_cost, max_cost, tot_cost, 
 									real, self, occ, self_min, self_max,
                                     cumul_sqr, self_sqr, sum_rms,
                                     sum_sqr_rms, rvms_syscall,
-                                    rvms_thread);
+                                    rvms_thread, rvms_syscall_self,
+                                    rvms_thread_self);
 				
 				RoutineContext c = null;
 				try {
@@ -795,13 +828,52 @@ public class AprofReport {
     }
     
     public boolean hasDistinctRms() {
-        if (input_metric == RMS) return false;
-        return (num_rms > 0);
+        return has_distinct_rms;
     }
 
     public boolean hasRvmsStats() {
         return has_rvms_stats;
     }
+
+    public void sortRoutinesByRatioRvmsThread() {
+        Collections.sort(routines, new Comparator<RoutineInfo> () {
+			@Override
+			public int compare(RoutineInfo r1, RoutineInfo r2) {
+			   if (r1.getRatioSumRvmsThread() == r2.getRatioSumRvmsThread()) return 0;
+			   if ((r1.getRatioSumRvmsThread()) < (r2.getRatioSumRvmsThread())) return 1;
+			   return -1;
+			}
+		});
+    }
     
+    public void sortRoutinesByRatioRvmsSyscall() {
+        Collections.sort(routines, new Comparator<RoutineInfo> () {
+			@Override
+			public int compare(RoutineInfo r1, RoutineInfo r2) {
+			   if (r1.getRatioSumRvmsSyscall() == r2.getRatioSumRvmsSyscall()) return 0;
+			   if ((r1.getRatioSumRvmsSyscall()) < (r2.getRatioSumRvmsSyscall())) return 1;
+			   return -1;
+			}
+		});
+    }
+    
+    public void sortRoutinesByInducedAccesses() {
+        Collections.sort(routines, new Comparator<RoutineInfo> () {
+			@Override
+			public int compare(RoutineInfo r1, RoutineInfo r2) {
+			   if (r1.getRatioInducedAccesses() == r2.getRatioInducedAccesses()) return 0;
+			   if (r1.getRatioInducedAccesses() < r2.getRatioInducedAccesses()) return 1;
+			   return -1;
+			}
+		});
+    }
+    
+    public long getSumRvmsSyscallSelf() {
+        return sum_rvms_syscall_self;
+    }
+
+    public long getSumRvmsThreadSelf() {
+        return sum_rvms_thread_self;
+    }
 }
 

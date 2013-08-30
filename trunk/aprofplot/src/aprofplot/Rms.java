@@ -18,6 +18,8 @@ public class Rms implements Comparable<Rms> {
     private long sum_sqr_rms;
     private long rvms_syscall;
     private long rvms_thread;
+    private long rvms_syscall_self;
+    private long rvms_thread_self;
 	
 	public static final int MAX_COST = 0;
 	public static final int AVG_COST = 1;
@@ -34,7 +36,8 @@ public class Rms implements Comparable<Rms> {
                 double total_real_cost, double total_self, long occ,
                 long self_min, long self_max, double cumul_sqr,
                 double self_sqr, long sum_rms, long sum_sqr_rms,
-                long rvms_syscall, long rvms_thread) {
+                long rvms_syscall, long rvms_thread, long rvms_syscall_self,
+                long rvms_thread_self) {
 
 		this.rms = rms;
 		this.min_cost = min_cost;
@@ -51,6 +54,8 @@ public class Rms implements Comparable<Rms> {
         this.sum_sqr_rms = sum_sqr_rms;
         this.rvms_syscall = rvms_syscall;
         this.rvms_thread = rvms_thread;
+        this.rvms_syscall_self = rvms_syscall_self;
+        this.rvms_thread_self = rvms_thread_self;
         
         long cost = 0;
         if (Main.getChartCost() == Main.COST_CUMULATIVE)
@@ -240,7 +245,9 @@ public class Rms implements Comparable<Rms> {
                 this.sum_rms + te.getSumRms(),
                 this.sum_sqr_rms + te.getSumSqrRms(),
                 this.rvms_syscall + te.getSumRvmsSyscall(),
-                this.rvms_thread + te.getSumRvmsThread());
+                this.rvms_thread + te.getSumRvmsThread(),
+                this.rvms_syscall_self + te.getSumRvmsSyscallSelf(),
+                this.rvms_thread_self + te.getSumRvmsThreadSelf());
 	}
 
     public long getCumulativeMinCost() {
@@ -297,6 +304,14 @@ public class Rms implements Comparable<Rms> {
     
     public long getSumRvmsThread() {
         return rvms_thread;
+    }
+    
+    public long getSumRvmsSyscallSelf() {
+        return rvms_syscall_self;
+    }
+    
+    public long getSumRvmsThreadSelf() {
+        return rvms_thread_self;
     }
     
     public double getRatioSumRvmsSyscall() {

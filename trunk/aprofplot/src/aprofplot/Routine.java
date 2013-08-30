@@ -22,6 +22,8 @@ public abstract class Routine implements Comparable<Routine> {
     private long sum_rvms;
     private long rvms_syscall;
     private long rvms_thread;
+    private long rvms_syscall_self;
+    private long rvms_thread_self;
     private long num_rms;
 	// Read memory size elements for this routine
 	private ArrayList<Rms> rms_list;
@@ -88,6 +90,9 @@ public abstract class Routine implements Comparable<Routine> {
         
         rvms_syscall += r.getSumRvmsSyscall();
         rvms_thread += r.getSumRvmsThread();
+        
+        rvms_syscall_self += r.getSumRvmsSyscallSelf();
+        rvms_thread_self += r.getSumRvmsThreadSelf();
         
 		// Invalid mcc cache
 		last_mcc_n = -1;
@@ -333,7 +338,18 @@ public abstract class Routine implements Comparable<Routine> {
     }
     
     public double getRatioRvmsRms() {
-        return (((double)getSizeRmsList()) /
+        
+        if (getCountRms() == 0) 
+            return getSizeRmsList();
+        
+        if (getName().equals("GOMP_taskwait"))
+            System.out.println("#rms " + getCountRms() +
+                                    " #rvms " + getSizeRmsList() +
+                                    " ratio " + (((double)getSizeRmsList() - getCountRms()) /
+                ((double)getCountRms()))
+                        );
+        
+        return (((double)getSizeRmsList() - getCountRms()) /
                 ((double)getCountRms()));
     }
     
@@ -347,14 +363,28 @@ public abstract class Routine implements Comparable<Routine> {
     
     public double getRatioSumRvmsThread() {
         
-         if (this.rvms_thread > 0)
-            return (((double)this.rvms_thread) / ((double)this.sum_rvms)); 
-        
+         if (this.rvms_thread > 0) {
+             return (((double)this.rvms_thread) / ((double)this.sum_rvms)); 
+         }
+            
         return 0;
     }
     
-    public double getCumulativeCost() {
-        return total_cumulative_cost;
+    public double getSumRvmsSyscallSelf() {
+        return this.rvms_syscall_self;
+    }
+    
+    public double getSumRvmsThreadSelf() {            
+        return this.rvms_thread_self;
+    }
+    
+    public double getRatioInducedAccesses() {
+    
+        if (this.sum_rvms <= 0) return 0;
+        
+        return (((double)this.rvms_thread + this.rvms_syscall) 
+                    / ((double)this.sum_rvms)); 
+        
     }
     
 }
