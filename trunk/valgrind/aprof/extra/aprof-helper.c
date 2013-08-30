@@ -1145,9 +1145,10 @@ static void post_merge_consistency(aprof_report * r, HChar * report) {
         rtn = (RoutineInfo *) HT_Next(r->routine_hash_table);
     }
     
-    
-    VG_(printf)("Sum thread input: %llu\n", sum_thread_input);
-    VG_(printf)("Sum syscall input: %llu\n", sum_syscall_input);
+    if (consistency) {
+        VG_(printf)("Sum thread input: %llu\n", sum_thread_input);
+        VG_(printf)("Sum syscall input: %llu\n", sum_syscall_input);
+    }
 }
 
 static Bool merge_report(HChar * report, aprof_report * rep_data) {
