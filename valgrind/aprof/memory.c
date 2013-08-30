@@ -282,7 +282,7 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
 
         }
         
-        #if 0 && DISTINCT_RMS
+        #if DISTINCT_RMS
         if (old_ts < act->aid_rvms) {
             
             act->d_rms++;

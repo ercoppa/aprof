@@ -351,11 +351,11 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
     
     //AP_ASSERT(act->d_rms <= act->rvms, "Wrong!");
     
-    RMSValue * node = (RMSValue *) HT_lookup(rtn_info->distinct_rms, act->rms); // act->d_rms
+    RMSValue * node = (RMSValue *) HT_lookup(rtn_info->distinct_rms, act->d_rms);
     if (node == NULL) {
     
         node = (RMSValue *) VG_(calloc)("distinct rms node", sizeof(RMSValue), 1);
-        node->key = act->rms; // act->d_rms;
+        node->key = act->d_rms;
         node->calls = 1;
         HT_add_node(rtn_info->distinct_rms, node->key, node);
         
@@ -397,8 +397,8 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
         info_access->self_time_min = partial_self;
     
     #if INPUT_METRIC == RVMS && DISTINCT_RMS
-    info_access->rms_input_sum += act->rms;//act->d_rms;
-    info_access->rms_input_sum_sqr += act->rms * act->rms; //(act->d_rms * act->d_rms);
+    info_access->rms_input_sum += act->d_rms;
+    info_access->rms_input_sum_sqr += (act->d_rms * act->d_rms);
     #endif
     
     #if INPUT_STATS

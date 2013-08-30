@@ -90,7 +90,7 @@
                                  // Input estimation metric:
 #define RMS                 1    // Read Memory Size
 #define RVMS                2    // Read Versioned Memory Size
-#define INPUT_METRIC        RMS
+#define INPUT_METRIC        RVMS
 
 #define TRACE_FUNCTION      1   // if 1, aprof traces functions by itself, 
                                 // otherwise the program must be 
@@ -98,9 +98,9 @@
                                 // with -finstrument-functions
                                 
 #define MEM_TRACE           1   // if 0 disable mem instrumentation
-#define THREAD_INPUT        0   // if 1, every write creates a new
+#define THREAD_INPUT        1   // if 1, every write creates a new
                                 // version of an input
-#define SYSCALL_WRAPPING    0   // if 1, I/O syscall stores are 
+#define SYSCALL_WRAPPING    1   // if 1, I/O syscall stores are 
                                 // considered as external I/O
 
 #define IGNORE_LOAD_SYS     1   // ignore load due to syscall
@@ -118,7 +118,7 @@
                                 // function (but this does not imply to
                                 // discard info about its children)
                                 
-#define IGNORE_REPEAT_ACC   1   // if 1, ignore repeated accesses to 
+#define IGNORE_REPEAT_ACC   0   // if 1, ignore repeated accesses to 
                                 // the same address within a BB
                                 
 #define REPORT_NAME         1   // if 1 report name is prog_TID.aprof, 
@@ -169,13 +169,13 @@
 #endif
 
 #if INPUT_METRIC == RVMS
-#define DISTINCT_RMS 0
+#define DISTINCT_RMS 1
 #else
 #define DISTINCT_RMS 0
 #endif
 
 #if DISTINCT_RMS
-#define DEBUG_DRMS 1
+#define DEBUG_DRMS 0
 #else
 #define DEBUG_DRMS 0
 #endif
