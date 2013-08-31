@@ -77,7 +77,7 @@
                                 // each thread to include context 
                                 // information in reports
                                 
-#define COSTANT_MEM_ACCESS  1   // if 1, memory access with size >1 are 
+#define COSTANT_MEM_ACCESS  0   // if 1, memory access with size >1 are 
                                 //  managed as size==1
                                 
                                 // Performance metric:
