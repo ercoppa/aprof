@@ -105,7 +105,7 @@
 
 #define IGNORE_LOAD_SYS     1   // ignore load due to syscall
 
-#define INPUT_STATS         0   // stats about thread input & external input
+#define INPUT_STATS         1   // stats about thread input & external input
 
 #define DEBUG_ALLOCATION    0   // if 1, check every allocation made by aprof
 #define IGNORE_DL_RUNTIME   1   // if 1, disable analysis for dl_

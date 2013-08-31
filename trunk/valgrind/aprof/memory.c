@@ -256,6 +256,10 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
                 act->rvms_thread++;
                 act->rvms_thread_self++;
             }
+            
+            
+            AP_ASSERT(act->rvms_thread <= act->rvms, "Wrong");
+            AP_ASSERT(act->rvms_syscall <= act->rvms, "Wrong");
             #endif
             
             #if DEBUG_DRMS
