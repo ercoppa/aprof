@@ -273,6 +273,7 @@ void APROF_(fprintf)(FILE * f, const HChar * format, ...);
 void APROF_(thread_switch)(ThreadId tid, ULong blocks_dispatched);
 void APROF_(thread_exit)(ThreadId tid);
 void APROF_(kill_threads)(void);
+void APROF_(thread_create)(ThreadId tid, ThreadId child);
 
 #if INPUT_METRIC == RVMS
 UInt APROF_(overflow_handler)(void);
