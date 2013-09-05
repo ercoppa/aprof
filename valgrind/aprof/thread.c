@@ -213,6 +213,11 @@ void APROF_(thread_exit)(ThreadId tid){
 
 }
 
+void APROF_(thread_create)(ThreadId tid, ThreadId child) {
+    //VG_(umsg)("\nThread create: %d\n", child);
+    APROF_(thread_start)(child);
+} 
+
 void APROF_(thread_switch)(ThreadId tid, ULong blocks_dispatched) {
     
     /* 
