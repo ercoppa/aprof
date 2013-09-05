@@ -56,7 +56,7 @@
 #define LK_SIZE 65536 // 4GB
 #else
 
-#define LK_SIZE  2048 // 2048GB
+#define LK_SIZE  65536 // 2048GB
 #define ILT_SIZE 16384 // 1GB
 
 /* 
