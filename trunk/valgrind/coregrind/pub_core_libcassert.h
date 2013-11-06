@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Julian Seward
+   Copyright (C) 2000-2013 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -37,6 +37,7 @@
 //--------------------------------------------------------------------
 
 #include "pub_tool_libcassert.h"
+#include "pub_core_basics.h"      // UnwindStartRegs
 
 // Useful for making failing stubs, when certain things haven't yet been
 // implemented.

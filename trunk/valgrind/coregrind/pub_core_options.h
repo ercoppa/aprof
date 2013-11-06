@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Julian Seward
+   Copyright (C) 2000-2013 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -128,6 +128,18 @@ extern const HChar* VG_(clo_fullpath_after)[VG_CLO_MAX_FULLPATH_AFTER];
 
 /* Full path to additional path to search for debug symbols */
 extern const HChar* VG_(clo_extra_debuginfo_path);
+
+/* Address of a debuginfo server to use.  Either an IPv4 address of
+   the form "d.d.d.d" or that plus a port spec, hence of the form
+   "d.d.d.d:d", where d is one or more digits. */
+extern const HChar* VG_(clo_debuginfo_server);
+
+/* Do we allow reading debuginfo from debuginfo objects that don't
+   match (in some sense) the main object?  This is dangerous, so the
+   default is NO (False).  In any case it applies only to objects
+   found either in _extra_debuginfo_path or via the
+   _debuginfo_server. */
+extern Bool VG_(clo_allow_mismatched_debuginfo);
 
 /* DEBUG: print generated code?  default: 00000000 ( == NO ) */
 extern UChar VG_(clo_trace_flags);
@@ -260,6 +272,9 @@ extern Word VG_(clo_main_stacksize);
    Note that the value is changeable by a gdbsrv command. */
 extern Int VG_(clo_merge_recursive_frames);
 
+/* Max number of sectors that will be used by the translation code cache. */
+extern UInt VG_(clo_num_transtab_sectors);
+
 /* Delay startup to allow GDB to be attached?  Default: NO */
 extern Bool VG_(clo_wait_for_gdb);
 
@@ -302,6 +317,19 @@ extern Bool VG_(should_we_trace_this_child) ( HChar* child_exe_name,
    Can be explicitly set through --sigill-diagnostics otherwise
    depends on verbosity (False if -q). */
 extern Bool VG_(clo_sigill_diag);
+
+/* Unwind using stack scanning (a nasty hack at the best of times)
+   when the normal CFI/FP-chain scan fails.  If the number of
+   "normally" recovered frames is below this number, stack scanning
+   will be used (on platforms on which it is supported, currently only
+   arm-linux).  The default value of zero has the effect of disabling
+   stack scanning.  Default: zero*/
+extern UInt VG_(clo_unw_stack_scan_thresh);
+
+/* If stack scanning is used, this is how many frames it may recover.
+   Since it tends to pick up a lot of junk, this value is set pretty
+   low by default.  Default: 5 */
+extern UInt VG_(clo_unw_stack_scan_frames);
 
 #endif   // __PUB_CORE_OPTIONS_H
 

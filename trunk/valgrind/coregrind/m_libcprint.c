@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Julian Seward 
+   Copyright (C) 2000-2013 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -31,14 +31,14 @@
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
 #include "pub_core_debuglog.h"
-#include "pub_tool_gdbserver.h"  // VG_(gdb_printf)
+#include "pub_core_gdbserver.h"  // VG_(gdb_printf)
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcfile.h"   // VG_(write)(), VG_(write_socket)()
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"   // VG_(getpid)(), VG_(read_millisecond_timer()
 #include "pub_core_options.h"
-#include "valgrind.h"            // For RUNNING_ON_VALGRIND
+#include "pub_core_clreq.h"      // For RUNNING_ON_VALGRIND
 
 
 /* ---------------------------------------------------------------------
@@ -74,7 +74,9 @@ void send_bytes_to_logging_sink ( OutputSink* sink, const HChar* msg, Int nbytes
          any more output. */
       if (sink->fd >= 0)
          VG_(write)( sink->fd, msg, nbytes );
-      else if (sink->fd == -2)
+      else if (sink->fd == -2 && nbytes > 0)
+         /* send to gdb the provided data, which must be
+            a null terminated string with len >= 1 */
          VG_(gdb_printf)("%s", msg);
    }
 }

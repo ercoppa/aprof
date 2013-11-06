@@ -36,12 +36,12 @@
 #include "host_generic_regs.h"  /* HReg */
 
 /* Num registers used for function calls */
-#if defined(VGP_mips64_linux)
-/* a0, a1, a2, a3, a4, a5, a6, a7 */
-#define MIPS_N_REGPARMS 8
-#else
+#if defined(VGP_mips32_linux)
 /* a0, a1, a2, a3 */
 #define MIPS_N_REGPARMS 4
+#else
+/* a0, a1, a2, a3, a4, a5, a6, a7 */
+#define MIPS_N_REGPARMS 8
 #endif
 /* --------- Registers. --------- */
 
@@ -359,15 +359,15 @@ typedef enum {
    Mfp_ADDS, Mfp_SUBS, Mfp_MULS, Mfp_DIVS,
 
    /* Unary */
-   Mfp_SQRTS, Mfp_SQRTD, Mfp_RSQRTS, Mfp_RSQRTD, Mfp_RECIPS, Mfp_RECIPD,
+   Mfp_SQRTS, Mfp_SQRTD,
    Mfp_ABSS, Mfp_ABSD, Mfp_NEGS, Mfp_NEGD, Mfp_MOVS, Mfp_MOVD,
-   Mfp_RSQRTE,
 
    /* FP convert */
    Mfp_CVTSD, Mfp_CVTSW, Mfp_CVTWD,
    Mfp_CVTWS, Mfp_CVTDL, Mfp_CVTSL, Mfp_CVTLS, Mfp_CVTLD, Mfp_TRULS, Mfp_TRULD,
    Mfp_TRUWS, Mfp_TRUWD, Mfp_FLOORWS, Mfp_FLOORWD, Mfp_ROUNDWS, Mfp_ROUNDWD,
-   Mfp_CVTDW, Mfp_CMP, Mfp_CEILWS, Mfp_CEILWD, Mfp_CEILLS, Mfp_CEILLD, Mfp_CVTDS
+   Mfp_CVTDW, Mfp_CMP, Mfp_CEILWS, Mfp_CEILWD, Mfp_CEILLS, Mfp_CEILLD,
+   Mfp_CVTDS, Mfp_ROUNDLD, Mfp_FLOORLD
 
 } MIPSFpOp;
 

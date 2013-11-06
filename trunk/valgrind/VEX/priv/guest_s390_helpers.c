@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright IBM Corp. 2010-2012
+   Copyright IBM Corp. 2010-2013
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -1185,27 +1185,27 @@ decode_bfp_rounding_mode(UInt irrm)
    psw >> 28;   /* cc */ \
 })
 
-/* Convert an IRRoundingModeDFP value to s390_dfp_round_t */
+/* Convert an IRRoundingMode value to s390_dfp_round_t */
 #if defined(VGA_s390x)
 static s390_dfp_round_t
 decode_dfp_rounding_mode(UInt irrm)
 {
    switch (irrm) {
-   case Irrm_DFP_NEAREST:
+   case Irrm_NEAREST:
       return S390_DFP_ROUND_NEAREST_EVEN_4;
-   case Irrm_DFP_NegINF:
+   case Irrm_NegINF:
       return S390_DFP_ROUND_NEGINF_7;
-   case Irrm_DFP_PosINF:
+   case Irrm_PosINF:
       return S390_DFP_ROUND_POSINF_6;
-   case Irrm_DFP_ZERO:
+   case Irrm_ZERO:
       return S390_DFP_ROUND_ZERO_5;
-   case Irrm_DFP_NEAREST_TIE_AWAY_0:
+   case Irrm_NEAREST_TIE_AWAY_0:
       return S390_DFP_ROUND_NEAREST_TIE_AWAY_0_1;
-   case Irrm_DFP_PREPARE_SHORTER:
+   case Irrm_PREPARE_SHORTER:
       return S390_DFP_ROUND_PREPARE_SHORT_3;
-   case Irrm_DFP_AWAY_FROM_ZERO:
+   case Irrm_AWAY_FROM_ZERO:
       return S390_DFP_ROUND_AWAY_0;
-   case Irrm_DFP_NEAREST_TIE_TOWARD_0:
+   case Irrm_NEAREST_TIE_TOWARD_0:
       return S390_DFP_ROUND_NEAREST_TIE_TOWARD_0;
    }
    vpanic("decode_dfp_rounding_mode");
@@ -1740,6 +1740,18 @@ s390_calculate_cc(ULong cc_op, ULong cc_dep1, ULong cc_dep2, ULong cc_ndep)
    case S390_CC_OP_DFP_128_TO_UINT_64: /* CLGXTR */
       return S390_CC_FOR_DFP128_UCONVERT(".insn rrf,0xb94a0000", cc_dep1,
                                          cc_dep2, cc_ndep);
+
+   case S390_CC_OP_PFPO_32: {
+      __asm__ volatile(
+           "ler 4, %[cc_dep1]\n\t"      /* 32 bit FR move */
+           "lr  0, %[cc_dep2]\n\t"      /* 32 bit GR move */
+           ".short 0x010a\n\t"          /* PFPO */
+           "ipm %[psw]\n\t"             : [psw] "=d"(psw)
+                                        : [cc_dep1] "f"(cc_dep1),
+                                          [cc_dep2] "d"(cc_dep2)
+                                        : "r0", "r1", "f4");
+      return psw >> 28;  /* cc */
+   }
 
    case S390_CC_OP_PFPO_64: {
       __asm__ volatile(
@@ -2345,10 +2357,39 @@ guest_s390x_spechelper(const HChar *function_name, IRExpr **args,
                           mkU64(0)));
       }
 
-missed:
-      ;
+      goto missed;
    }
 
+   /* --------- Specialising "s390_calculate_cond" --------- */
+
+   if (vex_streq(function_name, "s390_calculate_cc")) {
+      IRExpr *cc_op_expr, *cc_dep1;
+      ULong cc_op;
+
+      vassert(arity == 4);
+
+      cc_op_expr = args[0];
+
+      /* The necessary requirement for all optimizations here is that
+         cc_op is constant. So check that upfront. */
+      if (! isC64(cc_op_expr)) return NULL;
+
+      cc_op   = cc_op_expr->Iex.Const.con->Ico.U64;
+      cc_dep1 = args[1];
+
+      if (cc_op == S390_CC_OP_BITWISE) {
+         return unop(Iop_1Uto32,
+                     binop(Iop_CmpNE64, cc_dep1, mkU64(0)));
+      }
+
+      if (cc_op == S390_CC_OP_SET) {
+         return unop(Iop_64to32, cc_dep1);
+      }
+
+      goto missed;
+   }
+
+missed:
    return NULL;
 }
 

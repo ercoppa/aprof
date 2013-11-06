@@ -5,7 +5,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2011-2012 OpenWorks LLP info@open-works.co.uk,
+   Copyright (C) 2011-2013 OpenWorks LLP info@open-works.co.uk,
                            Philippe Waroquiers philippe.waroquiers@skynet.be
 
    This program is free software; you can redistribute it and/or
@@ -29,8 +29,8 @@
 #include "pub_core_basics.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
-#include "pub_tool_xarray.h"
-#include "pub_tool_poolalloc.h" /* self */
+#include "pub_core_xarray.h"
+#include "pub_core_poolalloc.h" /* self */
 
 struct _PoolAlloc {
    UWord   nrRef;         /* nr reference to this pool allocator */

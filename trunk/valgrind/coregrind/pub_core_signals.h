@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Julian Seward
+   Copyright (C) 2000-2013 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -36,6 +36,7 @@
 //--------------------------------------------------------------------
 
 #include "pub_tool_signals.h"       // I want to get rid of this header...
+#include "pub_core_vki.h"           // vki_sigset_t et al.
 
 /* Highest signal the kernel will let us use */
 extern Int VG_(max_signal);

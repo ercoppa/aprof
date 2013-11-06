@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2012 OpenWorks LLP
+   Copyright (C) 2004-2013 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -432,11 +432,11 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          emit        = (Int(*)(Bool*,UChar*,Int,HInstr*,Bool,
                                void*,void*,void*,void*))
                        emit_MIPSInstr;
-#if defined(VKI_LITTLE_ENDIAN)
+#        if defined(VKI_LITTLE_ENDIAN)
          host_is_bigendian = False;
-#elif defined(VKI_BIG_ENDIAN)
+#        elif defined(VKI_BIG_ENDIAN)
          host_is_bigendian = True;
-#endif
+#        endif
          host_word_type    = Ity_I32;
          vassert(are_valid_hwcaps(VexArchMIPS32, vta->archinfo_host.hwcaps));
          break;
@@ -456,11 +456,11 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          emit        = (Int(*)(Bool*,UChar*,Int,HInstr*,Bool,
                                void*,void*,void*,void*))
                        emit_MIPSInstr;
-#if defined(VKI_LITTLE_ENDIAN)
+#        if defined(VKI_LITTLE_ENDIAN)
          host_is_bigendian = False;
-#elif defined(VKI_BIG_ENDIAN)
+#        elif defined(VKI_BIG_ENDIAN)
          host_is_bigendian = True;
-#endif
+#        endif
          host_word_type    = Ity_I64;
          vassert(are_valid_hwcaps(VexArchMIPS64, vta->archinfo_host.hwcaps));
          break;
@@ -1171,10 +1171,10 @@ const HChar* LibVEX_ppVexHwCaps ( VexArch arch, UInt hwcaps )
 /* Write default settings info *vai. */
 void LibVEX_default_VexArchInfo ( /*OUT*/VexArchInfo* vai )
 {
-   vai->hwcaps             = 0;
-   vai->ppc_cache_line_szB = 0;
-   vai->ppc_dcbz_szB       = 0;
-   vai->ppc_dcbzl_szB      = 0;
+   vai->hwcaps              = 0;
+   vai->ppc_icache_line_szB = 0;
+   vai->ppc_dcbz_szB        = 0;
+   vai->ppc_dcbzl_szB       = 0;
 
    vai->hwcache_info.num_levels = 0;
    vai->hwcache_info.num_caches = 0;
@@ -1202,23 +1202,25 @@ void LibVEX_default_VexAbiInfo ( /*OUT*/VexAbiInfo* vbi )
 
 static const HChar* show_hwcaps_x86 ( UInt hwcaps ) 
 {
-   /* Monotonic, SSE3 > SSE2 > SSE1 > baseline. */
+   /* Monotonic, LZCNT > SSE3 > SSE2 > SSE1 > MMXEXT > baseline. */
    switch (hwcaps) {
       case 0:
          return "x86-sse0";
-      case VEX_HWCAPS_X86_SSE1:
-         return "x86-sse1";
-      case VEX_HWCAPS_X86_SSE1 | VEX_HWCAPS_X86_SSE2:
-         return "x86-sse1-sse2";
-      case VEX_HWCAPS_X86_SSE1 | VEX_HWCAPS_X86_SSE2
+      case VEX_HWCAPS_X86_MMXEXT:
+         return "x86-mmxext";
+      case VEX_HWCAPS_X86_MMXEXT | VEX_HWCAPS_X86_SSE1:
+         return "x86-mmxext-sse1";
+      case VEX_HWCAPS_X86_MMXEXT | VEX_HWCAPS_X86_SSE1 | VEX_HWCAPS_X86_SSE2:
+         return "x86-mmxext-sse1-sse2";
+      case VEX_HWCAPS_X86_MMXEXT | VEX_HWCAPS_X86_SSE1 | VEX_HWCAPS_X86_SSE2
            | VEX_HWCAPS_X86_LZCNT:
-         return "x86-sse1-sse2-lzcnt";
-      case VEX_HWCAPS_X86_SSE1 | VEX_HWCAPS_X86_SSE2
+         return "x86-mmxext-sse1-sse2-lzcnt";
+      case VEX_HWCAPS_X86_MMXEXT | VEX_HWCAPS_X86_SSE1 | VEX_HWCAPS_X86_SSE2
            | VEX_HWCAPS_X86_SSE3:
-         return "x86-sse1-sse2-sse3";
-      case VEX_HWCAPS_X86_SSE1 | VEX_HWCAPS_X86_SSE2
+         return "x86-mmxext-sse1-sse2-sse3";
+      case VEX_HWCAPS_X86_MMXEXT | VEX_HWCAPS_X86_SSE1 | VEX_HWCAPS_X86_SSE2
            | VEX_HWCAPS_X86_SSE3 | VEX_HWCAPS_X86_LZCNT:
-         return "x86-sse1-sse2-sse3-lzcnt";
+         return "x86-mmxext-sse1-sse2-sse3-lzcnt";
       default:
          return NULL;
    }
@@ -1294,6 +1296,7 @@ static const HChar* show_hwcaps_ppc32 ( UInt hwcaps )
    const UInt GX = VEX_HWCAPS_PPC32_GX;
    const UInt VX = VEX_HWCAPS_PPC32_VX;
    const UInt DFP = VEX_HWCAPS_PPC32_DFP;
+   const UInt ISA2_07 = VEX_HWCAPS_PPC32_ISA2_07;
          UInt c  = hwcaps;
    if (c == 0)           return "ppc32-int";
    if (c == F)           return "ppc32-int-flt";
@@ -1306,6 +1309,9 @@ static const HChar* show_hwcaps_ppc32 ( UInt hwcaps )
    if (c == (F|V|FX|GX)) return "ppc32-int-flt-vmx-FX-GX";
    if (c == (F|V|FX|GX|DFP))    return "ppc32-int-flt-vmx-FX-GX-DFP";
    if (c == (F|V|FX|GX|VX|DFP)) return "ppc32-int-flt-vmx-FX-GX-VX-DFP";
+   if (c == (F|V|FX|GX|VX|DFP|ISA2_07))
+      return "ppc32-int-flt-vmx-FX-GX-VX-DFP-ISA2_07";
+
    return NULL;
 }
 
@@ -1318,6 +1324,7 @@ static const HChar* show_hwcaps_ppc64 ( UInt hwcaps )
    const UInt GX = VEX_HWCAPS_PPC64_GX;
    const UInt VX = VEX_HWCAPS_PPC64_VX;
    const UInt DFP = VEX_HWCAPS_PPC64_DFP;
+   const UInt ISA2_07 = VEX_HWCAPS_PPC64_ISA2_07;
          UInt c  = hwcaps;
    if (c == 0)         return "ppc64-int-flt";
    if (c == FX)        return "ppc64-int-flt-FX";
@@ -1329,6 +1336,8 @@ static const HChar* show_hwcaps_ppc64 ( UInt hwcaps )
    if (c == (V|FX|GX)) return "ppc64-int-flt-vmx-FX-GX";
    if (c == (V|FX|GX|DFP))    return "ppc64-int-flt-vmx-FX-GX-DFP";
    if (c == (V|FX|GX|VX|DFP)) return "ppc64-int-flt-vmx-FX-GX-VX-DFP";
+   if (c == (V|FX|GX|VX|DFP|ISA2_07))
+      return "ppc64-int-flt-vmx-FX-GX-VX-DFP-ISA2_07";
    return NULL;
 }
 
@@ -1418,8 +1427,34 @@ static const HChar* show_hwcaps_s390x ( UInt hwcaps )
 
 static const HChar* show_hwcaps_mips32 ( UInt hwcaps )
 {
-   if (hwcaps == 0x00010000) return "MIPS-baseline";
-   if (hwcaps == 0x00020000) return "Broadcom-baseline";
+   /* MIPS baseline. */
+   if (VEX_MIPS_COMP_ID(hwcaps) == VEX_PRID_COMP_MIPS) {
+      /* MIPS baseline with dspr2. */
+      if (VEX_MIPS_PROC_DSP2(hwcaps)) {
+         return "MIPS-baseline-dspr2";
+      }
+      /* MIPS baseline with dsp. */
+      if (VEX_MIPS_PROC_DSP(hwcaps)) {
+         return "MIPS-baseline-dsp";
+      }
+      return "MIPS-baseline";
+   }
+
+   /* Broadcom baseline. */
+   if (VEX_MIPS_COMP_ID(hwcaps) == VEX_PRID_COMP_BROADCOM) {
+      return "Broadcom-baseline";
+   }
+
+   /* Netlogic baseline. */
+   if (VEX_MIPS_COMP_ID(hwcaps) == VEX_PRID_COMP_NETLOGIC) {
+      return "Netlogic-baseline";
+   }
+
+   /* Cavium baseline. */
+   if (VEX_MIPS_COMP_ID(hwcaps) == VEX_PRID_COMP_CAVIUM) {
+      return "Cavium-baseline";
+   }
+
    return NULL;
 }
 

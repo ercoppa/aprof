@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Julian Seward 
+   Copyright (C) 2000-2013 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -66,9 +66,9 @@
 #include "pub_core_translate.h"     // For VG_(translate)
 #include "pub_core_trampoline.h"
 #include "pub_core_transtab.h"
-#include "pub_tool_inner.h"
+#include "pub_core_inner.h"
 #if defined(ENABLE_INNER_CLIENT_REQUEST)
-#include "valgrind.h"
+#include "pub_core_clreq.h"
 #endif 
 
 
@@ -159,7 +159,7 @@ static void usage_NORETURN ( Bool debug_help )
 "    --max-stackframe=<number> assume stack switch for SP changes larger\n"
 "                              than <number> bytes [2000000]\n"
 "    --main-stacksize=<number> set size of main thread's stack (in bytes)\n"
-"                              [use current 'ulimit' value]\n"
+"                              [min(max(current 'ulimit' value,1MB),16MB)]\n"
 "\n"
 "  user options for Valgrind tools that replace malloc:\n"
 "    --alignment=<number>      set minimum alignment of heap allocations [%s]\n"
@@ -176,6 +176,11 @@ static void usage_NORETURN ( Bool debug_help )
 "    --extra-debuginfo-path=path    absolute path to search for additional\n"
 "                              debug symbols, in addition to existing default\n"
 "                              well known search paths.\n"
+"    --debuginfo-server=ipaddr:port    also query this server\n"
+"                              (valgrind-di-server) for debug symbols\n"
+"    --allow-mismatched-debuginfo=no|yes  [no]\n"
+"                              for the above two flags only, accept debuginfo\n"
+"                              objects that don't \"match\" the main object\n"
 "    --smc-check=none|stack|all|all-non-file [stack]\n"
 "                              checks for self-modifying code: none, only for\n"
 "                              code found in stacks, for all code, or for all\n"
@@ -195,6 +200,8 @@ static void usage_NORETURN ( Bool debug_help )
 "                              handle non-standard kernel variants\n"
 "    --merge-recursive-frames=<number>  merge frames between identical\n"
 "           program counters in max <number> frames) [0]\n"
+"    --num-transtab-sectors=<number> size of translated code cache [%d]\n"
+"           more sectors may increase performance, but use more memory.\n"
 "    --show-emwarns=no|yes     show warnings about emulation limits? [no]\n"
 "    --require-text-symbol=:sonamepattern:symbolpattern    abort run if the\n"
 "                              stated shared object doesn't have the stated\n"
@@ -205,6 +212,11 @@ static void usage_NORETURN ( Bool debug_help )
 "                  in the main exe:  --soname-synonyms=somalloc=NONE\n"
 "                  in libxyzzy.so:   --soname-synonyms=somalloc=libxyzzy.so\n"
 "    --sigill-diagnostics=yes|no  warn about illegal instructions? [yes]\n"
+"    --unw-stack-scan-thresh=<number>   Enable stack-scan unwind if fewer\n"
+"                  than <number> good frames found  [0, meaning \"disabled\"]\n"
+"                  NOTE: stack scanning is only available on arm-linux.\n"
+"    --unw-stack-scan-frames=<number>   Max number of frames that can be\n"
+"                  recovered by stack scanning [5]\n"
 "\n";
 
    const HChar usage2[] = 
@@ -257,7 +269,7 @@ static void usage_NORETURN ( Bool debug_help )
 "       0000 0010   show after reg-alloc\n"
 "       0000 0001   show final assembly\n"
 "       0000 0000   show summary profile only\n"
-"      (Nb: you need --trace-notbelow and/or --trace-notabove "
+"      (Nb: you need --trace-notbelow and/or --trace-notabove\n"
 "           with --trace-flags for full details)\n"
 "\n"
 "  debugging options for Valgrind tools that report errors\n"
@@ -273,8 +285,8 @@ static void usage_NORETURN ( Bool debug_help )
 "  Extra options read from ~/.valgrindrc, $VALGRIND_OPTS, ./.valgrindrc\n"
 "\n"
 "  %s is %s\n"
-"  Valgrind is Copyright (C) 2000-2012, and GNU GPL'd, by Julian Seward et al.\n"
-"  LibVEX is Copyright (C) 2004-2012, and GNU GPL'd, by OpenWorks LLP et al.\n"
+"  Valgrind is Copyright (C) 2000-2013, and GNU GPL'd, by Julian Seward et al.\n"
+"  LibVEX is Copyright (C) 2004-2013, and GNU GPL'd, by OpenWorks LLP et al.\n"
 "\n"
 "  Bug reports, feedback, admiration, abuse, etc, to: %s.\n"
 "\n";
@@ -301,7 +313,8 @@ static void usage_NORETURN ( Bool debug_help )
                default_alignment          /* char* */,
                default_redzone_size       /* char* */,
                VG_(clo_vgdb_poll)         /* int */,
-               VG_(vgdb_prefix_default)() /* char* */
+               VG_(vgdb_prefix_default)() /* char* */,
+               N_SECTORS_DEFAULT          /* int */
                ); 
    if (VG_(details).name) {
       VG_(printf)("  user options for %s:\n", VG_(details).name);
@@ -601,6 +614,9 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       else if VG_INT_CLO (arg, "--sanity-level",     VG_(clo_sanity_level)) {}
       else if VG_BINT_CLO(arg, "--num-callers",      VG_(clo_backtrace_size), 1,
                                                      VG_DEEPEST_BACKTRACE) {}
+      else if VG_BINT_CLO(arg, "--num-transtab-sectors",
+                               VG_(clo_num_transtab_sectors),
+                               MIN_N_SECTORS, MAX_N_SECTORS) {}
       else if VG_BINT_CLO(arg, "--merge-recursive-frames",
                                VG_(clo_merge_recursive_frames), 0,
                                VG_DEEPEST_BACKTRACE) {}
@@ -675,6 +691,12 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       else if VG_STR_CLO(arg, "--xml-socket", xml_fsname_unexpanded) {
          xml_to = VgLogTo_Socket;
       }
+
+      else if VG_STR_CLO(arg, "--debuginfo-server",
+                              VG_(clo_debuginfo_server)) {}
+
+      else if VG_BOOL_CLO(arg, "--allow-mismatched-debuginfo",
+                               VG_(clo_allow_mismatched_debuginfo)) {}
 
       else if VG_STR_CLO(arg, "--xml-user-comment",
                               VG_(clo_xml_user_comment)) {}
@@ -780,6 +802,11 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
                                VG_(clo_gen_suppressions), 1) {}
       else if VG_XACT_CLO(arg, "--gen-suppressions=all",
                                VG_(clo_gen_suppressions), 2) {}
+
+      else if VG_BINT_CLO(arg, "--unw-stack-scan-thresh",
+                          VG_(clo_unw_stack_scan_thresh), 0, 100) {}
+      else if VG_BINT_CLO(arg, "--unw-stack-scan-frames",
+                          VG_(clo_unw_stack_scan_frames), 0, 32) {}
 
       else if ( ! VG_(needs).command_line_options
              || ! VG_TDICT_CALL(tool_process_cmd_line_option, arg) ) {
@@ -1503,19 +1530,6 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    struct vki_rlimit zero = { 0, 0 };
    XArray* addr2dihandle = NULL;
 
-   // For an inner Valgrind, register the interim stack asap.
-   // This is needed to allow the outer valgrind to do stacktraces during init.
-   // Note that this stack is not unregistered when the main thread
-   // is switching to the (real) stack. Unregistering this would imply
-   // to save the stack id in a global variable, and have a "if"
-   // in run_a_thread_NORETURN to do the unregistration only for the
-   // main thread. This unregistration is not worth this complexity.
-   INNER_REQUEST
-      ((void) VALGRIND_STACK_REGISTER
-       (&VG_(interim_stack).bytes[0],
-        &VG_(interim_stack).bytes[0] + sizeof(VG_(interim_stack))));
-
-
    //============================================================
    //
    // Nb: startup is complex.  Prerequisites are shown at every step.
@@ -1700,6 +1714,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
         VG_(printf)("   * x86 (practically any; Pentium-I or above), "
                     "AMD Athlon or above)\n");
         VG_(printf)("   * AMD Athlon64/Opteron\n");
+        VG_(printf)("   * ARM (armv7)\n");
         VG_(printf)("   * PowerPC (most; ppc405 and above)\n");
         VG_(printf)("   * System z (64bit only - s390x; z900 and above)\n");
         VG_(printf)("\n");
@@ -1837,7 +1852,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    VG_(cl_auxv_fd) = -1;
 #else
    if (!need_help) {
-      HChar  buf[50], buf2[50+64];
+      HChar  buf[50], buf2[VG_(mkstemp_fullname_bufsz)(50-1)];
       HChar  nul[1];
       Int    fd, r;
       const HChar* exename;
@@ -2974,7 +2989,7 @@ asm(
     "\tdaddu  $25, $9, $10\n"
     "\tjalr   $25\n"
     "\tnop\n"
-".end __start\n"
+".previous\n"
 );
 #else
 #  error "Unknown linux platform"
@@ -3000,6 +3015,18 @@ void _start_in_C_linux ( UWord* pArgc )
    Word    argc = pArgc[0];
    HChar** argv = (HChar**)&pArgc[1];
    HChar** envp = (HChar**)&pArgc[1+argc+1];
+
+   // For an inner Valgrind, register the interim stack asap.
+   // This is needed to allow the outer valgrind to do stacktraces during init.
+   // Note that this stack is not unregistered when the main thread
+   // is switching to the (real) stack. Unregistering this would imply
+   // to save the stack id in a global variable, and have a "if"
+   // in run_a_thread_NORETURN to do the unregistration only for the
+   // main thread. This unregistration is not worth this complexity.
+   INNER_REQUEST
+      ((void) VALGRIND_STACK_REGISTER
+       (&VG_(interim_stack).bytes[0],
+        &VG_(interim_stack).bytes[0] + sizeof(VG_(interim_stack))));
 
    VG_(memset)( &the_iicii, 0, sizeof(the_iicii) );
    VG_(memset)( &the_iifii, 0, sizeof(the_iifii) );
@@ -3133,6 +3160,12 @@ void _start_in_C_darwin ( UWord* pArgc )
    Int     argc = *(Int *)pArgc;  // not pArgc[0] on LP64
    HChar** argv = (HChar**)&pArgc[1];
    HChar** envp = (HChar**)&pArgc[1+argc+1];
+
+   // See _start_in_C_linux
+   INNER_REQUEST
+      ((void) VALGRIND_STACK_REGISTER
+       (&VG_(interim_stack).bytes[0],
+        &VG_(interim_stack).bytes[0] + sizeof(VG_(interim_stack))));
 
    VG_(memset)( &the_iicii, 0, sizeof(the_iicii) );
    VG_(memset)( &the_iifii, 0, sizeof(the_iifii) );

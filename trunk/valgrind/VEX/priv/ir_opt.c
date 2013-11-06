@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2012 OpenWorks LLP
+   Copyright (C) 2004-2013 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -486,8 +486,11 @@ static void flatten_Stmt ( IRSB* bb, IRStmt* st )
             vassert(d2->mAddr == NULL);
          }
          d2->guard = flatten_Expr(bb, d2->guard);
-         for (i = 0; d2->args[i]; i++)
-            d2->args[i] = flatten_Expr(bb, d2->args[i]);
+         for (i = 0; d2->args[i]; i++) {
+            IRExpr* arg = d2->args[i];
+            if (LIKELY(!is_IRExpr_VECRET_or_BBPTR(arg)))
+               d2->args[i] = flatten_Expr(bb, arg);
+         }
          addStmtToIRSB(bb, IRStmt_Dirty(d2));
          break;
       case Ist_NoOp:
@@ -1173,14 +1176,6 @@ static Bool isZeroU32 ( IRExpr* e )
    return toBool( e->tag == Iex_Const 
                   && e->Iex.Const.con->tag == Ico_U32
                   && e->Iex.Const.con->Ico.U32 == 0);
-}
-
-/* Is this literally IRExpr_Const(IRConst_U32(1---1)) ? */
-static Bool isOnesU32 ( IRExpr* e )
-{
-   return toBool( e->tag == Iex_Const 
-                  && e->Iex.Const.con->tag == Ico_U32
-                  && e->Iex.Const.con->Ico.U32 == 0xFFFFFFFF );
 }
 
 /* Is this an integer constant with value 0 ? */
@@ -2120,23 +2115,24 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
                }
                break;
 
+            case Iop_And64:
             case Iop_And32:
-               /* And32(x,0xFFFFFFFF) ==> x */
-               if (isOnesU32(e->Iex.Binop.arg2)) {
+               /* And32/And64(x,1---1b) ==> x */
+               if (isOnesU(e->Iex.Binop.arg2)) {
                   e2 = e->Iex.Binop.arg1;
                   break;
                }
-               /* And32(x,0) ==> 0 */
-               if (isZeroU32(e->Iex.Binop.arg2)) {
+               /* And32/And64(x,0) ==> 0 */
+               if (isZeroU(e->Iex.Binop.arg2)) {
                   e2 = e->Iex.Binop.arg2;
                   break;
                }
-               /* And32(0,x) ==> 0 */
-               if (isZeroU32(e->Iex.Binop.arg1)) {
+               /* And32/And64(0,x) ==> 0 */
+               if (isZeroU(e->Iex.Binop.arg1)) {
                   e2 = e->Iex.Binop.arg1;
                   break;
                }
-               /* And32(t,t) ==> t, for some IRTemp t */
+               /* And32/And64(t,t) ==> t, for some IRTemp t */
                if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = e->Iex.Binop.arg1;
                   break;
@@ -2145,10 +2141,9 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
 
             case Iop_And8:
             case Iop_And16:
-            case Iop_And64:
             case Iop_AndV128:
             case Iop_AndV256:
-               /* And8/And16/And64/AndV128/AndV256(t,t) 
+               /* And8/And16/AndV128/AndV256(t,t) 
                   ==> t, for some IRTemp t */
                if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = e->Iex.Binop.arg1;
@@ -2560,8 +2555,11 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
          vassert(isIRAtom(d2->guard));
          d2->guard = fold_Expr(env, subst_Expr(env, d2->guard));
          for (i = 0; d2->args[i]; i++) {
-            vassert(isIRAtom(d2->args[i]));
-            d2->args[i] = fold_Expr(env, subst_Expr(env, d2->args[i]));
+            IRExpr* arg = d2->args[i];
+            if (LIKELY(!is_IRExpr_VECRET_or_BBPTR(arg))) {
+               vassert(isIRAtom(arg));
+               d2->args[i] = fold_Expr(env, subst_Expr(env, arg));
+            }
          }
          return IRStmt_Dirty(d2);
       }
@@ -2897,8 +2895,11 @@ static void addUses_Stmt ( Bool* set, IRStmt* st )
          if (d->mFx != Ifx_None)
             addUses_Expr(set, d->mAddr);
          addUses_Expr(set, d->guard);
-         for (i = 0; d->args[i] != NULL; i++)
-            addUses_Expr(set, d->args[i]);
+         for (i = 0; d->args[i] != NULL; i++) {
+            IRExpr* arg = d->args[i];
+            if (LIKELY(!is_IRExpr_VECRET_or_BBPTR(arg)))
+               addUses_Expr(set, arg);
+         }
          return;
       case Ist_NoOp:
       case Ist_IMark:
@@ -4456,8 +4457,11 @@ static void deltaIRStmt ( IRStmt* st, Int delta )
       case Ist_Dirty:
          d = st->Ist.Dirty.details;
          deltaIRExpr(d->guard, delta);
-         for (i = 0; d->args[i]; i++)
-            deltaIRExpr(d->args[i], delta);
+         for (i = 0; d->args[i]; i++) {
+            IRExpr* arg = d->args[i];
+            if (LIKELY(!is_IRExpr_VECRET_or_BBPTR(arg)))
+               deltaIRExpr(arg, delta);
+         }
          if (d->tmp != IRTemp_INVALID)
             d->tmp += delta;
          if (d->mAddr)
@@ -4715,6 +4719,44 @@ static IRSB* maybe_loop_unroll_BB ( IRSB* bb0, Addr64 my_addr )
    under most circumstances. */
 #define A_NENV 10
 
+/* An interval. Used to record the bytes in the guest state accessed
+   by a Put[I] statement or by (one or more) Get[I] expression(s). In 
+   case of several Get[I] expressions, the lower/upper bounds are recorded.
+   This is conservative but cheap.
+   E.g. a Put of 8 bytes at address 100 would be recorded as [100,107].
+   E.g. an expression that reads 8 bytes at offset 100 and 4 bytes at
+   offset 200 would be recorded as [100,203] */
+typedef
+   struct {
+      Bool present;
+      Int  low;
+      Int  high;
+   }
+   Interval;
+
+static inline Bool
+intervals_overlap(Interval i1, Interval i2)
+{
+   return (i1.low >= i2.low && i1.low <= i2.high) ||
+          (i2.low >= i1.low && i2.low <= i1.high);
+}
+
+static inline void
+update_interval(Interval *i, Int low, Int high)
+{
+   vassert(low <= high);
+
+   if (i->present) {
+      if (low  < i->low)  i->low  = low;
+      if (high > i->high) i->high = high;
+   } else {
+      i->present = True;
+      i->low  = low;
+      i->high = high;
+   }
+}
+
+
 /* bindee == NULL   ===  slot is not in use
    bindee != NULL   ===  slot is in use
 */
@@ -4723,7 +4765,8 @@ typedef
       IRTemp  binder;
       IRExpr* bindee;
       Bool    doesLoad;
-      Bool    doesGet;
+      /* Record the bytes of the guest state BINDEE reads from. */
+      Interval getInterval;
    }
    ATmpInfo;
 
@@ -4747,48 +4790,56 @@ static void ppAEnv ( ATmpInfo* env )
    a Get.  Be careful ... this really controls how much the
    tree-builder can reorder the code, so getting it right is critical.
 */
-static void setHints_Expr (Bool* doesLoad, Bool* doesGet, IRExpr* e )
+static void setHints_Expr (Bool* doesLoad, Interval* getInterval, IRExpr* e )
 {
    Int i;
    switch (e->tag) {
       case Iex_CCall:
          for (i = 0; e->Iex.CCall.args[i]; i++)
-            setHints_Expr(doesLoad, doesGet, e->Iex.CCall.args[i]);
+            setHints_Expr(doesLoad, getInterval, e->Iex.CCall.args[i]);
          return;
       case Iex_ITE:
-         setHints_Expr(doesLoad, doesGet, e->Iex.ITE.cond);
-         setHints_Expr(doesLoad, doesGet, e->Iex.ITE.iftrue);
-         setHints_Expr(doesLoad, doesGet, e->Iex.ITE.iffalse);
+         setHints_Expr(doesLoad, getInterval, e->Iex.ITE.cond);
+         setHints_Expr(doesLoad, getInterval, e->Iex.ITE.iftrue);
+         setHints_Expr(doesLoad, getInterval, e->Iex.ITE.iffalse);
          return;
       case Iex_Qop:
-         setHints_Expr(doesLoad, doesGet, e->Iex.Qop.details->arg1);
-         setHints_Expr(doesLoad, doesGet, e->Iex.Qop.details->arg2);
-         setHints_Expr(doesLoad, doesGet, e->Iex.Qop.details->arg3);
-         setHints_Expr(doesLoad, doesGet, e->Iex.Qop.details->arg4);
+         setHints_Expr(doesLoad, getInterval, e->Iex.Qop.details->arg1);
+         setHints_Expr(doesLoad, getInterval, e->Iex.Qop.details->arg2);
+         setHints_Expr(doesLoad, getInterval, e->Iex.Qop.details->arg3);
+         setHints_Expr(doesLoad, getInterval, e->Iex.Qop.details->arg4);
          return;
       case Iex_Triop:
-         setHints_Expr(doesLoad, doesGet, e->Iex.Triop.details->arg1);
-         setHints_Expr(doesLoad, doesGet, e->Iex.Triop.details->arg2);
-         setHints_Expr(doesLoad, doesGet, e->Iex.Triop.details->arg3);
+         setHints_Expr(doesLoad, getInterval, e->Iex.Triop.details->arg1);
+         setHints_Expr(doesLoad, getInterval, e->Iex.Triop.details->arg2);
+         setHints_Expr(doesLoad, getInterval, e->Iex.Triop.details->arg3);
          return;
       case Iex_Binop:
-         setHints_Expr(doesLoad, doesGet, e->Iex.Binop.arg1);
-         setHints_Expr(doesLoad, doesGet, e->Iex.Binop.arg2);
+         setHints_Expr(doesLoad, getInterval, e->Iex.Binop.arg1);
+         setHints_Expr(doesLoad, getInterval, e->Iex.Binop.arg2);
          return;
       case Iex_Unop:
-         setHints_Expr(doesLoad, doesGet, e->Iex.Unop.arg);
+         setHints_Expr(doesLoad, getInterval, e->Iex.Unop.arg);
          return;
       case Iex_Load:
          *doesLoad = True;
-         setHints_Expr(doesLoad, doesGet, e->Iex.Load.addr);
+         setHints_Expr(doesLoad, getInterval, e->Iex.Load.addr);
          return;
-      case Iex_Get:
-         *doesGet = True;
+      case Iex_Get: {
+         Int low = e->Iex.Get.offset;
+         Int high = low + sizeofIRType(e->Iex.Get.ty) - 1;
+         update_interval(getInterval, low, high);
          return;
-      case Iex_GetI:
-         *doesGet = True;
-         setHints_Expr(doesLoad, doesGet, e->Iex.GetI.ix);
+      }
+      case Iex_GetI: {
+         IRRegArray *descr = e->Iex.GetI.descr;
+         Int size = sizeofIRType(descr->elemTy);
+         Int low  = descr->base;
+         Int high = low + descr->nElems * size - 1;
+         update_interval(getInterval, low, high);
+         setHints_Expr(doesLoad, getInterval, e->Iex.GetI.ix);
          return;
+      }
       case Iex_RdTmp:
       case Iex_Const:
          return;
@@ -4810,7 +4861,9 @@ static void addToEnvFront ( ATmpInfo* env, IRTemp binder, IRExpr* bindee )
    env[0].binder   = binder;
    env[0].bindee   = bindee;
    env[0].doesLoad = False; /* filled in later */
-   env[0].doesGet  = False; /* filled in later */
+   env[0].getInterval.present  = False; /* filled in later */
+   env[0].getInterval.low  = -1; /* filled in later */
+   env[0].getInterval.high = -1; /* filled in later */
 }
 
 /* Given uses :: array of UShort, indexed by IRTemp
@@ -4941,8 +4994,11 @@ static void aoccCount_Stmt ( UShort* uses, IRStmt* st )
          if (d->mFx != Ifx_None)
             aoccCount_Expr(uses, d->mAddr);
          aoccCount_Expr(uses, d->guard);
-         for (i = 0; d->args[i]; i++)
-            aoccCount_Expr(uses, d->args[i]);
+         for (i = 0; d->args[i]; i++) {
+            IRExpr* arg = d->args[i];
+            if (LIKELY(!is_IRExpr_VECRET_or_BBPTR(arg)))
+               aoccCount_Expr(uses, arg);
+         }
          return;
       case Ist_NoOp:
       case Ist_IMark:
@@ -5016,6 +5072,9 @@ static IRExpr* fold_IRExpr_Unop ( IROp op, IRExpr* aa )
 {
    switch (op) {
    case Iop_CmpwNEZ64:
+      /* CmpwNEZ64( CmpwNEZ64 ( x ) ) --> CmpwNEZ64 ( x ) */
+      if (is_Unop(aa, Iop_CmpwNEZ64))
+         return IRExpr_Unop( Iop_CmpwNEZ64, aa->Iex.Unop.arg );
       /* CmpwNEZ64( Or64 ( CmpwNEZ64(x), y ) ) --> CmpwNEZ64( Or64( x, y ) ) */
       if (is_Binop(aa, Iop_Or64) 
           && is_Unop(aa->Iex.Binop.arg1, Iop_CmpwNEZ64))
@@ -5037,6 +5096,9 @@ static IRExpr* fold_IRExpr_Unop ( IROp op, IRExpr* aa )
       /* CmpNEZ64( Left64(x) ) --> CmpNEZ64(x) */
       if (is_Unop(aa, Iop_Left64)) 
          return IRExpr_Unop(Iop_CmpNEZ64, aa->Iex.Unop.arg);
+      /* CmpNEZ64( 1Uto64(X) ) --> X */
+      if (is_Unop(aa, Iop_1Uto64))
+         return aa->Iex.Unop.arg;
       break;
    case Iop_CmpwNEZ32:
       /* CmpwNEZ32( CmpwNEZ32 ( x ) ) --> CmpwNEZ32 ( x ) */
@@ -5050,6 +5112,9 @@ static IRExpr* fold_IRExpr_Unop ( IROp op, IRExpr* aa )
       /* CmpNEZ32( 1Uto32(X) ) --> X */
       if (is_Unop(aa, Iop_1Uto32))
          return aa->Iex.Unop.arg;
+      /* CmpNEZ32( 64to32( CmpwNEZ64(X) ) ) --> CmpNEZ64(X) */
+      if (is_Unop(aa, Iop_64to32) && is_Unop(aa->Iex.Unop.arg, Iop_CmpwNEZ64))
+         return IRExpr_Unop(Iop_CmpNEZ64, aa->Iex.Unop.arg->Iex.Unop.arg);
       break;
    case Iop_CmpNEZ8:
       /* CmpNEZ8( 1Uto8(X) ) --> X */
@@ -5060,6 +5125,11 @@ static IRExpr* fold_IRExpr_Unop ( IROp op, IRExpr* aa )
       /* Left32( Left32(x) ) --> Left32(x) */
       if (is_Unop(aa, Iop_Left32))
          return IRExpr_Unop( Iop_Left32, aa->Iex.Unop.arg );
+      break;
+   case Iop_Left64:
+      /* Left64( Left64(x) ) --> Left64(x) */
+      if (is_Unop(aa, Iop_Left64))
+         return IRExpr_Unop( Iop_Left64, aa->Iex.Unop.arg );
       break;
    case Iop_32to1:
       /* 32to1( 1Uto32 ( x ) ) --> x */
@@ -5310,8 +5380,11 @@ static IRStmt* atbSubst_Stmt ( ATmpInfo* env, IRStmt* st )
          if (d2->mFx != Ifx_None)
             d2->mAddr = atbSubst_Expr(env, d2->mAddr);
          d2->guard = atbSubst_Expr(env, d2->guard);
-         for (i = 0; d2->args[i]; i++)
-            d2->args[i] = atbSubst_Expr(env, d2->args[i]);
+         for (i = 0; d2->args[i]; i++) {
+            IRExpr* arg = d2->args[i];
+            if (LIKELY(!is_IRExpr_VECRET_or_BBPTR(arg)))
+               d2->args[i] = atbSubst_Expr(env, arg);
+         }
          return IRStmt_Dirty(d2);
       default: 
          vex_printf("\n"); ppIRStmt(st); vex_printf("\n");
@@ -5326,22 +5399,30 @@ static Bool dirty_helper_stores ( const IRDirty *d )
 }
 
 inline
-static Bool dirty_helper_puts ( const IRDirty *d,
-                                Bool (*preciseMemExnsFn)(Int, Int),
-                                Bool *requiresPreciseMemExns )
+static Interval dirty_helper_puts ( const IRDirty *d,
+                                    Bool (*preciseMemExnsFn)(Int, Int),
+                                    Bool *requiresPreciseMemExns )
 {
    Int i;
+   Interval interval;
 
    /* Passing the guest state pointer opens the door to modifying the
-      guest state under the covers. It's not allowed, but let's be
+      guest state under the covers.  It's not allowed, but let's be
       extra conservative and assume the worst. */
-   if (d->needsBBP) {
-      *requiresPreciseMemExns = True;
-      return True;
+   for (i = 0; d->args[i]; i++) {
+      if (UNLIKELY(d->args[i]->tag == Iex_BBPTR)) {
+         *requiresPreciseMemExns = True;
+         /* Assume all guest state is written. */
+         interval.present = True;
+         interval.low  = 0;
+         interval.high = 0x7FFFFFFF;
+         return interval;
+      }
    }
 
    /* Check the side effects on the guest state */
-   Bool ret = False;
+   interval.present = False;
+   interval.low = interval.high = -1;
    *requiresPreciseMemExns = False;
 
    for (i = 0; i < d->nFxState; ++i) {
@@ -5351,30 +5432,36 @@ static Bool dirty_helper_puts ( const IRDirty *d,
          Int nRepeats = d->fxState[i].nRepeats;
          Int repeatLen = d->fxState[i].repeatLen;
 
-         if (preciseMemExnsFn(offset, offset + nRepeats * repeatLen + size - 1)) {
+         if (preciseMemExnsFn(offset,
+                              offset + nRepeats * repeatLen + size - 1)) {
             *requiresPreciseMemExns = True;
-            return True;
          }
-         ret = True;
+         update_interval(&interval, offset,
+                         offset + nRepeats * repeatLen + size - 1);
       }
    }
 
-   return ret;
+   return interval;
 }
 
-/* Return true if st modifies the guest state. Via requiresPreciseMemExns
+/* Return an interval if st modifies the guest state. Via requiresPreciseMemExns
    return whether or not that modification requires precise exceptions. */
-static Bool stmt_modifies_guest_state ( IRSB *bb, const IRStmt *st,
-                                        Bool (*preciseMemExnsFn)(Int,Int),
-                                        Bool *requiresPreciseMemExns )
+static Interval stmt_modifies_guest_state ( IRSB *bb, const IRStmt *st,
+                                            Bool (*preciseMemExnsFn)(Int,Int),
+                                            Bool *requiresPreciseMemExns )
 {
+   Interval interval;
+
    switch (st->tag) {
    case Ist_Put: {
       Int offset = st->Ist.Put.offset;
       Int size = sizeofIRType(typeOfIRExpr(bb->tyenv, st->Ist.Put.data));
 
       *requiresPreciseMemExns = preciseMemExnsFn(offset, offset + size - 1);
-      return True;
+      interval.present = True;
+      interval.low  = offset;
+      interval.high = offset + size - 1;
+      return interval;
    }
 
    case Ist_PutI: {
@@ -5388,7 +5475,10 @@ static Bool stmt_modifies_guest_state ( IRSB *bb, const IRStmt *st,
          needed when in fact they are not. */
       *requiresPreciseMemExns = 
          preciseMemExnsFn(offset, offset + descr->nElems * size - 1);
-      return True;
+      interval.present = True;
+      interval.low  = offset;
+      interval.high = offset + descr->nElems * size - 1;
+      return interval;
    }
 
    case Ist_Dirty:
@@ -5397,7 +5487,10 @@ static Bool stmt_modifies_guest_state ( IRSB *bb, const IRStmt *st,
 
    default:
       *requiresPreciseMemExns = False;
-      return False;
+      interval.present = False;
+      interval.low  = -1;
+      interval.high = -1;
+      return interval;
    }
 }
 
@@ -5405,7 +5498,8 @@ static Bool stmt_modifies_guest_state ( IRSB *bb, const IRStmt *st,
                                           Bool (*preciseMemExnsFn)(Int,Int) )
 {
    Int      i, j, k, m;
-   Bool     stmtPuts, stmtStores, invalidateMe;
+   Bool     stmtStores, invalidateMe;
+   Interval putInterval;
    IRStmt*  st;
    IRStmt*  st2;
    ATmpInfo env[A_NENV];
@@ -5521,7 +5615,7 @@ static Bool stmt_modifies_guest_state ( IRSB *bb, const IRStmt *st,
          e  = st->Ist.WrTmp.data;
          e2 = atbSubst_Expr(env, e);
          addToEnvFront(env, st->Ist.WrTmp.tmp, e2);
-         setHints_Expr(&env[0].doesLoad, &env[0].doesGet, e2);
+         setHints_Expr(&env[0].doesLoad, &env[0].getInterval, e2);
          /* don't advance j, as we are deleting this stmt and instead
             holding it temporarily in the env. */
          continue; /* for (i = 0; i < bb->stmts_used; i++) loop */
@@ -5536,12 +5630,12 @@ static Bool stmt_modifies_guest_state ( IRSB *bb, const IRStmt *st,
          they originally entered env -- that means from oldest to
          youngest. */
 
-      /* stmtPuts/stmtStores characterise what the stmt under
+      /* putInterval/stmtStores characterise what the stmt under
          consideration does, or might do (sidely safe @ True). */
 
       Bool putRequiresPreciseMemExns;
-      stmtPuts = stmt_modifies_guest_state( bb, st, preciseMemExnsFn,
-                                            &putRequiresPreciseMemExns);
+      putInterval = stmt_modifies_guest_state( bb, st, preciseMemExnsFn,
+                                               &putRequiresPreciseMemExns);
 
       /* be True if this stmt writes memory or might do (==> we don't
          want to reorder other loads or stores relative to it).  Also,
@@ -5564,8 +5658,9 @@ static Bool stmt_modifies_guest_state ( IRSB *bb, const IRStmt *st,
             = toBool(
               /* a store invalidates loaded data */
               (env[k].doesLoad && stmtStores)
-              /* a put invalidates get'd data */
-              || (env[k].doesGet && stmtPuts)
+              /* a put invalidates get'd data, if they overlap */
+              || ((env[k].getInterval.present && putInterval.present) &&
+                  intervals_overlap(env[k].getInterval, putInterval))
               /* a put invalidates loaded data. That means, in essense, that
                  a load expression cannot be substituted into a statement
                  that follows the put. But there is nothing wrong doing so
@@ -5574,7 +5669,8 @@ static Bool stmt_modifies_guest_state ( IRSB *bb, const IRStmt *st,
                  updates the IP in the guest state. If the load generates
                  a segfault, the wrong address (line number) would be
                  reported. */
-              || (env[k].doesLoad && stmtPuts && putRequiresPreciseMemExns)
+              || (env[k].doesLoad && putInterval.present &&
+                  putRequiresPreciseMemExns)
               /* probably overly conservative: a memory bus event
                  invalidates absolutely everything, so that all
                  computation prior to it is forced to complete before
@@ -5779,8 +5875,11 @@ static void considerExpensives ( /*OUT*/Bool* hasGetIorPutI,
          case Ist_Dirty:
             d = st->Ist.Dirty.details;
             vassert(isIRAtom(d->guard));
-            for (j = 0; d->args[j]; j++)
-               vassert(isIRAtom(d->args[j]));
+            for (j = 0; d->args[j]; j++) {
+               IRExpr* arg = d->args[j];
+               if (LIKELY(!is_IRExpr_VECRET_or_BBPTR(arg)))
+                  vassert(isIRAtom(arg));
+            }
             if (d->mFx != Ifx_None)
                vassert(isIRAtom(d->mAddr));
             break;

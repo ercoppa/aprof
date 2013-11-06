@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2012 OpenWorks LLP
+   Copyright (C) 2004-2013 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -507,7 +507,7 @@ UInt armg_calculate_condition ( UInt cond_n_op /* (ARMCondcode << 4) | cc_op */,
       case ARMCondLS:    // C=0 || Z=1
          cf = armg_calculate_flag_c(cc_op, cc_dep1, cc_dep2, cc_dep3);
          zf = armg_calculate_flag_z(cc_op, cc_dep1, cc_dep2, cc_dep3);
-         return inv ^ (cf & ~zf);
+         return inv ^ (1 & (cf & ~zf));
 
       case ARMCondGE:    // N=V          => ~(n^v)
       case ARMCondLT:    // N!=V

@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2012 OpenWorks LLP
+   Copyright (C) 2004-2013 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -674,18 +674,19 @@ const HChar* showPPCAvOp ( PPCAvOp op ) {
    case Pav_UNPCKLPIX: return "vupklpx";
 
    /* Integer binary */
-   case Pav_ADDU:      return "vaddu_m";  // b,h,w
-   case Pav_QADDU:     return "vaddu_s";  // b,h,w
-   case Pav_QADDS:     return "vadds_s";  // b,h,w
+   case Pav_ADDU:      return "vaddu_m";  // b,h,w,dw
+   case Pav_QADDU:     return "vaddu_s";  // b,h,w,dw
+   case Pav_QADDS:     return "vadds_s";  // b,h,w,dw
      
-   case Pav_SUBU:      return "vsubu_m";  // b,h,w
-   case Pav_QSUBU:     return "vsubu_s";  // b,h,w
-   case Pav_QSUBS:     return "vsubs_s";  // b,h,w
+   case Pav_SUBU:      return "vsubu_m";  // b,h,w,dw
+   case Pav_QSUBU:     return "vsubu_s";  // b,h,w,dw
+   case Pav_QSUBS:     return "vsubs_s";  // b,h,w,dw
      
-   case Pav_OMULU:     return "vmulou";   // b,h
-   case Pav_OMULS:     return "vmulos";   // b,h
-   case Pav_EMULU:     return "vmuleu";   // b,h
-   case Pav_EMULS:     return "vmules";   // b,h
+   case Pav_MULU:      return "vmulu";    // w
+   case Pav_OMULU:     return "vmulou";   // b,h,w
+   case Pav_OMULS:     return "vmulos";   // b,h,w
+   case Pav_EMULU:     return "vmuleu";   // b,h,w
+   case Pav_EMULS:     return "vmules";   // b,h,w
   
    case Pav_AVGU:      return "vavgu";    // b,h,w
    case Pav_AVGS:      return "vavgs";    // b,h,w
@@ -702,13 +703,13 @@ const HChar* showPPCAvOp ( PPCAvOp op ) {
    case Pav_CMPGTS:    return "vcmpgts";  // b,h,w
 
    /* Shift */
-   case Pav_SHL:       return "vsl";      // ' ',b,h,w
-   case Pav_SHR:       return "vsr";      // ' ',b,h,w
-   case Pav_SAR:       return "vsra";     // b,h,w
-   case Pav_ROTL:      return "vrl";      // b,h,w
+   case Pav_SHL:       return "vsl";      // ' ',b,h,w,dw
+   case Pav_SHR:       return "vsr";      // ' ',b,h,w,dw
+   case Pav_SAR:       return "vsra";     // b,h,w,dw
+   case Pav_ROTL:      return "vrl";      // b,h,w,dw
 
    /* Pack */
-   case Pav_PACKUU:    return "vpku_um";  // h,w
+   case Pav_PACKUU:    return "vpku_um";  // h,w,dw
    case Pav_QPACKUU:   return "vpku_us";  // h,w
    case Pav_QPACKSU:   return "vpks_us";  // h,w
    case Pav_QPACKSS:   return "vpks_ss";  // h,w
@@ -717,6 +718,35 @@ const HChar* showPPCAvOp ( PPCAvOp op ) {
    /* Merge */
    case Pav_MRGHI:     return "vmrgh";    // b,h,w
    case Pav_MRGLO:     return "vmrgl";    // b,h,w
+
+   /* Concatenation */
+   case Pav_CATODD:     return "vmrgow";    // w
+   case Pav_CATEVEN:    return "vmrgew";    // w
+
+   /* SHA */
+   case Pav_SHA256:     return "vshasigmaw"; // w
+   case Pav_SHA512:     return "vshasigmaw"; // dw
+
+   /* BCD */
+   case Pav_BCDAdd:     return "bcdadd.";  // qw
+   case Pav_BCDSub:     return "bcdsub.";  // qw
+
+   /* Polynomial arith */
+   case Pav_POLYMULADD: return "vpmsum";   // b, h, w, d
+
+   /* Cipher */
+   case Pav_CIPHERV128:  case Pav_CIPHERLV128:
+   case Pav_NCIPHERV128: case Pav_NCIPHERLV128:
+   case Pav_CIPHERSUBV128: return "v_cipher_";  // qw
+
+   /* zero count */
+   case Pav_ZEROCNTBYTE: case Pav_ZEROCNTWORD:
+   case Pav_ZEROCNTHALF: case Pav_ZEROCNTDBL:
+      return "vclz_";                           // b, h, w, d
+
+   /* vector gather (byte-by-byte bit matrix transpose) */
+   case Pav_BITMTXXPOSE:
+      return "vgbbd";
 
    default: vpanic("showPPCAvOp");
    }
@@ -850,7 +880,7 @@ PPCInstr* PPCInstr_Call ( PPCCondCode cond,
    /* Only r3 .. r10 inclusive may be used as arg regs. Hence: */
    mask = (1<<3)|(1<<4)|(1<<5)|(1<<6)|(1<<7)|(1<<8)|(1<<9)|(1<<10);
    vassert(0 == (argiregs & ~mask));
-   vassert(rloc != RetLocINVALID);
+   vassert(is_sane_RetLoc(rloc));
    return i;
 }
 PPCInstr* PPCInstr_XDirect ( Addr64 dstGA, PPCAMode* amCIA,
@@ -1348,6 +1378,17 @@ PPCInstr* PPCInstr_AvBin32x4 ( PPCAvOp op, HReg dst,
    i->Pin.AvBin32x4.srcR = srcR;
    return i;
 }
+PPCInstr* PPCInstr_AvBin64x2 ( PPCAvOp op, HReg dst,
+                               HReg srcL, HReg srcR ) {
+   PPCInstr* i           = LibVEX_Alloc(sizeof(PPCInstr));
+   i->tag                = Pin_AvBin64x2;
+   i->Pin.AvBin64x2.op   = op;
+   i->Pin.AvBin64x2.dst  = dst;
+   i->Pin.AvBin64x2.srcL = srcL;
+   i->Pin.AvBin64x2.srcR = srcR;
+   return i;
+}
+
 PPCInstr* PPCInstr_AvBin32Fx4 ( PPCAvFpOp op, HReg dst,
                                 HReg srcL, HReg srcR ) {
    PPCInstr* i            = LibVEX_Alloc(sizeof(PPCInstr));
@@ -1375,6 +1416,7 @@ PPCInstr* PPCInstr_AvPerm ( HReg dst, HReg srcL, HReg srcR, HReg ctl ) {
    i->Pin.AvPerm.ctl  = ctl;
    return i;
 }
+
 PPCInstr* PPCInstr_AvSel ( HReg ctl, HReg dst, HReg srcL, HReg srcR ) {
    PPCInstr* i       = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag            = Pin_AvSel;
@@ -1415,6 +1457,45 @@ PPCInstr* PPCInstr_AvLdVSCR ( HReg src ) {
    PPCInstr* i         = LibVEX_Alloc(sizeof(PPCInstr));
    i->tag              = Pin_AvLdVSCR;
    i->Pin.AvLdVSCR.src = src;
+   return i;
+}
+PPCInstr* PPCInstr_AvCipherV128Unary ( PPCAvOp op, HReg dst, HReg src ) {
+   PPCInstr* i              = LibVEX_Alloc(sizeof(PPCInstr));
+   i->tag                   = Pin_AvCipherV128Unary;
+   i->Pin.AvCipherV128Unary.op   = op;
+   i->Pin.AvCipherV128Unary.dst  = dst;
+   i->Pin.AvCipherV128Unary.src  = src;
+   return i;
+}
+PPCInstr* PPCInstr_AvCipherV128Binary ( PPCAvOp op, HReg dst,
+                                        HReg srcL, HReg srcR ) {
+   PPCInstr* i              = LibVEX_Alloc(sizeof(PPCInstr));
+   i->tag                   = Pin_AvCipherV128Binary;
+   i->Pin.AvCipherV128Binary.op   = op;
+   i->Pin.AvCipherV128Binary.dst  = dst;
+   i->Pin.AvCipherV128Binary.srcL = srcL;
+   i->Pin.AvCipherV128Binary.srcR = srcR;
+   return i;
+}
+PPCInstr* PPCInstr_AvHashV128Binary ( PPCAvOp op, HReg dst,
+                                      HReg src, PPCRI* s_field ) {
+   PPCInstr* i              = LibVEX_Alloc(sizeof(PPCInstr));
+   i->tag                   = Pin_AvHashV128Binary;
+   i->Pin.AvHashV128Binary.op  = op;
+   i->Pin.AvHashV128Binary.dst = dst;
+   i->Pin.AvHashV128Binary.src = src;
+   i->Pin.AvHashV128Binary.s_field = s_field;
+   return i;
+}
+PPCInstr* PPCInstr_AvBCDV128Trinary ( PPCAvOp op, HReg dst,
+                                      HReg src1, HReg src2, PPCRI* ps ) {
+   PPCInstr* i = LibVEX_Alloc(sizeof(PPCInstr));
+   i->tag      = Pin_AvBCDV128Trinary;
+   i->Pin.AvBCDV128Trinary.op   = op;
+   i->Pin.AvBCDV128Trinary.dst  = dst;
+   i->Pin.AvBCDV128Trinary.src1 = src1;
+   i->Pin.AvBCDV128Trinary.src2 = src2;
+   i->Pin.AvBCDV128Trinary.ps   = ps;
    return i;
 }
 
@@ -1883,6 +1964,14 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
       vex_printf(",");
       ppHRegPPC(i->Pin.AvBin32x4.srcR);
       return;
+   case Pin_AvBin64x2:
+      vex_printf("%s(w) ", showPPCAvOp(i->Pin.AvBin64x2.op));
+      ppHRegPPC(i->Pin.AvBin64x2.dst);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.AvBin64x2.srcL);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.AvBin64x2.srcR);
+      return;
    case Pin_AvBin32Fx4:
       vex_printf("%s ", showPPCAvFpOp(i->Pin.AvBin32Fx4.op));
       ppHRegPPC(i->Pin.AvBin32Fx4.dst);
@@ -1964,6 +2053,42 @@ void ppPPCInstr ( PPCInstr* i, Bool mode64 )
    case Pin_AvLdVSCR:
       vex_printf("mtvscr ");
       ppHRegPPC(i->Pin.AvLdVSCR.src);
+      return;
+
+   case Pin_AvCipherV128Unary:
+      vex_printf("%s(w) ", showPPCAvOp(i->Pin.AvCipherV128Unary.op));
+      ppHRegPPC(i->Pin.AvCipherV128Unary.dst);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.AvCipherV128Unary.src);
+      return;
+
+   case Pin_AvCipherV128Binary:
+      vex_printf("%s(w) ", showPPCAvOp(i->Pin.AvCipherV128Binary.op));
+      ppHRegPPC(i->Pin.AvCipherV128Binary.dst);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.AvCipherV128Binary.srcL);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.AvCipherV128Binary.srcR);
+      return;
+
+   case Pin_AvHashV128Binary:
+      vex_printf("%s(w) ", showPPCAvOp(i->Pin.AvHashV128Binary.op));
+      ppHRegPPC(i->Pin.AvHashV128Binary.dst);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.AvHashV128Binary.src);
+      vex_printf(",");
+      ppPPCRI(i->Pin.AvHashV128Binary.s_field);
+      return;
+
+   case Pin_AvBCDV128Trinary:
+      vex_printf("%s(w) ", showPPCAvOp(i->Pin.AvBCDV128Trinary.op));
+      ppHRegPPC(i->Pin.AvBCDV128Trinary.dst);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.AvBCDV128Trinary.src1);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.AvBCDV128Trinary.src2);
+      vex_printf(",");
+      ppPPCRI(i->Pin.AvBCDV128Trinary.ps);
       return;
 
    case Pin_Dfp64Unary:
@@ -2364,6 +2489,11 @@ void getRegUsage_PPCInstr ( HRegUsage* u, PPCInstr* i, Bool mode64 )
       addHRegUse(u, HRmRead,  i->Pin.AvBin32x4.srcL);
       addHRegUse(u, HRmRead,  i->Pin.AvBin32x4.srcR);
       return;
+   case Pin_AvBin64x2:
+      addHRegUse(u, HRmWrite, i->Pin.AvBin64x2.dst);
+      addHRegUse(u, HRmRead,  i->Pin.AvBin64x2.srcL);
+      addHRegUse(u, HRmRead,  i->Pin.AvBin64x2.srcR);
+      return;
    case Pin_AvBin32Fx4:
       addHRegUse(u, HRmWrite, i->Pin.AvBin32Fx4.dst);
       addHRegUse(u, HRmRead,  i->Pin.AvBin32Fx4.srcL);
@@ -2402,6 +2532,26 @@ void getRegUsage_PPCInstr ( HRegUsage* u, PPCInstr* i, Bool mode64 )
       return;
    case Pin_AvLdVSCR:
       addHRegUse(u, HRmRead, i->Pin.AvLdVSCR.src);
+      return;
+   case Pin_AvCipherV128Unary:
+      addHRegUse(u, HRmWrite, i->Pin.AvCipherV128Unary.dst);
+      addHRegUse(u, HRmRead,  i->Pin.AvCipherV128Unary.src);
+      return;
+   case Pin_AvCipherV128Binary:
+      addHRegUse(u, HRmWrite, i->Pin.AvCipherV128Binary.dst);
+      addHRegUse(u, HRmRead,  i->Pin.AvCipherV128Binary.srcL);
+      addHRegUse(u, HRmRead,  i->Pin.AvCipherV128Binary.srcR);
+      return;
+   case Pin_AvHashV128Binary:
+      addHRegUse(u, HRmWrite, i->Pin.AvHashV128Binary.dst);
+      addHRegUse(u, HRmRead,  i->Pin.AvHashV128Binary.src);
+      addRegUsage_PPCRI(u,    i->Pin.AvHashV128Binary.s_field);
+      return;
+   case Pin_AvBCDV128Trinary:
+      addHRegUse(u, HRmWrite, i->Pin.AvBCDV128Trinary.dst);
+      addHRegUse(u, HRmRead,  i->Pin.AvBCDV128Trinary.src1);
+      addHRegUse(u, HRmRead,  i->Pin.AvBCDV128Trinary.src2);
+      addRegUsage_PPCRI(u,    i->Pin.AvBCDV128Trinary.ps);
       return;
    case Pin_Dfp64Unary:
       addHRegUse(u, HRmWrite, i->Pin.Dfp64Unary.dst);
@@ -2670,6 +2820,11 @@ void mapRegs_PPCInstr ( HRegRemap* m, PPCInstr* i, Bool mode64 )
       mapReg(m, &i->Pin.AvBin32x4.srcL);
       mapReg(m, &i->Pin.AvBin32x4.srcR);
       return;
+   case Pin_AvBin64x2:
+      mapReg(m, &i->Pin.AvBin64x2.dst);
+      mapReg(m, &i->Pin.AvBin64x2.srcL);
+      mapReg(m, &i->Pin.AvBin64x2.srcR);
+      return;
    case Pin_AvBin32Fx4:
       mapReg(m, &i->Pin.AvBin32Fx4.dst);
       mapReg(m, &i->Pin.AvBin32Fx4.srcL);
@@ -2706,6 +2861,26 @@ void mapRegs_PPCInstr ( HRegRemap* m, PPCInstr* i, Bool mode64 )
      return;
    case Pin_AvLdVSCR:
       mapReg(m, &i->Pin.AvLdVSCR.src);
+      return;
+   case Pin_AvCipherV128Unary:
+      mapReg(m, &i->Pin.AvCipherV128Unary.dst);
+      mapReg(m, &i->Pin.AvCipherV128Unary.src);
+      return;
+   case Pin_AvCipherV128Binary:
+      mapReg(m, &i->Pin.AvCipherV128Binary.dst);
+      mapReg(m, &i->Pin.AvCipherV128Binary.srcL);
+      mapReg(m, &i->Pin.AvCipherV128Binary.srcR);
+      return;
+   case Pin_AvHashV128Binary:
+      mapRegs_PPCRI(m, i->Pin.AvHashV128Binary.s_field);
+      mapReg(m, &i->Pin.AvHashV128Binary.dst);
+      mapReg(m, &i->Pin.AvHashV128Binary.src);
+      return;
+   case Pin_AvBCDV128Trinary:
+      mapReg(m, &i->Pin.AvBCDV128Trinary.dst);
+      mapReg(m, &i->Pin.AvBCDV128Trinary.src1);
+      mapReg(m, &i->Pin.AvBCDV128Trinary.src2);
+      mapRegs_PPCRI(m, i->Pin.AvBCDV128Trinary.ps);
       return;
    case Pin_Dfp64Unary:
       mapReg(m, &i->Pin.Dfp64Unary.dst);
@@ -3913,7 +4088,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
 
    case Pin_Call: {
       if (i->Pin.Call.cond.test != Pct_ALWAYS
-          && i->Pin.Call.rloc != RetLocNone) {
+          && i->Pin.Call.rloc.pri != RLPri_None) {
          /* The call might not happen (it isn't unconditional) and it
             returns a result.  In this case we will need to generate a
             control flow diamond to put 0x555..555 in the return
@@ -4597,6 +4772,12 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       case Pav_UNPCKL16S: opc2 =  718; break; // vupklsh
       case Pav_UNPCKHPIX: opc2 =  846; break; // vupkhpx
       case Pav_UNPCKLPIX: opc2 =  974; break; // vupklpx
+
+      case Pav_ZEROCNTBYTE: opc2 = 1794; break; // vclzb
+      case Pav_ZEROCNTHALF: opc2 = 1858; break; // vclzh
+      case Pav_ZEROCNTWORD: opc2 = 1922; break; // vclzw
+      case Pav_ZEROCNTDBL:  opc2 = 1986; break; // vclzd
+      case Pav_BITMTXXPOSE: opc2 = 1292; break; // vgbbd
       default:
          goto bad;
       }
@@ -4678,6 +4859,8 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       case Pav_MRGHI:    opc2 =   12; break; // vmrghb
       case Pav_MRGLO:    opc2 =  268; break; // vmrglb
 
+      case Pav_POLYMULADD: opc2 = 1032; break; // vpmsumb
+
       default:
          goto bad;
       }
@@ -4730,6 +4913,8 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       case Pav_MRGHI:   opc2 =   76; break; // vmrghh
       case Pav_MRGLO:   opc2 =  332; break; // vmrglh
 
+      case Pav_POLYMULADD: opc2 = 1224; break; // vpmsumh
+
       default:
          goto bad;
       }
@@ -4751,6 +4936,12 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       case Pav_SUBU:    opc2 = 1152; break; // vsubuwm
       case Pav_QSUBU:   opc2 = 1664; break; // vsubuws
       case Pav_QSUBS:   opc2 = 1920; break; // vsubsws
+
+      case Pav_MULU:    opc2 =  137; break; // vmuluwm
+      case Pav_OMULU:   opc2 =  136; break; // vmulouw
+      case Pav_OMULS:   opc2 =  392; break; // vmulosw
+      case Pav_EMULU:   opc2 =  648; break; // vmuleuw
+      case Pav_EMULS:   opc2 =  904; break; // vmulesw
 
       case Pav_AVGU:    opc2 = 1154; break; // vavguw
       case Pav_AVGS:    opc2 = 1410; break; // vavgsw
@@ -4778,6 +4969,11 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       case Pav_MRGHI:   opc2 =  140; break; // vmrghw
       case Pav_MRGLO:   opc2 =  396; break; // vmrglw
 
+      case Pav_CATODD:  opc2 = 1676; break; // vmrgow
+      case Pav_CATEVEN: opc2 = 1932; break; // vmrgew
+
+      case Pav_POLYMULADD: opc2 = 1160; break; // vpmsumw
+
       default:
          goto bad;
       }
@@ -4785,6 +4981,95 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       goto done;
    }
 
+   case Pin_AvBin64x2: {
+      UInt v_dst  = vregNo(i->Pin.AvBin64x2.dst);
+      UInt v_srcL = vregNo(i->Pin.AvBin64x2.srcL);
+      UInt v_srcR = vregNo(i->Pin.AvBin64x2.srcR);
+      UInt opc2;
+      switch (i->Pin.AvBin64x2.op) {
+      case Pav_ADDU:    opc2 =  192; break; // vaddudm  vector double add
+      case Pav_SUBU:    opc2 = 1216; break; // vsubudm  vector double add
+      case Pav_MAXU:    opc2 =  194; break; // vmaxud   vector double max
+      case Pav_MAXS:    opc2 =  450; break; // vmaxsd   vector double max
+      case Pav_MINU:    opc2 =  706; break; // vminud   vector double min
+      case Pav_MINS:    opc2 =  962; break; // vminsd   vector double min
+      case Pav_CMPEQU:  opc2 =  199; break; // vcmpequd vector double compare
+      case Pav_CMPGTU:  opc2 =  711; break; // vcmpgtud vector double compare
+      case Pav_CMPGTS:  opc2 =  967; break; // vcmpgtsd vector double compare
+      case Pav_SHL:     opc2 = 1476; break; // vsld
+      case Pav_SHR:     opc2 = 1732; break; // vsrd
+      case Pav_SAR:     opc2 =  964; break; // vsrad
+      case Pav_ROTL:    opc2 =  196; break; // vrld
+      case Pav_PACKUU:  opc2 = 1102; break; // vpkudum
+      case Pav_QPACKUU: opc2 = 1230; break; // vpkudus, vpksdus (emulated)
+      case Pav_QPACKSS: opc2 = 1486; break; // vpksdsm
+      case Pav_MRGHI:   opc2 = 1614; break; // vmrghw
+      case Pav_MRGLO:   opc2 = 1742; break; // vmrglw
+      case Pav_POLYMULADD: opc2 = 1096; break; // vpmsumd
+      default:
+         goto bad;
+      }
+      p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, opc2 );
+      goto done;
+   }
+   case Pin_AvCipherV128Unary: {
+      UInt v_dst = vregNo(i->Pin.AvCipherV128Unary.dst);
+      UInt v_src = vregNo(i->Pin.AvCipherV128Unary.src);
+      UInt opc2;
+      switch (i->Pin.AvCipherV128Unary.op) {
+      case Pav_CIPHERSUBV128:   opc2 =  1480; break; // vsbox
+      default:
+         goto bad;
+      }
+      p = mkFormVX( p, 4, v_dst, v_src, 0, opc2 );
+      goto done;
+   }
+   case Pin_AvCipherV128Binary: {
+      UInt v_dst  = vregNo(i->Pin.AvCipherV128Binary.dst);
+      UInt v_srcL = vregNo(i->Pin.AvCipherV128Binary.srcL);
+      UInt v_srcR = vregNo(i->Pin.AvCipherV128Binary.srcR);
+      UInt opc2;
+      switch (i->Pin.AvCipherV128Binary.op) {
+      case Pav_CIPHERV128:     opc2 =  1288; break; // vcipher
+      case Pav_CIPHERLV128:    opc2 =  1289; break; // vcipherlast
+      case Pav_NCIPHERV128:    opc2 =  1352; break; // vncipher
+      case Pav_NCIPHERLV128:   opc2 =  1353; break; // vncipherlast
+      default:
+         goto bad;
+      }
+      p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, opc2 );
+      goto done;
+   }
+   case Pin_AvHashV128Binary: {
+      UInt v_dst = vregNo(i->Pin.AvHashV128Binary.dst);
+      UInt v_src = vregNo(i->Pin.AvHashV128Binary.src);
+      PPCRI* s_field = i->Pin.AvHashV128Binary.s_field;
+      UInt opc2;
+      switch (i->Pin.AvHashV128Binary.op) {
+      case Pav_SHA256:   opc2 =  1666; break; // vshasigmaw
+      case Pav_SHA512:   opc2 =  1730; break; // vshasigmad
+      default:
+         goto bad;
+      }
+      p = mkFormVX( p, 4, v_dst, v_src, s_field->Pri.Imm, opc2 );
+      goto done;
+   }
+   case Pin_AvBCDV128Trinary: {
+      UInt v_dst  = vregNo(i->Pin.AvBCDV128Trinary.dst);
+      UInt v_src1 = vregNo(i->Pin.AvBCDV128Trinary.src1);
+      UInt v_src2 = vregNo(i->Pin.AvBCDV128Trinary.src2);
+      PPCRI* ps   = i->Pin.AvBCDV128Trinary.ps;
+      UInt opc2;
+      switch (i->Pin.AvBCDV128Trinary.op) {
+      case Pav_BCDAdd:   opc2 =  1; break; // bcdadd
+      case Pav_BCDSub:   opc2 = 65; break; // bcdsub
+      default:
+         goto bad;
+      }
+      p = mkFormVXR( p, 4, v_dst, v_src1, v_src2,
+                     0x1, (ps->Pri.Imm << 9) | opc2 );
+      goto done;
+   }
    case Pin_AvBin32Fx4: {
       UInt v_dst  = vregNo(i->Pin.AvBin32Fx4.dst);
       UInt v_srcL = vregNo(i->Pin.AvBin32Fx4.srcL);

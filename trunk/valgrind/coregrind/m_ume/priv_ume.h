@@ -6,7 +6,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Julian Seward 
+   Copyright (C) 2000-2013 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -31,6 +31,8 @@
 
 #ifndef __PRIV_UME_H
 #define __PRIV_UME_H
+
+#include "pub_core_ume.h"   // ExeInfo
 
 extern int VG_(do_exec_inner)(const HChar *exe, ExeInfo *info);
 

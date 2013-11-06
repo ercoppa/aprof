@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Julian Seward
+   Copyright (C) 2000-2013 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -34,7 +34,7 @@
 #include "pub_core_libcassert.h"
 #include "pub_core_libcfile.h"
 #include "pub_core_libcproc.h"      // For VG_(gettid)()
-#include "pub_tool_inner.h"
+#include "pub_core_inner.h"
 #if defined(ENABLE_INNER_CLIENT_REQUEST)
 #include "helgrind/helgrind.h"
 #endif

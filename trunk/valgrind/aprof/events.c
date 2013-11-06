@@ -1,8 +1,8 @@
 /*
  * Event handlers and instrumentation
  * 
- * Last changed: $Date$
- * Revision:     $Rev$
+ * Last changed: $Date: 2013-05-13 15:39:52 +0200 (lun, 13 mag 2013) $
+ * Revision:     $Rev: 838 $
  */
 
 /*

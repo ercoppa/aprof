@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2006-2012 OpenWorks LLP
+   Copyright (C) 2006-2013 OpenWorks LLP
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
@@ -32,6 +32,7 @@
 #ifndef __PUB_CORE_INITIMG_H
 #define __PUB_CORE_INITIMG_H
 
+#include "pub_core_basics.h"      // Addr
 
 //--------------------------------------------------------------------
 // PURPOSE: Map the client executable into memory, then set up its

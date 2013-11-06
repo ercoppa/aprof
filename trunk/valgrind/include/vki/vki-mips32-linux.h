@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2010-2012 RT-RK
+   Copyright (C) 2010-2013 RT-RK
       mips-valgrind@rt-rk.com
 
    This program is free software; you can redistribute it and/or
@@ -371,7 +371,10 @@ struct vki_f_owner_ex {
 //----------------------------------------------------------------------
 
 #define VKI_SOL_SOCKET	0xffff
+
 #define VKI_SO_TYPE	0x1008
+
+#define VKI_SO_ATTACH_FILTER	26
 
 //----------------------------------------------------------------------
 // From linux-2.6.35.5/include/asm-i386/sockios.h

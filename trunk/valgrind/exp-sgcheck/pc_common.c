@@ -9,7 +9,7 @@
    This file is part of Ptrcheck, a Valgrind tool for checking pointer
    use in programs.
 
-   Copyright (C) 2008-2012 OpenWorks Ltd
+   Copyright (C) 2008-2013 OpenWorks Ltd
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
@@ -736,11 +736,11 @@ Bool pc_is_recognised_suppression ( const HChar* name, Supp *su )
 }
 
 Bool pc_read_extra_suppression_info ( Int fd, HChar** bufpp, 
-                                      SizeT* nBufp, Supp* su )
+                                      SizeT* nBufp, Int* lineno, Supp* su )
 {
    Bool eof;
    if (VG_(get_supp_kind)(su) == XS_SysParam) {
-      eof = VG_(get_line) ( fd, bufpp, nBufp, NULL );
+      eof = VG_(get_line) ( fd, bufpp, nBufp, lineno );
       if (eof) return False;
       VG_(set_supp_string)(su, VG_(strdup)("pc.common.presi.1", *bufpp));
    }
@@ -793,6 +793,16 @@ Bool pc_get_extra_suppression_info ( Error* err,
    }
 }
 
+Bool pc_print_extra_suppression_use ( Supp* su,
+                                      /*OUT*/HChar* buf, Int nBuf )
+{
+   return False;
+}
+
+void pc_update_extra_suppression_use (Error* err, Supp* su)
+{
+   return;
+}
 
 /*--------------------------------------------------------------------*/
 /*--- end                                              pc_common.c ---*/

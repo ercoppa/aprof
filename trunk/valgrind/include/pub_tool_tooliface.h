@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Julian Seward
+   Copyright (C) 2000-2013 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -318,10 +318,10 @@ extern void VG_(needs_tool_errors) (
    // Read any extra info for this suppression kind.  Most likely for filling
    // in the `extra' and `string' parts (with VG_(set_supp_{extra, string})())
    // of a suppression if necessary.  Should return False if a syntax error
-   // occurred, True otherwise.  bufpp and nBufp are the same as for
-   // VG_(get_line).
+   // occurred, True otherwise.
+   // fd, bufpp, nBufp and lineno are the same as for VG_(get_line).
    Bool (*read_extra_suppression_info)(Int fd, HChar** bufpp, SizeT* nBufp,
-                                       Supp* su),
+                                       Int* lineno, Supp* su),
 
    // This should just check the kinds match and maybe some stuff in the
    // `string' and `extra' field if appropriate (using VG_(get_supp_*)() to
@@ -343,7 +343,20 @@ extern void VG_(needs_tool_errors) (
    // do nothing, and return False.  This function is the inverse of
    // VG_(tdict).tool_read_extra_suppression_info().
    Bool (*print_extra_suppression_info)(Error* err,
-                                        /*OUT*/HChar* buf, Int nBuf)
+                                        /*OUT*/HChar* buf, Int nBuf),
+
+   // This is similar to print_extra_suppression_info, but is used
+   // to print information such as additional statistical counters
+   // as part of the used suppression list produced by -v.
+   Bool (*print_extra_suppression_use)(Supp* su,
+                                       /*OUT*/HChar* buf, Int nBuf),
+
+   // Called by error mgr once it has been established that err
+   // is suppressed by su. update_extra_suppression_use typically
+   // can be used to update suppression extra information such as
+   // some statistical counters that will be printed by
+   // print_extra_suppression_use.
+   void (*update_extra_suppression_use)(Error* err, Supp* su)
 );
 
 /* Is information kept by the tool about specific instructions or

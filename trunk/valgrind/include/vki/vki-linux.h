@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Julian Seward 
+   Copyright (C) 2000-2013 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -676,6 +676,7 @@ __KINLINE struct vki_cmsghdr * vki_cmsg_nxthdr (struct vki_msghdr *__msg, struct
 #define VKI_AF_UNIX	1	/* Unix domain sockets 		*/
 #define VKI_AF_INET	2	/* Internet IP Protocol		*/
 #define VKI_AF_INET6	10	/* IP version 6			*/
+#define VKI_AF_BLUETOOTH 31	/* Bluetooth sockets		*/
 
 #define VKI_MSG_NOSIGNAL	0x4000	/* Do not generate SIGPIPE */
 
@@ -701,6 +702,8 @@ struct vki_sockaddr_in {
 			sizeof(unsigned short int) - sizeof(struct vki_in_addr)];
 };
 
+#define VKI_IPPROTO_TCP 6       /* Transmission Control Protocol        */
+
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/in6.h
 //----------------------------------------------------------------------
@@ -725,6 +728,13 @@ struct vki_sockaddr_in6 {
 	struct vki_in6_addr	sin6_addr;      /* IPv6 address */
 	__vki_u32		sin6_scope_id;  /* scope id (new in RFC2553) */
 };
+
+//----------------------------------------------------------------------
+// From linux-2.6.8.1/include/linux/tcp.h
+//----------------------------------------------------------------------
+
+#define VKI_TCP_NODELAY    1       /* Turn off Nagle's algorithm. */
+
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/un.h
@@ -2968,6 +2978,16 @@ struct vki_hci_inquiry_req {
 };
 
 //----------------------------------------------------------------------
+// From linux-3.9.2/include/net/bluetooth/rfcomm.h
+//----------------------------------------------------------------------
+
+struct vki_sockaddr_rc {
+        vki_sa_family_t     rc_family;
+        vki_bdaddr_t        rc_bdaddr;
+        __vki_u8            rc_channel;
+};
+
+//----------------------------------------------------------------------
 // From linux-3.4/include/linux/kvm.h
 //----------------------------------------------------------------------
 #define KVMIO 0xAE
@@ -3119,6 +3139,22 @@ struct vki_file_handle {
    unsigned char f_handle[0];
 };
 
+//----------------------------------------------------------------------
+// From linux-3.2.0/include/linux/filter.h
+//----------------------------------------------------------------------
+
+struct vki_sock_filter {
+	__vki_u16 code; /* Actual filter code */
+	__vki_u8 jt;    /* Jump true */
+	__vki_u8 jf;    /* Jump false */
+	__vki_u32 k;    /* Generic multiuse field */
+};
+
+struct vki_sock_fprog {
+	__vki_u16 len;  /* actually unsigned short */
+	struct vki_sock_filter *filter;
+};
+   
 #endif // __VKI_LINUX_H
 
 /*--------------------------------------------------------------------*/

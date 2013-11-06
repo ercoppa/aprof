@@ -7,7 +7,7 @@
    This file is part of Ptrcheck, a Valgrind tool for checking pointer
    use in programs.
 
-   Copyright (C) 2003-2012 Nicholas Nethercote
+   Copyright (C) 2003-2013 Nicholas Nethercote
       njn@valgrind.org
 
    This program is free software; you can redistribute it and/or
@@ -37,7 +37,7 @@
 #include "pub_tool_hashtable.h"
 #include "pub_tool_redir.h"
 #include "pub_tool_tooliface.h"
-#include "valgrind.h"
+#include "pub_tool_clreq.h"
 
 
 /* The following intercepts are copied verbatim from

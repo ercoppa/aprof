@@ -8,10 +8,10 @@
    This file is part of Helgrind, a Valgrind tool for detecting errors
    in threaded programs.
 
-   Copyright (C) 2007-2012 OpenWorks LLP
+   Copyright (C) 2007-2013 OpenWorks LLP
       info@open-works.co.uk
 
-   Copyright (C) 2007-2012 Apple, Inc.
+   Copyright (C) 2007-2013 Apple, Inc.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -1873,19 +1873,29 @@ void evh__HG_PTHREAD_MUTEX_INIT_POST( ThreadId tid,
 }
 
 static
-void evh__HG_PTHREAD_MUTEX_DESTROY_PRE( ThreadId tid, void* mutex )
+void evh__HG_PTHREAD_MUTEX_DESTROY_PRE( ThreadId tid, void* mutex,
+                                        Bool mutex_is_init )
 {
    Thread* thr;
    Lock*   lk;
    if (SHOW_EVENTS >= 1)
-      VG_(printf)("evh__hg_PTHREAD_MUTEX_DESTROY_PRE(ctid=%d, %p)\n", 
-                  (Int)tid, (void*)mutex );
+      VG_(printf)("evh__hg_PTHREAD_MUTEX_DESTROY_PRE"
+                  "(ctid=%d, %p, isInit=%d)\n", 
+                  (Int)tid, (void*)mutex, (Int)mutex_is_init );
 
    thr = map_threads_maybe_lookup( tid );
    /* cannot fail - Thread* must already exist */
    tl_assert( HG_(is_sane_Thread)(thr) );
 
    lk = map_locks_maybe_lookup( (Addr)mutex );
+
+   if (lk == NULL && mutex_is_init) {
+      /* We're destroying a mutex which we don't have any record of,
+         and which appears to have the value PTHREAD_MUTEX_INITIALIZER.
+         Assume it never got used, and so we don't need to do anything
+         more. */
+      goto out;
+   }
 
    if (lk == NULL || (lk->kind != LK_nonRec && lk->kind != LK_mbRec)) {
       HG_(record_error_Misc)(
@@ -1915,6 +1925,7 @@ void evh__HG_PTHREAD_MUTEX_DESTROY_PRE( ThreadId tid, void* mutex )
       del_LockN( lk );
    }
 
+  out:
    if (HG_(clo_sanity_flags) & SCE_LOCKS)
       all__sanity_check("evh__hg_PTHREAD_MUTEX_DESTROY_PRE");
 }
@@ -2077,7 +2088,7 @@ static void evh__HG_PTHREAD_SPIN_LOCK_POST( ThreadId tid,
 static void evh__HG_PTHREAD_SPIN_DESTROY_PRE( ThreadId tid, 
                                               void* slock )
 {
-   evh__HG_PTHREAD_MUTEX_DESTROY_PRE( tid, slock );
+   evh__HG_PTHREAD_MUTEX_DESTROY_PRE( tid, slock, 0/*!isInit*/ );
 }
 
 
@@ -2148,7 +2159,8 @@ static CVInfo* map_cond_to_CVInfo_lookup_NO_alloc ( void* cond ) {
    }
 }
 
-static void map_cond_to_CVInfo_delete ( ThreadId tid, void* cond ) {
+static void map_cond_to_CVInfo_delete ( ThreadId tid,
+                                        void* cond, Bool cond_is_init ) {
    Thread*   thr;
    UWord keyW, valW;
 
@@ -2162,9 +2174,9 @@ static void map_cond_to_CVInfo_delete ( ThreadId tid, void* cond ) {
       tl_assert(cvi);
       tl_assert(cvi->so);
       if (cvi->nWaiters > 0) {
-         HG_(record_error_Misc)(thr,
-                                "pthread_cond_destroy:"
-                                " destruction of condition variable being waited upon");
+         HG_(record_error_Misc)(
+            thr, "pthread_cond_destroy:"
+                 " destruction of condition variable being waited upon");
          /* Destroying a cond var being waited upon outcome is EBUSY and
             variable is not destroyed. */
          return;
@@ -2175,8 +2187,14 @@ static void map_cond_to_CVInfo_delete ( ThreadId tid, void* cond ) {
       cvi->mx_ga = 0;
       HG_(free)(cvi);
    } else {
-      HG_(record_error_Misc)(thr,
-                             "pthread_cond_destroy: destruction of unknown cond var");
+      /* We have no record of this CV.  So complain about it
+         .. except, don't bother to complain if it has exactly the
+         value PTHREAD_COND_INITIALIZER, since it might be that the CV
+         was initialised like that but never used. */
+      if (!cond_is_init) {
+         HG_(record_error_Misc)(
+            thr, "pthread_cond_destroy: destruction of unknown cond var");
+      }
    }
 }
 
@@ -2329,7 +2347,8 @@ static Bool evh__HG_PTHREAD_COND_WAIT_PRE ( ThreadId tid,
 }
 
 static void evh__HG_PTHREAD_COND_WAIT_POST ( ThreadId tid,
-                                             void* cond, void* mutex )
+                                             void* cond, void* mutex,
+                                             Bool timeout)
 {
    /* A pthread_cond_wait(cond, mutex) completed successfully.  Find
       the SO for this cond, and 'recv' from it so as to acquire a
@@ -2339,8 +2358,8 @@ static void evh__HG_PTHREAD_COND_WAIT_POST ( ThreadId tid,
 
    if (SHOW_EVENTS >= 1)
       VG_(printf)("evh__HG_PTHREAD_COND_WAIT_POST"
-                  "(ctid=%d, cond=%p, mutex=%p)\n", 
-                  (Int)tid, (void*)cond, (void*)mutex );
+                  "(ctid=%d, cond=%p, mutex=%p)\n, timeout=%d",
+                  (Int)tid, (void*)cond, (void*)mutex, (Int)timeout );
 
    thr = map_threads_maybe_lookup( tid );
    tl_assert(thr); /* cannot fail - Thread* must already exist */
@@ -2362,7 +2381,7 @@ static void evh__HG_PTHREAD_COND_WAIT_POST ( ThreadId tid,
    tl_assert(cvi->so);
    tl_assert(cvi->nWaiters > 0);
 
-   if (!libhb_so_everSent(cvi->so)) {
+   if (!timeout && !libhb_so_everSent(cvi->so)) {
       /* Hmm.  How can a wait on 'cond' succeed if nobody signalled
          it?  If this happened it would surely be a bug in the threads
          library.  Or one of those fabled "spurious wakeups". */
@@ -2394,17 +2413,17 @@ static void evh__HG_PTHREAD_COND_INIT_POST ( ThreadId tid,
 
 
 static void evh__HG_PTHREAD_COND_DESTROY_PRE ( ThreadId tid,
-                                               void* cond )
+                                               void* cond, Bool cond_is_init )
 {
    /* Deal with destroy events.  The only purpose is to free storage
       associated with the CV, so as to avoid any possible resource
       leaks. */
    if (SHOW_EVENTS >= 1)
       VG_(printf)("evh__HG_PTHREAD_COND_DESTROY_PRE"
-                  "(ctid=%d, cond=%p)\n", 
-                  (Int)tid, (void*)cond );
+                  "(ctid=%d, cond=%p, cond_is_init=%d)\n", 
+                  (Int)tid, (void*)cond, (Int)cond_is_init );
 
-   map_cond_to_CVInfo_delete( tid, cond );
+   map_cond_to_CVInfo_delete( tid, cond, cond_is_init );
 }
 
 
@@ -4820,8 +4839,9 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
          evh__HG_PTHREAD_MUTEX_INIT_POST( tid, (void*)args[1], args[2] );
          break;
 
+      /* mutex=arg[1], mutex_is_init=arg[2] */
       case _VG_USERREQ__HG_PTHREAD_MUTEX_DESTROY_PRE:
-         evh__HG_PTHREAD_MUTEX_DESTROY_PRE( tid, (void*)args[1] );
+         evh__HG_PTHREAD_MUTEX_DESTROY_PRE( tid, (void*)args[1], args[2] != 0 );
          break;
 
       case _VG_USERREQ__HG_PTHREAD_MUTEX_UNLOCK_PRE:   // pth_mx_t*
@@ -4865,16 +4885,17 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
                                          (void*)args[1], (void*)args[2] );
 	 break;
 
-      /* cond=arg[1] */
+      /* cond=arg[1], cond_is_init=arg[2] */
       case _VG_USERREQ__HG_PTHREAD_COND_DESTROY_PRE:
-         evh__HG_PTHREAD_COND_DESTROY_PRE( tid, (void*)args[1] );
+         evh__HG_PTHREAD_COND_DESTROY_PRE( tid, (void*)args[1], args[2] != 0 );
          break;
 
       /* Thread successfully completed pthread_cond_wait, cond=arg[1],
          mutex=arg[2] */
       case _VG_USERREQ__HG_PTHREAD_COND_WAIT_POST:
          evh__HG_PTHREAD_COND_WAIT_POST( tid,
-                                         (void*)args[1], (void*)args[2] );
+                                         (void*)args[1], (void*)args[2],
+                                         (Bool)args[3] );
          break;
 
       case _VG_USERREQ__HG_PTHREAD_RWLOCK_INIT_POST:
@@ -5247,7 +5268,7 @@ static void hg_pre_clo_init ( void )
    VG_(details_version)         (NULL);
    VG_(details_description)     ("a thread error detector");
    VG_(details_copyright_author)(
-      "Copyright (C) 2007-2012, and GNU GPL'd, by OpenWorks LLP et al.");
+      "Copyright (C) 2007-2013, and GNU GPL'd, by OpenWorks LLP et al.");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
    VG_(details_avg_translation_sizeB) ( 320 );
 
@@ -5265,7 +5286,9 @@ static void hg_pre_clo_init ( void )
                                    HG_(read_extra_suppression_info),
                                    HG_(error_matches_suppression),
                                    HG_(get_error_name),
-                                   HG_(get_extra_suppression_info));
+                                   HG_(get_extra_suppression_info),
+                                   HG_(print_extra_suppression_use),
+                                   HG_(update_extra_suppression_use));
 
    VG_(needs_xml_output)          ();
 

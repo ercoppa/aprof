@@ -8,8 +8,8 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright IBM Corp. 2010-2012
-   Copyright (C) 2012-2012  Florian Krohm   (britzel@acm.org)
+   Copyright IBM Corp. 2010-2013
+   Copyright (C) 2012-2013  Florian Krohm   (britzel@acm.org)
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -470,19 +470,42 @@ get_const_value_as_ulong(const IRConst *con)
    of the register allocator to throw out those reg-to-reg moves.
 */
 static void
-doHelperCall(ISelEnv *env, Bool passBBP, IRExpr *guard,
-             IRCallee *callee, IRExpr **args, HReg dst)
+doHelperCall(/*OUT*/UInt *stackAdjustAfterCall,
+             /*OUT*/RetLoc *retloc,
+             ISelEnv *env, IRExpr *guard,
+             IRCallee *callee, IRType retTy, IRExpr **args)
 {
    UInt n_args, i, argreg, size;
    ULong target;
    HReg tmpregs[S390_NUM_GPRPARMS];
    s390_cc_t cc;
 
+   /* Set default returns.  We'll update them later if needed. */
+   *stackAdjustAfterCall = 0;
+   *retloc               = mk_RetLoc_INVALID();
+
+   /* The return type can be I{64,32,16,8} or V{128,256}.  In the
+      latter two cases, it is expected that |args| will contain the
+      special node IRExpr_VECRET(), in which case this routine
+      generates code to allocate space on the stack for the vector
+      return value.  Since we are not passing any scalars on the
+      stack, it is enough to preallocate the return space before
+      marshalling any arguments, in this case.
+
+      |args| may also contain IRExpr_BBPTR(), in which case the value
+      in the guest state pointer register is passed as the
+      corresponding argument.
+
+      These are used for cross-checking that IR-level constraints on
+      the use of IRExpr_VECRET() and IRExpr_BBPTR() are observed. */
+   UInt nVECRETs = 0;
+   UInt nBBPTRs  = 0;
+
    n_args = 0;
    for (i = 0; args[i]; i++)
       ++n_args;
 
-   if (n_args > (S390_NUM_GPRPARMS - (passBBP ? 1 : 0))) {
+   if (n_args > S390_NUM_GPRPARMS) {
       vpanic("doHelperCall: too many arguments");
    }
 
@@ -493,31 +516,64 @@ doHelperCall(ISelEnv *env, Bool passBBP, IRExpr *guard,
    */
    Int arg_errors = 0;
    for (i = 0; i < n_args; ++i) {
-      IRType type = typeOfIRExpr(env->type_env, args[i]);
-      if (type != Ity_I64) {
-         ++arg_errors;
-         vex_printf("calling %s: argument #%d has type ", callee->name, i);
-         ppIRType(type);
-         vex_printf("; Ity_I64 is required\n");
+      if (UNLIKELY(args[i]->tag == Iex_VECRET)) {
+         nVECRETs++;
+      } else if (UNLIKELY(args[i]->tag == Iex_BBPTR)) {
+         nBBPTRs++;
+      } else {
+         IRType type = typeOfIRExpr(env->type_env, args[i]);
+         if (type != Ity_I64) {
+            ++arg_errors;
+            vex_printf("calling %s: argument #%d has type ", callee->name, i);
+            ppIRType(type);
+            vex_printf("; Ity_I64 is required\n");
+         }
       }
    }
 
    if (arg_errors)
       vpanic("cannot continue due to errors in argument passing");
 
-   argreg = 0;
+   /* If this fails, the IR is ill-formed */
+   vassert(nBBPTRs == 0 || nBBPTRs == 1);
 
-   /* If we need the guest state pointer put it in a temporary arg reg */
-   if (passBBP) {
-      tmpregs[argreg] = newVRegI(env);
-      addInstr(env, s390_insn_move(sizeof(ULong), tmpregs[argreg],
-                                   s390_hreg_guest_state_pointer()));
-      argreg++;
+   /* If we have a VECRET, allocate space on the stack for the return
+      value, and record the stack pointer after that. */
+   HReg r_vecRetAddr = INVALID_HREG;
+   if (nVECRETs == 1) {
+      /* we do not handle vector types yet */
+      vassert(0);
+      HReg sp = make_gpr(S390_REGNO_STACK_POINTER);
+      vassert(retTy == Ity_V128 || retTy == Ity_V256);
+      vassert(retTy != Ity_V256); // we don't handle that yet (if ever)
+      r_vecRetAddr = newVRegI(env);
+      addInstr(env, s390_insn_alu(4, S390_ALU_SUB, sp, s390_opnd_imm(16)));
+      addInstr(env, s390_insn_move(sizeof(ULong), r_vecRetAddr, sp));
+
+   } else {
+      // If either of these fail, the IR is ill-formed
+      vassert(retTy != Ity_V128 && retTy != Ity_V256);
+      vassert(nVECRETs == 0);
    }
+
+   argreg = 0;
 
    /* Compute the function arguments into a temporary register each */
    for (i = 0; i < n_args; i++) {
-      tmpregs[argreg] = s390_isel_int_expr(env, args[i]);
+      IRExpr *arg = args[i];
+      if(UNLIKELY(arg->tag == Iex_VECRET)) {
+         /* we do not handle vector types yet */
+         vassert(0);
+         addInstr(env, s390_insn_move(sizeof(ULong), tmpregs[argreg],
+                                      r_vecRetAddr));
+      } else if (UNLIKELY(arg->tag == Iex_BBPTR)) {
+         /* If we need the guest state pointer put it in a temporary arg reg */
+         tmpregs[argreg] = newVRegI(env);
+         addInstr(env, s390_insn_move(sizeof(ULong), tmpregs[argreg],
+                                      s390_hreg_guest_state_pointer()));
+      } else {
+         tmpregs[argreg] = s390_isel_int_expr(env, args[i]);
+      }
       argreg++;
    }
 
@@ -545,9 +601,39 @@ doHelperCall(ISelEnv *env, Bool passBBP, IRExpr *guard,
 
    target = Ptr_to_ULong(callee->addr);
 
+   /* Do final checks, set the return values, and generate the call
+      instruction proper. */
+   vassert(*stackAdjustAfterCall == 0);
+   vassert(is_RetLoc_INVALID(*retloc));
+   switch (retTy) {
+   case Ity_INVALID:
+      /* Function doesn't return a value. */
+      *retloc = mk_RetLoc_simple(RLPri_None);
+      break;
+   case Ity_I64: case Ity_I32: case Ity_I16: case Ity_I8:
+      *retloc = mk_RetLoc_simple(RLPri_Int);
+      break;
+   case Ity_V128:
+      /* we do not handle vector types yet */
+      vassert(0);
+      *retloc = mk_RetLoc_spRel(RLPri_V128SpRel, 0);
+      *stackAdjustAfterCall = 16;
+      break;
+   case Ity_V256:
+      /* we do not handle vector types yet */
+      vassert(0);
+      *retloc = mk_RetLoc_spRel(RLPri_V256SpRel, 0);
+      *stackAdjustAfterCall = 32;
+      break;
+   default:
+      /* IR can denote other possible return types, but we don't
+         handle those here. */
+      vassert(0);
+   }
+
    /* Finally, the call itself. */
    addInstr(env, s390_insn_helper_call(cc, (Addr64)target, n_args,
-                                       callee->name, dst));
+                                       callee->name, *retloc));
 }
 
 
@@ -683,8 +769,8 @@ set_dfp_rounding_mode_in_fpc(ISelEnv *env, IRExpr *irrm)
    stick the rounding mode into the FPC -- a good thing. However, the
    rounding mode must be known.
 
-   When mapping an Irrm_DFP_ value to an S390_DFP_ROUND_ value there is
-   often a choice. For instance, Irrm_DFP_ZERO could be mapped to either
+   When mapping an Irrm_XYZ value to an S390_DFP_ROUND_ value there is
+   often a choice. For instance, Irrm_ZERO could be mapped to either
    S390_DFP_ROUND_ZERO_5 or S390_DFP_ROUND_ZERO_9. The difference between
    those two is that with S390_DFP_ROUND_ZERO_9 the recognition of the
    quantum exception is suppressed whereas with S390_DFP_ROUND_ZERO_5 it
@@ -696,7 +782,7 @@ set_dfp_rounding_mode_in_fpc(ISelEnv *env, IRExpr *irrm)
    Translation table of
    s390 DFP rounding mode to IRRoundingMode to s390 DFP rounding mode
 
-   s390(S390_DFP_ROUND_)  |  IR(Irrm_DFP_)       |  s390(S390_DFP_ROUND_)
+   s390(S390_DFP_ROUND_)  |  IR(Irrm_)           |  s390(S390_DFP_ROUND_)
    --------------------------------------------------------------------
    NEAREST_TIE_AWAY_0_1   |  NEAREST_TIE_AWAY_0  |  NEAREST_TIE_AWAY_0_12
    NEAREST_TIE_AWAY_0_12  |     "                |     "
@@ -718,24 +804,24 @@ get_dfp_rounding_mode(ISelEnv *env, IRExpr *irrm)
 {
    if (irrm->tag == Iex_Const) {          /* rounding mode is known */
       vassert(irrm->Iex.Const.con->tag == Ico_U32);
-      IRRoundingModeDFP mode = irrm->Iex.Const.con->Ico.U32;
+      IRRoundingMode mode = irrm->Iex.Const.con->Ico.U32;
 
       switch (mode) {
-      case Irrm_DFP_NEAREST:
+      case Irrm_NEAREST:
          return S390_DFP_ROUND_NEAREST_EVEN_8;
-      case Irrm_DFP_NegINF:
+      case Irrm_NegINF:
          return S390_DFP_ROUND_NEGINF_11;
-      case Irrm_DFP_PosINF:
+      case Irrm_PosINF:
          return S390_DFP_ROUND_POSINF_10;
-      case Irrm_DFP_ZERO:
+      case Irrm_ZERO:
          return S390_DFP_ROUND_ZERO_9;
-      case Irrm_DFP_NEAREST_TIE_AWAY_0:
+      case Irrm_NEAREST_TIE_AWAY_0:
          return S390_DFP_ROUND_NEAREST_TIE_AWAY_0_12;
-      case Irrm_DFP_PREPARE_SHORTER:
+      case Irrm_PREPARE_SHORTER:
           return S390_DFP_ROUND_PREPARE_SHORT_15;
-      case Irrm_DFP_AWAY_FROM_ZERO:
+      case Irrm_AWAY_FROM_ZERO:
          return S390_DFP_ROUND_AWAY_0;
-      case Irrm_DFP_NEAREST_TIE_TOWARD_0:
+      case Irrm_NEAREST_TIE_TOWARD_0:
          return S390_DFP_ROUND_NEAREST_TIE_TOWARD_0;
       default:
          vpanic("get_dfp_rounding_mode");
@@ -1727,9 +1813,17 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
       /* --------- CCALL --------- */
    case Iex_CCall: {
       HReg dst = newVRegI(env);
+      HReg ret = make_gpr(S390_REGNO_RETURN_VALUE);
+      UInt   addToSp = 0;
+      RetLoc rloc    = mk_RetLoc_INVALID();
 
-      doHelperCall(env, False, NULL, expr->Iex.CCall.cee,
-                   expr->Iex.CCall.args, dst);
+      doHelperCall(&addToSp, &rloc, env, NULL, expr->Iex.CCall.cee,
+                   expr->Iex.CCall.retty, expr->Iex.CCall.args);
+      vassert(is_sane_RetLoc(rloc));
+      vassert(rloc.pri == RLPri_Int);
+      vassert(addToSp == 0);
+      addInstr(env, s390_insn_move(sizeof(ULong), dst, ret));
+
       return dst;
    }
 
@@ -1973,6 +2067,45 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
          *dst_hi = s390_isel_float_expr(env, expr->Iex.Binop.arg1);
          *dst_lo = s390_isel_float_expr(env, expr->Iex.Binop.arg2);
          return;
+
+      case Iop_D32toF128:
+      case Iop_D64toF128: {
+         IRExpr *irrm;
+         IRExpr *left;
+         s390_dfp_round_t rm;
+         HReg h1; /* virtual reg. to hold source */
+         HReg f0, f2, f4, r1; /* real registers used by PFPO */
+         s390_fp_conv_t fpconv;
+
+         switch (expr->Iex.Binop.op) {
+         case Iop_D32toF128:
+            fpconv = S390_FP_D32_TO_F128;
+            break;
+         case Iop_D64toF128:
+            fpconv = S390_FP_D64_TO_F128;
+            break;
+         default: goto irreducible;
+         }
+
+         f4 = make_fpr(4); /* source */
+         f0 = make_fpr(0); /* destination */
+         f2 = make_fpr(2); /* destination */
+         r1 = make_gpr(1); /* GPR #1 clobbered */
+         irrm = expr->Iex.Binop.arg1;
+         left = expr->Iex.Binop.arg2;
+         rm = get_dfp_rounding_mode(env, irrm);
+         h1 = s390_isel_dfp_expr(env, left);
+         addInstr(env, s390_insn_move(8, f4, h1));
+         addInstr(env, s390_insn_fp128_convert(16, fpconv, f0, f2,
+                                               f4, INVALID_HREG, r1, rm));
+         /* (f0, f2) --> destination */
+         *dst_hi = newVRegF(env);
+         *dst_lo = newVRegF(env);
+         addInstr(env, s390_insn_move(8, *dst_hi, f0));
+         addInstr(env, s390_insn_move(8, *dst_lo, f2));
+
+         return;
+      }
 
       case Iop_D128toF128: {
          IRExpr *irrm;
@@ -2246,7 +2379,11 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
       case Iop_I64StoF64: conv = S390_BFP_I64_TO_F64; goto convert_int;
       case Iop_I64UtoF32: conv = S390_BFP_U64_TO_F32; goto convert_int;
       case Iop_I64UtoF64: conv = S390_BFP_U64_TO_F64; goto convert_int;
+      case Iop_D32toF32:  fpconv = S390_FP_D32_TO_F32;  goto convert_dfp;
+      case Iop_D32toF64:  fpconv = S390_FP_D32_TO_F64;  goto convert_dfp;
+      case Iop_D64toF32:  fpconv = S390_FP_D64_TO_F32;  goto convert_dfp;
       case Iop_D64toF64:  fpconv = S390_FP_D64_TO_F64;  goto convert_dfp;
+      case Iop_D128toF32: fpconv = S390_FP_D128_TO_F32; goto convert_dfp128;
       case Iop_D128toF64: fpconv = S390_FP_D128_TO_F64; goto convert_dfp128;
 
       convert_float:
@@ -2638,12 +2775,24 @@ s390_isel_dfp128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
          return;
       }
 
+      case Iop_F32toD128:
       case Iop_F64toD128: {
          IRExpr *irrm;
          IRExpr *left;
          s390_dfp_round_t rm;
          HReg h1; /* virtual reg. to hold source */
          HReg f0, f2, f4, r1; /* real registers used by PFPO */
+         s390_fp_conv_t fpconv;
+
+         switch (expr->Iex.Binop.op) {
+         case Iop_F32toD128:       /* (D128, I64) -> D128 */
+            fpconv = S390_FP_F32_TO_D128;
+            break;
+         case Iop_F64toD128:       /* (D128, I64) -> D128 */
+            fpconv = S390_FP_F64_TO_D128;
+            break;
+         default: goto irreducible;
+         }
 
          f4 = make_fpr(4); /* source */
          f0 = make_fpr(0); /* destination */
@@ -2654,7 +2803,7 @@ s390_isel_dfp128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
          rm = get_dfp_rounding_mode(env, irrm);
          h1 = s390_isel_float_expr(env, left);
          addInstr(env, s390_insn_move(8, f4, h1));
-         addInstr(env, s390_insn_fp128_convert(16, S390_FP_F64_TO_D128, f0, f2,
+         addInstr(env, s390_insn_fp128_convert(16, fpconv, f0, f2,
                                                f4, INVALID_HREG, r1, rm));
          /* (f0, f2) --> destination */
          *dst_hi = newVRegF(env);
@@ -2823,7 +2972,12 @@ s390_isel_dfp_expr_wrk(ISelEnv *env, IRExpr *expr)
       case Iop_D64toD32:  conv = S390_DFP_D64_TO_D32; goto convert_dfp;
       case Iop_I64StoD64: conv = S390_DFP_I64_TO_D64; goto convert_int;
       case Iop_I64UtoD64: conv = S390_DFP_U64_TO_D64; goto convert_int;
+      case Iop_F32toD32:  fpconv = S390_FP_F32_TO_D32; goto convert_bfp;
+      case Iop_F32toD64:  fpconv = S390_FP_F32_TO_D64; goto convert_bfp;
+      case Iop_F64toD32:  fpconv = S390_FP_F64_TO_D32; goto convert_bfp;
       case Iop_F64toD64:  fpconv = S390_FP_F64_TO_D64; goto convert_bfp;
+      case Iop_F128toD32: fpconv = S390_FP_F128_TO_D32; goto convert_bfp128;
+      case Iop_F128toD64: fpconv = S390_FP_F128_TO_D64; goto convert_bfp128;
 
       convert_dfp:
          h1 = s390_isel_dfp_expr(env, left);
@@ -2862,6 +3016,28 @@ s390_isel_dfp_expr_wrk(ISelEnv *env, IRExpr *expr)
          /* operand --> f4 */
          addInstr(env, s390_insn_move(8, f4, h1));
          addInstr(env, s390_insn_fp_convert(size, fpconv, f0, f4, r1, rm));
+         /* f0 --> destination */
+         addInstr(env, s390_insn_move(8, dst, f0));
+         return dst;
+      }
+
+      convert_bfp128: {
+         s390_dfp_round_t rm;
+         HReg op_hi, op_lo;
+         HReg f0, f4, f6, r1; /* real registers used by PFPO */
+
+         f4 = make_fpr(4); /* source */
+         f6 = make_fpr(6); /* source */
+         f0 = make_fpr(0); /* destination */
+         r1 = make_gpr(1); /* GPR #1 clobbered */
+         s390_isel_float128_expr(&op_hi, &op_lo, env, left);
+         dst = newVRegF(env);
+         rm = get_dfp_rounding_mode(env, irrm);
+         /* operand --> (f4, f6) */
+         addInstr(env, s390_insn_move(8, f4, op_hi));
+         addInstr(env, s390_insn_move(8, f6, op_lo));
+         addInstr(env, s390_insn_fp128_convert(16, fpconv, f0, INVALID_HREG,
+                                               f4, f6, r1, rm));
          /* f0 --> destination */
          addInstr(env, s390_insn_move(8, dst, f0));
          return dst;
@@ -3573,8 +3749,9 @@ no_memcpy_put:
    case Ist_Dirty: {
       IRType   retty;
       IRDirty* d = stmt->Ist.Dirty.details;
-      Bool     passBBP;
       HReg dst;
+      RetLoc rloc    = mk_RetLoc_INVALID();
+      UInt   addToSp = 0;
       Int i;
 
       /* Invalidate tracked values of those guest state registers that are
@@ -3590,15 +3767,15 @@ no_memcpy_put:
          }
       }
 
-      if (d->nFxState == 0)
-         vassert(!d->needsBBP);
-
-      passBBP = toBool(d->nFxState > 0 && d->needsBBP);
-
       if (d->tmp == IRTemp_INVALID) {
          /* No return value. */
-         dst = INVALID_HREG;
-         doHelperCall(env, passBBP, d->guard, d->cee, d->args, dst);
+         retty = Ity_INVALID;
+         doHelperCall(&addToSp, &rloc, env, d->guard,  d->cee, retty,
+                      d->args);
+         vassert(is_sane_RetLoc(rloc));
+         vassert(rloc.pri == RLPri_None);
+         vassert(addToSp == 0);
+
          return;
       }
 
@@ -3606,9 +3783,45 @@ no_memcpy_put:
       if (retty == Ity_I64 || retty == Ity_I32
           || retty == Ity_I16 || retty == Ity_I8) {
          /* Move the returned value to the destination register */
+         HReg ret = make_gpr(S390_REGNO_RETURN_VALUE);
+
          dst = lookupIRTemp(env, d->tmp);
-         doHelperCall(env, passBBP, d->guard, d->cee, d->args, dst);
+         doHelperCall(&addToSp, &rloc, env, d->guard,  d->cee, retty,
+                      d->args);
+         vassert(is_sane_RetLoc(rloc));
+         vassert(rloc.pri == RLPri_Int);
+         vassert(addToSp == 0);
+         addInstr(env, s390_insn_move(sizeof(ULong), dst, ret));
+
          return;
+      }
+      if (retty == Ity_V128) {
+         /* we do not handle vector types yet */
+         vassert(0);
+         HReg sp = make_gpr(S390_REGNO_STACK_POINTER);
+         s390_amode *am;
+
+         dst = lookupIRTemp(env, d->tmp);
+         doHelperCall(&addToSp, &rloc, env, d->guard,  d->cee, retty,
+                      d->args);
+         vassert(is_sane_RetLoc(rloc));
+         vassert(rloc.pri == RLPri_V128SpRel);
+         vassert(addToSp >= 16);
+
+         /* rloc.spOff should be zero for s390 */
+         /* cannot use fits_unsigned_12bit(rloc.spOff), so doing
+            it explicitly */
+         vassert((rloc.spOff & 0xFFF) == rloc.spOff);
+         am = s390_amode_b12(rloc.spOff, sp);
+         // JRS 2013-Aug-08: is this correct?  Looks like we're loading
+         // only 64 bits from memory, when in fact we should be loading 128.
+         addInstr(env, s390_insn_load(8, dst, am));
+         addInstr(env, s390_insn_alu(4, S390_ALU_ADD, sp,
+                                     s390_opnd_imm(addToSp)));
+         return;
+      } else {/* if (retty == Ity_V256) */
+         /* we do not handle vector types yet */
+         vassert(0);
       }
       break;
    }

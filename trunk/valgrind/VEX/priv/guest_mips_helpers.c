@@ -164,6 +164,13 @@ void LibVEX_GuestMIPS32_initialise( /*OUT*/ VexGuestMIPS32State * vex_state)
    vex_state->guest_NRADDR = 0;
 
    vex_state->guest_COND = 0;
+
+   /* MIPS32 DSP ASE(r2) specific registers */
+   vex_state->guest_DSPControl = 0;   /* DSPControl register */
+   vex_state->guest_ac0 = 0;          /* Accumulator 0 */
+   vex_state->guest_ac1 = 0;          /* Accumulator 1 */
+   vex_state->guest_ac2 = 0;          /* Accumulator 2 */
+   vex_state->guest_ac3 = 0;          /* Accumulator 3 */
 }
 
 void LibVEX_GuestMIPS64_initialise ( /*OUT*/ VexGuestMIPS64State * vex_state )
@@ -274,11 +281,11 @@ void LibVEX_GuestMIPS64_initialise ( /*OUT*/ VexGuestMIPS64State * vex_state )
 
 /* Figure out if any part of the guest state contained in minoff
    .. maxoff requires precise memory exceptions.  If in doubt return
-   True (but this generates significantly slower code).  
+   True (but this generates significantly slower code).
 
    We enforce precise exns for guest SP, PC.
 
-   Only SP is needed in mode VexRegUpdSpAtMemAccess.   
+   Only SP is needed in mode VexRegUpdSpAtMemAccess.
 */
 Bool guest_mips32_state_requires_precise_mem_exns(Int minoff, Int maxoff)
 {
@@ -1057,7 +1064,7 @@ ULong mips64_dirtyhelper_dmfc0 ( UInt rd, UInt sel )
            break;
          }
        break;
- 
+
      default:
        break;
      }
@@ -1068,17 +1075,22 @@ ULong mips64_dirtyhelper_dmfc0 ( UInt rd, UInt sel )
 #define ASM_VOLATILE_CASE(rd, sel) \
    case rd: asm volatile ("dmfc0 %0, $" #rd ", "#sel"\n\t" :"=r" (x) ); break;
 
-#define ASM_VOLATILE_SYNC(stype) \
-        asm volatile ("sync \n\t");
-
-void mips32_dirtyhelper_sync(UInt stype)
-{
 #if defined(__mips__) && ((defined(__mips_isa_rev) && __mips_isa_rev >= 2))
-   ASM_VOLATILE_SYNC(0);
-#endif
+UInt mips32_dirtyhelper_rdhwr ( UInt rt, UInt rd )
+{
+   UInt x = 0;
+   switch (rd) {
+      case 1:  /* x = SYNCI_StepSize() */
+         __asm__ __volatile__("rdhwr %0, $1\n\t" : "=r" (x) );
+         break;
+
+      default:
+         vassert(0);
+         break;
+   }
+   return x;
 }
 
-#if defined(__mips__) && ((defined(__mips_isa_rev) && __mips_isa_rev >= 2))
 ULong mips64_dirtyhelper_rdhwr ( ULong rt, ULong rd )
 {
    ULong x = 0;
@@ -1094,6 +1106,153 @@ ULong mips64_dirtyhelper_rdhwr ( ULong rt, ULong rd )
    return x;
 }
 #endif
+
+#define ASM_VOLATILE_ROUND32(fs, inst)                              \
+   __asm__ volatile("cfc1    $t0, $31"  "\n\t"                      \
+                    "ctc1    %2,  $31"  "\n\t"                      \
+                    "mtc1    %1,  $f0"  "\n\t"                      \
+                    ""#inst" $f0, $f0"  "\n\t"                      \
+                    "cfc1    %0,  $31"  "\n\t"                      \
+                    "ctc1    $t0, $31"  "\n\t"                      \
+                    : "=r" (ret)                                    \
+                    : "r" (loVal), "r" (fcsr)                       \
+                    : "t0", "$f0", "$f1"                            \
+                   );
+
+#define ASM_VOLATILE_ROUND32_DOUBLE(fs, inst)                       \
+   __asm__ volatile("cfc1    $t0, $31"  "\n\t"                      \
+                    "ctc1    %3,  $31"  "\n\t"                      \
+                    "mtc1    %1,  $f0"  "\n\t"                      \
+                    "mtc1    %2,  $f1"  "\n\t"                      \
+                    ""#inst" $f0, $f0"  "\n\t"                      \
+                    "cfc1    %0,  $31"  "\n\t"                      \
+                    "ctc1    $t0, $31"  "\n\t"                      \
+                    : "=r" (ret)                                    \
+                    : "r" (loVal), "r" (hiVal), "r" (fcsr)          \
+                    : "t0", "$f0", "$f1"                            \
+                   );
+
+#define ASM_VOLATILE_ROUND64(fs, inst)                              \
+   __asm__ volatile("cfc1     $t0, $31"  "\n\t"                     \
+                    "ctc1     %2,  $31"  "\n\t"                     \
+                    "dmtc1    %1,  $f0"  "\n\t"                     \
+                    ""#inst"  $f0, $f0"  "\n\t"                     \
+                    "cfc1     %0,  $31"  "\n\t"                     \
+                    "ctc1     $t0, $31"  "\n\t"                     \
+                    : "=r" (ret)                                    \
+                    : "r" (addr[fs]), "r" (fcsr)                    \
+                    : "t0", "$f0"                                   \
+                   );
+
+/* TODO: Add cases for all fpu instructions because all fpu instructions are
+         change the value of FCSR register. */
+extern UInt mips_dirtyhelper_calculate_FCSR ( void* gs, UInt fs, flt_op inst )
+{
+   UInt ret = 0;
+#if defined(__mips__)
+#if defined(VGA_mips32)
+   VexGuestMIPS32State* guest_state = (VexGuestMIPS32State*)gs;
+   UInt *addr = (UInt *)&guest_state->guest_f0;
+   UInt loVal = addr[fs];
+   UInt hiVal = addr[fs+1];
+#define ASM_VOLATILE_ROUND(fs, inst)        ASM_VOLATILE_ROUND32(fs, inst)
+#define ASM_VOLATILE_ROUND_DOUBLE(fs, inst) ASM_VOLATILE_ROUND32_DOUBLE(fs, inst)
+#else
+   VexGuestMIPS64State* guest_state = (VexGuestMIPS64State*)gs;
+   ULong *addr = (ULong *)&guest_state->guest_f0;
+#define ASM_VOLATILE_ROUND(fs, inst)        ASM_VOLATILE_ROUND64(fs, inst)
+#define ASM_VOLATILE_ROUND_DOUBLE(fs, inst) ASM_VOLATILE_ROUND64(fs, inst)
+#endif
+   UInt fcsr = guest_state->guest_FCSR;
+   switch (inst) {
+      case ROUNDWD:
+         ASM_VOLATILE_ROUND_DOUBLE(fs, round.w.d)
+         break;
+      case FLOORWS:
+         ASM_VOLATILE_ROUND(fs, floor.w.s)
+         break;
+      case FLOORWD:
+         ASM_VOLATILE_ROUND_DOUBLE(fs, floor.w.d)
+         break;
+      case TRUNCWS:
+         ASM_VOLATILE_ROUND(fs, trunc.w.s)
+         break;
+      case TRUNCWD:
+         ASM_VOLATILE_ROUND_DOUBLE(fs, trunc.w.d)
+         break;
+      case CEILWS:
+         ASM_VOLATILE_ROUND(fs, ceil.w.s)
+         break;
+      case CEILWD:
+         ASM_VOLATILE_ROUND_DOUBLE(fs, ceil.w.d)
+         break;
+      case CVTDS:
+         ASM_VOLATILE_ROUND(fs, cvt.d.s)
+         break;
+      case CVTDW:
+         ASM_VOLATILE_ROUND(fs, cvt.d.w)
+         break;
+      case CVTSW:
+         ASM_VOLATILE_ROUND(fs, cvt.s.w)
+         break;
+      case CVTSD:
+         ASM_VOLATILE_ROUND_DOUBLE(fs, cvt.s.d)
+         break;
+      case CVTWS:
+         ASM_VOLATILE_ROUND(fs, cvt.w.s)
+         break;
+      case CVTWD:
+         ASM_VOLATILE_ROUND_DOUBLE(fs, cvt.w.d)
+         break;
+      case ROUNDWS:
+         ASM_VOLATILE_ROUND(fs, round.w.s)
+         break;
+#if ((__mips == 32) && defined(__mips_isa_rev) && (__mips_isa_rev >= 2)) \
+    || (__mips == 64)
+      case CEILLS:
+         ASM_VOLATILE_ROUND(fs, ceil.l.s)
+         break;
+      case CEILLD:
+         ASM_VOLATILE_ROUND_DOUBLE(fs, ceil.l.d)
+         break;
+      case CVTDL:
+         ASM_VOLATILE_ROUND_DOUBLE(fs, cvt.d.l)
+         break;
+      case CVTLS:
+         ASM_VOLATILE_ROUND(fs, cvt.l.s)
+         break;
+      case CVTLD:
+         ASM_VOLATILE_ROUND_DOUBLE(fs, cvt.l.d)
+         break;
+      case CVTSL:
+         ASM_VOLATILE_ROUND_DOUBLE(fs, cvt.s.l)
+         break;
+      case FLOORLS:
+         ASM_VOLATILE_ROUND(fs, floor.l.s)
+         break;
+      case FLOORLD:
+         ASM_VOLATILE_ROUND_DOUBLE(fs, floor.l.d)
+         break;
+      case ROUNDLS:
+         ASM_VOLATILE_ROUND(fs, round.l.s)
+         break;
+      case ROUNDLD:
+         ASM_VOLATILE_ROUND_DOUBLE(fs, round.l.d)
+         break;
+      case TRUNCLS:
+         ASM_VOLATILE_ROUND(fs, trunc.l.s)
+         break;
+      case TRUNCLD:
+         ASM_VOLATILE_ROUND_DOUBLE(fs, trunc.l.d)
+         break;
+#endif
+      default:
+         vassert(0);
+         break;
+   }
+#endif
+   return ret;
+}
 
 /*---------------------------------------------------------------*/
 /*--- end                                guest_mips_helpers.c ---*/

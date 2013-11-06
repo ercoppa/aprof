@@ -8,7 +8,7 @@
    This file is part of MemCheck, a heavyweight Valgrind tool for
    detecting memory errors.
 
-   Copyright (C) 2000-2012 Julian Seward 
+   Copyright (C) 2000-2013 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -342,20 +342,25 @@ typedef
       LeakCheckMode mode;
       UInt show_leak_kinds;
       UInt errors_for_leak_kinds;
+      UInt heuristics;
       LeakCheckDeltaMode deltamode;
-      UInt max_loss_records_output;       // limit on the nr of loss records output.
+      UInt max_loss_records_output; // limit on the nr of loss records output.
       Bool requested_by_monitor_command; // True when requested by gdb/vgdb.
    }
    LeakCheckParams;
 
 void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckParams * lcp);
 
+// Each time a leak search is done, the leak search generation
+// MC_(leak_search_gen) is incremented.
+extern UInt MC_(leak_search_gen);
+
 // maintains the lcp.deltamode given in the last call to detect_memory_leaks
 extern LeakCheckDeltaMode MC_(detect_memory_leaks_last_delta_mode);
 
 // prints the list of blocks corresponding to the given loss_record_nr.
-// Returns True if loss_record_nr identifies a correct loss record from last leak search.
-// Returns False otherwise.
+// Returns True if loss_record_nr identifies a correct loss record from last
+// leak search, returns False otherwise.
 Bool MC_(print_block_list) ( UInt loss_record_nr);
 
 // Prints the addresses/registers/... at which a pointer to
@@ -397,12 +402,15 @@ UInt MC_(update_Error_extra) ( Error* err );
 Bool MC_(is_recognised_suppression) ( const HChar* name, Supp* su );
 
 Bool MC_(read_extra_suppression_info) ( Int fd, HChar** buf,
-                                        SizeT* nBuf, Supp *su );
+                                        SizeT* nBuf, Int* lineno, Supp *su );
 
 Bool MC_(error_matches_suppression) ( Error* err, Supp* su );
 
 Bool MC_(get_extra_suppression_info) ( Error* err,
                                        /*OUT*/HChar* buf, Int nBuf );
+Bool MC_(print_extra_suppression_use) ( Supp* su,
+                                        /*OUT*/HChar* buf, Int nBuf );
+void MC_(update_extra_suppression_use) ( Error* err, Supp* su );
 
 const HChar* MC_(get_error_name) ( Error* err );
 
@@ -494,6 +502,39 @@ extern UInt MC_(clo_show_leak_kinds);
    Default : R2S(Possible) | R2S(Unreached). */
 extern UInt MC_(clo_errors_for_leak_kinds);
 
+/* Various leak check heuristics which can be activated/deactivated. */
+typedef 
+   enum {
+      LchNone                =0,
+      // no heuristic.
+      LchStdString           =1,
+      // Consider interior pointer pointing at the array of char in a
+      // std::string as reachable.
+      LchNewArray            =2,
+      // Consider interior pointer pointing at second word of a new[] array as
+      // reachable. Such interior pointers are used for arrays whose elements
+      // have a destructor.
+      LchMultipleInheritance =3,
+      // Conside interior pointer pointing just after what looks a vtable
+      // as reachable.
+  }
+  LeakCheckHeuristic;
+
+// Nr of heuristics, including the LchNone heuristic.
+#define N_LEAK_CHECK_HEURISTICS 4
+
+// Build mask to check or set Heuristic h membership
+#define H2S(h) (1 << (h))
+// CppHeuristic h is member of the Set s ?
+#define HiS(h,s) ((s) & R2S(h))
+// A set with all Heuristics:
+#define HallS \
+   (H2S(LchStdString) | H2S(LchNewArray) | H2S(LchMultipleInheritance))
+
+/* Heuristics set to use for the leak search.
+   Default : no heuristic. */
+extern UInt MC_(clo_leak_check_heuristics);
+
 /* Assume accesses immediately below %esp are due to gcc-2.96 bugs.
  * default: NO */
 extern Bool MC_(clo_workaround_gcc296_bugs);
@@ -578,15 +619,19 @@ VG_REGPARM(2) void MC_(helperc_STOREV32be) ( Addr, UWord );
 VG_REGPARM(2) void MC_(helperc_STOREV32le) ( Addr, UWord );
 VG_REGPARM(2) void MC_(helperc_STOREV16be) ( Addr, UWord );
 VG_REGPARM(2) void MC_(helperc_STOREV16le) ( Addr, UWord );
-VG_REGPARM(2) void MC_(helperc_STOREV8)   ( Addr, UWord );
+VG_REGPARM(2) void MC_(helperc_STOREV8)    ( Addr, UWord );
 
-VG_REGPARM(1) ULong MC_(helperc_LOADV64be) ( Addr );
-VG_REGPARM(1) ULong MC_(helperc_LOADV64le) ( Addr );
-VG_REGPARM(1) UWord MC_(helperc_LOADV32be) ( Addr );
-VG_REGPARM(1) UWord MC_(helperc_LOADV32le) ( Addr );
-VG_REGPARM(1) UWord MC_(helperc_LOADV16be) ( Addr );
-VG_REGPARM(1) UWord MC_(helperc_LOADV16le) ( Addr );
-VG_REGPARM(1) UWord MC_(helperc_LOADV8)    ( Addr );
+VG_REGPARM(2) void  MC_(helperc_LOADV256be) ( /*OUT*/V256*, Addr );
+VG_REGPARM(2) void  MC_(helperc_LOADV256le) ( /*OUT*/V256*, Addr );
+VG_REGPARM(2) void  MC_(helperc_LOADV128be) ( /*OUT*/V128*, Addr );
+VG_REGPARM(2) void  MC_(helperc_LOADV128le) ( /*OUT*/V128*, Addr );
+VG_REGPARM(1) ULong MC_(helperc_LOADV64be)  ( Addr );
+VG_REGPARM(1) ULong MC_(helperc_LOADV64le)  ( Addr );
+VG_REGPARM(1) UWord MC_(helperc_LOADV32be)  ( Addr );
+VG_REGPARM(1) UWord MC_(helperc_LOADV32le)  ( Addr );
+VG_REGPARM(1) UWord MC_(helperc_LOADV16be)  ( Addr );
+VG_REGPARM(1) UWord MC_(helperc_LOADV16le)  ( Addr );
+VG_REGPARM(1) UWord MC_(helperc_LOADV8)     ( Addr );
 
 void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len,
                                                  Addr nia );

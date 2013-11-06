@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Julian Seward
+   Copyright (C) 2000-2013 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -47,7 +47,7 @@
    portable way to avoid using stdarg.h. */
 #include <stdarg.h>
 
-#include "pub_tool_basics.h"  /* For definition of VG_ macro */
+#include "pub_core_basics.h"  /* For definition of VG_ macro */
 
 /* There are no tool-visible exports from m_debuglog, hence no header
    file for it. */

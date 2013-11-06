@@ -104,7 +104,8 @@ PRE(memory_op)
    }
    case VKI_XENMEM_increase_reservation:
    case VKI_XENMEM_decrease_reservation:
-   case VKI_XENMEM_populate_physmap: {
+   case VKI_XENMEM_populate_physmap:
+   case VKI_XENMEM_claim_pages: {
       struct xen_memory_reservation *memory_reservation =
          (struct xen_memory_reservation *)ARG2;
       const HChar *which;
@@ -124,6 +125,9 @@ PRE(memory_op)
          PRE_MEM_READ(which,
                       (Addr)memory_reservation->extent_start.p,
                       sizeof(vki_xen_pfn_t) * memory_reservation->nr_extents);
+         break;
+      case VKI_XENMEM_claim_pages:
+         which = "XENMEM_claim_pages";
          break;
       default:
          which = "XENMEM_unknown";
@@ -147,6 +151,10 @@ PRE(memory_op)
                    sizeof(memory_reservation->domid));
       break;
    }
+
+   case VKI_XENMEM_get_sharing_freed_pages:
+   case VKI_XENMEM_get_sharing_shared_pages:
+      break;
 
    default:
       bad_subop(tid, layout, arrghs, status, flags,
@@ -354,6 +362,7 @@ PRE(sysctl) {
    {
    case 0x00000008:
    case 0x00000009:
+   case 0x0000000a:
 	   break;
    default:
       VG_(dmsg)("WARNING: sysctl version %"PRIx32" not supported\n",
@@ -394,6 +403,10 @@ PRE(sysctl) {
 	 break;
       }
       break;
+
+   case VKI_XEN_SYSCTL_sched_id:
+       /* No inputs */
+       break;
 
    case VKI_XEN_SYSCTL_cpupool_op:
       PRE_XEN_SYSCTL_READ(cpupool_op, op);
@@ -470,6 +483,7 @@ PRE(domctl)
    {
    case 0x00000007:
    case 0x00000008:
+   case 0x00000009:
 	   break;
    default:
       VG_(dmsg)("WARNING: domctl version %"PRIx32" not supported\n",
@@ -567,7 +581,17 @@ PRE(domctl)
       __PRE_XEN_DOMCTL_READ(setvcpuaffinity, vcpuaffinity, vcpu);
       PRE_MEM_READ("XEN_DOMCTL_setvcpuaffinity u.vcpuaffinity.cpumap.bitmap",
                    (Addr)domctl->u.vcpuaffinity.cpumap.bitmap.p,
-                   domctl->u.vcpuaffinity.cpumap.nr_cpus / 8);
+                   domctl->u.vcpuaffinity.cpumap.nr_bits / 8);
+      break;
+
+   case VKI_XEN_DOMCTL_getnodeaffinity:
+      __PRE_XEN_DOMCTL_READ(nodeaffinity, nodeaffinity, nodemap.nr_bits);
+      break;
+   case VKI_XEN_DOMCTL_setnodeaffinity:
+      __PRE_XEN_DOMCTL_READ(nodeaffinity, nodeaffinity, nodemap.nr_bits);
+      PRE_MEM_READ("XEN_DOMCTL_setnodeaffinity u.nodeaffinity.cpumap.bitmap",
+                   (Addr)domctl->u.nodeaffinity.nodemap.bitmap.p,
+                   domctl->u.nodeaffinity.nodemap.nr_bits / 8);
       break;
 
    case VKI_XEN_DOMCTL_getvcpucontext:
@@ -640,6 +664,7 @@ POST(memory_op)
    switch (ARG1) {
    case VKI_XENMEM_set_memory_map:
    case VKI_XENMEM_decrease_reservation:
+   case VKI_XENMEM_claim_pages:
       /* No outputs */
       break;
    case VKI_XENMEM_increase_reservation:
@@ -651,6 +676,11 @@ POST(memory_op)
                      sizeof(vki_xen_pfn_t) * memory_reservation->nr_extents);
       break;
    }
+
+   case VKI_XENMEM_get_sharing_freed_pages:
+   case VKI_XENMEM_get_sharing_shared_pages:
+       /* No outputs */
+       break;
    }
 }
 
@@ -743,6 +773,7 @@ POST(sysctl)
    {
    case 0x00000008:
    case 0x00000009:
+   case 0x0000000a:
 	   break;
    default:
       return;
@@ -773,6 +804,10 @@ POST(sysctl)
       }
       break;
 
+   case VKI_XEN_SYSCTL_sched_id:
+       POST_XEN_SYSCTL_WRITE(sched_id, sched_id);
+       break;
+
    case VKI_XEN_SYSCTL_cpupool_op:
       if (sysctl->u.cpupool_op.op == VKI_XEN_SYSCTL_CPUPOOL_OP_CREATE ||
           sysctl->u.cpupool_op.op == VKI_XEN_SYSCTL_CPUPOOL_OP_INFO)
@@ -787,18 +822,39 @@ POST(sysctl)
       break;
 
    case VKI_XEN_SYSCTL_physinfo:
-      POST_XEN_SYSCTL_WRITE(physinfo, threads_per_core);
-      POST_XEN_SYSCTL_WRITE(physinfo, cores_per_socket);
-      POST_XEN_SYSCTL_WRITE(physinfo, nr_cpus);
-      POST_XEN_SYSCTL_WRITE(physinfo, max_cpu_id);
-      POST_XEN_SYSCTL_WRITE(physinfo, nr_nodes);
-      POST_XEN_SYSCTL_WRITE(physinfo, max_node_id);
-      POST_XEN_SYSCTL_WRITE(physinfo, cpu_khz);
-      POST_XEN_SYSCTL_WRITE(physinfo, total_pages);
-      POST_XEN_SYSCTL_WRITE(physinfo, free_pages);
-      POST_XEN_SYSCTL_WRITE(physinfo, scrub_pages);
-      POST_XEN_SYSCTL_WRITE(physinfo, hw_cap[8]);
-      POST_XEN_SYSCTL_WRITE(physinfo, capabilities);
+      switch (sysctl->interface_version)
+      {
+      case 0x00000008:
+      case 0x00000009: /* Unchanged from version 8 */
+         POST_XEN_SYSCTL_WRITE(physinfo_00000008, threads_per_core);
+         POST_XEN_SYSCTL_WRITE(physinfo_00000008, cores_per_socket);
+         POST_XEN_SYSCTL_WRITE(physinfo_00000008, nr_cpus);
+         POST_XEN_SYSCTL_WRITE(physinfo_00000008, max_cpu_id);
+         POST_XEN_SYSCTL_WRITE(physinfo_00000008, nr_nodes);
+         POST_XEN_SYSCTL_WRITE(physinfo_00000008, max_node_id);
+         POST_XEN_SYSCTL_WRITE(physinfo_00000008, cpu_khz);
+         POST_XEN_SYSCTL_WRITE(physinfo_00000008, total_pages);
+         POST_XEN_SYSCTL_WRITE(physinfo_00000008, free_pages);
+         POST_XEN_SYSCTL_WRITE(physinfo_00000008, scrub_pages);
+         POST_XEN_SYSCTL_WRITE(physinfo_00000008, hw_cap[8]);
+         POST_XEN_SYSCTL_WRITE(physinfo_00000008, capabilities);
+         break;
+      case 0x0000000a:
+         POST_XEN_SYSCTL_WRITE(physinfo_0000000a, threads_per_core);
+         POST_XEN_SYSCTL_WRITE(physinfo_0000000a, cores_per_socket);
+         POST_XEN_SYSCTL_WRITE(physinfo_0000000a, nr_cpus);
+         POST_XEN_SYSCTL_WRITE(physinfo_0000000a, max_cpu_id);
+         POST_XEN_SYSCTL_WRITE(physinfo_0000000a, nr_nodes);
+         POST_XEN_SYSCTL_WRITE(physinfo_0000000a, max_node_id);
+         POST_XEN_SYSCTL_WRITE(physinfo_0000000a, cpu_khz);
+         POST_XEN_SYSCTL_WRITE(physinfo_0000000a, total_pages);
+         POST_XEN_SYSCTL_WRITE(physinfo_0000000a, free_pages);
+         POST_XEN_SYSCTL_WRITE(physinfo_0000000a, scrub_pages);
+         POST_XEN_SYSCTL_WRITE(physinfo_0000000a, outstanding_pages);
+         POST_XEN_SYSCTL_WRITE(physinfo_0000000a, hw_cap[8]);
+         POST_XEN_SYSCTL_WRITE(physinfo_0000000a, capabilities);
+         break;
+      }
       break;
 
    case VKI_XEN_SYSCTL_topologyinfo:
@@ -834,6 +890,7 @@ POST(domctl){
    switch (domctl->interface_version) {
    case 0x00000007:
    case 0x00000008:
+   case 0x00000009:
 	   break;
    default:
 	   return;
@@ -855,6 +912,7 @@ POST(domctl){
    case VKI_XEN_DOMCTL_hypercall_init:
    case VKI_XEN_DOMCTL_setvcpuaffinity:
    case VKI_XEN_DOMCTL_setvcpucontext:
+   case VKI_XEN_DOMCTL_setnodeaffinity:
    case VKI_XEN_DOMCTL_set_cpuid:
    case VKI_XEN_DOMCTL_unpausedomain:
       /* No output fields */
@@ -908,7 +966,12 @@ POST(domctl){
 
    case VKI_XEN_DOMCTL_getvcpuaffinity:
       POST_MEM_WRITE((Addr)domctl->u.vcpuaffinity.cpumap.bitmap.p,
-                     domctl->u.vcpuaffinity.cpumap.nr_cpus / 8);
+                     domctl->u.vcpuaffinity.cpumap.nr_bits / 8);
+      break;
+
+   case VKI_XEN_DOMCTL_getnodeaffinity:
+      POST_MEM_WRITE((Addr)domctl->u.nodeaffinity.nodemap.bitmap.p,
+                     domctl->u.nodeaffinity.nodemap.nr_bits / 8);
       break;
 
    case VKI_XEN_DOMCTL_getdomaininfo:
@@ -941,6 +1004,22 @@ POST(domctl){
 	 POST_XEN_DOMCTL_WRITE(getdomaininfo_00000008, ssidref);
 	 POST_XEN_DOMCTL_WRITE(getdomaininfo_00000008, handle);
 	 POST_XEN_DOMCTL_WRITE(getdomaininfo_00000008, cpupool);
+      break;
+      case 0x00000009:
+	 POST_XEN_DOMCTL_WRITE(getdomaininfo_00000009, domain);
+	 POST_XEN_DOMCTL_WRITE(getdomaininfo_00000009, flags);
+	 POST_XEN_DOMCTL_WRITE(getdomaininfo_00000009, tot_pages);
+	 POST_XEN_DOMCTL_WRITE(getdomaininfo_00000009, max_pages);
+	 POST_XEN_DOMCTL_WRITE(getdomaininfo_00000009, outstanding_pages);
+	 POST_XEN_DOMCTL_WRITE(getdomaininfo_00000009, shr_pages);
+	 POST_XEN_DOMCTL_WRITE(getdomaininfo_00000009, paged_pages);
+	 POST_XEN_DOMCTL_WRITE(getdomaininfo_00000009, shared_info_frame);
+	 POST_XEN_DOMCTL_WRITE(getdomaininfo_00000009, cpu_time);
+	 POST_XEN_DOMCTL_WRITE(getdomaininfo_00000009, nr_online_vcpus);
+	 POST_XEN_DOMCTL_WRITE(getdomaininfo_00000009, max_vcpu_id);
+	 POST_XEN_DOMCTL_WRITE(getdomaininfo_00000009, ssidref);
+	 POST_XEN_DOMCTL_WRITE(getdomaininfo_00000009, handle);
+	 POST_XEN_DOMCTL_WRITE(getdomaininfo_00000009, cpupool);
       break;
       }
       break;

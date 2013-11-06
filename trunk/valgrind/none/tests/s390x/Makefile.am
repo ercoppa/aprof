@@ -11,7 +11,7 @@ INSN_TESTS = clc clcle cvb cvd icm lpr tcxb lam_stam xc mvst add sub mul \
              ex_sig ex_clone cu14 cu14_1 cu41 fpconv ecag fpext fpext_warn \
              rounding-1 rounding-2 rounding-3 rounding-4 rounding-5 bfp-1 \
              bfp-2 bfp-3 bfp-4 srnm srnmb comp-1 comp-2 exrl tmll tm stmg \
-	     ex clst mvc test_clone test_fork test_sig rounding-6 \
+	     ex clst mvc test_fork test_sig rounding-6 \
 	     spechelper-alr spechelper-algr \
 	     spechelper-slr spechelper-slgr \
 	     spechelper-cr  spechelper-clr  \
@@ -26,16 +26,14 @@ check_PROGRAMS = $(INSN_TESTS) \
 		 allexec \
 		 op00
 
-DIST_INSN_TESTS = $(INSN_TESTS) dfp-1
-
 EXTRA_DIST = \
-	$(addsuffix .stderr.exp,$(DIST_INSN_TESTS)) \
-	$(addsuffix .stdout.exp,$(DIST_INSN_TESTS)) \
-	$(addsuffix .vgtest,$(DIST_INSN_TESTS)) \
+	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
+	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
+	$(addsuffix .vgtest,$(INSN_TESTS)) \
 	ecag.stdout.exp-z10ec ecag.stdout.exp-z196 ecag.stdout.exp-zec12 \
 	op00.stderr.exp1 op00.stderr.exp2 op00.vgtest \
 	fpext_fail.vgtest fpext_fail.stderr.exp fpext_fail.stdout.exp \
-	test.h opcodes.h add.h  and.h  div.h  insert.h \
+	test.h opcodes.h add.h  and.h  div.h  insert.h dfp_utils.h \
 	mul.h  or.h  sub.h  xor.h table.h svc.h rounding.h \
 	dfp-1.stderr.exp dfp-1.stdout.exp dfp-1.vgtest \
 	dfp-2.stderr.exp dfp-2.stdout.exp dfp-2.vgtest \

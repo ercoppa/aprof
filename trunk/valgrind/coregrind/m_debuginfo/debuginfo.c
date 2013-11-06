@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Julian Seward 
+   Copyright (C) 2000-2013 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -51,6 +51,7 @@
 #include "pub_core_ume.h"
 
 #include "priv_misc.h"           /* dinfo_zalloc/free */
+#include "priv_image.h"
 #include "priv_d3basics.h"       /* ML_(pp_GX) */
 #include "priv_tytypes.h"
 #include "priv_storage.h"
@@ -3768,6 +3769,16 @@ Addr VG_(DebugInfo_get_text_avma)(const DebugInfo* di)
 SizeT VG_(DebugInfo_get_text_size)(const DebugInfo* di)
 {
    return di->text_present ? di->text_size : 0; 
+}
+
+Addr VG_(DebugInfo_get_bss_avma)(const DebugInfo* di)
+{
+   return di->bss_present ? di->bss_avma : 0; 
+}
+
+SizeT VG_(DebugInfo_get_bss_size)(const DebugInfo* di)
+{
+   return di->bss_present ? di->bss_size : 0; 
 }
 
 Addr VG_(DebugInfo_get_plt_avma)(const DebugInfo* di)

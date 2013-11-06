@@ -237,21 +237,27 @@ re-run, passing the <option>-v</option> option to Valgrind.  A second
 
     <para><computeroutput>valgrind-listener</computeroutput> accepts two
     command-line options:</para>
-    <itemizedlist>
-       <listitem>
-         <para><option>-e</option> or <option>--exit-at-zero</option>: 
-         when the number of connected processes falls back to zero,
-         exit.  Without this, it will run forever, that is, until you
-         send it Control-C.</para>
-       </listitem>
-       <listitem>
-        <para><option>portnumber</option>: changes the port it listens
-        on from the default (1500).  The specified port must be in the
-        range 1024 to 65535.  The same restriction applies to port
-        numbers specified by a <option>--log-socket</option> to
-        Valgrind itself.</para>
-      </listitem>
-    </itemizedlist>
+    <!-- start of xi:include in the manpage -->
+    <variablelist id="listener.opts.list">
+       <varlistentry>
+         <term><option>-e --exit-at-zero</option></term>
+         <listitem>
+           <para>When the number of connected processes falls back to zero,
+           exit.  Without this, it will run forever, that is, until you
+           send it Control-C.</para>
+         </listitem>
+       </varlistentry>
+       <varlistentry>
+        <term><option>portnumber</option></term>
+        <listitem>
+          <para>Changes the port it listens on from the default (1500).
+          The specified port must be in the range 1024 to 65535.
+          The same restriction applies to port numbers specified by a
+          <option>--log-socket</option> to Valgrind itself.</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+    <!-- end of xi:include in the manpage -->
 
     <para>If a Valgrinded process fails to connect to a listener, for
     whatever reason (the listener isn't running, invalid or unreachable
@@ -378,14 +384,17 @@ suppression mechanism is designed to allow precise yet flexible
 specification of errors to suppress.</para>
 
 <para>If you use the <option>-v</option> option, at the end of execution,
-Valgrind prints out one line for each used suppression, giving its name
-and the number of times it got used.  Here's the suppressions used by a
-run of <computeroutput>valgrind --tool=memcheck ls -l</computeroutput>:</para>
+Valgrind prints out one line for each used suppression, giving the number of times
+it got used, its name and the filename and line number where the suppression is
+defined. Depending on the suppression kind, the filename and line number are optionally
+followed by additional information (such as the number of blocks and bytes suppressed
+by a memcheck leak suppression). Here's the suppressions used by a
+run of <computeroutput>valgrind -v --tool=memcheck ls -l</computeroutput>:</para>
 
 <programlisting><![CDATA[
---27579-- supp: 1 socketcall.connect(serv_addr)/__libc_connect/__nscd_getgrgid_r
---27579-- supp: 1 socketcall.connect(serv_addr)/__libc_connect/__nscd_getpwuid_r
---27579-- supp: 6 strrchr/_dl_map_object_from_fd/_dl_map_object]]></programlisting>
+--1610-- used_suppression:      2 dl-hack3-cond-1 /usr/lib/valgrind/default.supp:1234
+--1610-- used_suppression:      2 glibc-2.5.x-on-SUSE-10.2-(PPC)-2a /usr/lib/valgrind/default.supp:1234
+]]></programlisting>
 
 <para>Multiple suppressions files are allowed.  By default, Valgrind
 uses <filename>$PREFIX/lib/valgrind/default.supp</filename>.  You can
@@ -1835,11 +1844,35 @@ need to use them.</para>
       A value of 1 will cause stack traces of simple recursive algorithms
       (for example, a factorial implementation) to be collapsed.
       A value of 2 will usually be needed to collapsed stack traces produced
-      by recursive algorithms such binary trees, quick sort, ...
+      by recursive algorithms such as binary trees, quick sort, ...
       Higher values might be needed for more complex recursive algorithms.
       </para>
       <para>Note: recursive calls are detected based on program counters.
       The cycles are not detected based on function names. </para>
+   </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.num-transtab-sectors" xreflabel="--num-transtab-sectors">
+    <term>
+      <option><![CDATA[--num-transtab-sectors=<number> [default: 6 or 16] ]]></option>
+    </term>
+    <listitem>
+      <para>Valgrind translates and instruments your program's machine
+      code in small fragments. The translations are stored in a
+      translation cache that is divided into a number of sections
+      (sectors). If the cache is full, the sector containing the
+      oldest translations is emptied and recycled. If these old
+      translations are needed again, Valgrind must re-translate and
+      re-instrument the corresponding program code, which is
+      expensive.  If the "executed instructions" working set of a
+      program is big, increasing the number of sectors may improve
+      performance by reducing the number of re-translations needed.
+      Sectors are allocated on demand.  Once allocated, a sector can
+      never be freed, and occupies considerable space, depending on the tool
+      (about 40 MB per sector for Memcheck).  Use the
+      option <option>--stats=yes</option> to obtain precise
+      information about the memory used by a sector and the allocation
+      and recycling of sectors.</para>
    </listitem>
   </varlistentry>
 

@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2005-2012 Nicholas Nethercote
+   Copyright (C) 2005-2013 Nicholas Nethercote
       njn@valgrind.org
 
    This program is free software; you can redistribute it and/or
@@ -80,7 +80,7 @@
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_oset.h"
-#include "pub_tool_poolalloc.h"
+#include "pub_core_poolalloc.h"
 
 /*--------------------------------------------------------------------*/
 /*--- Types and constants                                          ---*/
@@ -864,8 +864,7 @@ Bool VG_(OSetWord_Next)(AvlTree* t, UWord* val)
 // function supplied to VG_(OSetGen_Create).
 void VG_(OSetGen_ResetIterAt)(AvlTree* oset, const void* k)
 {
-   Int     i;
-   AvlNode *n, *t;
+   AvlNode *t;
    Word    cmpresS; /* signed */
    UWord   cmpresU; /* unsigned */
 
@@ -875,7 +874,6 @@ void VG_(OSetGen_ResetIterAt)(AvlTree* oset, const void* k)
    if (!oset->root)
       return;
 
-   n = NULL;
    // We need to do regular search and fill in the stack.
    t = oset->root;
 
@@ -909,13 +907,6 @@ void VG_(OSetGen_ResetIterAt)(AvlTree* oset, const void* k)
          stackPush(oset, t, 2);
       }
       t = cmpresU==0 ? t->left : t->right;
-   }
-   if (stackPop(oset, &n, &i)) {
-      // If we've pushed something to stack and did not find the exact key,
-      // we must fix the top element of stack.
-      vg_assert(i == 2);
-      stackPush(oset, n, 3);
-      // the stack looks like {2, 2, ..., 2, 3}
    }
 }
 

@@ -9,7 +9,7 @@
    This file is part of LibHB, a library for implementing and checking
    the happens-before relationship in concurrent programs.
 
-   Copyright (C) 2008-2012 OpenWorks Ltd
+   Copyright (C) 2008-2013 OpenWorks Ltd
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
@@ -6492,7 +6492,7 @@ static inline Bool TRACEME(Addr a, SizeT szB) {
    if (XXX2 && a <= XXX2 && XXX2 <= a+szB) return True;
    return False;
 }
-static void trace ( Thr* thr, Addr a, SizeT szB, const const HChar* s ) 
+static void trace ( Thr* thr, Addr a, SizeT szB, const HChar* s ) 
 {
   SVal sv = zsm_sread08(a);
   VG_(printf)("thr %p (%#lx,%lu) %s: 0x%016llx ", thr,a,szB,s,sv);

@@ -3,7 +3,7 @@ general valgrind monitor commands:
   v.wait [<ms>]           : sleep <ms> (default 0) then continue
   v.info all_errors       : show all errors found so far
   v.info last_error       : show last error found
-  v.info n_errs_found     : show the nr of errors found so far
+  v.info n_errs_found [msg] : show the nr of errors found so far and the given msg
   v.info open_fds         : show open file descriptors (only if --track-fds=yes)
   v.kill                  : kill the Valgrind process
   v.set gdb_output        : set valgrind output to gdb
@@ -25,10 +25,12 @@ memcheck monitor commands:
             and outputs a description of <addr>
   leak_check [full*|summary]
                 [kinds kind1,kind2,...|reachable|possibleleak*|definiteleak]
+                [heuristics heur1,heur2,...]
                 [increased*|changed|any]
                 [unlimited*|limited <max_loss_records_output>]
             * = defaults
-        where kind is one of definite indirect possible reachable all none
+       where kind is one of definite indirect possible reachable all none
+       where heur is one of stdstring newarray multipleinheritance all none*
         Examples: leak_check
                   leak_check summary any
                   leak_check full kinds indirect,possible
@@ -45,7 +47,7 @@ general valgrind monitor commands:
   v.wait [<ms>]           : sleep <ms> (default 0) then continue
   v.info all_errors       : show all errors found so far
   v.info last_error       : show last error found
-  v.info n_errs_found     : show the nr of errors found so far
+  v.info n_errs_found [msg] : show the nr of errors found so far and the given msg
   v.info open_fds         : show open file descriptors (only if --track-fds=yes)
   v.kill                  : kill the Valgrind process
   v.set gdb_output        : set valgrind output to gdb
@@ -78,10 +80,12 @@ memcheck monitor commands:
             and outputs a description of <addr>
   leak_check [full*|summary]
                 [kinds kind1,kind2,...|reachable|possibleleak*|definiteleak]
+                [heuristics heur1,heur2,...]
                 [increased*|changed|any]
                 [unlimited*|limited <max_loss_records_output>]
             * = defaults
-        where kind is one of definite indirect possible reachable all none
+       where kind is one of definite indirect possible reachable all none
+       where heur is one of stdstring newarray multipleinheritance all none*
         Examples: leak_check
                   leak_check summary any
                   leak_check full kinds indirect,possible

@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Julian Seward
+   Copyright (C) 2000-2013 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -30,6 +30,8 @@
 
 #ifndef __PUB_TOOL_DEBUGINFO_H
 #define __PUB_TOOL_DEBUGINFO_H
+
+#include "pub_tool_basics.h"   // VG_ macro
 
 /*====================================================================*/
 /*=== Obtaining debug information                                  ===*/
@@ -184,6 +186,8 @@ DebugInfo* VG_(find_DebugInfo) ( Addr a );
 /* Fish bits out of DebugInfos. */
 Addr          VG_(DebugInfo_get_text_avma)   ( const DebugInfo *di );
 SizeT         VG_(DebugInfo_get_text_size)   ( const DebugInfo *di );
+Addr          VG_(DebugInfo_get_bss_avma)    ( const DebugInfo *di );
+SizeT         VG_(DebugInfo_get_bss_size)    ( const DebugInfo *di );
 Addr          VG_(DebugInfo_get_plt_avma)    ( const DebugInfo *di );
 SizeT         VG_(DebugInfo_get_plt_size)    ( const DebugInfo *di );
 Addr          VG_(DebugInfo_get_gotplt_avma) ( const DebugInfo *di );

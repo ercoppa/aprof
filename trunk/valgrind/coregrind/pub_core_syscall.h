@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Julian Seward
+   Copyright (C) 2000-2013 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -30,6 +30,8 @@
 
 #ifndef __PUB_CORE_SYSCALL_H
 #define __PUB_CORE_SYSCALL_H
+
+#include "pub_core_basics.h"   // VG_ macro
 
 //--------------------------------------------------------------------
 // PURPOSE: This module contains the code for actually executing syscalls.

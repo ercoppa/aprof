@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2011-2012 Philippe Waroquiers
+   Copyright (C) 2011-2013 Philippe Waroquiers
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -31,6 +31,7 @@
 #define __PUB_CORE_GDBSERVER_H
 
 #include "pub_tool_gdbserver.h"
+#include "pub_core_threadstate.h"   // VgSchedReturnCode
 
 /* Return the path prefix for the named pipes (FIFOs) used by vgdb/gdb
    to communicate with valgrind */

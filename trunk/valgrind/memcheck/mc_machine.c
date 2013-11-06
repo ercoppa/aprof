@@ -9,7 +9,7 @@
    This file is part of MemCheck, a heavyweight Valgrind tool for
    detecting memory errors.
 
-   Copyright (C) 2008-2012 OpenWorks Ltd
+   Copyright (C) 2008-2013 OpenWorks Ltd
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
@@ -817,7 +817,9 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(EMNOTE) && sz == 4) return -1;
 
    if (o == GOF(CC_OP)    && sz == 8) return -1;
-   if (o == GOF(CC_DEP1)  && sz == 8) return o;
+   /* We access CC_DEP1 either fully or bits [0:31] */
+   if (o == GOF(CC_DEP1)  && (sz == 8 || sz ==4))
+      return o;
    if (o == GOF(CC_DEP2)  && sz == 8) return o;
    if (o == GOF(CC_NDEP)  && sz == 8) return -1;
    if (o == GOF(TISTART)  && sz == 8) return -1;
@@ -1058,7 +1060,15 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o >= GOF(f30) && o+sz <= GOF(f30)+SZB(f30)) return GOF(f30);
    if (o >= GOF(f31) && o+sz <= GOF(f31)+SZB(f31)) return GOF(f31);
 
-   if ((o > GOF(NRADDR)) && (o <= GOF(NRADDR) +12 )) return -1; /*padding registers*/
+   /* Slot unused. */ 
+   if ((o > GOF(NRADDR)) && (o <= GOF(NRADDR) +12 )) return -1;
+
+   /* MIPS32 DSP ASE(r2) specific registers. */
+   if (o == GOF(DSPControl)  && sz == 4) return o;
+   if (o == GOF(ac0)  && sz == 8) return o;
+   if (o == GOF(ac1)  && sz == 8) return o;
+   if (o == GOF(ac2)  && sz == 8) return o;
+   if (o == GOF(ac3)  && sz == 8) return o;
 
    VG_(printf)("MC_(get_otrack_shadow_offset)(mips)(off=%d,sz=%d)\n",
                offset,szB);

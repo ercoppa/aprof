@@ -59,7 +59,7 @@
 #include "pub_core_xarray.h"
 #include "pub_core_clientstate.h"  /* VG_(brk_base), VG_(brk_limit) */
 #include "pub_core_errormgr.h"
-#include "pub_tool_gdbserver.h"    /* VG_(gdbserver) */
+#include "pub_core_gdbserver.h"    /* VG_(gdbserver) */
 #include "pub_core_libcfile.h"
 #include "pub_core_machine.h"      /* VG_(get_SP) */
 #include "pub_core_mallocfree.h"
@@ -398,11 +398,11 @@ PRE(sys_sysfs)
 /* Very much MIPS specific */
 PRE(sys_cacheflush)
 {
-   PRINT("cacheflush (%lx, %#lx, %#lx)", ARG1, ARG2, ARG3);
-   PRE_REG_READ3(long, "cacheflush", void *, addrlow, void *, addrhigh,
-                 int, flags);
-   VG_(discard_translations)((Addr64) ARG1, ((ULong) ARG2) - ((ULong) ARG1) +
-                             1ULL /*paranoia */ , "PRE(sys_cacheflush)");
+   PRINT("cacheflush (%lx, %lx, %lx)", ARG1, ARG2, ARG3);
+   PRE_REG_READ3(long, "cacheflush", unsigned long, addr,
+                 int, nbytes, int, cache);
+   VG_ (discard_translations) ((Addr64) ARG1, ((ULong) ARG2),
+                               "PRE(sys_cacheflush)");
    SET_STATUS_Success(0);
 }
 
@@ -445,6 +445,9 @@ PRE(sys_ptrace)
       case VKI_PTRACE_SETSIGINFO:
          PRE_MEM_READ("ptrace(setsiginfo)", ARG4, sizeof(vki_siginfo_t));
          break;
+      case VKI_PTRACE_GETREGSET:
+         ML_(linux_PRE_getregset)(tid, ARG3, ARG4);
+         break;
       default:
         break;
    }
@@ -463,6 +466,9 @@ POST(sys_ptrace)
       break;
       case VKI_PTRACE_GETSIGINFO:
          POST_MEM_WRITE (ARG4, sizeof(vki_siginfo_t));
+         break;
+      case VKI_PTRACE_GETREGSET:
+         ML_(linux_POST_getregset)(tid, ARG3, ARG4);
          break;
       default:
       break;
@@ -913,7 +919,10 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_timerfd_create, sys_timerfd_create),
    LINXY (__NR_timerfd_gettime, sys_timerfd_gettime),
    LINXY (__NR_timerfd_settime, sys_timerfd_settime),
-   LINXY (__NR_newfstatat, sys_newfstatat)
+   LINXY (__NR_newfstatat, sys_newfstatat),
+   LINXY (__NR_prlimit64, sys_prlimit64),
+   LINXY (__NR_process_vm_readv, sys_process_vm_readv),
+   LINX_ (__NR_process_vm_writev, sys_process_vm_writev)
 };
 
 SyscallTableEntry * ML_(get_linux_syscall_entry) ( UInt sysno )

@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2012 OpenWorks LLP
+   Copyright (C) 2004-2013 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -224,12 +224,21 @@ void addHInstr ( HInstrArray* ha, HInstr* instr )
 
 void ppRetLoc ( RetLoc ska )
 {
-   switch (ska) {
-      case RetLocINVALID: vex_printf("RetLocINVALID"); return;
-      case RetLocNone:    vex_printf("RetLocNone");    return;
-      case RetLocInt:     vex_printf("RetLocInt");     return;
-      case RetLoc2Int:    vex_printf("RetLoc2Int");    return;
-      default:            vpanic("ppRetLoc");
+   switch (ska.pri) {
+      case RLPri_INVALID:
+         vex_printf("RLPri_INVALID"); return;
+      case RLPri_None:
+         vex_printf("RLPri_None");    return;
+      case RLPri_Int:
+         vex_printf("RLPri_Int");     return;
+      case RLPri_2Int:
+         vex_printf("RLPri_2Int");    return;
+      case RLPri_V128SpRel:
+         vex_printf("RLPri_V128SpRel(%d)", ska.spOff); return;
+      case RLPri_V256SpRel:
+         vex_printf("RLPri_V256SpRel(%d)", ska.spOff); return;
+      default:
+         vpanic("ppRetLoc");
    }
 }
 

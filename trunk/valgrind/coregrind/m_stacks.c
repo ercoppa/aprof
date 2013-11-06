@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Julian Seward 
+   Copyright (C) 2000-2013 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -36,6 +36,9 @@
 #include "pub_core_options.h"
 #include "pub_core_stacks.h"
 #include "pub_core_tooliface.h"
+
+// For expensive debugging
+#define EDEBUG(fmt, args...) //VG_(debugLog)(2, "stacks", fmt, ## args)
 
 /*
    The stack
@@ -307,8 +310,14 @@ static void complaints_stack_switch (Addr old_SP, Addr new_SP)
    These functions are performance critical, so are built with macros. */
 
 // preamble + check if stack has switched.
-#define IF_STACK_SWITCH_SET_current_task_AND_RETURN                     \
+#define IF_STACK_SWITCH_SET_current_stack_AND_RETURN                    \
    Word delta  = (Word)new_SP - (Word)old_SP;                           \
+                                                                        \
+   EDEBUG("current_stack  %p-%p %lu new_SP %p old_SP %p\n",             \
+          (void *) (current_stack ? current_stack->start : 0x0),        \
+          (void *) (current_stack ? current_stack->end : 0x0),          \
+          current_stack ? current_stack->id : 0,                        \
+          (void *)new_SP, (void *)old_SP);                              \
                                                                         \
    /* Check if the stack pointer is still in the same stack as before. */ \
    if (UNLIKELY(current_stack == NULL ||                                \
@@ -319,8 +328,13 @@ static void complaints_stack_switch (Addr old_SP, Addr new_SP)
          /* The stack pointer is now in another stack.  Update the current */ \
          /* stack information and return without doing anything else. */ \
          current_stack = new_stack;                                     \
+         EDEBUG("new current_stack  %p-%p %lu \n",                      \
+                (void *) current_stack->start,                          \
+                (void *) current_stack->end,                            \
+                current_stack->id);                                     \
          return;                                                        \
-      }                                                                 \
+      } else                                                            \
+         EDEBUG("new current_stack not found\n");                       \
    }
 
 #define IF_BIG_DELTA_complaints_AND_RETURN                              \
@@ -339,7 +353,7 @@ static void complaints_stack_switch (Addr old_SP, Addr new_SP)
   
 VG_REGPARM(3)
 void VG_(unknown_SP_update_w_ECU)( Addr old_SP, Addr new_SP, UInt ecu ) {
-   IF_STACK_SWITCH_SET_current_task_AND_RETURN;
+   IF_STACK_SWITCH_SET_current_stack_AND_RETURN;
    IF_BIG_DELTA_complaints_AND_RETURN;
    IF_SMALLER_STACK_die_mem_stack_AND_RETURN;
    if (delta < 0) { // IF_BIGGER_STACK
@@ -351,7 +365,7 @@ void VG_(unknown_SP_update_w_ECU)( Addr old_SP, Addr new_SP, UInt ecu ) {
 
 VG_REGPARM(2)
 void VG_(unknown_SP_update)( Addr old_SP, Addr new_SP ) {
-   IF_STACK_SWITCH_SET_current_task_AND_RETURN;
+   IF_STACK_SWITCH_SET_current_stack_AND_RETURN;
    IF_BIG_DELTA_complaints_AND_RETURN;
    IF_SMALLER_STACK_die_mem_stack_AND_RETURN;
    if (delta < 0) { // IF_BIGGER_STACK

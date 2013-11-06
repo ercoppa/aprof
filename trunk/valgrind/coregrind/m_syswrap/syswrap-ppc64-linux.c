@@ -7,8 +7,8 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2005-2012 Nicholas Nethercote <njn@valgrind.org>
-   Copyright (C) 2005-2012 Cerion Armour-Brown <cerion@open-works.co.uk>
+   Copyright (C) 2005-2013 Nicholas Nethercote <njn@valgrind.org>
+   Copyright (C) 2005-2013 Cerion Armour-Brown <cerion@open-works.co.uk>
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -890,7 +890,7 @@ static SyscallTableEntry syscall_table[] = {
 // _____(__NR_rt_sigpending,     sys_rt_sigpending),      // 175
    LINXY(__NR_rt_sigtimedwait,   sys_rt_sigtimedwait),    // 176
    LINXY(__NR_rt_sigqueueinfo,   sys_rt_sigqueueinfo),    // 177
-// _____(__NR_rt_sigsuspend,     sys_rt_sigsuspend),      // 178
+   LINX_(__NR_rt_sigsuspend,     sys_rt_sigsuspend),      // 178
    GENXY(__NR_pread64,           sys_pread64),            // 179
 
    GENX_(__NR_pwrite64,          sys_pwrite64),           // 180
@@ -927,10 +927,10 @@ static SyscallTableEntry syscall_table[] = {
 // _____(__NR_mincore,           sys_mincore),            // 206
    LINX_(__NR_gettid,            sys_gettid),             // 207
 // _____(__NR_tkill,             sys_tkill),              // 208
-// _____(__NR_setxattr,          sys_setxattr),           // 209
+   LINX_(__NR_setxattr,          sys_setxattr),           // 209
 
-// _____(__NR_lsetxattr,         sys_lsetxattr),          // 210
-// _____(__NR_fsetxattr,         sys_fsetxattr),          // 211
+   LINX_(__NR_lsetxattr,         sys_lsetxattr),          // 210
+   LINX_(__NR_fsetxattr,         sys_fsetxattr),          // 211
    LINXY(__NR_getxattr,          sys_getxattr),           // 212
    LINXY(__NR_lgetxattr,         sys_lgetxattr),          // 213
    LINXY(__NR_fgetxattr,         sys_fgetxattr),          // 214

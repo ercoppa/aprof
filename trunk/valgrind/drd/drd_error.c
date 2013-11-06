@@ -1,7 +1,7 @@
 /*
   This file is part of drd, a thread error detector.
 
-  Copyright (C) 2006-2012 Bart Van Assche <bvanassche@acm.org>.
+  Copyright (C) 2006-2013 Bart Van Assche <bvanassche@acm.org>.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
@@ -556,7 +556,7 @@ static Bool drd_is_recognized_suppression(const HChar* const name,
  */
 static
 Bool drd_read_extra_suppression_info(Int fd, HChar** bufpp,
-                                     SizeT* nBufp, Supp* supp)
+                                     SizeT* nBufp, Int* lineno, Supp* supp)
 {
    return True;
 }
@@ -608,6 +608,19 @@ Bool drd_get_extra_suppression_info(Error* e,
    return False;
 }
 
+static
+Bool drd_print_extra_suppression_use(Supp* su,
+                                     /*OUT*/HChar* buf, Int nBuf)
+{
+   return False;
+}
+
+static
+void  drd_update_extra_suppresion_use(Error* e, Supp* supp)
+{
+   return;
+}
+
 /** Tell the Valgrind core about DRD's error handlers. */
 void DRD_(register_error_handlers)(void)
 {
@@ -620,5 +633,7 @@ void DRD_(register_error_handlers)(void)
                           drd_read_extra_suppression_info,
                           drd_error_matches_suppression,
                           drd_get_error_name,
-                          drd_get_extra_suppression_info);
+                          drd_get_extra_suppression_info,
+                          drd_print_extra_suppression_use,
+                          drd_update_extra_suppresion_use);
 }

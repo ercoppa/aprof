@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2012 OpenWorks LLP
+   Copyright (C) 2004-2013 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -647,7 +647,7 @@ X86Instr* X86Instr_Call ( X86CondCode cond, Addr32 target, Int regparms,
    i->Xin.Call.regparms = regparms;
    i->Xin.Call.rloc     = rloc;
    vassert(regparms >= 0 && regparms <= 3);
-   vassert(rloc != RetLocINVALID);
+   vassert(is_sane_RetLoc(rloc));
    return i;
 }
 X86Instr* X86Instr_XDirect ( Addr32 dstGA, X86AMode* amEIP,
@@ -727,7 +727,8 @@ X86Instr* X86Instr_MFence ( UInt hwcaps ) {
    X86Instr* i          = LibVEX_Alloc(sizeof(X86Instr));
    i->tag               = Xin_MFence;
    i->Xin.MFence.hwcaps = hwcaps;
-   vassert(0 == (hwcaps & ~(VEX_HWCAPS_X86_SSE1
+   vassert(0 == (hwcaps & ~(VEX_HWCAPS_X86_MMXEXT
+                            |VEX_HWCAPS_X86_SSE1
                             |VEX_HWCAPS_X86_SSE2
                             |VEX_HWCAPS_X86_SSE3
                             |VEX_HWCAPS_X86_LZCNT)));
@@ -2383,7 +2384,8 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
       }
 
    case Xin_Call:
-      if (i->Xin.Call.cond != Xcc_ALWAYS && i->Xin.Call.rloc != RetLocNone) {
+      if (i->Xin.Call.cond != Xcc_ALWAYS
+          && i->Xin.Call.rloc.pri != RLPri_None) {
          /* The call might not happen (it isn't unconditional) and it
             returns a result.  In this case we will need to generate a
             control flow diamond to put 0x555..555 in the return
@@ -2694,7 +2696,7 @@ Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
          *p++ = 0x0F; *p++ = 0xAE; *p++ = 0xF0;
          goto done;
       }
-      if (i->Xin.MFence.hwcaps & VEX_HWCAPS_X86_SSE1) {
+      if (i->Xin.MFence.hwcaps & VEX_HWCAPS_X86_MMXEXT) {
          /* sfence */
          *p++ = 0x0F; *p++ = 0xAE; *p++ = 0xF8;
          /* lock addl $0,0(%esp) */

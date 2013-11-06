@@ -1,8 +1,8 @@
 /*
  * Entry and exit function handler
  * 
- * Last changed: $Date$
- * Revision:     $Rev$
+ * Last changed: $Date: 2013-08-30 11:29:14 +0200 (ven, 30 ago 2013) $
+ * Revision:     $Rev: 884 $
  */
 
 /*

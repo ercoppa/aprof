@@ -8,7 +8,7 @@
    This file is part of Helgrind, a Valgrind tool for detecting errors
    in threaded programs.
 
-   Copyright (C) 2007-2012 OpenWorks LLP
+   Copyright (C) 2007-2013 OpenWorks LLP
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
@@ -54,7 +54,7 @@
 
 #include "pub_tool_basics.h"
 #include "pub_tool_redir.h"
-#include "valgrind.h"
+#include "pub_tool_clreq.h"
 #include "helgrind.h"
 #include "config.h"
 
@@ -154,13 +154,27 @@
 #include <errno.h>
 #include <pthread.h>
 
+/* A standalone memcmp. */
+__attribute__((noinline))
+static int my_memcmp ( const void* ptr1, const void* ptr2, size_t size)
+{
+   unsigned char* uchar_ptr1 = (unsigned char*) ptr1;
+   unsigned char* uchar_ptr2 = (unsigned char*) ptr2;
+   size_t i;
+   for (i = 0; i < size; ++i) {
+      if (uchar_ptr1[i] != uchar_ptr2[i])
+         return (uchar_ptr1[i] < uchar_ptr2[i]) ? -1 : 1;
+   }
+   return 0;
+}
 
 /* A lame version of strerror which doesn't use the real libc
    strerror_r, since using the latter just generates endless more
    threading errors (glibc goes off and does tons of crap w.r.t.
    locales etc) */
 static const HChar* lame_strerror ( long err )
-{   switch (err) {
+{
+   switch (err) {
       case EPERM:       return "EPERM: Operation not permitted";
       case ENOENT:      return "ENOENT: No such file or directory";
       case ESRCH:       return "ESRCH: No such process";
@@ -446,14 +460,23 @@ PTH_FUNC(int, pthreadZumutexZudestroy, // pthread_mutex_destroy
               pthread_mutex_t *mutex)
 {
    int    ret;
+   unsigned long mutex_is_init;
    OrigFn fn;
+
    VALGRIND_GET_ORIG_FN(fn);
    if (TRACE_PTH_FNS) {
       fprintf(stderr, "<< pthread_mxdestroy %p", mutex); fflush(stderr);
    }
 
-   DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_MUTEX_DESTROY_PRE,
-               pthread_mutex_t*,mutex);
+   if (mutex != NULL) {
+      static const pthread_mutex_t mutex_init = PTHREAD_MUTEX_INITIALIZER;
+      mutex_is_init = my_memcmp(mutex, &mutex_init, sizeof(*mutex)) == 0;
+   } else {
+      mutex_is_init = 0;
+   }
+
+   DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_MUTEX_DESTROY_PRE,
+                pthread_mutex_t*, mutex, unsigned long, mutex_is_init);
 
    CALL_FN_W_W(ret, fn, mutex);
 
@@ -685,8 +708,8 @@ static int pthread_cond_wait_WRK(pthread_cond_t* cond,
    }
 
    if (ret == 0 && mutex_is_valid) {
-      DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_COND_WAIT_POST,
-                   pthread_cond_t*,cond, pthread_mutex_t*,mutex);
+      DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_COND_WAIT_POST,
+                    pthread_cond_t*,cond, pthread_mutex_t*,mutex, long,0);
    }
 
    if (ret != 0) {
@@ -773,9 +796,10 @@ static int pthread_cond_timedwait_WRK(pthread_cond_t* cond,
                   pthread_mutex_t*,mutex);
    }
 
-   if (ret == 0 && mutex_is_valid) {
-      DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_COND_WAIT_POST,
-                   pthread_cond_t*,cond, pthread_mutex_t*,mutex);
+   if ((ret == 0 || ret == ETIMEDOUT) && mutex_is_valid) {
+      DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_COND_WAIT_POST,
+                    pthread_cond_t*,cond, pthread_mutex_t*,mutex,
+                    long,ret == ETIMEDOUT);
    }
 
    if (ret != 0 && ret != ETIMEDOUT) {
@@ -975,6 +999,7 @@ __attribute__((noinline))
 static int pthread_cond_destroy_WRK(pthread_cond_t* cond)
 {
    int ret;
+   unsigned long cond_is_init;
    OrigFn fn;
 
    VALGRIND_GET_ORIG_FN(fn);
@@ -984,8 +1009,15 @@ static int pthread_cond_destroy_WRK(pthread_cond_t* cond)
       fflush(stderr);
    }
 
-   DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_COND_DESTROY_PRE,
-               pthread_cond_t*,cond);
+   if (cond != NULL) {
+      const pthread_cond_t cond_init = PTHREAD_COND_INITIALIZER;
+      cond_is_init = my_memcmp(cond, &cond_init, sizeof(*cond)) == 0;
+   } else {
+     cond_is_init = 0;
+   }
+
+   DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_COND_DESTROY_PRE,
+                pthread_cond_t*, cond, unsigned long, cond_is_init);
 
    CALL_FN_W_W(ret, fn, cond);
 

@@ -1,7 +1,7 @@
 /*
   This file is part of drd, a thread error detector.
 
-  Copyright (C) 2006-2012 Bart Van Assche <bvanassche@acm.org>.
+  Copyright (C) 2006-2013 Bart Van Assche <bvanassche@acm.org>.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
@@ -60,6 +60,7 @@ static Bool s_print_stats;
 static Bool s_var_info;
 static Bool s_show_stack_usage;
 static Bool s_trace_alloc;
+static Bool trace_sectsuppr;
 
 
 /**
@@ -115,6 +116,7 @@ static Bool DRD_(process_cmd_line_option)(const HChar* arg)
    else if VG_BOOL_CLO(arg, "--trace-hb",            trace_hb) {}
    else if VG_BOOL_CLO(arg, "--trace-mutex",         trace_mutex) {}
    else if VG_BOOL_CLO(arg, "--trace-rwlock",        trace_rwlock) {}
+   else if VG_BOOL_CLO(arg, "--trace-sectsuppr",     trace_sectsuppr) {}
    else if VG_BOOL_CLO(arg, "--trace-segment",       trace_segment) {}
    else if VG_BOOL_CLO(arg, "--trace-semaphore",     trace_semaphore) {}
    else if VG_BOOL_CLO(arg, "--trace-suppr",         trace_suppression) {}
@@ -158,8 +160,13 @@ static Bool DRD_(process_cmd_line_option)(const HChar* arg)
       DRD_(start_tracing_address_range)(addr, addr + 1, False);
    }
    if (ptrace_address) {
-      const Addr addr = VG_(strtoll16)(ptrace_address, 0);
-      DRD_(start_tracing_address_range)(addr, addr + 1, True);
+      char *plus = VG_(strchr)(ptrace_address, '+');
+      Addr addr, length;
+      if (plus)
+         *plus = '\0';
+      addr = VG_(strtoll16)(ptrace_address, 0);
+      length = plus ? VG_(strtoll16)(plus + 1, 0) : 1;
+      DRD_(start_tracing_address_range)(addr, addr + length, True);
    }
    if (trace_barrier != -1)
       DRD_(barrier_set_trace)(trace_barrier);
@@ -222,13 +229,14 @@ static void DRD_(print_usage)(void)
 "    --show-stack-usage=yes|no Print stack usage at thread exit time [no].\n"
 "\n"
 "  drd options for monitoring process behavior:\n"
-"    --ptrace-addr=<address>   Trace all load and store activity for the\n"
-"                              specified address and keep doing that even after\n"
-"                              the memory at that address has been freed and\n"
-"                              reallocated [off].\n"
+"    --ptrace-addr=<address>[+<length>] Trace all load and store activity for\n"
+"                              the specified address range and keep doing that\n"
+"                              even after the memory at that address has been\n"
+"                              freed and reallocated [off].\n"
 "    --trace-addr=<address>    Trace all load and store activity for the\n"
 "                              specified address [off].\n"
-"    --trace-alloc=yes|no      Trace all memory allocations and deallocations\n""                              [no].\n"
+"    --trace-alloc=yes|no      Trace all memory allocations and deallocations\n"
+"                              [no].\n"
 "    --trace-barrier=yes|no    Trace all barrier activity [no].\n"
 "    --trace-cond=yes|no       Trace all condition variable activity [no].\n"
 "    --trace-fork-join=yes|no  Trace all thread fork/join activity [no].\n"
@@ -250,6 +258,8 @@ static void DRD_(print_debug_usage)(void)
 "    --trace-conflict-set-bm=yes|no Trace all conflict set bitmap\n"
 "                              updates [no]. Note: enabling this option\n"
 "                              will generate a lot of output !\n"
+"    --trace-sectsuppr=yes|no  Trace which the dynamic library sections on\n"
+"                              which data race detection is suppressed.\n"
 "    --trace-segment=yes|no    Trace segment actions [no].\n"
 "    --trace-suppr=yes|no      Trace all address suppression actions [no].\n"
 );
@@ -396,8 +406,6 @@ void DRD_(clean_memory)(const Addr a1, const SizeT len)
    drd_start_using_mem(a1, len, is_stack_memory);
 }
 
-static const Bool trace_sectsuppr = False;
-
 /**
  * Suppress data race reports on all addresses contained in .plt, .got and
  * .got.plt sections inside the address range [ a, a + len [. The data in
@@ -423,6 +431,22 @@ static void DRD_(suppress_relocation_conflicts)(const Addr a, const SizeT len)
       if (trace_sectsuppr)
 	 VG_(dmsg)("Examining %s / %s\n", VG_(DebugInfo_get_filename)(di),
 		   VG_(DebugInfo_get_soname)(di));
+
+      /*
+       * Suppress the race report on the libpthread global variable
+       * __pthread_multiple_threads. See also
+       * http://bugs.kde.org/show_bug.cgi?id=323905.
+       */
+      avma = VG_(DebugInfo_get_bss_avma)(di);
+      size = VG_(DebugInfo_get_bss_size)(di);
+      tl_assert((avma && size) || (avma == 0 && size == 0));
+      if (size > 0 &&
+          VG_(strcmp)(VG_(DebugInfo_get_soname)(di), "libpthread.so.0") == 0) {
+	 if (trace_sectsuppr)
+	    VG_(dmsg)("Suppressing .bss @ 0x%lx size %ld\n", avma, size);
+         tl_assert(VG_(DebugInfo_sect_kind)(NULL, 0, avma) == Vg_SectBSS);
+         DRD_(start_suppression)(avma, avma + size, ".bss");
+      }
 
       avma = VG_(DebugInfo_get_plt_avma)(di);
       size = VG_(DebugInfo_get_plt_size)(di);
@@ -797,7 +821,7 @@ void drd_pre_clo_init(void)
    VG_(details_name)            ("drd");
    VG_(details_version)         (NULL);
    VG_(details_description)     ("a thread error detector");
-   VG_(details_copyright_author)("Copyright (C) 2006-2012, and GNU GPL'd,"
+   VG_(details_copyright_author)("Copyright (C) 2006-2013, and GNU GPL'd,"
                                  " by Bart Van Assche.");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
 

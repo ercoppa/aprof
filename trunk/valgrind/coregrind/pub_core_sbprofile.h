@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2012-2012 Mozilla Foundation
+   Copyright (C) 2012-2013 Mozilla Foundation
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -31,6 +31,8 @@
 
 #ifndef __PUB_CORE_SBPROFILE_H
 #define __PUB_CORE_SBPROFILE_H
+
+#include "pub_core_basics.h"   // VG_ macro
 
 /* Get and print a profile.  Also, zero out the counters so that if we
    call it again later, the second call will only show new work done

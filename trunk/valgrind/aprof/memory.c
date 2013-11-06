@@ -1,8 +1,8 @@
 /*
  * Load, store and modify handlers
  * 
- * Last changed: $Date$
- * Revision:     $Rev$
+ * Last changed: $Date: 2013-08-31 10:59:34 +0200 (sab, 31 ago 2013) $
+ * Revision:     $Rev: 888 $
  */
  
 /*

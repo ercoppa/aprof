@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Julian Seward 
+   Copyright (C) 2000-2013 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -43,7 +43,7 @@
 #include "pub_core_transtab.h"
 #include "pub_core_tooliface.h"
 
-#include "pub_tool_inner.h"
+#include "pub_core_inner.h"
 #if defined(ENABLE_INNER_CLIENT_REQUEST)
 #include "memcheck/memcheck.h"
 #endif
@@ -511,16 +511,6 @@ static ArenaId arenaP_to_ArenaId ( Arena *a )
    return arena;
 }
 
-SizeT VG_(malloc_effective_client_redzone_size)(void)
-{
-   vg_assert(VG_(needs).malloc_replacement);
-   ensure_mm_init (VG_AR_CLIENT);
-   /*  ensure_mm_init will call arena_init if not yet done.
-       This then ensures that the arena redzone size is properly
-       initialised. */
-   return arenaId_to_ArenaP(VG_AR_CLIENT)->rz_szB;
-}
-
 // Initialise an arena.  rz_szB is the (default) minimum redzone size;
 // It might be overriden by VG_(clo_redzone_size) or VG_(clo_core_redzone_size).
 // it might be made bigger to ensure that VG_MIN_MALLOC_SZB is observed.
@@ -694,16 +684,10 @@ void ensure_mm_init ( ArenaId aid )
       // Initialise the non-client arenas
       // Similarly to client arena, big allocations will be unsplittable.
       arena_init ( VG_AR_CORE,      "core",     CORE_REDZONE_DEFAULT_SZB,
-                   1048576, 1048576+1 );
-      arena_init ( VG_AR_TOOL,      "tool",     CORE_REDZONE_DEFAULT_SZB,
                    4194304, 4194304+1 );
       arena_init ( VG_AR_DINFO,     "dinfo",    CORE_REDZONE_DEFAULT_SZB,
                    1048576, 1048576+1 );
       arena_init ( VG_AR_DEMANGLE,  "demangle", CORE_REDZONE_DEFAULT_SZB,
-                   65536,   65536+1 );
-      arena_init ( VG_AR_EXECTXT,   "exectxt",  CORE_REDZONE_DEFAULT_SZB,
-                   1048576, 1048576+1 );
-      arena_init ( VG_AR_ERRORS,    "errors",   CORE_REDZONE_DEFAULT_SZB,
                    65536,   65536+1 );
       arena_init ( VG_AR_TTAUX,     "ttaux",    CORE_REDZONE_DEFAULT_SZB,
                    65536,   65536+1 );
@@ -762,6 +746,10 @@ void VG_(out_of_memory_NORETURN) ( const HChar* who, SizeT szB )
          VG_(print_all_arena_stats) ();
          if (VG_(clo_profile_heap))
             VG_(print_arena_cc_analysis) ();
+         /* In case we are an inner valgrind, asks the outer to report
+            its memory state in its log output. */
+         INNER_REQUEST(VALGRIND_MONITOR_COMMAND("v.set log_output"));
+         INNER_REQUEST(VALGRIND_MONITOR_COMMAND("v.info memory aspacemgr"));
       }
       outputTrial++;
       VG_(message)(Vg_UserMsg, s1, who, (ULong)szB, tot_alloc);
@@ -2182,6 +2170,14 @@ void VG_(mallinfo) ( ThreadId tid, struct vg_mallinfo* mi )
    mi->keepcost = 0; // may want some value in here
 }
 
+SizeT VG_(arena_redzone_size) ( ArenaId aid )
+{
+   ensure_mm_init (VG_AR_CLIENT);
+   /*  ensure_mm_init will call arena_init if not yet done.
+       This then ensures that the arena redzone size is properly
+       initialised. */
+   return arenaId_to_ArenaP(aid)->rz_szB;
+}
 
 /*------------------------------------------------------------*/
 /*--- Services layered on top of malloc/free.              ---*/
@@ -2198,7 +2194,8 @@ void* VG_(arena_calloc) ( ArenaId aid, const HChar* cc,
 
    p = VG_(arena_malloc) ( aid, cc, size );
 
-   VG_(memset)(p, 0, size);
+   if (p != NULL)
+     VG_(memset)(p, 0, size);
 
    return p;
 }
@@ -2304,27 +2301,27 @@ void* VG_(arena_perm_malloc) ( ArenaId aid, SizeT size, Int align  )
 
 void* VG_(malloc) ( const HChar* cc, SizeT nbytes )
 {
-   return VG_(arena_malloc) ( VG_AR_TOOL, cc, nbytes );
+   return VG_(arena_malloc) ( VG_AR_CORE, cc, nbytes );
 }
 
 void  VG_(free) ( void* ptr )
 {
-   VG_(arena_free) ( VG_AR_TOOL, ptr );
+   VG_(arena_free) ( VG_AR_CORE, ptr );
 }
 
 void* VG_(calloc) ( const HChar* cc, SizeT nmemb, SizeT bytes_per_memb )
 {
-   return VG_(arena_calloc) ( VG_AR_TOOL, cc, nmemb, bytes_per_memb );
+   return VG_(arena_calloc) ( VG_AR_CORE, cc, nmemb, bytes_per_memb );
 }
 
 void* VG_(realloc) ( const HChar* cc, void* ptr, SizeT size )
 {
-   return VG_(arena_realloc) ( VG_AR_TOOL, cc, ptr, size );
+   return VG_(arena_realloc) ( VG_AR_CORE, cc, ptr, size );
 }
 
 HChar* VG_(strdup) ( const HChar* cc, const HChar* s )
 {
-   return VG_(arena_strdup) ( VG_AR_TOOL, cc, s ); 
+   return VG_(arena_strdup) ( VG_AR_CORE, cc, s ); 
 }
 
 // Useful for querying user blocks.           
@@ -2335,7 +2332,7 @@ SizeT VG_(malloc_usable_size) ( void* p )
   
 void* VG_(perm_malloc) ( SizeT size, Int align  )
 {
-   return VG_(arena_perm_malloc) ( VG_AR_TOOL, size, align );
+   return VG_(arena_perm_malloc) ( VG_AR_CORE, size, align );
 }
 
 

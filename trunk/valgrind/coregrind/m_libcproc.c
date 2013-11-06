@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Julian Seward 
+   Copyright (C) 2000-2013 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -742,10 +742,10 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
    Addr addr;
 
    VG_(machine_get_VexArchInfo)( NULL, &vai );
-   cls = vai.ppc_cache_line_szB;
+   cls = vai.ppc_icache_line_szB;
 
    /* Stay sane .. */
-   vg_assert(cls == 32 || cls == 64 || cls == 128);
+   vg_assert(cls == 16 || cls == 32 || cls == 64 || cls == 128);
 
    startaddr &= ~(cls - 1);
    for (addr = startaddr; addr < endaddr; addr += cls) {

@@ -9,7 +9,7 @@
    This file is part of MemCheck, a heavyweight Valgrind tool for
    detecting memory errors.
 
-   Copyright (C) 2000-2012 Julian Seward 
+   Copyright (C) 2000-2013 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -1130,6 +1130,120 @@ static Bool parse_ignore_ranges ( const HChar* str0 )
 
 static
 __attribute__((noinline))
+void mc_LOADV_128_or_256_slow ( /*OUT*/ULong* res,
+                                Addr a, SizeT nBits, Bool bigendian )
+{
+   ULong  pessim[4];     /* only used when p-l-ok=yes */
+   SSizeT szB            = nBits / 8;
+   SSizeT szL            = szB / 8;  /* Size in Longs (64-bit units) */
+   SSizeT i, j;          /* Must be signed. */
+   SizeT  n_addrs_bad = 0;
+   Addr   ai;
+   UChar  vbits8;
+   Bool   ok;
+
+   /* Code below assumes load size is a power of two and at least 64
+      bits. */
+   tl_assert((szB & (szB-1)) == 0 && szL > 0);
+
+   /* If this triggers, you probably just need to increase the size of
+      the pessim array. */
+   tl_assert(szL <= sizeof(pessim) / sizeof(pessim[0]));
+
+   for (j = 0; j < szL; j++) {
+      pessim[j] = V_BITS64_DEFINED;
+      res[j] = V_BITS64_UNDEFINED;
+   }
+
+   /* Make up a result V word, which contains the loaded data for
+      valid addresses and Defined for invalid addresses.  Iterate over
+      the bytes in the word, from the most significant down to the
+      least.  The vbits to return are calculated into vbits128.  Also
+      compute the pessimising value to be used when
+      --partial-loads-ok=yes.  n_addrs_bad is redundant (the relevant
+      info can be gleaned from the pessim array) but is used as a
+      cross-check. */
+   for (j = szL-1; j >= 0; j--) {
+      ULong vbits64    = V_BITS64_UNDEFINED;
+      ULong pessim64   = V_BITS64_DEFINED;
+      UWord long_index = byte_offset_w(szL, bigendian, j);
+      for (i = 8-1; i >= 0; i--) {
+         PROF_EVENT(31, "mc_LOADV_128_or_256_slow(loop)");
+         ai = a + 8*long_index + byte_offset_w(8, bigendian, i);
+         ok = get_vbits8(ai, &vbits8);
+         vbits64 <<= 8;
+         vbits64 |= vbits8;
+         if (!ok) n_addrs_bad++;
+         pessim64 <<= 8;
+         pessim64 |= (ok ? V_BITS8_DEFINED : V_BITS8_UNDEFINED);
+      }
+      res[long_index] = vbits64;
+      pessim[long_index] = pessim64;
+   }
+
+   /* In the common case, all the addresses involved are valid, so we
+      just return the computed V bits and have done. */
+   if (LIKELY(n_addrs_bad == 0))
+      return;
+
+   /* If there's no possibility of getting a partial-loads-ok
+      exemption, report the error and quit. */
+   if (!MC_(clo_partial_loads_ok)) {
+      MC_(record_address_error)( VG_(get_running_tid)(), a, szB, False );
+      return;
+   }
+
+   /* The partial-loads-ok excemption might apply.  Find out if it
+      does.  If so, don't report an addressing error, but do return
+      Undefined for the bytes that are out of range, so as to avoid
+      false negatives.  If it doesn't apply, just report an addressing
+      error in the usual way. */
+
+   /* Some code steps along byte strings in aligned chunks
+      even when there is only a partially defined word at the end (eg,
+      optimised strlen).  This is allowed by the memory model of
+      modern machines, since an aligned load cannot span two pages and
+      thus cannot "partially fault".
+
+      Therefore, a load from a partially-addressible place is allowed
+      if all of the following hold:
+      - the command-line flag is set [by default, it isn't]
+      - it's an aligned load
+      - at least one of the addresses in the word *is* valid
+
+      Since this suppresses the addressing error, we avoid false
+      negatives by marking bytes undefined when they come from an
+      invalid address.
+   */
+
+   /* "at least one of the addresses is invalid" */
+   ok = False;
+   for (j = 0; j < szL; j++)
+      ok |= pessim[j] != V_BITS8_DEFINED;
+   tl_assert(ok);
+
+   if (0 == (a & (szB - 1)) && n_addrs_bad < szB) {
+      /* Exemption applies.  Use the previously computed pessimising
+         value and return the combined result, but don't flag an
+         addressing error.  The pessimising value is Defined for valid
+         addresses and Undefined for invalid addresses. */
+      /* for assumption that doing bitwise or implements UifU */
+      tl_assert(V_BIT_UNDEFINED == 1 && V_BIT_DEFINED == 0);
+      /* (really need "UifU" here...)
+         vbits[j] UifU= pessim[j]  (is pessimised by it, iow) */
+      for (j = szL-1; j >= 0; j--)
+         res[j] |= pessim[j];
+      return;
+   }
+
+   /* Exemption doesn't apply.  Flag an addressing error in the normal
+      way. */
+   MC_(record_address_error)( VG_(get_running_tid)(), a, szB, False );
+}
+
+
+static
+__attribute__((noinline))
 ULong mc_LOADVn_slow ( Addr a, SizeT nBits, Bool bigendian )
 {
    PROF_EVENT(30, "mc_LOADVn_slow");
@@ -1246,6 +1360,23 @@ ULong mc_LOADVn_slow ( Addr a, SizeT nBits, Bool bigendian )
       /* (really need "UifU" here...)
          vbits64 UifU= pessim64  (is pessimised by it, iow) */
       vbits64 |= pessim64;
+      return vbits64;
+   }
+
+   /* Also, in appears that gcc generates string-stepping code in
+      32-bit chunks on 64 bit platforms.  So, also grant an exception
+      for this case.  Note that the first clause of the conditional
+      (VG_WORDSIZE == 8) is known at compile time, so the whole clause
+      will get folded out in 32 bit builds. */
+   if (VG_WORDSIZE == 8
+       && VG_IS_4_ALIGNED(a) && nBits == 32 && n_addrs_bad < 4) {
+      tl_assert(V_BIT_UNDEFINED == 1 && V_BIT_DEFINED == 0);
+      /* (really need "UifU" here...)
+         vbits64 UifU= pessim64  (is pessimised by it, iow) */
+      vbits64 |= pessim64;
+      /* Mark the upper 32 bits as undefined, just to be on the safe
+         side. */
+      vbits64 |= (((ULong)V_BITS32_UNDEFINED) << 32);
       return vbits64;
    }
 
@@ -4060,34 +4191,102 @@ static void mc_pre_reg_read ( CorePart part, ThreadId tid, const HChar* s,
 
    On a 64-bit machine, it's more complex, since we're testing
    simultaneously for misalignment and for the address being at or
-   above 32G:
+   above 64G:
 
-   N_PRIMARY_BITS          == 19, so
-   N_PRIMARY_MAP           == 0x80000, so
-   N_PRIMARY_MAP-1         == 0x7FFFF, so
-   (N_PRIMARY_MAP-1) << 16 == 0x7FFFF'0000, and so
+   N_PRIMARY_BITS          == 20, so
+   N_PRIMARY_MAP           == 0x100000, so
+   N_PRIMARY_MAP-1         == 0xFFFFF, so
+   (N_PRIMARY_MAP-1) << 16 == 0xF'FFFF'0000, and so
 
-   MASK(1) = ~ ( (0x10000 - 1) | 0x7FFFF'0000 )
-           = ~ ( 0xFFFF | 0x7FFFF'0000 )
-           = ~ 0x7FFFF'FFFF
-           = 0xFFFF'FFF8'0000'0000
+   MASK(1) = ~ ( (0x10000 - 1) | 0xF'FFFF'0000 )
+           = ~ ( 0xFFFF | 0xF'FFFF'0000 )
+           = ~ 0xF'FFFF'FFFF
+           = 0xFFFF'FFF0'0000'0000
 
-   MASK(2) = ~ ( (0x10000 - 2) | 0x7FFFF'0000 )
-           = ~ ( 0xFFFE | 0x7FFFF'0000 )
-           = ~ 0x7FFFF'FFFE
-           = 0xFFFF'FFF8'0000'0001
+   MASK(2) = ~ ( (0x10000 - 2) | 0xF'FFFF'0000 )
+           = ~ ( 0xFFFE | 0xF'FFFF'0000 )
+           = ~ 0xF'FFFF'FFFE
+           = 0xFFFF'FFF0'0000'0001
 
-   MASK(4) = ~ ( (0x10000 - 4) | 0x7FFFF'0000 )
-           = ~ ( 0xFFFC | 0x7FFFF'0000 )
-           = ~ 0x7FFFF'FFFC
-           = 0xFFFF'FFF8'0000'0003
+   MASK(4) = ~ ( (0x10000 - 4) | 0xF'FFFF'0000 )
+           = ~ ( 0xFFFC | 0xF'FFFF'0000 )
+           = ~ 0xF'FFFF'FFFC
+           = 0xFFFF'FFF0'0000'0003
 
-   MASK(8) = ~ ( (0x10000 - 8) | 0x7FFFF'0000 )
-           = ~ ( 0xFFF8 | 0x7FFFF'0000 )
-           = ~ 0x7FFFF'FFF8
-           = 0xFFFF'FFF8'0000'0007
+   MASK(8) = ~ ( (0x10000 - 8) | 0xF'FFFF'0000 )
+           = ~ ( 0xFFF8 | 0xF'FFFF'0000 )
+           = ~ 0xF'FFFF'FFF8
+           = 0xFFFF'FFF0'0000'0007
 */
 
+
+/* ------------------------ Size = 16 ------------------------ */
+
+static INLINE
+void mc_LOADV_128_or_256 ( /*OUT*/ULong* res,
+                           Addr a, SizeT nBits, Bool isBigEndian )
+{
+   PROF_EVENT(200, "mc_LOADV_128_or_256");
+
+#ifndef PERF_FAST_LOADV
+   mc_LOADV_128_or_256_slow( res, a, nBits, isBigEndian );
+   return;
+#else
+   {
+      UWord   sm_off16, vabits16, j;
+      UWord   nBytes  = nBits / 8;
+      UWord   nULongs = nBytes / 8;
+      SecMap* sm;
+
+      if (UNLIKELY( UNALIGNED_OR_HIGH(a,nBits) )) {
+         PROF_EVENT(201, "mc_LOADV_128_or_256-slow1");
+         mc_LOADV_128_or_256_slow( res, a, nBits, isBigEndian );
+         return;
+      }
+
+      /* Handle common cases quickly: a (and a+8 and a+16 etc.) is
+         suitably aligned, is mapped, and addressible. */
+      for (j = 0; j < nULongs; j++) {
+         sm       = get_secmap_for_reading_low(a + 8*j);
+         sm_off16 = SM_OFF_16(a + 8*j);
+         vabits16 = ((UShort*)(sm->vabits8))[sm_off16];
+
+         // Convert V bits from compact memory form to expanded
+         // register form.
+         if (LIKELY(vabits16 == VA_BITS16_DEFINED)) {
+            res[j] = V_BITS64_DEFINED;
+         } else if (LIKELY(vabits16 == VA_BITS16_UNDEFINED)) {
+            res[j] = V_BITS64_UNDEFINED;
+         } else {
+            /* Slow case: some block of 8 bytes are not all-defined or
+               all-undefined. */
+            PROF_EVENT(202, "mc_LOADV_128_or_256-slow2");
+            mc_LOADV_128_or_256_slow( res, a, nBits, isBigEndian );
+            return;
+         }
+      }
+      return;
+   }
+#endif
+}
+
+VG_REGPARM(2) void MC_(helperc_LOADV256be) ( /*OUT*/V256* res, Addr a )
+{
+   mc_LOADV_128_or_256(&res->w64[0], a, 256, True);
+}
+VG_REGPARM(2) void MC_(helperc_LOADV256le) ( /*OUT*/V256* res, Addr a )
+{
+   mc_LOADV_128_or_256(&res->w64[0], a, 256, False);
+}
+
+VG_REGPARM(2) void MC_(helperc_LOADV128be) ( /*OUT*/V128* res, Addr a )
+{
+   mc_LOADV_128_or_256(&res->w64[0], a, 128, True);
+}
+VG_REGPARM(2) void MC_(helperc_LOADV128le) ( /*OUT*/V128* res, Addr a )
+{
+   mc_LOADV_128_or_256(&res->w64[0], a, 128, False);
+}
 
 /* ------------------------ Size = 8 ------------------------ */
 
@@ -4839,11 +5038,61 @@ LeakCheckMode MC_(clo_leak_check)             = LC_Summary;
 VgRes         MC_(clo_leak_resolution)        = Vg_HighRes;
 UInt          MC_(clo_show_leak_kinds)        = R2S(Possible) | R2S(Unreached);
 UInt          MC_(clo_error_for_leak_kinds)   = R2S(Possible) | R2S(Unreached);
+UInt          MC_(clo_leak_check_heuristics)  = 0;
 Bool          MC_(clo_workaround_gcc296_bugs) = False;
 Int           MC_(clo_malloc_fill)            = -1;
 Int           MC_(clo_free_fill)              = -1;
 KeepStacktraces MC_(clo_keep_stacktraces)     = KS_alloc_then_free;
 Int           MC_(clo_mc_level)               = 2;
+
+static Bool MC_(parse_leak_heuristics) ( const HChar *str0, UInt *lhs )
+{
+   SizeT str0len = VG_(strlen)(str0);
+   if (str0len > 1000) return False; /* "obviously invalid" */
+   HChar  tok_str0[str0len+1];
+   HChar *saveptr;
+   HChar *token;
+
+   Bool seen_all_kw = False;
+   Bool seen_none_kw = False;
+
+   VG_(strcpy) (tok_str0, str0);
+   *lhs = 0;
+
+   for (token = VG_(strtok_r)(tok_str0, ",", &saveptr);
+        token;
+        token = VG_(strtok_r)(NULL, ",", &saveptr)) {
+      if      (0 == VG_(strcmp)(token, "stdstring"))
+         *lhs |= H2S(LchStdString);
+      else if (0 == VG_(strcmp)(token, "newarray"))
+         *lhs |= H2S(LchNewArray);
+      else if (0 == VG_(strcmp)(token, "multipleinheritance"))
+         *lhs |= H2S(LchMultipleInheritance);
+      else if (0 == VG_(strcmp)(token, "all"))
+         seen_all_kw = True;
+      else if (0 == VG_(strcmp)(token, "none"))
+         seen_none_kw = True;
+      else
+         return False;
+   }
+
+   if (seen_all_kw) {
+      if (seen_none_kw || *lhs)
+         return False; // mixing all with either none or a specific value.
+      *lhs = HallS;
+   } else if (seen_none_kw) {
+      if (seen_all_kw || *lhs)
+         return False; // mixing none with either all or a specific value.
+      *lhs = 0;
+   } else {
+      // seen neither all or none, we must see at least one value
+      if (*lhs == 0)
+         return False;
+   }
+
+   return True;
+}
+
 
 static Bool mc_process_cmd_line_options(const HChar* arg)
 {
@@ -4895,6 +5144,10 @@ static Bool mc_process_cmd_line_options(const HChar* arg)
    }
    else if VG_STR_CLO(arg, "--show-leak-kinds", tmp_str) {
       if (!MC_(parse_leak_kinds)(tmp_str, &MC_(clo_show_leak_kinds)))
+         return False;
+   }
+   else if VG_STR_CLO(arg, "--leak-check-heuristics", tmp_str) {
+      if (!MC_(parse_leak_heuristics)(tmp_str, &MC_(clo_leak_check_heuristics)))
          return False;
    }
    else if (VG_BOOL_CLO(arg, "--show-reachable", tmp_show)) {
@@ -5000,6 +5253,9 @@ static void mc_print_usage(void)
 "    --errors-for-leak-kinds=kind1,kind2,..  which leak kinds are errors?\n"
 "                                            [definite,possible]\n"
 "        where kind is one of definite indirect possible reachable all none\n"
+"    --leak-check-heuristics=heur1,heur2,... which heuristics to use for\n"
+"        improving leak search false positive [none]\n"
+"        where heur is one of stdstring newarray multipleinheritance all none\n"
 "    --show-reachable=yes             same as --show-leak-kinds=all\n"
 "    --show-reachable=no --show-possibly-lost=yes\n"
 "                                     same as --show-leak-kinds=definite,possible\n"
@@ -5131,10 +5387,12 @@ static void print_monitor_help ( void )
 "            and outputs a description of <addr>\n"
 "  leak_check [full*|summary]\n"
 "                [kinds kind1,kind2,...|reachable|possibleleak*|definiteleak]\n"
+"                [heuristics heur1,heur2,...]\n"
 "                [increased*|changed|any]\n"
 "                [unlimited*|limited <max_loss_records_output>]\n"
 "            * = defaults\n"
-"        where kind is one of definite indirect possible reachable all none\n"
+"       where kind is one of definite indirect possible reachable all none\n"
+"       where heur is one of stdstring newarray multipleinheritance all none*\n"
 "        Examples: leak_check\n"
 "                  leak_check summary any\n"
 "                  leak_check full kinds indirect,possible\n"
@@ -5187,21 +5445,21 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
                 False  /* is client request */ ); 
             /* we are before the first character on next line, print a \n. */
             if ((i % 32) == 0 && i != 0)
-               VG_(gdb_printf) ("\n");
+               VG_(printf) ("\n");
             /* we are before the next block of 4 starts, print a space. */
             else if ((i % 4) == 0 && i != 0)
-               VG_(gdb_printf) (" ");
+               VG_(printf) (" ");
             if (res == 1) {
-               VG_(gdb_printf) ("%02x", vbits);
+               VG_(printf) ("%02x", vbits);
             } else {
                tl_assert(3 == res);
                unaddressable++;
-               VG_(gdb_printf) ("__");
+               VG_(printf) ("__");
             }
          }
-         VG_(gdb_printf) ("\n");
+         VG_(printf) ("\n");
          if (unaddressable) {
-            VG_(gdb_printf)
+            VG_(printf)
                ("Address %p len %ld has %d bytes unaddressable\n",
                 (void *)address, szB, unaddressable);
          }
@@ -5215,7 +5473,8 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
       
       lcp.mode               = LC_Full;
       lcp.show_leak_kinds    = R2S(Possible) | R2S(Unreached);
-      lcp.errors_for_leak_kinds = 0; /* no errors for interactive leak search. */
+      lcp.errors_for_leak_kinds = 0; // no errors for interactive leak search.
+      lcp.heuristics         = 0;
       lcp.deltamode          = LCD_Increased;
       lcp.max_loss_records_output = 999999999;
       lcp.requested_by_monitor_command = True;
@@ -5226,6 +5485,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
          switch (VG_(keyword_id) 
                  ("full summary "
                   "kinds reachable possibleleak definiteleak "
+                  "heuristics "
                   "increased changed any "
                   "unlimited limited ",
                   kw, kwd_report_all)) {
@@ -5254,15 +5514,24 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
          case  5: /* definiteleak */
             lcp.show_leak_kinds = R2S(Unreached);
             break;
-         case  6: /* increased */
+         case  6: { /* heuristics */
+            wcmd = VG_(strtok_r) (NULL, " ", &ssaveptr);
+            if (wcmd == NULL || !MC_(parse_leak_heuristics)(wcmd,
+                                                            &lcp.heuristics)) {
+               VG_(gdb_printf) ("missing or malformed heuristics set\n");
+               err++;
+            }
+            break;
+         }
+         case  7: /* increased */
             lcp.deltamode = LCD_Increased; break;
-         case  7: /* changed */
+         case  8: /* changed */
             lcp.deltamode = LCD_Changed; break;
-         case  8: /* any */
+         case  9: /* any */
             lcp.deltamode = LCD_Any; break;
-         case  9: /* unlimited */
+         case 10: /* unlimited */
             lcp.max_loss_records_output = 999999999; break;
-         case 10: { /* limited */
+         case 11: { /* limited */
             Int int_value;
             const HChar* endptr;
 
@@ -5333,19 +5602,20 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
       switch (kwdid) {
       case -2: break;
       case -1: break;
-      case  0: 
+      case  0: /* addressable */
          if (is_mem_addressable ( address, szB, &bad_addr ))
-            VG_(gdb_printf) ("Address %p len %ld addressable\n", 
+            VG_(printf) ("Address %p len %ld addressable\n", 
                              (void *)address, szB);
          else
-            VG_(gdb_printf)
+            VG_(printf)
                ("Address %p len %ld not addressable:\nbad address %p\n",
                 (void *)address, szB, (void *) bad_addr);
          MC_(pp_describe_addr) (address);
          break;
-      case  1: res = is_mem_defined ( address, szB, &bad_addr, &otag );
+      case  1: /* defined */
+         res = is_mem_defined ( address, szB, &bad_addr, &otag );
          if (MC_AddrErr == res)
-            VG_(gdb_printf)
+            VG_(printf)
                ("Address %p len %ld not addressable:\nbad address %p\n",
                 (void *)address, szB, (void *) bad_addr);
          else if (MC_ValueErr == res) {
@@ -5361,7 +5631,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
                src = ""; break;
             default: tl_assert(0);
             }
-            VG_(gdb_printf) 
+            VG_(printf) 
                ("Address %p len %ld not defined:\n"
                 "Uninitialised value at %p%s\n",
                 (void *)address, szB, (void *) bad_addr, src);
@@ -5372,8 +5642,8 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
             }
          }
          else
-            VG_(gdb_printf) ("Address %p len %ld defined\n",
-                             (void *)address, szB);
+            VG_(printf) ("Address %p len %ld defined\n",
+                         (void *)address, szB);
          MC_(pp_describe_addr) (address);
          break;
       default: tl_assert(0);
@@ -5497,6 +5767,7 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
           
          lcp.show_leak_kinds = MC_(clo_show_leak_kinds);
          lcp.errors_for_leak_kinds = MC_(clo_error_for_leak_kinds);
+         lcp.heuristics = MC_(clo_leak_check_heuristics);
 
          if (arg[2] == 0)
             lcp.deltamode = LCD_Any;
@@ -6276,6 +6547,7 @@ static void mc_fini ( Int exitcode )
       LeakCheckParams lcp;
       lcp.mode = MC_(clo_leak_check);
       lcp.show_leak_kinds = MC_(clo_show_leak_kinds);
+      lcp.heuristics = MC_(clo_leak_check_heuristics);
       lcp.errors_for_leak_kinds = MC_(clo_error_for_leak_kinds);
       lcp.deltamode = LCD_Any;
       lcp.max_loss_records_output = 999999999;
@@ -6423,7 +6695,7 @@ static void mc_pre_clo_init(void)
    VG_(details_version)         (NULL);
    VG_(details_description)     ("a memory error detector");
    VG_(details_copyright_author)(
-      "Copyright (C) 2002-2012, and GNU GPL'd, by Julian Seward et al.");
+      "Copyright (C) 2002-2013, and GNU GPL'd, by Julian Seward et al.");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
    VG_(details_avg_translation_sizeB) ( 640 );
 
@@ -6444,7 +6716,9 @@ static void mc_pre_clo_init(void)
                                    MC_(read_extra_suppression_info),
                                    MC_(error_matches_suppression),
                                    MC_(get_error_name),
-                                   MC_(get_extra_suppression_info));
+                                   MC_(get_extra_suppression_info),
+                                   MC_(print_extra_suppression_use),
+                                   MC_(update_extra_suppression_use));
    VG_(needs_libc_freeres)        ();
    VG_(needs_command_line_options)(mc_process_cmd_line_options,
                                    mc_print_usage,
