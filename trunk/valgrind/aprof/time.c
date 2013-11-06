@@ -44,8 +44,14 @@ ULong APROF_(time)(ThreadData * tdata) {
     return tdata->instr;
 
     #elif TIME == RDTSC
+    
     ULong ret;
-    __asm__ __volatile__("rdtsc": "=A" (ret));
+    unsigned long lo, hi;
+    asm( "rdtsc" : "=a" (lo), "=d" (hi) ); 
+    return( lo | (hi << 32) );
+
+//    __asm__ volatile (".byte 0x0f, 0x31" : "=A" (ret));
+//    __asm__ __volatile__("rdtsc": "=A" (ret));
     return ret;
 
     #elif TIME == BB_COUNT

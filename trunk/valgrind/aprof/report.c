@@ -129,7 +129,7 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
     #if TIME == BB_COUNT
     APROF_(fprintf)(report, "k %llu\n", tdata->bb_c + tdata->other_metric);
     #elif TIME == RDTSC
-    APROF_(fprintf)(report, "k %llu\n", APROF_(time)() - tdata->entry_time + tdata->other_metric);
+    APROF_(fprintf)(report, "k %llu\n", APROF_(time)(tdata) - tdata->entry_time + tdata->other_metric);
     #endif
     
     // write mtime binary

@@ -119,6 +119,10 @@ RoutineInfo * APROF_(new_routine_info)(ThreadData * tdata,
     return rtn_info;
 }
 
+#if TIME == RDTSC
+static ULong time = 0;
+#endif
+
 void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
 
     #if DEBUG
@@ -145,6 +149,14 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
     #endif
     
     ULong start = APROF_(time)(tdata);
+    
+    #if TIME == RDTSC
+    if (time > start) {
+        VG_(printf)("START=%llu END=%llu sizeof(ULong)=%lu\n", time, start, sizeof(ULong));
+        AP_ASSERT(time <= start, "Invalid time");
+    }
+    time = start;
+    #endif
 
     RoutineInfo * rtn_info = act->rtn_info;
     #if DEBUG
@@ -269,6 +281,15 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
     #endif
 
     ULong start = APROF_(time)(tdata);
+    
+    #if TIME == RDTSC
+    if (time > start) {
+        VG_(printf)("START=%llu END=%llu sizeof(ULong)=%lu\n", time, start, sizeof(ULong));
+        AP_ASSERT(time <= start, "Invalid time");
+    }
+    time = start;
+    #endif
+    
     RoutineInfo * rtn_info = act->rtn_info;
 
     ULong partial_cumulative = start - act->entry_time;

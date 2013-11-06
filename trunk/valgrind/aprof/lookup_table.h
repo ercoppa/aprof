@@ -77,6 +77,11 @@ typedef struct LookupTable {
     #else
     ILT * table[LK_SIZE];
     #endif
+    
+    // cache
+    UInt * last_chunk;
+    UWord  last_chunk_index;
+    
 } LookupTable;
 
 /*

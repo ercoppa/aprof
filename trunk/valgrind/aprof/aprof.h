@@ -85,12 +85,12 @@
 #define INSTR               1   // Count guest intel instruction 
 #define RDTSC               2   // rdtsc intel instruction timestamp
 #define BB_COUNT            3   // count BB executed
-#define TIME                BB_COUNT 
+#define TIME                BB_COUNT
                             
                                  // Input estimation metric:
 #define RMS                 1    // Read Memory Size
 #define RVMS                2    // Read Versioned Memory Size
-#define INPUT_METRIC        RVMS
+#define INPUT_METRIC        RMS
 
 #define TRACE_FUNCTION      1   // if 1, aprof traces functions by itself, 
                                 // otherwise the program must be 
@@ -98,17 +98,17 @@
                                 // with -finstrument-functions
                                 
 #define MEM_TRACE           1   // if 0 disable mem instrumentation
-#define THREAD_INPUT        1   // if 1, every write creates a new
+#define THREAD_INPUT        0   // if 1, every write creates a new
                                 // version of an input
-#define SYSCALL_WRAPPING    1   // if 1, I/O syscall stores are 
+#define SYSCALL_WRAPPING    0   // if 1, I/O syscall stores are 
                                 // considered as external I/O
 
 #define IGNORE_LOAD_SYS     1   // ignore load due to syscall
 
-#define INPUT_STATS         1   // stats about thread input & external input
+#define INPUT_STATS         0   // stats about thread input & external input
 
 #define DEBUG_ALLOCATION    0   // if 1, check every allocation made by aprof
-#define IGNORE_DL_RUNTIME   1   // if 1, disable analysis for dl_
+#define IGNORE_DL_RUNTIME   0   // if 1, disable analysis for dl_
                                 // runtime_resolve (and its children)
 
 #define REPORT_VERSION      6   // see documentation on our site: 
@@ -131,7 +131,7 @@
                                 // to get info about aprof mem usage 
 /* shadow memory  */
 
-#define CHECK_OVERFLOW      0   // On 64bit machine, we map only 2048GB...
+#define CHECK_OVERFLOW      1   // On 64bit machine, we map only 2048GB...
 
 /* Some constants */
 #define MAX_STACK_SIZE      15000   // max stack size
@@ -178,6 +178,11 @@
 #define DEBUG_DRMS 0
 #else
 #define DEBUG_DRMS 0
+#endif
+
+
+#if TIME == RDTSC && IGNORE_DL_RUNTIME == 1
+#error "IGNORE_DL_RUNTIME is not supported with TIME=RDTSC"
 #endif
 
 #if THREAD_INPUT && INPUT_METRIC != RVMS
