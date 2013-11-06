@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Julian Seward
+   Copyright (C) 2000-2013 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -30,6 +30,9 @@
 
 #ifndef __PUB_CORE_SCHEDULER_H
 #define __PUB_CORE_SCHEDULER_H
+
+#include "pub_core_basics.h"        // VG_ macro
+#include "pub_core_threadstate.h"   // VgSchedReturnCode
 
 //--------------------------------------------------------------------
 // PURPOSE: This module is the scheduler, which is the main loop

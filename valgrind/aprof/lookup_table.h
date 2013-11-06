@@ -14,8 +14,8 @@
  * - 32 bit => 2 level lookuptable => 4GB covered
  * - 64 bit => 3 level lookuptable => 2048GB covered
  * 
- * Last changed: $Date$
- * Revision:     $Rev$
+ * Last changed: $Date: 2013-09-06 00:55:22 +0200 (ven, 06 set 2013) $
+ * Revision:     $Rev: 891 $
  */
 
 /*

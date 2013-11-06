@@ -9,7 +9,7 @@
    This file is part of Ptrcheck, a Valgrind tool for checking pointer
    use in programs.
 
-   Copyright (C) 2008-2012 OpenWorks Ltd
+   Copyright (C) 2008-2013 OpenWorks Ltd
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
@@ -53,11 +53,14 @@ void pc_pp_Error           ( Error* err );
 UInt pc_update_Error_extra ( Error* err );
 Bool pc_is_recognised_suppression ( const HChar* name, Supp *su );
 Bool pc_read_extra_suppression_info ( Int fd, HChar** bufpp, 
-                                      SizeT* nBufp, Supp* su );
+                                      SizeT* nBufp, Int* lineno, Supp* su );
 Bool pc_error_matches_suppression (Error* err, Supp* su);
 const HChar* pc_get_error_name ( Error* err );
 Bool pc_get_extra_suppression_info ( Error* err,
                                      /*OUT*/HChar* buf, Int nBuf );
+Bool pc_print_extra_suppression_use ( Supp* su,
+                                      /*OUT*/HChar* buf, Int nBuf );
+void pc_update_extra_suppression_use (Error* err, Supp* su);
 
 extern Bool h_clo_partial_loads_ok;
 /* extern Bool h_clo_lossage_check; */

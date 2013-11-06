@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Julian Seward
+   Copyright (C) 2000-2013 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -251,10 +251,6 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
 /*=== Setting up the client's stack                                ===*/
 /*====================================================================*/
 
-#ifndef AT_DCACHEBSIZE
-#define AT_DCACHEBSIZE		19
-#endif /* AT_DCACHEBSIZE */
-
 #ifndef AT_ICACHEBSIZE
 #define AT_ICACHEBSIZE		20
 #endif /* AT_ICACHEBSIZE */
@@ -491,10 +487,6 @@ Addr setup_client_stack( void*  init_sp,
    /* The max stack size */
    clstack_max_size = VG_PGROUNDUP(clstack_max_size);
 
-   /* Record stack extent -- needed for stack-change code. */
-   VG_(clstk_base) = clstack_start;
-   VG_(clstk_end)  = clstack_end;
-
    if (0)
       VG_(printf)("stringsize=%d auxsize=%d stacksize=%d maxsize=0x%x\n"
                   "clstack_start %p\n"
@@ -572,6 +564,11 @@ Addr setup_client_stack( void*  init_sp,
 
      vg_assert(ok);
      vg_assert(!sr_isError(res)); 
+
+     /* Record stack extent -- needed for stack-change code. */
+     VG_(clstk_base) = anon_start -inner_HACK;
+     VG_(clstk_end)  = VG_(clstk_base) + anon_size +inner_HACK -1;
+
    }
 
    /* ==================== create client stack ==================== */
@@ -709,7 +706,6 @@ Addr setup_client_stack( void*  init_sp,
 #           endif
             break;
 
-         case AT_DCACHEBSIZE:
          case AT_ICACHEBSIZE:
          case AT_UCACHEBSIZE:
 #           if defined(VGP_ppc32_linux)
@@ -717,7 +713,7 @@ Addr setup_client_stack( void*  init_sp,
             if (auxv->u.a_val > 0) {
                VG_(machine_ppc32_set_clszB)( auxv->u.a_val );
                VG_(debugLog)(2, "initimg", 
-                                "PPC32 cache line size %u (type %u)\n", 
+                                "PPC32 icache line size %u (type %u)\n", 
                                 (UInt)auxv->u.a_val, (UInt)auxv->a_type );
             }
 #           elif defined(VGP_ppc64_linux)
@@ -725,7 +721,7 @@ Addr setup_client_stack( void*  init_sp,
             if (auxv->u.a_val > 0) {
                VG_(machine_ppc64_set_clszB)( auxv->u.a_val );
                VG_(debugLog)(2, "initimg", 
-                                "PPC64 cache line size %u (type %u)\n", 
+                                "PPC64 icache line size %u (type %u)\n", 
                                 (UInt)auxv->u.a_val, (UInt)auxv->a_type );
             }
 #           endif

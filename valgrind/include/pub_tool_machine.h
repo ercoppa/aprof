@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Julian Seward
+   Copyright (C) 2000-2013 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -31,6 +31,7 @@
 #ifndef __PUB_TOOL_MACHINE_H
 #define __PUB_TOOL_MACHINE_H
 
+#include "pub_tool_basics.h"           // ThreadID
 #include "libvex.h"                    // VexArchInfo
 
 #if defined(VGP_x86_linux)
@@ -132,7 +133,8 @@ void VG_(set_syscall_return_shadows) ( ThreadId tid,
                                        UWord s1err, UWord s2err );
 
 // Apply a function 'f' to all the general purpose registers in all the
-// current threads.
+// current threads. This is all live threads, or (when the process is exiting)
+// all threads that were instructed to die by the thread calling exit.
 // This is very Memcheck-specific -- it's used to find the roots when
 // doing leak checking.
 extern void VG_(apply_to_GP_regs)(void (*f)(ThreadId tid,

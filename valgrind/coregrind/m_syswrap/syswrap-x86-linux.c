@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Nicholas Nethercote
+   Copyright (C) 2000-2013 Nicholas Nethercote
       njn@valgrind.org
 
    This program is free software; you can redistribute it and/or
@@ -1118,6 +1118,10 @@ PRE(sys_ptrace)
       PRE_MEM_WRITE( "ptrace(getfpxregs)", ARG4, 
                      sizeof(struct vki_user_fxsr_struct) );
       break;
+   case VKI_PTRACE_GET_THREAD_AREA:
+      PRE_MEM_WRITE( "ptrace(get_thread_area)", ARG4, 
+                     sizeof(struct vki_user_desc) );
+      break;
    case VKI_PTRACE_SETREGS:
       PRE_MEM_READ( "ptrace(setregs)", ARG4, 
 		     sizeof (struct vki_user_regs_struct));
@@ -1129,6 +1133,10 @@ PRE(sys_ptrace)
    case VKI_PTRACE_SETFPXREGS:
       PRE_MEM_READ( "ptrace(setfpxregs)", ARG4, 
                      sizeof(struct vki_user_fxsr_struct) );
+      break;
+   case VKI_PTRACE_SET_THREAD_AREA:
+      PRE_MEM_READ( "ptrace(set_thread_area)", ARG4, 
+                     sizeof(struct vki_user_desc) );
       break;
    case VKI_PTRACE_GETEVENTMSG:
       PRE_MEM_WRITE( "ptrace(geteventmsg)", ARG4, sizeof(unsigned long));
@@ -1166,6 +1174,9 @@ POST(sys_ptrace)
       break;
    case VKI_PTRACE_GETFPXREGS:
       POST_MEM_WRITE( ARG4, sizeof(struct vki_user_fxsr_struct) );
+      break;
+   case VKI_PTRACE_GET_THREAD_AREA:
+      POST_MEM_WRITE( ARG4, sizeof(struct vki_user_desc) );
       break;
    case VKI_PTRACE_GETEVENTMSG:
       POST_MEM_WRITE( ARG4, sizeof(unsigned long));
@@ -1490,7 +1501,7 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_setregid,          sys_setregid16),     // 71
    PLAX_(__NR_sigsuspend,        sys_sigsuspend),     // 72
    LINXY(__NR_sigpending,        sys_sigpending),     // 73
-//zz    //   (__NR_sethostname,       sys_sethostname),    // 74 */*
+   GENX_(__NR_sethostname,       sys_sethostname),    // 74
 //zz 
    GENX_(__NR_setrlimit,         sys_setrlimit),      // 75
    GENXY(__NR_getrlimit,         sys_old_getrlimit),  // 76
@@ -1810,12 +1821,12 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_rt_tgsigqueueinfo, sys_rt_tgsigqueueinfo),// 335
    LINXY(__NR_perf_event_open,   sys_perf_event_open),  // 336
    LINXY(__NR_recvmmsg,          sys_recvmmsg),         // 337
-//   LINX_(__NR_fanotify_init,     sys_ni_syscall),       // 338
-//   LINX_(__NR_fanotify_mark,     sys_ni_syscall),       // 339
+   LINXY(__NR_fanotify_init,     sys_fanotify_init),    // 338
+   LINX_(__NR_fanotify_mark,     sys_fanotify_mark),    // 339
 
    LINXY(__NR_prlimit64,         sys_prlimit64),        // 340
    LINXY(__NR_name_to_handle_at, sys_name_to_handle_at),// 341
-//   LINX_(__NR_open_by_handle_at, sys_ni_syscall),       // 342
+   LINXY(__NR_open_by_handle_at, sys_open_by_handle_at),// 342
 //   LINX_(__NR_clock_adjtime,     sys_ni_syscall),       // 343
 //   LINX_(__NR_syncfs,            sys_ni_syscall),       // 344
 

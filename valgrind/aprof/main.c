@@ -2,8 +2,8 @@
  * Setup of valgrind and instrumentation needed by aprof;
  * command line parser
  * 
- * Last changed: $Date$
- * Revision:     $Rev$
+ * Last changed: $Date: 2013-09-05 21:30:23 +0200 (gio, 05 set 2013) $
+ * Revision:     $Rev: 890 $
  */
  
  /*

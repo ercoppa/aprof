@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Julian Seward 
+   Copyright (C) 2000-2013 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -225,6 +225,11 @@ struct _Supp {
    struct _Supp* next;
    Int count;     // The number of times this error has been suppressed.
    HChar* sname;  // The name by which the suppression is referred to.
+
+   // Index in VG_(clo_suppressions) giving filename from which suppression
+   // was read, and the lineno in this file where sname was read.
+   Int    clo_suppressions_i;
+   Int    sname_lineno;
 
    // Length of 'callers'
    Int n_callers;
@@ -586,6 +591,10 @@ static void pp_Error ( Error* err, Bool allow_db_attach, Bool xml )
       VG_(printf_xml)("<error>\n");
       VG_(printf_xml)("  <unique>0x%x</unique>\n", err->unique);
       VG_(printf_xml)("  <tid>%d</tid>\n", err->tid);
+      ThreadState* tst = VG_(get_ThreadState)(err->tid);
+      if (tst->thread_name) {
+         VG_(printf_xml)("  <threadname>%s</threadname>\n", tst->thread_name);
+      }
 
       /* actually print it */
       VG_TDICT_CALL( tool_pp_Error, err );
@@ -603,7 +612,12 @@ static void pp_Error ( Error* err, Bool allow_db_attach, Bool xml )
 
       if (VG_(tdict).tool_show_ThreadIDs_for_errors
           && err->tid > 0 && err->tid != last_tid_printed) {
-         VG_(umsg)("Thread %d:\n", err->tid );
+         ThreadState* tst = VG_(get_ThreadState)(err->tid);
+         if (tst->thread_name) {
+            VG_(umsg)("Thread %d %s:\n", err->tid, tst->thread_name );
+         } else {
+            VG_(umsg)("Thread %d:\n", err->tid );
+         }
          last_tid_printed = err->tid;
       }
    
@@ -777,7 +791,7 @@ void VG_(maybe_record_error) ( ThreadId tid,
    */
 
    /* copy main part */
-   p = VG_(arena_malloc)(VG_AR_ERRORS, "errormgr.mre.1", sizeof(Error));
+   p = VG_(malloc)("errormgr.mre.1", sizeof(Error));
    *p = err;
 
    /* update 'extra' */
@@ -899,10 +913,19 @@ static Bool show_used_suppressions ( void )
                                  "  </pair>\n",
                                  su->count, su->sname );
       } else {
+         HChar       xtra[256]; /* assumed big enough (is overrun-safe) */
+         Bool        anyXtra;
          // blank line before the first shown suppression, if any
          if (!any_supp)
             VG_(dmsg)("\n");
-         VG_(dmsg)("used_suppression: %6d %s\n", su->count, su->sname);
+         VG_(memset)(xtra, 0, sizeof(xtra));
+         anyXtra = VG_TDICT_CALL(tool_print_extra_suppression_use,
+                                 su, xtra, sizeof(xtra));
+         vg_assert(xtra[sizeof(xtra)-1] == 0);
+         VG_(dmsg)("used_suppression: %6d %s %s:%d%s%s\n", su->count, su->sname,
+                   VG_(clo_suppressions)[su->clo_suppressions_i],
+                   su->sname_lineno,
+                   anyXtra ? " " : "", xtra);
       }
       any_supp = True;
    }
@@ -944,7 +967,8 @@ void VG_(show_all_errors) (  Int verbosity, Bool xml )
 
    /* Print the contexts in order of increasing error count. 
       Once an error is shown, we add a huge value to its count to filter it
-      out. After having shown all errors, we reset count to the original value. */
+      out.
+      After having shown all errors, we reset count to the original value. */
    for (i = 0; i < n_err_contexts; i++) {
       n_min = (1 << 30) - 1;
       p_min = NULL;
@@ -1066,6 +1090,9 @@ static Bool get_nbnc_line ( Int fd, HChar** bufpp, SizeT* nBufp, Int* lineno )
    SizeT nBuf = *nBufp;
    HChar  ch;
    Int   n, i;
+
+   vg_assert(lineno); // lineno needed to correctly track line numbers.
+
    while (True) {
       buf[0] = 0;
       /* First, read until a non-blank char appears. */
@@ -1100,7 +1127,7 @@ static Bool get_nbnc_line ( Int fd, HChar** bufpp, SizeT* nBufp, Int* lineno )
          i--; buf[i] = 0; 
       };
 
-      /* VG_(printf)("The line is '%s'\n", buf); */
+      // VG_(printf)("The line *%p %d is '%s'\n", lineno, *lineno, buf);
       /* Ok, we have a line.  If a non-comment line, return.
          If a comment line, start all over again. */
       if (buf[0] != '#') return False;
@@ -1125,7 +1152,7 @@ Bool VG_(get_line) ( Int fd, HChar** bufpp, SizeT* nBufp, Int* lineno )
    if (is_location_line(*bufpp))
       return True; // Not a extra suppr line
    else
-      return False; // An suppression extra line
+      return False; // A suppression extra line
 }
 
 /* True if s contains no wildcard (?, *) characters. */
@@ -1191,12 +1218,14 @@ static Bool tool_name_present(const HChar *name, HChar *names)
    return found;
 }
 
-/* Read suppressions from the file specified in VG_(clo_suppressions)
+/* Read suppressions from the file specified in 
+   VG_(clo_suppressions)[clo_suppressions_i]
    and place them in the suppressions list.  If there's any difficulty
    doing this, just give up -- there's no point in trying to recover.  
 */
-static void load_one_suppressions_file ( const HChar* filename )
+static void load_one_suppressions_file ( Int clo_suppressions_i )
 {
+   const HChar* filename = VG_(clo_suppressions)[clo_suppressions_i];
    SysRes sres;
    Int    fd, i, j, lineno = 0;
    Bool   got_a_location_line_read_by_tool;
@@ -1257,6 +1286,8 @@ static void load_one_suppressions_file ( const HChar* filename )
       if (eof || VG_STREQ(buf, "}")) BOMB("unexpected '}'");
 
       supp->sname = VG_(arena_strdup)(VG_AR_CORE, "errormgr.losf.2", buf);
+      supp->clo_suppressions_i = clo_suppressions_i;
+      supp->sname_lineno = lineno;
 
       eof = get_nbnc_line ( fd, &buf, &nBuf, &lineno );
 
@@ -1311,7 +1342,7 @@ static void load_one_suppressions_file ( const HChar* filename )
       // from fd till a location line. 
       if (VG_(needs).tool_errors && 
           !VG_TDICT_CALL(tool_read_extra_suppression_info,
-                         fd, &buf, &nBuf, supp))
+                         fd, &buf, &nBuf, &lineno, supp))
       {
          BOMB("bad or missing extra suppression info");
       }
@@ -1408,7 +1439,7 @@ void VG_(load_suppressions) ( void )
          VG_(dmsg)("Reading suppressions file: %s\n", 
                    VG_(clo_suppressions)[i] );
       }
-      load_one_suppressions_file( VG_(clo_suppressions)[i] );
+      load_one_suppressions_file( i );
    }
 }
 
@@ -1635,8 +1666,9 @@ static Supp* is_suppressible_error ( Error* err )
    /* Conceptually, ip2fo contains an array of function names and an array of
       object names, corresponding to the array of IP of err->where.
       These names are just computed 'on demand' (so once maximum),
-      then stored (efficiently, avoiding too many allocs) in ip2fo to be re-usable
-      for the matching of the same IP with the next suppression pattern. 
+      then stored (efficiently, avoiding too many allocs) in ip2fo to be
+      re-usable for the matching of the same IP with the next suppression
+      pattern. 
 
       VG_(generic_match) gets this 'IP to Fun or Obj name completer' as one
       of its arguments. It will then pass it to the function
@@ -1663,7 +1695,10 @@ static Supp* is_suppressible_error ( Error* err )
       em_supplist_cmps++;
       if (supp_matches_error(su, err) 
           && supp_matches_callers(&ip2fo, su)) {
-         /* got a match.  Move this entry to the head of the list
+         /* got a match.  */
+         /* Inform the tool that err is suppressed by su. */
+         (void)VG_TDICT_CALL(tool_update_extra_suppression_use, err, su);
+         /* Move this entry to the head of the list
             in the hope of making future searches cheaper. */
          if (su_prev) {
             vg_assert(su_prev->next == su);

@@ -79,12 +79,13 @@ EXTRA_DIST = \
 	sse4-64.stdout.exp-older-glibc \
 	slahf-amd64.stderr.exp slahf-amd64.stdout.exp \
 	slahf-amd64.vgtest \
+	tm1.vgtest tm1.stderr.exp tm1.stdout.exp \
+	xacq_xrel.stderr.exp xacq_xrel.stdout.exp xacq_xrel.vgtest \
 	xadd.stderr.exp xadd.stdout.exp xadd.vgtest
 
 check_PROGRAMS = \
 	allexec \
 	amd64locked \
-	asorep \
 	bug127521-64 bug132813-amd64 bug132918 \
 	clc \
 	cmpxchg \
@@ -96,6 +97,9 @@ check_PROGRAMS = \
 	sbbmisc \
 	nibz_bennee_mmap \
 	xadd
+if BUILD_ADDR32_TESTS
+ check_PROGRAMS += asorep
+endif
 if BUILD_SSSE3_TESTS
  check_PROGRAMS += ssse3_misaligned
 endif
@@ -114,6 +118,9 @@ endif
 endif
 if BUILD_AVX2_TESTS
   check_PROGRAMS += avx2-1
+endif
+if BUILD_TSX_TESTS
+  check_PROGRAMS += tm1 xacq_xrel
 endif
 if BUILD_BMI_TESTS
  check_PROGRAMS += bmi
@@ -134,10 +141,12 @@ if ! VGCONF_OS_IS_DARWIN
 	fcmovnu \
 	fxtract \
 	looper \
-	loopnel \
 	jrcxz \
 	shrld \
 	slahf-amd64
+if BUILD_LOOPNEL_TESTS
+   check_PROGRAMS += loopnel
+endif
 endif
 
 AM_CFLAGS    += @FLAG_M64@

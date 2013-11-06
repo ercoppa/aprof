@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2008-2012 OpenWorks Ltd
+   Copyright (C) 2008-2013 OpenWorks Ltd
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
@@ -31,6 +31,8 @@
 
 #ifndef __PUB_TOOL_SPARSEWA_H
 #define __PUB_TOOL_SPARSEWA_H
+
+#include "pub_tool_basics.h"   // UWord
 
 //--------------------------------------------------------------------
 // PURPOSE: (see coregrind/pub_core_sparsewa.h for details)

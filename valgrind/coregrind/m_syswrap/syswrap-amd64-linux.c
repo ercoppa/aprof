@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Nicholas Nethercote
+   Copyright (C) 2000-2013 Nicholas Nethercote
       njn@valgrind.org
 
    This program is free software; you can redistribute it and/or
@@ -912,7 +912,7 @@ static SyscallTableEntry syscall_table[] = {
    //   (__NR_swapoff,           sys_swapoff),        // 168 
    //   (__NR_reboot,            sys_reboot),         // 169 
 
-   //   (__NR_sethostname,       sys_sethostname),    // 170 
+   GENX_(__NR_sethostname,       sys_sethostname),    // 170 
    //   (__NR_setdomainname,     sys_setdomainname),  // 171 
    GENX_(__NR_iopl,              sys_iopl),           // 172 
    LINX_(__NR_ioperm,            sys_ioperm),         // 173 
@@ -1068,11 +1068,11 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_perf_event_open,   sys_perf_event_open),  // 298
    LINXY(__NR_recvmmsg,          sys_recvmmsg),         // 299
 
-//   LINX_(__NR_fanotify_init,     sys_ni_syscall),       // 300
-//   LINX_(__NR_fanotify_mark,     sys_ni_syscall),       // 301
+   LINXY(__NR_fanotify_init,     sys_fanotify_init),    // 300
+   LINX_(__NR_fanotify_mark,     sys_fanotify_mark),    // 301
    LINXY(__NR_prlimit64,         sys_prlimit64),        // 302
    LINXY(__NR_name_to_handle_at, sys_name_to_handle_at),// 303
-//   LINX_(__NR_open_by_handle_at, sys_ni_syscall),       // 304
+   LINXY(__NR_open_by_handle_at, sys_open_by_handle_at),// 304
 
 //   LINX_(__NR_clock_adjtime,     sys_ni_syscall),       // 305
 //   LINX_(__NR_syncfs,            sys_ni_syscall),       // 306

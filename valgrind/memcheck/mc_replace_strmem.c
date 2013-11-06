@@ -9,7 +9,7 @@
    This file is part of MemCheck, a heavyweight Valgrind tool for
    detecting memory errors.
 
-   Copyright (C) 2000-2012 Julian Seward 
+   Copyright (C) 2000-2013 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -35,7 +35,7 @@
 #include "pub_tool_hashtable.h"
 #include "pub_tool_redir.h"
 #include "pub_tool_tooliface.h"
-#include "valgrind.h"
+#include "pub_tool_clreq.h"
 
 #include "mc_include.h"
 #include "memcheck.h"
@@ -1796,7 +1796,7 @@ int VG_WRAP_FUNCTION_ZU(VG_Z_LIBC_SONAME, setenv)
     if (value)
         for (p = value; *p; p++)
             __asm__ __volatile__("" ::: "memory");
-    VALGRIND_CHECK_VALUE_IS_DEFINED (overwrite);
+    (void) VALGRIND_CHECK_VALUE_IS_DEFINED (overwrite);
     CALL_FN_W_WWW(result, fn, name, value, overwrite);
     return result;
 }

@@ -6,7 +6,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2011-2012 Philippe Waroquiers
+   Copyright (C) 2011-2013 Philippe Waroquiers
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -81,7 +81,7 @@
    specific code and/or some OS specific code. */
 #if defined(VGA_arm) || defined(VGA_x86) || defined(VGA_amd64) \
     || defined(VGA_ppc32) || defined(VGA_ppc64) || defined(VGA_s390x) \
-    || defined(VGP_mips32_linux) || defined(VGA_mips64)
+    || defined(VGA_mips32) || defined(VGA_mips64)
 #define PTRACEINVOKER
 #else
 I_die_here : (PTRACEINVOKER) architecture missing in vgdb.c
@@ -100,9 +100,6 @@ I_die_here : (PTRACEINVOKER) architecture missing in vgdb.c
 
 #if defined(PTRACEINVOKER)
 #include <sys/user.h>
-#if defined(VGO_linux)
-#  include <linux/ptrace.h>
-#endif
 #endif
 
 
@@ -694,7 +691,7 @@ static struct user user_save;
 //       runtime check not yet done.
 //   0 : PTRACE_GETREGS runtime check has failed.
 //   1 : PTRACE_GETREGS defined and runtime check ok.
-#ifdef PTRACE_GETREGS
+#ifdef HAVE_PTRACE_GETREGS
 static int has_working_ptrace_getregs = -1;
 #endif
 
@@ -705,7 +702,7 @@ static
 Bool getregs (int pid, void *regs, long regs_bsz)
 {
    DEBUG(1, "getregs regs_bsz %ld\n", regs_bsz);
-#  ifdef PTRACE_GETREGS
+#  ifdef HAVE_PTRACE_GETREGS
    if (has_working_ptrace_getregs) {
       // Platforms having GETREGS
       long res;
@@ -776,7 +773,7 @@ Bool setregs (int pid, void *regs, long regs_bsz)
    DEBUG(1, "setregs regs_bsz %ld\n", regs_bsz);
 // Note : the below is checking for GETREGS, not SETREGS
 // as if one is defined and working, the other one should also work.
-#  ifdef PTRACE_GETREGS
+#  ifdef HAVE_PTRACE_GETREGS
    if (has_working_ptrace_getregs) {
       // Platforms having SETREGS
       long res;
@@ -919,7 +916,8 @@ Bool invoke_gdbserver (int pid)
 #elif defined(VGA_s390x)
    sp = user_mod.regs.gprs[15];
 #elif defined(VGA_mips32)
-   sp = user_mod.regs[29*2];
+   long long *p = (long long *)user_mod.regs;
+   sp = p[29];
 #elif defined(VGA_mips64)
    sp = user_mod.regs[29];
 #else
@@ -996,17 +994,14 @@ Bool invoke_gdbserver (int pid)
       XERROR(0, "(fn32) s390x has no 32bits implementation");
 #elif defined(VGA_mips32)
       /* put check arg in register 4 */
-      user_mod.regs[4*2] = check;
-      user_mod.regs[4*2+1] = 0xffffffff; // sign extend $a0
-      /* This sign extension is needed when vgdb 32 bits runs
-         on a 64 bits OS. */
+      p[4] = check;
       /* put NULL return address in ra */
-      user_mod.regs[31*2] = bad_return;
-      user_mod.regs[31*2+1] = 0;
-      user_mod.regs[34*2] = shared32->invoke_gdbserver;
-      user_mod.regs[34*2+1] = 0;
-      user_mod.regs[25*2] = shared32->invoke_gdbserver;
-      user_mod.regs[25*2+1] = 0;
+      p[31] = bad_return;
+      p[34] = shared32->invoke_gdbserver;
+      p[25] = shared32->invoke_gdbserver;
+      /* make stack space for args */
+      p[29] = sp - 32;
+
 #elif defined(VGA_mips64)
       assert(0); // cannot vgdb a 32 bits executable with a 64 bits exe
 #else
@@ -2070,7 +2065,7 @@ void usage(void)
 "             \n"
 "  --pid arg must be given if multiple Valgrind gdbservers are found.\n"
 "  --vgdb-prefix arg must be given to both Valgrind and vgdb utility\n"
-"      if you want to change the default prefix for the FIFOs communication\n"
+"      if you want to change the prefix (default %s) for the FIFOs communication\n"
 "      between the Valgrind gdbserver and vgdb.\n"
 "  --wait (default 0) tells vgdb to check during the specified number\n"
 "      of seconds if a Valgrind gdbserver can be found.\n"
@@ -2086,7 +2081,7 @@ void usage(void)
 "\n"
 "  -h --help shows this message\n"
 "  To get help from the Valgrind gdbserver, use vgdb help\n"
-"\n"
+"\n", vgdb_prefix_default()
            );
    ptrace_restrictions_msg();  
 }
@@ -2131,15 +2126,16 @@ int search_arg_pid(int arg_pid, int check_trials, Bool show_list)
       strcpy (vgdb_format, vgdb_prefix);
       strcat (vgdb_format, suffix);
       
-      strcpy (vgdb_dir_name, vgdb_prefix);
-      
-      for (is = strlen(vgdb_prefix) - 1; is >= 0; is--)
-         if (vgdb_dir_name[is] == '/') {
-            vgdb_dir_name[is+1] = '\0';
-            break;
-         }
-      if (strlen(vgdb_dir_name) == 0)
-         strcpy (vgdb_dir_name, "./");
+      if (strchr(vgdb_prefix, '/') != NULL) {
+         strcpy (vgdb_dir_name, vgdb_prefix);
+         for (is = strlen(vgdb_prefix) - 1; is >= 0; is--)
+            if (vgdb_dir_name[is] == '/') {
+               vgdb_dir_name[is+1] = '\0';
+               break;
+            }
+      } else {
+         strcpy (vgdb_dir_name, "");
+      }
 
       DEBUG(1, "searching pid in directory %s format %s\n", 
             vgdb_dir_name, vgdb_format);
@@ -2157,7 +2153,7 @@ int search_arg_pid(int arg_pid, int check_trials, Bool show_list)
            /* wait one second before checking again */
            sleep(1);
 
-         vgdb_dir = opendir (vgdb_dir_name);
+         vgdb_dir = opendir (strlen (vgdb_dir_name) ? vgdb_dir_name : "./");
          if (vgdb_dir == NULL)
             XERROR (errno, 
                     "vgdb error: opening directory %s searching vgdb fifo\n", 

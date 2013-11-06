@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Julian Seward
+   Copyright (C) 2000-2013 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -31,7 +31,9 @@
 #ifndef __PRIV_SYSWRAP_GENERIC_H
 #define __PRIV_SYSWRAP_GENERIC_H
 
-/* requires #include "priv_types_n_macros.h" */
+#include "pub_core_basics.h"      // ThreadId
+#include "pub_core_vki.h"         // vki_msghdr
+#include "priv_types_n_macros.h"  // DECL_TEMPLATE
 
 
 // Return true if address range entirely contained within client
@@ -149,6 +151,7 @@ DECL_TEMPLATE(generic, sys_chown);
 DECL_TEMPLATE(generic, sys_setuid);
 DECL_TEMPLATE(generic, sys_gettimeofday);
 DECL_TEMPLATE(generic, sys_madvise);
+DECL_TEMPLATE(generic, sys_sethostname);
 
 // These ones aren't POSIX, but are in some standard and look reasonably
 // generic,  and are the same for all architectures under Linux.

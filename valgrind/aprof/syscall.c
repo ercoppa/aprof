@@ -1,8 +1,8 @@
 /*
  * syscall handlers
  * 
- * Last changed: $Date$
- * Revision:     $Rev$
+ * Last changed: $Date: 2013-03-19 16:38:48 +0100 (mar, 19 mar 2013) $
+ * Revision:     $Rev: 828 $
  */
 
 /*

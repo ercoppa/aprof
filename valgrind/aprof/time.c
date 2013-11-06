@@ -1,8 +1,8 @@
 /*
  * time() function and instruction (VEX or Intel) counters
  * 
- * Last changed: $Date$
- * Revision:     $Rev$
+ * Last changed: $Date: 2013-01-10 12:36:45 +0100 (gio, 10 gen 2013) $
+ * Revision:     $Rev: 736 $
  */
  
  /*

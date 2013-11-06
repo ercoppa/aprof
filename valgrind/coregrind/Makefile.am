@@ -24,7 +24,8 @@ endif
 EXTRA_DIST = \
 	m_debuginfo/UNUSED_STABS.txt \
 	m_debuginfo/README.txt \
-	m_gdbserver/README_DEVELOPERS
+	m_gdbserver/README_DEVELOPERS \
+	docs/vgdb-manpage.xml
 
 #----------------------------------------------------------------------------
 # The launcher.  Built for the primary target only.
@@ -155,6 +156,7 @@ noinst_HEADERS = \
 	pub_core_gdbserver.h	\
 	pub_core_hashtable.h	\
 	pub_core_initimg.h	\
+	pub_core_inner.h	\
 	pub_core_libcbase.h	\
 	pub_core_libcassert.h	\
 	pub_core_libcfile.h	\
@@ -168,6 +170,7 @@ noinst_HEADERS = \
 	pub_core_options.h	\
 	pub_core_oset.h		\
 	pub_core_redir.h	\
+	pub_core_poolalloc.h	\
 	pub_core_replacemalloc.h\
 	pub_core_sbprofile.h	\
 	pub_core_scheduler.h	\
@@ -202,6 +205,10 @@ noinst_HEADERS = \
 	m_debuginfo/priv_readdwarf3.h	\
 	m_debuginfo/priv_readelf.h	\
 	m_debuginfo/priv_readmacho.h	\
+	m_debuginfo/priv_image.h	\
+	m_debuginfo/lzoconf.h		\
+	m_debuginfo/lzodefs.h		\
+	m_debuginfo/minilzo.h		\
 	m_demangle/ansidecl.h	\
 	m_demangle/cp-demangle.h \
 	m_demangle/dyn-string.h	\
@@ -215,7 +222,6 @@ noinst_HEADERS = \
 	m_gdbserver/valgrind_low.h \
 	m_gdbserver/gdb/signals.h \
 	m_initimg/priv_initimg_pathscan.h \
-	m_initimg/simple_huffman.c \
 	m_scheduler/priv_sema.h \
 	m_scheduler/priv_sched-lock.h \
 	m_scheduler/priv_sched-lock-impl.h \
@@ -296,6 +302,8 @@ COREGRIND_SOURCES_COMMON = \
 	m_debuginfo/readstabs.c \
 	m_debuginfo/storage.c \
 	m_debuginfo/tytypes.c \
+	m_debuginfo/image.c \
+	m_debuginfo/minilzo-inl.c \
 	m_demangle/cp-demangle.c \
 	m_demangle/cplus-dem.c \
 	m_demangle/demangle.c \

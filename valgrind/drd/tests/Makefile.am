@@ -61,9 +61,11 @@ EXTRA_DIST =                                        \
 	annotate_ignore_write2.vgtest		    \
 	annotate_trace_memory.stderr.exp-32bit	    \
 	annotate_trace_memory.stderr.exp-64bit	    \
+	annotate_trace_memory.stderr.exp-mips32	   \
 	annotate_trace_memory.vgtest		    \
 	annotate_trace_memory_xml.stderr.exp-32bit  \
 	annotate_trace_memory_xml.stderr.exp-64bit  \
+	annotate_trace_memory_xml.stderr.exp-mips32 \
 	annotate_trace_memory_xml.vgtest	    \
 	annotate_static.stderr.exp	            \
 	annotate_static.vgtest		            \
@@ -82,6 +84,8 @@ EXTRA_DIST =                                        \
 	bug-235681.vgtest			    \
 	circular_buffer.stderr.exp		    \
 	circular_buffer.vgtest			    \
+	concurrent_close.stderr.exp		    \
+	concurrent_close.vgtest			    \
 	custom_alloc.stderr.exp			    \
 	custom_alloc.vgtest			    \
 	custom_alloc_fiw.stderr.exp		    \
@@ -226,8 +230,14 @@ EXTRA_DIST =                                        \
 	sigalrm.vgtest                              \
 	sigaltstack.stderr.exp                      \
 	sigaltstack.vgtest                          \
+	std_list.stderr.exp		  	    \
+	std_list.vgtest			            \
+	std_string.stderr.exp		  	    \
+	std_string.vgtest			    \
 	std_thread.stderr.exp		  	    \
 	std_thread.vgtest			    \
+	str_tester.stderr.exp		  	    \
+	str_tester.vgtest			    \
 	tc01_simple_race.stderr.exp                 \
 	tc01_simple_race.vgtest                     \
 	tc02_simple_tls.stderr.exp                  \
@@ -306,8 +316,10 @@ check_PROGRAMS =      \
   annotate_ignore_write \
   annotate_publish_hg \
   annotate_static     \
+  annotate_trace_memory \
   bug-235681          \
   custom_alloc        \
+  concurrent_close    \
   fp_race             \
   free_is_write	      \
   hold_lock           \
@@ -353,20 +365,21 @@ check_PROGRAMS +=        \
   circular_buffer
 endif
 
-if HAVE_BUILTIN_ATOMIC64
-check_PROGRAMS +=        \
-  annotate_trace_memory
-endif
-
 if HAVE_BUILTIN_ATOMIC_CXX
 check_PROGRAMS +=        \
   annotate_smart_pointer \
   tsan_unittest
 endif
 
+# clang 3.3 will generate errors about libstdc++ headers from 
+# gcc (Ubuntu/Linaro 4.6.3-1ubuntu5) 4.6.3
+if CXX_CAN_INCLUDE_THREAD_HEADER
 if HAVE_SHARED_POINTER_ANNOTATION
 check_PROGRAMS += \
+  std_list        \
+  std_string      \
   std_thread
+endif
 endif
 
 if HAVE_OPENMP
@@ -397,6 +410,7 @@ AM_CXXFLAGS += $(AM_FLAG_M3264_PRI) @FLAG_W_EXTRA@ -Wno-inline -Wno-unused-param
 LDADD = -lpthread
 
 
+concurrent_close_SOURCES    = concurrent_close.cpp
 monitor_example_SOURCES     = monitor_example.cpp
 new_delete_SOURCES          = new_delete.cpp
 
@@ -443,6 +457,12 @@ endif
 if HAVE_PTHREAD_BARRIER
 matinv_LDADD                = $(LDADD) -lm
 endif
+
+std_list_SOURCES            = std_list.cpp
+std_list_CXXFLAGS           = $(AM_CXXFLAGS) -std=c++0x -Wno-sign-compare
+
+std_string_SOURCES          = std_string.cpp
+std_string_CXXFLAGS         = $(AM_CXXFLAGS) -std=c++0x -Wno-sign-compare
 
 std_thread_SOURCES          = std_thread.cpp
 std_thread_CXXFLAGS         = $(AM_CXXFLAGS) -std=c++0x

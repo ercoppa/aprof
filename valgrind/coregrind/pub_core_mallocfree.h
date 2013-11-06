@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Julian Seward
+   Copyright (C) 2000-2013 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -40,14 +40,11 @@
 
 /* Allocation arenas.  
 
-      CORE      for the core's general use.
-      TOOL      for the tool to use (and the only one it uses).
+      CORE      for the core's and tools' general use.
       DINFO     for debug info (symbols, line #s, CFI, etc) storage.
       CLIENT    for the client's mallocs/frees, if the tool replaces glibc's
                     malloc() et al -- redzone size is chosen by the tool.
       DEMANGLE  for the C++ demangler.
-      EXECTXT   for storing ExeContexts.
-      ERRORS    for storing CoreErrors.
       TTAUX     for storing TT/TC auxiliary structures (address range
                 equivalence classes).
 
@@ -55,34 +52,31 @@
 */
 typedef Int ArenaId;
 
-#define VG_N_ARENAS        8
+#define VG_N_ARENAS        5
 
 #define VG_AR_CORE         0
-#define VG_AR_TOOL         1
-#define VG_AR_DINFO        2
-#define VG_AR_CLIENT       3
-#define VG_AR_DEMANGLE     4
-#define VG_AR_EXECTXT      5
-#define VG_AR_ERRORS       6
-#define VG_AR_TTAUX        7
+#define VG_AR_DINFO        1
+#define VG_AR_CLIENT       2
+#define VG_AR_DEMANGLE     3
+#define VG_AR_TTAUX        4
 
 // This is both the minimum payload size of a malloc'd block, and its
 // minimum alignment.  Must be a power of 2 greater than 4, and should be
 // greater than 8.
 #if   defined(VGP_x86_linux)   || \
       defined(VGP_arm_linux)   || \
-      defined(VGP_mips32_linux) || \
-      defined(VGP_mips64_linux)
+      defined(VGP_mips32_linux)
 #  define VG_MIN_MALLOC_SZB        8
 // Nb: We always use 16 bytes for Darwin, even on 32-bits, so it can be used
 // for any AltiVec- or SSE-related type.  This matches the Darwin libc.
 // Also, use 16 bytes for any PPC variant, since 16 is required to make
 // Altiveccery work right.
-#elif defined(VGP_amd64_linux) || \
-      defined(VGP_ppc32_linux) || \
-      defined(VGP_ppc64_linux) || \
-      defined(VGP_s390x_linux) || \
-      defined(VGP_x86_darwin)  || \
+#elif defined(VGP_amd64_linux)  || \
+      defined(VGP_ppc32_linux)  || \
+      defined(VGP_ppc64_linux)  || \
+      defined(VGP_s390x_linux)  || \
+      defined(VGP_mips64_linux) || \
+      defined(VGP_x86_darwin)   || \
       defined(VGP_amd64_darwin)
 #  define VG_MIN_MALLOC_SZB       16
 #else
@@ -116,6 +110,8 @@ extern HChar* VG_(arena_strdup)  ( ArenaId aid, const HChar* cc,
                                    const HChar* s);
 
 extern SizeT VG_(arena_malloc_usable_size) ( ArenaId aid, void* payload );
+
+extern SizeT VG_(arena_redzone_size) ( ArenaId aid );
 
 extern void  VG_(mallinfo) ( ThreadId tid, struct vg_mallinfo* mi );
 

@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Julian Seward 
+   Copyright (C) 2000-2013 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -43,7 +43,7 @@
 #include "pub_core_clientstate.h"   // VG_(brk_base), VG_(brk_limit)
 #include "pub_core_debuglog.h"
 #include "pub_core_errormgr.h"
-#include "pub_tool_gdbserver.h"     // VG_(gdbserver)
+#include "pub_core_gdbserver.h"     // VG_(gdbserver)
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcfile.h"
@@ -941,6 +941,9 @@ void pre_mem_read_sockaddr ( ThreadId tid,
    struct vki_sockaddr_un*  sun  = (struct vki_sockaddr_un *)sa;
    struct vki_sockaddr_in*  sin  = (struct vki_sockaddr_in *)sa;
    struct vki_sockaddr_in6* sin6 = (struct vki_sockaddr_in6 *)sa;
+#ifdef VKI_AF_BLUETOOTH
+   struct vki_sockaddr_rc*  rc   = (struct vki_sockaddr_rc *)sa;
+#endif
 
    /* NULL/zero-length sockaddrs are legal */
    if ( sa == NULL || salen == 0 ) return;
@@ -980,7 +983,16 @@ void pre_mem_read_sockaddr ( ThreadId tid,
          PRE_MEM_READ( outmsg,
             (Addr) &sin6->sin6_scope_id, sizeof (sin6->sin6_scope_id) );
          break;
-               
+
+#ifdef VKI_AF_BLUETOOTH
+      case VKI_AF_BLUETOOTH:
+         VG_(sprintf) ( outmsg, description, "rc_bdaddr" );
+         PRE_MEM_READ( outmsg, (Addr) &rc->rc_bdaddr, sizeof (rc->rc_bdaddr) );
+         VG_(sprintf) ( outmsg, description, "rc_channel" );
+         PRE_MEM_READ( outmsg, (Addr) &rc->rc_channel, sizeof (rc->rc_channel) );
+         break;
+#endif
+
       default:
          VG_(sprintf) ( outmsg, description, "" );
          PRE_MEM_READ( outmsg, (Addr) sa, salen );
@@ -1984,7 +1996,7 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
    MapRequest mreq;
    Bool       mreq_ok;
 
-#if defined(VGO_darwin)
+#  if defined(VGO_darwin)
    // Nb: we can't use this on Darwin, it has races:
    // * needs to RETRY if advisory succeeds but map fails  
    //   (could have been some other thread in a nonblocking call)
@@ -1992,7 +2004,7 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
    //   (mmap will cheerfully smash whatever's already there, which might 
    //   be a new mapping from some other thread in a nonblocking call)
    VG_(core_panic)("can't use ML_(generic_PRE_sys_mmap) on Darwin");
-#endif
+#  endif
 
    if (arg2 == 0) {
       /* SuSV3 says: If len is zero, mmap() shall fail and no mapping
@@ -2014,6 +2026,15 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
          passed _SC_PAGESIZE or _SC_PAGE_SIZE. */
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
    }
+
+#  if defined(VKI_MAP_32BIT)
+   /* We can't support MAP_32BIT (at least, not without significant
+      complication), and it's royally unportable, so if the client
+      asks for it, just fail it. */
+   if (arg4 & VKI_MAP_32BIT) {
+      return VG_(mk_SysRes_Error)( VKI_ENOMEM );
+   }
+#  endif
 
    /* Figure out what kind of allocation constraints there are
       (fixed/hint/any), and ask aspacem what we should do. */
@@ -4216,6 +4237,13 @@ POST(sys_sigaltstack)
    vg_assert(SUCCESS);
    if (RES == 0 && ARG2 != 0)
       POST_MEM_WRITE( ARG2, sizeof(vki_stack_t));
+}
+
+PRE(sys_sethostname)
+{
+   PRINT("sys_sethostname ( %#lx, %ld )", ARG1,ARG2);
+   PRE_REG_READ2(long, "sethostname", char *, name, int, len);
+   PRE_MEM_READ( "sethostname(name)", ARG1, ARG2 );
 }
 
 #undef PRE

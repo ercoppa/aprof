@@ -1,8 +1,8 @@
 /*
  * lookup table implementation
  * 
- * Last changed: $Date$
- * Revision:     $Rev$
+ * Last changed: $Date: 2013-03-13 18:08:19 +0100 (mer, 13 mar 2013) $
+ * Revision:     $Rev: 822 $
  */
 
 /*

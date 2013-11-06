@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Julian Seward 
+   Copyright (C) 2000-2013 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -77,9 +77,13 @@ static void barf ( const char *format, ... )
 /* Search the path for the client program */
 static const char *find_client(const char *clientname)
 {
-   char *fullname = NULL;
+   char *fullname;
    const char *path = getenv("PATH");
    const char *colon;
+
+   assert(clientname != NULL);
+
+   if (path == NULL) return clientname;
 
    /* Make the size of the FULLNAME buffer large enough. */
    unsigned need = strlen(path) + strlen("/") + strlen(clientname) + 1;
@@ -108,6 +112,7 @@ static const char *find_client(const char *clientname)
       if (access(fullname, R_OK|X_OK) == 0)
          return fullname;
    }
+   free(fullname);
 
    return clientname;
 }

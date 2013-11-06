@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2007-2012 OpenWorks LLP
+   Copyright (C) 2007-2013 OpenWorks LLP
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
@@ -30,6 +30,8 @@
 
 #ifndef __PUB_TOOL_XARRAY_H
 #define __PUB_TOOL_XARRAY_H
+
+#include "pub_tool_basics.h"    // Word
 
 //--------------------------------------------------------------------
 // PURPOSE: Provides a simple but useful structure, which is an array

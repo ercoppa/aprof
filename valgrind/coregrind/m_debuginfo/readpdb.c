@@ -11,7 +11,7 @@
       derived from readelf.c and valgrind-20031012-wine/vg_symtab2.c
       derived from wine-1.0/tools/winedump/pdb.c and msc.c
 
-   Copyright (C) 2000-2012 Julian Seward
+   Copyright (C) 2000-2013 Julian Seward
       jseward@acm.org
    Copyright 2006 Eric Pouech (winedump/pdb.c and msc.c)
       GNU Lesser General Public License version 2.1 or later applies.
@@ -50,6 +50,7 @@
 #include "pub_core_redir.h"
 
 #include "priv_misc.h"             /* dinfo_zalloc/free/strdup */
+#include "priv_image.h"
 #include "priv_d3basics.h"
 #include "priv_storage.h"
 #include "priv_readpdb.h"          // self
@@ -2407,7 +2408,7 @@ HChar* ML_(find_name_of_pdb_file)( HChar* pename )
    /* This is a giant kludge, of the kind "you did WTF?!?", but it
       works. */
    Bool   do_cleanup = False;
-   HChar  tmpname[100], tmpnameroot[50];
+   HChar  tmpname[VG_(mkstemp_fullname_bufsz)(50-1)], tmpnameroot[50];
    Int    fd, r;
    HChar* res = NULL;
 

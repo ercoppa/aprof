@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2008-2012 OpenWorks LLP
+   Copyright (C) 2008-2013 OpenWorks LLP
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
@@ -35,6 +35,10 @@
 
 #ifndef __PRIV_TYTYPES_H
 #define __PRIV_TYTYPES_H
+
+#include "pub_core_basics.h"   // UWord
+#include "pub_core_xarray.h"   // XArray
+#include "priv_misc.h"         // MaybeULong
 
 typedef
    enum {

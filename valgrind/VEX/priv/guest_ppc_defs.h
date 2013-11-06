@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2012 OpenWorks LLP
+   Copyright (C) 2004-2013 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -134,6 +134,7 @@ enum {
    /* 15 */ PPCG_FLAG_OP_DIVWEU,  // divweuo
    /* 16 */ PPCG_FLAG_OP_DIVWE,   // divweo
    /* 17 */ PPCG_FLAG_OP_DIVDEU,  // divdeuo
+   /* 18 */ PPCG_FLAG_OP_MULLD,   // mulldo
    PPCG_FLAG_OP_NUMBER
 };
 

@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2011-2012 Philippe Waroquiers
+   Copyright (C) 2011-2013 Philippe Waroquiers
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -33,21 +33,21 @@
 #include "pub_core_libcproc.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_mallocfree.h"
-#include "pub_tool_libcsetjmp.h"
+#include "pub_core_libcsetjmp.h"
 #include "pub_core_threadstate.h"
 #include "pub_core_gdbserver.h"
 #include "pub_core_options.h"
 #include "pub_core_libcsetjmp.h"
 #include "pub_core_threadstate.h"
 #include "pub_core_transtab.h"
-#include "pub_tool_hashtable.h"
-#include "pub_tool_xarray.h"
+#include "pub_core_hashtable.h"
+#include "pub_core_xarray.h"
 #include "pub_core_libcassert.h"
-#include "pub_tool_libcbase.h"
+#include "pub_core_libcbase.h"
 #include "pub_core_libcsignal.h"
 #include "pub_core_signals.h"
-#include "pub_tool_machine.h"     // VG_(fnptr_to_fnentry)
-#include "pub_tool_debuginfo.h"
+#include "pub_core_machine.h"     // VG_(fnptr_to_fnentry)
+#include "pub_core_debuginfo.h"
 #include "pub_core_scheduler.h"
 #include "pub_core_syswrap.h"
 

@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Julian Seward
+   Copyright (C) 2000-2013 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -30,6 +30,8 @@
 
 #ifndef __PUB_TOOL_LIBCBASE_H
 #define __PUB_TOOL_LIBCBASE_H
+
+#include "pub_tool_basics.h"   // VG_ macro
 
 /* ---------------------------------------------------------------------
    Char functions.
@@ -193,6 +195,12 @@ extern Int VG_(log2_64)( ULong x );
 // non-NULL, it uses and updates whatever pSeed points at.
 extern UInt VG_(random) ( /*MOD*/UInt* pSeed );
 #define VG_RAND_MAX (1ULL << 32)
+
+/* Update a running Adler-32 checksum with the bytes buf[0..len-1] and
+   return the updated checksum. If buf is NULL, this function returns
+   the required initial value for the checksum. An Adler-32 checksum is
+   almost as reliable as a CRC32 but can be computed much faster. */
+extern UInt VG_(adler32)( UInt adler, const UChar* buf, UInt len);
 
 #endif   // __PUB_TOOL_LIBCBASE_H
 

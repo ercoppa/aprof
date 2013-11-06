@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2005-2012 Nicholas Nethercote
+   Copyright (C) 2005-2013 Nicholas Nethercote
       njn@valgrind.org
 
    This program is free software; you can redistribute it and/or
@@ -30,6 +30,8 @@
 
 #ifndef __PUB_TOOL_HASHTABLE_H
 #define __PUB_TOOL_HASHTABLE_H
+
+#include "pub_tool_basics.h"   // VG_ macro
 
 /* Generic type for a separately-chained hash table.  Via a kind of dodgy
    C-as-C++ style inheritance, tools can extend the VgHashNode type, so long

@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2012 OpenWorks LLP
+   Copyright (C) 2004-2013 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -1025,6 +1025,16 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
          /* Note, args are opposite way round from the usual */
          return unop(Iop_1Uto64,
                      binop(Iop_CmpLE64U, cc_dep2, cc_dep1));
+      }
+
+      if (isU64(cc_op, AMD64G_CC_OP_SUBQ) && isU64(cond, AMD64CondNLE)) {
+         /* long sub/cmp, then NLE (signed greater than) 
+            --> test !(dst <=s src)
+            --> test (dst >s src)
+            --> test (src <s dst) */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpLT64S, cc_dep2, cc_dep1));
+
       }
 
       if (isU64(cc_op, AMD64G_CC_OP_SUBQ) && isU64(cond, AMD64CondBE)) {
@@ -2560,7 +2570,7 @@ void amd64g_dirtyhelper_CPUID_sse42_and_cx16 ( VexGuestAMD64State* st )
 
 
 /* Claim to be the following CPU (4 x ...), which is AVX and cx16
-   capable.
+   capable.  Plus (kludge!) it "supports" HTM.
 
    vendor_id       : GenuineIntel
    cpu family      : 6
@@ -2641,7 +2651,7 @@ void amd64g_dirtyhelper_CPUID_avx_and_cx16 ( VexGuestAMD64State* st )
          SET_ABCD(0x00000077, 0x00000002, 0x00000009, 0x00000000);
          break;
       case 0x00000007:
-         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
+         SET_ABCD(0x00000000, 0x00000800, 0x00000000, 0x00000000);
          break;
       case 0x00000008:
          SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);

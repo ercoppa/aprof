@@ -2,8 +2,8 @@
  * aprof's implementation of libc fopen, fwrite, fclose, 
  * fflush and fprintf functions 
  * 
- * Last changed: $Date$
- * Revision:     $Rev$
+ * Last changed: $Date: 2013-02-06 15:49:16 +0100 (mer, 06 feb 2013) $
+ * Revision:     $Rev: 773 $
  */
 
 /*

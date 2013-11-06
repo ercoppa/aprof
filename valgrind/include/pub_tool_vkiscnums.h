@@ -7,9 +7,9 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2005-2012 Nicholas Nethercote
+   Copyright (C) 2005-2013 Nicholas Nethercote
       njn@valgrind.org
-   Copyright (C) 2006-2012 OpenWorks LLP
+   Copyright (C) 2006-2013 OpenWorks LLP
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
@@ -34,6 +34,7 @@
 #define __PUB_TOOL_VKISCNUMS_H
 
 #include "pub_tool_vkiscnums_asm.h"
+#include "pub_tool_basics.h"    // Word
 
 
 // This converts a syscall number into a string, suitable for printing.  It is

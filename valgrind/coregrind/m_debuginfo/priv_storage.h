@@ -9,7 +9,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Julian Seward 
+   Copyright (C) 2000-2013 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -42,6 +42,11 @@
 
 #ifndef __PRIV_STORAGE_H
 #define __PRIV_STORAGE_H
+
+#include "pub_core_basics.h"   // Addr
+#include "pub_core_xarray.h"   // XArray
+#include "priv_d3basics.h"     // GExpr et al.
+#include "priv_image.h"        // DiCursor
 
 /* --------------------- SYMBOLS --------------------- */
 
@@ -845,6 +850,11 @@ extern void ML_(addDiCfSI) ( struct _DebugInfo* di, DiCfSI* cfsi );
    ML_(addStr) will itself measure the length of the string. */
 extern HChar* ML_(addStr) ( struct _DebugInfo* di, const HChar* str, Int len );
 
+/* Add a string to the string table of a DebugInfo, by copying the
+   string from the given DiCursor.  Measures the length of the string
+   itself. */
+extern HChar* ML_(addStrFromCursor)( struct _DebugInfo* di, DiCursor c );
+
 extern void ML_(addVar)( struct _DebugInfo* di,
                          Int    level,
                          Addr   aMin,
@@ -908,8 +918,9 @@ extern void ML_(ppSym) ( Int idx, DiSym* sym );
 extern void ML_(ppDiCfSI) ( XArray* /* of CfiExpr */ exprs, DiCfSI* si );
 
 
+#define TRACE_SYMTAB_ENABLED (di->trace_symtab)
 #define TRACE_SYMTAB(format, args...) \
-   if (di->trace_symtab) { VG_(printf)(format, ## args); }
+   if (TRACE_SYMTAB_ENABLED) { VG_(printf)(format, ## args); }
 
 
 #endif /* ndef __PRIV_STORAGE_H */

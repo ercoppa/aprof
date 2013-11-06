@@ -8,7 +8,7 @@
    This file is part of Helgrind, a Valgrind tool for detecting errors
    in threaded programs.
 
-   Copyright (C) 2007-2012 OpenWorks Ltd
+   Copyright (C) 2007-2013 OpenWorks Ltd
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
@@ -1367,7 +1367,7 @@ Bool HG_(recognised_suppression) ( const HChar* name, Supp *su )
 }
 
 Bool HG_(read_extra_suppression_info) ( Int fd, HChar** bufpp, SizeT* nBufp,
-                                        Supp* su )
+                                        Int* lineno, Supp* su )
 {
    /* do nothing -- no extra suppression info present.  Return True to
       indicate nothing bad happened. */
@@ -1394,6 +1394,19 @@ Bool HG_(get_extra_suppression_info) ( Error* err,
 {
    /* Do nothing */
    return False;
+}
+
+Bool HG_(print_extra_suppression_use) ( Supp* su,
+                                        /*OUT*/HChar* buf, Int nBuf )
+{
+   /* Do nothing */
+   return False;
+}
+
+void HG_(update_extra_suppression_use) ( Error* err, Supp* su )
+{
+   /* Do nothing */
+   return;
 }
 
 

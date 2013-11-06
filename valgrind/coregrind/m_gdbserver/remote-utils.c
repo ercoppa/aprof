@@ -695,7 +695,10 @@ int putpkt_binary (char *buf, int cnt)
    char *p;
    int cc;
 
-   buf2 = malloc (PBUFSIZ);
+   buf2 = malloc (PBUFSIZ+POVERHSIZ);
+   // should malloc PBUFSIZ, but bypass GDB bug (see gdbserver_init in server.c)
+   vg_assert (5 == POVERHSIZ);
+   vg_assert (cnt <= PBUFSIZ); // be tolerant for GDB bug.
 
    /* Copy the packet into buffer BUF2, encapsulating it
       and giving it a checksum.  */

@@ -1,8 +1,8 @@
 /*
  * Some debug functions
  * 
- * Last changed: $Date$
- * Revision:     $Rev$
+ * Last changed: $Date: 2013-02-28 15:23:24 +0100 (gio, 28 feb 2013) $
+ * Revision:     $Rev: 811 $
  */
 
 /*

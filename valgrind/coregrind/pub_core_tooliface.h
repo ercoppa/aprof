@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Julian Seward
+   Copyright (C) 2000-2013 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -122,10 +122,13 @@ typedef struct {
    Bool  tool_show_ThreadIDs_for_errors;
    UInt  (*tool_update_extra)                (Error*);
    Bool  (*tool_recognised_suppression)      (const HChar*, Supp*);
-   Bool  (*tool_read_extra_suppression_info) (Int, HChar**, SizeT*, Supp*);
+   Bool  (*tool_read_extra_suppression_info) (Int, HChar**, SizeT*, Int*,
+                                              Supp*);
    Bool  (*tool_error_matches_suppression)   (Error*, Supp*);
    const HChar* (*tool_get_error_name)       (Error*);
    Bool  (*tool_get_extra_suppression_info)  (Error*,/*OUT*/HChar*,Int);
+   Bool  (*tool_print_extra_suppression_use) (Supp*,/*OUT*/HChar*,Int);
+   void  (*tool_update_extra_suppression_use) (Error*, Supp*);
 
    // VG_(needs).superblock_discards
    void (*tool_discard_superblock_info)(Addr64, VexGuestExtents);

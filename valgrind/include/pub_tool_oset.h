@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2005-2012 Nicholas Nethercote
+   Copyright (C) 2005-2013 Nicholas Nethercote
       njn@valgrind.org
 
    This program is free software; you can redistribute it and/or
@@ -30,6 +30,8 @@
 
 #ifndef __PUB_TOOL_OSET_H
 #define __PUB_TOOL_OSET_H
+
+#include "pub_tool_basics.h"   // Word
 
 // This module implements an ordered set, a data structure with fast
 // (eg. amortised log(n) or better) insertion, lookup and deletion of
@@ -54,9 +56,12 @@
 //   function even a (non-overlapping) interval list can be created.  But
 //   the cost of calling a function for every comparison can be high during
 //   lookup.  If no comparison function is provided, we assume that keys are
-//   (signed or unsigned) words, and that the key is the first word in each
+//   unsigned words, and that the key is the first word in each
 //   element.  This fast comparison is suitable for an OSet containing
 //   structs where the first element is an Addr, for example.
+//   Do not assume fast comparison works properly with signed words.
+//   A.o. iterating over the values will not return them in the correct
+//   order.
 //
 // Each OSet interface also has an iterator, which makes it simple to
 // traverse all the nodes in order.  Note that the iterator maintains state
@@ -226,7 +231,7 @@ extern OSet* VG_(OSetGen_Create_With_Pool)    ( PtrdiffT keyOff, OSetCmp_t cmp,
 // If there are several OSet managing similar such elements, it might be
 // interesting to use a shared pool for these OSet.
 // To have multiple OSets sharing a pool allocator, create the first OSet
-// with VG_(OSetGen_Create). Create subsequent OSet with
+// with VG_(OSetGen_Create_With_Pool). Create subsequent OSet with
 // VG_(OSetGen_EmptyClone).
 
 extern void  VG_(OSetGen_Destroy)   ( OSet* os );

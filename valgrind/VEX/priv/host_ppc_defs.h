@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2012 OpenWorks LLP
+   Copyright (C) 2004-2013 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -405,6 +405,7 @@ typedef
       Pav_AND, Pav_OR, Pav_XOR,            /* Bitwise */
       Pav_ADDU, Pav_QADDU, Pav_QADDS,
       Pav_SUBU, Pav_QSUBU, Pav_QSUBS,
+      Pav_MULU,
       Pav_OMULU, Pav_OMULS, Pav_EMULU, Pav_EMULS,
       Pav_AVGU, Pav_AVGS,
       Pav_MAXU, Pav_MAXS,
@@ -422,6 +423,28 @@ typedef
 
       /* Merge */
       Pav_MRGHI, Pav_MRGLO,
+
+      /* Concatenation */
+      Pav_CATODD, Pav_CATEVEN,
+
+      /* Polynomial Multipy-Add */
+      Pav_POLYMULADD,
+
+      /* Cipher */
+      Pav_CIPHERV128, Pav_CIPHERLV128, Pav_NCIPHERV128, Pav_NCIPHERLV128,
+      Pav_CIPHERSUBV128,
+
+      /* Hash */
+      Pav_SHA256, Pav_SHA512,
+
+      /* BCD Arithmetic */
+      Pav_BCDAdd, Pav_BCDSub,
+
+      /* zero count */
+      Pav_ZEROCNTBYTE, Pav_ZEROCNTWORD, Pav_ZEROCNTHALF, Pav_ZEROCNTDBL,
+
+      /* Vector bit matrix transpose by byte */
+      Pav_BITMTXXPOSE,
    }
    PPCAvOp;
 
@@ -492,6 +515,7 @@ typedef
       Pin_AvBin8x16,  /* AV binary, 8x4 */
       Pin_AvBin16x8,  /* AV binary, 16x4 */
       Pin_AvBin32x4,  /* AV binary, 32x4 */
+      Pin_AvBin64x2,  /* AV binary, 64x2 */
 
       Pin_AvBin32Fx4, /* AV FP binary, 32Fx4 */
       Pin_AvUn32Fx4,  /* AV FP unary,  32Fx4 */
@@ -502,6 +526,10 @@ typedef
       Pin_AvSplat,    /* One elem repeated throughout dst */
       Pin_AvLdVSCR,   /* mtvscr */
       Pin_AvCMov,     /* AV conditional move */
+      Pin_AvCipherV128Unary,  /* AV Vector unary Cipher */
+      Pin_AvCipherV128Binary, /* AV Vector binary Cipher */
+      Pin_AvHashV128Binary, /* AV Vector binary Hash */
+      Pin_AvBCDV128Trinary, /* BCD Arithmetic */
       Pin_Dfp64Unary,   /* DFP64  unary op */
       Pin_Dfp128Unary,  /* DFP128 unary op */
       Pin_DfpShift,     /* Decimal floating point shift by immediate value */
@@ -795,6 +823,13 @@ typedef
             HReg    srcL;
             HReg    srcR;
          } AvBin32x4;
+         /* Can only be generated for CPUs capable of ISA 2.07 or above */
+         struct {
+            PPCAvOp op;
+            HReg    dst;
+            HReg    srcL;
+            HReg    srcR;
+         } AvBin64x2;
          struct {
             PPCAvFpOp op;
             HReg      dst;
@@ -841,6 +876,30 @@ typedef
          struct {
             HReg src;
          } AvLdVSCR;
+         struct {
+            PPCAvOp   op;
+            HReg      dst;
+            HReg      src;
+         } AvCipherV128Unary;
+         struct {
+            PPCAvOp     op;
+            HReg       dst;
+            HReg       src;
+            PPCRI* s_field;
+         } AvHashV128Binary;
+         struct {
+            PPCAvOp     op;
+            HReg       dst;
+            HReg      src1;
+            HReg      src2;
+            PPCRI*      ps;
+         } AvBCDV128Trinary;
+         struct {
+            PPCAvOp   op;
+            HReg      dst;
+            HReg      srcL;
+            HReg      srcR;
+         } AvCipherV128Binary;
          struct {
             PPCFpOp op;
             HReg dst;
@@ -1013,6 +1072,7 @@ extern PPCInstr* PPCInstr_AvBinary   ( PPCAvOp op, HReg dst, HReg srcL, HReg src
 extern PPCInstr* PPCInstr_AvBin8x16  ( PPCAvOp op, HReg dst, HReg srcL, HReg srcR );
 extern PPCInstr* PPCInstr_AvBin16x8  ( PPCAvOp op, HReg dst, HReg srcL, HReg srcR );
 extern PPCInstr* PPCInstr_AvBin32x4  ( PPCAvOp op, HReg dst, HReg srcL, HReg srcR );
+extern PPCInstr* PPCInstr_AvBin64x2  ( PPCAvOp op, HReg dst, HReg srcL, HReg srcR );
 extern PPCInstr* PPCInstr_AvBin32Fx4 ( PPCAvFpOp op, HReg dst, HReg srcL, HReg srcR );
 extern PPCInstr* PPCInstr_AvUn32Fx4  ( PPCAvFpOp op, HReg dst, HReg src );
 extern PPCInstr* PPCInstr_AvPerm     ( HReg dst, HReg srcL, HReg srcR, HReg ctl );
@@ -1021,7 +1081,15 @@ extern PPCInstr* PPCInstr_AvShlDbl   ( UChar shift, HReg dst, HReg srcL, HReg sr
 extern PPCInstr* PPCInstr_AvSplat    ( UChar sz, HReg dst, PPCVI5s* src );
 extern PPCInstr* PPCInstr_AvCMov     ( PPCCondCode, HReg dst, HReg src );
 extern PPCInstr* PPCInstr_AvLdVSCR   ( HReg src );
-
+extern PPCInstr* PPCInstr_AvCipherV128Unary  ( PPCAvOp op, HReg dst,
+                                               HReg srcR );
+extern PPCInstr* PPCInstr_AvCipherV128Binary ( PPCAvOp op, HReg dst,
+                                               HReg srcL, HReg srcR );
+extern PPCInstr* PPCInstr_AvHashV128Binary ( PPCAvOp op, HReg dst,
+                                             HReg src, PPCRI* s_field );
+extern PPCInstr* PPCInstr_AvBCDV128Trinary ( PPCAvOp op, HReg dst,
+                                             HReg src1, HReg src2,
+                                             PPCRI* ps );
 extern PPCInstr* PPCInstr_Dfp64Unary  ( PPCFpOp op, HReg dst, HReg src );
 extern PPCInstr* PPCInstr_Dfp64Binary ( PPCFpOp op, HReg dst, HReg srcL,
                                         HReg srcR );

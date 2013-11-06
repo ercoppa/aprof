@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2012 OpenWorks LLP
+   Copyright (C) 2004-2013 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -71,11 +71,12 @@ typedef
    combinations. */
 
 /* x86: baseline capability is Pentium-1 (FPU, MMX, but no SSE), with
-   cmpxchg8b. */
-#define VEX_HWCAPS_X86_SSE1    (1<<1)  /* SSE1 support (Pentium III) */
-#define VEX_HWCAPS_X86_SSE2    (1<<2)  /* SSE2 support (Pentium 4) */
-#define VEX_HWCAPS_X86_SSE3    (1<<3)  /* SSE3 support (>= Prescott) */
-#define VEX_HWCAPS_X86_LZCNT   (1<<4)  /* SSE4a LZCNT insn */
+   cmpxchg8b. MMXEXT is a special AMD only subset of SSE1 (Integer SSE). */
+#define VEX_HWCAPS_X86_MMXEXT  (1<<1)  /* A subset of SSE1 on early AMD */
+#define VEX_HWCAPS_X86_SSE1    (1<<2)  /* SSE1 support (Pentium III) */
+#define VEX_HWCAPS_X86_SSE2    (1<<3)  /* SSE2 support (Pentium 4) */
+#define VEX_HWCAPS_X86_SSE3    (1<<4)  /* SSE3 support (>= Prescott) */
+#define VEX_HWCAPS_X86_LZCNT   (1<<5)  /* SSE4a LZCNT insn */
 
 /* amd64: baseline capability is SSE2, with cmpxchg8b but not
    cmpxchg16b. */
@@ -95,6 +96,7 @@ typedef
                                           (fres,frsqrte,fsel,stfiwx) */
 #define VEX_HWCAPS_PPC32_VX    (1<<12) /* Vector-scalar floating-point (VSX); implies ISA 2.06 or higher  */
 #define VEX_HWCAPS_PPC32_DFP   (1<<17) /* Decimal Floating Point (DFP) -- e.g., dadd */
+#define VEX_HWCAPS_PPC32_ISA2_07   (1<<19) /* ISA 2.07 -- e.g., mtvsrd */
 
 /* ppc64: baseline capability is integer and basic FP insns */
 #define VEX_HWCAPS_PPC64_V     (1<<13) /* Altivec (VMX) */
@@ -103,6 +105,7 @@ typedef
                                           (fres,frsqrte,fsel,stfiwx) */
 #define VEX_HWCAPS_PPC64_VX    (1<<16) /* Vector-scalar floating-point (VSX); implies ISA 2.06 or higher  */
 #define VEX_HWCAPS_PPC64_DFP   (1<<18) /* Decimal Floating Point (DFP) -- e.g., dadd */
+#define VEX_HWCAPS_PPC64_ISA2_07   (1<<20) /* ISA 2.07 -- e.g., mtvsrd */
 
 /* s390x: Hardware capability encoding
 
@@ -124,7 +127,8 @@ typedef
 #define VEX_S390X_MODEL_Z196     8
 #define VEX_S390X_MODEL_Z114     9
 #define VEX_S390X_MODEL_ZEC12    10
-#define VEX_S390X_MODEL_UNKNOWN  11     /* always last in list */
+#define VEX_S390X_MODEL_ZBC12    11
+#define VEX_S390X_MODEL_UNKNOWN  12     /* always last in list */
 #define VEX_S390X_MODEL_MASK     0x3F
 
 #define VEX_HWCAPS_S390X_LDISP (1<<6)   /* Long-displacement facility */
@@ -183,7 +187,26 @@ typedef
 
 #define VEX_PRID_COMP_MIPS      0x00010000
 #define VEX_PRID_COMP_BROADCOM  0x00020000
-#define VEX_PRID_COMP_NETLOGIC  0x000c0000
+#define VEX_PRID_COMP_NETLOGIC  0x000C0000
+#define VEX_PRID_COMP_CAVIUM    0x000D0000
+
+/*
+ * These are the PRID's for when 23:16 == PRID_COMP_MIPS
+ */
+#define VEX_PRID_IMP_34K        0x9500
+#define VEX_PRID_IMP_74K        0x9700
+
+/* Get MIPS Company ID from HWCAPS */
+#define VEX_MIPS_COMP_ID(x) ((x) & 0x00FF0000)
+/* Get MIPS Processor ID from HWCAPS */
+#define VEX_MIPS_PROC_ID(x) ((x) & 0x0000FFFF)
+/* Check if the processor supports DSP ASE Rev 2. */
+#define VEX_MIPS_PROC_DSP2(x) ((VEX_MIPS_COMP_ID(x) == VEX_PRID_COMP_MIPS) && \
+                               (VEX_MIPS_PROC_ID(x) == VEX_PRID_IMP_74K))
+/* Check if the processor supports DSP ASE Rev 1. */
+#define VEX_MIPS_PROC_DSP(x)  (VEX_MIPS_PROC_DSP2(x) || \
+                               ((VEX_MIPS_COMP_ID(x) == VEX_PRID_COMP_MIPS) && \
+                               (VEX_MIPS_PROC_ID(x) == VEX_PRID_IMP_34K)))
 
 /* These return statically allocated strings. */
 
@@ -240,8 +263,8 @@ typedef
       /* The following two fields are mandatory. */
       UInt hwcaps;
       VexCacheInfo hwcache_info;
-      /* PPC32/PPC64 only: size of cache line */
-      Int ppc_cache_line_szB;
+      /* PPC32/PPC64 only: size of instruction cache line */
+      Int ppc_icache_line_szB;
       /* PPC32/PPC64 only: sizes zeroed by the dcbz/dcbzl instructions
        * (bug#135264) */
       UInt ppc_dcbz_szB;

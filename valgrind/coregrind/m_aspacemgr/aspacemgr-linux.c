@@ -10,7 +10,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Julian Seward 
+   Copyright (C) 2000-2013 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -107,16 +107,16 @@
      reliable way to establish the initial boundaries.
 
      64-bit Linux is similar except for the important detail that the
-     upper boundary is set to 32G.  The reason is so that all
+     upper boundary is set to 64G.  The reason is so that all
      anonymous mappings (basically all client data areas) are kept
-     below 32G, since that is the maximum range that memcheck can
+     below 64G, since that is the maximum range that memcheck can
      track shadow memory using a fast 2-level sparse array.  It can go
-     beyond that but runs much more slowly.  The 32G limit is
+     beyond that but runs much more slowly.  The 64G limit is
      arbitrary and is trivially changed.  So, with the current
      settings, programs on 64-bit Linux will appear to run out of
-     address space and presumably fail at the 32G limit.  Given the
-     9/8 space overhead of Memcheck, that means you should be able to
-     memcheckify programs that use up to about 14G natively.
+     address space and presumably fail at the 64G limit.  Given the
+     considerable space overhead of Memcheck, that means you should be
+     able to memcheckify programs that use up to about 32G natively.
 
    Note that the aspacem_minAddr/aspacem_maxAddr limits apply only to
    anonymous mappings.  The client can still do fixed and hinted maps
@@ -264,11 +264,22 @@
 
 /* ------ start of STATE for the address-space manager ------ */
 
-/* Max number of segments we can track. */
-#define VG_N_SEGMENTS 5000
+/* Max number of segments we can track.  On Android, virtual address
+   space is limited, so keep a low limit -- 5000 x sizef(NSegment) is
+   360KB. */
+#if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
+# define VG_N_SEGMENTS 5000
+#else
+# define VG_N_SEGMENTS 30000
+#endif
 
-/* Max number of segment file names we can track. */
-#define VG_N_SEGNAMES 1000
+/* Max number of segment file names we can track.  These are big (1002
+   bytes) so on Android limit the space usage to ~1MB. */
+#if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
+# define VG_N_SEGNAMES 1000
+#else
+# define VG_N_SEGNAMES 6000
+#endif
 
 /* Max length of a segment file name. */
 #define VG_MAX_SEGNAMELEN 1000
@@ -1637,7 +1648,7 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
 
    suggested_clstack_top = -1; // ignored; Mach-O specifies its stack
 
-#else
+#else /* !defined(VGO_darwin) */
 
    /* Establish address limits and block out unusable parts
       accordingly. */
@@ -1670,7 +1681,7 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
    suggested_clstack_top = aspacem_maxAddr - 16*1024*1024ULL
                                            + VKI_PAGE_SIZE;
 
-#endif
+#endif /* #else of 'defined(VGO_darwin)' */
 
    aspacem_assert(VG_IS_PAGE_ALIGNED(aspacem_minAddr));
    aspacem_assert(VG_IS_PAGE_ALIGNED(aspacem_maxAddr + 1));
@@ -2448,14 +2459,27 @@ SysRes VG_(am_mmap_anon_float_valgrind)( SizeT length )
       another thread can pre-empt our spot.  [At one point on the DARWIN
       branch the VKI_MAP_FIXED was commented out;  unclear if this is
       necessary or not given the second Darwin-only call that immediately
-      follows if this one fails.  --njn] */
+      follows if this one fails.  --njn]
+      Also, an inner valgrind cannot observe the mmap syscalls done by
+      the outer valgrind. The outer Valgrind might make the mmap
+      fail here, as the inner valgrind believes that a segment is free,
+      while it is in fact used by the outer valgrind.
+      So, for an inner valgrind, similarly to DARWIN, if the fixed mmap
+      fails, retry the mmap without map fixed.
+      This is a kludge which on linux is only activated for the inner.
+      The state of the inner aspacemgr is not made correct by this kludge
+      and so a.o. VG_(am_do_sync_check) could fail.
+      A proper solution implies a better collaboration between the
+      inner and the outer (e.g. inner VG_(am_get_advisory) should do
+      a client request to call the outer VG_(am_get_advisory). */
    sres = VG_(am_do_mmap_NO_NOTIFY)( 
              advised, length, 
              VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC, 
              VKI_MAP_FIXED|VKI_MAP_PRIVATE|VKI_MAP_ANONYMOUS, 
              VM_TAG_VALGRIND, 0
           );
-#if defined(VGO_darwin)
+#if defined(VGO_darwin) || defined(ENABLE_INNER)
+   /* Kludge on Darwin and inner linux if the fixed mmap failed. */
    if (sr_isError(sres)) {
        /* try again, ignoring the advisory */
        sres = VG_(am_do_mmap_NO_NOTIFY)( 
@@ -2469,7 +2493,9 @@ SysRes VG_(am_mmap_anon_float_valgrind)( SizeT length )
    if (sr_isError(sres))
       return sres;
 
-#if defined(VGO_linux)
+#if defined(VGO_linux) && !defined(ENABLE_INNER)
+   /* Doing the check only in linux not inner, as the below
+      check can fail when the kludge above has been used. */
    if (sr_Res(sres) != advised) {
       /* I don't think this can happen.  It means the kernel made a
          fixed map succeed but not at the requested location.  Try to
@@ -3533,9 +3559,10 @@ static void add_mapping_callback(Addr addr, SizeT len, UInt prot,
          }
          return;
 
-      } else if (nsegments[i].kind == SkAnonC ||
-                 nsegments[i].kind == SkFileC ||
-                 nsegments[i].kind == SkShmC)
+      }
+      else if (nsegments[i].kind == SkAnonC ||
+               nsegments[i].kind == SkFileC ||
+               nsegments[i].kind == SkShmC)
       {
          /* Check permissions on client regions */
          // GrP fixme
@@ -3555,6 +3582,20 @@ static void add_mapping_callback(Addr addr, SizeT len, UInt prot,
                                  "mismatch (kernel %x, V %x)\n", 
                                  (void*)nsegments[i].start,
                                  (void*)(nsegments[i].end+1), prot, seg_prot);
+            /* Add mapping for regions with protection changes */
+            ChangedSeg* cs = &css_local[css_used_local];
+            if (css_used_local < css_size_local) {
+               cs->is_added = True;
+               cs->start    = addr;
+               cs->end      = addr + len - 1;
+               cs->prot     = prot;
+               cs->offset   = offset;
+               css_used_local++;
+            } else {
+               css_overflowed = True;
+            }
+	    return;
+
          }
 
       } else {

@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2008-2012 OpenWorks LLP
+   Copyright (C) 2008-2013 OpenWorks LLP
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
@@ -36,6 +36,7 @@
 #ifndef __PRIV_MISC_H
 #define __PRIV_MISC_H
 
+#include "pub_core_basics.h"    // SizeT
 
 /* Allocate(zeroed), free, strdup, memdup, all in VG_AR_DINFO. */
 void*  ML_(dinfo_zalloc)( const HChar* cc, SizeT szB );

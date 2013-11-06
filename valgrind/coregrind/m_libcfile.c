@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Julian Seward 
+   Copyright (C) 2000-2013 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -653,14 +653,26 @@ const HChar *VG_(tmpdir)(void)
    return tmpdir;
 }
 
+static const HChar *mkstemp_format = "%s/valgrind_%s_%08x";
+
+SizeT VG_(mkstemp_fullname_bufsz) ( SizeT part_of_name_len )
+{
+   return VG_(strlen)(mkstemp_format)
+      + VG_(strlen)(VG_(tmpdir)()) - 2 // %s tmpdir
+      + part_of_name_len - 2           // %s part_of_name
+      + 8 - 4                          // %08x
+      + 1;                             // trailing 0
+}
+
+
 /* Create and open (-rw------) a tmp file name incorporating said arg.
    Returns -1 on failure, else the fd of the file.  If fullname is
    non-NULL, the file's name is written into it.  The number of bytes
-   written is guaranteed not to exceed 64+strlen(part_of_name). */
+   written is equal to VG_(mkstemp_fullname_bufsz)(part_of_name). */
 
 Int VG_(mkstemp) ( HChar* part_of_name, /*OUT*/HChar* fullname )
 {
-   HChar  buf[200];
+   HChar  buf[VG_(mkstemp_fullname_bufsz)(VG_(strlen)(part_of_name))];
    Int    n, tries, fd;
    UInt   seed;
    SysRes sres;
@@ -1047,6 +1059,42 @@ Int VG_(getsockopt) ( Int sd, Int level, Int optname, void *optval,
 #  elif defined(VGO_darwin)
    SysRes res;
    res = VG_(do_syscall5)( __NR_getsockopt,
+                           (UWord)sd, (UWord)level, (UWord)optname, 
+                           (UWord)optval, (UWord)optlen );
+   return sr_isError(res) ? -1 : sr_Res(res);
+
+#  else
+#    error "Unknown platform"
+#  endif
+}
+
+
+Int VG_(setsockopt) ( Int sd, Int level, Int optname, void *optval,
+                      Int optlen)
+{
+#  if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) \
+      || defined(VGP_ppc64_linux) || defined(VGP_s390x_linux)
+   SysRes res;
+   UWord  args[5];
+   args[0] = sd;
+   args[1] = level;
+   args[2] = optname;
+   args[3] = (UWord)optval;
+   args[4] = (UWord)optlen;
+   res = VG_(do_syscall2)(__NR_socketcall, VKI_SYS_SETSOCKOPT, (UWord)&args);
+   return sr_isError(res) ? -1 : sr_Res(res);
+
+#  elif defined(VGP_amd64_linux) || defined(VGP_arm_linux) \
+        || defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
+   SysRes res;
+   res = VG_(do_syscall5)( __NR_setsockopt,
+                           (UWord)sd, (UWord)level, (UWord)optname, 
+                           (UWord)optval, (UWord)optlen );
+   return sr_isError(res) ? -1 : sr_Res(res);
+
+#  elif defined(VGO_darwin)
+   SysRes res;
+   res = VG_(do_syscall5)( __NR_setsockopt,
                            (UWord)sd, (UWord)level, (UWord)optname, 
                            (UWord)optval, (UWord)optlen );
    return sr_isError(res) ? -1 : sr_Res(res);

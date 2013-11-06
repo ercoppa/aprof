@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2012 OpenWorks LLP
+   Copyright (C) 2004-2013 OpenWorks LLP
       info@open-works.net
 
    This program is free software; you can redistribute it and/or
@@ -896,6 +896,7 @@ typedef
       Iop_Cnt8x8,
       Iop_Clz8Sx8, Iop_Clz16Sx4, Iop_Clz32Sx2,
       Iop_Cls8Sx8, Iop_Cls16Sx4, Iop_Cls32Sx2,
+      Iop_Clz64x2,
 
       /* VECTOR x VECTOR SHIFT / ROTATE */
       Iop_Shl8x8, Iop_Shl16x4, Iop_Shl32x2,
@@ -1006,13 +1007,13 @@ typedef
 
       /* ARITHMETIC INSTRUCTIONS   64-bit
 	 ----------------------------------
-	 IRRoundingModeDFP(I32) X D64 X D64 -> D64
+	 IRRoundingMode(I32) X D64 X D64 -> D64
       */
       Iop_AddD64, Iop_SubD64, Iop_MulD64, Iop_DivD64,
 
       /* ARITHMETIC INSTRUCTIONS  128-bit
 	 ----------------------------------
-	 IRRoundingModeDFP(I32) X D128 X D128 -> D128
+	 IRRoundingMode(I32) X D128 X D128 -> D128
       */
       Iop_AddD128, Iop_SubD128, Iop_MulD128, Iop_DivD128,
 
@@ -1050,10 +1051,10 @@ typedef
       /*   I64U -> D128 */
       Iop_I64UtoD128,
 
-      /*   IRRoundingModeDFP(I32) x D64 -> D32 */
+      /*   IRRoundingMode(I32) x D64 -> D32 */
       Iop_D64toD32,
 
-      /*   IRRoundingModeDFP(I32) x D128 -> D64 */
+      /*   IRRoundingMode(I32) x D128 -> D64 */
       Iop_D128toD64,
 
       /*   I32S -> D64 */
@@ -1062,52 +1063,88 @@ typedef
       /*   I32U -> D64 */
       Iop_I32UtoD64,
 
-      /*   IRRoundingModeDFP(I32) x I64 -> D64 */
+      /*   IRRoundingMode(I32) x I64 -> D64 */
       Iop_I64StoD64,
 
-      /*   IRRoundingModeDFP(I32) x I64 -> D64 */
+      /*   IRRoundingMode(I32) x I64 -> D64 */
       Iop_I64UtoD64,
 
-      /*   IRRoundingModeDFP(I32) x D64 -> I32 */
+      /*   IRRoundingMode(I32) x D64 -> I32 */
       Iop_D64toI32S,
 
-      /*   IRRoundingModeDFP(I32) x D64 -> I32 */
+      /*   IRRoundingMode(I32) x D64 -> I32 */
       Iop_D64toI32U,
 
-      /*   IRRoundingModeDFP(I32) x D64 -> I64 */
+      /*   IRRoundingMode(I32) x D64 -> I64 */
       Iop_D64toI64S,
 
-      /*   IRRoundingModeDFP(I32) x D64 -> I64 */
+      /*   IRRoundingMode(I32) x D64 -> I64 */
       Iop_D64toI64U,
 
-      /*   IRRoundingModeDFP(I32) x D128 -> I32 */
+      /*   IRRoundingMode(I32) x D128 -> I32 */
       Iop_D128toI32S,
 
-      /*   IRRoundingModeDFP(I32) x D128 -> I32 */
+      /*   IRRoundingMode(I32) x D128 -> I32 */
       Iop_D128toI32U,
 
-      /*   IRRoundingModeDFP(I32) x D128 -> I64 */
+      /*   IRRoundingMode(I32) x D128 -> I64 */
       Iop_D128toI64S,
 
-      /*   IRRoundingModeDFP(I32) x D128 -> I64 */
+      /*   IRRoundingMode(I32) x D128 -> I64 */
       Iop_D128toI64U,
 
-      /*   IRRoundingModeDFP(I32) x F64 -> D64 */
+      /*   IRRoundingMode(I32) x F32 -> D32 */
+      Iop_F32toD32,
+
+      /*   IRRoundingMode(I32) x F32 -> D64 */
+      Iop_F32toD64,
+
+      /*   IRRoundingMode(I32) x F32 -> D128 */
+      Iop_F32toD128,
+
+      /*   IRRoundingMode(I32) x F64 -> D32 */
+      Iop_F64toD32,
+
+      /*   IRRoundingMode(I32) x F64 -> D64 */
       Iop_F64toD64,
 
-      /*   IRRoundingModeDFP(I32) x D64 -> F64 */
-      Iop_D64toF64,
-
-      /*   IRRoundingModeDFP(I32) x F64 -> D128 */
+      /*   IRRoundingMode(I32) x F64 -> D128 */
       Iop_F64toD128,
 
-      /*   IRRoundingModeDFP(I32) x D128 -> F64 */
-      Iop_D128toF64,
+      /*   IRRoundingMode(I32) x F128 -> D32 */
+      Iop_F128toD32,
 
-      /*   IRRoundingModeDFP(I32) x F128 -> D128 */
+      /*   IRRoundingMode(I32) x F128 -> D64 */
+      Iop_F128toD64,
+
+      /*   IRRoundingMode(I32) x F128 -> D128 */
       Iop_F128toD128,
 
-      /*   IRRoundingModeDFP(I32) x D128 -> F128 */
+      /*   IRRoundingMode(I32) x D32 -> F32 */
+      Iop_D32toF32,
+
+      /*   IRRoundingMode(I32) x D32 -> F64 */
+      Iop_D32toF64,
+
+      /*   IRRoundingMode(I32) x D32 -> F128 */
+      Iop_D32toF128,
+
+      /*   IRRoundingMode(I32) x D64 -> F32 */
+      Iop_D64toF32,
+
+      /*   IRRoundingMode(I32) x D64 -> F64 */
+      Iop_D64toF64,
+
+      /*   IRRoundingMode(I32) x D64 -> F128 */
+      Iop_D64toF128,
+
+      /*   IRRoundingMode(I32) x D128 -> F32 */
+      Iop_D128toF32,
+
+      /*   IRRoundingMode(I32) x D128 -> F64 */
+      Iop_D128toF64,
+
+      /*   IRRoundingMode(I32) x D128 -> F128 */
       Iop_D128toF128,
 
       /* ROUNDING INSTRUCTIONS
@@ -1142,20 +1179,20 @@ typedef
        * of the first operand's exponent and the rounded based on the specified
        * rounding mode parameter.
        *
-       * IRRoundingModeDFP(I32) x D64 x D64-> D64 */
+       * IRRoundingMode(I32) x D64 x D64-> D64 */
       Iop_QuantizeD64,
 
-      /* IRRoundingModeDFP(I32) x D128 x D128 -> D128 */
+      /* IRRoundingMode(I32) x D128 x D128 -> D128 */
       Iop_QuantizeD128,
 
-      /* IRRoundingModeDFP(I32) x I8 x D64 -> D64
+      /* IRRoundingMode(I32) x I8 x D64 -> D64
        *    The Decimal Floating point operand is rounded to the requested 
        *    significance given by the I8 operand as specified by the rounding 
        *    mode.
        */
       Iop_SignificanceRoundD64,
 
-      /* IRRoundingModeDFP(I32) x I8 x D128 -> D128 */
+      /* IRRoundingMode(I32) x I8 x D128 -> D128 */
       Iop_SignificanceRoundD128,
 
       /* EXTRACT AND INSERT INSTRUCTIONS
@@ -1200,6 +1237,12 @@ typedef
        *     Convert 60 bit BCD string to 50-bit densely packed BCD string
        */
       Iop_BCDtoDPB,
+
+      /* BCD arithmetic instructions, (V128, V128) -> V128
+       * The BCD format is the same as that used in the BCD<->DPB conversion
+       * routines, except using 124 digits (vs 60) plus the trailing 4-bit signed code.
+       * */
+      Iop_BCDAdd, Iop_BCDSub,
 
       /* Conversion I64 -> D64 */
       Iop_ReinterpI64asD64,
@@ -1346,8 +1389,8 @@ typedef
                     Iop_MulHi16Ux8, Iop_MulHi32Ux4,
                     Iop_MulHi16Sx8, Iop_MulHi32Sx4,
       /* (widening signed/unsigned of even lanes, with lowest lane=zero) */
-      Iop_MullEven8Ux16, Iop_MullEven16Ux8,
-      Iop_MullEven8Sx16, Iop_MullEven16Sx8,
+      Iop_MullEven8Ux16, Iop_MullEven16Ux8, Iop_MullEven32Ux4,
+      Iop_MullEven8Sx16, Iop_MullEven16Sx8, Iop_MullEven32Sx4,
       /* FIXME: document these */
       Iop_Mull8Ux8, Iop_Mull8Sx8,
       Iop_Mull16Ux4, Iop_Mull16Sx4,
@@ -1367,6 +1410,39 @@ typedef
       Iop_PolynomialMul8x16, /* (V128, V128) -> V128 */
       Iop_PolynomialMull8x8, /*   (I64, I64) -> V128 */
 
+      /* Vector Polynomial multiplication add.   (V128, V128) -> V128
+
+       *** Below is the algorithm for the instructions. These Iops could
+           be emulated to get this functionality, but the emulation would
+           be long and messy.
+
+        Example for polynomial multiply add for vector of bytes
+        do i = 0 to 15
+            prod[i].bit[0:14] <- 0
+            srcA <- VR[argL].byte[i]
+            srcB <- VR[argR].byte[i]
+            do j = 0 to 7
+                do k = 0 to j
+                    gbit <- srcA.bit[k] & srcB.bit[j-k]
+                    prod[i].bit[j] <- prod[i].bit[j] ^ gbit
+                end
+            end
+
+            do j = 8 to 14
+                do k = j-7 to 7
+                     gbit <- (srcA.bit[k] & srcB.bit[j-k])
+                     prod[i].bit[j] <- prod[i].bit[j] ^ gbit
+                end
+            end
+        end
+
+        do i = 0 to 7
+            VR[dst].hword[i] <- 0b0 || (prod[2×i] ^ prod[2×i+1])
+        end
+      */
+      Iop_PolynomialMulAdd8x16, Iop_PolynomialMulAdd16x8,
+      Iop_PolynomialMulAdd32x4, Iop_PolynomialMulAdd64x2,
+
       /* PAIRWISE operations */
       /* Iop_PwFoo16x4( [a,b,c,d], [e,f,g,h] ) =
             [Foo16(a,b), Foo16(c,d), Foo16(e,f), Foo16(g,h)] */
@@ -1380,6 +1456,13 @@ typedef
       Iop_PwAddL8Ux16, Iop_PwAddL16Ux8, Iop_PwAddL32Ux4,
       Iop_PwAddL8Sx16, Iop_PwAddL16Sx8, Iop_PwAddL32Sx4,
 
+      /* Other unary pairwise ops */
+
+      /* Vector bit matrix transpose.  (V128) -> V128 */
+      /* For each doubleword element of the source vector, an 8-bit x 8-bit
+       * matrix transpose is performed. */
+      Iop_PwBitMtxXpose64x2,
+
       /* ABSOLUTE VALUE */
       Iop_Abs8x16, Iop_Abs16x8, Iop_Abs32x4,
 
@@ -1388,15 +1471,15 @@ typedef
       Iop_Avg8Sx16, Iop_Avg16Sx8, Iop_Avg32Sx4,
 
       /* MIN/MAX */
-      Iop_Max8Sx16, Iop_Max16Sx8, Iop_Max32Sx4,
-      Iop_Max8Ux16, Iop_Max16Ux8, Iop_Max32Ux4,
-      Iop_Min8Sx16, Iop_Min16Sx8, Iop_Min32Sx4,
-      Iop_Min8Ux16, Iop_Min16Ux8, Iop_Min32Ux4,
+      Iop_Max8Sx16, Iop_Max16Sx8, Iop_Max32Sx4, Iop_Max64Sx2,
+      Iop_Max8Ux16, Iop_Max16Ux8, Iop_Max32Ux4, Iop_Max64Ux2,
+      Iop_Min8Sx16, Iop_Min16Sx8, Iop_Min32Sx4, Iop_Min64Sx2,
+      Iop_Min8Ux16, Iop_Min16Ux8, Iop_Min32Ux4, Iop_Min64Ux2,
 
       /* COMPARISON */
       Iop_CmpEQ8x16,  Iop_CmpEQ16x8,  Iop_CmpEQ32x4,  Iop_CmpEQ64x2,
       Iop_CmpGT8Sx16, Iop_CmpGT16Sx8, Iop_CmpGT32Sx4, Iop_CmpGT64Sx2,
-      Iop_CmpGT8Ux16, Iop_CmpGT16Ux8, Iop_CmpGT32Ux4,
+      Iop_CmpGT8Ux16, Iop_CmpGT16Ux8, Iop_CmpGT32Ux4, Iop_CmpGT64Ux2,
 
       /* COUNT ones / leading zeroes / leading sign bits (not including topmost
          bit) */
@@ -1414,7 +1497,7 @@ typedef
       Iop_Shr8x16, Iop_Shr16x8, Iop_Shr32x4, Iop_Shr64x2,
       Iop_Sar8x16, Iop_Sar16x8, Iop_Sar32x4, Iop_Sar64x2,
       Iop_Sal8x16, Iop_Sal16x8, Iop_Sal32x4, Iop_Sal64x2,
-      Iop_Rol8x16, Iop_Rol16x8, Iop_Rol32x4,
+      Iop_Rol8x16, Iop_Rol16x8, Iop_Rol32x4, Iop_Rol64x2,
 
       /* VECTOR x VECTOR SATURATING SHIFT */
       Iop_QShl8x16, Iop_QShl16x8, Iop_QShl32x4, Iop_QShl64x2,
@@ -1431,6 +1514,8 @@ typedef
       Iop_QNarrowBin16Sto8Sx16, Iop_QNarrowBin32Sto16Sx8,
       Iop_QNarrowBin16Uto8Ux16, Iop_QNarrowBin32Uto16Ux8,
       Iop_NarrowBin16to8x16, Iop_NarrowBin32to16x8,
+      Iop_QNarrowBin64Sto32Sx4, Iop_QNarrowBin64Uto32Ux4,
+      Iop_NarrowBin64to32x4,
 
       /* NARROWING (unary) -- narrow V128 into I64 */
       Iop_NarrowUn16to8x8, Iop_NarrowUn32to16x4, Iop_NarrowUn64to32x2,
@@ -1560,6 +1645,17 @@ typedef
 
       Iop_Perm32x8,
 
+      /* (V128, V128) -> V128 */
+      Iop_CipherV128, Iop_CipherLV128, Iop_CipherSV128,
+      Iop_NCipherV128, Iop_NCipherLV128,
+
+      /* Hash instructions, Federal Information Processing Standards
+       * Publication 180-3 Secure Hash Standard. */
+      /* (V128, I8) -> V128; The I8 input arg is (ST | SIX), where ST and
+       * SIX are fields from the insn. See ISA 2.07 description of
+       * vshasigmad and vshasigmaw insns.*/
+      Iop_SHA512, Iop_SHA256,
+
       /* ------------------ 256-bit SIMD FP. ------------------ */
       Iop_Add64Fx4,
       Iop_Sub64Fx4,
@@ -1585,39 +1681,22 @@ typedef
 extern void ppIROp ( IROp );
 
 
-/* Encoding of IEEE754-specified rounding modes.  This is the same as
-   the encoding used by Intel IA32 to indicate x87 rounding mode.
+/* Encoding of IEEE754-specified rounding modes.
    Note, various front and back ends rely on the actual numerical
    values of these, so do not change them. */
 typedef
    enum { 
-      Irrm_NEAREST = 0, 
-      Irrm_NegINF  = 1, 
-      Irrm_PosINF  = 2, 
-      Irrm_ZERO    = 3 
+      Irrm_NEAREST              = 0,  // Round to nearest, ties to even
+      Irrm_NegINF               = 1,  // Round to negative infinity
+      Irrm_PosINF               = 2,  // Round to positive infinity
+      Irrm_ZERO                 = 3,  // Round toward zero
+      Irrm_NEAREST_TIE_AWAY_0   = 4,  // Round to nearest, ties away from 0
+      Irrm_PREPARE_SHORTER      = 5,  // Round to prepare for storter 
+                                      // precision
+      Irrm_AWAY_FROM_ZERO       = 6,  // Round to away from 0
+      Irrm_NEAREST_TIE_TOWARD_0 = 7   // Round to nearest, ties towards 0
    }
    IRRoundingMode;
-
-/* DFP encoding of IEEE754 2008 specified rounding modes extends the two bit
- * binary floating point rounding mode (IRRoundingMode) to three bits.  The 
- * DFP rounding modes are a super set of the binary rounding modes.  The 
- * encoding was chosen such that the mapping of the least significant two bits
- * of the IR to POWER encodings is same.  The upper IR encoding bit is just
- * a logical OR of the upper rounding mode bit from the POWER encoding.
- */
-typedef
-   enum { 
-      Irrm_DFP_NEAREST              = 0,  // Round to nearest, ties to even
-      Irrm_DFP_NegINF               = 1,  // Round to negative infinity
-      Irrm_DFP_PosINF               = 2,  // Round to posative infinity
-      Irrm_DFP_ZERO                 = 3,  // Round toward zero
-      Irrm_DFP_NEAREST_TIE_AWAY_0   = 4,  // Round to nearest, ties away from 0
-      Irrm_DFP_PREPARE_SHORTER      = 5,  // Round to prepare for storter 
-                                          // precision
-      Irrm_DFP_AWAY_FROM_ZERO       = 6,  // Round to away from 0
-      Irrm_DFP_NEAREST_TIE_TOWARD_0 = 7   // Round to nearest, ties towards 0
-   }
-   IRRoundingModeDFP;
 
 /* Binary floating point comparison result values.
    This is also derived from what IA32 does. */
@@ -1660,7 +1739,9 @@ typedef
       Iex_Load,
       Iex_Const,
       Iex_ITE,
-      Iex_CCall
+      Iex_CCall,
+      Iex_VECRET,
+      Iex_BBPTR
    }
    IRExprTag;
 
@@ -1834,6 +1915,11 @@ struct _IRExpr {
          Ist_Dirty inhibits various IR optimisations and so can cause
          quite poor code to be generated.  Try to avoid it.
 
+         In principle it would be allowable to have the arg vector
+         contain an IRExpr_VECRET(), although not IRExpr_BBPTR(). However,
+         at the moment there is no requirement for clean helper calls to
+         be able to return V128 or V256 values.  Hence this is not allowed.
+
          ppIRExpr output: <cee>(<args>):<retty>
                       eg. foo{0x80489304}(t1, t2):I32
       */
@@ -1875,6 +1961,30 @@ struct _IRQop {
    IRExpr* arg4;     /* operand 4 */
 };
 
+
+/* Two special kinds of IRExpr, which can ONLY be used in
+   argument lists for dirty helper calls (IRDirty.args) and in NO
+   OTHER PLACES.  And then only in very limited ways.  */
+
+/* Denotes an argument which (in the helper) takes a pointer to a
+   (naturally aligned) V128 or V256, into which the helper is expected
+   to write its result.  Use of IRExpr_VECRET() is strictly
+   controlled.  If the helper returns a V128 or V256 value then
+   IRExpr_VECRET() must appear exactly once in the arg list, although
+   it can appear anywhere, and the helper must have a C 'void' return
+   type.  If the helper returns any other type, IRExpr_VECRET() may
+   not appear in the argument list. */
+
+/* Denotes an void* argument which is passed to the helper, which at
+   run time will point to the thread's guest state area.  This can
+   only appear at most once in an argument list, and it may not appear
+   at all in argument lists for clean helper calls. */
+
+static inline Bool is_IRExpr_VECRET_or_BBPTR ( IRExpr* e ) {
+   return e->tag == Iex_VECRET || e->tag == Iex_BBPTR;
+}
+
+
 /* Expression constructors. */
 extern IRExpr* IRExpr_Binder ( Int binder );
 extern IRExpr* IRExpr_Get    ( Int off, IRType ty );
@@ -1890,6 +2000,8 @@ extern IRExpr* IRExpr_Load   ( IREndness end, IRType ty, IRExpr* addr );
 extern IRExpr* IRExpr_Const  ( IRConst* con );
 extern IRExpr* IRExpr_CCall  ( IRCallee* cee, IRType retty, IRExpr** args );
 extern IRExpr* IRExpr_ITE    ( IRExpr* cond, IRExpr* iftrue, IRExpr* iffalse );
+extern IRExpr* IRExpr_VECRET ( void );
+extern IRExpr* IRExpr_BBPTR  ( void );
 
 /* Deep-copy an IRExpr. */
 extern IRExpr* deepCopyIRExpr ( IRExpr* );
@@ -2034,11 +2146,12 @@ extern void ppIRJumpKind ( IRJumpKind );
      number of times at a fixed interval, if required.
 
    Normally, code is generated to pass just the args to the helper.
-   However, if .needsBBP is set, then an extra first argument is
-   passed, which is the baseblock pointer, so that the callee can
-   access the guest state.  It is invalid for .nFxState to be zero
-   but .needsBBP to be True, since .nFxState==0 is a claim that the
-   call does not access guest state.
+   However, if IRExpr_BBPTR() is present in the argument list (at most
+   one instance is allowed), then the baseblock pointer is passed for
+   that arg, so that the callee can access the guest state.  It is
+   invalid for .nFxState to be zero but IRExpr_BBPTR() to be present,
+   since .nFxState==0 is a claim that the call does not access guest
+   state.
 
    IMPORTANT NOTE re GUARDS: Dirty calls are strict, very strict.  The
    arguments and 'mFx' are evaluated REGARDLESS of the guard value.
@@ -2073,7 +2186,9 @@ typedef
          allowed. */
       IRCallee* cee;    /* where to call */
       IRExpr*   guard;  /* :: Ity_Bit.  Controls whether call happens */
-      IRExpr**  args;   /* arg list, ends in NULL */
+      /* The args vector may contain IRExpr_BBPTR() and/or
+         IRExpr_VECRET(), in both cases, at most once. */
+      IRExpr**  args;   /* arg vector, ends in NULL. */
       IRTemp    tmp;    /* to assign result to, or IRTemp_INVALID if none */
 
       /* Mem effects; we allow only one R/W/M region to be stated */
@@ -2082,7 +2197,6 @@ typedef
       Int       mSize;  /* of access, or zero if mFx==Ifx_None */
 
       /* Guest state effects; up to N allowed */
-      Bool needsBBP; /* True => also pass guest state ptr to callee */
       Int  nFxState; /* must be 0 .. VEX_N_FXSTATE */
       struct {
          IREffect fx:16;   /* read, write or modify?  Ifx_None is invalid. */

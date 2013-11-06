@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2012 Nicholas Nethercote
+   Copyright (C) 2000-2013 Nicholas Nethercote
       njn@valgrind.org
 
    This program is free software; you can redistribute it and/or
@@ -80,6 +80,8 @@ const HChar* VG_(clo_suppressions)[VG_CLO_MAX_SFILES];
 Int    VG_(clo_n_fullpath_after) = 0;
 const HChar* VG_(clo_fullpath_after)[VG_CLO_MAX_FULLPATH_AFTER];
 const HChar* VG_(clo_extra_debuginfo_path) = NULL;
+const HChar* VG_(clo_debuginfo_server) = NULL;
+Bool   VG_(clo_allow_mismatched_debuginfo) = False;
 UChar  VG_(clo_trace_flags)    = 0; // 00000000b
 Bool   VG_(clo_profyle_sbs)    = False;
 UChar  VG_(clo_profyle_flags)  = 0; // 00000000b
@@ -123,6 +125,9 @@ VgSmc  VG_(clo_smc_check)      = Vg_SmcStack;
 const HChar* VG_(clo_kernel_variant) = NULL;
 Bool   VG_(clo_dsymutil)       = False;
 Bool   VG_(clo_sigill_diag)    = True;
+UInt   VG_(clo_unw_stack_scan_thresh) = 0; /* disabled by default */
+UInt   VG_(clo_unw_stack_scan_frames) = 5;
+
 
 /*====================================================================*/
 /*=== File expansion                                               ===*/
