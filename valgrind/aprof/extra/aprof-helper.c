@@ -1084,6 +1084,7 @@ static void post_merge_consistency(aprof_report * r, HChar * report) {
     
     ULong sum_thread_input = 0;
     ULong sum_syscall_input = 0;
+    ULong tuples = 0;
     
     HT_ResetIter(r->routine_hash_table);
     RoutineInfo * rtn = (RoutineInfo *) HT_Next(r->routine_hash_table);
@@ -1092,6 +1093,8 @@ static void post_merge_consistency(aprof_report * r, HChar * report) {
         ULong cumul_real = 0;
         ULong sum_rms = 0;
         ULong sum_rvms = 0;
+        ULong induced_thread = 0;
+        ULong induced_syscall = 0;
         
         UInt k;
         for (k = 0; k < sizeof(rtn_skip)/sizeof(HChar *); k++) {
@@ -1106,6 +1109,8 @@ static void post_merge_consistency(aprof_report * r, HChar * report) {
         RMSInfo * i = (RMSInfo *) HT_Next(rtn->rvms_map);
         while (i != NULL) {
             
+            tuples++;
+            
             if (r->version == REPORT_VERSION) {
                 ADD(sum_rms, i->rms_input_sum);
                 ADD(sum_rvms, i->key*i->calls_number);
@@ -1114,8 +1119,26 @@ static void post_merge_consistency(aprof_report * r, HChar * report) {
             ADD(sum_syscall_input, i->rvms_syscall_self);
             ADD(sum_thread_input, i->rvms_thread_self);
             
+            ADD(induced_syscall, i->rvms_syscall_sum);
+            ADD(induced_thread, i->rvms_thread_sum);
+            
             ADD(cumul_real, i->cumul_real_time_sum);
             i = (RMSInfo *) HT_Next(rtn->rvms_map);
+        }
+        // dvector(long, long)
+        // HJM_Swaption_Blocking(double*, double, double, double, double, double, int, int, double, double*, double**, long, long, int, int)
+        if (consistency && VG_(strcmp)("HJM_Swaption_Blocking(double*, double, double, double, double, double, int, int, double, double*, double**, long, long, int, int)", rtn->fn->name) == 0) {
+            VG_(printf)("Function: %s\n", rtn->fn->name);
+            VG_(printf)("\tSum thread input: %llu\n", induced_thread);
+            VG_(printf)("\tSum syscall input: %llu\n", induced_syscall);
+            VG_(printf)("\tSum rvms: %llu\n", sum_rvms);
+        }
+        
+        if (consistency && VG_(strcmp)("dvector(long, long)", rtn->fn->name) == 0) {
+            VG_(printf)("Function: %s\n", rtn->fn->name);
+            VG_(printf)("\tSum thread input: %llu\n", induced_thread);
+            VG_(printf)("\tSum syscall input: %llu\n", induced_syscall);
+            VG_(printf)("\tSum rvms: %llu\n", sum_rvms);
         }
         
         ASSERT(cumul_real > 0, "Invalid cumul real: %s:%s", 
@@ -1146,8 +1169,10 @@ static void post_merge_consistency(aprof_report * r, HChar * report) {
     }
     
     if (consistency) {
-        VG_(printf)("Sum thread input: %llu\n", sum_thread_input);
-        VG_(printf)("Sum syscall input: %llu\n", sum_syscall_input);
+        VG_(printf)("Report: %s\n", report);
+        VG_(printf)("\tSum thread input: %llu\n", sum_thread_input);
+        VG_(printf)("\tSum syscall input: %llu\n", sum_syscall_input);
+        VG_(printf)("\tTuples: %llu\n", tuples);
     }
 }
 

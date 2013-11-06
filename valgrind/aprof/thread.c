@@ -120,11 +120,11 @@ static ThreadData * APROF_(thread_start)(ThreadId tid){
  
     #endif // CCT
     
-    #if TIME == RDTSC
-    tdata->entry_time = APROF_(time)();
-    #endif
-
     APROF_(running_threads)++;
+    
+    #if TIME == RDTSC
+    tdata->entry_time = APROF_(time)(tdata);
+    #endif
 
     return tdata;
 
@@ -476,7 +476,9 @@ UInt APROF_(overflow_handler)(void) {
 #if INPUT_METRIC == RMS || DEBUG_DRMS
 UInt APROF_(overflow_handler_rms)(void) {
 
+    #if DEBUG
     VG_(umsg)("Local counter overflow\n");
+    #endif
 
     ThreadData * tdata = APROF_(current_tdata);
     #if DEBUG

@@ -61,6 +61,51 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
                                         Addr addr, 
                                         SizeT size,
                                         UWord kernel_access) {
+
+    ThreadData * tdata = APROF_(current_tdata);
+    AP_ASSERT(tdata != NULL, "Thread data is NULL");
+    
+    if (tdata->stack_depth == 0) return;
+    
+    #if IGNORE_DL_RUNTIME == 1
+    if (tdata->skip) return;
+    #endif
+    
+    //addr = addr & ~(APROF_(addr_multiple)-1);
+    Int size_fix = size;
+    APROF_(fix_access_size)(addr, size_fix);
+    
+    Activation * act = APROF_(get_activation_noresize)(tdata, tdata->stack_depth);
+    AP_ASSERT(act != NULL, "act is NULL");
+    
+    while (size_fix > 0) {
+    
+        UInt old_aid = LK_insert(tdata->accesses_rms, addr, act->aid_rms);
+        if (type != STORE && old_aid < act->aid_rms) {
+            
+            act->rms++;    
+            if (old_aid >= APROF_(get_activation_noresize)(tdata, 1)->aid_rms) {
+                
+                Activation * a = APROF_(get_activation_by_aid_rms)(tdata, old_aid);
+                a->rms--;
+            }
+        }
+        
+        size_fix -= APROF_(addr_multiple);
+        addr += APROF_(addr_multiple);
+    }
+    
+    // __attribute__((unused))
+    return;
+}
+
+#if 0
+VG_REGPARM(3) void APROF_(trace_access)(UWord type, 
+                                        Addr addr, 
+                                        SizeT size,
+                                        UWord kernel_access) {
+    
+    return;
     
     #if DEBUG
     AP_ASSERT(APROF_(current_TID) == VG_(get_running_tid)(), "TID mismatch");
@@ -281,7 +326,7 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
                 APROF_(get_activation_by_aid_rvms)(tdata, old_ts)->rvms--;
                 #if DEBUG_DRMS
                 //dec_rvms = True;
-                #endif
+                #endif // DEBUG_DRMS
             }
 
         }
@@ -308,16 +353,16 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
                 AP_ASSERT(!dec_rvms, "Invalid d_rms [3]");
                 AP_ASSERT(dec_rms == NULL, "Invalid d_rms");
             }
-            #endif
+            #endif // DEBUG_DRMS
         } 
         #if DEBUG_DRMS
         else {
             AP_ASSERT(!inc_rms, "Invalid d_rms [4]");
             AP_ASSERT(dec_rms == NULL && !inc_rms, "Invalid d_rms");
         }
-        #endif
+        #endif // DEBUG_DRMS
         
-        #endif
+        #endif // DISTINCT_RMS
 
         #if DEBUG_DRMS & 0
         AP_ASSERT(act->rms == act->d_rms, "Invalid d_rms");
@@ -335,3 +380,4 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
     #endif
 
 }
+#endif

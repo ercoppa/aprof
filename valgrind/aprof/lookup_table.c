@@ -84,6 +84,9 @@ LookupTable * LK_create(void) {
 
 }
 
+UInt hit_cache = 0;
+UInt miss_cache = 0;
+
 void LK_destroy(LookupTable * lk) {
 
     UInt i = 0;
@@ -124,12 +127,32 @@ void LK_destroy(LookupTable * lk) {
     }
     VG_(free)(lk);
     
+    VG_(printf)("Cache hit:  %d\n",  hit_cache);
+    VG_(printf)("Cache miss: %d\n", miss_cache);
 }
+
+
 
 UInt LK_insert(LookupTable * suf, UWord addr, UInt ts) {
     
+    // cache
+    UWord addr_shift_16 = addr >> 16;
+    UWord addr_16 = (addr & 0xffff) >> APROF_(res_shift);
+    
+    if (addr_shift_16 == suf->last_chunk_index) {
+    
+        hit_cache++;
+    
+        UInt old = suf->last_chunk[addr_16];
+        suf->last_chunk[addr_16] = ts;
+        
+        return old;
+    }
+    
+    miss_cache++;
+    
     #ifdef __i386__
-    UWord i = addr >> 16;
+    UWord i = addr_shift_16;
     #else
     
     //VG_(printf)("Address is %llu\n", (UWord)addr);
@@ -142,7 +165,7 @@ UInt LK_insert(LookupTable * suf, UWord addr, UInt ts) {
     AP_ASSERT((i < LK_SIZE), "Address overflow");
     #endif
     
-    UWord k = (addr >> 16) & 0x3fff;
+    UWord k = (addr_shift_16) & 0x3fff;
     
     //VG_(printf)("index k %llu\n", k);
     
@@ -151,7 +174,7 @@ UInt LK_insert(LookupTable * suf, UWord addr, UInt ts) {
     // this is slow!!! 
     //UWord j = (addr & 0xffff) / APROF_(addr_multiple);
     // faster:
-    UWord j = (addr & 0xffff) >> APROF_(res_shift);
+    UWord j = addr_16;
     
     #ifndef __i386__
     if (suf->table[i] == NULL) {
@@ -209,13 +232,17 @@ UInt LK_insert(LookupTable * suf, UWord addr, UInt ts) {
     
     #ifdef __i386__
     value = &(suf->table[i][j]);
+    suf->last_chunk = suf->table[i];
     #else
     value = &(suf->table[i]->table[k][j]);
+    suf->last_chunk = suf->table[i]->table[k];
     #endif
     
     UInt old = *value;
     //if (old < ts) /* avoid a write if possible... */
         *value = ts;
+    
+    suf->last_chunk_index = addr_shift_16;
     
     return old;
 
