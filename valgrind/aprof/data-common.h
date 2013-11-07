@@ -6,6 +6,9 @@
 // type of memory access
 typedef enum access_t {LOAD, STORE, MODIFY} access_t;
 
+// input size metric
+typedef enum input_metric_t {RMS, DRMS} input_metric_t;
+
 // Used to descriminate final exit/jump of a BB
 typedef enum jump_t {
 
@@ -31,13 +34,15 @@ typedef enum alloc_type {
     HTN_S,      // ht node
     ILT_LK_S,   // intermediate table LK
     SEG_LK_S,   // LK segment
-    RMS_S,      // Read memory size
+    LK_S,       // LK
+    INPUT_S,    // input tuple
     HT_S,       // Hash Table
     HTC_S,      // array ht
     CCT_S,      // CCT node
     OBJ_S,      // Object
     MANGLED_S,  // Mangled name 
-    A_NONE      // unsed
+    FILE_S,     // FILE
+    A_NONE      // unused
 
 } alloc_type;
 
@@ -206,7 +211,7 @@ typedef struct {
 typedef struct ThreadData {
 
     LookupTable *   shadow_memory;      // Shadow memory (timestamps) 
-    HashTable *     routine_hash_table; // routine hash table
+    HashTable *     rtn_ht;             // routine hash table
     
     ULong           cost;               // if BB_COUNT and INSTR 
                                         // is the counter
@@ -244,14 +249,15 @@ typedef struct Runtime {
     
     /* Global variables */
     
-    UInt            events_used;        // # memory events queued (events.c)
-    ThreadId        current_TID;        // Thread ID of the current active thread
-    ThreadData *    current_tdata;      // Thread info of current active thread
-    UInt            running_threads;    // # of active threads
-    HashTable *     bb_ht;              // BB hash table
-    jump_t          last_exit;          // Last BB jump seen
-    HashTable *     obj_ht;             // Object hash table
-    HashTable *     fn_ht;              // Function hash table
+    UInt            events_used;            // # memory events queued (events.c)
+    ThreadId        current_TID;            // Thread ID of the current active thread
+    ThreadData *    current_tdata;          // Thread info of current active thread
+    UInt            running_threads;        // # of active threads
+    ThreadData *    threads[VG_N_THREADS];  // Thread data
+    HashTable *     bb_ht;                  // BB hash table
+    jump_t          last_exit;              // Last BB jump seen
+    HashTable *     obj_ht;                 // Object hash table
+    HashTable *     fn_ht;                  // Function hash table
     
     LookupTable *   global_shadow_memory;   // Global shadow memory (DRMS)
     UInt            global_counter;         // Global counter (DRMS)
@@ -275,6 +281,10 @@ typedef struct Runtime {
     // otherwise use -finstrument-functions
     // Default: True
     Bool            function_tracing;
+    
+    // Input size metric
+    // Default: RMS
+    input_metric_t  input_metric;
 
 } Runtime;
 
