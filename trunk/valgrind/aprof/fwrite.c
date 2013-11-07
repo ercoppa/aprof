@@ -9,7 +9,7 @@
 /*
    This file is part of aprof, an input sensitive profiler.
 
-   Copyright (C) 2011-2012, Emilio Coppa (ercoppa@gmail.com),
+   Copyright (C) 2011-2014, Emilio Coppa (ercoppa@gmail.com),
                             Camil Demetrescu,
                             Irene Finocchi,
                             Romolo Marotta
@@ -34,10 +34,6 @@
 
 #include "aprof.h"
 
-/* Note: fwrite() & co are not provided by valgrind, so... */
-#define INTERNAL_BUFF_SIZE 4096*5
-static HChar buffer[INTERNAL_BUFF_SIZE];
-
 FILE * APROF_(fopen)(const HChar * name){
     
     SysRes res = VG_(open)(name, VKI_O_EXCL|VKI_O_CREAT|VKI_O_WRONLY, 
@@ -45,23 +41,21 @@ FILE * APROF_(fopen)(const HChar * name){
     if (sr_isError(res)) return NULL;
     
     Int file = (Int) sr_Res(res);
-    FILE * f = VG_(malloc)("log_file", sizeof(FILE));
+    FILE * f = APROF_(new)(FILE_S, sizeof(FILE));
     f->file = file;
     f->fw_pos = 0;
 
     return f;
-
 }
 
 void APROF_(fflush)(FILE * f) {
-    
-    
+
     if (f->fw_pos == 0) return;
     
     UInt bw = 0, bf = 0, size = f->fw_pos;
     do {
         bf = VG_(write)(f->file, f->fw_buffer + bw, size - bw);
-        AP_ASSERT(bf >= 0, "Error during writing\n");
+        APROF_(assert)(bf >= 0, "Error during writing");
         bw += bf;
     } while(bw < size);
     
@@ -72,16 +66,13 @@ void APROF_(fflush)(FILE * f) {
 void APROF_(fwrite)(FILE * f, const HChar * buf, UInt size) {
 
     if (buf == NULL || size == 0) return;
-    
     while (1) {
         
         if (size < BUFFER_SIZE - f->fw_pos) {
         
             // it fits inside... just copy
             VG_(memcpy)(f->fw_buffer + f->fw_pos, buf, size);
-
             f->fw_pos += size;
-            
             return;
         
         } else {
@@ -95,11 +86,8 @@ void APROF_(fwrite)(FILE * f, const HChar * buf, UInt size) {
             f->fw_pos += BUFFER_SIZE - f->fw_pos;
             
             APROF_(fflush)(f);
-            
         }
-        
     }
-
 }
 
 void APROF_(fclose)(FILE * f) {
@@ -112,15 +100,11 @@ void APROF_(fclose)(FILE * f) {
 
 void APROF_(fprintf)(FILE * f, const HChar * format, ...) {
     
+    HChar buffer[4096];
     va_list vargs;
     va_start(vargs, format);
-    UInt size = VG_(vsprintf)(buffer, format, vargs);
+    UInt size = VG_(vsnprintf)(buffer, 4096, format, vargs);
     va_end(vargs);
     
-    #if DEBUG
-    AP_ASSERT(size < INTERNAL_BUFF_SIZE, "possible mal-formatted file");
-    #endif
-    
     APROF_(fwrite)(f, buffer, size);
-    
 }
