@@ -17,7 +17,7 @@ if VGCONF_HAVE_PLATFORM_SEC
 noinst_PROGRAMS += aprof-@VGCONF_ARCH_SEC@-@VGCONF_OS@
 endif
 
-aprof_SOURCES_COMMON =  CCT.c fwrite.c thread.c report.c \
+aprof_SOURCES_COMMON =  cct.c fwrite.c thread.c report.c \
 						events.c function.c memory.c time.c \
 						./hashtable/hashtable.c \
 						lookup_table.c syscall.c \
