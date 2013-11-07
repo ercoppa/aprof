@@ -3,92 +3,82 @@
 
 #if APROF_TOOL
 
-typedef IRExpr IRAtom;
 // type of memory access
-typedef enum access_t { LOAD, STORE, MODIFY } access_t;
-
-#if TRACE_FUNCTION
+typedef enum access_t {LOAD, STORE, MODIFY} access_t;
 
 // Used to descriminate final exit/jump of a BB
-typedef enum jump_t { 
-    
-    BB_INIT,                            // head of BB, not used anymore
-    CALL, RET, OTHER,                   // jump within a BB, not used anymore
-    BBCALL, BBRET, BBOTHER,             // final exit of a BB
-    NONE                                // default value
+typedef enum jump_t {
+
+    BB_INIT,                    // head of BB, not used anymore
+    CALL, RET, OTHER,           // jump within a BB, not used anymore
+    BBCALL, BBRET, BBOTHER,     // final exit of a BB
+    NONE                        // default value
     
 } jump_t;
 
-#endif // TRACE_FUNCTION
-
 #if DEBUG_ALLOCATION
-// Used for debugging of memory usage of aprof
+// Used for debugging memory usage of aprof
 typedef enum alloc_type {
 
-    BB_S, /* BB */ 
-    RT_S, /* Routine */
-    FN_S, /* Function */ 
-    T_S,  /* thread */  
-    FN_NAME_S, /* Function name */ 
-    ACT_S, /* Activation */ 
-    OBJ_NAME_S, /* Object name */ 
-    POOL_PAGE_S, /* Pool page */
-    HTN_S, /* ht node */
-    ILT_LK_S, /* intermediate table LK */
-    SEG_LK_S, /* LK segment */
-    RMS_S, /* Read memory size*/
-    HT_S, /* Hash Table */
-    HTC_S, /* element array ht */
-    CCT_S, /* CCT */
-    OBJ_S, /* Object */ 
-    MANGLED_S, /* Mangled name */
-    A_NONE /* unsed */
+    BB_S,       // BB 
+    RT_S,       // Routine
+    FN_S,       // Function
+    T_S,        // thread
+    FN_NAME_S,  // Function name
+    ACT_S,      // Activation
+    OBJ_NAME_S, // Object name
+    POOL_PAGE_S,// Pool page
+    HTN_S,      // ht node
+    ILT_LK_S,   // intermediate table LK
+    SEG_LK_S,   // LK segment
+    RMS_S,      // Read memory size
+    HT_S,       // Hash Table
+    HTC_S,      // array ht
+    CCT_S,      // CCT node
+    OBJ_S,      // Object
+    MANGLED_S,  // Mangled name 
+    A_NONE      // unsed
 
 } alloc_type;
-#endif // DEBUG_ALLOCATION
 
+#endif // DEBUG_ALLOCATION
 #endif // APROF_TOOL
 
 // an ELF object, instance shared by all threads
 typedef struct Object {
-
-    UWord       key;                    // Unique key for this function
-    void *      next;                   // HT node attr
-    HChar *     name;                   // Name of object
-    HChar *     filename;               // Name of file
-
+    
+    UWord   key;        // Unique key for this function
+    void *  next;       // HT node attr
+    HChar * name;       // Name of object
+    HChar * filename;   // Name of file
+    
 } Object;
 
 // a function, instance shared by all threads
 typedef struct Function {
-
-    UWord        key;                   // unique key for this function
-    void *       next;                  // HT node attr
-    HChar *      name;                  // name of routine (demangled full)
-    Object *     obj;                   // name of library the routine belongs to
-    HChar *      mangled;               // name of routine (mangled)
     
-    #if DISCARD_UNKNOWN
-    Bool         discard_info;          // discard SMS/cost for this 
-                                        // function (but not for its children!)
-    #endif
-
+    UWord       key;        // unique key for this function
+    void *      next;       // HT node attr
+    HChar *     name;       // name of routine (demangled full)
+    Object *    obj;        // name of library the routine belongs to
+    HChar *     mangled;    // name of routine (mangled)
+    Bool        discard;    // discard input?
+    
 } Function;
 
 #if APROF_TOOL
-#if TRACE_FUNCTION
 
 // Info about a Basic Block, instance shared by all threads 
 typedef struct BB {
 
-    UWord        key;                    // Basic block address (unique)
-    void *       next;                   // HT node attr...
-    UInt         instr_offset;           // length of BB (# bytes) 
-    jump_t       exit;                   // jumpking of this BB
-    VgSectKind   obj_section;            // ELF Object section (of the function)
-    Bool         is_dl_runtime_resolve;  // Is this BB part of dl_runtime_resolve?
-    Bool         is_entry;               // Is this BB first one of a function?
-    Function *   fn;                     // Info about the associated function
+    UWord       key;                    // Basic block address (unique)
+    void *      next;                   // HT node attr...
+    UInt        instr_offset;           // length of BB (# bytes) 
+    jump_t      exit;                   // jumpking of this BB
+    VgSectKind  obj_section;            // ELF Object section (of the function)
+    Bool        is_dl_runtime_resolve;  // Is this BB part of dl_runtime_resolve?
+    Bool        is_entry;               // Is this BB first one of a function?
+    Function *  fn;                     // Info about the associated function
     
 } BB;
 
@@ -96,265 +86,196 @@ typedef struct BB {
 struct chunk_t { int start, len; };
 struct pattern {
 
-    const char *    name;
-    int             len;
-    struct chunk_t  chunk[];
+    const char * name;
+    int len;
+    struct chunk_t chunk[];
 
 };
-
-#endif // TRACE_FUNCTION
 
 // file descriptor
 typedef struct FILE {
 
-    Int        file;                     // file descriptior ID 
-    HChar      fw_buffer[BUFFER_SIZE];   // buffer
-    Int        fw_pos;                   // buffer offset
-
+    Int file;                       // file descriptior ID 
+    HChar fw_buffer[BUFFER_SIZE];   // buffer
+    Int fw_pos;                     // buffer offset
+    
 } FILE;
-
-#if CCT
 
 // Record associated with CCT node,
 typedef struct CCTNode {
 
-    struct CCTNode *    firstChild;      // first child of the node in the CCT
-    struct CCTNode *    nextSibling;     // next sibling of the node in the CCT
-    ULong               routine_id;      // the routine id associated with this CCT node
-    UInt                context_id;      // the context id associated with this CCT node
-
-    #if CCT_GRAPHIC
-    char *              name;            // Name of routine associated to this node
-    #endif
-
+    struct CCTNode *    first_child;    // first child of the node in the CCT
+    struct CCTNode *    next_sibling;   // next sibling of the node in the CCT
+    ULong               routine_id;     // the routine id associated with this CCT node
+    UInt                context_id;     // the context id associated with this CCT node
+    
 } CCTNode;
-
-#endif // CCT
 
 #endif // APROF_TOOL
 
-#if DISTINCT_RMS
-typedef struct {
-    
-    UWord         key;
-    void *        next;
-    ULong         calls;
-    
-} RMSValue;
-#endif
-
 // Info about a routine, not shared btw threads 
 typedef struct {
+    
+    UWord       key;                // Unique key for this routine
+    void *      next;               // HT node attr...
+    ULong       routine_id;         // unique id for this routine
+    Function *  fn;                 // Info (name, file, etc) about this routine
+    UInt        recursion_pending;  // number of pending activations (> 1 means recursive)
+    HashTable * input_map;          // input size tuples
 
-    UWord        key;                    // Unique key for this routine
-    void *       next;                   // HT node attr...
-    ULong        routine_id;             // unique id for this routine
-    Function *   fn;                     // Info (name, file, etc) about this routine
-    Int          recursion_pending;      // number of pending activations (> 1 means recursive)
-    
-    #if DEBUG_DRMS || INPUT_METRIC == RMS
-    HashTable *  rms_map;                // set of unique RMSInfo records for this routine
-    #endif
-    
-    #if INPUT_METRIC == RVMS
-    HashTable *  rvms_map;               // set of unique RMSInfo records for this routine
-    #endif
-    
-    #if CCT
-    HashTable *  context_rms_map;        // set of pairs <context_id, sms_map>
-    #endif
-    
     #if EXTERNAL
     ULong       total_calls;
     #endif
 
-    #if DISTINCT_RMS
-    HashTable *  distinct_rms;    
-    #endif
-
 } RoutineInfo;
 
-// read memory size 
+// input size tuple
 typedef struct {
-
-    UWord       key;                     // rms value for this record
-    void *      next;                    // HT node value
-    ULong       min_cumulative_time;     // minimum time spent by the 
-                                         // routine in calls with this rms
-                                         
-    ULong       max_cumulative_time;     // maximum time spent by the 
-                                         // routine in calls with this rms
-                                         
-    ULong       cumulative_time_sum;     // total time spent by the 
-                                         // routine in calls with this rms
+    
+    UWord   key;                    // hash key
+    void *  next;                   // HT node value
+    UWord   input_size;             // input size value
+    ULong   calls_number;           // number of calls
+    
+    ULong   min_cumulative_cost;    // minimum cumulative cost 
+    ULong   max_cumulative_time;    // maximum cumulative cost 
+    ULong   sum_cumulative_cost;    // sum of cumulative costs
+    
+    ULong   min_self_cost;          // min self cost
+    ULong   max_self_cost;          // max self cost
+    ULong   sum_self_cost;          // sum of self costs
+    
+    ULong   sum_cumul_real_cost;    // total cost spent by the routine 
+                                    // in calls with this input size
+                                    // without considering recursive 
+                                    // calls of the same function: e.g.,
+                                    // t1: CALL FOO
+                                    // t2: CALL FOO
+                                    // t3: RET FOO
+                                    // t4: RET FOO
+                                    // sum of real costs is (t4 - t1)
+                                    // and NOT (t4 - t1) + (t3 - t2)
+  
     #if EXTERNAL
-    double      cumulative_sum_sqr;      // sum of the square of cumulative costs
-    #else
-    ULong       cumulative_sum_sqr;      // sum of the square of cumulative costs
-    #endif
-    
-    ULong       calls_number;            // number of times the routine 
-                                         // has been called with this rms
-    ULong       cumul_real_time_sum;     // total time spent by the routine 
-                                         // in calls with this rms
-                                         // without considering recursive 
-                                         // call of the same function
-    ULong       self_time_sum;           // total self time spent by the 
-                                         // routine in calls with this rms
-    ULong       self_time_min;           // minimum self time spent by 
-                                         // the routine in calls with this rms
-    ULong       self_time_max;           // maximum self time spent by the 
-                                         // routine in calls with this rms
-    #if EXTERNAL                                     
-    double      self_sum_sqr;            // sum of the square of self costs
-    #else
-    ULong       self_sum_sqr;            // sum of the square of self costs
-    #endif
+    double  sqr_cumulative_cost;    // sum of the square of cumulative costs
+    double  sqr_self_cost;          // sum of the square of self costs
+    #else // EXTERNAL
+    ULong   sqr_cumulative_cost;    // sum of the square of cumulative costs
+    ULong   sqr_self_cost;          // sum of the square of self costs
+    #endif // !EXTERNAL
 
-    #if INPUT_METRIC == RVMS
-    ULong       rms_input_sum;            // sum of RMS
-    
-    #if EXTERNAL
-    double      rms_input_sum_sqr;        // sum of squares of RMS
-    #else
-    ULong       rms_input_sum_sqr;        // sum of squares of RMS
-    #endif
-    
     #if INPUT_STATS
-    ULong        rvms_syscall_sum;
-    ULong        rvms_thread_sum;
-    ULong        rvms_syscall_self;
-    ULong        rvms_thread_self;
-    #endif
-    
-    #endif
+    ULong   sum_cumul_syscall;      // sum cumulative syscall input
+    ULong   sum_cumul_thread;       // sum cumulatibe thread input
+    ULong   sum_self_syscall;       // sum self syscall input
+    ULong   sum_self_thread;        // sum self thread input
+    #endif // INPUT_STATS
 
-} RMSInfo;
+} Input;
 
 #if APROF_TOOL
 
 // info about an activation of a routine
 typedef struct {
 
-    ULong          entry_time;           // time stamp at activation entry
-    ULong          total_children_time;  // total time spent in children
+    ULong           start;              // time stamp at activation entry
+    ULong           sum_children_cost;  // sum of cumulative children's costs
+    UInt            input_size;         // (partial) input size estimation
+    RoutineInfo *   rtn_info;           // routine information
+    UInt            activation_id;      // activation ID
+    Bool            skip;               // discard this info? 
+    CCTNode *       node;               // CCT node 
     
-    #if INPUT_METRIC == RMS || DEBUG_DRMS
-    UInt           rms;                  // RMS of activation 
-    #endif
-    #if INPUT_METRIC == RVMS             
-    UInt           rvms;                 // RVMS of activation
-    #endif
-    #if DISTINCT_RMS
-    UInt           d_rms;
-    #endif
-    
-    RoutineInfo *  rtn_info;             // pointer to info record of 
-                                         // activated routine
-                                         
-    #if INPUT_METRIC == RVMS
-    UInt           aid_rvms;             // Activation ID Activation ID 
-                                         // (value of the global counter
-                                         // when this act started)
-    
+    UWord           sp;                 // stack pointer value 
+                                        // when entered this activation
+    UWord           ret_addr;           // Expected BB addr of BB executed 
+                                        // after a return of a called 
+                                        // function (only meaningful if 
+                                        // the function is called with Ijk_Call)
+
     #if INPUT_STATS
-    ULong       rvms_syscall;
-    ULong       rvms_thread;
-    ULong       rvms_syscall_self;
-    ULong       rvms_thread_self;
-    #endif                                     
+    ULong   cumul_syscall;              // cumulative syscall input
+    ULong   cumul_thread;               // cumulatibe thread input
+    ULong   self_syscall;               // self syscall input
+    ULong   self_thread;                // self thread input
+    #endif // INPUT_STATS                                
     
-    #endif
-    #if DEBUG_DRMS || INPUT_METRIC == RMS
-    UInt           aid_rms;
-    #endif
-
-    #if CCT
-    CCTNode *      node;                 // pointer to the CCT node 
-                                         // associated with the call
-    #endif
-    
-    #if TRACE_FUNCTION
-    UWord           sp;                  // Stack pointer when entered this function
-    UWord           ret_addr;            // Expected BB addr of BB executed 
-                                         // after a return of a called 
-                                         // function (only meaningful if 
-                                         // the function is called with Ijk_Call)
-    
-    #if IGNORE_DL_RUNTIME
-    Bool            skip;                // if True, disable analysis 
-    #endif
-    
-    #endif
-
 } Activation;
 
 // Info about a thread
 typedef struct ThreadData {
 
-    #if INPUT_METRIC == RVMS
-    LookupTable *   accesses_rvms;         // stack of sets of addresses
-    #endif
-    #if DEBUG_DRMS || INPUT_METRIC == RMS
-    LookupTable *   accesses_rms;         // stack of sets of addresses
-    #endif
+    LookupTable *   shadow_memory;      // Shadow memory (timestamps) 
+    HashTable *     routine_hash_table; // routine hash table
     
-    HashTable *     routine_hash_table;  // table of all encountered routines
-    UInt            stack_depth;         // stack depth
-    Activation *    stack;               // activation stack
-    UInt            max_stack_size;      // max stack size
-    ULong           next_routine_id;     // the routine_id that will be 
-                                         // assigned to the next routine_info
-    ULong           other_metric;        // needed when merging reports
+    ULong           cost;               // if BB_COUNT and INSTR 
+                                        // is the counter
+                                        // if RTDTSC is the entry time
+
+    UInt            stack_depth;        // stack depth
+    Activation *    stack;              // activation stack
+    UInt            max_stack_size;     // max stack size
     
-    #if INPUT_METRIC == RMS || DEBUG_DRMS
-    UInt            next_aid;            // Activation ID that will be assigned 
-                                         // to the next Activation
-    #endif
+    BB *            last_bb;            // Last executed BB
+    jump_t          last_exit;          // Last "final" exit/jump of last BB
+
+    ULong           next_rtn_id;        // next routine id 
+    Bool            skip;               // discard info
+    ULong           extra_cost;         // needed when merging reports
     
-    #if CCT
-    CCTNode *       root;                // root of the CCT
-    ULong           next_context_id;     // the context_id that will 
-                                         // be assigned to the next CCT node
-    #endif
+    UInt            next_activation_id; // next act id (RMS)
     
-    #if TIME == INSTR
-    ULong            instr;              // Counter instr executed
-    #elif TIME == BB_COUNT
-    ULong            bb_c;               // Counter BB executed
-    #elif TIME == RDTSC
-    ULong            entry_time;         // Entry time for this thread
-    #endif
-    
-        
-    #if SUF2_SEARCH == STATS
-    ULong            avg_depth;          // Sum of stack depth when 
-                                         // doing all get_activation_by_aid
-    ULong            avg_iteration;      // Sum of iterations when doing 
-                                         // backwarding in all get_activation_by_aid
-    ULong            ops;                // # calls of get_activation_by_aid
-    #endif
-    
-    #if TRACE_FUNCTION
-    BB *             last_bb;            // Last executed BB
-    jump_t           last_exit;          // Last "final" exit/jump of last BB
-    
-    #if IGNORE_DL_RUNTIME
-    Bool             skip;               // Disable analysis
-    #endif
-    
-    #endif
+    CCTNode *       root;               // CCT root
+    ULong           next_context_id;    // next CCT node id
     
     #if EVENTCOUNT
-    ULong            num_func_enter;     // number of JSR events
-    ULong            num_func_exit;      // number of RTS events
-    ULong            num_read;           // number of memory data read operations
-    ULong            num_write;          // number of memory data write operations
-    ULong            num_modify;         // number of memory data read+write operations
-    #endif
-
+    ULong num_func_enter;               // number of CALLs
+    ULong num_func_exit;                // number of RETs
+    ULong num_read;                     // number of read ops
+    ULong num_write;                    // number of write ops
+    ULong num_modify;                   // number of read+write ops
+    #endif // EVENTCOUNT
+    
 } ThreadData;
 
 #endif // APROF_TOOL
+
+typedef struct Runtime {
+    
+    /* Global variables */
+    
+    UInt            events_used;        // # memory events queued (events.c)
+    ThreadId        current_TID;        // Thread ID of the current active thread
+    ThreadData *    current_tdata;      // Thread info of current active thread
+    UInt            running_threads;    // # of active threads
+    HashTable *     bb_ht;              // BB hash table
+    jump_t          last_exit;          // Last BB jump seen
+    HashTable *     obj_ht;             // Object hash table
+    HashTable *     fn_ht;              // Function hash table
+    
+    LookupTable *   global_shadow_memory;   // Global shadow memory (DRMS)
+    UInt            global_counter;         // Global counter (DRMS)
+    
+    /* Some configuration parameters */
+    
+    // Memory resolution: we can aggregate addresses in order
+    // to decrease the space required by the shadow memory.
+    // - 1 => finest resolution, each byte has its timestamp
+    // - 2 => every 2 bytes we have a single timestamp
+    // - ...
+    // Default: 4
+    UInt            memory_resolution;
+    
+    // If defined, reports will be saved in this directory
+    // otherwise in the cwd.
+    // Default: NULL
+    const HChar *   log_dir;
+    
+    // Use internal function CALL/RET heuristics
+    // otherwise use -finstrument-functions
+    // Default: True
+    Bool            function_tracing;
+
+} Runtime;
 
 #endif // APROF_DATA_H
