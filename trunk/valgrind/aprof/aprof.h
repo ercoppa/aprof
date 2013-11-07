@@ -161,6 +161,15 @@
     #define vgAprof_debug_assert(cond, ...) 
 #endif // !DEBUG
 
+#if VERBOSE > 0
+    #define vgAprof_verbose(level, ...) do { \
+                                            if (level <= VERBOSE)
+                                                VG_(printf)(__VA_ARGS__);
+                                        } while(0);
+#else // VERBOSE
+    #define vgAprof_verbose(level, ...)
+#endif // VERBOSE
+
 /* Data structures */
 
 #include "data-common.h"
@@ -183,6 +192,8 @@ void APROF_(thread_switch)(ThreadId tid, ULong blocks_dispatched);
 void APROF_(thread_exit)(ThreadId tid);
 void APROF_(kill_threads)(void);
 void APROF_(thread_create)(ThreadId tid, ThreadId child);
+
+/* counter overflow handlers (overflow.c) */
 UInt APROF_(overflow_handler_drms)(void);
 UInt APROF_(overflow_handler_rms)(void);
 
@@ -237,10 +248,12 @@ Bool APROF_(trace_function)(ThreadId tid, UWord * arg, UWord * ret);
     void APROF_(add_alloc)(UWord type);
     void APROF_(remove_alloc)(UWord type);
     void APROF_(print_alloc)(void);
-    #define vgAprof_new(kind, size)     VG_(malloc)("aprof", size); APROF_(add_alloc)(kind);
+    #define vgAprof_new(kind, size)     VG_(calloc)("aprof", size, 1); APROF_(add_alloc)(kind);
     #define vgAprof_delete(kind, ptr)   do { VG_(free)(prt); APROF_(remove_alloc)(kind); } while(0);
 #else // DEBUG_ALLOCATION
-    #define vgAprof_new(kind, size)     VG_(malloc)("aprof", size)
+    #define vgAprof_add_alloc(type)
+    #define vgAprof_remove_alloc(type)
+    #define vgAprof_new(kind, size)     VG_(calloc)("aprof", size, 1)
     #define vgAprof_delete(kind, ptr)   VG_(free)(ptr)
 #endif // !DEBUG_ALLOCATION
 
