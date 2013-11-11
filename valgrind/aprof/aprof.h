@@ -66,14 +66,13 @@
 #define EMPTY_ANALYSIS      0   // if 1, analysis routines are empty 
                                 // (useful in combination with EVENTCOUNT)
 
-#define DEBUG               0   // Enable some sanity checks
+#define DEBUG               1   // Enable some sanity checks
 
-#define VERBOSE             0   // 0 disabled, 1 function + thread, 2 
+#define VERBOSE             4   // 0 disabled, 1 function + thread, 2 
                                 // function + thread + load/store/modify,
                                 // 4 very verbose function tracing
 
-#define EVENTCOUNT          0   // 0 disabled, 1 memory accesses, 
-                                // 2 functions, 3 mem+fn
+#define EVENTCOUNT          1   // 0 disabled, 1 print event counts
                                 
                                 // Performance metric:
 #define NO_COST             0   // Nothing
@@ -82,40 +81,34 @@
 #define BB_COUNT            3   // count BB executed
 #define COST                BB_COUNT
 
-                                
-#define MEM_TRACE           1   // if 0 disable mem instrumentation
-#define THREAD_INPUT        0   // if 1, every write creates a new
-                                // version of an input
-#define SYSCALL_WRAPPING    0   // if 1, I/O syscall stores are 
-                                // considered as external I/O
+#define INPUT_STATS         1   // stats about thread input & external input
 
-#define IGNORE_LOAD_SYS     1   // ignore load due to syscall
-
-#define INPUT_STATS         0   // stats about thread input & external input
-
-#define DEBUG_ALLOCATION    0   // if 1, check every allocation made by aprof
+#define DEBUG_ALLOCATION    1   // if 1, check every allocation made by aprof
 #define IGNORE_DL_RUNTIME   0   // if 1, disable analysis for dl_
                                 // runtime_resolve (and its children)
                                 
 #define REPORT_NAME         1   // if 1 report name is prog_TID.aprof, 
                                 // if 2 is PID_TID_ADDRMULTIPLE.aprof
                                 
-#define CCT_GRAPHIC         0   // output CCT as dot language in an 
-                                // external file (file.graph); EXPERIMENTAL
-
-#define MEM_USAGE_INFO      0   // Check VmPeak in /proc/PID/status
+#define MEM_USAGE_INFO      1   // Check VmPeak in /proc/PID/status
                                 // to get info about aprof mem usage 
 
 /* shadow memory  */
 
-#define CHECK_OVERFLOW      1   // On 64bit machine, we map only 2048GB...
+#define CHECK_ADDR_OVERFLOW 1   // On 64bit machine, we map only 2048GB...
 
 /* Some constants */
 #define MAX_STACK_SIZE      15000   // max stack size
 #define STACK_SIZE          64      // Initial stack size
 #define BUFFER_SIZE         32000   // FILE buffer size
 #define NAME_SIZE           4096    // function/object name buffer size 
+#define MAX_DSIZE           512
 
+/* Up to this many unnotified events are allowed.  Must be at least two,
+   so that reads and writes to the same address can be merged into a modify.
+   Beyond that, larger numbers just potentially induce more spilling due to
+   extending live ranges of address temporaries. */
+#define N_EVENTS            4
 
 #if INPUT_STATS
     #define SET_THREAD(x)  ((x) &  0x7FFFFFFF) // clear 31th bit
@@ -163,8 +156,8 @@
 
 #if VERBOSE > 0
     #define vgAprof_verbose(level, ...) do { \
-                                            if (level <= VERBOSE)
-                                                VG_(printf)(__VA_ARGS__);
+                                            if (level <= VERBOSE) \
+                                                VG_(printf)(__VA_ARGS__); \
                                         } while(0);
 #else // VERBOSE
     #define vgAprof_verbose(level, ...)
@@ -206,7 +199,8 @@ void APROF_(free_CCT)(CCTNode * root);
 void APROF_(print_report_CCT)(FILE * f, CCTNode * root, UInt parent_id);
 
 /* Memory access handler (memory.c) */
-VG_REGPARM(3) void APROF_(trace_access)(UWord type, Addr addr, UWord kernel_access);
+VG_REGPARM(3) void APROF_(trace_access_rms)(UWord type, Addr addr, SizeT size);
+VG_REGPARM(3) void APROF_(trace_access_drms)(UWord type, Addr addr, SizeT size, UWord kernel_access);
 
 /* Function entry/exit handlers (function.c) */
 RoutineInfo * APROF_(new_routine_info)(ThreadData * tdata, Function * fn, UWord target);
@@ -214,30 +208,35 @@ void APROF_(destroy_routine_info)(RoutineInfo * ri);
 void APROF_(function_enter)(ThreadData * tdata, Activation * act);
 void APROF_(function_exit)(ThreadData * tdata, Activation * act);
 
-/* time (time.c) */
-ULong APROF_(time)(ThreadData * tdata);
-
+/* cost (cost.c) */
+VG_REGPARM(0) void APROF_(increase_cost)(void);
+    
 #if COST == INSTR
 VG_REGPARM(0) void APROF_(add_one_guest_instr)(void);
 #endif
 
 /* instrumentation events (events.c) */
-void APROF_(flushEvents)(IRSB * sb);
+void APROF_(flush_events_rms)(IRSB * sb);
+void APROF_(flush_events_drms)(IRSB * sb);
 void APROF_(addEvent_Ir)(IRSB * sb, IRExpr * iaddr, UInt isize );
 void APROF_(addEvent_Dr)(IRSB * sb, IRExpr * daddr, Int dsize);
 void APROF_(addEvent_Dw)(IRSB * sb, IRExpr * daddr, Int dsize);
 
 /* Callstack management (callstack.c */
-Activation * APROF_(get_activation_by_aid_drms)(ThreadData * tdata, UInt aid);
-Activation * APROF_(get_activation_by_aid_rms)(ThreadData * tdata, UInt aid);
-
 #define vgAprof_get_activation_noresize(tdata, depth) ((tdata)->stack + depth - 1)
 #define vgAprof_get_activation(tdata, depth) ((depth >= tdata->max_stack_size) ? \
                                         APROF_(resize_stack)(tdata, depth) : \
                                         (tdata->stack + depth - 1))
+  
+inline Activation * APROF_(get_activation_by_aid)(ThreadData * tdata, UInt aid);
+inline Activation * APROF_(get_activation_by_aid)(ThreadData * tdata, UInt aid) {
+    
+    Activation * a = &tdata->stack[tdata->stack_depth - 2];
+    while (a->activation_id > aid) a--;
+    return a;
+}
                                         
 Activation * APROF_(resize_stack)(ThreadData * tdata, UInt depth);
-UInt APROF_(str_hash)(const Char *s);
 void APROF_(unwind_stack)(ThreadData * tdata);
 BB * APROF_(get_BB)(UWord target);
 VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb);
@@ -248,8 +247,8 @@ Bool APROF_(trace_function)(ThreadId tid, UWord * arg, UWord * ret);
     void APROF_(add_alloc)(UWord type);
     void APROF_(remove_alloc)(UWord type);
     void APROF_(print_alloc)(void);
-    #define vgAprof_new(kind, size)     VG_(calloc)("aprof", size, 1); APROF_(add_alloc)(kind);
-    #define vgAprof_delete(kind, ptr)   do { VG_(free)(prt); APROF_(remove_alloc)(kind); } while(0);
+    #define vgAprof_new(kind, size)     (APROF_(add_alloc)(kind), VG_(calloc)("aprof", size, 1))
+    #define vgAprof_delete(kind, ptr)   do { VG_(free)(ptr); APROF_(remove_alloc)(kind); } while(0);
 #else // DEBUG_ALLOCATION
     #define vgAprof_add_alloc(type)
     #define vgAprof_remove_alloc(type)
@@ -262,9 +261,6 @@ Bool APROF_(trace_function)(ThreadId tid, UWord * arg, UWord * ret);
 void APROF_(print_info_mem_usage)(void);
 #endif
 
-/* internal debug info of valgrind */
-Bool VG_(get_fnname_no_cxx_demangle) (Addr a, Char* buf, Int nbuf);
-
 /* Syscall wrappers (syscall.c) */
 void APROF_(pre_syscall)(ThreadId tid, UInt syscallno, UWord * args, 
                          UInt nArgs);
@@ -273,9 +269,40 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno, UWord * args,
 
 #define vgAprof_fix_access_size(a, s) \
                     do{ \
-                        UInt diff = (a) & (APROF_(addr_multiple)-1); \
+                        UInt diff = (a) & (APROF_(runtime).memory_resolution-1); \
                         (a) -= diff; \
                         (s) += diff; \
                     } while(0);
+
+#define vgAprof_increase_global_counter()   do { \
+                                                APROF_(runtime).global_counter++; \
+                                                if(APROF_(runtime).global_counter == MAX_COUNT_VAL) \
+                                                APROF_(runtime).global_counter = APROF_(overflow_handler_drms)(); \
+                                            } while(0);
+
+#define vgAprof_hash(a, b)  (a + (b >> 16))
+
+#if COST == BB_COUNT || COST == INSTR || COST == NONE
+    #define vgAprof_time(tdata) (tdata->cost - tdata->skip_cost)
+#elif COST == RDTSC
+inline ULong APROF_(time)(ThreadData * tdata) {
+    
+    #if defined(__i386__)
+        unsigned long lo, hi;
+        asm( "rdtsc" : "=a" (lo), "=d" (hi));
+        return (lo - tdata->discard_cost);
+    #elif defined(__x86_64__)
+        unsigned long lo, hi;
+        asm( "rdtsc" : "=a" (lo), "=d" (hi) );
+        return ((lo | (hi << 32)) - tdata->skip_cost);
+    #else
+        #error "Unsopported platform"
+    #endif
+}
+#endif // COST == RDTSC
+
+/* internal functions of valgrind */
+const HChar* ML_(find_executable) (const HChar * exec);
+Bool VG_(get_fnname_no_cxx_demangle) (Addr a, Char* buf, Int nbuf);
 
 #endif

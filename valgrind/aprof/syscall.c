@@ -53,8 +53,8 @@
     pwritev     LOAD        * - {x86_darwin, amd64_darwin}
     msgrcv      SYS_STORE   * - {x86_linux}
     msgsnd      LOAD        * - {x86_linux}
-    mmap        STORE       *
-    mmap2       STORE      {x86_linux}
+    mmap        SYS_STORE   *
+    mmap2       SYS_STORE   {x86_linux}
    ---------------------------------------------------------
 
     '*' := all architectures
@@ -75,23 +75,8 @@ void APROF_(pre_syscall)(ThreadId tid, UInt syscallno,
 void APROF_(post_syscall)(ThreadId tid, UInt syscallno, 
                             UWord * args, UInt nArgs, SysRes res) {
 
-    #if DEBUG
-    AP_ASSERT(tid == VG_(get_running_tid)(), "TID mismatch");
-    #endif
+    APROF_(debug_assert)(tid == VG_(get_running_tid)(), "TID mismatch");
     
-    /*
-     * This is an undocumented behavior of Valgrind 
-     */
-    #if INPUT_METRIC == RVMS
-    Bool forced_switch = False;
-    #endif
-    if (tid != APROF_(current_TID)) {
-        APROF_(thread_switch)(tid, 0);
-        #if INPUT_METRIC == RVMS
-        forced_switch = True; // a thread switch increased the global counter
-        #endif
-    } 
-
     #if defined(VGO_linux)
     if(res._isError) {
     #elif defined(VGO_darwin)
@@ -99,7 +84,15 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
     #endif
 
         return;
+    }
     
+    /*
+     * This is an undocumented behavior of Valgrind 
+     */
+    Bool forced_switch = False;
+    if (tid != APROF_(runtime).current_TID) {
+        APROF_(thread_switch)(tid, 0);
+        forced_switch = True; // a thread switch increased the global counter
     }
     
     if(    
@@ -121,27 +114,21 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
 
         ){
             
-            #if INPUT_METRIC == RVMS && SYSCALL_WRAPPING
             Addr addr = args[1];
             Int size = (Int) sr_Res(res);
             APROF_(fix_access_size)(addr, size);
             
-            if (!forced_switch) {
-                APROF_(global_counter)++;
-                if(APROF_(global_counter) == MAX_COUNT_VAL)
-                    APROF_(global_counter) = APROF_(overflow_handler)();
-            }
+            if (!forced_switch) APROF_(increase_global_counter)();
             
             while(size > 0) {
                 
-                APROF_(trace_access)(   STORE, 
+                APROF_(trace_access_drms)(   STORE, 
                                         addr, 
-                                        APROF_(addr_multiple), True);
+                                        APROF_(runtime).memory_resolution, True);
                 
-                size -= APROF_(addr_multiple);
-                addr += APROF_(addr_multiple);
+                size -= APROF_(runtime).memory_resolution;
+                addr += APROF_(runtime).memory_resolution;
             }
-            #endif
 
     } else if (
     
@@ -151,20 +138,14 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
             #endif
             
             ){
-            
-            #if INPUT_METRIC == RVMS && SYSCALL_WRAPPING
-            
+             
             struct vki_iovec * base = (struct  vki_iovec *) args[1];
             UWord iovcnt = args[2];
             Int size = (Int) sr_Res(res);
             UWord i;
             Int iov_len;
             
-            if (!forced_switch) {
-                APROF_(global_counter)++;
-                if(APROF_(global_counter) == MAX_COUNT_VAL)
-                    APROF_(global_counter) = APROF_(overflow_handler)();
-            }
+            if (!forced_switch) APROF_(increase_global_counter)();
             
             for(i = 0; i < iovcnt; i++){
                 
@@ -182,16 +163,15 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
             
                 while(iov_len > 0) {
                     
-                    APROF_(trace_access)(   STORE, 
+                    APROF_(trace_access_drms)(   STORE, 
                                             addr, 
-                                            APROF_(addr_multiple), True);
+                                            APROF_(runtime).memory_resolution, True);
                     
-                    iov_len -= APROF_(addr_multiple);
-                    addr += APROF_(addr_multiple);
+                    iov_len -= APROF_(runtime).memory_resolution;
+                    addr += APROF_(runtime).memory_resolution;
                 }
                 
             }
-            #endif
 
     } else if (
                 syscallno == __NR_write
@@ -218,12 +198,12 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
         APROF_(fix_access_size)(addr, size);
         while (size > 0) {
             
-            APROF_(trace_access)(   LOAD, 
+            APROF_(trace_access_drms)(   LOAD, 
                                     addr, 
-                                    APROF_(addr_multiple), True);
+                                    APROF_(runtime).memory_resolution, True);
                                     
-            size -= APROF_(addr_multiple);
-            addr += APROF_(addr_multiple);
+            size -= APROF_(runtime).memory_resolution;
+            addr += APROF_(runtime).memory_resolution;
         }
 
     } else if (
@@ -254,12 +234,12 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
             
             while (iov_len > 0) {
                 
-                APROF_(trace_access)(   LOAD, 
+                APROF_(trace_access_drms)(   LOAD, 
                                         addr, 
-                                        APROF_(addr_multiple), True);
+                                        APROF_(runtime).memory_resolution, True);
                 
-                iov_len -= APROF_(addr_multiple);
-                addr += APROF_(addr_multiple);
+                iov_len -= APROF_(runtime).memory_resolution;
+                addr += APROF_(runtime).memory_resolution;
             }
             
         }
@@ -273,30 +253,22 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
             #endif
             ){
                 
-        #if INPUT_METRIC == RVMS && SYSCALL_WRAPPING
-        
         Int size = (Int) sr_Res(res);
         Addr addr = args[1];
         size = size + sizeof(long int);
         APROF_(fix_access_size)(addr, size);
         
-        if (!forced_switch) {
-            APROF_(global_counter)++;
-            if(APROF_(global_counter) == MAX_COUNT_VAL)
-                APROF_(global_counter) = APROF_(overflow_handler)();
-        }
+        if (!forced_switch) APROF_(increase_global_counter)();
         
         while(size > 0) {
             
-            APROF_(trace_access)(   STORE, 
+            APROF_(trace_access_drms)(   STORE, 
                                     addr, 
-                                    APROF_(addr_multiple), True);
+                                    APROF_(runtime).memory_resolution, True);
             
-            size -= APROF_(addr_multiple);
-            addr += APROF_(addr_multiple);
+            size -= APROF_(runtime).memory_resolution;
+            addr += APROF_(runtime).memory_resolution;
         }
-        
-        #endif
 
     } else if (
                 #if !defined(VGP_x86_linux)
@@ -315,12 +287,12 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
             
         while(size > 0) {
             
-            APROF_(trace_access)(   LOAD, 
+            APROF_(trace_access_drms)(   LOAD, 
                                     addr, 
-                                    APROF_(addr_multiple), True);
+                                    APROF_(runtime).memory_resolution, True);
             
-            size -= APROF_(addr_multiple);
-            addr += APROF_(addr_multiple);
+            size -= APROF_(runtime).memory_resolution;
+            addr += APROF_(runtime).memory_resolution;
         }
     
     } else if ( 
@@ -330,34 +302,21 @@ void APROF_(post_syscall)(ThreadId tid, UInt syscallno,
                 #endif
                 ) {
                     
-        #if INPUT_METRIC == RVMS && SYSCALL_WRAPPING
-        
         Addr addr = (Addr) sr_Res(res);
         Int size= args[1];
-        
-        //VG_(umsg)("mmap(%lu, %d, ?, ?) = %lu\n", args[0], size, addr);
-        
         APROF_(fix_access_size)(addr, size);
         
-        //VG_(umsg)("> mmap(%lu, %d, ?, ?) = %lu\n", args[0], size, addr);
-        
-        if (!forced_switch) {
-            APROF_(global_counter)++;
-            if(APROF_(global_counter) == MAX_COUNT_VAL)
-                APROF_(global_counter) = APROF_(overflow_handler)();
-        }
+        if (!forced_switch) APROF_(increase_global_counter)();
         
         while(size > 0) {
             
-            APROF_(trace_access)(   STORE, 
+            APROF_(trace_access_drms)(   STORE, 
                                     addr, 
-                                    APROF_(addr_multiple), True);
+                                    APROF_(runtime).memory_resolution, True);
             
-            size -= APROF_(addr_multiple);
-            addr += APROF_(addr_multiple);
+            size -= APROF_(runtime).memory_resolution;
+            addr += APROF_(runtime).memory_resolution;
         }
-        
-        #endif
                     
     }
 }

@@ -33,175 +33,77 @@
 
 #include "aprof.h"
 
-/* Memory resolution: we can aggregate addresses in order
- * to decrese the shadow memory. 
- * - 1 => finest resolution, each byte has its timestamp
- * - 2 => every 2 bytes we have a single timestamp 
- * - ...
- */
-UInt APROF_(addr_multiple) = 4;
+VG_REGPARM(3) void APROF_(trace_access_rms)(UWord type, 
+                                            Addr addr, 
+                                            SizeT size) {
 
-#if INPUT_METRIC == RVMS
-/* 
- * Global shadow memory used for checking latest "version" of an input.
- * If a routine writes a memory cell, we update the associated timestamp
- * in the global shadow memory with the current value of the global counter 
- */
-LookupTable * APROF_(global_shadow_memory) = NULL;
-
-/*
- * This global counter is increased by one when there is:
- * - a new routine activation
- * - a thread switch
- */
-UInt APROF_(global_counter) = 1;
-#endif
-
-VG_REGPARM(3) void APROF_(trace_access)(UWord type, 
-                                        Addr addr, 
-                                        SizeT size,
-                                        UWord kernel_access) {
-
-    ThreadData * tdata = APROF_(current_tdata);
-    AP_ASSERT(tdata != NULL, "Thread data is NULL");
+    ThreadData * tdata = APROF_(runtime).current_tdata;
+    APROF_(debug_assert)(tdata != NULL, "Thread data is NULL");
     
-    if (tdata->stack_depth == 0) return;
-    
-    #if IGNORE_DL_RUNTIME == 1
-    if (tdata->skip) return;
+    #if EVENTCOUNT > 0
+    if (type == LOAD) tdata->num_read++;
+    else if (type == STORE) tdata->num_write++;
+    else if (type == MODIFY) tdata->num_modify++;
     #endif
+
+    if (tdata->stack_depth == 0 || tdata->skip > 0) return;
     
-    //addr = addr & ~(APROF_(addr_multiple)-1);
     Int size_fix = size;
     APROF_(fix_access_size)(addr, size_fix);
     
     Activation * act = APROF_(get_activation_noresize)(tdata, tdata->stack_depth);
-    AP_ASSERT(act != NULL, "act is NULL");
+    APROF_(debug_assert)(act != NULL, "act is NULL");
     
     while (size_fix > 0) {
     
-        UInt old_aid = LK_insert(tdata->accesses_rms, addr, act->aid_rms);
-        if (type != STORE && old_aid < act->aid_rms) {
+        UInt old_aid = LK_insert(tdata->shadow_memory, addr, act->activation_id);
+        if (type != STORE && old_aid < act->activation_id) {
             
-            act->rms++;    
-            if (old_aid >= APROF_(get_activation_noresize)(tdata, 1)->aid_rms) {
+            act->input_size++;    
+            if (old_aid >= APROF_(get_activation_noresize)(tdata, 1)->activation_id) {
                 
-                Activation * a = APROF_(get_activation_by_aid_rms)(tdata, old_aid);
-                a->rms--;
+                Activation * a = APROF_(get_activation_by_aid)(tdata, old_aid);
+                a->input_size--;
             }
         }
         
-        size_fix -= APROF_(addr_multiple);
-        addr += APROF_(addr_multiple);
+        size_fix -= APROF_(runtime).memory_resolution;
+        addr += APROF_(runtime).memory_resolution;
     }
     
     // __attribute__((unused))
     return;
 }
 
-#if 0
-VG_REGPARM(3) void APROF_(trace_access)(UWord type, 
-                                        Addr addr, 
-                                        SizeT size,
-                                        UWord kernel_access) {
+VG_REGPARM(3) void APROF_(trace_access_drms)(UWord type, 
+                                                Addr addr, 
+                                                SizeT size,
+                                                UWord kernel_access) {
     
-    return;
+    APROF_(verbose)(2, "Load: %lu:%lu\n", addr, size);
+    APROF_(verbose)(2, "Store: %lu:%lu\n", addr, size);
+    APROF_(verbose)(2, "Modify: %lu:%lu\n", addr, size);
     
-    #if DEBUG
-    AP_ASSERT(APROF_(current_TID) == VG_(get_running_tid)(), "TID mismatch");
-    #endif
+    APROF_(debug_assert)(APROF_(runtime).current_TID 
+                            == VG_(get_running_tid)(), "TID mismatch");
+
+    ThreadData * tdata = APROF_(runtime).current_tdata;
+    APROF_(debug_assert)(tdata != NULL, "Thread data is NULL");
     
-    ThreadData * tdata = APROF_(current_tdata);
-    #if DEBUG
-    AP_ASSERT(tdata != NULL, "Thread data is NULL");
-    #endif
-    
-    #if VERBOSE > 1
-    if (type == LOAD) VG_(printf)("Load: %lu:%lu\n", addr, size);
-    else if (type == STORE) VG_(printf)("Store: %lu:%lu\n", addr, size);
-    else if (type == MODIFY) VG_(printf)("Modify: %lu:%lu\n", addr, size);
-    #endif
-    
-    #if EVENTCOUNT == 1 || EVENTCOUNT == 3
+    #if EVENTCOUNT > 0
     if (type == LOAD) tdata->num_read++;
     else if (type == STORE) tdata->num_write++;
     else if (type == MODIFY) tdata->num_modify++;
-    else AP_ASSERT(0, "Invalid type")
     #endif
     
-    #if EMPTY_ANALYSIS
-    return;
-    #endif
+    if (tdata->stack_depth == 0 || tdata->skip > 0) return;
     
-    if (tdata->stack_depth == 0) return;
-    
-    #if TRACE_FUNCTION && IGNORE_DL_RUNTIME
-    if (tdata->skip) return;
-    #endif
-    
-    #if COSTANT_MEM_ACCESS
-    addr = addr & ~(APROF_(addr_multiple)-1);
-    #else
     Int size_fix = size;
     APROF_(fix_access_size)(addr, size_fix);
-    #endif
  
-    #if !COSTANT_MEM_ACCESS
     while (size_fix > 0) {
-    #endif
-        
-        /*
-        UInt j = (addr & 0xffff) >> 2;
-        UInt i = addr >> 30; // 14 + 16
-        UInt k = (addr >> 16) & 0x3fff;
-        VG_(umsg)("addr: %u:%u:%u\n", i, k, j);
-        */
-        
-        #if DEBUG_DRMS
-        //Bool inc_rms = False;
-        //Activation * dec_rms = NULL;
-        #endif
-        
-        #if INPUT_METRIC == RMS || DEBUG_DRMS
-        Activation * act = APROF_(get_activation_noresize)(tdata, tdata->stack_depth);
-        
-        #if IGNORE_LOAD_SYS
-        if (!kernel_access) {
-        #else
-        if (!kernel_access || type != STORE) {
-        #endif
 
-            UInt old_aid = LK_insert(tdata->accesses_rms, addr, act->aid_rms);
-            if (old_aid < act->aid_rms && (type == LOAD || type == MODIFY)) {
-                
-                #if DEBUG_DRMS
-                //inc_rms = True;
-                //VG_(umsg)("RMS++\n");
-                #endif
-                act->rms++;
-                
-                if (old_aid > 0 && 
-                    old_aid >= APROF_(get_activation_noresize)(tdata, 1)->aid_rms) {
-                    
-                    Activation * a = APROF_(get_activation_by_aid_rms)(tdata, old_aid);
-                    a->rms--;
-                    
-                    #if DEBUG_DRMS
-                    //dec_rms = a;
-                    #endif
-
-                }
-
-            }
-            //VG_(umsg)("old_aid %u - act->aid_rms: %u\n", 
-            //                old_aid, act->aid_rms);
-
-        } 
-        #endif // INPUT_METRIC == RMS || DEBUG_DRMS
-        
-        #if INPUT_METRIC == RVMS
-        
-        UInt ts = APROF_(global_counter);
+        UInt ts = APROF_(runtime).global_counter;
         UInt old_ts;
         UInt wts = 0;
         
@@ -209,175 +111,91 @@ VG_REGPARM(3) void APROF_(trace_access)(UWord type,
          * We are writing a new input value. So, this is a new "version"
          * of the memory cell. Update its timestamp in the global shadow memory.
          */
-         if (type == STORE || type == MODIFY) {
+        switch(type) {
+             
+            case STORE:
             
-            #if THREAD_INPUT == 1
-            
-            #if INPUT_STATS
-            
-            if (kernel_access)
-                wts = LK_insert(APROF_(global_shadow_memory), addr, SET_SYSCALL(ts));
-            else // 31th bit is already cleared, avoid SET_THREAD
-                wts = LK_insert(APROF_(global_shadow_memory), addr, ts);
-            
-            #else
-            wts = LK_insert(APROF_(global_shadow_memory), addr, ts);
-            #endif
-            #endif
-
-            if (kernel_access) {
+                #if INPUT_STATS
+                if (kernel_access)
+                    wts = LK_insert(APROF_(runtime).global_shadow_memory, addr, SET_SYSCALL(ts));
+                else // 31th bit is already cleared, avoid SET_THREAD
+                    wts = LK_insert(APROF_(runtime).global_shadow_memory, addr, ts);
+                #else // INPUT_STATS
+                wts = LK_insert(APROF_(runtime).global_shadow_memory, addr, ts);
+                #endif
                 
-                #if THREAD_INPUT == 0
-                wts = LK_insert(APROF_(global_shadow_memory), addr, SET_SYSCALL(ts));
-                #endif
-                           
-                #if DEBUG_DRMS
-                //AP_ASSERT(!inc_rms, "Invalid rvms/d_rms [1]");
-                //AP_ASSERT(dec_rms == NULL, "Invalid d_rms [2]");
-                #endif
-                                
-                #if !COSTANT_MEM_ACCESS
-                size_fix -= APROF_(addr_multiple);
-                addr += APROF_(addr_multiple);
+                size_fix -= APROF_(runtime).memory_resolution;
+                addr += APROF_(runtime).memory_resolution;
                 continue;
-                #else
-                return;
-                #endif
-            }
-
-        } else { 
+                
+                break;
             
-            /*
-             * This is a load. What is the latest "version" of this
-             * memory cell? Get timestamp of the memory cell in
-             * the global shadow memory.
-             */
-            wts = LK_lookup(APROF_(global_shadow_memory), addr);
-
+            case MODIFY: // LOAD+STORE
+            
+                #if INPUT_STATS
+                if (kernel_access)
+                    wts = LK_insert(APROF_(runtime).global_shadow_memory, addr, SET_SYSCALL(ts));
+                else // 31th bit is already cleared, avoid SET_THREAD
+                    wts = LK_insert(APROF_(runtime).global_shadow_memory, addr, ts);
+                #else // INPUT_STATS
+                wts = LK_insert(APROF_(runtime).global_shadow_memory, addr, ts);
+                #endif // INPUT_STATS
+            
+                break;
+            
+            case LOAD:
+            
+                /*
+                 * This is a load. What is the latest "version" of this
+                 * memory cell? Get timestamp of the memory cell in
+                 * the global shadow memory.
+                 */
+                wts = LK_lookup(APROF_(runtime).global_shadow_memory, addr);
+            
+                break;
+            
+            default:
+                APROF_(assert)(0, "Invalid memory event");
         }
 
         /*
          * Update the timestamp in the private shadow memory.
          */
-        old_ts = LK_insert(tdata->accesses_rvms, addr, ts);
+        old_ts = LK_insert(tdata->shadow_memory, addr, ts);
 
-        if(type == STORE) {
-            
-            #if DEBUG_DRMS
-            //AP_ASSERT(!inc_rms, "Invalid rvms/d_rms [3]");
-            //AP_ASSERT(dec_rms == NULL, "Invalid d_rms [4]");
-            #endif
-            
-            #if COSTANT_MEM_ACCESS
-            return;
-            #else
-            size_fix -= APROF_(addr_multiple);
-            addr += APROF_(addr_multiple);
-            continue;
-            #endif
-        }
-
-        #if DEBUG_DRMS == 0
         Activation * act = APROF_(get_activation_noresize)(tdata, tdata->stack_depth);
-        #endif
         
-        #if DEBUG_DRMS
-        //Bool inc_rvms = False;
-        //Bool dec_rvms = False;
-        #endif
-       
-                
-        //VG_(umsg)("old_ts %u - act->aid_rvms: %u\n", old_ts, act->aid_rvms);
-       
+        // Dynamic input?
         if(old_ts < TS(wts)){
             
-            act->rvms++;
+            act->input_size++;
             
             #if INPUT_STATS
             if (SYSCALL(wts)) {
-                act->rvms_syscall++;
-                act->rvms_syscall_self++;
+                act->self_syscall++;
+                act->cumul_syscall++;
             } else {
-                act->rvms_thread++;
-                act->rvms_thread_self++;
+                act->self_syscall++;
+                act->cumul_thread++;
             }
-            
-            
-            AP_ASSERT(act->rvms_thread <= act->rvms, "Wrong");
-            AP_ASSERT(act->rvms_syscall <= act->rvms, "Wrong");
-            #endif
-            
-            #if DEBUG_DRMS
-            //VG_(umsg)("RVMS++ [1]\n");
-            //inc_rvms = True;
-            #endif
+            APROF_(debug_assert)(act->cumul_thread + act->cumul_syscall 
+                                    <= act->input_size, "Wrong");
+            #endif // INPUT_STATS
         }
  
-        else if (old_ts < act->aid_rvms) {
+        // RMS?
+        else if (old_ts < act->activation_id) {
             
-            act->rvms++;
-            
-            #if DEBUG_DRMS
-            //VG_(umsg)("RVMS++ [2]\n");
-            //inc_rvms = True;
-            #endif
-            if (old_ts > 0 && old_ts >= APROF_(get_activation_noresize)(tdata, 1)->aid_rvms) {
+            act->input_size++;
+            if (old_ts > 0 && old_ts >= APROF_(get_activation_noresize)(tdata, 1)->activation_id) {
                 
-                APROF_(get_activation_by_aid_rvms)(tdata, old_ts)->rvms--;
-                #if DEBUG_DRMS
-                //dec_rvms = True;
-                #endif // DEBUG_DRMS
+                APROF_(get_activation_by_aid)(tdata, old_ts)->input_size--;
             }
-
         }
-        
-        #if DISTINCT_RMS
-        if (old_ts < act->aid_rvms) {
-            
-            act->d_rms++;
-            #if DEBUG_DRMS
-            //VG_(umsg)("D_RMS++\n");
-            AP_ASSERT(inc_rms, "Invalid d_rms");
-            AP_ASSERT(inc_rvms, "Invalid d_rms");
-            #endif
-            if (old_ts > 0 && old_ts >= APROF_(get_activation_noresize)(tdata, 1)->aid_rvms) {
-                
-                Activation * a = APROF_(get_activation_by_aid_rvms)(tdata, old_ts);
-                a->d_rms--;
-                #if DEBUG_DRMS
-                AP_ASSERT(dec_rms == a, "Invalid d_rms");
-                #endif
-            } 
-            #if DEBUG_DRMS
-            else {
-                AP_ASSERT(!dec_rvms, "Invalid d_rms [3]");
-                AP_ASSERT(dec_rms == NULL, "Invalid d_rms");
-            }
-            #endif // DEBUG_DRMS
-        } 
-        #if DEBUG_DRMS
-        else {
-            AP_ASSERT(!inc_rms, "Invalid d_rms [4]");
-            AP_ASSERT(dec_rms == NULL && !inc_rms, "Invalid d_rms");
-        }
-        #endif // DEBUG_DRMS
-        
-        #endif // DISTINCT_RMS
-
-        #if DEBUG_DRMS & 0
-        AP_ASSERT(act->rms == act->d_rms, "Invalid d_rms");
-        AP_ASSERT(act->d_rms <= act->rvms, "Invalid RVMS");
-        #endif
-        
-        #endif
     
-    #if !COSTANT_MEM_ACCESS
-    
-        size_fix -= APROF_(addr_multiple);
-        addr += APROF_(addr_multiple);
+        size_fix -= APROF_(runtime).memory_resolution;
+        addr += APROF_(runtime).memory_resolution;
         
     }
-    #endif
 
 }
-#endif

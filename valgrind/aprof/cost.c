@@ -1,14 +1,14 @@
 /*
- * time() function and instruction (VEX or Intel) counters
+ * cost 
  * 
  * Last changed: $Date: 2013-01-10 12:36:45 +0100 (gio, 10 gen 2013) $
  * Revision:     $Rev: 736 $
  */
- 
- /*
+
+/*
    This file is part of aprof, an input sensitive profiler.
 
-   Copyright (C) 2011-2013, Emilio Coppa (ercoppa@gmail.com),
+   Copyright (C) 2011-2014, Emilio Coppa (ercoppa@gmail.com),
                             Camil Demetrescu,
                             Irene Finocchi,
                             Romolo Marotta
@@ -33,45 +33,7 @@
 
 #include "aprof.h"
 
-#if TIME != BB_COUNT
-ULong APROF_(time)(ThreadData * tdata) {
-
-    #if EMPTY_ANALYSIS
-    return 0;
-    #endif
-
-    #if TIME == INSTR
-    return tdata->instr;
-
-    #elif TIME == RDTSC
-    
-    ULong ret;
-    unsigned long lo, hi;
-    asm( "rdtsc" : "=a" (lo), "=d" (hi) ); 
-    return( lo | (hi << 32) );
-
-//    __asm__ volatile (".byte 0x0f, 0x31" : "=A" (ret));
-//    __asm__ __volatile__("rdtsc": "=A" (ret));
-    return ret;
-
-    #elif TIME == BB_COUNT
-    return tdata->bb_c;
-    #endif
-
-    return 0;
-
+VG_REGPARM(0) void APROF_(increase_cost)(void) {
+    APROF_(runtime).current_tdata->cost++;
 }
-#endif
-
-#if TIME == INSTR
-VG_REGPARM(0) void APROF_(add_one_guest_instr)(void) {
-    APROF_(current_tdata)->instr++;
-}
-#endif
-
-#if TIME == BB_COUNT && !TRACE_FUNCTION
-VG_REGPARM(0) void APROF_(add_one_guest_BB)(void) {
-    APROF_(current_tdata)->bb_c++;
-}
-#endif
 
