@@ -8,7 +8,7 @@
 /*
    This file is part of aprof, an input sensitive profiler.
 
-   Copyright (C) 2011-2012, Emilio Coppa (ercoppa@gmail.com),
+   Copyright (C) 2011-2014, Emilio Coppa (ercoppa@gmail.com),
                             Camil Demetrescu,
                             Irene Finocchi,
                             Romolo Marotta
@@ -49,7 +49,7 @@ static UInt APROF_(res_shift) = 2;
                                                                                       
 LookupTable * LK_create(void) {
 
-    switch(APROF_(addr_multiple)) {
+    switch(APROF_(runtime).memory_resolution) {
         
         case 4:
             APROF_(flt_size) = 16384; 
@@ -77,11 +77,11 @@ LookupTable * LK_create(void) {
             break;
         
         default:
-            AP_ASSERT(0, "Supported memory resolutions: 1, 2, 4, 8 or 16");
+            APROF_(assert)(0, "Supported memory resolutions: 1, 2, 4, 8 or 16");
     }
-
-    return VG_(calloc)("Lookuptable", sizeof(struct LookupTable), 1);
-
+    
+    LookupTable * lk = APROF_(new)(LK_S, sizeof(struct LookupTable));
+    return lk;
 }
 
 UInt hit_cache = 0;
@@ -134,118 +134,57 @@ void LK_destroy(LookupTable * lk) {
 
 
 UInt LK_insert(LookupTable * suf, UWord addr, UInt ts) {
-    
-    // cache
-    UWord addr_shift_16 = addr >> 16;
-    UWord addr_16 = (addr & 0xffff) >> APROF_(res_shift);
-    
-    if (addr_shift_16 == suf->last_chunk_index) {
-    
-        hit_cache++;
-    
-        UInt old = suf->last_chunk[addr_16];
-        suf->last_chunk[addr_16] = ts;
-        
-        return old;
-    }
-    
-    miss_cache++;
-    
+
     #ifdef __i386__
-    UWord i = addr_shift_16;
-    #else
+    UWord i = addr >> 16;
     
-    //VG_(printf)("Address is %llu\n", (UWord)addr);
+    #else // __i386__
     
     UWord i = addr >> 30; // 14 + 16
     
-    //VG_(printf)("index i %llu\n", i);
-    
-    #if CHECK_OVERFLOW
-    AP_ASSERT((i < LK_SIZE), "Address overflow");
+    #if CHECK_ADDR_OVERFLOW
+    APROF_(assert)((i < LK_SIZE), "Address overflow");
     #endif
     
-    UWord k = (addr_shift_16) & 0x3fff;
+    UWord k = (addr >> 16) & 0x3fff;
     
-    //VG_(printf)("index k %llu\n", k);
+    #endif // ! __i386__
     
-    #endif
-    
-    // this is slow!!! 
-    //UWord j = (addr & 0xffff) / APROF_(addr_multiple);
-    // faster:
-    UWord j = addr_16;
+    UWord j = (addr & 0xffff) >> APROF_(res_shift);
     
     #ifndef __i386__
     if (suf->table[i] == NULL) {
-        
-        suf->table[i] = VG_(calloc)("suf sm", sizeof(ILT), 1);
-        #if DEBUG
-        AP_ASSERT(suf->table[i] != NULL, "SUF sm not allocable");
-        #endif
-        
-        #if DEBUG_ALLOCATION
-        APROF_(add_alloc)(ILT_LK_S);
-        #endif
-        /*
-        if (suf == APROF_(global_shadow_memory))
-            VG_(umsg)("Create global chunk %lu\n", i);
-        */
-    }
-    #endif
+        suf->table[i] = APROF_(new)(ILT_LK_S, sizeof(ILT));
+    } 
+    #endif // __i386__
 
     #ifdef __i386__
     if (suf->table[i] == NULL) {
-    #else
+    #else // __i386__
     if (suf->table[i]->table[k] == NULL) {
-    #endif
+    #endif // ! __i386__
     
         #ifdef __i386__
-        suf->table[i] = VG_(calloc)("suf sm", sizeof(UInt) * APROF_(flt_size), 1);
-        #else
-        suf->table[i]->table[k] = VG_(calloc)("suf sm", sizeof(UInt) * APROF_(flt_size), 1);
-        /*
-        if (suf == APROF_(global_shadow_memory)) {
-            
-            VG_(umsg)("Create global chunk (%lu,%lu)\n", i, k);
-            AP_ASSERT(APROF_(global_shadow_memory)->table[i]->table[k] != NULL,
-                "GSM broken")
-        }
-        */
-        #endif
-        
-        #if DEBUG_ALLOCATION
-        APROF_(add_alloc)(SEG_LK_S);
-        #endif
-        
-        #ifdef __i386__
+        suf->table[i] = APROF_(new)(SEG_LK_S, sizeof(UInt) * APROF_(flt_size));
         suf->table[i][j] = ts;
-        #else
+        #else // __i386__
+        suf->table[i]->table[k] = APROF_(new)(SEG_LK_S, sizeof(UInt) * APROF_(flt_size));
         suf->table[i]->table[k][j] = ts;
-        #endif
+        #endif // ! __i386__
 
         return 0;
-    
     }
     
-    UInt * value;
-    
     #ifdef __i386__
-    value = &(suf->table[i][j]);
-    suf->last_chunk = suf->table[i];
-    #else
-    value = &(suf->table[i]->table[k][j]);
-    suf->last_chunk = suf->table[i]->table[k];
-    #endif
+    UInt * value = &(suf->table[i][j]);
+    #else // __i386__
+    UInt * value = &(suf->table[i]->table[k][j]);
+    #endif // ! __i386__
     
     UInt old = *value;
-    //if (old < ts) /* avoid a write if possible... */
-        *value = ts;
-    
-    suf->last_chunk_index = addr_shift_16;
-    
-    return old;
+    *value = ts;
 
+    return old;
 }
 
 UInt LK_lookup(LookupTable * suf, UWord addr) {
@@ -259,12 +198,12 @@ UInt LK_lookup(LookupTable * suf, UWord addr) {
     if (ssm == NULL) return 0;
     return ssm[j];
     
-    #else
+    #else // __i386__
     
     UWord i = addr >> 30; // 14 + 16
     
-    #if CHECK_OVERFLOW
-    AP_ASSERT((i <= LK_SIZE), "Address overflow");
+    #if CHECK_ADDR_OVERFLOW
+    APROF_(assert)((i < LK_SIZE), "Address overflow");
     #endif
     
     UWord k = (addr >> 16) & 0x3fff;
@@ -273,12 +212,8 @@ UInt LK_lookup(LookupTable * suf, UWord addr) {
     if (ssm == NULL) return 0;
     return ssm[j];
     
-    #endif
-    
-    return 0;
+    #endif // ! __i386__
 }
-
-#if INPUT_METRIC == RVMS
 
 static UInt binary_search(UInt * array, UInt init, UInt size, UInt ts){
     

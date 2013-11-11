@@ -18,10 +18,9 @@ noinst_PROGRAMS += aprof-@VGCONF_ARCH_SEC@-@VGCONF_OS@
 endif
 
 aprof_SOURCES_COMMON =  cct.c fwrite.c thread.c events.c \
-						time.c main.c function.c memory.c report.c \
-						./hashtable/hashtable.c \
-						lookup_table.c syscall.c \
-						callstack.c debug.c overflow.c 
+						./hashtable/hashtable.c cost.c \
+						syscall.c function.c memory.c report.c \
+						callstack.c debug.c main.c lookup_table.c overflow.c
 
 aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_SOURCES      = \
 	$(aprof_SOURCES_COMMON)

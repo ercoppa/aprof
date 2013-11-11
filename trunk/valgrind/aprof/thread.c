@@ -56,11 +56,13 @@ static ThreadData * APROF_(thread_start)(ThreadId tid){
     tdata->last_exit = NONE;
     tdata->next_activation_id = 1;
     tdata->shadow_memory = LK_create();
-    tdata->next_rtn_id = 1;
+    tdata->next_routine_id = 1;
     tdata->next_context_id = 1;
     
-    // allocate dummy CCT root
-    tdata->root = APROF_(new)(CCT_S, sizeof(CCTNode));
+    if (APROF_(runtime).collect_CCT) // allocate dummy CCT root
+        tdata->root = APROF_(new)(CCT_S, sizeof(CCTNode));
+    else
+        tdata->root = NULL;
 
     // registering thread
     APROF_(runtime).threads[tid-1] = tdata;
@@ -143,17 +145,13 @@ void APROF_(thread_switch)(ThreadId tid, ULong blocks_dispatched) {
         return;
     }
     
-    if (APROF_(runtime).input_metric == DRMS) {
-        
-        APROF_(runtime).global_counter++;
-        if(APROF_(runtime).global_counter == MAX_COUNT_VAL)
-            APROF_(runtime).global_counter = APROF_(overflow_handler_drms)();
-    }
+    if (APROF_(runtime).input_metric == DRMS) 
+        APROF_(increase_global_counter)();
     
     if (APROF_(runtime).threads[tid-1] == NULL) {
     
         APROF_(runtime).current_tdata = APROF_(thread_start)(tid);
-        APROF_(debug_assert)(APROF_(current_tdata) != NULL, "Invalid tdata");
+        APROF_(debug_assert)(APROF_(runtime).current_tdata != NULL, "Invalid tdata");
     
     } else {
     

@@ -3,6 +3,14 @@
 
 #if APROF_TOOL
 
+// memory event
+typedef enum { Event_Ir, Event_Dr, Event_Dw, Event_Dm } EventKind;
+typedef struct {
+    EventKind  ekind;
+    IRExpr *   addr;
+    Int        size;
+} Event;
+
 // type of memory access
 typedef enum access_t {LOAD, STORE, MODIFY} access_t;
 
@@ -67,7 +75,8 @@ typedef struct Function {
     HChar *     name;       // name of routine (demangled full)
     Object *    obj;        // name of library the routine belongs to
     HChar *     mangled;    // name of routine (mangled)
-    Bool        discard;    // discard input?
+    Bool        discard;    // discard information about this function
+    Bool        skip;       // ignore this and all its children
     
 } Function;
 
@@ -140,10 +149,11 @@ typedef struct {
     UWord   key;                    // hash key
     void *  next;                   // HT node value
     UWord   input_size;             // input size value
-    ULong   calls_number;           // number of calls
+    UWord   context_id;             // context id
+    ULong   calls;                  // number of calls
     
     ULong   min_cumulative_cost;    // minimum cumulative cost 
-    ULong   max_cumulative_time;    // maximum cumulative cost 
+    ULong   max_cumulative_cost;    // maximum cumulative cost 
     ULong   sum_cumulative_cost;    // sum of cumulative costs
     
     ULong   min_self_cost;          // min self cost
@@ -186,9 +196,8 @@ typedef struct {
     ULong           start;              // time stamp at activation entry
     ULong           sum_children_cost;  // sum of cumulative children's costs
     UInt            input_size;         // (partial) input size estimation
-    RoutineInfo *   rtn_info;           // routine information
+    RoutineInfo *   routine_info;       // routine information
     UInt            activation_id;      // activation ID
-    Bool            skip;               // discard this info? 
     CCTNode *       node;               // CCT node 
     
     UWord           sp;                 // stack pointer value 
@@ -224,8 +233,9 @@ typedef struct ThreadData {
     BB *            last_bb;            // Last executed BB
     jump_t          last_exit;          // Last "final" exit/jump of last BB
 
-    ULong           next_rtn_id;        // next routine id 
-    Bool            skip;               // discard info
+    ULong           next_routine_id;    // next routine id 
+    UInt            skip;               // # active rtn with discard info
+    ULong           skip_cost;          // sum skipped rtn costs
     ULong           extra_cost;         // needed when merging reports
     
     UInt            next_activation_id; // next act id (RMS)
@@ -249,18 +259,26 @@ typedef struct Runtime {
     
     /* Global variables */
     
-    UInt            events_used;            // # memory events queued (events.c)
+    UInt            events_used;            // # memory events queued 
+    Event           events[N_EVENTS];       // memory event queue
+    void            (*flush_events)(IRSB *);// flush event helper
     ThreadId        current_TID;            // Thread ID of the current active thread
     ThreadData *    current_tdata;          // Thread info of current active thread
     UInt            running_threads;        // # of active threads
     ThreadData *    threads[VG_N_THREADS];  // Thread data
     HashTable *     bb_ht;                  // BB hash table
     jump_t          last_exit;              // Last BB jump seen
+    BB *            last_bb;                // last BB seen
     HashTable *     obj_ht;                 // Object hash table
     HashTable *     fn_ht;                  // Function hash table
+    ULong           binary_mtime;           // exec's modification time
     
     LookupTable *   global_shadow_memory;   // Global shadow memory (DRMS)
     UInt            global_counter;         // Global counter (DRMS)
+    
+    Addr            dl_runtime_resolve_addr;    // dl_runtime_resolve address
+    int             dl_runtime_resolve_length;  // dl_runtime_resolve length
+                                                // if 1, then dl_* is stripped
     
     /* Some configuration parameters */
     
@@ -285,6 +303,10 @@ typedef struct Runtime {
     // Input size metric
     // Default: RMS
     input_metric_t  input_metric;
+    
+    // Collect calling context tree
+    // Default: False
+    Bool            collect_CCT;
 
 } Runtime;
 

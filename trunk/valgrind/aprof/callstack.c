@@ -36,52 +36,12 @@
 
 #include "aprof.h"
 
-/* HT of all functions and ELF object */
-HashTable * APROF_(fn_ht) = NULL;
-HashTable * APROF_(obj_ht) = NULL;
-
-#if 0 // We use a macro now... but maybe useful when debugging
-Activation * APROF_(get_activation)(ThreadData * tdata, unsigned int depth) {
-
-    #if DEBUG
-    AP_ASSERT(tdata != NULL, "Invalid tdata in get_activation");
-    AP_ASSERT(depth > 0 && depth < 5000, "Invalid depth");
-    #endif
-
-    /* Expand stack if necessary */
-    if (depth - 1 >= tdata->max_stack_size) {
-        
-        #if DEBUG_ALLOCATION
-        int j = 0;
-        for (j = 0; j < tdata->max_stack_size; j++) APROF_(add_alloc)(ACT);
-        #endif
-        
-        tdata->max_stack_size = tdata->max_stack_size * 2; 
-        
-        #if VERBOSE
-        VG_(printf)("Relocate stack: %llu\n", tdata->max_stack_size);
-        #endif
-        
-        tdata->stack = VG_(realloc)("stack", tdata->stack, 
-                            tdata->max_stack_size * sizeof(Activation));
-        #if DEBUG
-        AP_ASSERT(tdata->stack, "stack not reallocable");
-        #endif
-    }
-    
-    return tdata->stack + depth - 1;
-
-}
-#endif
-
 Activation * APROF_(resize_stack)(ThreadData * tdata, unsigned int depth) {
 
-    #if DEBUG
-    AP_ASSERT(tdata != NULL, "Invalid tdata in get_activation");
-    #endif
+    APROF_(debug_assert)(tdata != NULL, "Invalid tdata in get_activation");
     
     /* Safety check, better always run this :) */
-    AP_ASSERT(depth > 0 && depth < MAX_STACK_SIZE, "Invalid depth");
+    APROF_(assert)(depth > 0 && depth < MAX_STACK_SIZE, "Invalid depth");
 
     /* Expand stack if necessary */
     if (depth - 1 >= tdata->max_stack_size) {
@@ -94,125 +54,29 @@ Activation * APROF_(resize_stack)(ThreadData * tdata, unsigned int depth) {
         
         tdata->max_stack_size = tdata->max_stack_size * 2; 
         
-        #if VERBOSE
-        VG_(printf)("Relocate stack: %u\n", tdata->max_stack_size);
-        #endif
-        
         tdata->stack = VG_(realloc)("stack", tdata->stack, 
                             tdata->max_stack_size * sizeof(Activation));
-                            
-        #if DEBUG
-        AP_ASSERT(tdata->stack, "stack not reallocable");
-        #endif
-        
-        /* Safety check */
-        #if DEBUG
-        AP_ASSERT(depth - 1 < tdata->max_stack_size, "This is absurd...")
-        #endif
     }
     
     return tdata->stack + depth - 1;
-
 }
 
-#if INPUT_METRIC == RMS || DEBUG_DRMS
-Activation * APROF_(get_activation_by_aid_rms)(ThreadData * tdata, UInt aid) {
-    
-    #if DEBUG
-    AP_ASSERT(tdata != NULL, "Invalid tdata");
-    AP_ASSERT(aid > 0, "Invalid aid");
-    #endif
-    
-    Activation * a = &tdata->stack[tdata->stack_depth - 2];
-    while (a->aid_rms > aid) {
-        
-        a--;
-        #if DEBUG
-        AP_ASSERT(a >= tdata->stack, "Requested aid not found in stack!");
-        #endif
-        
-    }
-    return a;
-    
-}
-#endif
-
-#if INPUT_METRIC == RVMS
-Activation * APROF_(get_activation_by_aid_rvms)(ThreadData * tdata, UInt aid) {
-    
-    #if DEBUG
-    AP_ASSERT(tdata != NULL, "Invalid tdata");
-    AP_ASSERT(aid > 0, "Invalid aid");
-    #endif
-    
-    Activation * a = &tdata->stack[tdata->stack_depth - 2];
-    while (a->aid_rvms > aid) {
-        
-        a--;
-        #if DEBUG
-        AP_ASSERT(a >= tdata->stack, "Requested aid not found in stack!");
-        #endif
-        
-    }
-    return a;
-
-}
-#endif
-
-UInt APROF_(str_hash)(const Char *s) {
+static inline UInt APROF_(str_hash)(const HChar *s) {
     
     UInt hash_value = 0;
-    for ( ; *s; s++)
+    for (; *s; s++)
         hash_value = 31 * hash_value + *s;
     
-    #if DEBUG
-    AP_ASSERT(hash_value > 0, "Invalid hash value for this function or obj");
-    #endif
-    
+    APROF_(debug_assert)(hash_value > 0, "Invalid hash value");
     return hash_value;
 }
-
-#if TRACE_FUNCTION
-
-/* Global vars */
-
-jump_t APROF_(last_exit) = NONE;
-
-/* 
- * _ld_runtime_resolve need a special handling,
- * we need to know its address and length
- * 
- * runtime_resolve_addr == 1 means that ld is not stripped,
- * so never have to search for its code in an object
- */
-static Addr runtime_resolve_addr   = 0;
-static int  runtime_resolve_length = 0;
-/* HT of all BBs */
-HashTable * APROF_(bb_ht) = NULL;
-
-/* End global vars */
 
 /* Obtain a BB from bb_ht or allocate a new BB */
 BB * APROF_(get_BB)(UWord target) {
     
-    //VG_(printf)("Asked BB for %lu\n", target);
-    
-    BB * bb = HT_lookup(APROF_(bb_ht), target);
-    if (bb == NULL) {
-        
-        bb = VG_(calloc)("bb", sizeof(BB), 1);
-        #if DEBUG
-        AP_ASSERT(bb != NULL, "BB not allocable")
-        #endif
-        
-        #if DEBUG_ALLOCATION
-        APROF_(add_alloc)(BB_S);
-        #endif
-        
-    }
-    
+    BB * bb = HT_lookup(APROF_(runtime).bb_ht, target);
+    if (bb == NULL) bb = APROF_(new)(BB_S, sizeof(BB));    
     return bb;
-
 }
 
 /* 
@@ -225,9 +89,11 @@ BB * APROF_(get_BB)(UWord target) {
  * If found, return true and set runtime_resolve_{addr,length}
  */
 __attribute__((unused))    // Possibly;  depends on the platform.
-static Bool check_code(UWord obj_start, UWord obj_size, 
-                        UChar code[], struct pattern* pat)
-{
+static Bool check_code(UWord obj_start, 
+                        UWord obj_size, 
+                        UChar code[], 
+                        struct pattern* pat) {
+                            
     Bool found;
     Addr addr, end;
     int chunk, start, len;
@@ -236,14 +102,14 @@ static Bool check_code(UWord obj_start, UWord obj_size,
      * first chunk of pattern should always start at offset 0 and
      * have at least 3 bytes 
      */
-    AP_ASSERT((pat->chunk[0].start == 0) && (pat->chunk[0].len >2), 
+    APROF_(assert)((pat->chunk[0].start == 0) && (pat->chunk[0].len >2), 
                                             "Check on chunk pat failed");
 
     end = obj_start + obj_size - pat->len;
     addr = obj_start;
     while(addr < end) {
+        
         found = (VG_(memcmp)( (void*)addr, code, pat->chunk[0].len) == 0);
-
         if (found) {
             
             chunk = 1;
@@ -252,7 +118,7 @@ static Bool check_code(UWord obj_start, UWord obj_size,
                 len   = pat->chunk[chunk].len;
                 if (len == 0) break;
 
-                AP_ASSERT(len >2, "fail check pattern");
+                APROF_(assert)(len >2, "fail check pattern");
 
                 if (VG_(memcmp)( (void*)(addr+start), code+start, len) != 0) {
                     found = False;
@@ -263,8 +129,8 @@ static Bool check_code(UWord obj_start, UWord obj_size,
 
             if (found) {
                 
-                runtime_resolve_addr   = addr;
-                runtime_resolve_length = pat->len;
+                APROF_(runtime).dl_runtime_resolve_addr = addr;
+                APROF_(runtime).dl_runtime_resolve_length = pat->len;
                 return True;
             }
         }
@@ -287,9 +153,10 @@ static Bool check_code(UWord obj_start, UWord obj_size,
  *
  * We stop if the ELF object name does not seem to be the runtime linker
  */
-static Bool search_runtime_resolve(HChar * obj_name, UWord obj_start,
-                                        UWord obj_size)
-{
+static Bool search_runtime_resolve(const HChar * obj_name, 
+                                    UWord obj_start,
+                                    UWord obj_size) {
+                                        
 #if defined(VGP_x86_linux)
     static UChar code[] = {
     /* 0*/ 0x50, 0x51, 0x52, 0x8b, 0x54, 0x24, 0x10, 0x8b,
@@ -368,43 +235,30 @@ static Bool search_runtime_resolve(HChar * obj_name, UWord obj_start,
 
 /* End callgrind code */
 
-
 /* Push a new activation on the stack */
-static void APROF_(push_stack)(ThreadData * tdata, UWord sp, Function * f, Bool skip) {
+static void APROF_(push_stack)(ThreadData * tdata, 
+                                UWord sp, 
+                                Function * f) {
     
-    #if DEBUG
-    AP_ASSERT(tdata != NULL, "Invalid tdata");
-    AP_ASSERT(sp > 0, "Invalid stack pointer");
-    AP_ASSERT(f != NULL, "Invalid function");
-    #endif
+    
+    APROF_(debug_assert)(sp > 0, "Invalid stack pointer");
+    APROF_(debug_assert)(f != NULL, "Invalid function");
     
     tdata->stack_depth++;
     Activation * act = APROF_(get_activation)(tdata, tdata->stack_depth);
-    #if DEBUG
-    AP_ASSERT(act != NULL, "Invalid activation info");
-    #endif
+    APROF_(debug_assert)(act != NULL, "Invalid activation info");
     
-    RoutineInfo * rtn_info = HT_lookup(tdata->routine_hash_table, (UWord) f); 
-    if (rtn_info == NULL) {
-        
+    RoutineInfo * rtn_info = HT_lookup(tdata->rtn_ht, (UWord) f); 
+    if (rtn_info == NULL)
         rtn_info = APROF_(new_routine_info)(tdata, f, (UWord) f);
-        #if DEBUG
-        AP_ASSERT(rtn_info != NULL, "Invalid routine info");
-        #endif
         
-    } 
-    
-    #if IGNORE_DL_RUNTIME
-    if (skip) act->skip = True;
-    else act->skip = False;
-    #endif
-    
     act->sp = sp;
-    act->ret_addr = 0; /* We change this maybe in the future if this fn calls another fn */
-    act->rtn_info = rtn_info;
+    act->routine_info = rtn_info;
+    
+    // We change this maybe in the future if this fn calls another fn 
+    act->ret_addr = 0; 
     
     APROF_(function_enter)(tdata, act);
-
 }
 
 /* 
@@ -412,79 +266,61 @@ static void APROF_(push_stack)(ThreadData * tdata, UWord sp, Function * f, Bool 
  * and CSP == SP, pop out n_frames activation.
  * Return how many activations are been removed from the stack.
  */
-static UInt APROF_(pop_stack)(ThreadData * tdata, UWord csp, UInt n_frames,
-                                                Activation * current) {
+static UInt APROF_(pop_stack)(ThreadData * tdata, 
+                                UWord csp, 
+                                UInt n_frames,
+                                Activation * current) {
+    
+    APROF_(debug_assert)(csp > 0, "Invalid current stack pointer");
+    APROF_(debug_assert)(current != NULL, "Invalid activation"); 
     
     UInt n_pop = 0;
-    
-    #if DEBUG
-    AP_ASSERT(tdata != NULL, "Invalid tdata");
-    AP_ASSERT(csp > 0, "Invalid current stack pointer");
-    AP_ASSERT(current != NULL, "Invalid activition"); 
-    #endif
-    
-    while (    tdata->stack_depth > 0 && 
+    while ( tdata->stack_depth > 0 && 
             (
                 csp > current->sp || 
                 (csp == current->sp && n_frames > 0)
             )
           ) 
     {
-        
-        
         APROF_(function_exit)(tdata, current);
         
         if (n_frames > 0) n_frames--;
         n_pop++;
+        
         /* Adjust stack */
-        #if DEBUG
-        AP_ASSERT(tdata->stack_depth > 0, "Stack depth not possible");
-        #endif
+        APROF_(assert)(tdata->stack_depth > 0, "Invalid stack depth");
         tdata->stack_depth--;
         current--;
-        
     }
     
     return n_pop;
-    
 }
 
 /* Helper function called at start of a BB */
 VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
 
-    #if DEBUG
-    AP_ASSERT(target > 0, "Invalid target");
-    AP_ASSERT(bb != NULL, "Invalid BB");
-    #endif
-    
-    #if VERBOSE == 4
-    VG_(printf)("Start BB %lu\n", target);
-    #endif
+    APROF_(debug_assert)(target > 0, "Invalid target");
+    APROF_(debug_assert)(bb != NULL, "Invalid BB");
 
     /* Safety check due to an old bug of Valgrind */
-    #if DEBUG
-    AP_ASSERT(APROF_(current_TID) == VG_(get_running_tid)(), "TID mismatch");
-    #endif
-
+    APROF_(debug_assert)(APROF_(runtime).current_TID 
+                            == VG_(get_running_tid)(), "TID mismatch");
+                            
     /* Get thread data */
-    ThreadData * tdata = APROF_(current_tdata);
-    #if DEBUG
-    AP_ASSERT(tdata != NULL, "Invalid tdata");
-    #endif
+    ThreadData * tdata = APROF_(runtime).current_tdata;
     
-    #if TIME == BB_COUNT
-    tdata->bb_c++;
+    #if COST == BB_COUNT
+    tdata->cost++;
     #endif
     
     /* Previous BB executed */
     BB * last_bb = tdata->last_bb;
     enum jump_t exit = NONE;
-    if (last_bb != NULL) {
-        exit = APROF_(last_exit);
-    }
+    if (last_bb != NULL)
+        exit = APROF_(runtime).last_exit;
 
     /* Get current stack pointer */
-    UWord csp = (UWord) VG_(get_SP)(APROF_(current_TID));
+    UWord csp = (UWord) VG_(get_SP)(APROF_(runtime).current_TID);
     
     Bool different_obj = False;
     Bool different_sect = False;
@@ -492,24 +328,13 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
     /* Create a new BB structure */
     if (bb->key == 0) {
         
-        #if VERBOSE == 4
-        VG_(printf)("Populating BB info\n");
-        #endif
-        
         bb->key = target;
         
         /* Obtain section kind of this BB */
         bb->obj_section = VG_(DebugInfo_sect_kind)(NULL, 0, target);
         
         /* Function name buffer */
-        HChar * fn = VG_(calloc)("fn_name", NAME_SIZE, 1);
-        #if DEBUG
-        AP_ASSERT(fn != NULL, "function name not allocable");
-        #endif
-        
-        #if DEBUG_ALLOCATION
-        APROF_(add_alloc)(FN_NAME_S);
-        #endif
+        HChar * fn = APROF_(new)(FN_NAME_S, NAME_SIZE);
         
         /* 
          * Are we entering a new function? Ask to Valgrind
@@ -530,16 +355,18 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
         }
         
         if (info_fn && VG_(strcmp)(fn, "_dl_runtime_resolve") == 0) {
-            bb->is_dl_runtime_resolve = 1;
-            runtime_resolve_addr = 1; /* this only means that ld is not stripped */
+            
+            bb->is_dl_runtime_resolve = True;
+            // this only means that ld is not stripped 
+            APROF_(runtime).dl_runtime_resolve_addr = 1;         
         }
         
         Function * f = NULL;
         UInt hash = 0;
         if (info_fn) {
             
-            hash = APROF_(str_hash)((Char *)fn);
-            f = HT_lookup(APROF_(fn_ht), hash);
+            hash = APROF_(str_hash)((HChar *)fn);
+            f = HT_lookup(APROF_(runtime).fn_ht, hash);
             
             while (f != NULL && VG_(strcmp)(f->name, fn) != 0) {
                 f = f->next;
@@ -547,23 +374,19 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
         }
         
         Object * obj = NULL;
-        char * obj_name = NULL;
+        const HChar * obj_name = NULL;
         if (f == NULL || f->obj == NULL) {
             
             /* Obtain debug info about this BB */
             DebugInfo * di = VG_(find_DebugInfo)(target);
             /* Obtain object name */
-            obj_name = di ?    (char *) VG_(DebugInfo_get_filename)(di) : NULL;
-            
-            #if VERBOSE == 4
-            VG_(printf)("Test different object\n");
-            #endif
+            obj_name = di ? VG_(DebugInfo_get_filename)(di) : NULL;
             
             UInt hash_obj = 0;
             if (obj_name != NULL) {
                 
-                hash_obj = APROF_(str_hash)((Char *)obj_name);
-                obj = HT_lookup(APROF_(obj_ht), hash_obj);
+                hash_obj = APROF_(str_hash)((HChar *) obj_name);
+                obj = HT_lookup(APROF_(runtime).obj_ht, hash_obj);
                 
                 while (obj != NULL && VG_(strcmp)(obj->name, obj_name) != 0) {
                     obj = obj->next;
@@ -571,41 +394,24 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
                 
                 if (obj == NULL) {
                     
-                    char * obj_name_c = VG_(strdup)("obj_name", obj_name);
-                    obj = VG_(calloc)("obj", sizeof(Object), 1);
-                    #if DEBUG
-                    AP_ASSERT(obj != NULL, "Obj not allocable");
-                    #endif
+                    HChar * obj_name_c = VG_(strdup)("obj_name", obj_name);
+                    APROF_(add_alloc)(OBJ_NAME_S);
+                    
+                    obj = APROF_(new)(OBJ_S, sizeof(Object));
                     
                     obj->key = hash_obj;
                     obj->name = obj_name_c;
                     obj->filename = NULL; /* FixMe */
-                    HT_add_node(APROF_(obj_ht), obj->key, obj);
-                    
-                    #if DEBUG_ALLOCATION
-                    APROF_(add_alloc)(OBJ_NAME_S);
-                    APROF_(add_alloc)(OBJ_S);
-                    #endif
-                    
+                    HT_add_node(APROF_(runtime).obj_ht, obj->key, obj);
                 }
-                
             }
-            
-            #if DEBUG
-            if (f != NULL) {
-                obj_name = di ?    (char *) VG_(DebugInfo_get_filename)(di) : NULL;
-                if (obj_name != NULL)
-                    AP_ASSERT(VG_(strcmp)(obj_name, f->obj->name) == 0, 
-                        "Same function in different obj");
-            }
-            #endif
             
             if (last_bb != NULL && obj != last_bb->fn->obj)
                 different_obj = True;
             
             /* try to see if we find dl_runtime_resolve in this obj */
             if (!bb->is_dl_runtime_resolve && obj_name != NULL && 
-                different_obj && runtime_resolve_addr == 0) {
+                different_obj && APROF_(runtime).dl_runtime_resolve_addr == 0) {
             
                 /* Obtain obj start address */
                 UWord obj_start = di ? VG_(DebugInfo_get_text_avma)(di) : 0;
@@ -617,18 +423,17 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
                     bb->is_dl_runtime_resolve = True;
                     VG_(sprintf)(fn, "_dl_runtime_resolve");
                     info_fn = True;
-                    
                 }
-            
             }
-            
         }
         
         /* Is this BB dl_runtime_resolve? */ 
         if (
-            !bb->is_dl_runtime_resolve && runtime_resolve_addr > 1 &&
-            (target >= runtime_resolve_addr) &&
-            (target < runtime_resolve_addr + runtime_resolve_length)
+            !bb->is_dl_runtime_resolve 
+            && APROF_(runtime).dl_runtime_resolve_addr > 1 
+            && (target >= APROF_(runtime).dl_runtime_resolve_addr) 
+            && (target < (APROF_(runtime).dl_runtime_resolve_addr 
+                            + APROF_(runtime).dl_runtime_resolve_length))
             ) 
         {
             bb->is_dl_runtime_resolve = True;
@@ -652,17 +457,16 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
                 
             info_fn = True;
             unknown = True;
-            
         }
                 
         if (info_fn && f == NULL) {
             
             /* Maybe we have renamed the function...*/
-            UInt hash_2 = APROF_(str_hash)((Char *)fn);
+            UInt hash_2 = APROF_(str_hash)(fn);
             if (hash != hash_2) {
                 
                 hash = hash_2;
-                f = HT_lookup(APROF_(fn_ht), hash);
+                f = HT_lookup(APROF_(runtime).fn_ht, hash);
                 
                 while (f != NULL && VG_(strcmp)(f->name, fn) != 0) {
                     f = f->next;
@@ -671,123 +475,61 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
             
             if (f == NULL) {
                 
-                f = VG_(calloc)("fn", sizeof(Function), 1);
-                #if DEBUG
-                AP_ASSERT(f != NULL, "Function not allocable");
-                #endif
-                
-                #if DEBUG_ALLOCATION
-                APROF_(add_alloc)(FN_S);
-                #endif
-                
+                f = APROF_(new)(FN_S, sizeof(Function));
                 f->key = hash;
                 
                 /* 
                  * fn is a buffer of 4096, if possible try to minimize
                  * the wasted space
                  */
-                char * fn_c = VG_(strdup)("fn_name", fn);
+                HChar * fn_c = VG_(strdup)("fn_name", fn);
                 VG_(free)(fn);
                 fn = fn_c;
                 
                 f->name = fn;
+                if (unknown) f->discard = True;
                 
-                #if DISCARD_UNKNOWN
-                if (unknown) f->discard_info = True;
-                #endif
-                
-                HChar * mangled = VG_(calloc)("mangled", NAME_SIZE, 1);
-                #if DEBUG
-                AP_ASSERT(mangled != NULL, "mangled name not allocable");
-                #endif
-                #if DEBUG_ALLOCATION
-                APROF_(add_alloc)(MANGLED_S);
-                #endif
-                
-                if(    VG_(get_fnname_no_cxx_demangle)(bb->key, (Char *)mangled, NAME_SIZE)) {
+                HChar * mangled = APROF_(new)(MANGLED_S, NAME_SIZE);
+                if(VG_(get_fnname_no_cxx_demangle)(bb->key, (Char *) mangled, NAME_SIZE)) {
+                    
                     if (VG_(strcmp)(mangled, "(below main)") == 0) {
                         VG_(sprintf)(mangled, "below_main");
                     }
-                    if (VG_(strcmp)(f->name, mangled) != 0) {
+
+                    if (VG_(strcmp)(f->name, mangled) == 0) {
+                        APROF_(delete)(MANGLED_S, mangled); 
+                    } else {
                         
                         /* try min wasted space */
                         char * mangled_c = VG_(strdup)("mangle_name", mangled);
                         VG_(free)(mangled);
                         mangled = mangled_c;
-                        
                         f->mangled = mangled;
-                        
-                    } else {
-                        
-                        VG_(free)(mangled);
-                        #if DEBUG_ALLOCATION
-                        APROF_(remove_alloc)(MANGLED_S);
-                        #endif
-                        
                     }
                 
-                } else {
-                    
-                    #if DEBUG_ALLOCATION
-                    APROF_(remove_alloc)(MANGLED_S);
-                    #endif
-                    VG_(free)(mangled);
+                } else 
+                    APROF_(delete)(MANGLED_S, mangled);
                 
-                }
-                
-                HT_add_node(APROF_(fn_ht), f->key, f);
                 f->obj = obj;
-            
-            } else {
+                if (bb->is_dl_runtime_resolve) 
+                    f->skip = True;
                 
-                VG_(free)(fn);
-                
-                #if DEBUG_ALLOCATION
-                APROF_(remove_alloc)(FN_NAME_S);
-                #endif
-            }
+                HT_add_node(APROF_(runtime).fn_ht, f->key, f);
+
+            } else
+                APROF_(delete)(FN_NAME_S, fn);
             
-            if (!info_fn) {
-                
-                VG_(free)(fn);
-                #if DEBUG_ALLOCATION
-                APROF_(remove_alloc)(FN_NAME_S);
-                #endif
+        } else 
+            APROF_(delete)(FN_NAME_S, fn);
             
-            }
-            
-        } else {
-            
-            VG_(free)(fn);
-            #if DEBUG_ALLOCATION
-            APROF_(remove_alloc)(FN_NAME_S);
-            #endif
-            
-        }
         bb->fn = f;
         bb->instr_offset = 0; /* real value filled with a store */
-        
-        #if DEBUG
-        AP_ASSERT(bb->fn != NULL, "Invalid fn node");
-        #endif
-        
-        HT_add_node(APROF_(bb_ht), bb->key, bb);
-        #if DEBUG
-        BB * bb_t = HT_lookup(APROF_(bb_ht), bb->key);
-        if (bb_t == NULL) AP_ASSERT(0, "BB inserted not found");
-        #endif
-    
+        HT_add_node(APROF_(runtime).bb_ht, bb->key, bb);
     }
     
-    #if VERBOSE == 4
-    VG_(printf)("Test different obj\n");
-    #endif
     if (!different_obj && last_bb != NULL && bb->fn->obj != last_bb->fn->obj)
         different_obj = True;
 
-    #if VERBOSE == 4
-    VG_(printf)("Test different section\n");
-    #endif
     if (last_bb != NULL && bb->obj_section != last_bb->obj_section)
         different_sect = True;
 
@@ -799,12 +541,8 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
     
     /* Current activation */
     Activation * current = NULL;
-    if (tdata->stack_depth > 0) {
+    if (tdata->stack_depth > 0) 
         current = APROF_(get_activation_noresize)(tdata, tdata->stack_depth);
-        #if DEBUG
-        AP_ASSERT(current != NULL, "Invalid activation");
-        #endif
-    }
     
     /* 
      * If last BB does an Ijk_Ret exit not always this is a real return.
@@ -825,22 +563,16 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
      */
     if (exit == BBRET) {
         
-        #if VERBOSE == 4
-        VG_(printf)("Try RET as CALL\n");
-        #endif
-        
         /* This is a call! */
         if (csp < current->sp) {
             n_pop = 0;
-            //VG_(printf)("On BB %lu, RET to CALL because SP(%lu) < TOP_SP(%lu)\n", target, csp, stack.current->sp);
         }
+        
         /* 
          * SP does not change, so this is a call only if return 
          * does not match our expected return address.
          */
         else if (csp == current->sp) {
-            
-            //VG_(printf)("Try to convert RET to CALL for BB(%lu) because SP=CSP=%lu\n", target, csp);
             
             Activation * c = current;
             UInt depth = tdata->stack_depth;
@@ -864,7 +596,6 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
                  * planned pop operations.
                  */
                 n_pop = 0;
-                //VG_(printf)("No match found BB(%lu)\n", target);
                 break;
             }
             
@@ -873,12 +604,7 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
         if (n_pop == 0) {
             ret_as_call = True;
             exit = BBOTHER;
-            
-            #if VERBOSE == 4
-            VG_(printf)("Call because RET as CALL\n");
-            #endif
         }
-        
     }
     
     /* This is a call also if last BB exit is
@@ -889,10 +615,6 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
      */
     Bool call_emulation = False;
     if (last_bb != NULL && exit != BBCALL && exit != BBRET) {
-        
-        #if VERBOSE == 4
-        VG_(printf)("Try call emulation\n");
-        #endif
         
         if (ret_as_call || different_obj || different_sect || bb->is_entry) {
             
@@ -905,21 +627,14 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
              */
             if (tdata->stack_depth > 0 && last_bb->is_dl_runtime_resolve) {
                 
-                #if VERBOSE == 4
-                VG_(printf)("POP caused by dl_runtime_resolve\n");
-                #endif
-                
                 /* Update current stack pointer */
                 csp = current->sp;
                 APROF_(function_exit)(tdata, current);
                 
                 /* Adjust stack */
-                #if DEBUG
-                AP_ASSERT(tdata->stack_depth > 0, "Stack depth not possible");
-                #endif
+                APROF_(debug_assert)(tdata->stack_depth > 0, "Stack depth not possible");
                 tdata->stack_depth--;
                 current = APROF_(get_activation_noresize)(tdata, tdata->stack_depth);
-                
             }
             
             exit = BBCALL;
@@ -929,13 +644,7 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
              * something in the stack
              */
             call_emulation = True;
-            
-            #if VERBOSE == 4
-            VG_(printf)("Call emulution is true\n");
-            #endif
-            
         }
-        
     }
     
     /* 
@@ -943,10 +652,6 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
      * entry :)
      */
     if (exit == BBRET) {
-        
-        #if VERBOSE == 4
-        VG_(printf)("Calling POP stack\n");
-        #endif
         
         APROF_(pop_stack)(tdata, csp, n_pop, current);
         
@@ -958,68 +663,31 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
          */
         if (tdata->stack_depth > 0) {
             
-            #if VERBOSE == 4
-            VG_(printf)("Try to see if is a RET\n");
-            #endif
-            
             n_pop = APROF_(pop_stack)(tdata, csp, 0, current);
             if (n_pop > 0) {
-                
-                #if VERBOSE == 4
-                VG_(printf)("Call deleted\n");
-                #endif
-                
                 exit = BBRET;
             } 
         }
         
         if (exit == BBCALL) {
             
-            #if VERBOSE == 4
-            VG_(printf)("This is a CALL\n");
-            #endif
-            
             /* I don't know why we do this but callgrind does so... */
             if (call_emulation && tdata->stack_depth > 0)
                 csp = current->sp;
             
             if (tdata->stack_depth > 0 && last_bb != NULL && last_bb->exit == BBCALL) {
-                
-                #if VERBOSE == 4
-                VG_(printf)("Assign ret address\n");
-                #endif
-                
-                #if DEBUG
-                AP_ASSERT(current != NULL, "Invalid activation");
-                #endif
                 current->ret_addr = last_bb->key + last_bb->instr_offset;
             }
             
-            #if VERBOSE == 4
-            VG_(printf)("Call PUSH stack\n");
-            #endif
-            
-            APROF_(push_stack)(tdata, csp, bb->fn, bb->is_dl_runtime_resolve); 
-            
+            APROF_(push_stack)(tdata, csp, bb->fn); 
         }
-        
     }
-    
-    #if 0
-    if (tdata->stack_depth > 0) {
-        Activation * acta = APROF_(get_activation_noresize)(tdata, tdata->stack_depth);
-        if (acta->rtn_info->fn != bb->fn)
-            VG_(printf)("Skipped function %s\n", bb->fn->name);
-    } else
-        VG_(printf)("Skipped function %s\n", bb->fn->name);
-    #endif
     
     /* Update pointer last BB executed */
     tdata->last_bb = bb;
     
     /* Reset exit of current BB */
-    APROF_(last_exit) = BBOTHER;
-
+    APROF_(runtime).last_exit = BBOTHER;
 }
 
 void APROF_(unwind_stack)(ThreadData * tdata) {
@@ -1030,15 +698,12 @@ void APROF_(unwind_stack)(ThreadData * tdata) {
         APROF_(function_exit)(tdata, current);
         tdata->stack_depth--;
         current--;
-
     }
-    
 }
 
-#else
-
 Bool APROF_(trace_function)(ThreadId tid, UWord * arg, UWord * ret) {
-    
+
+#if 0
     /* Is this client request for aprof? */
     if (!VG_IS_TOOL_USERREQ('V','A',arg[0])) return False;
     
@@ -1046,14 +711,14 @@ Bool APROF_(trace_function)(ThreadId tid, UWord * arg, UWord * ret) {
     return True;
     #endif
     
-    ThreadData * tdata = APROF_(current_tdata);
+    ThreadData * tdata = APROF_(runtime).current_tdata;
     #if DEBUG
-    AP_ASSERT(tdata != NULL, "Invalid tdata");
+    APROF_(assert)(tdata != NULL, "Invalid tdata");
     #endif
     
     UWord target = arg[1]; 
     #if DEBUG
-    AP_ASSERT(target > 0, "Invalid target")
+    APROF_(assert)(target > 0, "Invalid target")
     #endif
     
     if (arg[2] == 1) {
@@ -1061,12 +726,12 @@ Bool APROF_(trace_function)(ThreadId tid, UWord * arg, UWord * ret) {
         tdata->stack_depth++;
         Activation * act = APROF_(get_activation)(tdata, tdata->stack_depth);
         #if DEBUG
-        AP_ASSERT(act != NULL, "Invalid activation info");
+        APROF_(assert)(act != NULL, "Invalid activation info");
         #endif
         
         char * rtn_name = VG_(calloc)("rtn_name", NAME_SIZE, 1);
         #if DEBUG
-        AP_ASSERT(rtn_name != NULL, "rtn_name not allocable");
+        APROF_(assert)(rtn_name != NULL, "rtn_name not allocable");
         #endif
         
         #if DEBUG_ALLOCATION
@@ -1077,7 +742,7 @@ Bool APROF_(trace_function)(ThreadId tid, UWord * arg, UWord * ret) {
             VG_(sprintf)(rtn_name, "%p", (void *) target);
         
         Function * fn = NULL;
-        fn = HT_lookup(APROF_(fn_ht), target);
+        fn = HT_lookup(APROF_(runtime).fn_ht, target);
         
         RoutineInfo * rtn_info = NULL;
         if (fn != NULL) {
@@ -1089,7 +754,7 @@ Bool APROF_(trace_function)(ThreadId tid, UWord * arg, UWord * ret) {
                 
                 fn = VG_(calloc)("fn node", sizeof(Function), 1);
                 #if DEBUG
-                AP_ASSERT(fn != NULL, "fn node not allocable");
+                APROF_(assert)(fn != NULL, "fn node not allocable");
                 #endif
                 
                 #if DEBUG_ALLOCATION
@@ -1098,7 +763,7 @@ Bool APROF_(trace_function)(ThreadId tid, UWord * arg, UWord * ret) {
                 
                 char * mangled = VG_(calloc)("mangled", NAME_SIZE, 1);
                 #if DEBUG
-                AP_ASSERT(mangled != NULL, "mangled name not allocable");
+                APROF_(assert)(mangled != NULL, "mangled name not allocable");
                 #endif
                 if(    VG_(get_fnname_no_cxx_demangle)(target, mangled, NAME_SIZE)
                     && VG_(strcmp)(rtn_name, mangled) != 0
@@ -1113,17 +778,17 @@ Bool APROF_(trace_function)(ThreadId tid, UWord * arg, UWord * ret) {
                 
                 DebugInfo * di = VG_(find_DebugInfo)(target);
                 #if DEBUG
-                AP_ASSERT(di != NULL, "Invalid debug info");
+                APROF_(assert)(di != NULL, "Invalid debug info");
                 #endif
                 
                 char * obj_name = (char *) VG_(DebugInfo_get_soname)(di);
                 #if DEBUG
-                AP_ASSERT(obj_name != NULL, "Invalid object name");
+                APROF_(assert)(obj_name != NULL, "Invalid object name");
                 #endif
                 
                 Object * obj = NULL;
                 UInt hash_obj = APROF_(str_hash)(obj_name);
-                obj = HT_lookup(APROF_(obj_ht), hash_obj);
+                obj = HT_lookup(APROF_(runtime).obj_ht, hash_obj);
                 while(obj != NULL && VG_(strcmp)(obj->name, obj_name) != 0)
                     obj = obj->next;
                 
@@ -1131,12 +796,12 @@ Bool APROF_(trace_function)(ThreadId tid, UWord * arg, UWord * ret) {
                     
                     obj_name = VG_(strdup)("copy obj", obj_name);
                     #if DEBUG
-                    AP_ASSERT(obj_name != NULL, "Invalid copy of object name");
+                    APROF_(assert)(obj_name != NULL, "Invalid copy of object name");
                     #endif
                     
                     obj = VG_(calloc)("obj", sizeof(Object), 1);
                     #if DEBUG
-                    AP_ASSERT(obj != NULL, "Invalid object");
+                    APROF_(assert)(obj != NULL, "Invalid object");
                     #endif
                     
                     #if DEBUG_ALLOCATION
@@ -1147,7 +812,7 @@ Bool APROF_(trace_function)(ThreadId tid, UWord * arg, UWord * ret) {
                     obj->name = obj_name;
                     obj->key = hash_obj;
                     
-                    HT_add_node(APROF_(obj_ht), obj->key, obj);
+                    HT_add_node(APROF_(runtime).obj_ht, obj->key, obj);
                     
                 }
                 
@@ -1155,13 +820,13 @@ Bool APROF_(trace_function)(ThreadId tid, UWord * arg, UWord * ret) {
                 fn->name = rtn_name;
                 fn->obj = obj;
                 
-                HT_add_node(APROF_(fn_ht), fn->key, fn);
+                HT_add_node(APROF_(runtime).fn_ht, fn->key, fn);
             
             }
             
             rtn_info = APROF_(new_routine_info)(tdata, fn, target);
             #if DEBUG
-            AP_ASSERT(rtn_info != NULL, "Invalid routine info");
+            APROF_(assert)(rtn_info != NULL, "Invalid routine info");
             #endif
             
         }
@@ -1174,21 +839,19 @@ Bool APROF_(trace_function)(ThreadId tid, UWord * arg, UWord * ret) {
         
         Activation * act = APROF_(get_activation)(tdata, tdata->stack_depth);
         #if DEBUG
-        AP_ASSERT(act != NULL, "Invalid activation");
+        APROF_(assert)(act != NULL, "Invalid activation");
         #endif
         
         APROF_(function_exit)(tdata, act);
         
         #if DEBUG
-        AP_ASSERT(tdata->stack_depth > 0, "Stack depth not possible");
+        APROF_(assert)(tdata->stack_depth > 0, "Stack depth not possible");
         #endif
         tdata->stack_depth--;
     
     } else
-        AP_ASSERT(0, "Invalid client req");
-    
+        APROF_(assert)(0, "Invalid client req");
+#endif    
+
     return True;
-
 }
-
-#endif
