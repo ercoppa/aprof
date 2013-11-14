@@ -4,7 +4,14 @@ DIR=`pwd`
 echo $DIR
 #make clean
 ./autogen.sh
-./configure --prefix=$DIR/inst && make && make install && \
+
+# default
+#./configure --prefix=$DIR/inst && make && make install && \
+
+# DEBUG
+./configure --prefix=$DIR/inst  --enable-inner && make && make install && \
+# valgrind --sim-hints=enable-outer --trace-children=yes  --smc-check=all-non-file  --run-libc-freeres=no --tool=memcheck --leak-check=full ./valgrind/inst/bin/valgrind --vgdb-prefix=./valgrind/ --tool=aprof ls
+
 cd $DIR/aprof/extra/ && \
 make && make install || exit -1
 

@@ -68,11 +68,11 @@
 
 #define DEBUG               1   // Enable some sanity checks
 
-#define VERBOSE             4   // 0 disabled, 1 function + thread, 2 
+#define VERBOSE             0   // 0 disabled, 1 function + thread, 2 
                                 // function + thread + load/store/modify,
                                 // 4 very verbose function tracing
 
-#define EVENTCOUNT          1   // 0 disabled, 1 print event counts
+#define EVENTCOUNT          0   // 0 disabled, 1 print event counts
                                 
                                 // Performance metric:
 #define NO_COST             0   // Nothing
@@ -83,14 +83,14 @@
 
 #define INPUT_STATS         1   // stats about thread input & external input
 
-#define DEBUG_ALLOCATION    1   // if 1, check every allocation made by aprof
+#define DEBUG_ALLOCATION    0   // if 1, check every allocation made by aprof
 #define IGNORE_DL_RUNTIME   0   // if 1, disable analysis for dl_
                                 // runtime_resolve (and its children)
                                 
 #define REPORT_NAME         1   // if 1 report name is prog_TID.aprof, 
                                 // if 2 is PID_TID_ADDRMULTIPLE.aprof
                                 
-#define MEM_USAGE_INFO      1   // Check VmPeak in /proc/PID/status
+#define MEM_USAGE_INFO      0   // Check VmPeak in /proc/PID/status
                                 // to get info about aprof mem usage 
 
 /* shadow memory  */
@@ -256,7 +256,7 @@ Bool APROF_(trace_function)(ThreadId tid, UWord * arg, UWord * ret);
     #define vgAprof_remove_alloc(type)
     #define vgAprof_new(kind, size)     VG_(calloc)("aprof", size, 1)
     #define vgAprof_delete(kind, ptr)   VG_(free)(ptr)
-    #defime vgAprof_print_alloc()       
+    #define vgAprof_print_alloc()       
 #endif // !DEBUG_ALLOCATION
 
 /* main.c */

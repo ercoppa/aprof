@@ -37,6 +37,10 @@ VG_REGPARM(3) void APROF_(trace_access_rms)(UWord type,
                                             Addr addr, 
                                             SizeT size) {
 
+    APROF_(verbose)(2, "Load: %lu:%lu\n", addr, size);
+    APROF_(verbose)(2, "Store: %lu:%lu\n", addr, size);
+    APROF_(verbose)(2, "Modify: %lu:%lu\n", addr, size);
+
     ThreadData * tdata = APROF_(runtime).current_tdata;
     APROF_(debug_assert)(tdata != NULL, "Thread data is NULL");
     
@@ -70,9 +74,6 @@ VG_REGPARM(3) void APROF_(trace_access_rms)(UWord type,
         size_fix -= APROF_(runtime).memory_resolution;
         addr += APROF_(runtime).memory_resolution;
     }
-    
-    // __attribute__((unused))
-    return;
 }
 
 VG_REGPARM(3) void APROF_(trace_access_drms)(UWord type, 
@@ -89,7 +90,7 @@ VG_REGPARM(3) void APROF_(trace_access_drms)(UWord type,
 
     ThreadData * tdata = APROF_(runtime).current_tdata;
     APROF_(debug_assert)(tdata != NULL, "Thread data is NULL");
-    
+
     #if EVENTCOUNT > 0
     if (type == LOAD) tdata->num_read++;
     else if (type == STORE) tdata->num_write++;
@@ -114,22 +115,6 @@ VG_REGPARM(3) void APROF_(trace_access_drms)(UWord type,
         switch(type) {
              
             case STORE:
-            
-                #if INPUT_STATS
-                if (kernel_access)
-                    wts = LK_insert(APROF_(runtime).global_shadow_memory, addr, SET_SYSCALL(ts));
-                else // 31th bit is already cleared, avoid SET_THREAD
-                    wts = LK_insert(APROF_(runtime).global_shadow_memory, addr, ts);
-                #else // INPUT_STATS
-                wts = LK_insert(APROF_(runtime).global_shadow_memory, addr, ts);
-                #endif
-                
-                size_fix -= APROF_(runtime).memory_resolution;
-                addr += APROF_(runtime).memory_resolution;
-                continue;
-                
-                break;
-            
             case MODIFY: // LOAD+STORE
             
                 #if INPUT_STATS
@@ -163,6 +148,13 @@ VG_REGPARM(3) void APROF_(trace_access_drms)(UWord type,
          */
         old_ts = LK_insert(tdata->shadow_memory, addr, ts);
 
+        if (type == STORE) {
+            
+            size_fix -= APROF_(runtime).memory_resolution;
+            addr += APROF_(runtime).memory_resolution;
+            continue;
+        }
+
         Activation * act = APROF_(get_activation_noresize)(tdata, tdata->stack_depth);
         
         // Dynamic input?
@@ -175,7 +167,7 @@ VG_REGPARM(3) void APROF_(trace_access_drms)(UWord type,
                 act->self_syscall++;
                 act->cumul_syscall++;
             } else {
-                act->self_syscall++;
+                act->self_thread++;
                 act->cumul_thread++;
             }
             APROF_(debug_assert)(act->cumul_thread + act->cumul_syscall 
