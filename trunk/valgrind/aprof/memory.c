@@ -195,7 +195,5 @@ VG_REGPARM(3) void APROF_(trace_access_drms)(UWord type,
     
         size_fix -= APROF_(runtime).memory_resolution;
         addr += APROF_(runtime).memory_resolution;
-        
     }
-
 }

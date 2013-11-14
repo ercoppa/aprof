@@ -150,8 +150,11 @@
                                                     tl_assert(cond); \
                                                 } \
                                             } while(0);
+                                            
+    #define vgAprof_debug_printf(...)   VG_(printf)(__VA_ARGS__);
 #else // DEBUG
     #define vgAprof_debug_assert(cond, ...) 
+    #define vgAprof_debug_printf(...)
 #endif // !DEBUG
 
 #if VERBOSE > 0
@@ -228,8 +231,7 @@ void APROF_(addEvent_Dw)(IRSB * sb, IRExpr * daddr, Int dsize);
                                         APROF_(resize_stack)(tdata, depth) : \
                                         (tdata->stack + depth - 1))
   
-inline Activation * APROF_(get_activation_by_aid)(ThreadData * tdata, UInt aid);
-inline Activation * APROF_(get_activation_by_aid)(ThreadData * tdata, UInt aid) {
+static inline Activation * APROF_(get_activation_by_aid)(ThreadData * tdata, UInt aid) {
     
     Activation * a = &tdata->stack[tdata->stack_depth - 2];
     while (a->activation_id > aid) a--;
@@ -254,6 +256,7 @@ Bool APROF_(trace_function)(ThreadId tid, UWord * arg, UWord * ret);
     #define vgAprof_remove_alloc(type)
     #define vgAprof_new(kind, size)     VG_(calloc)("aprof", size, 1)
     #define vgAprof_delete(kind, ptr)   VG_(free)(ptr)
+    #defime vgAprof_print_alloc()       
 #endif // !DEBUG_ALLOCATION
 
 /* main.c */
