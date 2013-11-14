@@ -32,60 +32,43 @@
 */
 
 #include "aprof.h"
-
-#define COMPRESS_DEBUG 0
-
-/* 
- * # timestamps in the last level of the lookup table
- * default value for memory resolution = 4 => 65536/4
- */
-static UInt APROF_(flt_size) = 16384;
-                                      
-/*
- * # of >> shifts in order to achieve the chosen resolution
- * default value for memory resolution = 4 => 2 shifts
- */
-static UInt APROF_(res_shift) = 2;
                                                                                       
 LookupTable * LK_create(void) {
 
+    LookupTable * lk = APROF_(new)(LK_S, sizeof(struct LookupTable));
     switch(APROF_(runtime).memory_resolution) {
         
         case 4:
-            APROF_(flt_size) = 16384; 
-            APROF_(res_shift) = 2;
+            lk->flt_size = 16384; 
+            lk->res_shift = 2;
             break;
         
         case 1:
-            APROF_(flt_size) = 65536; 
-            APROF_(res_shift) = 0;
+            lk->flt_size = 65536; 
+            lk->res_shift = 0;
             break;
         
         case 2:
-            APROF_(flt_size) = 32768; 
-            APROF_(res_shift) = 1;
+            lk->flt_size = 32768; 
+            lk->res_shift = 1;
             break;
         
         case 8:
-            APROF_(flt_size) = 8192; 
-            APROF_(res_shift) = 3;
+            lk->flt_size = 8192; 
+            lk->res_shift = 3;
             break;
         
         case 16:
-            APROF_(flt_size) = 4096; 
-            APROF_(res_shift) = 4;
+            lk->flt_size = 4096; 
+            lk->res_shift = 4;
             break;
         
         default:
             APROF_(assert)(0, "Supported memory resolutions: 1, 2, 4, 8 or 16");
     }
     
-    LookupTable * lk = APROF_(new)(LK_S, sizeof(struct LookupTable));
     return lk;
 }
-
-UInt hit_cache = 0;
-UInt miss_cache = 0;
 
 void LK_destroy(LookupTable * lk) {
 
@@ -95,45 +78,31 @@ void LK_destroy(LookupTable * lk) {
         if (lk->table[i] != NULL) {
         
             #ifndef __i386__
-            UInt j = 0;
-            while (j < ILT_SIZE) {
                 
-                if (lk->table[i]->table[j] != NULL) {
-                
-                    VG_(free)(lk->table[i]->table[j]);
-                    #if DEBUG_ALLOCATION
-                    APROF_(remove_alloc)(SEG_LK_S);
-                    #endif
+                UInt j = 0;
+                while (j < ILT_SIZE) {
+                    
+                    if (lk->table[i]->table[j] != NULL) 
+                        APROF_(delete)(SEG_LK_S, lk->table[i]->table[j]);
+
+                    j++;            
                 }
-                j++;
-            
-            }
-            
-            #if DEBUG_ALLOCATION
-            APROF_(remove_alloc)(ILT_LK_S);
-            #endif
+                APROF_(remove_alloc)(ILT_LK_S);
             
             #else // i386
-            
-            #if DEBUG_ALLOCATION
-            APROF_(remove_alloc)(SEG_LK_S);
-            #endif
-            
+                APROF_(remove_alloc)(SEG_LK_S);
             #endif // i386
             
             VG_(free)(lk->table[i]);
         }
         i++;
     }
-    VG_(free)(lk);
-    
-    VG_(printf)("Cache hit:  %d\n",  hit_cache);
-    VG_(printf)("Cache miss: %d\n", miss_cache);
+    APROF_(delete)(LK_S, lk); 
 }
 
 
 
-UInt LK_insert(LookupTable * suf, UWord addr, UInt ts) {
+UInt LK_insert(LookupTable * lk, UWord addr, UInt ts) {
 
     #ifdef __i386__
     UWord i = addr >> 16;
@@ -150,35 +119,35 @@ UInt LK_insert(LookupTable * suf, UWord addr, UInt ts) {
     
     #endif // ! __i386__
     
-    UWord j = (addr & 0xffff) >> APROF_(res_shift);
+    UWord j = (addr & 0xffff) >> lk->res_shift;
     
     #ifndef __i386__
-    if (suf->table[i] == NULL) {
-        suf->table[i] = APROF_(new)(ILT_LK_S, sizeof(ILT));
+    if (lk->table[i] == NULL) {
+        lk->table[i] = APROF_(new)(ILT_LK_S, sizeof(ILT));
     } 
     #endif // __i386__
 
     #ifdef __i386__
-    if (suf->table[i] == NULL) {
+    if (lk->table[i] == NULL) {
     #else // __i386__
-    if (suf->table[i]->table[k] == NULL) {
+    if (lk->table[i]->table[k] == NULL) {
     #endif // ! __i386__
     
         #ifdef __i386__
-        suf->table[i] = APROF_(new)(SEG_LK_S, sizeof(UInt) * APROF_(flt_size));
-        suf->table[i][j] = ts;
+        lk->table[i] = APROF_(new)(SEG_LK_S, sizeof(UInt) * lk->flt_size);
+        lk->table[i][j] = ts;
         #else // __i386__
-        suf->table[i]->table[k] = APROF_(new)(SEG_LK_S, sizeof(UInt) * APROF_(flt_size));
-        suf->table[i]->table[k][j] = ts;
+        lk->table[i]->table[k] = APROF_(new)(SEG_LK_S, sizeof(UInt) * lk->flt_size);
+        lk->table[i]->table[k][j] = ts;
         #endif // ! __i386__
 
         return 0;
     }
     
     #ifdef __i386__
-    UInt * value = &(suf->table[i][j]);
+    UInt * value = &(lk->table[i][j]);
     #else // __i386__
-    UInt * value = &(suf->table[i]->table[k][j]);
+    UInt * value = &(lk->table[i]->table[k][j]);
     #endif // ! __i386__
     
     UInt old = *value;
@@ -187,14 +156,14 @@ UInt LK_insert(LookupTable * suf, UWord addr, UInt ts) {
     return old;
 }
 
-UInt LK_lookup(LookupTable * suf, UWord addr) {
+UInt LK_lookup(LookupTable * lk, UWord addr) {
     
-    UWord j = (addr & 0xffff) >> APROF_(res_shift);
+    UWord j = (addr & 0xffff) >> lk->res_shift;
     
     #ifdef __i386__
     
     UWord i = addr >> 16;
-    UInt * ssm = suf->table[i];
+    UInt * ssm = lk->table[i];
     if (ssm == NULL) return 0;
     return ssm[j];
     
@@ -207,8 +176,8 @@ UInt LK_lookup(LookupTable * suf, UWord addr) {
     #endif
     
     UWord k = (addr >> 16) & 0x3fff;
-    if (suf->table[i] == NULL) return 0;
-    UInt * ssm = suf->table[i]->table[k];
+    if (lk->table[i] == NULL) return 0;
+    UInt * ssm = lk->table[i]->table[k];
     if (ssm == NULL) return 0;
     return ssm[j];
     
@@ -225,26 +194,14 @@ static UInt binary_search(UInt * array, UInt init, UInt size, UInt ts){
     if (size == 1) return 0;
     if (array[1] > ts) return 0;
     if (array[size - 1] <= ts) return size - 1;
-    /*
-    Int q = size - 1;
-    while (q >= 0) {
-        if (array[q--] <= ts) { 
-            q++; 
-            break; // return q;
-        }
-    }
-    AP_ASSERT(q >= 0, "value not found [1]");
-    */
+
     Int min = init;
     Int max = size - 1;
-    
     do {
         
         Int index = (min + max) / 2;
         
         if (array[index] == ts) {
-            
-            //AP_ASSERT(index == q, "Invalid binary search");
             return index;
         }
         
@@ -254,12 +211,9 @@ static UInt binary_search(UInt * array, UInt init, UInt size, UInt ts){
         else {
             
             if (array[index + 1] > ts) {
-                //VG_(umsg)("index=%u q=%u\n", index, q);
-                //AP_ASSERT(index == q, "Invalid binary search");
                 return index;
             }
             min = index + 1;
-            
         }
         
     } while(min <= max);
@@ -268,7 +222,7 @@ static UInt binary_search(UInt * array, UInt init, UInt size, UInt ts){
     UInt i = 0;
     while (i < size) VG_(umsg)("%u ", array[i++]);
     VG_(umsg)("\n");
-    AP_ASSERT(0, "Binary search fail");
+    APROF_(assert)(0, "Binary search fail");
     return 0;
 }
 
@@ -297,16 +251,16 @@ static UInt binary_search(UInt * array, UInt init, UInt size, UInt ts){
  * all active-ts.
  */
 #if COMPRESS_DEBUG
-void LK_compress(UInt * array, UInt size, LookupTable ** shamem, void * file) {
+void LK_compress_drms(UInt * array, UInt size, LookupTable ** shamem, void * file) {
 #else
-void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
+void LK_compress_drms(UInt * array, UInt size, LookupTable ** shamem) {
 #endif
 
     #if COMPRESS_DEBUG
     FILE * f = (FILE *) file;
     #endif
     
-    UInt count_thread = APROF_(running_threads);
+    UInt count_thread = APROF_(runtime).running_threads;
     UInt i = 0;
     UInt k = 0;
     UInt ts = 0;
@@ -320,7 +274,7 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
     for(i = 0; i < LK_SIZE; i++){
     
         // chunk: a list of ts (e.g. ts for a 64KB segment) 
-        UInt * global_chunk = (UInt *) APROF_(global_shadow_memory)->table[i];
+        UInt * global_chunk = (UInt *) APROF_(runtime).global_shadow_memory->table[i];
         #if COMPRESS_DEBUG
         if (global_chunk != NULL) VG_(umsg)("Global chunk %u exists\n", i);
         #endif
@@ -333,9 +287,9 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
              * if not we assume wts[x] = 0 
              */
 
-            if(APROF_(global_shadow_memory)->table[i] != NULL) {
+            if(APROF_(runtime).global_shadow_memory->table[i] != NULL) {
                 
-                global_chunk = APROF_(global_shadow_memory)->table[i]->table[j];
+                global_chunk = APROF_(runtime).global_shadow_memory->table[i]->table[j];
                 
                 #if COMPRESS_DEBUG
                 if (global_chunk != NULL)
@@ -370,7 +324,7 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
             if (q == 0 && global_chunk == NULL) {
                 
                 for(t = 0; t < q; t++)
-                    AP_ASSERT(local[t] == NULL, "local chunk is not null")
+                    APROF_(assert)(local[t] == NULL, "local chunk is not null")
                 continue;
             }
             #endif
@@ -382,7 +336,7 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
             #endif
             
             UInt gts = 0; ts = 0;
-            for (k = 0; k < APROF_(flt_size); k++){
+            for (k = 0; k < APROF_(runtime).global_shadow_memory->flt_size; k++){
                 
                 if (global_chunk != NULL) {
                     
@@ -402,7 +356,7 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
                 
                 #if COMPRESS_DEBUG 
                 if (global_chunk == NULL)
-                    AP_ASSERT(gts == 0 && ts == 0, "Invalid gts/ts");
+                    APROF_(assert)(gts == 0 && ts == 0, "Invalid gts/ts");
                 #endif
                 
                 // for each thread, access the relative chunk
@@ -509,32 +463,28 @@ void LK_compress(UInt * array, UInt size, LookupTable ** shamem) {
     
 }
 
-#endif
-
-#if INPUT_METRIC == RMS || DEBUG_DRMS
-
-void LK_compress_rms(LookupTable * uf, UInt * arr_rid, UInt size_arr) {
+void LK_compress_rms(LookupTable * lk, UInt * arr_rid, UInt size_arr) {
     
     UInt i = 0;
     while (i < LK_SIZE) {
         
         #ifndef __i386__
         UInt q = 0;
-        if (uf->table[i] != NULL) {
+        if (lk->table[i] != NULL) {
         
             q = 0;
             while (q < ILT_SIZE) {
                 
-                UInt * table = uf->table[i]->table[q]; 
+                UInt * table = lk->table[i]->table[q]; 
         #else
-                UInt * table = uf->table[i];
+                UInt * table = lk->table[i];
         #endif
                 
                 if (table != NULL) {
 
                     UInt j = 0;
                     UInt rid = 0;
-                    for (j = 0; j < APROF_(flt_size); j++){
+                    for (j = 0; j < lk->flt_size; j++){
                         
                         rid = table[j];
                         if (rid == 0) continue;
@@ -549,7 +499,6 @@ void LK_compress_rms(LookupTable * uf, UInt * arr_rid, UInt size_arr) {
                                 table[j] = k + 1;
                                 break;
                             }
-                            
                         }
                         
                         /*
@@ -564,9 +513,7 @@ void LK_compress_rms(LookupTable * uf, UInt * arr_rid, UInt size_arr) {
                          * invoked before main() )
                          */
                         if (k < 0) table[j] = 0;
-
                     }
-
                 }
         #ifndef __i386__
             q++;
@@ -575,8 +522,5 @@ void LK_compress_rms(LookupTable * uf, UInt * arr_rid, UInt size_arr) {
         #endif
         i++;
     }
-
 }
-
-#endif
 

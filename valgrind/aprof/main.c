@@ -34,6 +34,8 @@
 
 #include "aprof.h"
 
+Runtime APROF_(runtime);
+
 static IRSB* APROF_(instrument) (   
                                     VgCallbackClosure * closure, 
                                     IRSB * sbIn,
@@ -260,7 +262,25 @@ static IRSB* APROF_(instrument) (
 // aprof initialization
 // some runtime parameters are set by APROF_(cmd_line)()
 static void APROF_(init)(void) {
-        
+    
+    APROF_(runtime).fn_ht = HT_construct(NULL);    
+    APROF_(runtime).obj_ht = HT_construct(NULL);
+    APROF_(runtime).global_counter = 1;
+    APROF_(runtime).events_used = 0;
+    APROF_(runtime).current_TID = VG_INVALID_THREADID;
+    APROF_(runtime).current_tdata = NULL;
+    APROF_(runtime).running_threads = 0;
+    APROF_(runtime).last_bb = NULL;
+    APROF_(runtime).last_exit = NONE;
+    APROF_(runtime).dl_runtime_resolve_addr = 0;
+    APROF_(runtime).dl_runtime_resolve_length = 0;
+    
+    VG_(clo_vex_control).iropt_unroll_thresh = 0;
+    VG_(clo_vex_control).guest_chase_thresh  = 0;
+}
+
+static void APROF_(post_init)(void) {
+    
     if (APROF_(runtime).function_tracing)
         APROF_(runtime).bb_ht = HT_construct(VG_(free));
     else
@@ -277,21 +297,6 @@ static void APROF_(init)(void) {
         APROF_(runtime).global_shadow_memory = NULL;
         APROF_(runtime).flush_events = APROF_(flush_events_rms);
     }
-    
-    APROF_(runtime).fn_ht = HT_construct(NULL);    
-    APROF_(runtime).obj_ht = HT_construct(NULL);
-    APROF_(runtime).global_counter = 1;
-    APROF_(runtime).events_used = 0;
-    APROF_(runtime).current_TID = VG_INVALID_THREADID;
-    APROF_(runtime).current_tdata = NULL;
-    APROF_(runtime).running_threads = 0;
-    APROF_(runtime).last_bb = NULL;
-    APROF_(runtime).last_exit = NONE;
-    APROF_(runtime).dl_runtime_resolve_addr = 0;
-    APROF_(runtime).dl_runtime_resolve_length = 0;
-    
-    VG_(clo_vex_control).iropt_unroll_thresh = 0;
-    VG_(clo_vex_control).guest_chase_thresh  = 0;
 }
 
 #if MEM_USAGE_INFO 
@@ -395,10 +400,7 @@ static void APROF_(fini)(Int exitcode) {
     if (APROF_(runtime).input_metric == DRMS)
         LK_destroy(APROF_(runtime).global_shadow_memory);
     
-    #if DEBUG_ALLOCATION
-    VG_(printf)("\nAfter clean:\n");
     APROF_(print_alloc)();
-    #endif
 }
 
 #if 0
@@ -413,17 +415,39 @@ static void APROF_(signal)(ThreadId tid, Int sigNo, Bool alt_stack) {
 
 static Bool APROF_(cmd_line)(const HChar* argv) {
     
-    int value = 0;
-    const HChar * val_s;
+    Bool value_bool = False;
+    int value_int = 0;
     
-    if VG_INT_CLO(argv, "--memory-resolution", value) {
-        APROF_(runtime).memory_resolution = value;
+    // default values
+    APROF_(runtime).memory_resolution = 4;
+    APROF_(runtime).log_dir = NULL;
+    APROF_(runtime).collect_CCT = False;
+    APROF_(runtime).function_tracing = True;
+    APROF_(runtime).input_metric = RMS;
+    
+    if VG_INT_CLO(argv, "--memory-resolution", value_int) {
+        
+        APROF_(assert)(value_int == 1 
+                        || value_int == 2
+                        || value_int == 4
+                        || value_int == 8
+                        || value_int == 16,
+                        "Invalid memory resolution");
+        
+        APROF_(runtime).memory_resolution = value_int;
     }
 
-    else if VG_STR_CLO(argv, "--log-dir", val_s) {
-        APROF_(runtime).log_dir = val_s;
+    else if VG_STR_CLO(argv, "--log-dir", APROF_(runtime).log_dir) {}
+    
+    else if VG_BOOL_CLO(argv, "--collect-cct", APROF_(runtime).collect_CCT) {}
+    
+    else if VG_BOOL_CLO(argv, "--internal-fn-tracing", APROF_(runtime).function_tracing) {}
+    
+    else if VG_BOOL_CLO(argv, "--drms", value_bool) {
+        if (value_bool) APROF_(runtime).input_metric = DRMS;
     }
     
+    APROF_(post_init)();
     return True;
 }
 
@@ -432,6 +456,9 @@ static void APROF_(print_usage)(void) {
     VG_(printf)(
         "    --memory-resolution=<n>        Memory resolution of the shadow memory {1, 2, 4, 8, 16} [4]\n"
         "    --log-dir=<PATH>               Reports will be saved in this directory\n"
+        "    --drms=no|yes                  Use the dynamic read memory size [no]\n"
+        "    --collect-cct=no|yes           Collect calling contect tree [no]\n"
+        "    --internal-fn-tracing=yes|no   Use the internal function CALL/RET heuristic [yes]\n"
     );
 }
 

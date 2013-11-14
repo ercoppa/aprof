@@ -47,7 +47,7 @@
 #ifndef _LK_H_
 #define _LK_H_
 
-
+#define OVERFLOW_DEBUG 0
 #define COMPRESS_DEBUG 0
 
 //#define __i386__
@@ -78,9 +78,8 @@ typedef struct LookupTable {
     ILT * table[LK_SIZE];
     #endif
     
-    // cache
-    UInt * last_chunk;
-    UWord  last_chunk_index;
+    UInt flt_size;
+    UInt res_shift;
     
 } LookupTable;
 
@@ -115,9 +114,9 @@ UInt LK_lookup(LookupTable * lt, UWord key);
  * memsha: all the thread shadow memories
  */
 #if COMPRESS_DEBUG
-void LK_compress(UInt * array, UInt size, LookupTable ** memsha, void * f);
+void LK_compress_drms(UInt * array, UInt size, LookupTable ** memsha, void * f);
 #else
-void LK_compress(UInt * array, UInt size, LookupTable ** memsha);
+void LK_compress_drms(UInt * array, UInt size, LookupTable ** memsha);
 #endif
 void LK_compress_rms(LookupTable * uf, UInt * arr_rid, UInt size_arr);
 

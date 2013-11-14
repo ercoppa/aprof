@@ -33,9 +33,10 @@
 
 #include "aprof.h"
 
-#define OVERFLOW_DEBUG 0
+#if OVERFLOW_DEBUG
+static UInt round = 0;
+#endif
 
-#if INPUT_METRIC == DRMS
 /*
  * global_counter is 32 bit integer so it can overflow. To overcome this
  * issue we periodically compress our set of valid timestamps 
@@ -52,22 +53,19 @@
  * Return the new starting value for the global counter: 
  *      3 * size(active_ts).
  */
-#if OVERFLOW_DEBUG
-static UInt round = 0;
-#endif
 UInt APROF_(overflow_handler_drms)(void) {
 
-    //VG_(umsg)("Global counter overflow\n");
+    APROF_(debug_printf)("Global counter overflow\n");
 
-    #if OVERFLOW_DEBUG
+    #if OVERFLOW_DEBUG || COMPRESS_DEBUG
     HChar name[128];
     VG_(sprintf)(name, "overflow_log_%u", round++);
     FILE * f = APROF_(fopen)(name);
-    if (f == NULL) AP_ASSERT(0, "Cannot open overflow log");
+    APROF_(assert)(f != NULL, "Cannot open overflow log");
     #endif
     
     UInt sum = 0; // # valid timestamps
-    UInt count_thread = APROF_(running_threads);
+    UInt count_thread = APROF_(runtime).running_threads;
 
     // pointers to active shadow memories
     LookupTable ** shamem = VG_(calloc)("pointers to all PSM", 
@@ -87,7 +85,7 @@ UInt APROF_(overflow_handler_drms)(void) {
     // compute the number of different activation-ts
     while(i < count_thread && j < VG_N_THREADS){
         
-        if(threads[j] == NULL) {
+        if(APROF_(runtime).threads[j] == NULL) {
         
             j++;
         
@@ -95,12 +93,12 @@ UInt APROF_(overflow_handler_drms)(void) {
         
             #if OVERFLOW_DEBUG
             APROF_(fprintf)(f, "Thread: %u ~ depth: %d\n", j, 
-                                    threads[j]->stack_depth);
+                                    APROF_(runtime).threads[j]->stack_depth);
             APROF_(fflush)(f);
             #endif
         
-            shamem[i] = threads[j]->accesses_rvms;
-            stack_depths[i] = threads[j]->stack_depth;
+            shamem[i] = APROF_(runtime).threads[j]->shadow_memory;
+            stack_depths[i] = APROF_(runtime).threads[j]->stack_depth;
             sum += stack_depths[i]; // over-estimation
             i++; j++;
         
@@ -147,20 +145,20 @@ UInt APROF_(overflow_handler_drms)(void) {
         /* find the max activation ts among all shadow stacks */ 
         for(j = 0; j < count_thread; j++){
 
-            while(threads[k] == NULL) k++;
+            while(APROF_(runtime).threads[k] == NULL) k++;
 
             if(stack_depths[j] > 0){
                 
-                act_tmp = APROF_(get_activation)(threads[k], stack_depths[j]);
+                act_tmp = APROF_(get_activation)(APROF_(runtime).threads[k], stack_depths[j]);
                 
                 #if OVERFLOW_DEBUG
-                APROF_(fprintf)(f, "Thread[%u]: aid = %u\n", k, act_tmp->aid_rvms);
+                APROF_(fprintf)(f, "Thread[%u]: aid = %u\n", k, act_tmp->activation_id);
                 APROF_(fflush)(f);
                 #endif
 
-                if(max < act_tmp->aid_rvms){
+                if(max < act_tmp->activation_id){
                     
-                    max = act_tmp->aid_rvms;
+                    max = act_tmp->activation_id;
                     act_max = act_tmp;
                     max_ind = j;
                 
@@ -180,7 +178,7 @@ UInt APROF_(overflow_handler_drms)(void) {
         
         // next time we check for the max the caller of this act
         stack_depths[max_ind]--; 
-        act_max->aid_rvms = i*3; // re-assign ts
+        act_max->activation_id = i*3; // re-assign ts
     
     }
     
@@ -201,9 +199,9 @@ UInt APROF_(overflow_handler_drms)(void) {
     // compress shadow memories
     #if OVERFLOW_DEBUG
     VG_(umsg)("Compressing\n");
-    LK_compress(active_ts, sum, shamem, f);
+    LK_compress_drms(active_ts, sum, shamem, f);
     #else
-    LK_compress(active_ts, sum, shamem);
+    LK_compress_drms(active_ts, sum, shamem);
     #endif
     
     VG_(free)(active_ts);
@@ -212,24 +210,16 @@ UInt APROF_(overflow_handler_drms)(void) {
     #if OVERFLOW_DEBUG
     APROF_(fclose)(f);
     #endif
-    //VG_(umsg)("Global counter overflow handler end\n");
-    //AP_ASSERT(0, "test");
     
     return 3 * (sum + 1);
 }
-#endif
 
-#if INPUT_METRIC == RMS || DEBUG_DRMS
+
 UInt APROF_(overflow_handler_rms)(void) {
 
-    #if DEBUG
-    VG_(umsg)("Local counter overflow\n");
-    #endif
+    APROF_(debug_printf)("Local counter overflow\n");
 
-    ThreadData * tdata = APROF_(current_tdata);
-    #if DEBUG
-    AP_ASSERT(tdata != NULL, "Invalid tdata");
-    #endif
+    ThreadData * tdata = APROF_(runtime).current_tdata;
 
     /* Collect all valid aid */
     UInt * arr_aid = VG_(calloc)("arr rid", tdata->stack_depth, sizeof(UInt));
@@ -238,18 +228,17 @@ UInt APROF_(overflow_handler_rms)(void) {
     for (j = 0; j < tdata->stack_depth; j++) {
     
         Activation * act_c = APROF_(get_activation)(tdata, j + 1);
-        //VG_(umsg)("%u=%u ", j + 1, act_c->aid_rms);
-        arr_aid[j] = act_c->aid_rms;
-        act_c->aid_rms = j + 1;
+        //VG_(umsg)("%u=%u ", j + 1, act_c->activation_id);
+        arr_aid[j] = act_c->activation_id;
+        act_c->activation_id = j + 1;
         
     }
     
     //VG_(umsg)("\n");
-    LK_compress_rms(tdata->accesses_rms, arr_aid, tdata->stack_depth);
+    LK_compress_rms(tdata->shadow_memory, arr_aid, tdata->stack_depth);
     VG_(free)(arr_aid);
 
     //VG_(umsg)("Local counter: %u\n", tdata->stack_depth + 1);
     return tdata->stack_depth + 1;
 
 }
-#endif // INPUT_METRIC == RMS || DISTINCT_RMS
