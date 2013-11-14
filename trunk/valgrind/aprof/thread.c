@@ -56,18 +56,18 @@ static ThreadData * APROF_(thread_start)(ThreadId tid){
     tdata->last_exit = NONE;
     tdata->next_activation_id = 1;
     tdata->shadow_memory = LK_create();
-    tdata->next_routine_id = 1;
+    tdata->next_routine_id = 0;
     tdata->next_context_id = 1;
     
     if (APROF_(runtime).collect_CCT) // allocate dummy CCT root
         tdata->root = APROF_(new)(CCT_S, sizeof(CCTNode));
     else
         tdata->root = NULL;
-
+        
     // registering thread
     APROF_(runtime).threads[tid-1] = tdata;
     APROF_(runtime).running_threads++;
-
+    
     return tdata;
 }
 
@@ -78,7 +78,7 @@ void APROF_(thread_exit)(ThreadId tid) {
     
     ThreadData * tdata = APROF_(runtime).threads[tid - 1];
     APROF_(debug_assert)(tdata != NULL, "Invalid tdata");
-    
+
     APROF_(unwind_stack)(tdata);
     APROF_(generate_report)(tdata, tid);
 
@@ -101,9 +101,11 @@ void APROF_(thread_exit)(ThreadId tid) {
         APROF_(remove_alloc)(ACT_S);
     #endif // DEBUG_ALLOCATION
 
+    if (APROF_(runtime).collect_CCT)
+        APROF_(free_CCT)(tdata->root);
+
     VG_(free)(tdata->stack);
     LK_destroy(tdata->shadow_memory);
-    APROF_(free_CCT)(tdata->root);
     HT_destruct(tdata->rtn_ht);
     APROF_(delete)(T_S, tdata);
     

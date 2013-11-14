@@ -94,8 +94,7 @@ void APROF_(fclose)(FILE * f) {
     
     APROF_(fflush)(f);
     VG_(close)(f->file);
-    VG_(free)(f);
-
+    APROF_(delete)(FILE_S, f);
 }
 
 void APROF_(fprintf)(FILE * f, const HChar * format, ...) {

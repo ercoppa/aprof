@@ -79,12 +79,13 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
     
     RoutineInfo * rtn_info = act->routine_info;
     APROF_(debug_assert)(rtn_info != NULL, "Invalid routine info");
-    rtn_info->recursion_pending++;
     
     if (rtn_info->fn->skip) {
         tdata->skip++;
         return;
     }
+    
+    if (tdata->skip > 0) return;
     
     if (APROF_(runtime).input_metric == RMS) {
         
@@ -104,6 +105,7 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
         }
     }
     
+    rtn_info->recursion_pending++;
     act->sum_children_cost = 0;
     act->input_size = 0;
     
@@ -150,30 +152,35 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
     APROF_(debug_assert)(tdata != NULL, "Thread data is not valid");
     APROF_(debug_assert)(act != NULL, "Invalid activation info");
     APROF_(verbose)(1, "Exit: %s\n", act->routine_info->fn->name);
-    
+
     #if EVENTCOUNT
     tdata->num_func_exit++;
     #endif
-    
+
     #if EMPTY_ANALYSIS
     return;
     #endif
 
     ULong cumul_cost = APROF_(time)(tdata) - act->start;
-    ULong self_cost = cumul_cost - act->sum_children_cost;
-    
+
     RoutineInfo * rtn_info = act->routine_info;
     APROF_(debug_assert)(rtn_info != NULL, "Invalid routine info");
-    
+
     if (tdata->skip > 0) {
         
-        if (tdata->skip == 1)
+        if (rtn_info->fn->skip) {
+            tdata->skip--;
             tdata->skip_cost += cumul_cost;
+        }
         
-        tdata->skip--;
         return;
     }
-
+    
+    APROF_(debug_assert)(cumul_cost >= act->sum_children_cost, "Invalid cost");
+    ULong self_cost = cumul_cost - act->sum_children_cost;
+    
+    rtn_info->recursion_pending--;
+    
     if (!rtn_info->fn->discard) {
     
         UWord key;
@@ -190,6 +197,10 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
             tuple->min_cumulative_cost = (ULong)-1;
             tuple->min_self_cost = (ULong)-1;
             tuple->key = key;
+            tuple->input_size = act->input_size;
+            
+            if (APROF_(runtime).collect_CCT)
+                tuple->context_id = act->node->context_id;
             
             HT_add_node(rtn_info->input_map, key, tuple);
         }
@@ -212,6 +223,7 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
         tuple->sum_self_cost += self_cost;
         tuple->sqr_self_cost += self_cost * self_cost;
         
+        /*
         tuple->max_self_cost = tuple->max_self_cost ^  // max(x, y)
                                     ((tuple->max_self_cost ^ self_cost) 
                                     & -(tuple->max_self_cost < self_cost)); 
@@ -219,7 +231,13 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
         tuple->min_self_cost = tuple->min_self_cost ^ // min(x, y)
                                     ((self_cost ^ tuple->min_self_cost) 
                                     & -(self_cost < tuple->min_self_cost)); 
-
+        */
+        tuple->max_self_cost = (tuple->max_self_cost < self_cost) 
+                                ? self_cost : tuple->max_self_cost;
+        
+        tuple->min_self_cost = (tuple->min_self_cost > self_cost) 
+                                ? self_cost : tuple->min_self_cost;
+        
         // real cumulative cost
         if (rtn_info->recursion_pending < 2) 
             tuple->sum_cumul_real_cost += cumul_cost;
@@ -239,16 +257,21 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
         
         #endif // INPUT_STATS   
     }
-    
-    Activation * parent_activation = APROF_(get_activation_noresize)(
-                                tdata, tdata->stack_depth - 1);
-    APROF_(debug_assert)(parent_activation != NULL, "Invalid parent activation");
 
-    parent_activation->input_size += act->input_size;
-    parent_activation->sum_children_cost += cumul_cost;
-    
-    #if INPUT_STATS
-    parent_activation->cumul_syscall += act->cumul_syscall;
-    parent_activation->cumul_thread += act->cumul_thread;
-    #endif
+    if (tdata->stack_depth > 1) {
+        
+        Activation * parent_activation = APROF_(get_activation_noresize)(
+                                    tdata, tdata->stack_depth - 1);
+        APROF_(debug_assert)(parent_activation != NULL, "Invalid parent activation");
+        
+        parent_activation->input_size += act->input_size;
+        parent_activation->sum_children_cost += cumul_cost;
+        
+        #if INPUT_STATS
+        ULong a = act->cumul_syscall;
+        ULong b = act->cumul_thread;
+        parent_activation->cumul_syscall += a;
+        parent_activation->cumul_thread += b;
+        #endif
+    }
 }

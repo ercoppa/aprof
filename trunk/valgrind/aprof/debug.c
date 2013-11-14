@@ -85,20 +85,24 @@ void APROF_(remove_alloc)(UWord type) {
 
 void APROF_(print_alloc)(void) {
 
-    VG_(umsg)("Report allocations of aprof:\n\n");
+    //VG_(umsg)("Report allocations of aprof:\n\n");
 
     UInt est = 0;
     UInt i = 0;
     for (i = 0; i < A_NONE; i++) {
-        VG_(umsg)("Allocated %u %s ~ %u kb (%u mb)\n",
-                alloc_counter[i], alloc_type_name[i],
-                (alloc_counter[i] * alloc_type_size[i]) / 1024,
-                (alloc_counter[i] * alloc_type_size[i]) / 1024 / 1024);
+        
+        if (alloc_counter[i] > 0)
+            VG_(umsg)("Allocated %u %s ~ %u kb (%u mb)\n",
+                    alloc_counter[i], alloc_type_name[i],
+                    (alloc_counter[i] * alloc_type_size[i]) / 1024,
+                    (alloc_counter[i] * alloc_type_size[i]) / 1024 / 1024);
+        
         est += alloc_counter[i] * alloc_type_size[i];
     }
 
-    VG_(umsg)("\n");
-    VG_(umsg)("Estimated space usage: %u kb (%u mb)\n\n", est/1024, est/1024/1024);
+    if (est > 0)
+        VG_(umsg)("\nEstimated space usage: %u kb (%u mb)\n\n", 
+                            est/1024, est/1024/1024);
 }
 
 #endif

@@ -259,9 +259,43 @@ static IRSB* APROF_(instrument) (
     return sbOut;
 }
 
+static void APROF_(default_params)(void) {
+    
+    // default values
+    APROF_(runtime).memory_resolution = 4;
+    APROF_(runtime).log_dir = NULL;
+    APROF_(runtime).collect_CCT = False;
+    APROF_(runtime).function_tracing = True;
+    APROF_(runtime).input_metric = RMS;
+}
+
 // aprof initialization
 // some runtime parameters are set by APROF_(cmd_line)()
 static void APROF_(init)(void) {
+    
+    if (APROF_(runtime).function_tracing)
+        APROF_(runtime).bb_ht = HT_construct(VG_(free));
+    else
+        APROF_(runtime).bb_ht = NULL;
+    
+    APROF_(assert)(APROF_(runtime).input_metric == RMS 
+                    || APROF_(runtime).input_metric == DRMS,
+                    "Invalid input size metric");
+    
+    if (APROF_(runtime).input_metric == DRMS) {
+        
+        APROF_(runtime).global_shadow_memory = LK_create();
+        APROF_(runtime).flush_events = APROF_(flush_events_drms);
+        
+        VG_(needs_syscall_wrapper) (
+                                        APROF_(pre_syscall), 
+                                        APROF_(post_syscall)
+                                    );
+    
+    } else {
+        APROF_(runtime).global_shadow_memory = NULL;
+        APROF_(runtime).flush_events = APROF_(flush_events_rms);
+    }
     
     APROF_(runtime).fn_ht = HT_construct(NULL);    
     APROF_(runtime).obj_ht = HT_construct(NULL);
@@ -277,26 +311,6 @@ static void APROF_(init)(void) {
     
     VG_(clo_vex_control).iropt_unroll_thresh = 0;
     VG_(clo_vex_control).guest_chase_thresh  = 0;
-}
-
-static void APROF_(post_init)(void) {
-    
-    if (APROF_(runtime).function_tracing)
-        APROF_(runtime).bb_ht = HT_construct(VG_(free));
-    else
-        APROF_(runtime).bb_ht = NULL;
-    
-    APROF_(assert)(APROF_(runtime).input_metric == RMS 
-                    || APROF_(runtime).input_metric == RMS,
-                    "Invalid input size metric");
-    
-    if (APROF_(runtime).input_metric == DRMS) {
-        APROF_(runtime).global_shadow_memory = LK_create();
-        APROF_(runtime).flush_events = APROF_(flush_events_drms);
-    } else {
-        APROF_(runtime).global_shadow_memory = NULL;
-        APROF_(runtime).flush_events = APROF_(flush_events_rms);
-    }
 }
 
 #if MEM_USAGE_INFO 
@@ -418,13 +432,6 @@ static Bool APROF_(cmd_line)(const HChar* argv) {
     Bool value_bool = False;
     int value_int = 0;
     
-    // default values
-    APROF_(runtime).memory_resolution = 4;
-    APROF_(runtime).log_dir = NULL;
-    APROF_(runtime).collect_CCT = False;
-    APROF_(runtime).function_tracing = True;
-    APROF_(runtime).input_metric = RMS;
-    
     if VG_INT_CLO(argv, "--memory-resolution", value_int) {
         
         APROF_(assert)(value_int == 1 
@@ -447,7 +454,6 @@ static Bool APROF_(cmd_line)(const HChar* argv) {
         if (value_bool) APROF_(runtime).input_metric = DRMS;
     }
     
-    APROF_(post_init)();
     return True;
 }
 
@@ -458,7 +464,7 @@ static void APROF_(print_usage)(void) {
         "    --log-dir=<PATH>               Reports will be saved in this directory\n"
         "    --drms=no|yes                  Use the dynamic read memory size [no]\n"
         "    --collect-cct=no|yes           Collect calling contect tree [no]\n"
-        "    --internal-fn-tracing=yes|no   Use the internal function CALL/RET heuristic [yes]\n"
+    //    "    --internal-fn-tracing=yes|no   Use the internal function CALL/RET heuristic [yes]\n"
     );
 }
 
@@ -483,15 +489,8 @@ static void APROF_(pre_clo_init)(void) {
                                         NULL
                                     );
     
-    #if !TRACE_FUNCTION
+    #if 0
     VG_(needs_client_requests)      (APROF_(trace_function));
-    #endif
-    
-    #if INPUT_METRIC == DRMS
-    VG_(needs_syscall_wrapper)      (
-                                        APROF_(pre_syscall), 
-                                        APROF_(post_syscall)
-                                    );
     #endif
     
     VG_(track_pre_thread_ll_create) (APROF_(thread_create));
@@ -501,6 +500,7 @@ static void APROF_(pre_clo_init)(void) {
     
     VG_(clo_vex_control).iropt_unroll_thresh = 0;
     VG_(clo_vex_control).guest_chase_thresh  = 0;
+    APROF_(default_params)();
 }
 
 VG_DETERMINE_INTERFACE_VERSION(APROF_(pre_clo_init))

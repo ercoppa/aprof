@@ -104,6 +104,8 @@ void LK_destroy(LookupTable * lk) {
 
 UInt LK_insert(LookupTable * lk, UWord addr, UInt ts) {
 
+    APROF_(debug_assert)(lk != NULL, "Invalid lookup table");
+
     #ifdef __i386__
     UWord i = addr >> 16;
     

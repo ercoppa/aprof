@@ -195,7 +195,7 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
                     APROF_(fprintf)(report, "p %lu ", rtn_info->routine_id);
                 
                 APROF_(fprintf)(report,
-                                "%lu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu\n",
+                                "%lu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu",
                                 tuple->input_size,
                                 tuple->min_cumulative_cost,
                                 tuple->max_cumulative_cost,
@@ -209,12 +209,11 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
                                 tuple->sqr_self_cost
                                 );
                 
-                
                 #if INPUT_STATS
                 if (APROF_(runtime).input_metric == DRMS) {
                     
                     APROF_(fprintf)(report,
-                                    " %llu %llu %llu %llu",
+                                    " 0 0 %llu %llu %llu %llu",
                                     tuple->sum_cumul_syscall,
                                     tuple->sum_cumul_thread,
                                     tuple->sum_self_syscall,
@@ -228,9 +227,10 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
                 tuple = HT_RemoveNext(rtn_info->input_map);
             }
             
-            APROF_(destroy_routine_info)(rtn_info);
-            rtn_info = HT_RemoveNext(tdata->rtn_ht);
         }
+        
+        APROF_(destroy_routine_info)(rtn_info);
+        rtn_info = HT_RemoveNext(tdata->rtn_ht);
     }
     
     if (APROF_(runtime).collect_CCT)
