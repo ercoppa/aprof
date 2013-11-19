@@ -569,8 +569,7 @@ static RoutineInfo * merge_tuple(HChar * line_input, RoutineInfo * curr,
         if (sqr_sum < ((double) min) * ((double) min) * ((double) occ)
                 && !r->sqr_over) {
             
-            EMSG(
-                    YELLOW("Warning:") " Invalid sqr_sum (overflow?): %s\n", report);
+            EMSG(YELLOW("Warning:") " Invalid sqr_sum (overflow?): %s\n", report);
             
             r->sqr_over = True;
         }

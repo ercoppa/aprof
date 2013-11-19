@@ -138,7 +138,7 @@
 
 #define vgAprof_assert(cond, ...)   do{ \
                                         if (UNLIKELY(!(cond))) { \
-                                            VG_(printf)(__VA_ARGS__); \
+                                            VG_(umsg)(__VA_ARGS__); \
                                             tl_assert(cond); \
                                         } \
                                     } while(0);
@@ -146,7 +146,7 @@
 #if DEBUG
     #define vgAprof_debug_assert(cond, ...) do{ \
                                                 if (UNLIKELY(!(cond))) { \
-                                                    VG_(printf)(__VA_ARGS__); \
+                                                    VG_(umsg)(__VA_ARGS__); \
                                                     tl_assert(cond); \
                                                 } \
                                             } while(0);
@@ -264,6 +264,9 @@ Bool APROF_(trace_function)(ThreadId tid, UWord * arg, UWord * ret);
 void APROF_(print_info_mem_usage)(void);
 #endif
 
+/* merge.c */
+void APROF_(load_reports)(void);
+    
 /* Syscall wrappers (syscall.c) */
 void APROF_(pre_syscall)(ThreadId tid, UInt syscallno, UWord * args, 
                          UInt nArgs);
@@ -303,6 +306,8 @@ inline ULong APROF_(time)(ThreadData * tdata) {
     #endif
 }
 #endif // COST == RDTSC
+
+extern inline UInt APROF_(str_hash)(const HChar *s);
 
 /* internal functions of valgrind */
 const HChar* ML_(find_executable) (const HChar * exec);

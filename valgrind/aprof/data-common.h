@@ -78,6 +78,9 @@ typedef struct Function {
     Bool        discard;    // discard information about this function
     Bool        skip;       // ignore this and all its children
     
+    HashTable * input_map;  // input tuples (used if single_report == True) 
+    ULong       function_id;// id (used if single_report == True) 
+    
 } Function;
 
 #if APROF_TOOL
@@ -236,8 +239,7 @@ typedef struct ThreadData {
     ULong           next_routine_id;    // next routine id 
     UInt            skip;               // # active rtn with discard info
     ULong           skip_cost;          // sum skipped rtn costs
-    ULong           extra_cost;         // needed when merging reports
-    
+ 
     UInt            next_activation_id; // next act id (RMS)
     
     CCTNode *       root;               // CCT root
@@ -271,15 +273,24 @@ typedef struct Runtime {
     BB *            last_bb;                // last BB seen
     HashTable *     obj_ht;                 // Object hash table
     HashTable *     fn_ht;                  // Function hash table
-    ULong           binary_mtime;           // exec's modification time
+    ULong           binary_mtime;           // exec's modification time 
+    HChar *         application;            // application name
+    HChar *         cmd_line;               // command line
     
     LookupTable *   global_shadow_memory;   // Global shadow memory (DRMS)
     UInt            global_counter;         // Global counter (DRMS)
     
     Addr            dl_runtime_resolve_addr;    // dl_runtime_resolve address
-    int             dl_runtime_resolve_length;  // dl_runtime_resolve length
+    Int             dl_runtime_resolve_length;  // dl_runtime_resolve length
                                                 // if 1, then dl_* is stripped
     
+    Bool            loaded_report;              // needed when merging reports
+    ULong           extra_cost;                 // needed when merging reports
+    
+    UInt            next_function_id;
+    UInt            next_context_id;
+    CCTNode *       root;
+   
     /* Some configuration parameters */
     
     // Memory resolution: we can aggregate addresses in order
@@ -307,6 +318,9 @@ typedef struct Runtime {
     // Collect calling context tree
     // Default: False
     Bool            collect_CCT;
+
+    Bool            single_report;
+    Bool            incremental_report;
 
 } Runtime;
 

@@ -1,8 +1,8 @@
 /*
  * Global/local counter overflow handlers
  * 
- * Last changed: $Date: 2013-09-05 21:30:23 +0200 (gio, 05 set 2013) $
- * Revision:     $Rev: 890 $
+ * Last changed: $Date$
+ * Revision:     $Rev$
  */
 
 /*

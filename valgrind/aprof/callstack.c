@@ -35,6 +35,7 @@
 */
 
 #include "aprof.h"
+#include "aprof_inline.h"
 
 Activation * APROF_(resize_stack)(ThreadData * tdata, unsigned int depth) {
 
@@ -59,16 +60,6 @@ Activation * APROF_(resize_stack)(ThreadData * tdata, unsigned int depth) {
     }
     
     return tdata->stack + depth - 1;
-}
-
-static inline UInt APROF_(str_hash)(const HChar *s) {
-    
-    UInt hash_value = 0;
-    for (; *s; s++)
-        hash_value = 31 * hash_value + *s;
-    
-    APROF_(debug_assert)(hash_value > 0, "Invalid hash value");
-    return hash_value;
 }
 
 /* Obtain a BB from bb_ht or allocate a new BB */
@@ -477,6 +468,7 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
                 
                 f = APROF_(new)(FN_S, sizeof(Function));
                 f->key = hash;
+                f->function_id = APROF_(runtime).next_function_id++;
                 
                 /* 
                  * fn is a buffer of 4096, if possible try to minimize

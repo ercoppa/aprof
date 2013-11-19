@@ -90,8 +90,11 @@ static FILE * init_report(const HChar * prog_name, ThreadId tid,
 
 void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
     
+    if (APROF_(runtime).single_report 
+        && APROF_(runtime).running_threads > 1) return;
+    
     HChar * filename = NULL;
-    HChar * prog_name = (HChar *) VG_(args_the_exename);
+    HChar * prog_name = APROF_(runtime).application;
     FILE * report = init_report(prog_name, tid, &filename);
 
     APROF_(assert)(report != NULL, "Report can not be created: %s", filename);
@@ -116,8 +119,7 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
                                         + tdata->extra_cost);
     #else 
     APROF_(fprintf)(report, "k %llu\n", APROF_(time)(tdata) 
-                                        - tdata->skip_cost
-                                        + tdata->extra_cost);
+                                        - tdata->skip_cost);
     #endif
     
     // write mtime binary
@@ -152,16 +154,7 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
     APROF_(fprintf)(report, "a %s\n", prog_name);
     
     // write commandline
-    APROF_(fprintf)(report, "f %s", prog_name);
-    XArray * x = VG_(args_for_client);
-    int i = 0;
-    for (i = 0; i < VG_(sizeXA)(x); i++) {
-        HChar ** c = VG_(indexXA)(x, i);
-        if (c != NULL) {
-            APROF_(fprintf)(report, " %s", *c);
-        }
-    }
-    APROF_(fprintf)(report, "\n");
+    APROF_(fprintf)(report, "f %s\n", APROF_(runtime).cmd_line);
 
     // iterate over routines
     HT_ResetIter(tdata->rtn_ht);
