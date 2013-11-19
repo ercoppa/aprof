@@ -50,20 +50,30 @@ static ThreadData * APROF_(thread_start)(ThreadId tid){
     for (j = 0; j < STACK_SIZE; j++) APROF_(add_alloc)(ACT_S);
     #endif
     
-    tdata->rtn_ht = HT_construct(NULL);
     tdata->cost = APROF_(time)(tdata);
     tdata->last_bb = NULL;
     tdata->last_exit = NONE;
     tdata->next_activation_id = 1;
     tdata->shadow_memory = LK_create();
+    tdata->rtn_ht = HT_construct(NULL);
     tdata->next_routine_id = 0;
     tdata->next_context_id = 1;
     
-    if (APROF_(runtime).collect_CCT) // allocate dummy CCT root
-        tdata->root = APROF_(new)(CCT_S, sizeof(CCTNode));
-    else
-        tdata->root = NULL;
-        
+    
+    if (APROF_(runtime).collect_CCT){
+        if (!APROF_(runtime).single_report) 
+            tdata->root = APROF_(new)(CCT_S, sizeof(CCTNode));
+        else
+            tdata->root = APROF_(runtime).root;
+    }
+    
+    if (APROF_(runtime).incremental_report 
+            && !APROF_(runtime).loaded_report) {
+                
+        APROF_(load_reports)();
+        APROF_(runtime).loaded_report = True;
+    }
+    
     // registering thread
     APROF_(runtime).threads[tid-1] = tdata;
     APROF_(runtime).running_threads++;

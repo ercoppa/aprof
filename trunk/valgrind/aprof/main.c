@@ -267,6 +267,8 @@ static void APROF_(default_params)(void) {
     APROF_(runtime).collect_CCT = False;
     APROF_(runtime).function_tracing = True;
     APROF_(runtime).input_metric = RMS;
+    APROF_(runtime).incremental_report = True;
+    APROF_(runtime).single_report = True;
 }
 
 // aprof initialization
@@ -308,6 +310,25 @@ static void APROF_(init)(void) {
     APROF_(runtime).last_exit = NONE;
     APROF_(runtime).dl_runtime_resolve_addr = 0;
     APROF_(runtime).dl_runtime_resolve_length = 0;
+    APROF_(runtime).next_function_id = 0;
+    
+    if (APROF_(runtime).collect_CCT && APROF_(runtime).single_report)
+        APROF_(runtime).root = APROF_(new)(CCT_S, sizeof(CCTNode));
+        
+    APROF_(runtime).application = VG_(strdup)("app", VG_(args_the_exename));
+    APROF_(runtime).cmd_line = VG_(malloc)("cmd", 4096);
+    
+    // write commandline
+    XArray * x = VG_(args_for_client);
+    UInt i = 0, offset = 0;
+    offset += VG_(sprintf)(APROF_(runtime).cmd_line, "%s", APROF_(runtime).application);
+    for (i = 0; i < VG_(sizeXA)(x); i++) {
+        HChar ** c = VG_(indexXA)(x, i);
+        if (c != NULL) {
+            offset += VG_(sprintf)(APROF_(runtime).cmd_line, " %s", *c);
+        }
+        APROF_(assert)(offset < 4096, "command line too long\n");
+    }
     
     VG_(clo_vex_control).iropt_unroll_thresh = 0;
     VG_(clo_vex_control).guest_chase_thresh  = 0;

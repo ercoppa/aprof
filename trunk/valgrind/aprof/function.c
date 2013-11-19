@@ -50,11 +50,22 @@ RoutineInfo * APROF_(new_routine_info)(ThreadData * tdata,
     
     rtn_info->key = target;
     rtn_info->fn = fn;
-    
+        
     if (!rtn_info->fn->discard) {
-
-        rtn_info->routine_id = tdata->next_routine_id++;
-        rtn_info->input_map = HT_construct(NULL);
+        
+        if (APROF_(runtime).single_report) {
+            
+            if (rtn_info->fn->input_map == NULL)
+                rtn_info->fn->input_map = HT_construct(NULL);
+                
+            rtn_info->input_map = rtn_info->fn->input_map;
+            rtn_info->routine_id = rtn_info->fn->function_id;
+        
+        } else {
+        
+            rtn_info->routine_id = tdata->next_routine_id++;
+            rtn_info->input_map = HT_construct(NULL);
+        }
     }
     
     HT_add_node(tdata->rtn_ht, rtn_info->key, rtn_info);
