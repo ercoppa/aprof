@@ -1,5 +1,5 @@
 /*
- * Inline functions
+ * Inlined functions
  * 
  * Last changed: $Date$
  * Revision:     $Rev$
