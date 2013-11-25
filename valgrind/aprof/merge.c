@@ -37,13 +37,30 @@
 #define DELIM_SQ '$'
 #define DELIM_DQ "$"
 
-#define UOF_LONG(error, token, val, line) APROF_(assert)(!(val == 0 && error == token), \
-                                                            "under/over flow: %s", line);
+// check for overflow (long)
+#define ADD(dest, inc) do { \
+                            ULong old = dest; \
+                            dest += inc; \
+                            APROF_(assert)(dest >= old, "overflow"); \
+                            } while(0); 
+
+// check for overflow (double)
+#define ADD_D(dest, inc) do { \
+                            double old = dest; \
+                            dest += inc; \
+                            APROF_(assert)(dest >= old, "overflow"); \
+                            } while(0); 
 
 #if !APROF_TOOL
     #define HELPER(action) action
+    #define WARNING(cond, ...) do { if (!(cond)) EMSG(YELLOW("Warning:") __VA_ARGS__) } while(0);
 #else
     #define HELPER(action)
+    #define WARNING(cond, ...)
+    #define UOF_LONG(error, token, val, line) APROF_(assert)(!(val == 0 && error == token), \
+                                                                "under/over flow: %s", line)
+    #define UOF_DOUBLE(error, token, val, line) APROF_(assert)(!(val == 0 && error == token), \
+                                                               "under/over flow: %s", line)
 #endif
 
 static UInt APROF_(search_reports)(HChar *** reports) {
@@ -216,8 +233,7 @@ static Function * APROF_(merge_tuple)(  HChar * line_input,
     if (token[0] == 'r') {
         
         if (curr != NULL) {
-            if (*real_cumul == 0)
-                HELPER(EMSG(YELLOW("Warning:") "Invalid cumul: %s", line_orig));
+            WARNING(*real_cumul > 0, "Invalid cumul: %s", line_orig);
         } else 
             HELPER(ADD(r->performance_metric, *real_cumul));
         
@@ -330,7 +346,7 @@ static Function * APROF_(merge_tuple)(  HChar * line_input,
         }
         
     } else if (token[0] == 'p') {
-        #if 0
+        
         // routine ID
         token = VG_(strtok)(NULL, DELIM_DQ);
         APROF_(assert)(token != NULL, "Invalid id: %s", line_orig);
@@ -340,231 +356,194 @@ static Function * APROF_(merge_tuple)(  HChar * line_input,
         
         APROF_(assert)(*rid == id, "Routine id mismatch: %s", line_orig);
         
-        UInt i;
-        for (i = 0; i < sizeof(rtn_skip) / sizeof(HChar *); i++) {
-            if (VG_(strcmp)(rtn_skip[i], curr->fn->name) == 0) {
-                VG_(free)(line);
-                r->tmp = 1;
-                return curr;
-            }
-        }
-        
-        // RMS
+        // input size
         token = VG_(strtok)(NULL, DELIM_DQ);
-        APROF_(assert)(token != NULL, "Invalid rms: %s", line_orig);
-        ULong rms = VG_(strtoull10) (token, NULL);
-        UOF_LONG(error, token, rms, line_orig);
+        APROF_(assert)(token != NULL, "Invalid input size: %s", line_orig);
+        ULong input_size = VG_(strtoull10) (token, NULL);
+        UOF_LONG(error, token, input_size, line_orig);
         
         // min
         token = VG_(strtok)(NULL, DELIM_DQ);
         APROF_(assert)(token != NULL, "Invalid min: %s", line_orig);
         ULong min = VG_(strtoull10) (token, NULL);
-        APROF_(assert)(min != LLONG_MIN && min != LLONG_MAX,
-                "under/overflow: %s", line_orig);
-        APROF_(assert)(min > 0, "Invalid min: %s", line_orig);
-        
+        UOF_LONG(error, token, min, line_orig);
+        WARNING(min > 0, "Invalid min: %s", line_orig);
+
         // max
         token = VG_(strtok)(NULL, DELIM_DQ);
         APROF_(assert)(token != NULL, "Invalid max: %s", line_orig);
         ULong max = VG_(strtoull10) (token, NULL);
         UOF_LONG(error, token, max, line_orig);
-        APROF_(assert)(max > 0 && max >= min, "Invalid max: %s", line_orig);
+        WARNING(max > 0 && max >= min, "Invalid max: %s", line_orig);
         
         // sum
         token = VG_(strtok)(NULL, DELIM_DQ);
         APROF_(assert)(token != NULL, "Invalid sum: %s", line_orig);
         ULong sum = VG_(strtoull10) (token, NULL);
         UOF_LONG(error, token, sum, line_orig);
-        APROF_(assert)(sum >= max, "Invalid sum: %s", line_orig);
+        WARNING(sum >= max, "Invalid sum: %s", line_orig);
         
         // sqr sum
         token = VG_(strtok)(NULL, DELIM_DQ);
         APROF_(assert)(token != NULL, "Invalid sqr sum: %s", line_orig);
         double sqr_sum = VG_(strtod)(token, NULL);
-        UOF_DOUBLE(sqr_sum, line_orig);
-        APROF_(assert)(sqr_sum >= sum, "Invalid sqr_sum: %s", line_orig);
+        UOF_DOUBLE(error, token, sqr_sum, line_orig);
+        WARNING(sqr_sum >= sum, "Invalid sqr_sum: %s", line_orig);
         
         // occ
         token = VG_(strtok)(NULL, DELIM_DQ);
         APROF_(assert)(token != NULL, "Invalid occ: %s", line_orig);
         ULong occ = VG_(strtoull10) (token, NULL);
         UOF_LONG(error, token, occ, line_orig);
-        APROF_(assert)(occ > 0, "Invalid occ: %s", line_orig);
+        WARNING(occ > 0, "Invalid occ: %s", line_orig);
         
-        APROF_(assert)(sum >= min*occ, "Invalid sum: %s", line_orig);
+        WARNING(sum >= min*occ, "Invalid sum: %s", line_orig);
         
-        if (sqr_sum < ((double) min) * ((double) min) * ((double) occ)
+        HELPER(if (sqr_sum < ((double) min) * ((double) min) * ((double) occ)
                 && !r->sqr_over) {
             
-            EMSG(
-                    YELLOW("Warning:") " Invalid sqr_sum (overflow?): %s\n", report);
-            
+            WARNING(0, "Invalid sqr_sum (overflow?): %s\n", report);
             r->sqr_over = True;
-        }
+        })
         
         // cumul_real
         token = VG_(strtok)(NULL, DELIM_DQ);
         APROF_(assert)(token != NULL, "Invalid cumul: %s", line_orig);
         ULong cumul_real = VG_(strtoull10) (token, NULL);
         UOF_LONG(error, token, cumul_real, line_orig);
-        APROF_(assert)(cumul_real >= 0 && cumul_real <= sum,
-                "Invalid cumul: %s", line_orig);
+        WARNING(cumul_real >= 0 && cumul_real <= sum, "Invalid cumul: %s", line_orig);
         
-        ADD(r->tmp, cumul_real);
+        HELPER(ADD(r->tmp, cumul_real));
         
         // self_total
         token = VG_(strtok)(NULL, DELIM_DQ);
         APROF_(assert)(token != NULL, "Invalid self total: %s", line_orig);
         ULong self = VG_(strtoull10) (token, NULL);
         UOF_LONG(error, token, self, line_orig);
-        APROF_(assert)(self > 0 && self <= sum, "Invalid self total: %s", line_orig);
+        WARNING(self > 0 && self <= sum, "Invalid self total: %s", line_orig);
         
         // self_min
         token = VG_(strtok)(NULL, DELIM_DQ);
         APROF_(assert)(token != NULL, "Invalid self min: %s", line_orig);
         ULong self_min = VG_(strtoull10) (token, NULL);
         UOF_LONG(error, token, self_min, line_orig);
-        APROF_(assert)(self_min > 0 && self_min <= min,
-                "Invalid self min: %s", line_orig);
+        WARNING(self_min > 0 && self_min <= min, "Invalid self min: %s", line_orig);
         
-        APROF_(assert)(self >= self_min*occ, "Invalid self total: %s", line_orig);
+        WARNING(self >= self_min*occ, "Invalid self total: %s", line_orig);
         
         // self_max
         token = VG_(strtok)(NULL, DELIM_DQ);
         APROF_(assert)(token != NULL, "Invalid self max: %s", line_orig);
         ULong self_max = VG_(strtoull10) (token, NULL);
         UOF_LONG(error, token, self_max, line_orig);
-        APROF_(assert)(self_max >= self_min && self_max <= max,
-                "Invalid self max: %s", line_orig);
+        WARNING(self_max >= self_min && self_max <= max, "Invalid self max: %s", line_orig);
         
         // sqr self
         token = VG_(strtok)(NULL, DELIM_DQ);
         APROF_(assert)(token != NULL, "Invalid sqr self: %s", line_orig);
         double self_sqr = VG_(strtod)(token, NULL);
-        UOF_DOUBLE(self_sqr, line_orig);
+        UOF_DOUBLE(error, token, self_sqr, line_orig);
         
-        if (self_sqr < ((double) self_min) * ((double) self_min)
+        HELPER(if (self_sqr < ((double) self_min) * ((double) self_min)
                 && !r->self_sqr_over) {
             
-            EMSG(
-                    YELLOW("Warning:") " Invalid self sqr (overflow?): %s\n", report);
-            
+            WARNING("Invalid self sqr (overflow?): %s\n", report);
             r->self_sqr_over = True;
-        }
+        })
         
-        ULong rms_sum = 0;
-        double rms_sqr = 0;
-        ULong rvms_syscall_sum = 0;
-        ULong rvms_thread_sum = 0;
-        ULong rvms_syscall_self = 0;
-        ULong rvms_thread_self = 0;
-        if (r->version == REPORT_VERSION && r->input_metric == RVMS) {
+        ULong sum_cumul_syscall = 0;
+        ULong sum_cumul_thread = 0;
+        ULong sum_self_syscall = 0;
+        ULong sum_self_thread = 0;
+        do {
             
-            // rms sum
+            // input_size sum (deprecated)
             token = VG_(strtok)(NULL, DELIM_DQ);
-            APROF_(assert)(token != NULL, "Invalid rms sum: %s", line_orig);
-            rms_sum = VG_(strtoull10) (token, NULL);
-            UOF_LONG(error, token, rms_sum, line_orig);
-            APROF_(assert)(rms_sum <= rms*occ, "invalid rms sum: %s", line_orig);
+            if (token == NULL) break;
             
-            // ratio sum sqr
+            // input_size sqr (deprecated)
             token = VG_(strtok)(NULL, DELIM_DQ);
-            APROF_(assert)(token != NULL, "Invalid sqr rms: %s", line_orig);
-            rms_sqr = VG_(strtod)(token, NULL);
-            UOF_DOUBLE(rms_sqr, line_orig);
-            APROF_(assert)(rms_sqr <= ((double)rms) * ((double)rms) * ((double)occ),
-                    "invalid rms sqr: %s", line_orig);
+            APROF_(assert)(token != NULL, "Invalid input_size sum sqr: %s", line_orig);
             
-            // rvms syscall sum
+            // sum cumulative syscall input
             token = VG_(strtok)(NULL, DELIM_DQ);
-            if (token != NULL) {
-                
-                rvms_syscall_sum = VG_(strtoull10) (token, NULL);
-                UOF_LONG(error, token, rvms_syscall_sum, line_orig);
-                APROF_(assert)(rvms_syscall_sum <= rms*occ,
-                        "invalid rvms syscall: %s", line_orig);
-                
-                // rvms thread sum
-                token = VG_(strtok)(NULL, DELIM_DQ);
-                APROF_(assert)(token != NULL, "Invalid rvms thread: %s", line_orig);
-                rvms_thread_sum = VG_(strtoull10) (token, NULL);
-                UOF_LONG(error, token, rvms_thread_sum, line_orig);
-                APROF_(assert)(rvms_thread_sum <= rms*occ,
-                        "invalid rvms thread: %s", line_orig);
-                
-                APROF_(assert)(rvms_thread_sum + rvms_syscall_sum <= rms * occ,
-                        "invalid rvms syscall/thread: %s", line_orig);
-                
-                // rvms syscall self
-                token = VG_(strtok)(NULL, DELIM_DQ);
-                APROF_(assert)(token != NULL,
-                        "Invalid rvms syscall self: %s", line_orig);
-                rvms_syscall_self = VG_(strtoull10) (token, NULL);
-                UOF_LONG(error, token, rvms_syscall_self, line_orig);
-                APROF_(assert)(rvms_syscall_self <= rms*occ,
-                        "invalid rvms syscall self: %s", line_orig);
-                
-                // rvms thread self
-                token = VG_(strtok)(NULL, DELIM_DQ);
-                APROF_(assert)(token != NULL, "Invalid rvms thread: %s", line_orig);
-                rvms_thread_self = VG_(strtoull10) (token, NULL);
-                UOF_LONG(error, token, rvms_thread_self, line_orig);
-                APROF_(assert)(rvms_thread_self <= rms*occ,
-                        "invalid rvms thread self: %s", line_orig);
-                
-                APROF_(assert)(rvms_thread_self + rvms_syscall_self <= rms * occ,
-                        "invalid rvms syscall/thread self: %s", line_orig);
-                
-            }
+            APROF_(assert)(token != NULL, "Invalid sum cumulative syscall input: %s", line_orig);
+            sum_cumul_syscall = VG_(strtoull10) (token, NULL);
+            UOF_LONG(error, token, sum_cumul_syscall, line_orig);
+            WARNING(sum_cumul_syscall <= input_size*occ, "invalid sum cumulative syscall inpur: %s", line_orig);
             
-        }
+            // sum cumulative thread input
+            token = VG_(strtok)(NULL, DELIM_DQ);
+            APROF_(assert)(token != NULL, "Invalid sum cumulative thread input: %s", line_orig);
+            sum_cumul_thread = VG_(strtoull10) (token, NULL);
+            UOF_LONG(error, token, sum_cumul_thread, line_orig);
+            WARNING(sum_cumul_thread <= input_size*occ, "invalid sum cumulative thread input: %s", line_orig);
+            
+            WARNING(sum_cumul_thread + sum_cumul_syscall <= input_size * occ,
+                    "invalid rvms syscall/thread input: %s", line_orig);
+            
+            // sum self syscall input
+            token = VG_(strtok)(NULL, DELIM_DQ);
+            APROF_(assert)(token != NULL,
+                    "Invalid rvms syscall self: %s", line_orig);
+            sum_self_syscall = VG_(strtoull10) (token, NULL);
+            UOF_LONG(error, token, sum_self_syscall, line_orig);
+            WARNING(sum_self_syscall <= input_size*occ, "sum self syscall input: %s", line_orig);
+            
+            // sum self thread input
+            token = VG_(strtok)(NULL, DELIM_DQ);
+            APROF_(assert)(token != NULL, "Invalid rvms thread: %s", line_orig);
+            sum_self_thread = VG_(strtoull10) (token, NULL);
+            UOF_LONG(error, token, sum_self_thread, line_orig);
+            WARNING(sum_self_thread <= input_size*occ, "invalid sum self thread input: %s", line_orig);
+            
+            WARNING(sum_self_thread + sum_self_syscall <= input_size * occ,
+                    "invalid self syscall/thread input: %s", line_orig);
+            
+        } while (0);
         
         APROF_(assert)(curr != NULL, "Invalid routine: %s", line_orig);
-        RMSInfo * info_access = HT_lookup(curr->rvms_map, rms);
-        if (info_access == NULL) {
+        
+        UWord key = input_size;
+        Input * tuple = HT_lookup(curr->input_map, key);
+        if (tuple == NULL) {
             
-            info_access =
-                    (RMSInfo *) VG_(calloc)("rms_info", 1, sizeof(RMSInfo));
-            APROF_(debug_assert)(info_access != NULL,
-                    "rms_info not allocable in function exit");
+            tuple = APROF_(new)(INPUT_S, sizeof(Input));
             
-            info_access->min_cumulative_time = min;
-            info_access->self_time_min = self_min;
-            info_access->key = rms;
-            HT_add_node(curr->rvms_map, info_access->key, info_access);
+            tuple->min_cumulative_cost = (ULong)-1;
+            tuple->min_self_cost = (ULong)-1;
+            tuple->key = key;
+            tuple->input_size = input_size;
             
+            HT_add_node(curr->input_map, key, tuple);
         }
         
-        ADD(info_access->cumulative_time_sum, sum);
-        ADD_D(info_access->cumulative_sum_sqr, sqr_sum);
-        ADD(info_access->calls_number, occ);
-        ADD(curr->total_calls, info_access->calls_number);
-        
-        APROF_(assert)(
-                info_access->cumulative_sum_sqr >= info_access->cumulative_time_sum,
+        ADD(tuple->sum_cumulative_cost, sum);
+        ADD_D(tuple->sqr_cumulative_cost, sqr_sum);
+        ADD(tuple->calls, occ);
+        HELPER(ADD(curr->total_calls, tuple->calls_number));
+
+        WARNING(tuple->sqr_cumulative_cost >= tuple->sum_cumulative_cost,
                 "Invalid sqr_sum: %s", line_orig);
         
-        if (info_access->max_cumulative_time < max)
-            info_access->max_cumulative_time = max;
+        if (tuple->max_cumulative_cost < max)
+            tuple->max_cumulative_cost = max;
         
-        if (info_access->min_cumulative_time > min)
-            info_access->min_cumulative_time = min;
+        if (tuple->min_cumulative_cost > min)
+            tuple->min_cumulative_cost = min;
         
-        APROF_(assert)(
-                info_access->max_cumulative_time >= info_access->min_cumulative_time,
+        WARNING(tuple->max_cumulative_cost >= tuple->min_cumulative_cost,
                 "Invalid min/max");
-        APROF_(assert)(
-                info_access->cumulative_time_sum >= info_access->max_cumulative_time,
+        WARNING(tuple->sum_cumulative_cost >= tuple->max_cumulative_cost,
+                "Invalid sum");
+        WARNING(tuple->sum_cumulative_cost >= tuple->min_cumulative_cost * tuple->calls,
                 "Invalid sum");
         
-        APROF_(assert)(
-                info_access->cumulative_time_sum >= info_access->min_cumulative_time * info_access->calls_number,
-                "Invalid sum");
-        
-        if (info_access->cumulative_sum_sqr
-                < ((double) info_access->min_cumulative_time)
-                        * ((double) info_access->min_cumulative_time)
-                        * ((double) info_access->calls_number)
+        #if 0
+        if (tuple->cumulative_sum_sqr
+                < ((double) tuple->min_cumulative_time)
+                        * ((double) tuple->min_cumulative_time)
+                        * ((double) tuple->calls_number)
                 && !r->sqr_over) {
             
             EMSG(
@@ -573,40 +552,40 @@ static Function * APROF_(merge_tuple)(  HChar * line_input,
             r->sqr_over = True;
         }
         
-        ADD(info_access->cumul_real_time_sum, cumul_real);
+        ADD(tuple->cumul_real_time_sum, cumul_real);
         ADD(r->real_total_cost, cumul_real);
         
-        ADD(info_access->self_time_sum, self);
+        ADD(tuple->self_time_sum, self);
         ADD(r->self_total_cost, self);
-        ADD_D(info_access->self_sum_sqr, self_sqr);
+        ADD_D(tuple->self_sum_sqr, self_sqr);
         
         APROF_(assert)(
-                info_access->cumul_real_time_sum >= 0 && info_access->cumul_real_time_sum <= info_access->cumulative_time_sum,
+                tuple->cumul_real_time_sum >= 0 && tuple->cumul_real_time_sum <= tuple->cumulative_time_sum,
                 "Invalid cumul: %s", line_orig);
         
-        if (info_access->self_time_min > self_min)
-            info_access->self_time_min = self_min;
+        if (tuple->self_time_min > self_min)
+            tuple->self_time_min = self_min;
         
-        if (info_access->self_time_max < self_max)
-            info_access->self_time_max = self_max;
+        if (tuple->self_time_max < self_max)
+            tuple->self_time_max = self_max;
         
         APROF_(assert)(
-                info_access->self_time_min <= info_access->min_cumulative_time && info_access->self_time_max <= info_access->max_cumulative_time && info_access->self_time_sum <= info_access->cumulative_time_sum,
+                tuple->self_time_min <= tuple->min_cumulative_time && tuple->self_time_max <= tuple->max_cumulative_time && tuple->self_time_sum <= tuple->cumulative_time_sum,
                 "Invalid self: %s", line_orig);
         
-        APROF_(assert)(info_access->self_time_max >= info_access->self_time_min,
+        APROF_(assert)(tuple->self_time_max >= tuple->self_time_min,
                 "Invalid self min/max");
-        APROF_(assert)(info_access->self_time_sum >= info_access->self_time_max,
+        APROF_(assert)(tuple->self_time_sum >= tuple->self_time_max,
                 "Invalid self sum");
         
         APROF_(assert)(
-                info_access->self_time_sum >= info_access->self_time_min * info_access->calls_number,
+                tuple->self_time_sum >= tuple->self_time_min * tuple->calls_number,
                 "Invalid sum");
         
-        if (info_access->self_sum_sqr
-                < ((double) info_access->self_time_min)
-                        * ((double) info_access->self_time_min)
-                        * ((double) info_access->calls_number)
+        if (tuple->self_sum_sqr
+                < ((double) tuple->self_time_min)
+                        * ((double) tuple->self_time_min)
+                        * ((double) tuple->calls_number)
                 && !r->self_sqr_over) {
             
             EMSG(
@@ -615,33 +594,34 @@ static Function * APROF_(merge_tuple)(  HChar * line_input,
         
         if (r->version == REPORT_VERSION && r->input_metric == RVMS) {
             
-            ADD(info_access->rms_input_sum, rms_sum);
-            ADD_D(info_access->rms_input_sum_sqr, rms_sqr);
+            ADD(tuple->input_size_input_sum, input_size_sum);
+            ADD_D(tuple->input_size_input_sum_sqr, input_size_sqr);
             
             APROF_(assert)(
-                    info_access->rms_input_sum <= rms * info_access->calls_number,
-                    "invalid rms sum");
+                    tuple->input_size_input_sum <= input_size * tuple->calls_number,
+                    "invalid input_size sum");
             
             APROF_(assert)(
-                    info_access->rms_input_sum_sqr <= ((double)rms) * ((double)rms) * ((double)info_access->calls_number),
-                    "invalid rms sqr");
+                    tuple->input_size_input_sum_sqr <= ((double)input_size) * ((double)input_size) * ((double)tuple->calls_number),
+                    "invalid input_size sqr");
             
-            ADD(info_access->rvms_thread_sum, rvms_thread_sum);
-            ADD(info_access->rvms_syscall_sum, rvms_syscall_sum);
+            ADD(tuple->sum_cumul_thread, sum_cumul_thread);
+            ADD(tuple->sum_cumul_syscall, sum_cumul_syscall);
             
             APROF_(assert)(
-                    info_access->rvms_thread_sum + info_access->rvms_syscall_sum <= rms * info_access->calls_number,
+                    tuple->sum_cumul_thread + tuple->sum_cumul_syscall <= input_size * tuple->calls_number,
                     "invalid rvms syscall/thread: %s", line_orig);
             
-            ADD(info_access->rvms_thread_self, rvms_thread_self);
-            ADD(info_access->rvms_syscall_self, rvms_syscall_self);
+            ADD(tuple->sum_self_thread, sum_self_thread);
+            ADD(tuple->sum_self_syscall, sum_self_syscall);
             
             APROF_(assert)(
-                    info_access->rvms_thread_self + info_access->rvms_syscall_self <= rms * info_access->calls_number,
+                    tuple->sum_self_thread + tuple->sum_self_syscall <= input_size * tuple->calls_number,
                     "invalid rvms syscall/thread: %s", line_orig);
             
         }
         #endif
+        
     } else if (token[0] == 'a') {
         
         token = VG_(strtok)(NULL, DELIM_DQ);
