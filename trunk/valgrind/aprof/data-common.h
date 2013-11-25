@@ -81,6 +81,10 @@ typedef struct Function {
     HashTable * input_map;  // input tuples (used if single_report == True) 
     ULong       function_id;// id (used if single_report == True) 
     
+    #if EXTERNAL
+    ULong       total_calls;
+    #endif
+    
 } Function;
 
 #if APROF_TOOL
@@ -139,10 +143,6 @@ typedef struct {
     Function *  fn;                 // Info (name, file, etc) about this routine
     UInt        recursion_pending;  // number of pending activations (> 1 means recursive)
     HashTable * input_map;          // input size tuples
-
-    #if EXTERNAL
-    ULong       total_calls;
-    #endif
 
 } RoutineInfo;
 
