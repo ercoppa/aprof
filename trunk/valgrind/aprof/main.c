@@ -259,6 +259,14 @@ static IRSB* APROF_(instrument) (
     return sbOut;
 }
 
+static inline ULong get_binary_mtime(const HChar * exec) {
+    
+    const HChar * exe_name = ML_(find_executable)(exec);
+    struct vg_stat buf;
+    VG_(stat)(exe_name, &buf);
+    return buf.mtime;
+}
+
 static void APROF_(default_params)(void) {
     
     // default values
@@ -325,10 +333,14 @@ static void APROF_(init)(void) {
     for (i = 0; i < VG_(sizeXA)(x); i++) {
         HChar ** c = VG_(indexXA)(x, i);
         if (c != NULL) {
-            offset += VG_(sprintf)(APROF_(runtime).cmd_line, " %s", *c);
+            offset += VG_(sprintf)(APROF_(runtime).cmd_line + offset, " %s", *c);
         }
         APROF_(assert)(offset < 4096, "command line too long\n");
     }
+    
+    // check binary mtime
+    if (APROF_(runtime).binary_mtime == 0)
+        APROF_(runtime).binary_mtime = get_binary_mtime(APROF_(runtime).application);
     
     VG_(clo_vex_control).iropt_unroll_thresh = 0;
     VG_(clo_vex_control).guest_chase_thresh  = 0;

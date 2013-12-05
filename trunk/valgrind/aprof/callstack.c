@@ -37,6 +37,16 @@
 #include "aprof.h"
 #include "aprof_inline.h"
 
+UInt APROF_(str_hash)(const HChar *s) {
+    
+    UInt hash_value = 0;
+    for (; *s; s++)
+        hash_value = 31 * hash_value + *s;
+    
+    APROF_(debug_assert)(hash_value > 0, "Invalid hash value");
+    return hash_value;
+}
+
 Activation * APROF_(resize_stack)(ThreadData * tdata, unsigned int depth) {
 
     APROF_(debug_assert)(tdata != NULL, "Invalid tdata in get_activation");
@@ -468,7 +478,7 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
                 
                 f = APROF_(new)(FN_S, sizeof(Function));
                 f->key = hash;
-                f->function_id = APROF_(runtime).next_function_id++;
+                
                 
                 /* 
                  * fn is a buffer of 4096, if possible try to minimize
@@ -480,6 +490,7 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
                 
                 f->name = fn;
                 if (unknown) f->discard = True;
+                else f->function_id = APROF_(runtime).next_function_id++;
                 
                 HChar * mangled = APROF_(new)(MANGLED_S, NAME_SIZE);
                 if(VG_(get_fnname_no_cxx_demangle)(bb->key, (Char *) mangled, NAME_SIZE)) {

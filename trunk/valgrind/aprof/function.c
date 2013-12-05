@@ -173,6 +173,7 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
     #endif
 
     ULong cumul_cost = APROF_(time)(tdata) - act->start;
+    APROF_(debug_assert)(cumul_cost > 0, "Invalid cumul cost");
 
     RoutineInfo * rtn_info = act->routine_info;
     APROF_(debug_assert)(rtn_info != NULL, "Invalid routine info");
@@ -189,6 +190,7 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
     
     APROF_(debug_assert)(cumul_cost >= act->sum_children_cost, "Invalid cost");
     ULong self_cost = cumul_cost - act->sum_children_cost;
+    APROF_(debug_assert)(self_cost > 0, "Invalid self cost");
     
     rtn_info->recursion_pending--;
     
