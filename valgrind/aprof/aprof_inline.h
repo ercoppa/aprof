@@ -34,14 +34,4 @@
 #ifndef APROF_INLINE_H
 #define APROF_INLINE_H
 
-static inline UInt APROF_(str_hash)(const HChar *s) {
-    
-    UInt hash_value = 0;
-    for (; *s; s++)
-        hash_value = 31 * hash_value + *s;
-    
-    APROF_(debug_assert)(hash_value > 0, "Invalid hash value");
-    return hash_value;
-}
-
 #endif

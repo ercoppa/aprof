@@ -50,14 +50,6 @@ static inline HChar * report_name(  HChar * name,
     return name;
 }
 
-static inline ULong get_binary_mtime(const HChar * exec) {
-    
-    const HChar * exe_name = ML_(find_executable)(exec);
-    struct vg_stat buf;
-    VG_(stat)(exe_name, &buf);
-    return buf.mtime;
-}
-
 static FILE * init_report(const HChar * prog_name, ThreadId tid, 
                                 HChar ** filename_p) {
     
@@ -98,10 +90,6 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
     FILE * report = init_report(prog_name, tid, &filename);
 
     APROF_(assert)(report != NULL, "Report can not be created: %s", filename);
-
-    // check binary mtime
-    if (APROF_(runtime).binary_mtime == 0)
-        APROF_(runtime).binary_mtime = get_binary_mtime(prog_name);
 
     // write header
     APROF_(fprintf)(report, "c -------------------------------------\n");

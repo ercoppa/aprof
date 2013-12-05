@@ -15,7 +15,7 @@ typedef struct {
 typedef enum access_t {LOAD, STORE, MODIFY} access_t;
 
 // input size metric
-typedef enum input_metric_t {RMS, DRMS} input_metric_t;
+typedef enum input_metric_t {RMS, DRMS, INVALID} input_metric_t;
 
 // Used to descriminate final exit/jump of a BB
 typedef enum jump_t {

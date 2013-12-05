@@ -307,7 +307,7 @@ inline ULong APROF_(time)(ThreadData * tdata) {
 }
 #endif // COST == RDTSC
 
-extern inline UInt APROF_(str_hash)(const HChar *s);
+UInt APROF_(str_hash)(const HChar *s);
 
 /* internal functions of valgrind */
 const HChar* ML_(find_executable) (const HChar * exec);
