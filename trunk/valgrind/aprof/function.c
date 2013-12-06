@@ -33,45 +33,6 @@
 
 #include "aprof.h"
 
-void APROF_(destroy_routine_info)(RoutineInfo * ri) {
-    
-    HT_destruct(ri->input_map);
-    APROF_(delete)(RT_S, ri);
-}
-
-RoutineInfo * APROF_(new_routine_info)(ThreadData * tdata, 
-                                Function * fn, UWord target) {
-    
-    APROF_(debug_assert)(tdata != NULL, "Thread data is not valid");
-    APROF_(debug_assert)(fn != NULL, "Invalid function info");
-    APROF_(debug_assert)(target > 0, "Invalid target");
-    
-    RoutineInfo * rtn_info = APROF_(new)(RT_S, sizeof(RoutineInfo));
-    
-    rtn_info->key = target;
-    rtn_info->fn = fn;
-        
-    if (!rtn_info->fn->discard) {
-        
-        if (APROF_(runtime).single_report) {
-            
-            if (rtn_info->fn->input_map == NULL)
-                rtn_info->fn->input_map = HT_construct(NULL);
-                
-            rtn_info->input_map = rtn_info->fn->input_map;
-            rtn_info->routine_id = rtn_info->fn->function_id;
-        
-        } else {
-        
-            rtn_info->routine_id = tdata->next_routine_id++;
-            rtn_info->input_map = HT_construct(NULL);
-        }
-    }
-    
-    HT_add_node(tdata->rtn_ht, rtn_info->key, rtn_info);
-    return rtn_info;
-}
-
 void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
 
     APROF_(debug_assert)(tdata != NULL, "Thread data is not valid");

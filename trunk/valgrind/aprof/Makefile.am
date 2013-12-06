@@ -21,7 +21,7 @@ aprof_SOURCES_COMMON =  cct.c fwrite.c thread.c events.c \
 						./hashtable/hashtable.c cost.c \
 						syscall.c function.c memory.c report.c \
 						callstack.c debug.c main.c lookup_table.c \
-						overflow.c merge.c
+						overflow.c merge.c util.c
 
 aprof_@VGCONF_ARCH_PRI@_@VGCONF_OS@_SOURCES      = \
 	$(aprof_SOURCES_COMMON)

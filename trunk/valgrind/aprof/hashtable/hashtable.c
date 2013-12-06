@@ -32,9 +32,9 @@
  */
 
 #ifdef EXTERNAL
-#include "../extra/valgrind-types.h"
+    #include "../extra/aprof-helper.h"
 #else
-#include "../aprof.h"
+    #include "../aprof.h"
 #endif
 
 #include "hashtable.h"
