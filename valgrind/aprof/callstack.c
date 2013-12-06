@@ -35,17 +35,6 @@
 */
 
 #include "aprof.h"
-#include "aprof_inline.h"
-
-UInt APROF_(str_hash)(const HChar *s) {
-    
-    UInt hash_value = 0;
-    for (; *s; s++)
-        hash_value = 31 * hash_value + *s;
-    
-    APROF_(debug_assert)(hash_value > 0, "Invalid hash value");
-    return hash_value;
-}
 
 Activation * APROF_(resize_stack)(ThreadData * tdata, unsigned int depth) {
 
@@ -251,7 +240,7 @@ static void APROF_(push_stack)(ThreadData * tdata,
     
     RoutineInfo * rtn_info = HT_lookup(tdata->rtn_ht, (UWord) f); 
     if (rtn_info == NULL)
-        rtn_info = APROF_(new_routine_info)(tdata, f, (UWord) f);
+        rtn_info = APROF_(new_routine_info)(tdata->rtn_ht, f, (UWord) f, tdata);
         
     act->sp = sp;
     act->routine_info = rtn_info;

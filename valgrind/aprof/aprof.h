@@ -144,13 +144,7 @@
                                     } while(0);
 
 #if DEBUG
-    #define vgAprof_debug_assert(cond, ...) do{ \
-                                                if (UNLIKELY(!(cond))) { \
-                                                    VG_(umsg)(__VA_ARGS__); \
-                                                    tl_assert(cond); \
-                                                } \
-                                            } while(0);
-                                            
+    #define vgAprof_debug_assert(cond, ...) APROF_(assert)(cond, __VA_ARGS__);
     #define vgAprof_debug_printf(...)   VG_(printf)(__VA_ARGS__);
 #else // DEBUG
     #define vgAprof_debug_assert(cond, ...) 
@@ -195,6 +189,12 @@ UInt APROF_(overflow_handler_rms)(void);
 
 /* report functions (report.c) */
 void APROF_(generate_report)(ThreadData * tdata, ThreadId tid);
+void APROF_(print_report)(  FILE * report,
+                            Runtime * r,
+                            HashTable * rtn_ht,
+                            ULong cost,
+                            CCTNode * root
+                            );
 
 /* CCT functions (CCT.c) */
 CCTNode * APROF_(parent_CCT)(ThreadData * tdata);
@@ -206,8 +206,6 @@ VG_REGPARM(3) void APROF_(trace_access_rms)(UWord type, Addr addr, SizeT size);
 VG_REGPARM(3) void APROF_(trace_access_drms)(UWord type, Addr addr, SizeT size, UWord kernel_access);
 
 /* Function entry/exit handlers (function.c) */
-RoutineInfo * APROF_(new_routine_info)(ThreadData * tdata, Function * fn, UWord target);
-void APROF_(destroy_routine_info)(RoutineInfo * ri);
 void APROF_(function_enter)(ThreadData * tdata, Activation * act);
 void APROF_(function_exit)(ThreadData * tdata, Activation * act);
 
@@ -266,6 +264,14 @@ void APROF_(print_info_mem_usage)(void);
 
 /* merge.c */
 void APROF_(load_reports)(void);
+Bool APROF_(merge_report)(HChar * report, Runtime * runtime);
+UInt APROF_(search_reports)(HChar *** reports);
+
+/* util.c */
+UInt APROF_(str_hash)(const HChar *s);
+RoutineInfo * APROF_(new_routine_info)(HashTable * rtn_ht, 
+                                Function * fn, UWord target, ThreadData * t);
+void APROF_(destroy_routine_info)(RoutineInfo * ri);
     
 /* Syscall wrappers (syscall.c) */
 void APROF_(pre_syscall)(ThreadId tid, UInt syscallno, UWord * args, 
@@ -307,10 +313,22 @@ inline ULong APROF_(time)(ThreadData * tdata) {
 }
 #endif // COST == RDTSC
 
-UInt APROF_(str_hash)(const HChar *s);
-
 /* internal functions of valgrind */
 const HChar* ML_(find_executable) (const HChar * exec);
 Bool VG_(get_fnname_no_cxx_demangle) (Addr a, Char* buf, Int nbuf);
+
+// check for overflow (long)
+#define ADD(dest, inc) do { \
+                            ULong old = dest; \
+                            dest += inc; \
+                            APROF_(assert)(dest >= old, "overflow"); \
+                            } while(0); 
+
+// check for overflow (double)
+#define ADD_D(dest, inc) do { \
+                            double old = dest; \
+                            dest += inc; \
+                            APROF_(assert)(dest >= old, "overflow"); \
+                            } while(0);
 
 #endif
