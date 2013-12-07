@@ -337,7 +337,8 @@ typedef struct Runtime {
     Bool            compare;
     Bool            merge_all;
     Bool            merge_runs;
-    Bool            merge_threads;       
+    Bool            merge_threads;
+    HashTable *     rtn_ht;      
     Bool            sqr_cumul_overflow;
     Bool            sqr_self_overflow;
     ULong           total_real_cost;

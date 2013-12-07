@@ -275,8 +275,8 @@ static void APROF_(default_params)(void) {
     APROF_(runtime).collect_CCT = False;
     APROF_(runtime).function_tracing = True;
     APROF_(runtime).input_metric = RMS;
-    APROF_(runtime).incremental_report = True;
-    APROF_(runtime).single_report = True;
+    APROF_(runtime).incremental_report = False;
+    APROF_(runtime).single_report = False;
 }
 
 // aprof initialization
@@ -319,6 +319,8 @@ static void APROF_(init)(void) {
     APROF_(runtime).dl_runtime_resolve_addr = 0;
     APROF_(runtime).dl_runtime_resolve_length = 0;
     APROF_(runtime).next_function_id = 0;
+    APROF_(runtime).loaded_report = False;
+    APROF_(runtime).extra_cost = 0;
     
     if (APROF_(runtime).collect_CCT && APROF_(runtime).single_report)
         APROF_(runtime).root = APROF_(new)(CCT_S, sizeof(CCTNode));
@@ -481,10 +483,23 @@ static Bool APROF_(cmd_line)(const HChar* argv) {
     
     else if VG_BOOL_CLO(argv, "--collect-cct", APROF_(runtime).collect_CCT) {}
     
-    else if VG_BOOL_CLO(argv, "--internal-fn-tracing", APROF_(runtime).function_tracing) {}
+    //else if VG_BOOL_CLO(argv, "--internal-fn-tracing", APROF_(runtime).function_tracing) {}
+    
+    else if VG_BOOL_CLO(argv, "--single-log", APROF_(runtime).single_report) {}
+     
+    else if VG_BOOL_CLO(argv, "--incremental-log", APROF_(runtime).incremental_report) {
+        APROF_(runtime).single_report = True;
+    }
     
     else if VG_BOOL_CLO(argv, "--drms", value_bool) {
         if (value_bool) APROF_(runtime).input_metric = DRMS;
+    }
+    
+    if (APROF_(runtime).incremental_report && APROF_(runtime).collect_CCT) {
+        
+        VG_(umsg)("Sorry \"--collect-cct\" can not be used with \"--collect-cct\".\n");
+        VG_(umsg)("We plan to implement it in future releases.\n");
+        return False;
     }
     
     return True;
@@ -494,9 +509,13 @@ static void APROF_(print_usage)(void) {
     
     VG_(printf)(
         "    --memory-resolution=<n>        Memory resolution of the shadow memory {1, 2, 4, 8, 16} [4]\n"
-        "    --log-dir=<PATH>               Reports will be saved in this directory\n"
+        "    --log-dir=<PATH>               Reports will be saved in this directory [cwd]\n"
         "    --drms=no|yes                  Use the dynamic read memory size [no]\n"
         "    --collect-cct=no|yes           Collect calling contect tree [no]\n"
+        "    --single-log=no|yes            Output a single report for all threads [no]\n"
+        "    --incremental-log=no|yes       Load previous reports (from cwd or log dir)\n"
+        "                                   and add performance tuples of the current run.\n"
+        "                                   This implies --single-log option. [no]\n"
     //    "    --internal-fn-tracing=yes|no   Use the internal function CALL/RET heuristic [yes]\n"
     );
 }
