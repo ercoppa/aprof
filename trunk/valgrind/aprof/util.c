@@ -72,11 +72,11 @@ RoutineInfo * APROF_(new_routine_info)(HashTable * rtn_ht,
         #endif
         
             if (rtn_info->fn->input_map == NULL)
-                rtn_info->fn->input_map = HT_construct(NULL);
+                rtn_info->fn->input_map = HT_construct(VG_(free));
                 
             rtn_info->input_map = rtn_info->fn->input_map;
             rtn_info->routine_id = rtn_info->fn->function_id;
-        
+                
         #if APROF_TOOL
         } else {
         

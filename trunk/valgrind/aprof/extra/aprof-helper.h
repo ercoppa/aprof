@@ -10,6 +10,7 @@
 #include <libgen.h>
 #include <stdio.h>
 #include <errno.h>
+#include <limits.h>
 
 #define _GNU_SOURCE
 #include <unistd.h>
@@ -105,6 +106,7 @@ Bool APROF_(merge_report)(HChar * report, Runtime * runtime);
 void APROF_(print_report)(FILE * report, Runtime * r,
                             HashTable * rtn_ht, ULong cost,
                             CCTNode * root);
+UInt APROF_(search_reports)(HChar *** reports, const HChar * path);
 
 #define STR(buf, ...) sprintf(buf, __VA_ARGS__);
 

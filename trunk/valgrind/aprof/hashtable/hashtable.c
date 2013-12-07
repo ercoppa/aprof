@@ -250,13 +250,13 @@ void * HT_RemoveNext(HashTable * table) {
 }
 
 void HT_destruct(HashTable * table) {
-    
+        
     if (table == NULL)
         return;
     
     UInt i;
     HashNode *node, *node_next;
-    
+        
     if (table->n_elements > 0 && table->free_func != NULL)
         for (i = 0; i < table->n_chains; i++) {
             for (node = table->chains[i]; node != NULL; node = node_next) {

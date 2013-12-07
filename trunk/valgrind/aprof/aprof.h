@@ -66,7 +66,7 @@
 #define EMPTY_ANALYSIS      0   // if 1, analysis routines are empty 
                                 // (useful in combination with EVENTCOUNT)
 
-#define DEBUG               1   // Enable some sanity checks
+#define DEBUG               0   // Enable some sanity checks
 
 #define VERBOSE             0   // 0 disabled, 1 function + thread, 2 
                                 // function + thread + load/store/modify,
@@ -265,7 +265,7 @@ void APROF_(print_info_mem_usage)(void);
 /* merge.c */
 void APROF_(load_reports)(void);
 Bool APROF_(merge_report)(HChar * report, Runtime * runtime);
-UInt APROF_(search_reports)(HChar *** reports);
+UInt APROF_(search_reports)(HChar *** reports, const HChar * path);
 
 /* util.c */
 UInt APROF_(str_hash)(const HChar *s);

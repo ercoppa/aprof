@@ -60,9 +60,12 @@
                                                                "under/over flow: %s", line)
 #endif
 
-UInt APROF_(search_reports)(HChar *** reports) {
+UInt APROF_(search_reports)(HChar *** reports, const HChar * path) {
 
-    SysRes r = VG_(open)("./", VKI_O_RDONLY, VKI_S_IRUSR|VKI_S_IWUSR);
+    if (path == NULL)
+        path = ".";
+        
+    SysRes r = VG_(open)(path, VKI_O_RDONLY, VKI_S_IRUSR|VKI_S_IWUSR);
     Int dir = (Int) sr_Res(r);
     if (dir < 0) return 0; 
     
@@ -99,7 +102,9 @@ UInt APROF_(search_reports)(HChar *** reports) {
                                             capacity * sizeof(HChar *)); 
                 }
                 
-                *(*reports + size) = VG_(strdup)("report", file->d_name);;
+                HChar * fname = VG_(calloc)("report", 4096, 1);
+                VG_(sprintf)(fname, "%s/%s", path, file->d_name);
+                *(*reports + size) = fname;
                 //VG_(printf)("File %s\n", *(*reports + size));
                 size += 1;
             }            
@@ -166,14 +171,6 @@ static Function * APROF_(merge_tuple)(  HChar * line_input,
     
     //VG_(umsg)("Analyzing %s\n", line_input);
     
-    HashTable * fn_ht = r->fn_ht;
-    HashTable * obj_ht = r->obj_ht;
-    //HChar * cmd = r->cmd_line;
-    HChar * app = r->application;
-    input_metric_t input_metric = r->input_metric;
-    UInt memory_resolution = r->memory_resolution;
-    ULong binary_mtime = r->binary_mtime;
-    
     HChar * error;
     *invalid = False;
     
@@ -227,7 +224,7 @@ static Function * APROF_(merge_tuple)(  HChar * line_input,
         
         // Search function
         UInt hash = APROF_(str_hash)(name);
-        Function * fn = HT_lookup(fn_ht, hash);
+        Function * fn = HT_lookup(r->fn_ht, hash);
         while (fn != NULL && VG_(strcmp)(fn->name, name) != 0) {
             
             fn = fn->next;
@@ -239,10 +236,10 @@ static Function * APROF_(merge_tuple)(  HChar * line_input,
             
             fn->key = hash;
             fn->name = name;
-            fn->input_map = HT_construct(NULL);
+            fn->input_map = HT_construct(VG_(free));
             fn->function_id = r->next_function_id++;
             
-            HT_add_node(fn_ht, fn->key, fn);
+            HT_add_node(r->fn_ht, fn->key, fn);
             
         } else
             VG_(free)(name);
@@ -250,7 +247,7 @@ static Function * APROF_(merge_tuple)(  HChar * line_input,
         if (fn->obj == NULL) { // new object
                 
             UInt hash_obj = APROF_(str_hash)(obj_name);
-            Object * obj = HT_lookup(obj_ht, hash_obj);
+            Object * obj = HT_lookup(r->obj_ht, hash_obj);
             while (obj != NULL && VG_(strcmp)(obj->name, obj_name) != 0) {
                 
                 obj = obj->next;
@@ -263,7 +260,7 @@ static Function * APROF_(merge_tuple)(  HChar * line_input,
                 obj->key = hash_obj;
                 obj->name = obj_name;
                 obj->filename = NULL; /* FixMe */
-                HT_add_node(obj_ht, obj->key, obj);
+                HT_add_node(r->obj_ht, obj->key, obj);
                 
                 fn->obj = obj;
                 
@@ -349,7 +346,7 @@ static Function * APROF_(merge_tuple)(  HChar * line_input,
         APROF_(assert)(token != NULL, "Invalid sqr sum: %s", line_orig);
         double sqr_sum = VG_(strtod)(token, NULL);
         UOF_DOUBLE(error, token, sqr_sum, line_orig);
-        WARNING(sqr_sum >= sum, "Invalid sqr_sum: %s", line_orig);
+        WARNING(sqr_sum >= sum, "Invalid sqr_sum [1]: %s", line_orig);
         
         // occ
         token = VG_(strtok)(NULL, DELIM_DQ);
@@ -363,7 +360,7 @@ static Function * APROF_(merge_tuple)(  HChar * line_input,
         HELPER(if (sqr_sum < ((double) min) * ((double) min) * ((double) occ)
                 && !r->sqr_cumul_overflow) {
             
-            WARNING(0, "Invalid sqr_sum (overflow?): %s\n", report);
+            WARNING(0, "Invalid sqr_sum (overflow?) [2]: %s\n", report);
             r->sqr_cumul_overflow = True;
         })
         
@@ -485,7 +482,7 @@ static Function * APROF_(merge_tuple)(  HChar * line_input,
         HELPER(ADD(curr->total_calls, tuple->calls));
         
         WARNING(tuple->sqr_cumulative_cost >= tuple->sum_cumulative_cost,
-                "Invalid sqr_sum: %s", line_orig);
+                "Invalid sqr_sum [3]: %s", line_orig);
         
         if (tuple->max_cumulative_cost < max)
             tuple->max_cumulative_cost = max;
@@ -501,12 +498,12 @@ static Function * APROF_(merge_tuple)(  HChar * line_input,
                 "Invalid sum");
                 
         HELPER(if (tuple->sqr_cumulative_cost 
-                    <= ((double) tuple->min_cumulative_cost)
+                    < ((double) tuple->min_cumulative_cost)
                         * ((double) tuple->min_cumulative_cost)
                         * ((double) tuple->calls)
                 && !r->sqr_cumul_overflow) {
             
-            WARNING(0, " Invalid sqr_sum (overflow?): %s\n", report);
+            WARNING(0, "Invalid sqr_sum (overflow?) [4]: %s\n", report);
             r->sqr_cumul_overflow = True;
         })
         
@@ -541,16 +538,16 @@ static Function * APROF_(merge_tuple)(  HChar * line_input,
                 "Invalid self sum: %llu %llu %llu", tuple->sum_self_cost, tuple->min_self_cost, tuple->calls);
         
         HELPER(if (tuple->sqr_self_cost 
-                    <= ((double) tuple->min_self_cost)
+                    < ((double) tuple->min_self_cost)
                         * ((double) tuple->min_self_cost)
                         * ((double) tuple->calls)
                 && !r->sqr_self_overflow) {
             
-            WARNING(0, "Invalid sqr_sum (overflow?): %s\n", report);
+            WARNING(0, "Invalid sqr_sum (overflow?) [5]: %s\n", report);
             r->sqr_self_overflow = True;
         })
         
-        if (input_metric == DRMS) {
+        if (r->input_metric == DRMS) {
             
             ADD(tuple->sum_cumul_thread, sum_cumul_thread);
             ADD(tuple->sum_cumul_syscall, sum_cumul_syscall);
@@ -587,13 +584,14 @@ static Function * APROF_(merge_tuple)(  HChar * line_input,
         // remove final space
         app_r[VG_(strlen)(app_r) - 1] = '\0';
         
-        if (app == NULL) {
+        if (r->application == NULL) {
             
-            app = VG_(strdup)("app_r", app_r);
+            r->application = VG_(strdup)("app_r", app_r);
             
         } else {
             
-            if (VG_(strcmp)(app, app_r) != 0 HELPER(&& !r->merge_all)) {
+            if (VG_(strcmp)(r->application, app_r) != 0 HELPER(&& !r->merge_all)) {
+                VG_(umsg)("Invalid app\n");
                 *invalid = True;
                 VG_(free)(line);
                 return NULL;
@@ -605,6 +603,7 @@ static Function * APROF_(merge_tuple)(  HChar * line_input,
         token = VG_(strtok)(NULL, DELIM_DQ);
         APROF_(assert)(token != NULL, "Invalid perf metric: %s", line_orig);
         ULong sum = VG_(strtoull10) (token, NULL);
+        HELPER(printf("Max %llu\n", ULLONG_MAX));
         UOF_LONG(error, token, sum, line_orig);
         APROF_(assert)(sum > 0, "Invalid sum: %s", line_orig);
         
@@ -619,6 +618,7 @@ static Function * APROF_(merge_tuple)(  HChar * line_input,
         UOF_LONG(error, token, ver, line_orig);
         
         if (ver != REPORT_VERSION) {
+            VG_(umsg)("Invalid version\n");
             *invalid = True;
             VG_(free)(line);
             return NULL;
@@ -640,16 +640,17 @@ static Function * APROF_(merge_tuple)(  HChar * line_input,
         if (VG_(strcmp)(token, "rms") == 0) im = RMS;
         else if (VG_(strcmp)(token, "drms") == 0) im = DRMS;
 
-        if (input_metric == RMS || input_metric == DRMS) {
+        if (r->input_metric == RMS || r->input_metric == DRMS) {
             
-            if (im != input_metric) {
+            if (im != r->input_metric) {
+                VG_(umsg)("Invalid metric\n");
                 *invalid = True;
                 VG_(free)(line);
                 return NULL;
             }
             
         } else
-            input_metric = im;
+            r->input_metric = im;
         
     } else if (token[0] == 't') {
 
@@ -660,7 +661,11 @@ static Function * APROF_(merge_tuple)(  HChar * line_input,
                 m_res == 1 || m_res == 2 || m_res == 4 || m_res == 8 || m_res == 16,
                 "Invalid memory resolution: %s", line_orig);
         
-        if (memory_resolution != m_res) {
+        if (r->memory_resolution == 0)
+            r->memory_resolution = m_res;
+        
+        if (r->memory_resolution != m_res) {
+            VG_(umsg)("Invalid memory resolution\n");
             *invalid = True;
             VG_(free)(line);
             return NULL;
@@ -708,7 +713,11 @@ static Function * APROF_(merge_tuple)(  HChar * line_input,
         APROF_(assert)(token != NULL, "Invalid binary time: %s", line_orig);
         ULong bmtime = VG_(strtoull10) (token, NULL);
         
-        if (bmtime != binary_mtime) {
+        if (r->binary_mtime == 0)
+            r->binary_mtime = bmtime;
+        
+        if (bmtime != r->binary_mtime) {
+            VG_(umsg)("Invalid binary mtime\n");
             *invalid = True;
             VG_(free)(line);
             return NULL;
@@ -731,14 +740,17 @@ Bool APROF_(merge_report)(HChar * report, Runtime * runtime) {
     //VG_(umsg)("Try to merge report: %s\n", report);
     HChar buf[4096];
     
+    //VG_(umsg)("Memory resolution: %u %u\n", APROF_(get_memory_resolution_report)(report), runtime->memory_resolution);
+    
     // check memory resolution
-    if (APROF_(get_memory_resolution_report)(report) != runtime->memory_resolution) 
+    if (runtime->memory_resolution != 0
+        && APROF_(get_memory_resolution_report)(report) != runtime->memory_resolution) 
         return False;
     
     SysRes res = VG_(open)(report, VKI_O_RDONLY, VKI_S_IRUSR | VKI_S_IWUSR);
     if (sr_isError(res)) return False;
     Int file = (Int) sr_Res(res);
-    
+        
     HChar line[1024];
     UInt offset = 0;
     Function * current_routine = NULL;
@@ -804,9 +816,6 @@ Bool APROF_(merge_report)(HChar * report, Runtime * runtime) {
     
     HELPER(post_merge_consistency(runtime, report));
     
-    // delete merged report
-    VG_(unlink)(report);
-    
     return True;
 }
 
@@ -816,10 +825,13 @@ void APROF_(load_reports)(void) {
     UInt k;
     HChar ** list;
     
-    UInt size = APROF_(search_reports)(&list);
+    UInt size = APROF_(search_reports)(&list, APROF_(runtime).log_dir);
     for (k = 0; k < size; k++) {
         Bool m = APROF_(merge_report)(list[k], &APROF_(runtime));
-        if (m) VG_(umsg)("Merged report: %s\n", list[k]);
+        if (m) {
+            VG_(unlink)(list[k]);
+            VG_(umsg)("Merged report: %s\n", list[k]);
+        }
     }
     VG_(free)(list);
 }
