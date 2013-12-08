@@ -215,6 +215,10 @@ void APROF_(print_report)(  FILE * report,
             
         }
         
+        #if !APROF_TOOL
+        rtn_info->fn->input_map = NULL;
+        #endif
+        
         APROF_(destroy_routine_info)(rtn_info);
         rtn_info = HT_RemoveNext(rtn_ht);
     }
@@ -231,20 +235,23 @@ void APROF_(print_report)(  FILE * report,
 #if APROF_TOOL
 void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
     
-    if (APROF_(runtime).single_report 
-        && APROF_(runtime).running_threads > 1) return;
-    
-    HChar * filename = NULL;
-    FILE * file = APROF_(create_report)(APROF_(runtime).application, tid, &filename);
-
-    APROF_(assert)(file != NULL, "Report can not be created: %s", filename);
-
     ULong cost = APROF_(time)(tdata);
-    cost -= tdata->skip_cost;
-    cost -= APROF_(runtime).extra_cost;
     #if COST == RDTSC
     cost -= tdata->cost; // time? start - end
     #endif
+
+    cost -= tdata->skip_cost;
+    
+    if (APROF_(runtime).single_report) {
+    
+        APROF_(runtime).extra_cost += cost;
+        if (APROF_(runtime).running_threads > 1) return;
+        else cost = APROF_(runtime).extra_cost;
+    }
+            
+    HChar * filename = NULL;
+    FILE * file = APROF_(create_report)(APROF_(runtime).application, tid, &filename);
+    APROF_(assert)(file != NULL, "Report can not be created: %s", filename);
     
     APROF_(print_report)(file, &APROF_(runtime), tdata->rtn_ht, cost, tdata->root);
     
