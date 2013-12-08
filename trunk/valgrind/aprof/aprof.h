@@ -66,7 +66,7 @@
 #define EMPTY_ANALYSIS      0   // if 1, analysis routines are empty 
                                 // (useful in combination with EVENTCOUNT)
 
-#define DEBUG               0   // Enable some sanity checks
+#define DEBUG               1   // Enable some sanity checks
 
 #define VERBOSE             0   // 0 disabled, 1 function + thread, 2 
                                 // function + thread + load/store/modify,
@@ -84,8 +84,10 @@
 #define INPUT_STATS         1   // stats about thread input & external input
 
 #define DEBUG_ALLOCATION    0   // if 1, check every allocation made by aprof
-#define IGNORE_DL_RUNTIME   0   // if 1, disable analysis for dl_
-                                // runtime_resolve (and its children)
+
+#define SKIP_DL_RUNTIME     0   // if 1, ignore _dl_runtime_resolve
+                                // this function may create some
+                                // "noise"
                                 
 #define REPORT_NAME         1   // if 1 report name is prog_TID.aprof, 
                                 // if 2 is PID_TID_ADDRMULTIPLE.aprof
@@ -138,7 +140,7 @@
 
 #define vgAprof_assert(cond, ...)   do{ \
                                         if (UNLIKELY(!(cond))) { \
-                                            VG_(umsg)(__VA_ARGS__); \
+                                            VG_(printf)(__VA_ARGS__); \
                                             tl_assert(cond); \
                                         } \
                                     } while(0);

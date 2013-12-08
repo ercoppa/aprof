@@ -334,6 +334,7 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
          * later.
          */
         bb->is_entry = VG_(get_fnname_if_entry)(target, fn, NAME_SIZE);
+        
         /* If is not entry, we need anyway info about this function */
         Bool info_fn = True; 
         if (!bb->is_entry) {
@@ -448,7 +449,7 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
             info_fn = True;
             unknown = True;
         }
-                
+        
         if (info_fn && f == NULL) {
             
             /* Maybe we have renamed the function...*/
@@ -467,7 +468,6 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
                 
                 f = APROF_(new)(FN_S, sizeof(Function));
                 f->key = hash;
-                
                 
                 /* 
                  * fn is a buffer of 4096, if possible try to minimize
@@ -503,9 +503,6 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
                     APROF_(delete)(MANGLED_S, mangled);
                 
                 f->obj = obj;
-                if (bb->is_dl_runtime_resolve) 
-                    f->skip = True;
-                
                 HT_add_node(APROF_(runtime).fn_ht, f->key, f);
 
             } else
@@ -513,7 +510,12 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
             
         } else 
             APROF_(delete)(FN_NAME_S, fn);
-            
+        
+        #if SKIP_DL_RUNTIME
+        if (bb->is_dl_runtime_resolve) 
+            f->skip = True;
+        #endif
+        
         bb->fn = f;
         bb->instr_offset = 0; /* real value filled with a store */
         HT_add_node(APROF_(runtime).bb_ht, bb->key, bb);

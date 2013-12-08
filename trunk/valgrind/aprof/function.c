@@ -138,10 +138,11 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
 
     RoutineInfo * rtn_info = act->routine_info;
     APROF_(debug_assert)(rtn_info != NULL, "Invalid routine info");
-
+    
     if (tdata->skip > 0) {
         
         if (rtn_info->fn->skip) {
+            
             tdata->skip--;
             tdata->skip_cost += cumul_cost;
         }
@@ -192,6 +193,13 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
         tuple->min_cumulative_cost = tuple->min_cumulative_cost ^ // min(x, y)
                                     ((cumul_cost ^ tuple->min_cumulative_cost) 
                                     & -(cumul_cost < tuple->min_cumulative_cost)); 
+
+    
+        APROF_(debug_assert)(tuple->min_cumulative_cost 
+                                * tuple->min_cumulative_cost 
+                                * tuple->calls 
+                                <= tuple->sqr_cumulative_cost,
+                                "Invalid sqr");
 
         // self cost
         tuple->sum_self_cost += self_cost;

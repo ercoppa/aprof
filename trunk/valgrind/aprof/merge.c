@@ -64,7 +64,9 @@ UInt APROF_(search_reports)(HChar *** reports, const HChar * path) {
 
     if (path == NULL)
         path = ".";
-        
+    
+    //VG_(umsg)("Searching reports in %s\n", path);
+    
     SysRes r = VG_(open)(path, VKI_O_RDONLY, VKI_S_IRUSR|VKI_S_IWUSR);
     Int dir = (Int) sr_Res(r);
     if (dir < 0) return 0; 
@@ -360,7 +362,8 @@ static Function * APROF_(merge_tuple)(  HChar * line_input,
         HELPER(if (sqr_sum < ((double) min) * ((double) min) * ((double) occ)
                 && !r->sqr_cumul_overflow) {
             
-            WARNING(0, "Invalid sqr_sum (overflow?) [2]: %s\n", report);
+            WARNING(0, "%f %f\n", sqr_sum, ((double) min) * ((double) min) * ((double) occ));
+            WARNING(0, "Invalid sqr_sum (overflow?) [2]: routine %s in %s\n", curr->name, report);
             r->sqr_cumul_overflow = True;
         })
         
@@ -603,7 +606,7 @@ static Function * APROF_(merge_tuple)(  HChar * line_input,
         token = VG_(strtok)(NULL, DELIM_DQ);
         APROF_(assert)(token != NULL, "Invalid perf metric: %s", line_orig);
         ULong sum = VG_(strtoull10) (token, NULL);
-        HELPER(printf("Max %llu\n", ULLONG_MAX));
+        //HELPER(printf("Max %llu\n", ULLONG_MAX));
         UOF_LONG(error, token, sum, line_orig);
         APROF_(assert)(sum > 0, "Invalid sum: %s", line_orig);
         

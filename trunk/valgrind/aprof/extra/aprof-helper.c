@@ -284,7 +284,7 @@ static HChar ** merge_by_run(HChar ** list, UInt * size, Runtime * r) {
                             basename(list[curr]));
                 
                 if (merged > 1)
-                    printf("into "YELLOW("%s")"\n", new_rep);
+                    printf("into "GREEN("%s")"\n", new_rep);
                 
                 create_rtn_ht(r);
                 
@@ -403,7 +403,7 @@ static HChar ** merge_by_thread(HChar ** list, UInt * size, Runtime * r) {
                 sprintf(new_rep, "%s/%s/%s", dirname(buf), DIR_MERGE_THREAD,
                         basename(list[curr]));
                 
-                printf("into "YELLOW("%s")"\n", new_rep);
+                printf("into "GREEN("%s")"\n", new_rep);
                 //printf("saving %s to %s\n", list[curr], new_rep);
                 
                 FILE * report = fopen(new_rep, "w");
@@ -549,11 +549,20 @@ Int main(Int argc, HChar *argv[]) {
                 APROF_(assert)(strlen(optarg) > 0 && strlen(optarg) < 1024,
                         "path too long");
                 HChar dir[1024];
+                
+                if (optarg[strlen(optarg) - 1] == '/')
+                    optarg[strlen(optarg) - 1] = '\0';
+                
+                STR(dir, "%s", optarg);
+                
+                /*
                 if (optarg[strlen(optarg) - 1] == '/') {
                     STR(dir, "%s", optarg);
                 } else {
                     STR(dir, "%s/", optarg);
                 }
+                */
+                
                 directory = dir;
                 //printf("directory := %s\n", directory);
                 break;
@@ -646,9 +655,8 @@ Int main(Int argc, HChar *argv[]) {
 
     UInt size = 0;
     HChar ** list;
-    if (directory != NULL && logs[0] == NULL) {
+    if (logs[0] == NULL) {
         
-        //printf("Searching list in: %s\n", directory);
         size = APROF_(search_reports)(&list, directory);
         
     } else {
@@ -721,7 +729,7 @@ Int main(Int argc, HChar *argv[]) {
     for (i = 0; i < SLOT; i++) 
         clean_data(&report[i]);
     
-    if (directory != NULL && logs[0] == NULL) {
+    if (logs[0] == NULL) {
         
         i = 0;
         while (i < size) {
