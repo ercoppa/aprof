@@ -184,9 +184,6 @@ Valid actions are:
 
    Merge reports (no criteria).
 
-`-c` (experimental feature)
-   Compare two reports; required -a and -b arguments.
-
 Other options:
 
 `-d <PATH> [default: working directory]`
@@ -195,8 +192,12 @@ Other options:
 `-a <PATH>`
    Perform an action on a specific report.
 
-`-b <PATH>`
-   Compare report specified with -a with this report.
+Some usage examples:
+
+   Merge report with same PID (different threads) stored in directory `logs`:
+   {{{
+   aprof-X.Y.Z/inst/bin/aprof-helper -t -d logs
+   }}}
 
 == Report file format ==
 
