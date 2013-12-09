@@ -194,10 +194,10 @@ Other options:
 
 Some usage examples:
 
-   Merge report with same PID (different threads) stored in directory `logs`:
-   {{{
-   aprof-X.Y.Z/inst/bin/aprof-helper -t -d logs
-   }}}
+ * Merge report with same PID (different threads) stored in directory `logs`:
+{{{
+aprof-X.Y.Z/inst/bin/aprof-helper -t -d logs
+}}}
 
 == Report file format ==
 
