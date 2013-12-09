@@ -126,9 +126,25 @@ See the [BasicUsage#Profile_a_program basic usage page]
   To reduce the space needed by the shadow memory, `aprof` allows users to configure the resolution of distinct observable memory objects, trading space for accuracy. This can potentially impact the number of distinct RMS values observed by `aprof`, and therefore the number of collected performance tuples. We denote by k the size in bytes of the smallest observable objects, which we assume to be aligned to addresses multiple of k. For k = 1, we have the finest resolution, shadowing the addresses of all accessed individual memory bytes. For k = 2, we trace accesses to 2-bytes words aligned at 16-bit boundaries, halving the universe of timestamps. The larger k, the smaller the RMS accuracy for routines working on small objects (e.g., strings of characters) and the smaller the size of the shadow memory. 
   Possible valid values are: 1, 2, 4, 8, 16. 
 
-`--log-dir=<PATH>`
+`--log-dir=<PATH> [default: cwd]`
 
    Reports will be saved in this directory.
+
+`--drms=no|yes [default: no]`
+
+   Use as input metric the Dynamic Read Memory Size (DRMS).
+
+`--collect-cct=no|yes [default: no]`
+
+   Collect calling contect trees.
+
+`--single-log=no|yes [default: no]`
+
+   Output a single report for all threads.
+
+`--incremental-log=no|yes [default: no]`
+
+   Load previous reports (from cwd or log dir) and add performance tuples of the current run. This implies --single-log option. 
 
 <wiki:comment>
 == aprof specific client requests ==
