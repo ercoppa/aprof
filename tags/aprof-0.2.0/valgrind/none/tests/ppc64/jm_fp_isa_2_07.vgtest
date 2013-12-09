@@ -1,2 +1,0 @@
-prereq: ../../../tests/check_isa-2_07_cap
-prog: test_isa_2_07_part1 -f

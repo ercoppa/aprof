@@ -1,2 +1,0 @@
-prereq: ../../../tests/check_dfp_cap
-prog: test_dfp3
