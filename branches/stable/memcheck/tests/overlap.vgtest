@@ -1,3 +1,0 @@
-prog: overlap
-vgopts: -q
-stderr_filter: filter_memcpy
