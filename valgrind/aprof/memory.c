@@ -43,6 +43,10 @@ VG_REGPARM(3) void APROF_(trace_access_rms)(UWord type,
 
     ThreadData * tdata = APROF_(runtime).current_tdata;
     APROF_(debug_assert)(tdata != NULL, "Thread data is NULL");
+
+    #if EMPTY_MEM_ANALYSIS
+    return;
+    #endif
     
     #if EVENTCOUNT > 0
     if (type == LOAD) tdata->num_read++;
@@ -90,6 +94,10 @@ VG_REGPARM(3) void APROF_(trace_access_drms)(UWord type,
 
     ThreadData * tdata = APROF_(runtime).current_tdata;
     APROF_(debug_assert)(tdata != NULL, "Thread data is NULL");
+    
+    #if EMPTY_MEM_ANALYSIS
+    return;
+    #endif
 
     #if EVENTCOUNT > 0
     if (type == LOAD) tdata->num_read++;

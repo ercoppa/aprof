@@ -63,8 +63,9 @@
                                 // 1 == 1.1, 2 == 1.2, ...
 
 /* Behavioral macro */
-#define EMPTY_ANALYSIS      0   // if 1, analysis routines are empty 
-                                // (useful in combination with EVENTCOUNT)
+#define EMPTY_FN_ANALYSIS   0   // if 1, routine analysis is empty 
+
+#define EMPTY_MEM_ANALYSIS  0   // if 1, memory access analysis is empty
 
 #define DEBUG               1   // Enable some sanity checks
 

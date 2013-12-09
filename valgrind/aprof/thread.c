@@ -89,7 +89,10 @@ void APROF_(thread_exit)(ThreadId tid) {
     APROF_(debug_assert)(tdata != NULL, "Invalid tdata");
 
     APROF_(unwind_stack)(tdata);
+    
+    #if !EMPTY_FN_ANALYSIS || !EMPTY_MEM_ANALYSIS
     APROF_(generate_report)(tdata, tid);
+    #endif
 
     #if EVENTCOUNT
     VG_(printf)("[TID=%d] Load: %llu\n", tid, tdata->num_read);
