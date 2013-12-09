@@ -594,7 +594,7 @@ static Function * APROF_(merge_tuple)(  HChar * line_input,
         } else {
             
             if (VG_(strcmp)(r->application, app_r) != 0 HELPER(&& !r->merge_all)) {
-                VG_(umsg)("Invalid app\n");
+                //VG_(umsg)("Invalid app\n");
                 *invalid = True;
                 VG_(free)(line);
                 return NULL;
@@ -621,7 +621,7 @@ static Function * APROF_(merge_tuple)(  HChar * line_input,
         UOF_LONG(error, token, ver, line_orig);
         
         if (ver != REPORT_VERSION) {
-            VG_(umsg)("Invalid version\n");
+            //VG_(umsg)("Invalid version\n");
             *invalid = True;
             VG_(free)(line);
             return NULL;
@@ -646,7 +646,7 @@ static Function * APROF_(merge_tuple)(  HChar * line_input,
         if (r->input_metric == RMS || r->input_metric == DRMS) {
             
             if (im != r->input_metric) {
-                VG_(umsg)("Invalid metric\n");
+                //VG_(umsg)("Invalid metric\n");
                 *invalid = True;
                 VG_(free)(line);
                 return NULL;
@@ -668,7 +668,7 @@ static Function * APROF_(merge_tuple)(  HChar * line_input,
             r->memory_resolution = m_res;
         
         if (r->memory_resolution != m_res) {
-            VG_(umsg)("Invalid memory resolution\n");
+            //VG_(umsg)("Invalid memory resolution\n");
             *invalid = True;
             VG_(free)(line);
             return NULL;
@@ -720,7 +720,7 @@ static Function * APROF_(merge_tuple)(  HChar * line_input,
             r->binary_mtime = bmtime;
         
         if (bmtime != r->binary_mtime) {
-            VG_(umsg)("Invalid binary mtime\n");
+            //VG_(umsg)("Invalid binary mtime\n");
             *invalid = True;
             VG_(free)(line);
             return NULL;
@@ -835,6 +835,7 @@ void APROF_(load_reports)(void) {
             VG_(unlink)(list[k]);
             VG_(umsg)("Merged report: %s\n", list[k]);
         }
+        VG_(free)(list[k]);
     }
     VG_(free)(list);
 }

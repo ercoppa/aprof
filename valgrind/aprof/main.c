@@ -307,8 +307,8 @@ static void APROF_(init)(void) {
         APROF_(runtime).flush_events = APROF_(flush_events_rms);
     }
     
-    APROF_(runtime).fn_ht = HT_construct(NULL);    
-    APROF_(runtime).obj_ht = HT_construct(NULL);
+    APROF_(runtime).fn_ht = HT_construct(APROF_(destroy_function));    
+    APROF_(runtime).obj_ht = HT_construct(APROF_(destroy_object));
     APROF_(runtime).global_counter = 1;
     APROF_(runtime).events_used = 0;
     APROF_(runtime).current_TID = VG_INVALID_THREADID;
@@ -423,27 +423,9 @@ static void APROF_(fini)(Int exitcode) {
     }
     
     // destroy function objs
-    HT_ResetIter(APROF_(runtime).fn_ht);
-    Function * f = HT_RemoveNext(APROF_(runtime).fn_ht);
-    while (f != NULL) {
-        
-        APROF_(delete)(FN_NAME_S, f->name);
-        if (f->mangled) APROF_(delete)(MANGLED_S, f->mangled);
-        APROF_(delete)(FN_S, f);
-        
-        f = HT_RemoveNext(APROF_(runtime).fn_ht);
-    }
     HT_destruct(APROF_(runtime).fn_ht);
     
     // destroy ELF objects
-    HT_ResetIter(APROF_(runtime).obj_ht);
-    Object * o = HT_RemoveNext(APROF_(runtime).obj_ht);
-    while (o != NULL) {
-        
-        APROF_(delete)(OBJ_NAME_S, o->name);
-        APROF_(delete)(OBJ_S, o);
-        o = HT_RemoveNext(APROF_(runtime).obj_ht);
-    }
     HT_destruct(APROF_(runtime).obj_ht);
     
     if (APROF_(runtime).input_metric == DRMS)

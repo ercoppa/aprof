@@ -52,12 +52,20 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
     RoutineInfo * rtn_info = act->routine_info;
     APROF_(debug_assert)(rtn_info != NULL, "Invalid routine info");
     
+    /*
+    if (VG_(strcmp)(act->routine_info->fn->name, "_dl_runtime_resolve") == 0)
+        APROF_(assert)(rtn_info->fn->skip, "dl_runtime_resolved not skipped");
+    */
+    
     if (rtn_info->fn->skip) {
         tdata->skip++;
         return;
     }
     
-    if (tdata->skip > 0) return;
+    if (tdata->skip > 0) {
+        //VG_(umsg)("Skipping: %s\n", act->routine_info->fn->name);
+        return;
+    }
     
     if (APROF_(runtime).input_metric == RMS) {
         
@@ -145,6 +153,7 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
             
             tdata->skip--;
             tdata->skip_cost += cumul_cost;
+            //VG_(umsg)("Skip cost += %llu [%s]\n", cumul_cost, act->routine_info->fn->name);
         }
         
         return;
@@ -205,7 +214,6 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
         tuple->sum_self_cost += self_cost;
         tuple->sqr_self_cost += self_cost * self_cost;
         
-        /*
         tuple->max_self_cost = tuple->max_self_cost ^  // max(x, y)
                                     ((tuple->max_self_cost ^ self_cost) 
                                     & -(tuple->max_self_cost < self_cost)); 
@@ -213,15 +221,17 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
         tuple->min_self_cost = tuple->min_self_cost ^ // min(x, y)
                                     ((self_cost ^ tuple->min_self_cost) 
                                     & -(self_cost < tuple->min_self_cost)); 
-        */
+        
+        /*
         tuple->max_self_cost = (tuple->max_self_cost < self_cost) 
                                 ? self_cost : tuple->max_self_cost;
         
         tuple->min_self_cost = (tuple->min_self_cost > self_cost) 
                                 ? self_cost : tuple->min_self_cost;
+        */
         
         // real cumulative cost
-        if (rtn_info->recursion_pending < 2) 
+        if (rtn_info->recursion_pending < 1) 
             tuple->sum_cumul_real_cost += cumul_cost;
         
         #if INPUT_STATS

@@ -274,6 +274,8 @@ UInt APROF_(str_hash)(const HChar *s);
 RoutineInfo * APROF_(new_routine_info)(HashTable * rtn_ht, 
                                 Function * fn, UWord target, ThreadData * t);
 void APROF_(destroy_routine_info)(RoutineInfo * ri);
+void APROF_(destroy_function)(void * fnt);
+void APROF_(destroy_object)(void * obj);
     
 /* Syscall wrappers (syscall.c) */
 void APROF_(pre_syscall)(ThreadId tid, UInt syscallno, UWord * args, 

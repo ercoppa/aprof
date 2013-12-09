@@ -55,10 +55,9 @@ static ThreadData * APROF_(thread_start)(ThreadId tid){
     tdata->last_exit = NONE;
     tdata->next_activation_id = 1;
     tdata->shadow_memory = LK_create();
-    tdata->rtn_ht = HT_construct(NULL);
+    tdata->rtn_ht = HT_construct(VG_(free));
     tdata->next_routine_id = 0;
     tdata->next_context_id = 1;
-    
     
     if (APROF_(runtime).collect_CCT){
         if (!APROF_(runtime).single_report) 

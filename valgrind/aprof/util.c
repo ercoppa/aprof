@@ -95,3 +95,20 @@ void APROF_(destroy_routine_info)(RoutineInfo * ri) {
     HT_destruct(ri->input_map);
     APROF_(delete)(RT_S, ri);
 }
+
+void APROF_(destroy_function)(void * fnt) {
+    
+    Function * f = (Function *) fnt;
+    
+    APROF_(delete)(FN_NAME_S, f->name);
+    if (f->mangled) APROF_(delete)(MANGLED_S, f->mangled);
+    HT_destruct(f->input_map);
+    
+    APROF_(delete)(FN_S, f);
+}
+
+void APROF_(destroy_object)(void * obj) {
+    Object * o = (Object *) obj;
+    APROF_(delete)(OBJ_NAME_S, o->name);
+    APROF_(delete)(OBJ_S, o);
+}
