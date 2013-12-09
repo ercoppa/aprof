@@ -194,9 +194,20 @@ Other options:
 
 Some usage examples:
 
- * Merge report with same PID (different threads) stored in directory `logs`:
+ * Merge reports with same PID (different threads of the same run) stored in directory `logs`:
 {{{
 aprof-X.Y.Z/inst/bin/aprof-helper -t -d logs
+}}}
+
+ * Merge reports of different runs of the same program stored in directory `logs`:
+{{{
+aprof-X.Y.Z/inst/bin/aprof-helper -r -d logs
+}}}
+Different threads will continue to have distinct reports (add -t option otherwise).
+
+ * Check consistency report `prog_129_0_4.aprof`:
+{{{
+aprof-X.Y.Z/inst/bin/aprof-helper -k -a prog_129_0_4.aprof
 }}}
 
 == Report file format ==
