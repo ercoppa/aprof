@@ -199,11 +199,11 @@ Some usage examples:
 aprof-X.Y.Z/inst/bin/aprof-helper -t -d logs
 }}}
 
- * Merge reports of different runs of the same program stored in directory `logs`. different threads will continue to have distinct reports (add -t option otherwise).
+ * Merge reports of different runs of the same program stored in directory `logs`: 
 {{{
 aprof-X.Y.Z/inst/bin/aprof-helper -r -d logs
 }}}
-
+   Different threads will continue to have distinct reports (add -t option otherwise).
 
  * Check consistency report `prog_129_0_4.aprof`:
 {{{
