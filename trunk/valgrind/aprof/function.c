@@ -39,12 +39,12 @@ void APROF_(function_enter)(ThreadData * tdata, Activation * act) {
     APROF_(debug_assert)(act != NULL, "Invalid activation info");
     APROF_(verbose)(1, "Enter: %s\n", act->routine_info->fn->name);
     
-    #if EVENTCOUNT
-    tdata->num_func_enter++;
+    #if EMPTY_FN_ANALYSIS
+    return;
     #endif
     
-    #if EMPTY_ANALYSIS
-    return;
+    #if EVENTCOUNT
+    tdata->num_func_enter++;
     #endif
     
     act->start = APROF_(time)(tdata);
@@ -133,12 +133,12 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
     APROF_(debug_assert)(act != NULL, "Invalid activation info");
     APROF_(verbose)(1, "Exit: %s\n", act->routine_info->fn->name);
 
-    #if EVENTCOUNT
-    tdata->num_func_exit++;
+    #if EMPTY_FN_ANALYSIS
+    return;
     #endif
 
-    #if EMPTY_ANALYSIS
-    return;
+    #if EVENTCOUNT
+    tdata->num_func_exit++;
     #endif
 
     ULong cumul_cost = APROF_(time)(tdata) - act->start;
