@@ -97,11 +97,7 @@ typedef           int             SysRes;
 #define vgAprof_fprintf             fprintf
 #define vgAprof_fclose              fclose
 
-typedef struct Runtime Runtime;
-typedef struct RoutineInfo RoutineInfo;
-typedef struct Function Function;
-typedef struct CCTNode CCTNode;
-typedef struct _HashTable HashTable;
+#include "../data-common.h"
 
 void post_merge_consistency(Runtime * r, HChar * report);
 UInt APROF_(str_hash)(const HChar *s);
