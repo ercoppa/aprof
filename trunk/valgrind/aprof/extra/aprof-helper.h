@@ -1,6 +1,12 @@
 #ifndef HELPER_DTYPES_H
 #define HELPER_DTYPES_H
 
+/*
+ * aprof (based on Valgrind which uses a embedded libc) and aprof-tool 
+ * (default libc) share some code. This is a "bridge" between the
+ * two worlds.
+ */
+
 #include <stdlib.h>
 #include <assert.h>
 #include <sys/types.h>
@@ -107,6 +113,8 @@ void APROF_(print_report)(FILE * report, Runtime * r,
                             HashTable * rtn_ht, ULong cost,
                             CCTNode * root);
 UInt APROF_(search_reports)(HChar *** reports, const HChar * path);
+void APROF_(destroy_function)(void * fnt);
+void APROF_(destroy_object)(void * obj);
 
 #define STR(buf, ...) sprintf(buf, __VA_ARGS__);
 

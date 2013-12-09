@@ -133,36 +133,51 @@ void APROF_(print_report)(  FILE * report,
     // write commandline
     APROF_(fprintf)(report, "f %s\n", r->cmd_line);
 
+    HashTable * routines = rtn_ht;
+    if (routines == NULL) routines = r->fn_ht;
+
     // iterate over routines
-    HT_ResetIter(rtn_ht);
-    RoutineInfo * rtn_info = HT_RemoveNext(rtn_ht);
-    while (rtn_info != NULL) {
+    HT_ResetIter(routines);
+    void * rtn = HT_RemoveNext(routines);
+    while (rtn != NULL) {
         
-        if (!rtn_info->fn->discard) {
+        Function * fn; HashTable * input_map; UInt routine_id;
+        if (rtn_ht == NULL) {
+            
+            fn = (Function *) rtn;
+            input_map = fn->input_map;
+            routine_id = fn->function_id;
+            
+        } else {
+        
+            fn = ((RoutineInfo *) rtn)->fn;
+            input_map = ((RoutineInfo *) rtn)->input_map;
+            routine_id = ((RoutineInfo *) rtn)->routine_id;
+        }
+        
+        if (!fn->discard) {
         
             const HChar * obj_name = "NONE";
-            if (rtn_info->fn->obj != NULL)
-                obj_name = rtn_info->fn->obj->name; 
+            if (fn->obj != NULL)
+                obj_name = fn->obj->name; 
         
-            APROF_(fprintf)(report, "r \"%s\" \"%s\" %llu\n", 
-                        rtn_info->fn->name, obj_name, 
-                        rtn_info->routine_id);
+            APROF_(fprintf)(report, "r \"%s\" \"%s\" %u\n", 
+                        fn->name, obj_name, routine_id);
         
-            if (rtn_info->fn->mangled != NULL) {
-                APROF_(fprintf)(report, "u %llu \"%s\"\n", 
-                                rtn_info->routine_id, 
-                                rtn_info->fn->mangled);
+            if (fn->mangled != NULL) {
+                APROF_(fprintf)(report, "u %u \"%s\"\n", 
+                                routine_id, fn->mangled);
             }
 
             // iterate over tuples
-            HT_ResetIter(rtn_info->input_map);
-            Input * tuple = HT_RemoveNext(rtn_info->input_map);
+            HT_ResetIter(input_map);
+            Input * tuple = HT_RemoveNext(input_map);
             while (tuple != NULL) {
             
                 if (r->collect_CCT)
                     APROF_(fprintf)(report, "q %lu ", tuple->context_id);
                 else
-                    APROF_(fprintf)(report, "p %llu ", rtn_info->routine_id);
+                    APROF_(fprintf)(report, "p %u ", routine_id);
                 
                 APROF_(fprintf)(report,
                                 "%lu %llu %llu %llu ",
@@ -210,17 +225,17 @@ void APROF_(print_report)(  FILE * report,
                 
                 APROF_(fprintf)(report, "\n");
                 APROF_(delete)(INPUT_S, tuple);
-                tuple = HT_RemoveNext(rtn_info->input_map);
+                tuple = HT_RemoveNext(input_map);
             }
             
         }
         
-        #if !APROF_TOOL
-        rtn_info->fn->input_map = NULL;
-        #endif
+        if (rtn_ht != NULL) 
+            APROF_(destroy_routine_info)(rtn);
+        else
+            APROF_(destroy_function)(rtn);
         
-        APROF_(destroy_routine_info)(rtn_info);
-        rtn_info = HT_RemoveNext(rtn_ht);
+        rtn = HT_RemoveNext(routines);
     }
     
     #if APROF_TOOL
@@ -230,7 +245,7 @@ void APROF_(print_report)(  FILE * report,
     
     // close report file
     APROF_(fclose)(report);
-}
+} 
 
 #if APROF_TOOL
 void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
@@ -242,18 +257,21 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
 
     cost -= tdata->skip_cost;
     
+    HashTable * routines = tdata->rtn_ht;
     if (APROF_(runtime).single_report) {
     
         APROF_(runtime).extra_cost += cost;
         if (APROF_(runtime).running_threads > 1) return;
         else cost = APROF_(runtime).extra_cost;
+        
+        routines = NULL;
     }
             
     HChar * filename = NULL;
     FILE * file = APROF_(create_report)(APROF_(runtime).application, tid, &filename);
     APROF_(assert)(file != NULL, "Report can not be created: %s", filename);
     
-    APROF_(print_report)(file, &APROF_(runtime), tdata->rtn_ht, cost, tdata->root);
+    APROF_(print_report)(file, &APROF_(runtime), routines, cost, tdata->root);
     
     VG_(umsg)("Report: %s\n", filename);
     VG_(free)(filename);

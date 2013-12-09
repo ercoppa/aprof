@@ -20,20 +20,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-static void fn_destroy(void * fnt) {
-    Function * fn = (Function *) fnt;
-    VG_(free)(fn->name);
-    VG_(free)(fn->mangled);
-    HT_destruct(fn->input_map);
-    VG_(free)(fnt);
-}
-
-static void obj_destroy(void * obj) {
-    Object * o = (Object *) obj;
-    VG_(free)(o->name);
-    VG_(free)(o);
-}
-
 void post_merge_consistency(Runtime * r, HChar * report) {
     
     /* ToDo: re-add some sanity checks */
@@ -61,8 +47,6 @@ static void clean_data(Runtime * rep) {
     
     APROF_(assert)(rep != NULL, "Invalid aprof report");
     
-    if (rep->rtn_ht != NULL)
-        HT_destruct(rep->rtn_ht);
     if (rep->fn_ht != NULL)
         HT_destruct(rep->fn_ht);
     if (rep->obj_ht != NULL)
@@ -90,9 +74,8 @@ static void reset_data(Runtime * rep) {
     rep->cmd_line = NULL;
     rep->application = NULL;
     rep->memory_resolution = 0;
-    rep->fn_ht = HT_construct(fn_destroy);
-    rep->obj_ht = HT_construct(obj_destroy);
-    rep->rtn_ht = HT_construct(VG_(free));
+    rep->fn_ht = HT_construct(APROF_(destroy_function));
+    rep->obj_ht = HT_construct(APROF_(destroy_object));
     rep->input_metric = INVALID;
 }
 
@@ -160,17 +143,6 @@ static Int get_tid_report(HChar * report) {
     Int tid = VG_(strtoull10)(p, NULL);
     
     return tid;
-}
-
-static void create_rtn_ht(Runtime * r) {
-        
-    HT_ResetIter(r->fn_ht);
-    Function * f = HT_Next(r->fn_ht);
-    while (f != NULL) {
-        
-        APROF_(new_routine_info)(r->rtn_ht, f, (UWord) f);
-        f = HT_Next(r->fn_ht);
-    }
 }
 
 static HChar ** merge_by_run(HChar ** list, UInt * size, Runtime * r) {
@@ -286,13 +258,11 @@ static HChar ** merge_by_run(HChar ** list, UInt * size, Runtime * r) {
                 if (merged > 1)
                     printf("into "GREEN("%s")"\n", new_rep);
                 
-                create_rtn_ht(r);
-                
                 FILE * report = fopen(new_rep, "w");
                 APROF_(assert)(report != NULL, 
                                 "Can't save report: %s\n", new_rep);
                 
-                APROF_(print_report)(report, r, r->rtn_ht, r->extra_cost, NULL);
+                APROF_(print_report)(report, r, NULL, r->extra_cost, NULL);
                                         
                 list_post[size_post++] = new_rep;
                 
@@ -410,7 +380,7 @@ static HChar ** merge_by_thread(HChar ** list, UInt * size, Runtime * r) {
                 APROF_(assert)(report != NULL, 
                                 "Can't save report: %s\n", new_rep);
                 
-                APROF_(print_report)(report, r, r->rtn_ht, r->extra_cost, NULL);
+                APROF_(print_report)(report, r, NULL, r->extra_cost, NULL);
                 
                 list_post[size_post++] = new_rep;
                 
@@ -696,7 +666,6 @@ Int main(Int argc, HChar *argv[]) {
             
             reset_data(&report[0]);
             APROF_(merge_report)(list[i++], &report[0]);
-            //create_rtn_ht(&report[0]);
         }
                 
         printf(GREEN("Passed:")" ");
