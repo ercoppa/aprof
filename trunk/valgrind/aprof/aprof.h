@@ -56,7 +56,7 @@
 #include "../coregrind/pub_core_options.h"
 #include "lookup_table.h"
 
-#define APROF_VERSION       "0.2"
+#define APROF_VERSION       "0.2.0"
 #define APROF_(str)         VGAPPEND(vgAprof_,str)
 #define APROF_TOOL          1   // useful for data-common.h
 #define REPORT_VERSION      6   // see documentation on our site:
