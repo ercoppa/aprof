@@ -24,7 +24,7 @@ public class RmsTableModel extends AbstractTableModel {
         if (main == null || main.isInputMetricRms())
             columnNames.add("RMS");
         else
-            columnNames.add("RVMS");
+            columnNames.add("DRMS");
         columnTypes.add(Integer.class);
             
         if (Main.getChartCost() == Main.COST_CUMULATIVE)
@@ -115,7 +115,7 @@ public class RmsTableModel extends AbstractTableModel {
             case 6: return te.getRatioSumRvmsSyscall() * 100;
             case 7: return te.getRatioSumRvmsThread() * 100;
 			//case 5: return te.getVar();
-			//case 6: return rtn.getMcc(te.getRms());
+			//case 6: return rtn.getAmortizedValue(te.getRms());
 			default: return null;
 		}
 	}

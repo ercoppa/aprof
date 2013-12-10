@@ -32,7 +32,7 @@ public class RmsFilterDialog extends javax.swing.JDialog {
         if (((MainWindow)this.getParent()).isInputMetricRms())
             jCheckBox2.setText("#RMS");
         else
-            jCheckBox2.setText("#RVMS");
+            jCheckBox2.setText("#DRMS");
 	}
 
 	/** This method is called from within the constructor to

@@ -100,7 +100,7 @@ public class AprofReport {
                 String m = tokenizer.nextToken();
 				if (m.equals("rms"))
                     this.input_metric = RMS;
-                else if (m.equals("rvms"))
+                else if (m.equals("rvms") || m.equals("drms"))
                     this.input_metric = RVMS;
                     
                 continue;
@@ -138,7 +138,7 @@ public class AprofReport {
                 
 				int rtn_id = Integer.parseInt(id);
                 
-				RoutineInfo r;
+                RoutineInfo r;
 				try {
 					
 					r = routines.get(rtn_id);
@@ -247,8 +247,8 @@ public class AprofReport {
 				
 				int rtn_id = Integer.parseInt(tokenizer.nextToken());
 				long rms = Long.parseLong(tokenizer.nextToken());
-				long min_cost = Long.parseLong(tokenizer.nextToken());
-				long max_cost = Long.parseLong(tokenizer.nextToken());
+				double min_cost = Double.parseDouble(tokenizer.nextToken());
+				double max_cost = Double.parseDouble(tokenizer.nextToken());
 				double cost_sum = Double.parseDouble(tokenizer.nextToken());
                 
                 double cumul_sqr = 0;
@@ -265,10 +265,10 @@ public class AprofReport {
                     total_self_cost += self;
                 }
                 
-                long self_min = 0, self_max = 0;
+                double self_min = 0, self_max = 0;
                 if (this.version >= 3) {
-                    self_min = Long.parseLong(tokenizer.nextToken());
-                    self_max = Long.parseLong(tokenizer.nextToken());
+                    self_min = Double.parseDouble(tokenizer.nextToken());
+                    self_max = Double.parseDouble(tokenizer.nextToken());
                 }
                 
                 double self_sqr = 0;
@@ -460,7 +460,7 @@ public class AprofReport {
 			//throw(new Exception());
 		}
 		in.close();
-				
+        
 		if (hasContexts()) {
 			
 			Iterator it = routines.iterator();
@@ -474,14 +474,16 @@ public class AprofReport {
 		}
 		
 		total_contexts = contexts.size(); 
-		
+        
 		for (int i = 0; i < routines.size(); i++) {
-			
-            //System.out.println("Routine i=" + i);
             
+            if (routines.get(i) == null)
+                System.out.println("Missing routine: " + i);
 			long calls = routines.get(i).getTotalCalls();
-			if (routines.get(i).getTotalCumulativeCost() > total_cost)
-				total_cost = routines.get(i).getTotalCumulativeCost();
+			if (routines.get(i).getTotalCumulativeCost() > total_cost) {
+                System.out.println("Routine " + routines.get(i).getName());
+                total_cost = routines.get(i).getTotalCumulativeCost();
+            }
 			total_calls += calls;
 			
 			int ne = routines.get(i).getSizeRmsList();
@@ -502,7 +504,6 @@ public class AprofReport {
             System.out.println("Total self: " + total_self_cost);
         }
         */
-
 	}
 
     public HashMap<String, Routine> getHashMapRoutines() {

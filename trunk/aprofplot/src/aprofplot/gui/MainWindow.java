@@ -3,26 +3,17 @@ package aprofplot.gui;
 import aprofplot.*;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.Insets;
-import java.awt.Rectangle;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.*;
 import javax.swing.table.TableModel;
 import javax.swing.text.BadLocationException;
 import javax.swing.tree.*;
 import java.util.*;
 import java.io.*;
-import java.net.URL;
-import javax.swing.RowSorter.SortKey;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
-import org.fife.ui.rtextarea.Gutter;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
 public class MainWindow extends javax.swing.JFrame {
@@ -107,9 +98,7 @@ public class MainWindow extends javax.swing.JFrame {
         jCheckBoxMenuItem6 = new javax.swing.JCheckBoxMenuItem();
         jCheckBoxMenuItem9 = new javax.swing.JCheckBoxMenuItem();
         jCheckBoxMenuItem8 = new javax.swing.JCheckBoxMenuItem();
-        jCheckBoxMenuItem11 = new javax.swing.JCheckBoxMenuItem();
-        jCheckBoxMenuItem22 = new javax.swing.JCheckBoxMenuItem();
-        jCheckBoxMenuItem23 = new javax.swing.JCheckBoxMenuItem();
+        jCheckBoxMenuItem25 = new javax.swing.JCheckBoxMenuItem();
         jButton12 = new javax.swing.JButton();
         jToolBar1 = new javax.swing.JToolBar();
         jButton3 = new javax.swing.JButton();
@@ -235,6 +224,7 @@ public class MainWindow extends javax.swing.JFrame {
         jMenuItem19 = new javax.swing.JMenuItem();
         jMenuItem20 = new javax.swing.JMenuItem();
         jMenuItem18 = new javax.swing.JMenuItem();
+        jMenuItem21 = new javax.swing.JMenuItem();
         jMenuItem7 = new javax.swing.JMenuItem();
         jSeparator4 = new javax.swing.JSeparator();
         jMenuItem2 = new javax.swing.JMenuItem();
@@ -248,9 +238,7 @@ public class MainWindow extends javax.swing.JFrame {
         jCheckBoxMenuItem14 = new javax.swing.JCheckBoxMenuItem();
         jCheckBoxMenuItem17 = new javax.swing.JCheckBoxMenuItem();
         jCheckBoxMenuItem16 = new javax.swing.JCheckBoxMenuItem();
-        jCheckBoxMenuItem19 = new javax.swing.JCheckBoxMenuItem();
-        jCheckBoxMenuItem20 = new javax.swing.JCheckBoxMenuItem();
-        jCheckBoxMenuItem21 = new javax.swing.JCheckBoxMenuItem();
+        jCheckBoxMenuItem24 = new javax.swing.JCheckBoxMenuItem();
         jCheckBoxMenuItem1 = new javax.swing.JCheckBoxMenuItem();
         jMenu4 = new javax.swing.JMenu();
         jMenuItem3 = new javax.swing.JMenuItem();
@@ -299,7 +287,7 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jPopupMenu1.add(jCheckBoxMenuItem4);
 
-        jCheckBoxMenuItem7.setText("Mean cumulative cost plot");
+        jCheckBoxMenuItem7.setText("Amortized cost plot");
         jCheckBoxMenuItem7.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jCheckBoxMenuItem7ActionPerformed(evt);
@@ -347,29 +335,14 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jPopupMenu1.add(jCheckBoxMenuItem8);
 
-        jCheckBoxMenuItem11.setText("Program statistics plot");
-        jCheckBoxMenuItem11.addActionListener(new java.awt.event.ActionListener() {
+        jCheckBoxMenuItem25.setText("Alpha plot");
+        jCheckBoxMenuItem25.setToolTipText("");
+        jCheckBoxMenuItem25.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxMenuItem11ActionPerformed(evt);
+                jCheckBoxMenuItem25ActionPerformed(evt);
             }
         });
-        jPopupMenu1.add(jCheckBoxMenuItem11);
-
-        jCheckBoxMenuItem22.setText("Ratio tuples plot");
-        jCheckBoxMenuItem22.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxMenuItem22ActionPerformed(evt);
-            }
-        });
-        jPopupMenu1.add(jCheckBoxMenuItem22);
-
-        jCheckBoxMenuItem23.setText("External input plot");
-        jCheckBoxMenuItem23.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxMenuItem23ActionPerformed(evt);
-            }
-        });
-        jPopupMenu1.add(jCheckBoxMenuItem23);
+        jPopupMenu1.add(jCheckBoxMenuItem25);
 
         jButton12.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Filter-icon.png"))); // NOI18N
         jButton12.setToolTipText("Filter routines");
@@ -1052,6 +1025,15 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jMenu6.add(jMenuItem18);
 
+        jMenuItem21.setText("Alpha values...");
+        jMenuItem21.setEnabled(false);
+        jMenuItem21.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem21ActionPerformed(evt);
+            }
+        });
+        jMenu6.add(jMenuItem21);
+
         jMenu1.add(jMenu6);
 
         jMenuItem7.setText("Merge...");
@@ -1100,7 +1082,7 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jMenu3.add(jCheckBoxMenuItem12);
 
-        jCheckBoxMenuItem15.setText("Mean cumulative cost plot");
+        jCheckBoxMenuItem15.setText("Amortized cost plot");
         jCheckBoxMenuItem15.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jCheckBoxMenuItem15ActionPerformed(evt);
@@ -1148,29 +1130,13 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jMenu3.add(jCheckBoxMenuItem16);
 
-        jCheckBoxMenuItem19.setText("Program statistics plot");
-        jCheckBoxMenuItem19.addActionListener(new java.awt.event.ActionListener() {
+        jCheckBoxMenuItem24.setText("Alpha plot");
+        jCheckBoxMenuItem24.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxMenuItem19ActionPerformed(evt);
+                jCheckBoxMenuItem24ActionPerformed(evt);
             }
         });
-        jMenu3.add(jCheckBoxMenuItem19);
-
-        jCheckBoxMenuItem20.setText("Ratio # tuples plot");
-        jCheckBoxMenuItem20.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxMenuItem20ActionPerformed(evt);
-            }
-        });
-        jMenu3.add(jCheckBoxMenuItem20);
-
-        jCheckBoxMenuItem21.setText("External input ratio plot");
-        jCheckBoxMenuItem21.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxMenuItem21ActionPerformed(evt);
-            }
-        });
-        jMenu3.add(jCheckBoxMenuItem21);
+        jMenu3.add(jCheckBoxMenuItem24);
 
         jCheckBoxMenuItem1.setText("Source code editor");
         jCheckBoxMenuItem1.setEnabled(false);
@@ -1335,8 +1301,8 @@ public class MainWindow extends javax.swing.JFrame {
             jCheckBoxMenuItem18.setText("RMS frequency plot");
             jCheckBoxMenuItem10.setText("RMS frequency plot");
         } else {
-            jCheckBoxMenuItem18.setText("RVMS frequency plot");
-            jCheckBoxMenuItem10.setText("RVMS frequency plot");
+            jCheckBoxMenuItem18.setText("DRMS frequency plot");
+            jCheckBoxMenuItem10.setText("DRMS frequency plot");
         }
         
 	}
@@ -1564,11 +1530,15 @@ public class MainWindow extends javax.swing.JFrame {
 		if (jCheckBoxMenuItem5.isSelected()) MMMGraphPanel.clearData();
 		if (jCheckBoxMenuItem9.isSelected()) VarGraphPanel.clearData();
 		if (jCheckBoxMenuItem6.isSelected()) TotalCostGraphPanel.clearData();
-		if (jCheckBoxMenuItem7.isSelected()) MccGraphPanel.clearData();
-		if (jCheckBoxMenuItem11.isSelected()) RtnGraphPanel.setData(null);
+		if (jCheckBoxMenuItem7.isSelected()) AmortizedGraphPanel.clearData();
+		if (jCheckBoxMenuItem24.isSelected()) AlphaGraphPanel.setData(null);
+        
+        /*
+        if (jCheckBoxMenuItem11.isSelected()) RtnGraphPanel.setData(null);
         if (jCheckBoxMenuItem22.isSelected()) RatioTuplesGraphPanel.setData(null);
         if (jCheckBoxMenuItem23.isSelected()) ExternalInputGraphPanel.setData(null);
-		
+		*/
+        
 		// Update routine table: we change data in table, this must be done by swing thread
 		final AprofReport final_report = report;
 		SwingUtilities.invokeLater(new Runnable() {
@@ -1715,12 +1685,14 @@ public class MainWindow extends javax.swing.JFrame {
             TotalCostGraphPanel.setXLogScale(log);
 		if (graph_type != GraphPanel.RTN_PLOT) 
             RtnGraphPanel.setXLogScale(log);
-		if (graph_type != GraphPanel.MCC_PLOT) 
-            MccGraphPanel.setXLogScale(log);
+		if (graph_type != GraphPanel.AMORTIZED_PLOT) 
+            AmortizedGraphPanel.setXLogScale(log);
         if (graph_type != GraphPanel.RATIO_TUPLES_PLOT) 
             RatioTuplesGraphPanel.setXLogScale(log);
         if (graph_type != GraphPanel.EXTERNAL_INPUT_PLOT) 
             ExternalInputGraphPanel.setXLogScale(log);
+        if (graph_type != GraphPanel.ALPHA_PLOT) 
+            AlphaGraphPanel.setXLogScale(log);
         
 	}
 
@@ -1740,14 +1712,16 @@ public class MainWindow extends javax.swing.JFrame {
             TotalCostGraphPanel.setYLogScale(log);
 		if (graph_type != GraphPanel.VAR_PLOT) 
             VarGraphPanel.setYLogScale(log);
-		if (graph_type != GraphPanel.MCC_PLOT) 
-            MccGraphPanel.setYLogScale(log);
+		if (graph_type != GraphPanel.AMORTIZED_PLOT) 
+            AmortizedGraphPanel.setYLogScale(log);
 		if (graph_type != GraphPanel.RTN_PLOT) 
             RtnGraphPanel.setYLogScale(log);
         if (graph_type != GraphPanel.RATIO_TUPLES_PLOT) 
             RatioTuplesGraphPanel.setYLogScale(log);
         if (graph_type != GraphPanel.EXTERNAL_INPUT_PLOT) 
             ExternalInputGraphPanel.setYLogScale(log);
+        if (graph_type != GraphPanel.ALPHA_PLOT) 
+            AlphaGraphPanel.setYLogScale(log);
 	
 	}
 
@@ -1769,12 +1743,14 @@ public class MainWindow extends javax.swing.JFrame {
             VarGraphPanel.maximize();
 		if (graph_type != GraphPanel.RTN_PLOT) 
             RtnGraphPanel.maximize();
-		if (graph_type != GraphPanel.MCC_PLOT) 
-            MccGraphPanel.maximize();
+		if (graph_type != GraphPanel.AMORTIZED_PLOT) 
+            AmortizedGraphPanel.maximize();
         if (graph_type != GraphPanel.RATIO_TUPLES_PLOT) 
             RatioTuplesGraphPanel.maximize();
         if (graph_type != GraphPanel.EXTERNAL_INPUT_PLOT) 
             ExternalInputGraphPanel.maximize();
+        if (graph_type != GraphPanel.ALPHA_PLOT) 
+            AlphaGraphPanel.maximize();
 	
 	}
 
@@ -1788,7 +1764,7 @@ public class MainWindow extends javax.swing.JFrame {
 		if (graph_type != GraphPanel.MMM_PLOT) MMMGraphPanel.setGroupThreshold(threshold);
 		if (graph_type != GraphPanel.TOTALCOST_PLOT) TotalCostGraphPanel.setGroupThreshold(threshold);
 		if (graph_type != GraphPanel.VAR_PLOT) VarGraphPanel.setGroupThreshold(threshold);
-		if (graph_type != GraphPanel.MCC_PLOT) MccGraphPanel.setGroupThreshold(threshold);
+		if (graph_type != GraphPanel.AMORTIZED_PLOT) AmortizedGraphPanel.setGroupThreshold(threshold);
 	
 	}
 
@@ -1802,7 +1778,7 @@ public class MainWindow extends javax.swing.JFrame {
 		if (graph_type != GraphPanel.MMM_PLOT) MMMGraphPanel.setSmoothThreshold(threshold);
 		if (graph_type != GraphPanel.TOTALCOST_PLOT) TotalCostGraphPanel.setSmoothThreshold(threshold);
 		if (graph_type != GraphPanel.VAR_PLOT) VarGraphPanel.setSmoothThreshold(threshold);
-		if (graph_type != GraphPanel.MCC_PLOT) MccGraphPanel.setSmoothThreshold(threshold);
+		if (graph_type != GraphPanel.AMORTIZED_PLOT) AmortizedGraphPanel.setSmoothThreshold(threshold);
 	
 	}
 	
@@ -1863,7 +1839,7 @@ public class MainWindow extends javax.swing.JFrame {
             jLabel7.setText("");
 			
 			if (jCheckBoxMenuItem4.isSelected()) CostGraphPanel.clearData();
-            if (jCheckBoxMenuItem7.isSelected()) MccGraphPanel.clearData();
+            if (jCheckBoxMenuItem7.isSelected()) AmortizedGraphPanel.clearData();
             if (jCheckBoxMenuItem10.isSelected()) freqGraphPanel.clearData();
             if (jCheckBoxMenuItem5.isSelected()) MMMGraphPanel.clearData();
             if (jCheckBoxMenuItem6.isSelected()) TotalCostGraphPanel.clearData();
@@ -1900,7 +1876,7 @@ public class MainWindow extends javax.swing.JFrame {
         if (jCheckBoxMenuItem5.isSelected()) MMMGraphPanel.setData(r);
         if (jCheckBoxMenuItem9.isSelected()) VarGraphPanel.setData(r);
         if (jCheckBoxMenuItem6.isSelected()) TotalCostGraphPanel.setData(r);
-        if (jCheckBoxMenuItem7.isSelected()) MccGraphPanel.setData(r);
+        if (jCheckBoxMenuItem7.isSelected()) AmortizedGraphPanel.setData(r);
         */
 
         perf.start(this, PerformanceMonitor.ELABORATE);
@@ -1911,7 +1887,8 @@ public class MainWindow extends javax.swing.JFrame {
         if (jCheckBoxMenuItem5.isSelected()) MMMGraphPanel.setRoutine(r);
         if (jCheckBoxMenuItem9.isSelected()) VarGraphPanel.setRoutine(r);
         if (jCheckBoxMenuItem6.isSelected()) TotalCostGraphPanel.setRoutine(r);
-        if (jCheckBoxMenuItem7.isSelected()) MccGraphPanel.setRoutine(r);
+        if (jCheckBoxMenuItem7.isSelected()) AmortizedGraphPanel.setRoutine(r);
+        if (jCheckBoxMenuItem24.isSelected()) AlphaGraphPanel.setRoutine(r);
 
         r.sortRmsListByAccesses();
         Iterator i = r.getRmsListIterator();
@@ -1925,9 +1902,10 @@ public class MainWindow extends javax.swing.JFrame {
             if (jCheckBoxMenuItem5.isSelected()) MMMGraphPanel.addPoint(te);
             if (jCheckBoxMenuItem9.isSelected()) VarGraphPanel.addPoint(te);
             if (jCheckBoxMenuItem6.isSelected()) TotalCostGraphPanel.addPoint(te);
-            if (jCheckBoxMenuItem7.isSelected()) MccGraphPanel.addPoint(te);
+            if (jCheckBoxMenuItem7.isSelected()) AmortizedGraphPanel.addPoint(te);
 
         }
+        if (jCheckBoxMenuItem24.isSelected()) AlphaGraphPanel.populateChart();
 
         if (jCheckBoxMenuItem4.isSelected()) CostGraphPanel.maximize();
         if (jCheckBoxMenuItem8.isSelected()) ratioGraphPanel.maximize();
@@ -1935,11 +1913,20 @@ public class MainWindow extends javax.swing.JFrame {
         if (jCheckBoxMenuItem5.isSelected()) MMMGraphPanel.maximize();
         if (jCheckBoxMenuItem9.isSelected()) VarGraphPanel.maximize();
         if (jCheckBoxMenuItem6.isSelected()) TotalCostGraphPanel.maximize();
-        if (jCheckBoxMenuItem7.isSelected()) MccGraphPanel.maximize();
-
+        if (jCheckBoxMenuItem7.isSelected()) {
+            AmortizedGraphPanel.maximize();
+            AmortizedGraphPanel.updateGraphTitle();
+        }
+        if (jCheckBoxMenuItem24.isSelected()) AlphaGraphPanel.maximize();
+        
         // enable/disable entries in export menu related to routine
-        if (r == null) jMenuItem11.setEnabled(false);
-        else jMenuItem11.setEnabled(true);
+        if (r == null) {
+            jMenuItem11.setEnabled(false);
+            jMenuItem21.setEnabled(false);
+        } else {
+            jMenuItem11.setEnabled(true);
+            jMenuItem21.setEnabled(true);
+        }
 
         // Update routine profile panel
         ((RmsTableModel)jTable2.getModel()).setData(r);
@@ -2288,14 +2275,14 @@ public class MainWindow extends javax.swing.JFrame {
 		try {
 			
 			File tmp = new File(this.report.getName() + "-"
-								+ this.rtn_info.getName() + ".rprof");
+								+ this.rtn_info.getName() + ".dat");
 			
 			JFileChooser chooser = new javax.swing.JFileChooser();
 			String lastReportPath = Main.getLastReportPath();
 			if (!lastReportPath.equals("")) 
 				chooser.setCurrentDirectory(new File(lastReportPath));
 			
-			FileNameExtensionFilter filter = new FileNameExtensionFilter("Routine profile", "rprof");
+			FileNameExtensionFilter filter = new FileNameExtensionFilter("Routine profile", "dat");
 			chooser.setFileFilter(filter);
 			chooser.setAcceptAllFileFilterUsed(false);
 			chooser.setSelectedFile(tmp);
@@ -2308,12 +2295,12 @@ public class MainWindow extends javax.swing.JFrame {
 				PrintWriter out = new PrintWriter(new FileWriter(tmp));
                 
                 out.println("# RMS CUMUL_MIN CUMUL_MAX CUMUL_SUM "
-                            + "REAL_SUM OCC SELF_SUM SELF_MIN SELF_MAX");
+                            + "REAL_SUM OCC SELF_SUM SELF_MIN SELF_MAX AM");
                 
 				while (it.hasNext()) {
 
 					Rms s = (Rms) it.next();
-					out.println(s.getRms() + " " + (int) s.getCumulativeMinCost() 
+					out.print(s.getRms() + " " + (int) s.getCumulativeMinCost() 
 										+ " " + (int) s.getCumulativeMaxCost() 
 										+ " " + (long) s.getTotalCumulativeCost()
                                         + " " + (long) s.getTotalRealCost()
@@ -2322,7 +2309,7 @@ public class MainWindow extends javax.swing.JFrame {
 										+ " " + (int) s.getSelfMaxCost() 
 										+ " " + (long) s.getTotalSelfCost()
                               );
-					//out.format(" %.2f%n", rtn_info.getMcc(s.getRms()));
+					out.format(" %.2f%n", rtn_info.getAmortizedValue(s.getRms()));
 
 				}
 				out.close();
@@ -2345,14 +2332,14 @@ public class MainWindow extends javax.swing.JFrame {
 		ArrayList<Routine> els = this.report.getRoutines();
 		try {
 			
-			File tmp = new File(this.report.getName() + ".pprof");
+			File tmp = new File(this.report.getName() + ".dat");
 			
 			JFileChooser chooser = new javax.swing.JFileChooser();
 			String lastReportPath = Main.getLastReportPath();
 			if (!lastReportPath.equals("")) 
 				chooser.setCurrentDirectory(new File(lastReportPath));
 			
-			FileNameExtensionFilter filter = new FileNameExtensionFilter("Program profile", "pprof");
+			FileNameExtensionFilter filter = new FileNameExtensionFilter("Program profile", "dat");
 			chooser.setFileFilter(filter);
 			chooser.setAcceptAllFileFilterUsed(false);
 			chooser.setSelectedFile(tmp);
@@ -2392,14 +2379,14 @@ public class MainWindow extends javax.swing.JFrame {
 		
 		try {
 			
-			File tmp = new File(this.report.getName() + ".stats");
+			File tmp = new File(this.report.getName() + ".dat");
 			
 			JFileChooser chooser = new javax.swing.JFileChooser();
 			String lastReportPath = Main.getLastReportPath();
 			if (!lastReportPath.equals("")) 
 				chooser.setCurrentDirectory(new File(lastReportPath));
 			
-			FileNameExtensionFilter filter = new FileNameExtensionFilter("Program statistics", "pprof");
+			FileNameExtensionFilter filter = new FileNameExtensionFilter("Program statistics", "dat");
 			chooser.setFileFilter(filter);
 			chooser.setAcceptAllFileFilterUsed(false);
 			chooser.setSelectedFile(tmp);
@@ -2493,9 +2480,9 @@ public class MainWindow extends javax.swing.JFrame {
 
 	private void jCheckBoxMenuItem7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem7ActionPerformed
 		
-		// Graph menu button: mcc plot
-		if (jCheckBoxMenuItem7.isSelected()) addGraph(MccGraphPanel);
-		else removeGraph(MccGraphPanel);
+		// Graph menu button: amortized plot
+		if (jCheckBoxMenuItem7.isSelected()) addGraph(AmortizedGraphPanel);
+		else removeGraph(AmortizedGraphPanel);
 		
 	}//GEN-LAST:event_jCheckBoxMenuItem7ActionPerformed
 
@@ -2523,14 +2510,6 @@ public class MainWindow extends javax.swing.JFrame {
 		
 	}//GEN-LAST:event_jCheckBoxMenuItem10ActionPerformed
 
-	private void jCheckBoxMenuItem11ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem11ActionPerformed
-		
-		// Graph menu button: program stats plot
-		if (jCheckBoxMenuItem11.isSelected()) addGraph(RtnGraphPanel);
-		else removeGraph(RtnGraphPanel);
-		
-	}//GEN-LAST:event_jCheckBoxMenuItem11ActionPerformed
-
 	private void jCheckBoxMenuItem12ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem12ActionPerformed
 		
 		// Graph menu button: cost plot
@@ -2557,9 +2536,9 @@ public class MainWindow extends javax.swing.JFrame {
 
 	private void jCheckBoxMenuItem15ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem15ActionPerformed
 		
-		// Graph menu button: mcc plot
-		if (jCheckBoxMenuItem15.isSelected()) addGraph(MccGraphPanel);
-		else removeGraph(MccGraphPanel);
+		// Graph menu button: amortized plot
+		if (jCheckBoxMenuItem15.isSelected()) addGraph(AmortizedGraphPanel);
+		else removeGraph(AmortizedGraphPanel);
 		
 	}//GEN-LAST:event_jCheckBoxMenuItem15ActionPerformed
 
@@ -2586,14 +2565,6 @@ public class MainWindow extends javax.swing.JFrame {
 		else removeGraph(freqGraphPanel);
 		
 	}//GEN-LAST:event_jCheckBoxMenuItem18ActionPerformed
-
-	private void jCheckBoxMenuItem19ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem19ActionPerformed
-		
-		// Graph menu button: program stats plot
-		if (jCheckBoxMenuItem19.isSelected()) addGraph(RtnGraphPanel);
-		else removeGraph(RtnGraphPanel);
-		
-	}//GEN-LAST:event_jCheckBoxMenuItem19ActionPerformed
 
 	private void chooseSourceDirectory() {
 	
@@ -2764,38 +2735,6 @@ public class MainWindow extends javax.swing.JFrame {
 		}
     }//GEN-LAST:event_jButton12ActionPerformed
 
-    private void jCheckBoxMenuItem20ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem20ActionPerformed
-        
-        // ratio # RMS / # RVMS checkbox (menubar)
-        if (jCheckBoxMenuItem20.isSelected()) addGraph(RatioTuplesGraphPanel);
-		else removeGraph(RatioTuplesGraphPanel);
-        
-    }//GEN-LAST:event_jCheckBoxMenuItem20ActionPerformed
-
-    private void jCheckBoxMenuItem21ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem21ActionPerformed
-        
-        // External input ratio checkbox (menubar)
-        if (jCheckBoxMenuItem21.isSelected()) addGraph(ExternalInputGraphPanel);
-		else removeGraph(ExternalInputGraphPanel);
-        
-    }//GEN-LAST:event_jCheckBoxMenuItem21ActionPerformed
-
-    private void jCheckBoxMenuItem22ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem22ActionPerformed
-        
-        // ratio # RMS / # RVMS checkbox (toolbar)
-        if (jCheckBoxMenuItem22.isSelected()) addGraph(RatioTuplesGraphPanel);
-		else removeGraph(RatioTuplesGraphPanel);
-        
-    }//GEN-LAST:event_jCheckBoxMenuItem22ActionPerformed
-
-    private void jCheckBoxMenuItem23ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem23ActionPerformed
-        
-        // External input ratio checkbox (toolbar)
-        if (jCheckBoxMenuItem23.isSelected()) addGraph(ExternalInputGraphPanel);
-		else removeGraph(ExternalInputGraphPanel);
-        
-    }//GEN-LAST:event_jCheckBoxMenuItem23ActionPerformed
-
     private void jMenuItem14ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem14ActionPerformed
         
         // Menu: File > Export > Input volume...
@@ -2825,7 +2764,7 @@ public class MainWindow extends javax.swing.JFrame {
 				tmp.createNewFile();
 				PrintWriter out = new PrintWriter(new FileWriter(tmp));
 		
-                out.format("# Percent Input_Valume*100 %n");
+                out.format("# Percent Input_Volume*100 %n");
 				for (int i = 0; i < rr.size(); i++) {
 					
                     Routine r = rr.get(i);
@@ -3125,6 +3064,66 @@ public class MainWindow extends javax.swing.JFrame {
 		}
     }//GEN-LAST:event_jMenuItem20ActionPerformed
 
+    private void jCheckBoxMenuItem24ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem24ActionPerformed
+        
+        // Alpha plot checkbox (menubar)
+        if (jCheckBoxMenuItem24.isSelected()) addGraph(AlphaGraphPanel);
+		else removeGraph(AlphaGraphPanel);
+        
+    }//GEN-LAST:event_jCheckBoxMenuItem24ActionPerformed
+
+    private void jCheckBoxMenuItem25ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem25ActionPerformed
+        
+        // Alpha plot checkbox (toolbar)
+        if (jCheckBoxMenuItem25.isSelected()) addGraph(AlphaGraphPanel);
+		else removeGraph(AlphaGraphPanel);
+    }//GEN-LAST:event_jCheckBoxMenuItem25ActionPerformed
+
+    private void jMenuItem21ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem21ActionPerformed
+        
+        // Menu: File > Export > alpha values
+		
+        if (report == null || rtn_info == null) return;
+        
+        try {
+			
+			File tmp = new File(this.report.getName() + "_alpha.dat");
+			
+			JFileChooser chooser = new javax.swing.JFileChooser();
+			String lastReportPath = Main.getLastReportPath();
+			if (!lastReportPath.equals("")) 
+				chooser.setCurrentDirectory(new File(lastReportPath));
+			
+			FileNameExtensionFilter filter = new FileNameExtensionFilter("Alpha values", "dat");
+			chooser.setFileFilter(filter);
+			chooser.setAcceptAllFileFilterUsed(false);
+			chooser.setSelectedFile(tmp);
+			int choice = chooser.showSaveDialog(this.getParent());
+			
+			if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
+				
+				tmp = chooser.getSelectedFile();
+				tmp.createNewFile();
+				PrintWriter out = new PrintWriter(new FileWriter(tmp));
+		
+                out.format("# alpha points %n");
+                
+                ArrayList<Double> list = rtn_info.estimateAmortizedConstant();
+                for (int i = 0; i < list.size(); i += 2)
+                    out.format("%.3f %.0f%n", list.get(i), list.get(i+1));
+                
+				out.close();
+				
+			}
+			
+		} catch(java.io.IOException e) {
+			
+			JOptionPane.showMessageDialog(this, "Error during export :(",
+					"Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+		
+		}
+    }//GEN-LAST:event_jMenuItem21ActionPerformed
+
 	private void resetRoutineTableFilter() {
 		
 		// reset filter over routine table
@@ -3377,7 +3376,7 @@ public class MainWindow extends javax.swing.JFrame {
 		if (RtnGraphPanel != null) RtnGraphPanel.refreshFilter();
         if (RatioTuplesGraphPanel != null) RatioTuplesGraphPanel.refreshFilter();
         if (ExternalInputGraphPanel != null) ExternalInputGraphPanel.refreshFilter();
-		if (MccGraphPanel != null) MccGraphPanel.refreshFilter();
+		if (AmortizedGraphPanel != null) AmortizedGraphPanel.refreshFilter();
 	}
 
     protected void refreshRmsTableFilter() {
@@ -3530,10 +3529,11 @@ public class MainWindow extends javax.swing.JFrame {
 		TotalCostGraphPanel = new GraphPanel(GraphPanel.TOTALCOST_PLOT, this);
 		VarGraphPanel = new GraphPanel(GraphPanel.VAR_PLOT, this);
 		RtnGraphPanel = new GraphPanel(GraphPanel.RTN_PLOT, this);
-		MccGraphPanel = new GraphPanel(GraphPanel.MCC_PLOT, this);
+		AmortizedGraphPanel = new GraphPanel(GraphPanel.AMORTIZED_PLOT, this);
         RatioTuplesGraphPanel = new GraphPanel(GraphPanel.RATIO_TUPLES_PLOT, this);
         ExternalInputGraphPanel = new GraphPanel(GraphPanel.EXTERNAL_INPUT_PLOT, this);
-		
+		AlphaGraphPanel = new GraphPanel(GraphPanel.ALPHA_PLOT, this);
+        
 		// Set performance monitor
 		CostGraphPanel.setPerformanceMonitor(perf);
 		ratioGraphPanel.setPerformanceMonitor(perf);
@@ -3542,9 +3542,10 @@ public class MainWindow extends javax.swing.JFrame {
 		TotalCostGraphPanel.setPerformanceMonitor(perf);
 		VarGraphPanel.setPerformanceMonitor(perf);
 		RtnGraphPanel.setPerformanceMonitor(perf);
-		MccGraphPanel.setPerformanceMonitor(perf);
+		AmortizedGraphPanel.setPerformanceMonitor(perf);
 		RatioTuplesGraphPanel.setPerformanceMonitor(perf);
         ExternalInputGraphPanel.setPerformanceMonitor(perf);
+        AlphaGraphPanel.setPerformanceMonitor(perf);
         
 		ArrayList<Integer> graph_order = Main.getGraphOrder();
 		// Reset graph order (addGraph will set this later)
@@ -3584,8 +3585,8 @@ public class MainWindow extends javax.swing.JFrame {
 					g = RtnGraphPanel;
 					break;
 					
-				case GraphPanel.MCC_PLOT:
-					g = MccGraphPanel;
+				case GraphPanel.AMORTIZED_PLOT:
+					g = AmortizedGraphPanel;
 					break;
 					
                 case GraphPanel.RATIO_TUPLES_PLOT:
@@ -3595,7 +3596,11 @@ public class MainWindow extends javax.swing.JFrame {
                 case GraphPanel.EXTERNAL_INPUT_PLOT:
                     g = ExternalInputGraphPanel;
                     break;
-                        
+                
+                case GraphPanel.ALPHA_PLOT:
+                    g = AlphaGraphPanel;
+                    break;
+                    
 				default:
 					System.out.println("Invalid graph type");
 					throw new RuntimeException("Invalid graph type");
@@ -3630,7 +3635,7 @@ public class MainWindow extends javax.swing.JFrame {
 				jCheckBoxMenuItem14.setSelected(true);
 				break;
 			
-			case GraphPanel.MCC_PLOT:
+			case GraphPanel.AMORTIZED_PLOT:
 				jCheckBoxMenuItem7.setSelected(true);
 				jCheckBoxMenuItem15.setSelected(true);
 				break;
@@ -3649,7 +3654,7 @@ public class MainWindow extends javax.swing.JFrame {
 				jCheckBoxMenuItem10.setSelected(true);
 				jCheckBoxMenuItem18.setSelected(true);
 				break;
-				
+			/*	
 			case GraphPanel.RTN_PLOT:
 				jCheckBoxMenuItem11.setSelected(true);
 				jCheckBoxMenuItem19.setSelected(true);
@@ -3663,6 +3668,11 @@ public class MainWindow extends javax.swing.JFrame {
             case GraphPanel.EXTERNAL_INPUT_PLOT:
                 jCheckBoxMenuItem21.setSelected(true);
                 jCheckBoxMenuItem23.setSelected(true);
+                break;
+            */
+            case GraphPanel.ALPHA_PLOT:
+                jCheckBoxMenuItem25.setSelected(true);
+                jCheckBoxMenuItem24.setSelected(true);
                 break;
 				
 		}
@@ -3727,7 +3737,7 @@ public class MainWindow extends javax.swing.JFrame {
 				jCheckBoxMenuItem14.setSelected(false);
 				break;
 			
-			case GraphPanel.MCC_PLOT:
+			case GraphPanel.AMORTIZED_PLOT:
 				jCheckBoxMenuItem7.setSelected(false);
 				jCheckBoxMenuItem15.setSelected(false);
 				break;
@@ -3746,12 +3756,13 @@ public class MainWindow extends javax.swing.JFrame {
 				jCheckBoxMenuItem10.setSelected(false);
 				jCheckBoxMenuItem18.setSelected(false);
 				break;
-				
+            
+            /*
 			case GraphPanel.RTN_PLOT:
 				jCheckBoxMenuItem11.setSelected(false);
 				jCheckBoxMenuItem19.setSelected(false);
 				break;
-				
+            
             case GraphPanel.RATIO_TUPLES_PLOT:
                 jCheckBoxMenuItem20.setSelected(false);
                 jCheckBoxMenuItem22.setSelected(false);
@@ -3761,7 +3772,12 @@ public class MainWindow extends javax.swing.JFrame {
                 jCheckBoxMenuItem21.setSelected(false);
                 jCheckBoxMenuItem23.setSelected(false);
                 break;
-            
+            */
+                
+            case GraphPanel.ALPHA_PLOT:
+                jCheckBoxMenuItem24.setSelected(false);
+                jCheckBoxMenuItem25.setSelected(false);
+                break;
 		}
 		
 		// This does not work...
@@ -4174,7 +4190,6 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JButton jButton9;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem1;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem10;
-    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem11;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem12;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem13;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem14;
@@ -4182,11 +4197,8 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem16;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem17;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem18;
-    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem19;
-    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem20;
-    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem21;
-    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem22;
-    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem23;
+    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem24;
+    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem25;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem4;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem5;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem6;
@@ -4223,6 +4235,7 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JMenuItem jMenuItem19;
     private javax.swing.JMenuItem jMenuItem2;
     private javax.swing.JMenuItem jMenuItem20;
+    private javax.swing.JMenuItem jMenuItem21;
     private javax.swing.JMenuItem jMenuItem3;
     private javax.swing.JMenuItem jMenuItem4;
     private javax.swing.JMenuItem jMenuItem5;
@@ -4287,8 +4300,9 @@ public class MainWindow extends javax.swing.JFrame {
 	private GraphPanel CostGraphPanel, ratioGraphPanel, 
 						freqGraphPanel, MMMGraphPanel,
 						TotalCostGraphPanel, VarGraphPanel,
-						RtnGraphPanel, MccGraphPanel,
-                        RatioTuplesGraphPanel, ExternalInputGraphPanel;
+						RtnGraphPanel, AmortizedGraphPanel,
+                        RatioTuplesGraphPanel, ExternalInputGraphPanel,
+                        AlphaGraphPanel;
     
 	private TableRowSorter<TableModel> routines_table_sorter = null;
 	private List<RowSorter.SortKey> routines_sort = null;

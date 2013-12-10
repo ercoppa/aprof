@@ -105,8 +105,4 @@ public class RoutineContext extends Routine {
         return res;
     }
      
-    @Override
-    public double getTotalCumulativeCost() {
-        return getCumulativeCost();
-    }
 }

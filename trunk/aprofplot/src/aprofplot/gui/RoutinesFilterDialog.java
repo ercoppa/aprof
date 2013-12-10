@@ -54,7 +54,7 @@ public class RoutinesFilterDialog extends javax.swing.JDialog {
         if (((MainWindow)this.getParent()).isInputMetricRms())
             jCheckBox5.setText("#RMS");
         else
-            jCheckBox5.setText("#RVMS");
+            jCheckBox5.setText("#DRMS");
 	}
     
     public RoutinesFilterDialog(java.awt.Frame parent, boolean modal, 
