@@ -260,10 +260,8 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
         parent_activation->sum_children_cost += cumul_cost;
         
         #if INPUT_STATS
-        ULong a = act->cumul_syscall;
-        ULong b = act->cumul_thread;
-        parent_activation->cumul_syscall += a;
-        parent_activation->cumul_thread += b;
+        parent_activation->cumul_syscall += act->cumul_syscall;
+        parent_activation->cumul_thread += act->cumul_thread;
         #endif
     }
 }
