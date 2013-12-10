@@ -215,46 +215,7 @@ public class MergeReportsDialog extends javax.swing.JDialog {
 	}//GEN-LAST:event_jButton5ActionPerformed
 
 	private void jButton3ActionPerformed(ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-		
-		// Pressed Merge button
-		
-		// Selected at least two files?
-		if (((MergeListModel)jList1.getModel()).getSize() < 2) {
-			javax.swing.JOptionPane.showMessageDialog(this, "Please select at least two aprof report files");
-			return;
-		}
-		
-		// Valid save path?
-		if (jTextField1.getText().equals("")) {
-			javax.swing.JOptionPane.showMessageDialog(this, "Please enter a valid save path");
-			return;
-		}
 
-		File res = null;
-		try {
-			
-			res = AprofReport.merge(((MergeListModel)jList1.getModel()).getElements(), new File(jTextField1.getText()));
-			
-			System.gc();
-			
-			this.dispose();
-			if (jCheckBox1.isSelected()) {
-			
-				((MainWindow)this.getParent()).loadReport(res);
-				Main.addRecentFile(res);
-				((MainWindow)this.getParent()).refreshRecentFiles();
-			
-			}
-		
-		} catch(IOException e) {
-		
-			JOptionPane.showMessageDialog(this, "Couldn't open the selected files");
-		
-		} catch (Exception e) {
-			
-			JOptionPane.showMessageDialog(this, "Error while merging files:\n" + e.getMessage());
-			
-		}
 	}//GEN-LAST:event_jButton3ActionPerformed
 
 	private void jFileChooser1ActionPerformed(ActionEvent evt) {//GEN-FIRST:event_jFileChooser1ActionPerformed

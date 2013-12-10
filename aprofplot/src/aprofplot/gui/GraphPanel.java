@@ -2083,45 +2083,6 @@ public class GraphPanel extends javax.swing.JPanel {
 		
         if (graph_type == AMORTIZED_PLOT) updateGraphTitle();
         
-		if (graph_type == RTN_PLOT) {
-			
-			AprofReport report = main_window.getCurrentReport();
-			if (report == null) return;
-			double x = 0;
-			double y = 0;
-			long[] num_class_sms = report.getNumCallsClassSms();
-			long[] tot_calls_class_sms = report.getTotCallsClassSms();
-			long[] max_calls_class_sms = report.getMaxCallsClassSms();
-			long most_called = report.getCallsHottestRoutine();
-			double num_at_least = 0;
-			
-			for (int k = num_class_sms.length-1; k >= 0; k--) {
-				
-				if (num_class_sms[k] == 0) continue;
-				x = Math.pow(2, k);
-				num_at_least += num_class_sms[k];
-				
-				y = 100 * ((double) tot_calls_class_sms[k] / (double) report.getTotalCalls());
-				series[0].add(x, y, false);
-
-				y = 100 * ((double)((double) tot_calls_class_sms[k] / (double) num_class_sms[k])
-										/ (double) most_called);
-				series[1].add(x, y, false);
-				
-				y = 100 * ((double) num_class_sms[k] / (double)report.getRoutineCount());
-				series[2].add(x, y, false);
-			   
-				y = 100 * ((double) max_calls_class_sms[k] / (double) most_called);
-				series[3].add(x, y, false);
-				
-				y = 100 * ((double) num_at_least / (double)report.getRoutineCount());
-				series[4].add(x, y, false);
-			   
-			}
-			
-			return;
-		}
-        
         if (graph_type == RATIO_TUPLES_PLOT) {
         
             AprofReport report = main_window.getCurrentReport();

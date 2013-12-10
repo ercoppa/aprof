@@ -1282,7 +1282,7 @@ public class MainWindow extends javax.swing.JFrame {
 		this.setTitle(file.toString() + " - aprof-plot");
 		jLabel3.setText("Profile report for " + report.getAppName() + " (" + report.getCommandLine() + ")");
 		jLabel1.setText(" Routines: " + report.getRoutineCount() + " ");
-		jLabel4.setText(" Contexts: " + report.getTotalContexts() + " ");
+		jLabel4.setText(" Contexts: " + report.getContextsCount() + " ");
         String tcos = String.format(" Total cost: %d ", (long)report.getTotalCost());
         jLabel5.setText(tcos);
 		/*
@@ -1341,7 +1341,7 @@ public class MainWindow extends javax.swing.JFrame {
         
         if (report == null) return true;
         
-        if (report.getInputMetric() == AprofReport.RVMS)
+        if (report.getInputMetric() == AprofReport.InputMetric.DRMS)
             return false;
         
         return true;
@@ -2375,66 +2375,6 @@ public class MainWindow extends javax.swing.JFrame {
 
 	private void jMenuItem13ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem13ActionPerformed
 		
-		// Menu: File > Export > Program statistics
-		
-		try {
-			
-			File tmp = new File(this.report.getName() + ".dat");
-			
-			JFileChooser chooser = new javax.swing.JFileChooser();
-			String lastReportPath = Main.getLastReportPath();
-			if (!lastReportPath.equals("")) 
-				chooser.setCurrentDirectory(new File(lastReportPath));
-			
-			FileNameExtensionFilter filter = new FileNameExtensionFilter("Program statistics", "dat");
-			chooser.setFileFilter(filter);
-			chooser.setAcceptAllFileFilterUsed(false);
-			chooser.setSelectedFile(tmp);
-			int choice = chooser.showSaveDialog(this.getParent());
-			
-			if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
-				
-				tmp = chooser.getSelectedFile();
-				tmp.createNewFile();
-				PrintWriter out = new PrintWriter(new FileWriter(tmp));
-				
-				long[] num_class_sms = report.getNumCallsClassSms();
-				long[] tot_class_sms = report.getTotCallsClassSms();
-				long[] max_class_sms = report.getMaxCallsClassSms();
-				long most_called = report.getCallsHottestRoutine();
-				int x = 0;
-				double y1, y2, y3, y4, y5 = 0;
-				double sum_at_least = 0;
-				out.println("# SMS_CLASS_X PERC_TOTAL_CALLS PERC_AVG_CALLS PERC_MAX_CALLS PERC_NUMBER_OF_ROUTINE_DISTINCT PERC_NUMBER_OF_ROUTINE_AT_LEAST");
-				for (int k = num_class_sms.length - 1; k >= 0; k--) {
-
-					x = (int) Math.pow(2, k);
-					if (num_class_sms[k] == 0) {
-						if (sum_at_least > 0)
-							out.format("%d 0 0 0 0 %.1f%n", x, y5);
-						continue;
-					}
-					sum_at_least += num_class_sms[k];
-					y1 = (100 * ((double) tot_class_sms[k] / (double) report.getTotalCalls()));
-					y2 = (100 * ((double) ((double) tot_class_sms[k] / (double) num_class_sms[k]) / (double) most_called));
-					y3 = (100 * ((double) max_class_sms[k] / (double) most_called));
-					y4 = (100 * ((double) num_class_sms[k] / (double) report.getRoutineCount()));
-					y5 = (100 * ((double) sum_at_least / (double) report.getRoutineCount()));
-
-					out.format("%d %.1f %.1f %.1f %.1f %.1f%n", x, y1, y2, y3, y4, y5);
-				}
-				out.close();
-			
-			}
-			
-		} catch(java.io.IOException e) {
-			
-			javax.swing.JOptionPane.showMessageDialog(this, 
-					"Error during export :(", "Error",
-					javax.swing.JOptionPane.ERROR_MESSAGE);
-		
-		}
-		
 	}//GEN-LAST:event_jMenuItem13ActionPerformed
 
 	private void jToggleButton10ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton10ActionPerformed
@@ -2842,7 +2782,7 @@ public class MainWindow extends javax.swing.JFrame {
         // Menu: File > Export > thread input...
 		
         if (report == null) return;
-        report.sortRoutinesByRatioRvmsThread();
+        report.sortRoutinesByThreadInput();
         ArrayList<Routine> rr = report.getRoutines();
         
         try {
@@ -2898,7 +2838,7 @@ public class MainWindow extends javax.swing.JFrame {
         // Menu: File > Export > external input...
 		
         if (report == null) return;
-        report.sortRoutinesByRatioRvmsSyscall();
+        report.sortRoutinesBySyscallInput();
         ArrayList<Routine> rr = report.getRoutines();
         
         try {
@@ -2959,7 +2899,7 @@ public class MainWindow extends javax.swing.JFrame {
         // Menu: File > Export > induced accesses...
 		
         if (report == null) return;
-        report.sortRoutinesByInducedAccesses();
+        report.sortRoutinesByDynamicInput();
         ArrayList<Routine> rr = report.getRoutines();
         
         try {
@@ -3043,12 +2983,12 @@ public class MainWindow extends javax.swing.JFrame {
 		
                 out.format("#Self_External_input Self_Thread_input%n");
                 
-                out.println(report.getSumRvmsSyscallSelf() + " " +
-                                    report.getSumRvmsThreadSelf());
+                out.println(report.getTotalSelfSyscallInput() + " " +
+                                    report.getTotalSelfThreadInput());
                 
-                double x = report.getSumRvmsSyscallSelf() + report.getSumRvmsThreadSelf();
-                double y = (report.getSumRvmsSyscallSelf() / x) * 100;
-                double z = (report.getSumRvmsThreadSelf() / x) * 100;
+                double x = report.getTotalSelfSyscallInput() + report.getTotalSelfThreadInput();
+                double y = (report.getTotalSelfSyscallInput() / x) * 100;
+                double z = (report.getTotalSelfThreadInput() / x) * 100;
                 
                 out.format("%.1f %.1f%n", y, z);
                 
@@ -4109,7 +4049,7 @@ public class MainWindow extends javax.swing.JFrame {
     
     public boolean hasRvmsStats() {
         
-        if (report != null && report.hasRvmsStats())
+        if (report != null && report.hasInputStats())
             return true;
         
         return false;
