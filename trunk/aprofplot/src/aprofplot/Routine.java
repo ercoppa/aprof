@@ -81,9 +81,6 @@ public abstract class Routine implements Comparable<Routine> {
         if (r.getRms() > max_rms) max_rms = r.getRms();
 		if (r.getRms() < min_rms) min_rms = r.getRms();
 		
-        if (getName().equals("consumer") && r.getTotalRealCost() > 0)
-           System.out.println("Real cost " + r.getTotalRealCost());    
-        
         total_cumulative_cost += r.getTotalCumulativeCost();
         total_cost += r.getTotalRealCost();
         total_self += r.getTotalSelfCost();
