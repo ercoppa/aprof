@@ -6,7 +6,7 @@ echo $DIR
 ./autogen.sh
 
 # default
-./configure --prefix=$DIR/inst && make && make install && \
+ ./configure --prefix=$DIR/inst && make && make install && \
 
 # DEBUG
 # ./configure --prefix=$DIR/inst  --enable-inner && make && make install && \
