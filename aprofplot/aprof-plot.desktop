@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Name=aprof-plot
+Comment=A Java tool for visualizing aprof's reports
+Exec=java -jar /home/ercoppa/Desktop/code/aprof-dev-rvms/aprofplot/dist/aprof-plot.jar
+Icon=/home/ercoppa/Desktop/code/aprof-dev-rvms/aprofplot/src/aprofplot/gui/resources/App-icon.png
+Terminal=false
+Type=Application
+Categories=Utility;Application;

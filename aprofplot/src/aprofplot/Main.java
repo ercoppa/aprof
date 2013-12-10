@@ -334,12 +334,9 @@ public class Main {
 	private synchronized static void resetGraphOrder() {
 	
 		graph_order = new ArrayList<Integer>();
-		graph_order.add(0); // cost plot
-		graph_order.add(7); // MCC plot
-		graph_order.add(2); // frequency plot
-		graph_order.add(3); // MMM cost plot
-		graph_order.add(4); // total cost plot
-		graph_order.add(5); // variance cost plot		
+		graph_order.add(GraphPanel.COST_PLOT); // cost plot
+		graph_order.add(GraphPanel.FREQ_PLOT); // frequency plot
+		graph_order.add(GraphPanel.RATIO_PLOT); // ratio plot
 	
 	}
     

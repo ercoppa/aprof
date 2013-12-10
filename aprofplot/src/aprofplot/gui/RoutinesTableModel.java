@@ -53,7 +53,7 @@ public class RoutinesTableModel extends AbstractTableModel {
         if (main == null || main.isInputMetricRms())
             columnNames.add("#RMS");
         else
-            columnNames.add("#RVMS");
+            columnNames.add("#DRMS");
         columnTypes.add(Integer.class);
         
         // Cost %
@@ -80,6 +80,8 @@ public class RoutinesTableModel extends AbstractTableModel {
         columnNames.add("Calls %");
         columnTypes.add(Double.class);
         
+        /*
+        
         // ratio RMS/RVMS
         if (main != null && !main.isInputMetricRms()) {
             columnNames.add("Ext. input");
@@ -91,6 +93,8 @@ public class RoutinesTableModel extends AbstractTableModel {
             columnNames.add("#RVMS - #RMS");
             columnTypes.add(Long.class);
         }
+        
+        */
         
         if (main != null && main.hasRvmsStats()) {
             
@@ -243,6 +247,9 @@ public class RoutinesTableModel extends AbstractTableModel {
 			case 7: // % of rtn calls wrt all rtns
 					return Math.ceil(((double)rtn_info.getTotalCalls() / 
                             (double)report.getTotalCalls()) * 100 * 100) / 100;
+            
+            
+            /*
             case 8:
                     // sum(RMS) / sum (RVMS) 
                     if (!main.isInputMetricRms()) {
@@ -256,14 +263,14 @@ public class RoutinesTableModel extends AbstractTableModel {
                     if (main.hasDistinctRms()) {
                         return rtn_info.getSizeRmsList() - rtn_info.getCountRms();
                     }
-                
-            case 10:
+            */    
+            case 8:
                     // % syscall
                     if (main.hasRvmsStats()) {
                         return rtn_info.getRatioSumRvmsSyscall() * 100;
                     }
                 
-            case 11:
+            case 9:
                     // % thread
                     if (main.hasRvmsStats()) {
                         return rtn_info.getRatioSumRvmsThread() * 100;

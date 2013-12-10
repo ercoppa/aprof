@@ -28,12 +28,11 @@ public abstract class Routine implements Comparable<Routine> {
 	// Read memory size elements for this routine
 	private ArrayList<Rms> rms_list;
 	
-	// Mcc cache hack
+	// amortized cache hack
     private int chart_cost = Main.COST_CUMULATIVE;
-	private long last_mcc_n = -1;
-	private double last_mcc_est = 0;
-	private double last_mcc_occ = 0;
-	private long last_mcc_index = 0;
+	private long last_amortized_n = -1;
+	private double last_amortized_budget = 0;
+	private long last_amortized_index = 0;
 	
 	// Sort rms list status
 	public final static int UNSORTED = 0;
@@ -41,6 +40,8 @@ public abstract class Routine implements Comparable<Routine> {
 	public final static int SORT_OTHER = 2;
 	private int sort_status = UNSORTED;
 	     
+    private double amortized_constant = 1.0;
+    
 	public Routine(long num_rms) {
 		
 		min_cost = Double.MAX_VALUE;
@@ -80,6 +81,9 @@ public abstract class Routine implements Comparable<Routine> {
         if (r.getRms() > max_rms) max_rms = r.getRms();
 		if (r.getRms() < min_rms) min_rms = r.getRms();
 		
+        if (getName().equals("consumer") && r.getTotalRealCost() > 0)
+           System.out.println("Real cost " + r.getTotalRealCost());    
+        
         total_cumulative_cost += r.getTotalCumulativeCost();
         total_cost += r.getTotalRealCost();
         total_self += r.getTotalSelfCost();
@@ -94,8 +98,8 @@ public abstract class Routine implements Comparable<Routine> {
         rvms_syscall_self += r.getSumRvmsSyscallSelf();
         rvms_thread_self += r.getSumRvmsThreadSelf();
         
-		// Invalid mcc cache
-		last_mcc_n = -1;
+		// Invalid amortized cache
+		last_amortized_n = -1;
 		
 		// Set as unsorted
 		sort_status = UNSORTED;
@@ -178,43 +182,104 @@ public abstract class Routine implements Comparable<Routine> {
 		return -1;
 	}
 	
-	public double getMcc(long n) {
+    public void InvalidAmortizedCache() {
+        last_amortized_n = -1;
+    }
+    
+    public void setAmortizedConstant(double alpha) {
+        this.amortized_constant = alpha;
+    }
+    
+    public double getAmortizedConstant() {
+        return this.amortized_constant;
+    }
+    
+	public double getAmortizedValue(long n) {
 		
 		if (sort_status != SORT_BY_ACCESS) sortRmsListByAccesses();
 		if (Main.getChartCost() != this.chart_cost) {
             this.chart_cost = Main.getChartCost();
-            last_mcc_n = -1;
+            last_amortized_n = -1;
         }
         
-		double est = 0;
-		double sum_occ = 0;
 		long i = 0;
-		
+		double am_value = 0;
+        double budget = 0;
+        double alpha = getAmortizedConstant();
+        
 		// Use cache if possible...
-		if (last_mcc_n != -1 && n >= last_mcc_n) {
-			est = last_mcc_est;
-			sum_occ = last_mcc_occ;
-			i = last_mcc_index + 1;
+		if (last_amortized_n != -1 && n >= last_amortized_n) {
+			budget = last_amortized_budget;
+			i = last_amortized_index + 1;
 		}
-		
+        
 		for(; i < rms_list.size(); i++) {
 			Rms s = rms_list.get((int)i);
 			if (s.getRms() > n) {
 				i--;
 				break;
 			}
-			est += s.getTotalCost();
-			sum_occ += s.getOcc();
+              
+            if (s.getTotalCost() < budget) {
+                budget -= s.getTotalCost();
+                am_value = 0;
+            } else {
+                am_value = ((alpha + 1) * s.getTotalCost()) / s.getOcc();;  
+                budget = budget + (alpha * s.getTotalCost()); 
+            }
 		}
 		
 		// Update cache
-		last_mcc_est = est;
-		last_mcc_occ = sum_occ;
-		last_mcc_n = n;
-		last_mcc_index = i;
-		
-		return est / sum_occ;
+		last_amortized_budget = budget;
+		last_amortized_n = n;
+		last_amortized_index = i;
+
+        return am_value;
+		//return est / sum_occ;
 	}
+    
+    public ArrayList<Double> estimateAmortizedConstant() {
+        
+        ArrayList<Double> list = new ArrayList<Double>();
+        
+        if (sort_status != SORT_BY_ACCESS) 
+            sortRmsListByAccesses();
+        
+        double alpha = 0;
+        int round = 0;
+        while (round < 10000) {
+
+            double accum = 0;
+            double diff = 0;
+            double count = 0;
+            for(int i = 0; i < rms_list.size(); i++) {
+                
+                Rms s = rms_list.get(i);
+                if (s.getTotalCost() < accum) {
+                    accum -= s.getTotalCost();
+                    diff = 0;
+                } else {
+                    diff = ((alpha + 1) * s.getTotalCost()) / s.getOcc(); 
+                    accum = accum + (alpha * s.getTotalCost()); 
+                }
+                
+                if (i > 0 && diff > 0) count++;
+                
+            }
+            
+            list.add(alpha);
+            list.add(count);
+            
+            if (count <= 0) break;
+            
+            if (alpha == 0) alpha = 0.001;
+            else alpha = alpha * 1.03;
+            
+            round++;
+        }
+        
+        return list;
+    }
 
 	public void sortRmsListByAccesses() {
 		

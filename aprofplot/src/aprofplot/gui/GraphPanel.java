@@ -11,6 +11,7 @@ import org.jfree.chart.plot.*;
 import org.jfree.chart.renderer.xy.*;
 import org.jfree.chart.title.*;
 import org.jfree.data.xy.*;
+import org.jfree.ui.RectangleEdge;
 import org.jfree.ui.RectangleInsets;
 
 public class GraphPanel extends javax.swing.JPanel {
@@ -23,10 +24,11 @@ public class GraphPanel extends javax.swing.JPanel {
 	public static final int TOTALCOST_PLOT = 4;
 	public static final int VAR_PLOT = 5;
 	public static final int RTN_PLOT = 6;
-	public static final int MCC_PLOT = 7;
+	public static final int AMORTIZED_PLOT = 7;
     public static final int RATIO_TUPLES_PLOT = 8;
     public static final int EXTERNAL_INPUT_PLOT = 9;
-	public static final int MAX_VAL_PLOT = 9; // Max value
+    public static final int ALPHA_PLOT = 10;
+	public static final int MAX_VAL_PLOT = 11; // Max value
 
 	// Possible cost used by a graph
 	public static final int MAX_COST = 0;
@@ -56,7 +58,7 @@ public class GraphPanel extends javax.swing.JPanel {
 	private double max_x = 10, max_y = 10;
 	private String[] filters;
 	private Routine rtn_info = null;
-
+    
 	// Temp global vars
 	private int elem_slot = 0, slot_start = 0;
 	private double sum_y = 0, sum_y2 = 0, sum_y3 = 0, sum_x = 0;
@@ -346,6 +348,7 @@ public class GraphPanel extends javax.swing.JPanel {
         jToggleButton3 = new javax.swing.JToggleButton();
         jToggleButton4 = new javax.swing.JToggleButton();
         jButton3 = new javax.swing.JButton();
+        jButton4 = new javax.swing.JButton();
         jPanel1 = new javax.swing.JPanel();
         jLabel2 = new javax.swing.JLabel();
 
@@ -708,7 +711,8 @@ public class GraphPanel extends javax.swing.JPanel {
         });
         if (graph_type == RTN_PLOT
             || graph_type == EXTERNAL_INPUT_PLOT
-            || graph_type == RATIO_TUPLES_PLOT)
+            || graph_type == RATIO_TUPLES_PLOT
+            || graph_type == ALPHA_PLOT)
         jToggleButton6.setVisible(false);
         jToolBar1.add(jToggleButton6);
 
@@ -769,7 +773,8 @@ public class GraphPanel extends javax.swing.JPanel {
         });
         if (graph_type == RTN_PLOT
             || graph_type == EXTERNAL_INPUT_PLOT
-            || graph_type == RATIO_TUPLES_PLOT)
+            || graph_type == RATIO_TUPLES_PLOT
+            || graph_type == ALPHA_PLOT)
         jToggleButton4.setVisible(false);
         jToolBar1.add(jToggleButton4);
 
@@ -790,6 +795,24 @@ public class GraphPanel extends javax.swing.JPanel {
             }
         });
         jToolBar1.add(jButton3);
+
+        jButton4.setFont(new java.awt.Font("Arial", 1, 20)); // NOI18N
+        jButton4.setText("α");
+        jButton4.setToolTipText("Amortized costant");
+        jButton4.setBorder(null);
+        jButton4.setFocusable(false);
+        jButton4.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButton4.setMaximumSize(new java.awt.Dimension(28, 28));
+        jButton4.setMinimumSize(new java.awt.Dimension(28, 28));
+        jButton4.setPreferredSize(new java.awt.Dimension(28, 28));
+        jButton4.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jButton4.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton4ActionPerformed(evt);
+            }
+        });
+        if (graph_type != AMORTIZED_PLOT) jButton4.setVisible(false);
+        jToolBar1.add(jButton4);
 
         jPanel1.setBorder(null);
         jPanel1.setMinimumSize(new java.awt.Dimension(30, 10));
@@ -853,7 +876,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		switch(graph_type) {
 		
 			case COST_PLOT: return 0;
-			case MCC_PLOT: return 1;
+			case AMORTIZED_PLOT: return 1;
 			case FREQ_PLOT: return 2;
 			case MMM_PLOT: return 3;
 			case TOTALCOST_PLOT: return 4;
@@ -862,8 +885,9 @@ public class GraphPanel extends javax.swing.JPanel {
 			case RTN_PLOT: return 7;
             case RATIO_TUPLES_PLOT: return 8;
             case EXTERNAL_INPUT_PLOT: return 9;
+            case ALPHA_PLOT: return 10;
 				
-			default: return 10;
+			default: return 11;
 		
 		}
 		
@@ -879,13 +903,16 @@ public class GraphPanel extends javax.swing.JPanel {
             case RATIO_TUPLES_PLOT:
             case EXTERNAL_INPUT_PLOT:
                 return "percentage of routines";
+            
+            case ALPHA_PLOT:
+                return "α";
                 
 			default:
                 
                 if (main_window.isInputMetricRms())
                     return "read memory size";
                 else
-                    return "read versioned memory size";
+                    return "dynamic read memory size";
                 
 		}
 	
@@ -901,7 +928,7 @@ public class GraphPanel extends javax.swing.JPanel {
 			case FREQ_PLOT: 
 				return "frequency";
 			
-			case MCC_PLOT:
+			case AMORTIZED_PLOT:
 				return "mean cumulative cost";
 				
 			case RTN_PLOT: 
@@ -911,6 +938,9 @@ public class GraphPanel extends javax.swing.JPanel {
                 return "ratio";
             case EXTERNAL_INPUT_PLOT:
                 return "percentage (ratio)";
+            
+            case ALPHA_PLOT:
+                return "number of points";
                 
 			default: 
 				return "cost";
@@ -955,7 +985,6 @@ public class GraphPanel extends javax.swing.JPanel {
 		}
 		
 		plot.setDomainAxis(domainAxis);
-
 	}
 
 	private void updateYAxis(boolean reset) {
@@ -1008,16 +1037,23 @@ public class GraphPanel extends javax.swing.JPanel {
                 if (main_window.isInputMetricRms()) {
                     s = "RMS frequency plot"; break;
                 } else {
-                    s = "RVMS frequency plot"; break;
+                    s = "DRMS frequency plot"; break;
                 }
             case MMM_PLOT: s = "Min/Avg/Max cost plot"; break;
 			case TOTALCOST_PLOT: s = "Total cost plot"; break;
 			case VAR_PLOT: s = "Cost variance plot"; break;
 			case RTN_PLOT: s = "Program statistics plot"; break;
-            case RATIO_TUPLES_PLOT: s = "Ratio #RVMS/#RMS plot"; break;
+            case RATIO_TUPLES_PLOT: s = "Ratio #DRMS/#RMS plot"; break;
             case EXTERNAL_INPUT_PLOT: s = "External input plot"; break;
-			case MCC_PLOT: s = "Mean cumulative cost plot"; break;
-			case RATIO_PLOT: s = "Curve bounding plot - T(n) / ";
+            case ALPHA_PLOT: s = "Alpha plot"; break;
+			case AMORTIZED_PLOT: 
+                if (rtn_info != null)
+                    s = "Amortized cost plot (α = " + rtn_info.getAmortizedConstant() + ")" ; 
+                else
+                    s = "Amortized cost plot";
+                break;
+			case 
+                    RATIO_PLOT: s = "Curve bounding plot - T(n) / ";
 							double[] rc = Rms.getRatioConfig();
 							int k = 0;
 							for (int i =  0; i < rc.length; i++) {
@@ -1075,6 +1111,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		x_log_scale = logscale;
 		jToggleButton1.setSelected(logscale);
 		updateXAxis(false);
+        updateMinimalTicks();
 	
 	}
 
@@ -1083,7 +1120,8 @@ public class GraphPanel extends javax.swing.JPanel {
 		y_log_scale = logscale;
 		jToggleButton2.setSelected(logscale);
 		updateYAxis(false);
-	
+        updateMinimalTicks();
+        
 	}
 
 	public void setGroupCost(int cost_type) {
@@ -1108,7 +1146,8 @@ public class GraphPanel extends javax.swing.JPanel {
         
 		if (graph_type == RTN_PLOT || rtn_info == null
                 || graph_type == RATIO_TUPLES_PLOT
-                || graph_type == EXTERNAL_INPUT_PLOT) return;
+                || graph_type == EXTERNAL_INPUT_PLOT
+                || graph_type == ALPHA_PLOT) return;
 		
 		// reset grouping
 		group_threshold = 1;
@@ -1140,7 +1179,8 @@ public class GraphPanel extends javax.swing.JPanel {
         
 		if (graph_type == RTN_PLOT || rtn_info == null
                 || graph_type == RATIO_TUPLES_PLOT
-                || graph_type == EXTERNAL_INPUT_PLOT) return;
+                || graph_type == EXTERNAL_INPUT_PLOT
+                || graph_type == ALPHA_PLOT) return;
 		
 		// Reset smoothing
 		smooth_threshold = 1;
@@ -1170,11 +1210,10 @@ public class GraphPanel extends javax.swing.JPanel {
     public void maximize() {
 		
 		this.status = MAXIMIZED;
-		
-		//System.out.println("Maximize " + n++);
-		//jButton2.setToolTipText("autoscale graph");
-		//jButton2.setIcon(new ImageIcon(getClass().getResource("/aprofplot/gui/resources/Minimize-icon.png")));
-		
+        
+        updateXAxis(true);
+		updateYAxis(true);
+        
         chartPanel.restoreAutoBounds();
         
 		max_x = domainAxis.getUpperBound();
@@ -1191,16 +1230,21 @@ public class GraphPanel extends javax.swing.JPanel {
 			min_x = domainAxis.getLowerBound();
 			min_y = rangeAxis.getLowerBound();
 		}
-		
-        if (graph_type == this.RATIO_TUPLES_PLOT)
-    		System.out.println("Min_x: " + min_x + " Max_x: " + max_x);
         
-        updateXAxis(true);
-		updateYAxis(true);
-        
-        if (graph_type == this.RATIO_TUPLES_PLOT)
-    		System.out.println("Min_x: " + min_x + " Max_x: " + max_x);
-	}
+        updateMinimalTicks();
+    }
+    
+    private void updateMinimalTicks() {
+    
+        if (!x_log_scale && max_x < 10) {
+            //System.out.println("Set minimal ticks");
+            domainAxis.setTickUnit(new NumberTickUnit(max_x / 10));
+        }
+            
+        if (!y_log_scale && max_y < 10) 
+            rangeAxis.setTickUnit(new NumberTickUnit(max_y / 10));
+
+    }
 
 	private void jToggleButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton1ActionPerformed
 
@@ -1209,7 +1253,8 @@ public class GraphPanel extends javax.swing.JPanel {
 		if (jToggleButton1.isSelected()) logscale = true;
 		else logscale = false;
 		setXLogScale(logscale);
-		if (this.main_window.arePlotsLinked()) main_window.setXLogScaleAll(graph_type, logscale);
+		if (this.main_window.arePlotsLinked()) 
+            main_window.setXLogScaleAll(graph_type, logscale);
 		
 	}//GEN-LAST:event_jToggleButton1ActionPerformed
 
@@ -1303,7 +1348,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		else if (this.graph_type == RTN_PLOT) filename += "_rtn_plot.png";
         else if (this.graph_type == RATIO_TUPLES_PLOT) filename += "_count_rvms_plot.png";
         else if (this.graph_type == EXTERNAL_INPUT_PLOT) filename += "_value_rvms_plot.png";
-		else if (this.graph_type == MCC_PLOT) filename += "_amm_plot.png";
+		else if (this.graph_type == AMORTIZED_PLOT) filename += "_amm_plot.png";
 		else filename += "_freq_plot.png";
 		
 		java.io.File f = new java.io.File(filename);
@@ -1687,6 +1732,32 @@ public class GraphPanel extends javax.swing.JPanel {
 		
 	}//GEN-LAST:event_jButton3ActionPerformed
 
+    private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
+        
+        // ratio menu > 14-th entry
+		double alpha = 1.0;
+        if (rtn_info != null) alpha = rtn_info.getAmortizedConstant();
+		try {
+			alpha = Double.parseDouble(javax.swing.JOptionPane.showInputDialog(main_window, "Enter alpha", alpha));
+		} catch (NumberFormatException e) {
+			javax.swing.JOptionPane.showMessageDialog(main_window, "alpha must be a decimal value");
+			return;
+		} catch (Exception e) {
+			return;
+		}
+
+		if (alpha < 0) {
+			javax.swing.JOptionPane.showMessageDialog(main_window, "alpha must be non negative");
+            return;
+		}
+		
+        
+        rtn_info.InvalidAmortizedCache();
+        rtn_info.setAmortizedConstant(alpha);
+		refresh(true);
+		//main_window.refreshTables();
+    }//GEN-LAST:event_jButton4ActionPerformed
+
 	private boolean filterRms(Rms t) {
 		
 		if (filters == null) return true;
@@ -1734,7 +1805,8 @@ public class GraphPanel extends javax.swing.JPanel {
 		
 		if (this.rtn_info != null && graph_type != RTN_PLOT
                 && graph_type != RATIO_TUPLES_PLOT
-                && graph_type != EXTERNAL_INPUT_PLOT) {
+                && graph_type != EXTERNAL_INPUT_PLOT
+                && graph_type != ALPHA_PLOT) {
 			
 			long max = rtn_info.getMaxRms();
 			group_threshold_base = (int) Math.log10(max) + 1;
@@ -1851,8 +1923,8 @@ public class GraphPanel extends javax.swing.JPanel {
 			else if (slot == 2)
 				y = te.getMaxCost();
 			
-		} else if (graph_type == MCC_PLOT) 
-			y = rtn_info.getMcc(te.getRms());
+		} else if (graph_type == AMORTIZED_PLOT) 
+			y = rtn_info.getAmortizedValue(te.getRms());
 			
 		else if (this.graph_type == GraphPanel.FREQ_PLOT)
 			y = te.getOcc();
@@ -1867,7 +1939,7 @@ public class GraphPanel extends javax.swing.JPanel {
 					
 		double x = te.getRms();
 		double y = 0;
-
+        
 		if (group_threshold == 1 && smooth_threshold == 1) { 
 
 			if (filterRms(te)) {
@@ -1881,11 +1953,13 @@ public class GraphPanel extends javax.swing.JPanel {
 				} else if (graph_type == FREQ_PLOT) {
 
                     int index = 0;
+                    /*
                     if (main_window.hasDistinctRms())
                         index = (int)(((double)1-te.getRatioSumRmsRvms())*10);
-					series[index].add(x, getY(te, 0), false);
+					*/
+                    series[index].add(x, getY(te, 0), false);
                 
-                } else if (graph_type == MCC_PLOT) {
+                } else if (graph_type == AMORTIZED_PLOT) {
                     
                     series[0].add(x, getY(te, 0), false);
                     
@@ -1967,7 +2041,7 @@ public class GraphPanel extends javax.swing.JPanel {
 			mean_y = sum_y3 / elem_slot;
 			series[11].add(mean_x, mean_y, false);
 
-		} else if (graph_type == MCC_PLOT) {
+		} else if (graph_type == AMORTIZED_PLOT) {
 
 			double mean_y = sum_y / elem_slot;
 			series[0].add(mean_x, mean_y, false);
@@ -2000,13 +2074,15 @@ public class GraphPanel extends javax.swing.JPanel {
 	 * NOTE: avoid use of this method when possible, this method will not "share"
 	 *       any work with other active graphs (e.g. iteration over rms list)
 	 */ 
-    private void populateChart() {
+    public void populateChart() {
 		
 		//System.out.println("Inside populate chart");
         //Thread.dumpStack();
         
 		for (int i = 0; i < series.length; i++) series[i].clear();
 		
+        if (graph_type == AMORTIZED_PLOT) updateGraphTitle();
+        
 		if (graph_type == RTN_PLOT) {
 			
 			AprofReport report = main_window.getCurrentReport();
@@ -2110,12 +2186,24 @@ public class GraphPanel extends javax.swing.JPanel {
             }
             
             return;
-        }
+        
+        } else if (graph_type == ALPHA_PLOT) {
+            
+            ArrayList<Double> list = rtn_info.estimateAmortizedConstant();
+            for (int i = 0; i < list.size(); i += 2) {
+                series[0].add(list.get(i), list.get(i+1), false);
+                //System.out.println(list.get(i) + " " + list.get(i+1));
+            }
+            
+            return;
+        } 
         
 		if (rtn_info == null || rtn_info.getSizeRmsList() <= 0) return;
 		
 		if (group_threshold == 1 && smooth_threshold == 1) {
 			
+            //System.out.println("START################");
+            
 			//System.out.println("GroupThreshold == 1");
 			Iterator rms_list = this.rtn_info.getRmsListIterator();
 			while (rms_list.hasNext()) {
@@ -2169,8 +2257,8 @@ public class GraphPanel extends javax.swing.JPanel {
 						y = te.getTotalCost();
 					else if (graph_type == VAR_PLOT) 
 						y = te.getVar();
-					else if (graph_type == MCC_PLOT)
-						y = rtn_info.getMcc((int)x);
+					else if (graph_type == AMORTIZED_PLOT)
+						y = rtn_info.getAmortizedValue((int)x);
 					else if (graph_type == FREQ_PLOT)
 						y = te.getOcc();
 					else if (graph_type == MMM_PLOT) {
@@ -2201,7 +2289,7 @@ public class GraphPanel extends javax.swing.JPanel {
 								series[0].add(mean_x, mean_y);
 								series[5].add(mean_x, mean_y2);
 								series[11].add(mean_x, mean_y3);
-							} else if (graph_type == MCC_PLOT) {
+							} else if (graph_type == AMORTIZED_PLOT) {
 								double mean_y = (k == 0) ? sum_y : sum_y / k;
 								series[0].add(mean_x, mean_y);
 							} else {
@@ -2238,7 +2326,7 @@ public class GraphPanel extends javax.swing.JPanel {
 					series[0].add(mean_x, mean_y, false);
 					series[5].add(mean_x, mean_y2, false);
 					series[11].add(mean_x, mean_y3, false);
-				} else if (graph_type == MCC_PLOT) {
+				} else if (graph_type == AMORTIZED_PLOT) {
 					double mean_y = (k == 0) ? sum_y : sum_y / k;
 					series[0].add(mean_x, mean_y, false);
 				} else {
@@ -2270,7 +2358,7 @@ public class GraphPanel extends javax.swing.JPanel {
 			if (t % 2 == 0) t++;
 			// rms items within window; circular array; +2 avoid immediate overwrite
 			Rms[] l = new Rms[t + 2]; 
-			// Mcc cache
+			// amortized cache
 			double[] lm = new double[t + 2];
 			double sum = 0, sum2 = 0, sum3 = 0;
 			rtn_info.sortRmsListByAccesses();
@@ -2308,7 +2396,7 @@ public class GraphPanel extends javax.swing.JPanel {
 					
 					// add to the list
 					l[head % l.length] = te;
-					if (graph_type == MCC_PLOT) 
+					if (graph_type == AMORTIZED_PLOT) 
 						lm[head % lm.length] = y;
 					
 					head++;
@@ -2331,10 +2419,10 @@ public class GraphPanel extends javax.swing.JPanel {
 				if (n >= t || c == 0) {
 					
 					// update sum
-					if (graph_type == MCC_PLOT) {
+					if (graph_type == AMORTIZED_PLOT) {
 					
-						double mcc_old = lm[tail++ % l.length];
-						sum -= mcc_old;
+						double amortized_old = lm[tail++ % l.length];
+						sum -= amortized_old;
 						
 					} else {
 					
@@ -2359,10 +2447,10 @@ public class GraphPanel extends javax.swing.JPanel {
 					if (add > 0) {
 
 						// update sum
-						if (graph_type == MCC_PLOT) {
+						if (graph_type == AMORTIZED_PLOT) {
 
-							double mcc_old = lm[tail++ % l.length];
-							sum -= mcc_old;
+							double amortized_old = lm[tail++ % l.length];
+							sum -= amortized_old;
 
 						} else {
 						
@@ -2398,7 +2486,7 @@ public class GraphPanel extends javax.swing.JPanel {
 					series[5].add(x, sum2/n, false);
 					series[11].add(x, sum3/n, false);
 
-				} else if (graph_type == MCC_PLOT || graph_type == FREQ_PLOT) {
+				} else if (graph_type == AMORTIZED_PLOT || graph_type == FREQ_PLOT) {
 
 					series[0].add(x, sum/n, false);
 
@@ -2470,7 +2558,8 @@ public class GraphPanel extends javax.swing.JPanel {
         
 		if (graph_type == RTN_PLOT
             || graph_type == RATIO_TUPLES_PLOT
-            || graph_type == EXTERNAL_INPUT_PLOT) {
+            || graph_type == EXTERNAL_INPUT_PLOT
+            || graph_type == ALPHA_PLOT) {
             
 			min_x = -1;
 			min_y = -1;
@@ -2526,6 +2615,7 @@ public class GraphPanel extends javax.swing.JPanel {
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
+    private javax.swing.JButton jButton4;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JMenuItem jMenuItem10;

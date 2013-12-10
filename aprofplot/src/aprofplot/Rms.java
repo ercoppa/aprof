@@ -3,14 +3,14 @@ package aprofplot;
 public class Rms implements Comparable<Rms> {
 
 	private long rms;
-	private long min_cost; // cumulative
-	private long max_cost; // cumulative
+	private double min_cost; // cumulative
+	private double max_cost; // cumulative
 	private double total_cost; // cumulative
     private double total_sqr_sum_cost; // cumulative
     private double total_real_cost;
 	private double total_self;
-    private long self_min;
-    private long self_max;
+    private double self_min;
+    private double self_max;
     private double total_self_sqr_sum;
 	private long occ;
     
@@ -32,9 +32,9 @@ public class Rms implements Comparable<Rms> {
 	// pos 2 -> log_e(log_e(n)) exponent
 	private static double[] ratio_config = {1, 0, 0};
 
-	public Rms(long rms, long min_cost, long max_cost, double total_cost, 
+	public Rms(long rms, double min_cost, double max_cost, double total_cost, 
                 double total_real_cost, double total_self, long occ,
-                long self_min, long self_max, double cumul_sqr,
+                double self_min, double self_max, double cumul_sqr,
                 double self_sqr, long sum_rms, long sum_sqr_rms,
                 long rvms_syscall, long rvms_thread, long rvms_syscall_self,
                 long rvms_thread_self) {
@@ -57,7 +57,7 @@ public class Rms implements Comparable<Rms> {
         this.rvms_syscall_self = rvms_syscall_self;
         this.rvms_thread_self = rvms_thread_self;
         
-        long cost = 0;
+        double cost = 0;
         if (Main.getChartCost() == Main.COST_CUMULATIVE)
             cost = this.max_cost;
         else
@@ -250,19 +250,19 @@ public class Rms implements Comparable<Rms> {
                 this.rvms_thread_self + te.getSumRvmsThreadSelf());
 	}
 
-    public long getCumulativeMinCost() {
+    public double getCumulativeMinCost() {
         return min_cost;
     }
     
-    public long getCumulativeMaxCost() {
+    public double getCumulativeMaxCost() {
         return max_cost;
     }
     
-    public long getSelfMinCost() {
+    public double getSelfMinCost() {
         return self_min;
     }
 
-    public long getSelfMaxCost() {
+    public double getSelfMaxCost() {
         return self_max;
     }
 
