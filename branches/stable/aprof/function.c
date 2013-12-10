@@ -166,14 +166,24 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
     rtn_info->recursion_pending--;
     
     if (!rtn_info->fn->discard) {
-    
+
         UWord key;
-        if (APROF_(runtime).collect_CCT)
-            key = APROF_(hash)(act->input_size, act->node->context_id);
-        else
-            key = act->input_size;
+        Input * tuple;
+        if (APROF_(runtime).collect_CCT) {
         
-        Input * tuple = HT_lookup(rtn_info->input_map, key);
+            key = APROF_(hash)(act->input_size, act->node->context_id);
+            tuple = HT_lookup(rtn_info->input_map, key);
+            
+            while (tuple != NULL && (tuple->context_id != act->node->context_id || 
+                    tuple->input_size != act->input_size))
+                tuple = tuple->next;
+            
+        } else {
+
+            key = act->input_size;
+            tuple = HT_lookup(rtn_info->input_map, key);
+        }
+        
         if (tuple == NULL) {
             
             tuple = APROF_(new)(INPUT_S, sizeof(Input));
