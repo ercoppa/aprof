@@ -133,7 +133,13 @@ VG_REGPARM(3) void APROF_(trace_access_drms)(UWord type,
                 #else // INPUT_STATS
                 wts = LK_insert(APROF_(runtime).global_shadow_memory, addr, ts);
                 #endif // INPUT_STATS
-                        
+                
+                if (kernel_access) {
+                    size_fix -= APROF_(runtime).memory_resolution;
+                    addr += APROF_(runtime).memory_resolution;
+                    continue;
+                }
+                
                 break;
             
             case LOAD:
@@ -151,17 +157,17 @@ VG_REGPARM(3) void APROF_(trace_access_drms)(UWord type,
                 APROF_(assert)(0, "Invalid memory event");
         }
 
+        /*
+         * Update the timestamp in the private shadow memory.
+         */
+        old_ts = LK_insert(tdata->shadow_memory, addr, ts);
+
         if (type == STORE) {
             
             size_fix -= APROF_(runtime).memory_resolution;
             addr += APROF_(runtime).memory_resolution;
             continue;
         }
-        
-        /*
-         * Update the timestamp in the private shadow memory.
-         */
-        old_ts = LK_insert(tdata->shadow_memory, addr, ts);
 
         Activation * act = APROF_(get_activation_noresize)(tdata, tdata->stack_depth);
         
