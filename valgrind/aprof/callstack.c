@@ -312,9 +312,6 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
     /* Get current stack pointer */
     UWord csp = (UWord) VG_(get_SP)(APROF_(runtime).current_TID);
     
-    Bool different_obj = False;
-    Bool different_sect = False;
-    
     /* Create a new BB structure */
     if (bb->key == 0) {
         
@@ -397,12 +394,10 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
                 }
             }
             
-            if (last_bb != NULL && obj != last_bb->fn->obj)
-                different_obj = True;
-            
             /* try to see if we find dl_runtime_resolve in this obj */
-            if (!bb->is_dl_runtime_resolve && obj_name != NULL && 
-                different_obj && APROF_(runtime).dl_runtime_resolve_addr == 0) {
+            if (APROF_(runtime).dl_runtime_resolve_addr == 0
+                && !bb->is_dl_runtime_resolve && obj_name != NULL && 
+                && last_bb != NULL && obj != last_bb->fn->obj) {
             
                 /* Obtain obj start address */
                 UWord obj_start = di ? VG_(DebugInfo_get_text_avma)(di) : 0;
@@ -520,12 +515,6 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
         bb->instr_offset = 0; /* real value filled with a store */
         HT_add_node(APROF_(runtime).bb_ht, bb->key, bb);
     }
-    
-    if (!different_obj && last_bb != NULL && bb->fn->obj != last_bb->fn->obj)
-        different_obj = True;
-
-    if (last_bb != NULL && bb->obj_section != last_bb->obj_section)
-        different_sect = True;
 
     /* Are we converting RET into a CALL? */
     Bool ret_as_call = False;
@@ -609,6 +598,14 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
      */
     Bool call_emulation = False;
     if (last_bb != NULL && exit != BBCALL && exit != BBRET) {
+        
+        Bool different_obj = False;
+        if (last_bb != NULL && bb->fn->obj != last_bb->fn->obj)
+            different_obj = True;
+
+        Bool different_sect = False;
+        if (last_bb != NULL && bb->obj_section != last_bb->obj_section)
+            different_sect = True;
         
         if (ret_as_call || different_obj || different_sect || bb->is_entry) {
             
