@@ -1752,7 +1752,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		}
 		
         
-        rtn_info.InvalidAmortizedCache();
+        rtn_info.invalidAmortizedCache();
         rtn_info.setAmortizedConstant(alpha);
 		refresh(true);
 		//main_window.refreshTables();
@@ -1808,7 +1808,7 @@ public class GraphPanel extends javax.swing.JPanel {
                 && graph_type != EXTERNAL_INPUT_PLOT
                 && graph_type != ALPHA_PLOT) {
 			
-			long max = rtn_info.getMaxRms();
+			long max = rtn_info.getMaxInput();
 			group_threshold_base = (int) Math.log10(max) + 1;
 			smooth_threshold_base = (int) Math.log10(max) + 1;
 			
@@ -1822,7 +1822,7 @@ public class GraphPanel extends javax.swing.JPanel {
 			sum_y = 0; sum_y2 = 0; sum_y3 = 0; sum_x = 0;
 			sum_occ = 0;
 			
-            if (rtn_info.getSizeRmsList() <= 0) {
+            if (rtn_info.getInputTuplesCount() <= 0) {
                 
                 jRadioButtonMenuItem1.setText("0");
                 jRadioButtonMenuItem2.setText("0");
@@ -1850,45 +1850,45 @@ public class GraphPanel extends javax.swing.JPanel {
 
             
 			int val = (int)Math.pow(smooth_threshold_base, 0);
-            if (rtn_info.getSizeRmsList() > 0 && val >= rtn_info.getSizeRmsList()) {
-                val = rtn_info.getSizeRmsList() - 1;
+            if (rtn_info.getInputTuplesCount() > 0 && val >= rtn_info.getInputTuplesCount()) {
+                val = rtn_info.getInputTuplesCount() - 1;
             }
-			if (rtn_info.getSizeRmsList() > 0 && val % 2 == 0) val++; // we want an odd number...
+			if (rtn_info.getInputTuplesCount() > 0 && val % 2 == 0) val++; // we want an odd number...
 			jRadioButtonMenuItem10.setText(Integer.toString(val));
 
 			val = (int)Math.pow(smooth_threshold_base, 1);
-            if (rtn_info.getSizeRmsList() > 0 && val >= rtn_info.getSizeRmsList()) {
-                val = rtn_info.getSizeRmsList() - 1;
+            if (rtn_info.getInputTuplesCount() > 0 && val >= rtn_info.getInputTuplesCount()) {
+                val = rtn_info.getInputTuplesCount() - 1;
             }
-			if (rtn_info.getSizeRmsList() > 0 && val % 2 == 0) val++;
+			if (rtn_info.getInputTuplesCount() > 0 && val % 2 == 0) val++;
 			jRadioButtonMenuItem11.setText(Integer.toString(val));
 
 			val = (int)Math.pow(smooth_threshold_base, 2);
-			if (rtn_info.getSizeRmsList() > 0 && val >= rtn_info.getSizeRmsList()) {
-                val = rtn_info.getSizeRmsList() - 1;
+			if (rtn_info.getInputTuplesCount() > 0 && val >= rtn_info.getInputTuplesCount()) {
+                val = rtn_info.getInputTuplesCount() - 1;
             }
-            if (rtn_info.getSizeRmsList() > 0 && val % 2 == 0) val++;
+            if (rtn_info.getInputTuplesCount() > 0 && val % 2 == 0) val++;
 			jRadioButtonMenuItem12.setText(Integer.toString(val));
 
 			val = (int)Math.pow(smooth_threshold_base, 3);
-            if (rtn_info.getSizeRmsList() > 0 && val >= rtn_info.getSizeRmsList()) {
-                val = rtn_info.getSizeRmsList() - 1;
+            if (rtn_info.getInputTuplesCount() > 0 && val >= rtn_info.getInputTuplesCount()) {
+                val = rtn_info.getInputTuplesCount() - 1;
             }
-            if (rtn_info.getSizeRmsList() > 0 && val % 2 == 0) val++;
+            if (rtn_info.getInputTuplesCount() > 0 && val % 2 == 0) val++;
 			jRadioButtonMenuItem13.setText(Integer.toString(val));
 
 			val = (int)Math.pow(smooth_threshold_base, 4);
-			if (rtn_info.getSizeRmsList() > 0 && val >= rtn_info.getSizeRmsList()) {
-                val = rtn_info.getSizeRmsList() - 1;
+			if (rtn_info.getInputTuplesCount() > 0 && val >= rtn_info.getInputTuplesCount()) {
+                val = rtn_info.getInputTuplesCount() - 1;
             }
-            if (rtn_info.getSizeRmsList() > 0 && val % 2 == 0) val++;
+            if (rtn_info.getInputTuplesCount() > 0 && val % 2 == 0) val++;
 			jRadioButtonMenuItem14.setText(Integer.toString(val));
 
 			val = (int)Math.pow(smooth_threshold_base, 5);
-			if (rtn_info.getSizeRmsList() > 0 && val >= rtn_info.getSizeRmsList()) {
-                val = rtn_info.getSizeRmsList() - 1;
+			if (rtn_info.getInputTuplesCount() > 0 && val >= rtn_info.getInputTuplesCount()) {
+                val = rtn_info.getInputTuplesCount() - 1;
             }
-            if (rtn_info.getSizeRmsList() > 0 && val % 2 == 0) val++;
+            if (rtn_info.getInputTuplesCount() > 0 && val % 2 == 0) val++;
 			jRadioButtonMenuItem15.setText(Integer.toString(val));
 			
 		}
@@ -2007,11 +2007,11 @@ public class GraphPanel extends javax.swing.JPanel {
 			}
 			
 			// Is this the last point?
-			if (x == rtn_info.getMaxRms()) add_group_point();
+			if (x == rtn_info.getMaxInput()) add_group_point();
 
 		} else if (group_threshold == 1 && smooth_threshold > 1) {
 			
-			if (x == rtn_info.getMaxRms()) 
+			if (x == rtn_info.getMaxInput()) 
 				this.setData(rtn_info);
 			
 			//throw new RuntimeException("Not yet implemented :(");
@@ -2159,14 +2159,14 @@ public class GraphPanel extends javax.swing.JPanel {
             return;
         } 
         
-		if (rtn_info == null || rtn_info.getSizeRmsList() <= 0) return;
+		if (rtn_info == null || rtn_info.getInputTuplesCount() <= 0) return;
 		
 		if (group_threshold == 1 && smooth_threshold == 1) {
 			
             //System.out.println("START################");
             
 			//System.out.println("GroupThreshold == 1");
-			Iterator rms_list = this.rtn_info.getRmsListIterator();
+			Iterator rms_list = this.rtn_info.getInputTuplesIterator();
 			while (rms_list.hasNext()) {
 				
 				Rms te = (Rms) rms_list.next();
@@ -2203,7 +2203,7 @@ public class GraphPanel extends javax.swing.JPanel {
 			long sum_occurrences = 0;
 			int t = group_threshold;
 			int k = 0;
-			Iterator rms_list = this.rtn_info.getRmsListIterator();
+			Iterator rms_list = this.rtn_info.getInputTuplesIterator();
 			while(rms_list.hasNext()) {
 				
 				Rms te = (Rms) rms_list.next();
@@ -2315,15 +2315,15 @@ public class GraphPanel extends javax.swing.JPanel {
 		} else if (smooth_threshold > 1 && group_threshold == 1) {
 			
 			int t = (int) Math.pow(smooth_threshold_base, smooth_threshold-1);
-			if (t >= rtn_info.getSizeRmsList()) t = rtn_info.getSizeRmsList() - 1;
+			if (t >= rtn_info.getInputTuplesCount()) t = rtn_info.getInputTuplesCount() - 1;
 			if (t % 2 == 0) t++;
 			// rms items within window; circular array; +2 avoid immediate overwrite
 			Rms[] l = new Rms[t + 2]; 
 			// amortized cache
 			double[] lm = new double[t + 2];
 			double sum = 0, sum2 = 0, sum3 = 0;
-			rtn_info.sortRmsListByAccesses();
-			Iterator rms_list = rtn_info.getRmsListIterator();
+			rtn_info.sortInputTuplesByInput();
+			Iterator rms_list = rtn_info.getInputTuplesIterator();
 			
 			int tail = 0;
 			int current = 0;

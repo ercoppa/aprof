@@ -46,14 +46,14 @@ public class PlotThumbRenderer extends JLabel implements TableCellRenderer {
 
 		Routine r = (Routine)rtn_info;
 		if (r != null) {
-			Iterator i = r.getRmsListIterator();
+			Iterator i = r.getInputTuplesIterator();
 			if (i.hasNext()) {
 
 				/* maximize graph */
 				min_x = min_y = 0;
 				max_y = Math.ceil(r.getMaxCost());
 				if (max_y == 0) max_y++;
-				max_x = r.getMaxRms();
+				max_x = r.getMaxInput();
 				if (max_x == 0) max_x++;
 
 				/* draw points */

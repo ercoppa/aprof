@@ -9,12 +9,10 @@ public class RoutineInfo extends Routine {
 	private String image;
 
 	public RoutineInfo(int id) {
-        super(0);
 		this.id = id;
 	}
 
 	public RoutineInfo(int id, String name, String image, long num_rms) {
-        super(num_rms);
 		this.id = id;
 		this.name = name;
 		this.image = image.substring(image.lastIndexOf('/') + 1);

@@ -91,7 +91,7 @@ public class RmsTableModel extends AbstractTableModel {
 	@Override
 	public int getRowCount() {
 		if (rtn == null) return 0;
-		else return rtn.getSizeRmsList();
+		else return rtn.getInputTuplesCount();
  	}
 
 	@Override
@@ -104,7 +104,7 @@ public class RmsTableModel extends AbstractTableModel {
 		
 		if (rtn == null) return null;
 		
-		Rms te = rtn.getRmsItem(rowIndex);
+		Rms te = rtn.getInputTuple(rowIndex);
 		switch (columnIndex) {
 			case 0: return te.getRms();
 			case 1: return te.getMinCost();

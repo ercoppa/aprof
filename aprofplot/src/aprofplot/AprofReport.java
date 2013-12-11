@@ -227,7 +227,7 @@ public class AprofReport {
                 
                 if (token.equals("p")) {
                     RoutineInfo r = routines.get(id);
-                    r.addRms(te);
+                    r.addInput(te);
                 } else {
                     
                     RoutineContext c = null;
@@ -422,8 +422,8 @@ public class AprofReport {
         Collections.sort(routines, new Comparator<RoutineInfo> () {
 			@Override
 			public int compare(RoutineInfo r1, RoutineInfo r2) {
-			   if (r1.getRatioSumRvmsThread() == r2.getRatioSumRvmsThread()) return 0;
-			   if ((r1.getRatioSumRvmsThread()) < (r2.getRatioSumRvmsThread())) return 1;
+			   if (r1.getRatioThreadInput() == r2.getRatioThreadInput()) return 0;
+			   if ((r1.getRatioThreadInput()) < (r2.getRatioThreadInput())) return 1;
 			   return -1;
 			}
 		});
@@ -433,8 +433,8 @@ public class AprofReport {
         Collections.sort(routines, new Comparator<RoutineInfo> () {
 			@Override
 			public int compare(RoutineInfo r1, RoutineInfo r2) {
-			   if (r1.getRatioSumRvmsSyscall() == r2.getRatioSumRvmsSyscall()) return 0;
-			   if ((r1.getRatioSumRvmsSyscall()) < (r2.getRatioSumRvmsSyscall())) return 1;
+			   if (r1.getRatioSyscallInput() == r2.getRatioSyscallInput()) return 0;
+			   if ((r1.getRatioSyscallInput()) < (r2.getRatioSyscallInput())) return 1;
 			   return -1;
 			}
 		});
