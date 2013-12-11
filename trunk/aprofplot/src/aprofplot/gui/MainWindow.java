@@ -1890,8 +1890,8 @@ public class MainWindow extends javax.swing.JFrame {
         if (jCheckBoxMenuItem7.isSelected()) AmortizedGraphPanel.setRoutine(r);
         if (jCheckBoxMenuItem24.isSelected()) AlphaGraphPanel.setRoutine(r);
 
-        r.sortRmsListByAccesses();
-        Iterator i = r.getRmsListIterator();
+        r.sortInputTuplesByInput();
+        Iterator i = r.getInputTuplesIterator();
         while (i.hasNext()) {
 
             Rms te = (Rms) i.next();
@@ -2271,7 +2271,7 @@ public class MainWindow extends javax.swing.JFrame {
 		
 		if (this.rtn_info == null) return;
 		
-		Iterator it = rtn_info.getRmsListIterator();
+		Iterator it = rtn_info.getInputTuplesIterator();
 		try {
 			
 			File tmp = new File(this.report.getName() + "-"
@@ -2354,7 +2354,7 @@ public class MainWindow extends javax.swing.JFrame {
 				for (int i = 0; i < els.size(); i++) {
 					Routine el = els.get(i);
 					out.println(el.getID() + " " +
-								(long) el.getSizeRmsList() + " " +
+								(long) el.getInputTuplesCount() + " " +
 								(long) el.getTotalCost() + " " +
 								(long) el.getTotalCalls() + " " +
 								el.getName()
@@ -2812,7 +2812,7 @@ public class MainWindow extends javax.swing.JFrame {
 					
                     Routine r = rr.get(i);
                     double x = ((double)i + 1) / (((double)rr.size())/100);
-                    double y = r.getRatioSumRvmsThread() * 100;
+                    double y = r.getRatioThreadInput() * 100;
                     
 					out.format("%.1f %.1f%n", x, y);
 				}
@@ -2868,7 +2868,7 @@ public class MainWindow extends javax.swing.JFrame {
 					
                     Routine r = rr.get(i);
                     double x = ((double)i + 1) / (((double)rr.size())/100);
-                    double y =  r.getRatioSumRvmsSyscall() * 100;
+                    double y =  r.getRatioSyscallInput() * 100;
                     
 					out.format("%.1f %.1f%n", x, y);
 				}
@@ -2929,15 +2929,15 @@ public class MainWindow extends javax.swing.JFrame {
 				for (int i = 0; i < rr.size(); i++) {
                     
                     Routine r = rr.get(i);
-                    if (r.getSizeRmsList() < 5) continue;
+                    if (r.getInputTuplesCount() < 5) continue;
                     /*
                     System.out.println("Routine " 
                             + i + " tuples " + r.getSizeRmsList());
                     
                     */
                     double x = k++;
-                    double y =  r.getRatioSumRvmsSyscall() * 100;
-                    double z =  r.getRatioSumRvmsThread() * 100;
+                    double y =  r.getRatioSyscallInput() * 100;
+                    double z =  r.getRatioThreadInput() * 100;
                     
 					out.format("%.1f %.1f %.1f%n", x, y, z);
 				}

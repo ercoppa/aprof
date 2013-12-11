@@ -5,59 +5,45 @@ import java.util.*;
 public abstract class Routine implements Comparable<Routine> {
 
 	// Some statistics about the routine
-	private double min_cost; // cumulative
-	private double max_cost; // cumulative
-	private double max_avg_cost; // cumulative
     
-    private double total_cumulative_cost;
-    private double total_cost;
-    private double total_self;
-    private double self_min; 
-    private double self_max_avg;
-    private double self_max;
-	private long total_calls;
-	private long min_rms;
-	private long max_rms;
-    private long sum_rms;
-    private long sum_rvms;
-    private long rvms_syscall;
-    private long rvms_thread;
-    private long rvms_syscall_self;
-    private long rvms_thread_self;
-    private long num_rms;
-	// Read memory size elements for this routine
-	private ArrayList<Rms> rms_list;
-	
-	// amortized cache hack
-    private int chart_cost = Main.COST_CUMULATIVE;
+	private double min_cumulative_cost = Double.MAX_VALUE; 
+	private double max_cumulative_cost = 0;  
+	private double max_avg_cumulative_cost = 0;
+    private double total_cumulative_cost = 0;
+    
+    private double total_cumulative_real_cost = 0;
+    
+    private double min_self_cost = Double.MAX_VALUE;
+    private double max_self_cost = 0;
+    private double max_avg_self_cost = 0;
+    private double total_self_cost = 0;
+    
+	private long total_calls = 0;
+    
+	private long min_input = Integer.MAX_VALUE;
+	private long max_input = 0;
+    private long total_input = 0;
+
+    private long total_cumulative_syscall_input = 0;
+    private long total_cumulative_thread_input = 0;
+    private long total_self_syscall_input = 0;
+    private long total_self_thread_input = 0;
+
+    public enum SortOrder {
+        NONE, BY_INPUT, BY_CUMULATIVE_COST, BY_SELF_COST
+    }
+    
+	private ArrayList<Rms> input_tuples = new ArrayList<Rms>();
+    private SortOrder sort_status = SortOrder.NONE;
+    
+	// amortized analysis
 	private long last_amortized_n = -1;
 	private double last_amortized_budget = 0;
 	private long last_amortized_index = 0;
-	
-	// Sort rms list status
-	public final static int UNSORTED = 0;
-	public final static int SORT_BY_ACCESS = 1;
-	public final static int SORT_OTHER = 2;
-	private int sort_status = UNSORTED;
-	     
     private double amortized_constant = 1.0;
+    private int chart_cost = Main.COST_CUMULATIVE;
     
-	public Routine(long num_rms) {
-		
-		min_cost = Double.MAX_VALUE;
-		max_cost = 0;
-        max_avg_cost = 0;
-		total_calls = 0;
-		min_rms = Integer.MAX_VALUE;
-		max_rms = 0;
-        self_min = Double.MAX_VALUE;
-        self_max = 0;
-        self_max_avg = 0;
-        this.num_rms = num_rms;
-        total_cumulative_cost = 0;
-		rms_list = new ArrayList<Rms>();
-	
-	}
+	public Routine() {}
 
 	public abstract int getID();
 	public abstract String getImage();
@@ -66,134 +52,141 @@ public abstract class Routine implements Comparable<Routine> {
 	public abstract String getMangledName();
 
 	// No duplicated rms!
-	public void addRms(Rms r) {
+	public void addInput(Rms i) {
 
-		rms_list.add(r);
+		input_tuples.add(i);
 		
-		if (r.getCumulativeMinCost() < min_cost) min_cost = r.getCumulativeMinCost();
-		if (r.getCumulativeMaxCost() > max_cost) max_cost = r.getCumulativeMaxCost();
-		if (r.getCumulativeAvgCost() > max_avg_cost) max_avg_cost = r.getCumulativeAvgCost();
+        // cumulative
+		if (i.getCumulativeMinCost() < min_cumulative_cost) 
+            min_cumulative_cost = i.getCumulativeMinCost();
+		if (i.getCumulativeMaxCost() > max_cumulative_cost) 
+            max_cumulative_cost = i.getCumulativeMaxCost();
+		if (i.getCumulativeAvgCost() > max_avg_cumulative_cost) 
+            max_avg_cumulative_cost = i.getCumulativeAvgCost();
+        total_cumulative_cost += i.getTotalCumulativeCost();
         
-        if (r.getSelfMinCost() < self_min) self_min = r.getSelfMinCost();
-		if (r.getSelfMaxCost() > self_max) self_max = r.getSelfMaxCost();
-		if (r.getSelfAvgCost() > self_max_avg) self_max_avg = r.getSelfAvgCost();
-		
-        if (r.getRms() > max_rms) max_rms = r.getRms();
-		if (r.getRms() < min_rms) min_rms = r.getRms();
-		
-        total_cumulative_cost += r.getTotalCumulativeCost();
-        total_cost += r.getTotalRealCost();
-        total_self += r.getTotalSelfCost();
-		total_calls += r.getOcc();
-	
-        sum_rvms += r.getOcc() * r.getRms();
-        sum_rms += r.getSumRms();
+        // self
+        if (i.getSelfMinCost() < min_self_cost) 
+            min_self_cost = i.getSelfMinCost();
+		if (i.getSelfMaxCost() > max_self_cost) 
+            max_self_cost = i.getSelfMaxCost();
+		if (i.getSelfAvgCost() > max_avg_self_cost) 
+            max_avg_self_cost = i.getSelfAvgCost();
+		total_self_cost += i.getTotalSelfCost();
         
-        rvms_syscall += r.getSumRvmsSyscall();
-        rvms_thread += r.getSumRvmsThread();
+        total_cumulative_real_cost += i.getTotalRealCost();
         
-        rvms_syscall_self += r.getSumRvmsSyscallSelf();
-        rvms_thread_self += r.getSumRvmsThreadSelf();
+        if (i.getRms() > max_input) max_input = i.getRms();
+		if (i.getRms() < min_input) min_input = i.getRms();
+		total_input = i.getRms();
+        
+		total_calls += i.getOcc();
+        
+        total_cumulative_syscall_input += i.getSumRvmsSyscall();
+        total_cumulative_thread_input += i.getSumRvmsThread();
+        total_self_syscall_input += i.getSumRvmsSyscallSelf();
+        total_self_thread_input += i.getSumRvmsThreadSelf();
         
 		// Invalid amortized cache
 		last_amortized_n = -1;
 		
 		// Set as unsorted
-		sort_status = UNSORTED;
-		
+		sort_status = SortOrder.NONE;
 	}
     
 	public double getMinCost() {
         
         if (Main.getChartCost() == Main.COST_CUMULATIVE)
-            return min_cost;
+            return min_cumulative_cost;
 		
-        return self_min;
+        return min_self_cost;
 	}
 	
 	public double getMaxCost() {
         
         if (Main.getChartCost() == Main.COST_CUMULATIVE)
-            return max_cost;
+            return max_cumulative_cost;
 		
-        return self_max;
+        return max_self_cost;
 	}
 
 	public double getMaxAvgCost() {
         
         if (Main.getChartCost() == Main.COST_CUMULATIVE)
-            return max_avg_cost;
+            return max_avg_cumulative_cost;
 		
-        return self_max_avg;
+        return max_avg_self_cost;
 	}
 
 	public double getTotalCost() {
         
         if (Main.getChartCost() == Main.COST_CUMULATIVE)
-            return total_cost;
+            return total_cumulative_real_cost;
 		
-        return total_self;
+        return total_self_cost;
 	}
     
     public double getTotalCumulativeCost() {
-        return total_cost;
+        return total_cumulative_real_cost;
     }
     
     public double getTotalSelfCost() {
-        return total_self;
+        return total_self_cost;
     }
     
 	public long getTotalCalls() {
 		return total_calls;
 	}
 	
-	public long getMaxRms() {
-		return max_rms;
+	public long getMaxInput() {
+		return max_input;
 	}
 	
-	public long getMinRms() {
-		return min_rms;
+	public long getMinInput() {
+		return min_input;
 	}
 
-	public int getSizeRmsList() {
-		return rms_list.size();
+	public int getInputTuplesCount() {
+		return input_tuples.size();
 	}
 
-	public Iterator getRmsListIterator() {
-		sortRmsListByAccesses();
-		return new RmsIterator(rms_list.iterator());
+	public Iterator getInputTuplesIterator() {
+		sortInputTuplesByInput();
+		return input_tuples.iterator();
 	}
 	
-	public Rms getRmsItem(int index) {
-		return rms_list.get(index);
+	public Rms getInputTuple(int index) {
+		return input_tuples.get(index);
 	}
 	
-	public ArrayList<Rms> getRmsList() {
-		return rms_list;
+	public ArrayList<Rms> getInputTuples() {
+		return input_tuples;
 	}
 
 	@Override
 	public int compareTo(Routine r) {
-		if (total_cost == r.getTotalCost()) return 0;
-		if (total_cost > r.getTotalCost()) return 1;
+		if (total_cumulative_real_cost == r.getTotalCost()) return 0;
+		if (total_cumulative_real_cost > r.getTotalCost()) return 1;
 		return -1;
 	}
 	
-    public void InvalidAmortizedCache() {
+    public void invalidAmortizedCache() {
         last_amortized_n = -1;
     }
     
     public void setAmortizedConstant(double alpha) {
-        this.amortized_constant = alpha;
+        amortized_constant = alpha;
     }
     
     public double getAmortizedConstant() {
-        return this.amortized_constant;
+        return amortized_constant;
     }
     
 	public double getAmortizedValue(long n) {
 		
-		if (sort_status != SORT_BY_ACCESS) sortRmsListByAccesses();
+		if (sort_status != SortOrder.BY_INPUT) 
+            sortInputTuplesByInput();
+        
 		if (Main.getChartCost() != this.chart_cost) {
             this.chart_cost = Main.getChartCost();
             last_amortized_n = -1;
@@ -210,8 +203,8 @@ public abstract class Routine implements Comparable<Routine> {
 			i = last_amortized_index + 1;
 		}
         
-		for(; i < rms_list.size(); i++) {
-			Rms s = rms_list.get((int)i);
+		for(; i < input_tuples.size(); i++) {
+			Rms s = input_tuples.get((int)i);
 			if (s.getRms() > n) {
 				i--;
 				break;
@@ -221,7 +214,7 @@ public abstract class Routine implements Comparable<Routine> {
                 budget -= s.getTotalCost();
                 am_value = 0;
             } else {
-                am_value = ((alpha + 1) * s.getTotalCost()) / s.getOcc();;  
+                am_value = ((alpha + 1) * s.getTotalCost()) / s.getOcc(); 
                 budget = budget + (alpha * s.getTotalCost()); 
             }
 		}
@@ -232,15 +225,14 @@ public abstract class Routine implements Comparable<Routine> {
 		last_amortized_index = i;
 
         return am_value;
-		//return est / sum_occ;
 	}
     
     public ArrayList<Double> estimateAmortizedConstant() {
         
         ArrayList<Double> list = new ArrayList<Double>();
         
-        if (sort_status != SORT_BY_ACCESS) 
-            sortRmsListByAccesses();
+        if (sort_status != SortOrder.BY_INPUT) 
+            sortInputTuplesByInput();
         
         double alpha = 0;
         int round = 0;
@@ -249,9 +241,9 @@ public abstract class Routine implements Comparable<Routine> {
             double accum = 0;
             double diff = 0;
             double count = 0;
-            for(int i = 0; i < rms_list.size(); i++) {
+            for(int i = 0; i < input_tuples.size(); i++) {
                 
-                Rms s = rms_list.get(i);
+                Rms s = input_tuples.get(i);
                 if (s.getTotalCost() < accum) {
                     accum -= s.getTotalCost();
                     diff = 0;
@@ -278,11 +270,10 @@ public abstract class Routine implements Comparable<Routine> {
         return list;
     }
 
-	public void sortRmsListByAccesses() {
+	public void sortInputTuplesByInput() {
 		
-		if (sort_status == SORT_BY_ACCESS) return;
-		sort_status = SORT_BY_ACCESS;
-		Collections.sort(rms_list, new Comparator<Rms> () {
+		if (sort_status == SortOrder.BY_INPUT) return;
+		Collections.sort(input_tuples, new Comparator<Rms> () {
 			@Override
 			public int compare(Rms t1, Rms t2) {
 				if (t1.getRms() == t2.getRms()) {
@@ -294,12 +285,28 @@ public abstract class Routine implements Comparable<Routine> {
 				return -1;
 			}
 		});
-	
+        sort_status = SortOrder.BY_INPUT;
 	}
 
 	public void sortRmsListByCost() {
-		sort_status = SORT_OTHER;
-		Collections.sort(rms_list, new Comparator<Rms> () {
+        
+        if (Main.getChartCost() == Main.COST_CUMULATIVE) {
+            
+            if (sort_status == SortOrder.BY_CUMULATIVE_COST)
+                return;
+            else
+                sort_status = SortOrder.BY_CUMULATIVE_COST;
+        
+        } else if (Main.getChartCost() == Main.COST_SELF) {
+            
+            if (sort_status == SortOrder.BY_SELF_COST)
+                return;
+            else
+                sort_status = SortOrder.BY_SELF_COST;
+        
+        }
+        
+		Collections.sort(input_tuples, new Comparator<Rms> () {
 			@Override
 			public int compare(Rms t1, Rms t2) {
 				if (t1.getCost() == t2.getCost()) return 0;
@@ -308,145 +315,34 @@ public abstract class Routine implements Comparable<Routine> {
 			}
 		});
 	}
-
-	public void sortRmsListByRatio() {
-		sort_status = SORT_OTHER;
-		Collections.sort(rms_list, new Comparator<Rms> () {
-			@Override
-			public int compare(Rms t1, Rms t2) {
-				if (t1.getRatio() == t2.getRatio()) return 0;
-				if (t1.getRatio() > t2.getRatio()) return 1;
-				return -1;
-			}
-		});
-	}
-
-	public void sortRmsListByRatio(int type) {
-		sort_status = SORT_OTHER;
-		final int t = type;
-		Collections.sort(rms_list, new Comparator<Rms> () {
-			@Override
-			public int compare(Rms t1, Rms t2) {
-				if (t1.getRatio(t) == t2.getRatio(t)) return 0;
-				if (t1.getRatio(t) > t2.getRatio(t)) return 1;
-				return -1;
-			}
-		});
-	}
-
-	public void sortRmsListByOccurrences() {
-		sort_status = SORT_OTHER;
-		Collections.sort(rms_list, new Comparator<Rms> () {
-			@Override
-			public int compare(Rms t1, Rms t2) {
-				if (t1.getOcc() == t2.getOcc()) return 0;
-				if (t1.getOcc() > t2.getOcc()) return 1;
-				return -1;
-			}
-		});
-	}
-	
-	public void sortRmsListByVar() {
-		sort_status = SORT_OTHER;
-		Collections.sort(rms_list, new Comparator<Rms> () {
-			@Override
-			public int compare(Rms t1, Rms t2) {
-				if (t1.getVar() == t2.getVar()) return 0;
-				if (t1.getVar() > t2.getVar()) return 1;
-				return -1;
-			}
-		});
-	}
-	
-	public void sortRmsListByTotalCost() {
-		sort_status = SORT_OTHER;
-		Collections.sort(rms_list, new Comparator<Rms> () {
-			@Override
-			public int compare(Rms t1, Rms t2) {
-				if (t1.getTotalCost() == t2.getTotalCost()) return 0;
-				if (t1.getTotalCost() > t2.getTotalCost()) return 1;
-				return -1;
-			}
-		});
-	}
-
-    public double sumRms() {
-        return sum_rms;
-    }
     
-    public double sumRvms() {
-        return sum_rvms;
-    }
-    
-    public double getRatioSumRmsRvms() {
+    public double getRatioSyscallInput() {
         
-        if (sum_rms > 0 && sum_rvms == 0)
-            throw new RuntimeException("Invalid RVMS");
-        else if (sum_rms == 0 && sum_rvms == 0)
-            return 1;
-           
-        if (this.getName().equals("diff"))
-            System.out.println("sum rms: " + sum_rms + "  sum rvms: " + sum_rvms);
-            
-        return (((double) sum_rms) / ((double) sum_rvms));
-    }
-    
-    public void setCountRms(long distinct_rms) {
-        this.num_rms = distinct_rms;
-    }
-	
-    public long getCountRms() {
-        return num_rms;
-    }
-    
-    public double getRatioRvmsRms() {
-        
-        if (getCountRms() == 0) 
-            return getSizeRmsList();
-        
-        if (getName().equals("GOMP_taskwait"))
-            System.out.println("#rms " + getCountRms() +
-                                    " #rvms " + getSizeRmsList() +
-                                    " ratio " + (((double)getSizeRmsList() - getCountRms()) /
-                ((double)getCountRms()))
-                        );
-        
-        return (((double)getSizeRmsList() - getCountRms()) /
-                ((double)getCountRms()));
-    }
-    
-    public double getRatioSumRvmsSyscall() {
-        
-         if (this.rvms_syscall > 0)
-            return (((double)this.rvms_syscall) / ((double)this.sum_rvms)); 
+         if (total_input > 0)
+            return (((double)total_cumulative_syscall_input) / ((double)total_input)); 
         
         return 0;
     }
     
-    public double getRatioSumRvmsThread() {
+    public double getRatioThreadInput() {
         
-         if (this.rvms_thread > 0) {
-             return (((double)this.rvms_thread) / ((double)this.sum_rvms)); 
+         if (total_input > 0) {
+             return (((double)total_cumulative_thread_input) / ((double)total_input)); 
          }
             
         return 0;
     }
     
-    public double getSumRvmsSyscallSelf() {
-        return this.rvms_syscall_self;
+    public double getTotalSelfSyscallInput() {
+        return this.total_self_syscall_input;
     }
     
-    public double getSumRvmsThreadSelf() {            
-        return this.rvms_thread_self;
+    public double getTotalSelfThreadInput() {            
+        return this.total_self_thread_input;
     }
     
-    public double getRatioInducedAccesses() {
-    
-        if (this.sum_rvms <= 0) return 0;
-        
-        return (((double)this.rvms_thread + this.rvms_syscall) 
-                    / ((double)this.sum_rvms)); 
-        
-    }
-    
+    // deprecated
+    public double getRatioSumRmsRvms() { return 0; }
+    public double getRatioRvmsRms() { return 0; }
+    public double getRatioInducedAccesses() { return 0; } 
 }

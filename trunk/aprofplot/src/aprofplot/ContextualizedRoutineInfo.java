@@ -35,7 +35,7 @@ public class ContextualizedRoutineInfo extends RoutineInfo {
 		
 		contexts.add(c);
 		c.setContextId(contexts.size());
-		lazy_list.addAll(c.getRmsList());
+		lazy_list.addAll(c.getInputTuples());
 	
 	}
 	
@@ -89,7 +89,7 @@ public class ContextualizedRoutineInfo extends RoutineInfo {
                                     rvms_thread, rvms_syscall_self,
                                     rvms_thread_self);
 				
-				addRms(rr);
+				addInput(rr);
 				
 				// reset
 				min_cost = Long.MAX_VALUE;
@@ -139,7 +139,7 @@ public class ContextualizedRoutineInfo extends RoutineInfo {
                                     rvms_thread, rvms_syscall_self,
                                     rvms_thread_self);
 				
-		addRms(rr);
+		addInput(rr);
 		
 		// free lazy list
 		lazy_list.clear();

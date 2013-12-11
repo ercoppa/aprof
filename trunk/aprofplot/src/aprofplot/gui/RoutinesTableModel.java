@@ -228,7 +228,7 @@ public class RoutinesTableModel extends AbstractTableModel {
                         return rtn_info.getTotalSelfCost();
                 
 			case 3: // # Rms
-					return rtn_info.getSizeRmsList();
+					return rtn_info.getInputTuplesCount();
 			
 			case 4: // % total cost rtn wrt all rtns
                     if (main.isDisplayCumulativeTotalCost())
@@ -267,13 +267,13 @@ public class RoutinesTableModel extends AbstractTableModel {
             case 8:
                     // % syscall
                     if (main.hasRvmsStats()) {
-                        return rtn_info.getRatioSumRvmsSyscall() * 100;
+                        return rtn_info.getRatioSyscallInput() * 100;
                     }
                 
             case 9:
                     // % thread
                     if (main.hasRvmsStats()) {
-                        return rtn_info.getRatioSumRvmsThread() * 100;
+                        return rtn_info.getRatioThreadInput() * 100;
                     }
                 
 		}

@@ -47,7 +47,7 @@ public class extractData {
 		for (int i = 0; i < rr.size(); i++) {
 			
 			Routine r = rr.get(i);
-			if (r.getSizeRmsList() >= 10) count_rich++;
+			if (r.getInputTuplesCount() >= 10) count_rich++;
 			else {
 				
 				count_poor++;
