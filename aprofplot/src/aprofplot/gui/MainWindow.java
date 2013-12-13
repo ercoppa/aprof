@@ -1782,7 +1782,7 @@ public class MainWindow extends javax.swing.JFrame {
 	
 	}
 	
-	protected void setGroupCostAll(int graph_type, int cost_type) {
+	protected void setGroupCostAll(int graph_type, Input.Cost cost_type) {
 		
 		// this method is called by one graph, we notify to all others...
 		
@@ -1894,7 +1894,7 @@ public class MainWindow extends javax.swing.JFrame {
         Iterator i = r.getInputTuplesIterator();
         while (i.hasNext()) {
 
-            Rms te = (Rms) i.next();
+            Input te = (Input) i.next();
 
             if (jCheckBoxMenuItem4.isSelected()) CostGraphPanel.addPoint(te);
             if (jCheckBoxMenuItem8.isSelected()) ratioGraphPanel.addPoint(te);
@@ -2299,17 +2299,17 @@ public class MainWindow extends javax.swing.JFrame {
                 
 				while (it.hasNext()) {
 
-					Rms s = (Rms) it.next();
-					out.print(s.getRms() + " " + (int) s.getCumulativeMinCost() 
-										+ " " + (int) s.getCumulativeMaxCost() 
-										+ " " + (long) s.getTotalCumulativeCost()
-                                        + " " + (long) s.getTotalRealCost()
-										+ " " + (long)s.getOcc()
-                                        + " " + (int) s.getSelfMinCost() 
-										+ " " + (int) s.getSelfMaxCost() 
-										+ " " + (long) s.getTotalSelfCost()
+					Input s = (Input) it.next();
+					out.print(s.getSize() + " " + (int) s.getMinCumulativeCost() 
+										+ " " + (int) s.getMaxCumulativeCost() 
+										+ " " + (long) s.getSumCumulativeCost()
+                                        + " " + (long) s.getSumCumulativeRealCost()
+										+ " " + (long)s.getCalls()
+                                        + " " + (int) s.getMinSelfCost() 
+										+ " " + (int) s.getMaxSelfCost() 
+										+ " " + (long) s.getSumSelfCost()
                               );
-					out.format(" %.2f%n", rtn_info.getAmortizedValue(s.getRms()));
+					out.format(" %.2f%n", rtn_info.getAmortizedValue(s.getSize()));
 
 				}
 				out.close();

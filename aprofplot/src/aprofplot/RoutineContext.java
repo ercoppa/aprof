@@ -8,16 +8,16 @@ public class RoutineContext extends Routine {
 	private RoutineContext parent;
 	private ContextualizedRoutineInfo overall; 
 
-	public RoutineContext() {}
-
+    public RoutineContext() {}
+    
 	public RoutineContext(RoutineContext parent, ContextualizedRoutineInfo overall) {					
 		this.parent = parent;
 		this.overall = overall;
 	}
 
-	public void addRmsToContext(Rms r) {
+	public void addInputTuple(Input r) {
 		addInput(r);
-		if (overall != null) overall.addRmsLazy(r);
+		if (overall != null) overall.addInputTupleLazy(r);
 	}
 
 	public void setParent(RoutineContext p) {

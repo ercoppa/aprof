@@ -33,7 +33,7 @@ public abstract class Routine implements Comparable<Routine> {
         NONE, BY_INPUT, BY_CUMULATIVE_COST, BY_SELF_COST
     }
     
-	private ArrayList<Rms> input_tuples = new ArrayList<Rms>();
+	private ArrayList<Input> input_tuples = new ArrayList<Input>();
     private SortOrder sort_status = SortOrder.NONE;
     
 	// amortized analysis
@@ -52,40 +52,40 @@ public abstract class Routine implements Comparable<Routine> {
 	public abstract String getMangledName();
 
 	// No duplicated rms!
-	public void addInput(Rms i) {
+	public void addInput(Input i) {
 
 		input_tuples.add(i);
 		
         // cumulative
-		if (i.getCumulativeMinCost() < min_cumulative_cost) 
-            min_cumulative_cost = i.getCumulativeMinCost();
-		if (i.getCumulativeMaxCost() > max_cumulative_cost) 
-            max_cumulative_cost = i.getCumulativeMaxCost();
-		if (i.getCumulativeAvgCost() > max_avg_cumulative_cost) 
-            max_avg_cumulative_cost = i.getCumulativeAvgCost();
-        total_cumulative_cost += i.getTotalCumulativeCost();
+		if (i.getMinCumulativeCost() < min_cumulative_cost) 
+            min_cumulative_cost = i.getMinCumulativeCost();
+		if (i.getMaxCumulativeCost() > max_cumulative_cost) 
+            max_cumulative_cost = i.getMaxCumulativeCost();
+		if (i.getAvgCumulativeCost() > max_avg_cumulative_cost) 
+            max_avg_cumulative_cost = i.getAvgCumulativeCost();
+        total_cumulative_cost += i.getSumCumulativeCost();
         
         // self
-        if (i.getSelfMinCost() < min_self_cost) 
-            min_self_cost = i.getSelfMinCost();
-		if (i.getSelfMaxCost() > max_self_cost) 
-            max_self_cost = i.getSelfMaxCost();
-		if (i.getSelfAvgCost() > max_avg_self_cost) 
-            max_avg_self_cost = i.getSelfAvgCost();
-		total_self_cost += i.getTotalSelfCost();
+        if (i.getMinSelfCost() < min_self_cost) 
+            min_self_cost = i.getMinSelfCost();
+		if (i.getMaxSelfCost() > max_self_cost) 
+            max_self_cost = i.getMaxSelfCost();
+		if (i.getAvgSelfCost() > max_avg_self_cost) 
+            max_avg_self_cost = i.getAvgSelfCost();
+		total_self_cost += i.getSumSelfCost();
         
-        total_cumulative_real_cost += i.getTotalRealCost();
+        total_cumulative_real_cost += i.getSumCumulativeRealCost();
         
-        if (i.getRms() > max_input) max_input = i.getRms();
-		if (i.getRms() < min_input) min_input = i.getRms();
-		total_input = i.getRms();
+        if (i.getSize() > max_input) max_input = i.getSize();
+		if (i.getSize() < min_input) min_input = i.getSize();
+		total_input = i.getSize();
         
-		total_calls += i.getOcc();
+		total_calls += i.getCalls();
         
-        total_cumulative_syscall_input += i.getSumRvmsSyscall();
-        total_cumulative_thread_input += i.getSumRvmsThread();
-        total_self_syscall_input += i.getSumRvmsSyscallSelf();
-        total_self_thread_input += i.getSumRvmsThreadSelf();
+        total_cumulative_syscall_input += i.getSumCumulativeSyscallInput();
+        total_cumulative_thread_input += i.getSumCumulativeThreadInput();
+        total_self_syscall_input += i.getSumSelfSyscallInput();
+        total_self_thread_input += i.getSumSelfThreadInput();
         
 		// Invalid amortized cache
 		last_amortized_n = -1;
@@ -155,11 +155,11 @@ public abstract class Routine implements Comparable<Routine> {
 		return input_tuples.iterator();
 	}
 	
-	public Rms getInputTuple(int index) {
+	public Input getInputTuple(int index) {
 		return input_tuples.get(index);
 	}
 	
-	public ArrayList<Rms> getInputTuples() {
+	public ArrayList<Input> getInputTuples() {
 		return input_tuples;
 	}
 
@@ -204,18 +204,18 @@ public abstract class Routine implements Comparable<Routine> {
 		}
         
 		for(; i < input_tuples.size(); i++) {
-			Rms s = input_tuples.get((int)i);
-			if (s.getRms() > n) {
+			Input s = input_tuples.get((int)i);
+			if (s.getSize() > n) {
 				i--;
 				break;
 			}
               
-            if (s.getTotalCost() < budget) {
-                budget -= s.getTotalCost();
+            if (s.getSumCost() < budget) {
+                budget -= s.getSumCost();
                 am_value = 0;
             } else {
-                am_value = ((alpha + 1) * s.getTotalCost()) / s.getOcc(); 
-                budget = budget + (alpha * s.getTotalCost()); 
+                am_value = ((alpha + 1) * s.getSumCost()) / s.getCalls(); 
+                budget = budget + (alpha * s.getSumCost()); 
             }
 		}
 		
@@ -243,13 +243,13 @@ public abstract class Routine implements Comparable<Routine> {
             double count = 0;
             for(int i = 0; i < input_tuples.size(); i++) {
                 
-                Rms s = input_tuples.get(i);
-                if (s.getTotalCost() < accum) {
-                    accum -= s.getTotalCost();
+                Input s = input_tuples.get(i);
+                if (s.getSumCost() < accum) {
+                    accum -= s.getSumCost();
                     diff = 0;
                 } else {
-                    diff = ((alpha + 1) * s.getTotalCost()) / s.getOcc(); 
-                    accum = accum + (alpha * s.getTotalCost()); 
+                    diff = ((alpha + 1) * s.getSumCost()) / s.getCalls(); 
+                    accum = accum + (alpha * s.getSumCost()); 
                 }
                 
                 if (i > 0 && diff > 0) count++;
@@ -273,22 +273,23 @@ public abstract class Routine implements Comparable<Routine> {
 	public void sortInputTuplesByInput() {
 		
 		if (sort_status == SortOrder.BY_INPUT) return;
-		Collections.sort(input_tuples, new Comparator<Rms> () {
+        
+        Collections.sort(input_tuples, new Comparator<Input> () {
 			@Override
-			public int compare(Rms t1, Rms t2) {
-				if (t1.getRms() == t2.getRms()) {
-                    if (t1.getOcc() == t2.getOcc()) return 0;
-                    if (t1.getOcc() > t2.getOcc()) return -1;
+			public int compare(Input t1, Input t2) {
+				if (t1.getSize() == t2.getSize()) {
+                    if (t1.getCalls() == t2.getCalls()) return 0;
+                    if (t1.getCalls() > t2.getCalls()) return -1;
                     return 1;
                 }
-				if (t1.getRms() > t2.getRms()) return 1;
+				if (t1.getSize() > t2.getSize()) return 1;
 				return -1;
 			}
 		});
         sort_status = SortOrder.BY_INPUT;
 	}
 
-	public void sortRmsListByCost() {
+	public void sortInputTuplesByCost() {
         
         if (Main.getChartCost() == Main.COST_CUMULATIVE) {
             
@@ -303,17 +304,9 @@ public abstract class Routine implements Comparable<Routine> {
                 return;
             else
                 sort_status = SortOrder.BY_SELF_COST;
-        
         }
         
-		Collections.sort(input_tuples, new Comparator<Rms> () {
-			@Override
-			public int compare(Rms t1, Rms t2) {
-				if (t1.getCost() == t2.getCost()) return 0;
-				if (t1.getCost() > t2.getCost()) return 1;
-				return -1;
-			}
-		});
+		Collections.sort(input_tuples, new Input.ComparatorCostInput());
 	}
     
     public double getRatioSyscallInput() {

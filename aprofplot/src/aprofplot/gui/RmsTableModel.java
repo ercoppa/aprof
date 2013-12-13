@@ -104,16 +104,16 @@ public class RmsTableModel extends AbstractTableModel {
 		
 		if (rtn == null) return null;
 		
-		Rms te = rtn.getInputTuple(rowIndex);
+		Input te = rtn.getInputTuple(rowIndex);
 		switch (columnIndex) {
-			case 0: return te.getRms();
+			case 0: return te.getSize();
 			case 1: return te.getMinCost();
 			case 2: return Math.ceil(te.getAvgCost() * 10) / 10;
 			case 3: return te.getMaxCost();
-			case 4: return te.getOcc();
+			case 4: return te.getCalls();
             case 5: return (1 - te.getRatioSumRmsRvms()) * 100;
-            case 6: return te.getRatioSumRvmsSyscall() * 100;
-            case 7: return te.getRatioSumRvmsThread() * 100;
+            case 6: return te.getRatioSyscallInput() * 100;
+            case 7: return te.getRatioThreadInput() * 100;
 			//case 5: return te.getVar();
 			//case 6: return rtn.getAmortizedValue(te.getRms());
 			default: return null;
