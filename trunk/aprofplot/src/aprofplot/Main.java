@@ -344,12 +344,6 @@ public class Main {
 	 * @param args the command line arguments
 	 */
 	public static void main(String[] args) {
-		
-        if (args.length > 1) {
-            CompareReport c = new CompareReport(args[0], args[1]);
-            c.printDiff();
-            return;
-        }
         
 		// Mac OS X integration
 		System.setProperty("apple.laf.useScreenMenuBar", "true");

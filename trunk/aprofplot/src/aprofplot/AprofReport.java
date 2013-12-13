@@ -111,7 +111,7 @@ public class AprofReport {
                 
                 RoutineInfo r;
                 if (contexts.isEmpty())
-                    r = new RoutineInfo(rtn_id, rtn_name, lib, 0);
+                    r = new RoutineInfo(rtn_id, rtn_name, lib);
                 else
                     r = r = (RoutineInfo) new ContextualizedRoutineInfo(rtn_id, 
                                                    rtn_name, lib);
@@ -217,11 +217,11 @@ public class AprofReport {
                     }
                 }
                 
-                Rms te = new Rms(input, min_cumul_cost, max_cumul_cost, 
+                Input te = new Input(input, min_cumul_cost, max_cumul_cost, 
                                     sum_cumul_cost, sum_cumul_real_cost, 
                                     sum_self_cost, occ, min_self_cost, 
                                     max_self_cost, sqr_cumul_cost, 
-                                    sqr_self_cost, 0, 0,
+                                    sqr_self_cost,
                                     sum_cumul_syscall, sum_cumul_thread, 
                                     sum_self_syscall, sum_self_thread);
                 
@@ -233,17 +233,20 @@ public class AprofReport {
                     RoutineContext c = null;
                     
                     try {
+                        
                         c = contexts.get(id);
                         if (c == null)
                             throw new IndexOutOfBoundsException();
                         
                     } catch (IndexOutOfBoundsException e) {
+                        
                         c = new RoutineContext();
                         while (contexts.size() <= id) contexts.add(null);
                         contexts.set(id, c);
+                    
                     }
                     
-                    c.addRmsToContext(te);
+                    c.addInputTuple(te);
                 }
                 
 				continue;
@@ -285,7 +288,7 @@ public class AprofReport {
 			while(it.hasNext()) {
 					
 				ContextualizedRoutineInfo r = (ContextualizedRoutineInfo) it.next();
-				r.mergeLazyList();
+				r.mergeInputTupleLazyList();
 				
 			}	
 		}

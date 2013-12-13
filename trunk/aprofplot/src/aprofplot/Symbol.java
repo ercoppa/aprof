@@ -1,21 +1,17 @@
 package aprofplot;
 
-/**
- *
- * @author ercoppa
- */
 public class Symbol {
-	
+    
+    public enum Type {
+        FUNCTION, OTHER, NONE
+    }
+    
+	private Type type = Type.NONE;
 	private String name = null;
 	private int line = -1;
 	private String file = null;
-	private int type = 0;
-	// type of symbol
-	public static final int NONE = 0;
-	public static final int FUNCTION = 1;
-	public static final int OTHER = 2;
-	
-	public Symbol(String name, int line, String file, int type) {
+    
+	public Symbol(String name, int line, String file, Type type) {
 		this.type = type;
 		this.name = name;
 		this.line = line;
@@ -34,7 +30,7 @@ public class Symbol {
 		return file;
 	}
 	
-	public int getType() {
+	public Type getType() {
 		return type;
 	}
 	

@@ -6,7 +6,7 @@ public class RmsIterator implements Iterator {
 
 	private Iterator it = null;
 	
-	public RmsIterator(Iterator<Rms> i) {
+	public RmsIterator(Iterator<Input> i) {
 		this.it = i;
 	}
 	
@@ -16,8 +16,8 @@ public class RmsIterator implements Iterator {
 	}
 
 	@Override
-	public Rms next() {
-		return (Rms)it.next();
+	public Input next() {
+		return (Input)it.next();
 	}
 
 	@Override

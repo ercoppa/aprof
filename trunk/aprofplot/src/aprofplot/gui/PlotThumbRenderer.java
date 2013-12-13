@@ -59,8 +59,8 @@ public class PlotThumbRenderer extends JLabel implements TableCellRenderer {
 				/* draw points */
 				g2d.setColor(java.awt.Color.BLUE);
 				while(i.hasNext()) {
-					Rms s = (Rms) i.next();
-					double x = s.getRms();
+					Input s = (Input) i.next();
+					double x = s.getSize();
 					double y = s.getCost();
 					int x_trans = XCoordTransform(x);
 					int y_trans = -YCoordTransform(y);

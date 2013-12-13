@@ -12,7 +12,7 @@ public class RoutineInfo extends Routine {
 		this.id = id;
 	}
 
-	public RoutineInfo(int id, String name, String image, long num_rms) {
+	public RoutineInfo(int id, String name, String image) {
 		this.id = id;
 		this.name = name;
 		this.image = image.substring(image.lastIndexOf('/') + 1);

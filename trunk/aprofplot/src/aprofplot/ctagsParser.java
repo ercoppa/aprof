@@ -3,19 +3,12 @@ package aprofplot;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.StringTokenizer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-/**
- *
- * @author ercoppa
- */
 public class ctagsParser {
 	
 	private File source = null;
@@ -24,7 +17,6 @@ public class ctagsParser {
 	public ctagsParser(File source) {
 		
 		this.source = source;
-	
 	}
 	
 	public HashMap<String, Symbol> getSymbols() {
@@ -104,7 +96,7 @@ public class ctagsParser {
 					if(!files.contains(file))
 						files.add(file);
 					
-					ls.put(name, new Symbol(name, ln, file, Symbol.FUNCTION));
+					ls.put(name, new Symbol(name, ln, file, Symbol.Type.FUNCTION));
 					//System.out.println("Function " + name + " at line " + line_n + " of " + file);
 				}
 

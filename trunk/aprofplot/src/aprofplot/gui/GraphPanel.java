@@ -29,11 +29,6 @@ public class GraphPanel extends javax.swing.JPanel {
     public static final int EXTERNAL_INPUT_PLOT = 9;
     public static final int ALPHA_PLOT = 10;
 	public static final int MAX_VAL_PLOT = 11; // Max value
-
-	// Possible cost used by a graph
-	public static final int MAX_COST = 0;
-	public static final int AVG_COST = 1;
-	public static final int MIN_COST = 2;
 	
 	// Status of graph
 	public static final int MAXIMIZED = 0;
@@ -43,7 +38,7 @@ public class GraphPanel extends javax.swing.JPanel {
 	PerformanceMonitor perf = null;
 	
 	private int graph_type;
-	private int cost_type;
+	private Input.Cost cost_type;
 	private MainWindow main_window;
 	private boolean x_log_scale = false;
 	private boolean y_log_scale = false;
@@ -1054,7 +1049,7 @@ public class GraphPanel extends javax.swing.JPanel {
                 break;
 			case 
                     RATIO_PLOT: s = "Curve bounding plot - T(n) / ";
-							double[] rc = Rms.getRatioConfig();
+							double[] rc = Input.getRatioConfig();
 							int k = 0;
 							for (int i =  0; i < rc.length; i++) {
 								if (rc[i] != 0) k++;
@@ -1124,20 +1119,19 @@ public class GraphPanel extends javax.swing.JPanel {
         
 	}
 
-	public void setGroupCost(int cost_type) {
+	public void setGroupCost(Input.Cost cost_type) {
 		
 		if (cost_type == this.cost_type) return;
 		switch(cost_type) {
-			case MAX_COST:  jRadioButtonMenuItem7.setSelected(true);
-							break;
-			case AVG_COST:  jRadioButtonMenuItem8.setSelected(true);
-							break;
-			case MIN_COST:  jRadioButtonMenuItem9.setSelected(true);
-							break;
+			case MAX:   jRadioButtonMenuItem7.setSelected(true);
+						break;
+			case AVG:   jRadioButtonMenuItem8.setSelected(true);
+						break;
+			case MIN:   jRadioButtonMenuItem9.setSelected(true);
+						break;
 		}
 		this.cost_type = cost_type;
 		refresh(false);
-	
 	}
 
 	public void setSmoothThreshold(int t) {
@@ -1398,7 +1392,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		
 		// ratio menu > first entry
 		double[] rc = {1, 0, 0};
-		Rms.setRatioConfig(rc);
+		Input.setRatioConfig(rc);
 		updateGraphTitle();
 		refresh(true);
 		main_window.refreshTables();
@@ -1409,7 +1403,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		
 		// // ratio menu > second entry
 		double[] rc = {1, 0, 1};
-		Rms.setRatioConfig(rc);
+		Input.setRatioConfig(rc);
 		updateGraphTitle();
 		refresh(true);
 		main_window.refreshTables();
@@ -1420,7 +1414,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		
 		// // ratio menu > third entry
 		double[] rc = {1, 1, 0};
-		Rms.setRatioConfig(rc);
+		Input.setRatioConfig(rc);
 		updateGraphTitle();
 		refresh(true);
 		main_window.refreshTables();
@@ -1431,7 +1425,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		
 		// ratio menu > fourth entry
 		double[] rc = {1.5, 0, 0};
-		Rms.setRatioConfig(rc);
+		Input.setRatioConfig(rc);
 		updateGraphTitle();
 		refresh(true);
 		main_window.refreshTables();
@@ -1442,7 +1436,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		
 		// ratio menu > fifth entry
 		double[] rc = {2, 0, 0};
-		Rms.setRatioConfig(rc);
+		Input.setRatioConfig(rc);
 		updateGraphTitle();
 		refresh(true);
 		main_window.refreshTables();
@@ -1453,7 +1447,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		
 		// ratio menu > sixth entry
 		double[] rc = {2.5, 0, 0};
-		Rms.setRatioConfig(rc);
+		Input.setRatioConfig(rc);
 		updateGraphTitle();
 		refresh(true);
 		main_window.refreshTables();
@@ -1464,7 +1458,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		
 		// ratio menu > seventh entry
 		double[] rc = {3, 0, 0};
-		Rms.setRatioConfig(rc);
+		Input.setRatioConfig(rc);
 		updateGraphTitle();
 		refresh(true);
 		main_window.refreshTables();
@@ -1474,13 +1468,13 @@ public class GraphPanel extends javax.swing.JPanel {
 	private void jMenuItem8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem8ActionPerformed
 		
 		// ratio menu > eighth entry
-		double[] rc = Rms.getRatioConfig();
+		double[] rc = Input.getRatioConfig();
 		rc[2]--;
 		if (rc[0] == 0 && rc[1] == 0 && rc[2] == 0) {
 			javax.swing.JOptionPane.showMessageDialog(main_window, "can't apply setting: division by zero");
 			return;
 		}
-		Rms.setRatioConfig(rc);
+		Input.setRatioConfig(rc);
 		updateGraphTitle();
 		refresh(true);
 		main_window.refreshTables();
@@ -1490,9 +1484,9 @@ public class GraphPanel extends javax.swing.JPanel {
 	private void jMenuItem9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem9ActionPerformed
 		
 		// ratio menu > ninth entry
-		double[] rc = Rms.getRatioConfig();
+		double[] rc = Input.getRatioConfig();
 		rc[2]++;
-		Rms.setRatioConfig(rc);
+		Input.setRatioConfig(rc);
 		updateGraphTitle();
 		refresh(true);
 		main_window.refreshTables();
@@ -1502,13 +1496,13 @@ public class GraphPanel extends javax.swing.JPanel {
 	private void jMenuItem10ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem10ActionPerformed
 		
 		// ratio menu > 10-th entry
-		double[] rc = Rms.getRatioConfig();
+		double[] rc = Input.getRatioConfig();
 		rc[1]--;
 		if (rc[0] == 0 && rc[1] == 0 && rc[2] == 0) {
 			javax.swing.JOptionPane.showMessageDialog(main_window, "can't apply setting: division by zero");
 			return;
 		}
-		Rms.setRatioConfig(rc);
+		Input.setRatioConfig(rc);
 		updateGraphTitle();
 		refresh(true);
 		main_window.refreshTables();
@@ -1518,9 +1512,9 @@ public class GraphPanel extends javax.swing.JPanel {
 	private void jMenuItem11ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem11ActionPerformed
 		
 		// ratio menu > 11-th entry
-		double[] rc = Rms.getRatioConfig();
+		double[] rc = Input.getRatioConfig();
 		rc[1]++;
-		Rms.setRatioConfig(rc);
+		Input.setRatioConfig(rc);
 		updateGraphTitle();
 		refresh(true);
 		main_window.refreshTables();
@@ -1539,13 +1533,13 @@ public class GraphPanel extends javax.swing.JPanel {
 		} catch (Exception e) {
 			return;
 		}
-		double[] rc = Rms.getRatioConfig();
+		double[] rc = Input.getRatioConfig();
 		rc[2] -= exp;
 		if (rc[0] == 0 && rc[1] == 0 && rc[2] == 0) {
 			javax.swing.JOptionPane.showMessageDialog(main_window, "can't apply setting: division by zero");
 			return;
 		}
-		Rms.setRatioConfig(rc);
+		Input.setRatioConfig(rc);
 		updateGraphTitle();
 		refresh(true);
 		main_window.refreshTables();
@@ -1564,13 +1558,13 @@ public class GraphPanel extends javax.swing.JPanel {
 		} catch (Exception e) {
 			return;
 		}
-		double[] rc = Rms.getRatioConfig();
+		double[] rc = Input.getRatioConfig();
 		rc[1] -= exp;
 		if (rc[0] == 0 && rc[1] == 0 && rc[2] == 0) {
 			javax.swing.JOptionPane.showMessageDialog(main_window, "can't apply setting: division by zero");
 			return;
 		}
-		Rms.setRatioConfig(rc);
+		Input.setRatioConfig(rc);
 		updateGraphTitle();
 		refresh(true);
 		main_window.refreshTables();
@@ -1588,13 +1582,13 @@ public class GraphPanel extends javax.swing.JPanel {
 		} catch (Exception e) {
 			return;
 		}
-		double[] rc = Rms.getRatioConfig();
+		double[] rc = Input.getRatioConfig();
 		rc[0] -= exp;
 		if (rc[0] == 0 && rc[1] == 0 && rc[2] == 0) {
 			javax.swing.JOptionPane.showMessageDialog(main_window, "can't apply setting: division by zero");
 			return;
 		}
-		Rms.setRatioConfig(rc);
+		Input.setRatioConfig(rc);
 		updateGraphTitle();
 		refresh(true);
 		main_window.refreshTables();
@@ -1627,7 +1621,7 @@ public class GraphPanel extends javax.swing.JPanel {
 
 	private void jRadioButtonMenuItem7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem7ActionPerformed
 		
-		cost_type = MAX_COST;
+		cost_type = Input.Cost.MAX;
 		if (main_window.arePlotsLinked()) main_window.setGroupCostAll(graph_type, cost_type);
 		refresh(true);
 		
@@ -1635,7 +1629,7 @@ public class GraphPanel extends javax.swing.JPanel {
 
 	private void jRadioButtonMenuItem8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem8ActionPerformed
 		
-		cost_type = AVG_COST;
+		cost_type = Input.Cost.MIN;
 		if (main_window.arePlotsLinked()) main_window.setGroupCostAll(graph_type, cost_type);
 		refresh(true);
 		
@@ -1643,8 +1637,9 @@ public class GraphPanel extends javax.swing.JPanel {
 
 	private void jRadioButtonMenuItem9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem9ActionPerformed
 		
-		cost_type = MIN_COST;
-		if (main_window.arePlotsLinked()) main_window.setGroupCostAll(graph_type, cost_type);
+		cost_type = Input.Cost.MIN;
+		if (main_window.arePlotsLinked()) 
+            main_window.setGroupCostAll(graph_type, cost_type);
 		refresh(true);
 		
 	}//GEN-LAST:event_jRadioButtonMenuItem9ActionPerformed
@@ -1758,7 +1753,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		//main_window.refreshTables();
     }//GEN-LAST:event_jButton4ActionPerformed
 
-	private boolean filterRms(Rms t) {
+	private boolean filterRms(Input t) {
 		
 		if (filters == null) return true;
 		
@@ -1774,7 +1769,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		if (filters[1] != null) {
 			try {
 				int rms = Integer.parseInt(filters[1]);
-				if (t.getRms() < rms) return false;
+				if (t.getSize() < rms) return false;
 			} catch (Exception e) {
 				return true;
 			}
@@ -1783,7 +1778,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		if (filters[2] != null) {
 			try {
 				int freq = Integer.parseInt(filters[2]);
-				if (t.getOcc() < freq) return false;
+				if (t.getCalls() < freq) return false;
 			} catch (Exception e) {
 				return true;
 			}
@@ -1895,7 +1890,7 @@ public class GraphPanel extends javax.swing.JPanel {
 		
 	}
 	
-	private double getY(Rms te, int slot) {
+	private double getY(Input te, int slot) {
 		
         //System.out.println("Set getY");
         
@@ -1909,7 +1904,7 @@ public class GraphPanel extends javax.swing.JPanel {
 			y = te.getRatioCost(cost_type);
 		
 		else if (this.graph_type == GraphPanel.TOTALCOST_PLOT) 
-			y = te.getTotalCost();
+			y = te.getSumCost();
 		
 		else if (this.graph_type == GraphPanel.VAR_PLOT) 
 			y = te.getVar();
@@ -1924,10 +1919,10 @@ public class GraphPanel extends javax.swing.JPanel {
 				y = te.getMaxCost();
 			
 		} else if (graph_type == AMORTIZED_PLOT) 
-			y = rtn_info.getAmortizedValue(te.getRms());
+			y = rtn_info.getAmortizedValue(te.getSize());
 			
 		else if (this.graph_type == GraphPanel.FREQ_PLOT)
-			y = te.getOcc();
+			y = te.getCalls();
 		
 		else
 			throw new RuntimeException("Not defined getY behavior: " + graph_type);
@@ -1935,9 +1930,9 @@ public class GraphPanel extends javax.swing.JPanel {
 		return y;
 	}
 	
-	public void addPoint(Rms te) {
+	public void addPoint(Input te) {
 					
-		double x = te.getRms();
+		double x = te.getSize();
 		double y = 0;
         
 		if (group_threshold == 1 && smooth_threshold == 1) { 
@@ -1966,7 +1961,7 @@ public class GraphPanel extends javax.swing.JPanel {
 				} else {
 
 					y = getY(te, 0);
-					double index = Math.round(Math.log10(te.getOcc()) / Math.log10(2));
+					double index = Math.round(Math.log10(te.getCalls()) / Math.log10(2));
 					if (index > 11) index = 11;
 					if (index < 0) index = 0;
 					series[(int)index].add(x, y, false);
@@ -1995,7 +1990,7 @@ public class GraphPanel extends javax.swing.JPanel {
 
 				sum_x += x;
 				sum_y += getY(te, 0);
-				sum_occ += te.getOcc(); // need for choosing color
+				sum_occ += te.getCalls(); // need for choosing color
 
 				if (graph_type == MMM_PLOT) {
 					sum_y2 += getY(te, 1);
@@ -2169,7 +2164,7 @@ public class GraphPanel extends javax.swing.JPanel {
 			Iterator rms_list = this.rtn_info.getInputTuplesIterator();
 			while (rms_list.hasNext()) {
 				
-				Rms te = (Rms) rms_list.next();
+				Input te = (Input) rms_list.next();
 				addPoint(te);
 				
 			}
@@ -2206,22 +2201,22 @@ public class GraphPanel extends javax.swing.JPanel {
 			Iterator rms_list = this.rtn_info.getInputTuplesIterator();
 			while(rms_list.hasNext()) {
 				
-				Rms te = (Rms) rms_list.next();
+				Input te = (Input) rms_list.next();
 				if (filterRms(te)) {
-					double x = te.getRms();
+					double x = te.getSize();
 					double y = 0, y2 = 0, y3 = 0;
 					if (graph_type == GraphPanel.COST_PLOT)
 						y = te.getCost(cost_type); 
 					else if (graph_type == GraphPanel.RATIO_PLOT) 
 						y = te.getRatioCost(cost_type);
 					else if (graph_type == GraphPanel.TOTALCOST_PLOT) 
-						y = te.getTotalCost();
+						y = te.getSumCost();
 					else if (graph_type == VAR_PLOT) 
 						y = te.getVar();
 					else if (graph_type == AMORTIZED_PLOT)
 						y = rtn_info.getAmortizedValue((int)x);
 					else if (graph_type == FREQ_PLOT)
-						y = te.getOcc();
+						y = te.getCalls();
 					else if (graph_type == MMM_PLOT) {
 						y = te.getMinCost();
 						y2 = te.getAvgCost();
@@ -2235,7 +2230,7 @@ public class GraphPanel extends javax.swing.JPanel {
 						sum_y += y;
 						if (n_y >= 2) sum_y2 += y2;
 						if (n_y >= 3) sum_y3 += y3;
-						sum_occurrences += te.getOcc();
+						sum_occurrences += te.getCalls();
 						k++;
 					} else {
 						if (k > 0) {
@@ -2268,7 +2263,7 @@ public class GraphPanel extends javax.swing.JPanel {
 							sum_y = y;
 							if (n_y >= 2) sum_y2 = y2;
 							if (n_y >= 3) sum_y3 = y3;
-							sum_occurrences = te.getOcc();
+							sum_occurrences = te.getCalls();
 							k = 1;
 						}
 						slot_start = current_slot;
@@ -2318,7 +2313,7 @@ public class GraphPanel extends javax.swing.JPanel {
 			if (t >= rtn_info.getInputTuplesCount()) t = rtn_info.getInputTuplesCount() - 1;
 			if (t % 2 == 0) t++;
 			// rms items within window; circular array; +2 avoid immediate overwrite
-			Rms[] l = new Rms[t + 2]; 
+			Input[] l = new Input[t + 2]; 
 			// amortized cache
 			double[] lm = new double[t + 2];
 			double sum = 0, sum2 = 0, sum3 = 0;
@@ -2333,7 +2328,7 @@ public class GraphPanel extends javax.swing.JPanel {
 			while(true) {	
 				
 				int add = 0;
-				Rms removed = null;
+				Input removed = null;
 				
 				if (n == t || n == 0) add = 1;
 				else add = 2;
@@ -2341,12 +2336,12 @@ public class GraphPanel extends javax.swing.JPanel {
 				int c = 0;
 				while (add > 0) {
 					
-					Rms te = null;
+					Input te = null;
 					
 					// extract a valid rms
 					while (rms_list.hasNext()) {
 						
-						te = (Rms) rms_list.next();
+						te = (Input) rms_list.next();
 						if (filterRms(te)) break;
 					
 					}
@@ -2439,7 +2434,7 @@ public class GraphPanel extends javax.swing.JPanel {
 				n += c;
 				
 				//System.out.println("Aggiungo punto - current: " +  current + " head: " + head);
-				double x = l[current % l.length].getRms();
+				double x = l[current % l.length].getSize();
                     
 				if (graph_type == MMM_PLOT) {
 
@@ -2453,7 +2448,7 @@ public class GraphPanel extends javax.swing.JPanel {
 
 				} else {
 
-					double index = Math.round(Math.log10(l[current % l.length].getOcc()) / Math.log10(2));
+					double index = Math.round(Math.log10(l[current % l.length].getCalls()) / Math.log10(2));
 					if (index > 11) index = 11;
 					if (index < 0) index = 0;
 					series[(int)index].add(x, sum/n, false);
