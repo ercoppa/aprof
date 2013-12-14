@@ -5,6 +5,7 @@ import aprofplot.jfreechart.SamplingXYLineAndShapeRenderer;
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
 import java.util.*;
+import javax.swing.Box;
 import org.jfree.chart.*;
 import org.jfree.chart.axis.*;
 import org.jfree.chart.plot.*;
@@ -286,7 +287,7 @@ public class GraphPanel extends javax.swing.JPanel {
 			legenditemcollection.add(legenditem4);
 		
 		} else return null;
-		
+        
 		return legenditemcollection;
 	}
 
@@ -342,10 +343,10 @@ public class GraphPanel extends javax.swing.JPanel {
         jButton1 = new javax.swing.JButton();
         jToggleButton3 = new javax.swing.JToggleButton();
         jToggleButton4 = new javax.swing.JToggleButton();
-        jButton3 = new javax.swing.JButton();
         jButton4 = new javax.swing.JButton();
-        jPanel1 = new javax.swing.JPanel();
-        jLabel2 = new javax.swing.JLabel();
+        jButton3 = new javax.swing.JButton();
+        filler1 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 0), new java.awt.Dimension(0, 0), new java.awt.Dimension(0, 0));
+        colorLegend1 = new aprofplot.gui.ColorLegend();
 
         jPopupMenu1.addPopupMenuListener(new javax.swing.event.PopupMenuListener() {
             public void popupMenuCanceled(javax.swing.event.PopupMenuEvent evt) {
@@ -654,7 +655,7 @@ public class GraphPanel extends javax.swing.JPanel {
         jToolBar1.setBorder(null);
         jToolBar1.setFloatable(false);
         jToolBar1.setRollover(true);
-        jToolBar1.setMargin(new java.awt.Insets(4, 3, 3, 3));
+        jToolBar1.setMargin(new java.awt.Insets(0, 3, 3, 3));
 
         jToggleButton1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Xlog-icon.png"))); // NOI18N
         jToggleButton1.setToolTipText("toggle x axis logarithmic scale");
@@ -773,24 +774,6 @@ public class GraphPanel extends javax.swing.JPanel {
         jToggleButton4.setVisible(false);
         jToolBar1.add(jToggleButton4);
 
-        jButton3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/zoom_out_16.png"))); // NOI18N
-        jButton3.setToolTipText("Zoom out");
-        jButton3.setBorder(null);
-        jButton3.setEnabled(false);
-        jButton3.setVisible(false);
-        jButton3.setFocusable(false);
-        jButton3.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-        jButton3.setMaximumSize(new java.awt.Dimension(28, 28));
-        jButton3.setMinimumSize(new java.awt.Dimension(28, 28));
-        jButton3.setPreferredSize(new java.awt.Dimension(28, 28));
-        jButton3.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
-        jButton3.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton3ActionPerformed(evt);
-            }
-        });
-        jToolBar1.add(jButton3);
-
         jButton4.setFont(new java.awt.Font("Arial", 1, 20)); // NOI18N
         jButton4.setText("α");
         jButton4.setToolTipText("Amortized costant");
@@ -809,28 +792,39 @@ public class GraphPanel extends javax.swing.JPanel {
         if (graph_type != AMORTIZED_PLOT) jButton4.setVisible(false);
         jToolBar1.add(jButton4);
 
-        jPanel1.setBorder(null);
-        jPanel1.setMinimumSize(new java.awt.Dimension(30, 10));
-        jPanel1.setPreferredSize(new java.awt.Dimension(30, 10));
-        jToolBar1.add(jPanel1);
+        jButton3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/zoom_out_16.png"))); // NOI18N
+        jButton3.setToolTipText("Zoom out");
+        jButton3.setBorder(null);
+        jButton3.setEnabled(false);
+        jButton3.setVisible(false);
+        jButton3.setFocusable(false);
+        jButton3.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButton3.setMaximumSize(new java.awt.Dimension(28, 28));
+        jButton3.setMinimumSize(new java.awt.Dimension(28, 28));
+        jButton3.setPreferredSize(new java.awt.Dimension(28, 28));
+        jButton3.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jButton3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton3ActionPerformed(evt);
+            }
+        });
+        jToolBar1.add(jButton3);
+        jToolBar1.add(filler1);
 
+        colorLegend1.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
         if (graph_type == FREQ_PLOT
             || graph_type == MMM_PLOT
             || graph_type == RTN_PLOT
             || graph_type == EXTERNAL_INPUT_PLOT
             || graph_type == RATIO_TUPLES_PLOT)
-        jLabel2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Dummy.png"))); // NOI18N
-        else {
-            jLabel2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Color-scale.png"))); // NOI18N
-            //jLabel2.setBorder(new javax.swing.border.LineBorder(java.awt.Color.BLACK));
-        }
-        jToolBar1.add(jLabel2);
+        colorLegend1.setVisible(false);
+        jToolBar1.add(colorLegend1);
 
         add(jToolBar1);
     }// </editor-fold>//GEN-END:initComponents
 
 	private void chartMouseReleased() {
-		
+        
 		//System.out.println(this.getSize(null));
 		
 		double cmin_x = domainAxis.getLowerBound();
@@ -2568,11 +2562,12 @@ public class GraphPanel extends javax.swing.JPanel {
 	}
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private aprofplot.gui.ColorLegend colorLegend1;
+    private javax.swing.Box.Filler filler1;
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
-    private javax.swing.JLabel jLabel2;
     private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JMenuItem jMenuItem10;
     private javax.swing.JMenuItem jMenuItem11;
@@ -2587,7 +2582,6 @@ public class GraphPanel extends javax.swing.JPanel {
     private javax.swing.JMenuItem jMenuItem7;
     private javax.swing.JMenuItem jMenuItem8;
     private javax.swing.JMenuItem jMenuItem9;
-    private javax.swing.JPanel jPanel1;
     private javax.swing.JPopupMenu jPopupMenu1;
     private javax.swing.JPopupMenu jPopupMenu2;
     private javax.swing.JPopupMenu jPopupMenu3;

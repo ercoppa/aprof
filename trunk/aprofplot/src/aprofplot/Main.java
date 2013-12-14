@@ -167,7 +167,6 @@ public class Main {
 			for (int i = 0; i < blacklist.size(); i++) 
 				out.print(blacklist.get(i) + " ");
 			out.println("");
-			
 
 			if (graph_order == null) resetGraphOrder();
 			out.print("graph_order ");
@@ -175,10 +174,10 @@ public class Main {
 				out.print(graph_order.get(i) + " ");
 			out.println("");
 
-			if (!lastSourceDir.equals(""))
+			if (lastSourceDir != null && !lastSourceDir.equals("") )
 				out.println("src " + lastSourceDir);
 			
-			if (!ctags.equals(""))
+			if (ctags != null && !ctags.equals(""))
 				out.println("ctags " + ctags);
 			
 			if (editor)
