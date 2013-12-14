@@ -68,7 +68,7 @@ public class MainWindow extends javax.swing.JFrame {
 			resetRoutineTableFilter();
             resetContextsTableFilter();
 			checkEditor();
-		
+            
 		} catch (Exception e) {
 		
 			System.out.println("Fatal error during start of MainWindow [1]");
