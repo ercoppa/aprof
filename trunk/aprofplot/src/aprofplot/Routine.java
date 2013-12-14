@@ -41,7 +41,7 @@ public abstract class Routine implements Comparable<Routine> {
 	private double last_amortized_budget = 0;
 	private long last_amortized_index = 0;
     private double amortized_constant = 1.0;
-    private int chart_cost = Main.COST_CUMULATIVE;
+    private Input.CostType chart_cost_mode = Input.CostType.CUMULATIVE;
     
 	public Routine() {}
 
@@ -96,7 +96,7 @@ public abstract class Routine implements Comparable<Routine> {
     
 	public double getMinCost() {
         
-        if (Main.getChartCost() == Main.COST_CUMULATIVE)
+        if (Main.getChartCostMode() == Input.CostType.CUMULATIVE)
             return min_cumulative_cost;
 		
         return min_self_cost;
@@ -104,7 +104,7 @@ public abstract class Routine implements Comparable<Routine> {
 	
 	public double getMaxCost() {
         
-        if (Main.getChartCost() == Main.COST_CUMULATIVE)
+        if (Main.getChartCostMode() == Input.CostType.CUMULATIVE)
             return max_cumulative_cost;
 		
         return max_self_cost;
@@ -112,7 +112,7 @@ public abstract class Routine implements Comparable<Routine> {
 
 	public double getMaxAvgCost() {
         
-        if (Main.getChartCost() == Main.COST_CUMULATIVE)
+        if (Main.getChartCostMode() == Input.CostType.CUMULATIVE)
             return max_avg_cumulative_cost;
 		
         return max_avg_self_cost;
@@ -120,7 +120,7 @@ public abstract class Routine implements Comparable<Routine> {
 
 	public double getTotalCost() {
         
-        if (Main.getChartCost() == Main.COST_CUMULATIVE)
+        if (Main.getChartCostMode() == Input.CostType.CUMULATIVE)
             return total_cumulative_real_cost;
 		
         return total_self_cost;
@@ -187,8 +187,8 @@ public abstract class Routine implements Comparable<Routine> {
 		if (sort_status != SortOrder.BY_INPUT) 
             sortInputTuplesByInput();
         
-		if (Main.getChartCost() != this.chart_cost) {
-            this.chart_cost = Main.getChartCost();
+		if (Main.getChartCostMode() != this.chart_cost_mode) {
+            this.chart_cost_mode = Main.getChartCostMode();
             last_amortized_n = -1;
         }
         
@@ -291,14 +291,14 @@ public abstract class Routine implements Comparable<Routine> {
 
 	public void sortInputTuplesByCost() {
         
-        if (Main.getChartCost() == Main.COST_CUMULATIVE) {
+        if (Main.getChartCostMode() == Input.CostType.CUMULATIVE) {
             
             if (sort_status == SortOrder.BY_CUMULATIVE_COST)
                 return;
             else
                 sort_status = SortOrder.BY_CUMULATIVE_COST;
         
-        } else if (Main.getChartCost() == Main.COST_SELF) {
+        } else if (Main.getChartCostMode() == Input.CostType.SELF) {
             
             if (sort_status == SortOrder.BY_SELF_COST)
                 return;

@@ -8,25 +8,28 @@ import java.util.regex.MatchResult;
 
 public class Main {
 
-	public static final int DEMANGLED = 0;
-	public static final int DEMANGLED_FULL = 1;
-	private static final int RECENT_SIZE = 6;
+    public enum RtnNameMode {
+        DEMANGLED, DEMANGLED_FULL
+    }
     
-    // Total cost type
-    public final static int COST_CUMULATIVE = 0;
-    public final static int COST_SELF       = 1;
+    private static RtnNameMode rtn_name_mode = RtnNameMode.DEMANGLED;
+    private static Input.CostType rtn_cost_mode = Input.CostType.CUMULATIVE;
+    private static Input.CostType chart_cost_mode = Input.CostType.CUMULATIVE;
     
 	private static ArrayList<MainWindow> windows = new ArrayList<MainWindow>();
-	private static ArrayList<String> blacklist = new ArrayList<String>();
-	private static ArrayList<File> recent_files = new ArrayList<File>();
-	private static ArrayList<Integer> graph_order = null;
+	
+    private static ArrayList<String> blacklist = new ArrayList<String>();
 	private static boolean blacklist_enabled = false;
-	private static String lastReportPath = "";
-	private static String lastSourceDir = "";
+    
+    private static ArrayList<File> recent_files = new ArrayList<File>();
+    private static final int RECENT_SIZE = 6;
+    
+	private static ArrayList<Integer> graph_order = null;
+	
+	private static String lastReportPath = null;
+	private static String lastSourceDir = null;
+    
 	private static boolean editor = false;
-	private static int rtn_display_mode = DEMANGLED;
-    private static int display_cost_total = COST_CUMULATIVE;
-    private static int chart_cost = COST_CUMULATIVE;
 	private static String ctags = "ctags-exuberant";
 	
 	public synchronized static void newWindow() {
@@ -41,46 +44,20 @@ public class Main {
 		});
 	}
     
-    public synchronized static int getDisplayTotalCost() {
-        return display_cost_total;
+    public synchronized static Input.CostType getRtnCostMode() {
+        return rtn_cost_mode;
     }
     
-    public synchronized static void setDisplayTotalCost(int cost) {
-        
-        switch(cost){
-            
-            case COST_CUMULATIVE:
-                display_cost_total = COST_CUMULATIVE;
-                break;
-                
-            case COST_SELF:
-                display_cost_total = COST_SELF;
-                break;
-                
-            default:
-                throw new RuntimeException("Invalid total cost");
-        }
+    public synchronized static void setRtnCostMode(Input.CostType cost) {
+        rtn_cost_mode = cost;
     }
     
-    public synchronized static int getChartCost() {
-        return chart_cost;
+    public synchronized static Input.CostType getChartCostMode() {
+        return chart_cost_mode;
     }
     
-    public synchronized static void setChartCost(int cost) {
-        
-        switch(cost){
-            
-            case COST_CUMULATIVE:
-                chart_cost = COST_CUMULATIVE;
-                break;
-                
-            case COST_SELF:
-                chart_cost = COST_SELF;
-                break;
-                
-            default:
-                throw new RuntimeException("Invalid cost");
-        }
+    public synchronized static void setChartCostMode(Input.CostType cost) {
+        chart_cost_mode = cost;
     }
 	
 	public synchronized static void removeWindow(MainWindow window) {
@@ -96,7 +73,7 @@ public class Main {
 		return editor;
 	}
 	
-	public synchronized static void storeEditorVisible(boolean editor_visible) {
+	public synchronized static void setEditorVisible(boolean editor_visible) {
 		editor = editor_visible;
 		saveSettings();
 	}
@@ -105,7 +82,7 @@ public class Main {
 		return ctags;
 	}
 	
-	public synchronized static void storeCtagsPath(String ctags_path) {
+	public synchronized static void setCtagsPath(String ctags_path) {
 		ctags = ctags_path;
 		saveSettings();
 	}
@@ -114,12 +91,12 @@ public class Main {
 		return lastSourceDir;
 	}
 
-	public synchronized static void storeLastReportPath(String path) {
+	public synchronized static void setLastReportPath(String path) {
 		lastReportPath = path;
 		saveSettings();
 	}
 	
-	public synchronized static void storeLastSourceDir(String path) {
+	public synchronized static void setLastSourceDir(String path) {
 		lastSourceDir = path;
 		saveSettings();
 	}
@@ -132,18 +109,18 @@ public class Main {
 		return blacklist_enabled;
 	}
 
-	public synchronized static void storeBlacklist(ArrayList<String> v, boolean enabled) {
+	public synchronized static void setBlacklist(ArrayList<String> v, boolean enabled) {
 		blacklist = v;
 		blacklist_enabled = enabled;
 		saveSettings();
 	}
 
-	public synchronized static int getRtnDisplayMode() {
-		return rtn_display_mode;
+	public synchronized static RtnNameMode getRtnNameMode() {
+		return rtn_name_mode;
 	}
 
-	public synchronized static void storeRtnDisplayMode(int mode) {
-		rtn_display_mode = mode;
+	public synchronized static void setRtnNameMode(RtnNameMode mode) {
+		rtn_name_mode = mode;
 		saveSettings();
 	}
 
@@ -208,15 +185,15 @@ public class Main {
 				out.println("editor");
 				
 			out.print("rtn_display ");
-			if (rtn_display_mode == DEMANGLED) out.println("0");
+			if (rtn_name_mode == RtnNameMode.DEMANGLED) out.println("0");
 			else out.println("1");
             
             out.print("cost_display ");
-			if (display_cost_total == COST_CUMULATIVE) out.println("0");
+			if (rtn_cost_mode == Input.CostType.CUMULATIVE) out.println("0");
 			else out.println("1");
             
             out.print("chart_cost ");
-			if (chart_cost == COST_CUMULATIVE) out.println("0");
+			if (chart_cost_mode == Input.CostType.CUMULATIVE) out.println("0");
 			else out.println("1");
             
 			for (int i = 0; i < recent_files.size(); i++) 
@@ -254,18 +231,39 @@ public class Main {
 					
 				} else if (tag.equals("rtn_display")) {
 					
-					if (tokenizer.hasMoreTokens())
-						rtn_display_mode = Integer.parseInt(tokenizer.nextToken());
+					if (tokenizer.hasMoreTokens()) {
+                    
+                        int mode = Integer.parseInt(tokenizer.nextToken());
+                        if (mode == 0) 
+                            Main.setRtnNameMode(RtnNameMode.DEMANGLED);
+                        else if (mode == 1)
+                            Main.setRtnNameMode(RtnNameMode.DEMANGLED_FULL);
+                    
+                    }
+						
 					
 				} else if (tag.equals("cost_display")) {
 					
-					if (tokenizer.hasMoreTokens())
-						display_cost_total = Integer.parseInt(tokenizer.nextToken());
+					if (tokenizer.hasMoreTokens()) {
+                    
+                        int mode = Integer.parseInt(tokenizer.nextToken());
+                        if (mode == 0) 
+                            Main.setRtnCostMode(Input.CostType.CUMULATIVE);
+                        else if (mode == 1)
+                            Main.setRtnCostMode(Input.CostType.SELF);
+                    }
+						
 					
 				} else if (tag.equals("chart_cost")) {
 					
-					if (tokenizer.hasMoreTokens())
-						chart_cost = Integer.parseInt(tokenizer.nextToken());
+					if (tokenizer.hasMoreTokens()) {
+                    
+                        int cost = Integer.parseInt(tokenizer.nextToken());
+                        if (cost == 0) 
+                            Main.setChartCostMode(Input.CostType.CUMULATIVE);
+                        else if (cost == 1)
+                            Main.setChartCostMode(Input.CostType.SELF);
+                    }
 					
 				} else if (tag.equals("graph_order")) {
 					

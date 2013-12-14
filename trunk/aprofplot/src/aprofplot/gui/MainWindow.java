@@ -1609,7 +1609,7 @@ public class MainWindow extends javax.swing.JFrame {
 		int choice = chooser.showOpenDialog(this);
 		if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
 			java.io.File file = chooser.getSelectedFile();
-			Main.storeLastReportPath(file.getParent());
+			Main.setLastReportPath(file.getParent());
             loadReport(file);
 		}
 	
@@ -1782,7 +1782,7 @@ public class MainWindow extends javax.swing.JFrame {
 	
 	}
 	
-	protected void setGroupCostAll(int graph_type, Input.Cost cost_type) {
+	protected void setGroupCostAll(int graph_type, Input.CostKind cost_type) {
 		
 		// this method is called by one graph, we notify to all others...
 		
@@ -2524,7 +2524,7 @@ public class MainWindow extends javax.swing.JFrame {
 			loading = true;
 			
 			source_dir = chooser.getSelectedFile().getPath();
-			Main.storeLastSourceDir(chooser.getSelectedFile().getPath());
+			Main.setLastSourceDir(chooser.getSelectedFile().getPath());
 			//System.out.println("Selected directory: " + source_dir);
 			final ctagsParser c = new ctagsParser(chooser.getSelectedFile());
 			
@@ -3808,7 +3808,7 @@ public class MainWindow extends javax.swing.JFrame {
 			if (!editor_visible) {
 				
 				//System.out.println("Show editor");
-				Main.storeEditorVisible(true);
+				Main.setEditorVisible(true);
 				jCheckBoxMenuItem1.setSelected(true);
 				jToggleButton1.setSelected(true);
 				jSplitPane4.setRightComponent(jPanel11);
@@ -3836,7 +3836,7 @@ public class MainWindow extends javax.swing.JFrame {
 			if (editor_visible) {
 				
 				//System.out.println("Hide editor");
-				Main.storeEditorVisible(false);
+				Main.setEditorVisible(false);
 				jCheckBoxMenuItem1.setSelected(false);
 				jToggleButton1.setSelected(false);
 				jSplitPane4.setRightComponent(null);
@@ -4022,14 +4022,14 @@ public class MainWindow extends javax.swing.JFrame {
 	
     public boolean isDisplayCumulativeTotalCost() {
         
-        if (Main.getDisplayTotalCost() == Main.COST_CUMULATIVE) return true;        
+        if (Main.getRtnCostMode() == Input.CostType.CUMULATIVE) return true;        
         return false;
     
     }
     
     public boolean isChartCumulativeCost() {
         
-        if (Main.getChartCost() == Main.COST_CUMULATIVE) return true;        
+        if (Main.getChartCostMode() == Input.CostType.CUMULATIVE) return true;        
         return false;
     
     }

@@ -42,7 +42,7 @@ public class RoutinesTableModel extends AbstractTableModel {
         columnTypes.add(String.class);
         
         // Cost
-        if (Main.getDisplayTotalCost() == Main.COST_CUMULATIVE)
+        if (Main.getRtnCostMode() == Input.CostType.CUMULATIVE)
             columnNames.add("Cost (cumul.)");
         else
             columnNames.add("Cost (self)");
@@ -57,7 +57,7 @@ public class RoutinesTableModel extends AbstractTableModel {
         columnTypes.add(Integer.class);
         
         // Cost %
-        if (Main.getDisplayTotalCost() == Main.COST_CUMULATIVE)
+        if (Main.getRtnCostMode() == Input.CostType.CUMULATIVE)
             columnNames.add("Cost % (cumul.)");
         else
             columnNames.add("Cost % (self)");
@@ -65,7 +65,7 @@ public class RoutinesTableModel extends AbstractTableModel {
         columnTypes.add(Double.class);
         
         // Cost plot
-        if (Main.getChartCost() == Main.COST_CUMULATIVE)
+        if (Main.getChartCostMode() == Input.CostType.CUMULATIVE)
             columnNames.add("Cost plot (cumul.)");
         else
             columnNames.add("Cost plot (self)");
@@ -193,9 +193,15 @@ public class RoutinesTableModel extends AbstractTableModel {
 		// Collapse context
 		if (is_table_routine && report.hasContexts() 
                    && columnIndex == columnNames.size() - 3) {
-			Routine rtn = elements.get(rowIndex);
-			return (rtn instanceof ContextualizedRoutineInfo) || 
-						(rtn instanceof RoutineContext);
+			
+            Routine rtn = elements.get(rowIndex);
+            
+            if (rtn instanceof ContextualizedRoutineInfo) {
+                ContextualizedRoutineInfo c = (ContextualizedRoutineInfo) rtn;
+                return c.getContextCount() > 1;
+            }
+                
+			return rtn instanceof RoutineContext;
 		}
 
 		return false;
@@ -285,7 +291,10 @@ public class RoutinesTableModel extends AbstractTableModel {
 			if (is_table_routine && columnIndex == columnNames.size() - 3) { // Collapsed?
 				
 				if (rtn_info instanceof ContextualizedRoutineInfo) {
-                    return ((ContextualizedRoutineInfo)rtn_info).getCollapsed(); 
+                    
+                    ContextualizedRoutineInfo c = (ContextualizedRoutineInfo) rtn_info;
+                    return c.getCollapsed(); 
+                
                 } else return null;
 				
 			}
