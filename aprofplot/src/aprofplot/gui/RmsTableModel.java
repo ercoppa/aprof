@@ -27,21 +27,21 @@ public class RmsTableModel extends AbstractTableModel {
             columnNames.add("DRMS");
         columnTypes.add(Integer.class);
             
-        if (Main.getChartCost() == Main.COST_CUMULATIVE)
+        if (Main.getChartCostMode() == Input.CostType.CUMULATIVE)
             columnNames.add("min cost (cumul)");
         else
             columnNames.add("min cost (self)");
         
         columnTypes.add(Double.class);
         
-        if (Main.getChartCost() == Main.COST_CUMULATIVE)
+        if (Main.getChartCostMode() == Input.CostType.CUMULATIVE)
             columnNames.add("avg cost (colum.)");
         else
             columnNames.add("avg cost (self)");
         
         columnTypes.add(Double.class);
         
-        if (Main.getChartCost() == Main.COST_CUMULATIVE)
+        if (Main.getChartCostMode() == Input.CostType.CUMULATIVE)
             columnNames.add("max cost (cumul)");
         else
             columnNames.add("max cost (self)");

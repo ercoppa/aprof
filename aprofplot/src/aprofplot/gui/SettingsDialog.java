@@ -23,13 +23,13 @@ public class SettingsDialog extends javax.swing.JDialog {
 		java.util.ArrayList<String> blacklist = Main.getBlackList();
 		for (int i = 0; i < blacklist.size(); i++) jTextArea1.append(blacklist.get(i) + ", ");
 		
-        if (Main.getRtnDisplayMode() == Main.DEMANGLED) jRadioButton1.setSelected(true);
+        if (Main.getRtnNameMode() == Main.RtnNameMode.DEMANGLED) jRadioButton1.setSelected(true);
 		else jRadioButton2.setSelected(true);
         
-        if (Main.getDisplayTotalCost() == Main.COST_CUMULATIVE) jRadioButton5.setSelected(true);
+        if (Main.getRtnCostMode() == Input.CostType.CUMULATIVE) jRadioButton5.setSelected(true);
 		else jRadioButton6.setSelected(true);
         
-        if (Main.getChartCost() == Main.COST_CUMULATIVE) jRadioButton7.setSelected(true);
+        if (Main.getChartCostMode() == Input.CostType.CUMULATIVE) jRadioButton7.setSelected(true);
 		else jRadioButton8.setSelected(true);
         
 		jButton2.setEnabled(false);
@@ -285,26 +285,26 @@ public class SettingsDialog extends javax.swing.JDialog {
 				blacklist.add(tokenizer.nextToken().trim());
 			}
 		}
-		if (jRadioButton1.isSelected()) Main.storeRtnDisplayMode(Main.DEMANGLED);
-		else Main.storeRtnDisplayMode(Main.DEMANGLED_FULL);
+		if (jRadioButton1.isSelected()) Main.setRtnNameMode(Main.RtnNameMode.DEMANGLED);
+		else Main.setRtnNameMode(Main.RtnNameMode.DEMANGLED_FULL);
 		
-        int old_display_tcost = Main.getDisplayTotalCost();
-        int old_chart_cost = Main.getChartCost();
+        Input.CostType old_display_tcost = Main.getRtnCostMode();
+        Input.CostType old_chart_cost = Main.getChartCostMode();
         
-        if (jRadioButton5.isSelected()) Main.setDisplayTotalCost(Main.COST_CUMULATIVE);
-		else Main.setDisplayTotalCost(Main.COST_SELF);
+        if (jRadioButton5.isSelected()) Main.setRtnCostMode(Input.CostType.CUMULATIVE);
+		else Main.setRtnCostMode(Input.CostType.SELF);
         
-        if (jRadioButton7.isSelected()) Main.setChartCost(Main.COST_CUMULATIVE);
-		else Main.setChartCost(Main.COST_SELF);
+        if (jRadioButton7.isSelected()) Main.setChartCostMode(Input.CostType.CUMULATIVE);
+		else Main.setChartCostMode(Input.CostType.SELF);
         
         boolean refresh_rt = false;
         
-        if (old_display_tcost != Main.getDisplayTotalCost()) {
+        if (old_display_tcost != Main.getRtnCostMode()) {
             ((MainWindow)getParent()).refreshRoutinesTable();
             refresh_rt = true;
         }
         
-        if(old_chart_cost != Main.getChartCost()) {
+        if(old_chart_cost != Main.getChartCostMode()) {
             
             ((MainWindow)getParent()).refreshRoutine();
             ((MainWindow)getParent()).refreshRmsTable(false);
@@ -312,11 +312,11 @@ public class SettingsDialog extends javax.swing.JDialog {
                 ((MainWindow)getParent()).refreshRoutinesTable();
         }
             
-        Main.storeBlacklist(blacklist, jCheckBox1.isSelected());
+        Main.setBlacklist(blacklist, jCheckBox1.isSelected());
 		((MainWindow)getParent()).refreshRoutinesTableFilter();
         
 		if (!jTextField1.getText().equals("")) {
-			Main.storeCtagsPath(jTextField1.getText());
+			Main.setCtagsPath(jTextField1.getText());
 			((MainWindow)getParent()).checkEditor();
 		}
 		

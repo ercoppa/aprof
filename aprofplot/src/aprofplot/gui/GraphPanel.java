@@ -38,7 +38,7 @@ public class GraphPanel extends javax.swing.JPanel {
 	PerformanceMonitor perf = null;
 	
 	private int graph_type;
-	private Input.Cost cost_type;
+	private Input.CostKind cost_type = Input.CostKind.MAX;
 	private MainWindow main_window;
 	private boolean x_log_scale = false;
 	private boolean y_log_scale = false;
@@ -1119,7 +1119,7 @@ public class GraphPanel extends javax.swing.JPanel {
         
 	}
 
-	public void setGroupCost(Input.Cost cost_type) {
+	public void setGroupCost(Input.CostKind cost_type) {
 		
 		if (cost_type == this.cost_type) return;
 		switch(cost_type) {
@@ -1621,7 +1621,7 @@ public class GraphPanel extends javax.swing.JPanel {
 
 	private void jRadioButtonMenuItem7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem7ActionPerformed
 		
-		cost_type = Input.Cost.MAX;
+		cost_type = Input.CostKind.MAX;
 		if (main_window.arePlotsLinked()) main_window.setGroupCostAll(graph_type, cost_type);
 		refresh(true);
 		
@@ -1629,7 +1629,7 @@ public class GraphPanel extends javax.swing.JPanel {
 
 	private void jRadioButtonMenuItem8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem8ActionPerformed
 		
-		cost_type = Input.Cost.MIN;
+		cost_type = Input.CostKind.AVG;
 		if (main_window.arePlotsLinked()) main_window.setGroupCostAll(graph_type, cost_type);
 		refresh(true);
 		
@@ -1637,7 +1637,7 @@ public class GraphPanel extends javax.swing.JPanel {
 
 	private void jRadioButtonMenuItem9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem9ActionPerformed
 		
-		cost_type = Input.Cost.MIN;
+		cost_type = Input.CostKind.MIN;
 		if (main_window.arePlotsLinked()) 
             main_window.setGroupCostAll(graph_type, cost_type);
 		refresh(true);

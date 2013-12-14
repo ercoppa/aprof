@@ -4,8 +4,12 @@ import java.util.Comparator;
 
 public class Input implements Comparable<Input>, Cloneable {
 
-    public enum Cost {
+    public enum CostKind {
         MIN, AVG, MAX
+    }
+    
+    public enum CostType {
+        CUMULATIVE, SELF
     }
     
 	private long size;
@@ -107,7 +111,7 @@ public class Input implements Comparable<Input>, Cloneable {
 
 	public double getMinCost() {
         
-        if (Main.getChartCost() == Main.COST_CUMULATIVE)
+        if (Main.getChartCostMode() == CostType.CUMULATIVE)
             return getMinCumulativeCost();
         
 		return getMinSelfCost();
@@ -115,7 +119,7 @@ public class Input implements Comparable<Input>, Cloneable {
 
 	public double getMaxCost() {
         
-        if (Main.getChartCost() == Main.COST_CUMULATIVE)
+        if (Main.getChartCostMode() == CostType.CUMULATIVE)
     		return getMaxCumulativeCost();
         
         return getMaxSelfCost();
@@ -123,7 +127,7 @@ public class Input implements Comparable<Input>, Cloneable {
 
 	public double getSumCost() {
         
-        if (Main.getChartCost() == Main.COST_CUMULATIVE)
+        if (Main.getChartCostMode() == CostType.CUMULATIVE)
     		return getSumCumulativeCost();
 	
         return getSumSelfCost();
@@ -148,7 +152,7 @@ public class Input implements Comparable<Input>, Cloneable {
     
 	public double getSqrCost() {
         
-		if (Main.getChartCost() == Main.COST_CUMULATIVE)
+		if (Main.getChartCostMode() == CostType.CUMULATIVE)
             return getSqrCumulativeCost();
         
         return getSqrSelfCost();
@@ -173,17 +177,17 @@ public class Input implements Comparable<Input>, Cloneable {
 
 	public double getAvgCost() {
         
-        if (Main.getChartCost() == Main.COST_CUMULATIVE)
+        if (Main.getChartCostMode() == CostType.CUMULATIVE)
     		return getAvgCumulativeCost();
         
 		return getAvgSelfCost();
 	}
 
 	public double getCost() {
-		return getCost(Cost.MAX);
+		return getCost(CostKind.MAX);
 	}
 	
-	public double getCost(Cost type) {
+	public double getCost(CostKind type) {
 		switch(type) {
 			case MAX: return getMaxCost();
 			case AVG: return getAvgCost();
@@ -193,10 +197,10 @@ public class Input implements Comparable<Input>, Cloneable {
 	}
 
 	public double getRatio() {
-		return getRatioCost(Cost.MAX);
+		return getRatioCost(CostKind.MAX);
 	}
 
-	public double getRatioCost(Cost type) {
+	public double getRatioCost(CostKind type) {
 		if (size == 0 || (size == 1 && (ratio_config[1] != 0 || ratio_config[2] != 0)))
 			switch(type) {
 				case MAX: return getMaxCost();
