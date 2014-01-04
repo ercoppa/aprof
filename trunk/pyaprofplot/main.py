@@ -4,6 +4,7 @@ import functionSet as fSet
 import argparse
 import tex_generator as texG
 import os
+import shutil
 
 parser = argparse.ArgumentParser(description="A tool that generates a pdf to see the Aprof response for main functions inside a program")
 parser.add_argument("fileIN", type=str, help="the aprof file")
@@ -61,52 +62,59 @@ tuples_list=[]
 for i in data:
     tuples_list.append(i.split())
 temp=[]
-totC=0
+totCalls=0
+totCumul=0
 title=""
 for i in tuples_list:
 	if i:
 		if i[0]=="v":
 			vn=i[1]
-		if i[0]=="m":
+		elif i[0]=="m":
 			m=i[1]
-		if i[0]=="e":
+		elif i[0]=="e":
 			ex=i[1]
-		if i[0]=="k":
-			tc=i[1]
-		if i[0]=="f":
+		elif i[0]=="k":
+			tc=int(i[1])
+		elif i[0]=="f":
 			title=i[1][2:]
-		if i[0]=="r":
-			f= func.AFunct(str(i[1][1:len(i[1])-1]),str(i[2][1:len(i[2])-1]),int(i[3]))
+		elif i[0]=="r":
+			libName=(i[2].split("/"))[-1]
+			f= func.AFunct(str(i[1][1:len(i[1])-1]),str(i[2][1:len(i[2])-1]),int(i[3]),libName[0:len(libName)-1])
 			temp.append(f)
-		if i[0]=="p":
-			totC+=int(i[7])
+		elif i[0]=="p":
+			totCalls+=int(i[7])
 			f.addRms(i)
-aggregator=infoC.infoCon(vn,tc,ex,m,totC)
+aggregator=infoC.infoCon(vn,tc,ex,m,totCalls)
 for i in temp:
 	i.reorder()
 	aggregator.addFunct(i)
 
 data=[]
 count=0
-os.makedirs("tmp")
+if not os.path.exists("tmp"):
+	os.mkdir("tmp")
+else:
+	shutil.rmtree("tmp")
+	os.mkdir("tmp")
+toPlot=[]
+if cP==True:
+	toPlot.append("costPlot")
+if tcP==True:
+	toPlot.append("TotalCostPlot")
+if fP==True:
+	toPlot.append("RMSFreqPlot")
+if cbP==True:
+	toPlot.append("curveBounding")
+if mccP==True:
+	toPlot.append("MeanCumulativePlot")
+if mamP==True:
+	toPlot.append("mamPlot")
+
 for i in aggregator.functContainer:
-	temp=[]
 	if i.Nrms>=treeshold:
-		if cP==True:
-			temp.append("costPlot")
-		if tcP==True:
-			temp.append("TotalCostPlot")
-		if fP==True:
-			temp.append("RMSFreqPlot")
-		if cbP==True:
-			temp.append("curveBounding")
-		if mccP==True:
-			temp.append("MeanCumulativePlot")
-		if mamP==True:
-			temp.append("mamPlot")
-		data.append(i.rName)
-		fSet.create_grid(i,temp)
+
+		data.append(i)
+		fSet.create_grid(i,toPlot)
 
 texG.tex_gen(title,data)
-
 
