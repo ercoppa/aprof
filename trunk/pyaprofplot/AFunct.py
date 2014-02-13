@@ -2,7 +2,7 @@ import numpy as np
 from operator import itemgetter
 
 class AFunct: 
-	def __init__(self, rName, imName, fid,libName): 
+	def __init__(self, rName, imName, fid,libName,toFit): 
 		self.rName=rName
 		self.imName=imName
 		self.fid=fid
@@ -13,6 +13,7 @@ class AFunct:
 		self.cumulativeCostPerc=0
 		self.Nrms=0
 		self.lib=libName
+		self.toFit=toFit
 	def addRms(self, rms):
 		rms=map(int,rms[2:])
 		self.rmsSet=np.vstack([self.rmsSet,rms])
@@ -24,5 +25,4 @@ class AFunct:
 	def reorder(self):
 		temp=self.rmsSet[:,0].argsort()
 		self.rmsSet=self.rmsSet[temp]
-
 
