@@ -7,63 +7,30 @@ import numpy as np
 import sys as sys
 import os
 import math
-import fitting as fit
-import scipy.cluster.hierarchy as hcluster
 import matplotlib.gridspec as gridspec
 import time
 import datetime
-
+import clusterFit as cf
 cmap = plt.cm.jet
 bounds=[-1,0,1,4,8,12,16,32,128,256,1024,2048,4000,sys.maxint-1,sys.maxint]
 norm = colors.BoundaryNorm(bounds, cmap.N)
 newBounds=[1,4,8,12,16,32,128,256,1024,1800,6500]
 np.seterr(all='call')
 def errorhandler(errstr, errflag):
-	return [-1,-1,1],[0,0,0]
+	return [-1,-1,1]
 np.seterrcall(errorhandler)
+plt.rc('legend',**{'fontsize':10})
 
 
 def fitParameters(f):
 	if f.toFit==False:
 		return [f,0,0,0,0,0,f.rName,f.lib,f.Nrms,f.cumulativeCost,f.cumulativeCostPerc,f.totCalls,f.totCallsPerc]
 	else:
-		poptC,pcovC=costFit(f)
-		rs=0
-		rscc=0
-		if poptC[0]!=-1:
-			rs=RSquared(f,poptC)
-		return [f,poptC[0],poptC[1],poptC[2],pcovC[2],rs,f.rName,f.lib,f.Nrms,f.cumulativeCost,f.cumulativeCostPerc,f.totCalls,f.totCallsPerc]
-	
-
-def RSquared(funct,p):
-	x=np.array([])
-	x=np.append(x,funct.rmsSet[:,0])
-	y=np.array([])
-	y=np.append(y,funct.rmsSet[:,2])
-	mean_y=np.mean(y)# mean of y values
-	TSS=0
-	RSS=0
-	index=0
-	for i in y:
-		TSS+=np.power(i-mean_y,2)
-		RSS+=np.power(i-(p[0]+p[1]*np.power(x[index],p[2])),2)
-		index+=1
-	result=1-((RSS/TSS))
-	return result
-	
-
-def costFit(funct):
-	x=np.array([])
-	x=np.append(x,funct.rmsSet[:,0])
-	y=np.array([])
-	y=np.append(y,funct.rmsSet[:,2])
-	try:
-		popt,pcov=fit.calc_fitVal(x,y)
-		variance = np.diagonal(pcov)
-		standard_dev=np.sqrt(variance)
-		return popt,standard_dev
-	except:
-		return [-1,-1,-1],[0,0,0]
+		result=cf.clusterFit(f)
+		if len(result)==0:
+			return [f,0,0,0,0,result,f.rName,f.lib,f.Nrms,f.cumulativeCost,f.cumulativeCostPerc,f.totCalls,f.totCallsPerc]
+		r0=result[0]
+		return [f,r0[0],r0[1],r0[2],r0[3],result,f.rName,f.lib,f.Nrms,f.cumulativeCost,f.cumulativeCostPerc,f.totCalls,f.totCallsPerc]
 		
 
 def create_grid(args):
@@ -73,10 +40,10 @@ def create_grid(args):
 	epsMin=args[2]
 	autolog=args[3]
 	alpha=args[4]
+	dat=args[0][5]
 	functB=""
 	fig = plt.figure()
 	functN=len(functL)
-	create_colormap()
 	r=0 #row
 	c=0 #column
 	v=0
@@ -106,26 +73,27 @@ def create_grid(args):
 		else:
 			gs = gridspec.GridSpec((functN+1)/2, 2,height_ratios=[1.2,1,1,1])
 			gs.update(wspace=0.20,hspace=0.75)
+
 	else:
 		gs = gridspec.GridSpec(functN/2, 2)
 		gs.update(wspace=0.20,hspace=0.5)
 	if functN%2!=0:
-		globals()[functL[0]](f,(fig.add_subplot(gs[0,:]),fitData,autolog,alpha))
+		globals()[functL[0]](f,(fig.add_subplot(gs[0,:]),fitData,autolog,alpha,args[0][5]))
 		r=1
 		v=1
 	for i in functL[v:]:
-		globals()[i](f,(fig.add_subplot(gs[r,c]),fitData,autolog,alpha))
+		globals()[i](f,(fig.add_subplot(gs[r,c]),fitData,autolog,alpha,args[0][5]))
 		if c==1:
 			c=0
 			r+=1
 		else:
 			c+=1
 	if epsMin==True:
+		create_colormap()
 		costPlot_min(f)
 		fig.savefig(f.rName+".eps",bbox_inches="tight",format="eps")
 	else:
 		dateT=datetime.datetime.now().strftime('%b %d %I:%M %p %G')
-		preorderCluster(f)
 		fig.savefig(f.rName+"_"+dateT+".eps",bbox_inches="tight",format="eps")
 
 def create_colormap():
@@ -152,6 +120,7 @@ def centroidP(x,y):
 def costPlot(funct,args):
 	pl=args[0]
 	fitData=args[1]
+	dat=args[4]
 	x=np.array([])
 	y=np.array([])
 	f=np.array([])
@@ -166,24 +135,38 @@ def costPlot(funct,args):
 	pl.axis([0, np.amax(x)+(2*np.amax(x)/100), 0, np.amax(y)+(2*np.amax(y)/100)])
 	pl.tick_params(axis='y', labelsize=7)
 	pl.set_xlabel('read memory size',fontsize=8)
-	#pl.xaxis.set_label_coords(0.3, -0.15) only for colorab ON
 	pl.set_ylabel("cost",fontsize=8)
 	pl.grid(True)
-	pl.tick_params(axis='x', labelsize=6)
+	pl.tick_params(axis='x', labelsize=7)
 	sc=pl.scatter(x,y,s=6,c=f, marker = 'o',cmap=cmap,norm=norm,lw=0.0)
+	fd=fitData[4]
+	j=0
+	curve=[]
+	text=[]
 	if funct.toFit:
-		pl.plot(x,fitData[0]+fitData[1]*np.power(x,fitData[2]),c="red")
-		if fitData[2]>=0:
-			pl.set_title("Cost: \n $\mathit{c = "+str(round(fitData[2],2))+",R{^2}="+str(round(fitData[4],3))+"}$",fontsize=13)
+		for i in fd:
+			 tx=gen_samples(dat[j][4],dat[j][5])
+			 cur=pl.plot(tx,i[0]+i[1]*np.power(tx,i[2]),c=np.random.rand(3,1),linewidth=2.5,label=str(round(i[2],2)))
+			 j+=1
+		if fitData[2]>0:
+			pl.set_title("Cost: $\mathit{c = "+str(round(fitData[2],2))+",R{^2}="+str(round(fitData[3],3))+"}$",fontsize=14)
+			pl.legend(loc=4)
 		else:
-			pl.set_title("Cost: \n No Fit Possible",fontsize=14)
+			pl.set_title("Cost: No Fit Possible",fontsize=15)
 	else:
 		pl.set_title("Cost",fontsize=14)
-	#colorbar!
-	#cbar=plt.colorbar(sc,cmap=cmap, norm=norm, boundaries=newBounds, ticks=[1,16,256,4000],aspect=12,shrink=0.2,pad=0.11,orientation="horizontal",use_gridspec=True)
-	#cbar.ax.tick_params(labelsize=7) 
 	pylab.close()
-		
+
+def gen_samples(minx,maxx):
+	result=np.array([])
+	step=1.0*(maxx-minx)/500
+	i=minx
+	while i<maxx:
+		result=np.append(result,i)
+		i+=step		
+	if i<maxx:
+		result=np.append(result,maxx)
+	return result
 	
 def costPlot_min(funct):
 	x=np.array([])
