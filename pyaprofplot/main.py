@@ -6,7 +6,6 @@ import tex_generator as texG
 import os
 import shutil
 from multiprocessing import Process
-import time
 import multiprocessing
 import numpy as np
 import sys
@@ -33,7 +32,7 @@ def main():
 	args = parser.parse_args()
 	functToPlot={"rms frequency":True,"cost":True,"total cost":True,"amortized cost":True,"minavgmax":True,"cost variance":True,"alpha plot":True}
 	filters={"rms":5,"cumul cost percentage":1.0}
-	others={"autolog":False,"alpha":1.0,"noFit":False,"sort":"rms"}
+	others={"autolog":False,"alpha":1.0,"noFit":False,"sort":"fit"}
 	treesholdRMS=5
 	treesholdCPERC=1
 	epsB=False
