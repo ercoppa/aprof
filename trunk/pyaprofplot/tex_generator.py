@@ -36,7 +36,7 @@ def tex_gen(t,info,tp,readInfo):
 	tex_file.write("\\tableofcontents\n")
 	tex_file.write("\chapter{How to read it}\n")
 	tex_file.write("\\begin{center}")
-	tex_file.write("Except for 'Frequency', 'Min/Max/Avg' and 'Alpha' plots, the following colorbar represents the RMS frequencies:\n")
+	tex_file.write("Except for {\em Frequency}, {\em Amortized}, {\em Min/Max/Avg} and {\em Alpha} plots, the following colorbar represents the RMS frequencies:\n")
 	tex_file.write("\\newline")
 	tex_file.write("\\newline")
 	tex_file.write("\\newline")
