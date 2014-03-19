@@ -181,7 +181,7 @@ def main_solver(f):
 		result=r
 	final_result=np.array([0,0,0,0,0,0])
 	for i in result:
-		final_result=np.vstack([final_result,(i[1][0],i[1][1],i[1][2],i[2],np.min(i[0]),np.max(i[0]))])
+		final_result=np.vstack([final_result,(i[1][0],i[1][1],i[1][2],i[2],np.min(i[0][:,0]),np.max(i[0][:,0]))])
 	final_result=np.delete(final_result,0,0)
 	if len(final_result)>0:
 		final_result=final_result[final_result[:,2].argsort()]
