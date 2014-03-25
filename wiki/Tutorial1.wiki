@@ -76,7 +76,7 @@ where `quick_tutorial.c` is a text file containing the previous example code.
 
 == Profiling ==
 
-You can install `aprof` by following the _[#Install_aprof Instructions for installing aprof]_. We can profile our program with the following command:
+You can install `aprof` by following the _[Install#Install_aprof Instructions for installing aprof]_. We can profile our program with the following command:
 {{{
 path-to-aprof/inst/bin/valgrind --tool=aprof ./quick_tutorial
 }}}
