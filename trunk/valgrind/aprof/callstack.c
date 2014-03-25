@@ -396,7 +396,7 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
             
             /* try to see if we find dl_runtime_resolve in this obj */
             if (APROF_(runtime).dl_runtime_resolve_addr == 0
-                && !bb->is_dl_runtime_resolve && obj_name != NULL && 
+                && !bb->is_dl_runtime_resolve && obj_name != NULL
                 && last_bb != NULL && obj != last_bb->fn->obj) {
             
                 /* Obtain obj start address */
