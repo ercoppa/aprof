@@ -330,6 +330,8 @@ typedef struct Runtime {
 
     Bool            single_report;
     Bool            incremental_report;
+    
+    const HChar *   dope_fn;
     #endif
     
     #if !APROF_TOOL
