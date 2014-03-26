@@ -140,6 +140,10 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
     #if EVENTCOUNT
     tdata->num_func_exit++;
     #endif
+    
+    if (VG_(strcmp)(APROF_(runtime).dope_fn, act->routine_info->fn->name)){
+        tdata->cost += act->input_size * act->input_size;     
+    }
 
     ULong cumul_cost = APROF_(time)(tdata) - act->start;
     APROF_(debug_assert)(cumul_cost > 0, "Invalid cumul cost");

@@ -272,6 +272,7 @@ static void APROF_(default_params)(void) {
     // default values
     APROF_(runtime).memory_resolution = 4;
     APROF_(runtime).log_dir = NULL;
+    APROF_(runtime).dope_fn = NULL;
     APROF_(runtime).collect_CCT = False;
     APROF_(runtime).function_tracing = True;
     APROF_(runtime).input_metric = RMS;
@@ -462,6 +463,10 @@ static Bool APROF_(cmd_line)(const HChar* argv) {
     }
 
     else if VG_STR_CLO(argv, "--log-dir", APROF_(runtime).log_dir) {}
+    
+    else if VG_STR_CLO(argv, "--dope-fn", APROF_(runtime).dope_fn) {
+        VG_(printf)("Dope function: %s\n", APROF_(runtime).dope_fn);
+    }
     
     else if VG_BOOL_CLO(argv, "--collect-cct", APROF_(runtime).collect_CCT) {}
     
