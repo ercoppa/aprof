@@ -143,7 +143,8 @@ void APROF_(function_exit)(ThreadData * tdata, Activation * act) {
     
     if (APROF_(runtime).dope_fn != NULL &&
         VG_(strcmp)(APROF_(runtime).dope_fn, act->routine_info->fn->name) == 0){
-        tdata->cost += act->input_size * act->input_size;
+        ULong doping = act->input_size;
+        tdata->cost += doping * doping;
     }
 
     ULong cumul_cost = APROF_(time)(tdata) - act->start;
