@@ -264,9 +264,13 @@ void APROF_(generate_report)(ThreadData * tdata, ThreadId tid) {
         if (APROF_(runtime).running_threads > 1) return;
         else cost = APROF_(runtime).extra_cost;
         
+        if (APROF_(runtime).incremental_report) {
+            APROF_(load_reports)();
+        }
+        
         routines = NULL;
     }
-            
+    
     HChar * filename = NULL;
     FILE * file = APROF_(create_report)(APROF_(runtime).application, tid, &filename);
     APROF_(assert)(file != NULL, "Report can not be created: %s", filename);

@@ -473,29 +473,36 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
                 fn = fn_c;
                 
                 f->name = fn;
+                
                 if (unknown) f->discard = True;
-                else f->function_id = APROF_(runtime).next_function_id++;
-                
-                HChar * mangled = APROF_(new)(MANGLED_S, NAME_SIZE);
-                if(VG_(get_fnname_no_cxx_demangle)(bb->key, (Char *) mangled, NAME_SIZE)) {
+                else {
                     
-                    if (VG_(strcmp)(mangled, "(below main)") == 0) {
-                        VG_(sprintf)(mangled, "below_main");
-                    }
-
-                    if (VG_(strcmp)(f->name, mangled) == 0) {
-                        APROF_(delete)(MANGLED_S, mangled); 
-                    } else {
+                    if (APROF_(runtime).single_report)
+                        f->input_map = HT_construct(VG_(free));
+                    
+                    f->function_id = APROF_(runtime).next_function_id++;
+                    
+                    HChar * mangled = APROF_(new)(MANGLED_S, NAME_SIZE);
+                    if(VG_(get_fnname_no_cxx_demangle)(bb->key, (Char *) mangled, NAME_SIZE)) {
                         
-                        /* try min wasted space */
-                        char * mangled_c = VG_(strdup)("mangle_name", mangled);
-                        VG_(free)(mangled);
-                        mangled = mangled_c;
-                        f->mangled = mangled;
-                    }
-                
-                } else 
-                    APROF_(delete)(MANGLED_S, mangled);
+                        if (VG_(strcmp)(mangled, "(below main)") == 0) {
+                            VG_(sprintf)(mangled, "below_main");
+                        }
+
+                        if (VG_(strcmp)(f->name, mangled) == 0) {
+                            APROF_(delete)(MANGLED_S, mangled); 
+                        } else {
+                            
+                            /* try min wasted space */
+                            char * mangled_c = VG_(strdup)("mangle_name", mangled);
+                            VG_(free)(mangled);
+                            mangled = mangled_c;
+                            f->mangled = mangled;
+                        }
+                    
+                    } else 
+                        APROF_(delete)(MANGLED_S, mangled);
+                }
                 
                 f->obj = obj;
                 HT_add_node(APROF_(runtime).fn_ht, f->key, f);
