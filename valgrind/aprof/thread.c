@@ -66,13 +66,6 @@ static ThreadData * APROF_(thread_start)(ThreadId tid){
             tdata->root = APROF_(runtime).root;
     }
     
-    if (APROF_(runtime).incremental_report 
-            && !APROF_(runtime).loaded_report) {
-                
-        APROF_(load_reports)();
-        APROF_(runtime).loaded_report = True;
-    }
-    
     // registering thread
     APROF_(runtime).threads[tid-1] = tdata;
     APROF_(runtime).running_threads++;
