@@ -86,7 +86,7 @@
 
 #define DEBUG_ALLOCATION    0   // if 1, check every allocation made by aprof
 
-#define SKIP_DL_RUNTIME     0   // if 1, ignore _dl_runtime_resolve
+#define SKIP_DL_RUNTIME     1   // if 1, ignore _dl_runtime_resolve
                                 // this function may create some
                                 // "noise"
                                 
