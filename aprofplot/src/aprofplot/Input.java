@@ -32,6 +32,8 @@ public class Input implements Comparable<Input>, Cloneable {
     private long sum_cumulative_thread_input;
     private long sum_self_syscall_input;
     private long sum_self_thread_input;
+    
+    private long amortized_index = -1;
 
 	// pos 0 -> n exponent;
 	// pos 1 -> log_e(n) exponent;
@@ -43,6 +45,15 @@ public class Input implements Comparable<Input>, Cloneable {
         public int compare(Input t1, Input t2) {
             if (t1.getCost() == t2.getCost()) return 0;
             if (t1.getCost() > t2.getCost()) return 1;
+            return -1;
+        }
+    }
+    
+    public static class ComparatorAvgCostInput implements Comparator<Input> {
+        @Override
+        public int compare(Input t1, Input t2) {
+            if (t1.getAvgCost() == t2.getAvgCost()) return 0;
+            if (t1.getAvgCost() > t2.getAvgCost()) return 1;
             return -1;
         }
     }
@@ -60,8 +71,10 @@ public class Input implements Comparable<Input>, Cloneable {
                 long sum_self_syscall_input,
                 long sum_self_thread_input) {
 
+        /*
         if (size == 0) 
             throw new RuntimeException("Invalid input size");
+        */
         
         if (min_cumulative_cost == 0 || max_cumulative_cost == 0 
                 || min_cumulative_cost > max_cumulative_cost) 
@@ -70,9 +83,11 @@ public class Input implements Comparable<Input>, Cloneable {
         if (calls == 0)
             throw new RuntimeException("Invalid number of calls");
         
+        /*
         if (min_self_cost == 0 || max_self_cost == 0 
                 || min_self_cost > max_self_cost) 
             throw new RuntimeException("Invalid min/max self cost");
+        */
         
 		this.size = size;
         
@@ -97,6 +112,14 @@ public class Input implements Comparable<Input>, Cloneable {
         
 	}
 
+    long getAmortizedIndex() {
+        return amortized_index;
+    }
+    
+    public void setAmortizedIndex(long index) {
+        amortized_index = index;
+    }
+    
 	public static double[] getRatioConfig() {
 		return ratio_config;
 	}
@@ -358,7 +381,9 @@ public class Input implements Comparable<Input>, Cloneable {
         
         return 0;
     }
-    
-    // deprecated
-    public double getRatioSumRmsRvms() { return 0; }
+
+    @Override
+    public String toString() {
+        return getSize() + " " + getCalls();
+    }
 }

@@ -789,7 +789,8 @@ public class GraphPanel extends javax.swing.JPanel {
                 jButton4ActionPerformed(evt);
             }
         });
-        if (graph_type != AMORTIZED_PLOT) jButton4.setVisible(false);
+        if (graph_type != AMORTIZED_PLOT)
+        jButton4.setVisible(false);
         jToolBar1.add(jButton4);
 
         jButton3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/zoom_out_16.png"))); // NOI18N
@@ -918,7 +919,7 @@ public class GraphPanel extends javax.swing.JPanel {
 				return "frequency";
 			
 			case AMORTIZED_PLOT:
-				return "mean cumulative cost";
+				return "α(rms)";
 				
 			case RTN_PLOT: 
 				return "percentage of routines";
@@ -1035,12 +1036,7 @@ public class GraphPanel extends javax.swing.JPanel {
             case RATIO_TUPLES_PLOT: s = "Ratio #DRMS/#RMS plot"; break;
             case EXTERNAL_INPUT_PLOT: s = "External input plot"; break;
             case ALPHA_PLOT: s = "Alpha plot"; break;
-			case AMORTIZED_PLOT: 
-                if (rtn_info != null)
-                    s = "Amortized cost plot (α = " + rtn_info.getAmortizedConstant() + ")" ; 
-                else
-                    s = "Amortized cost plot";
-                break;
+			case AMORTIZED_PLOT:  s = "Amortized cost plot"; break;
 			case 
                     RATIO_PLOT: s = "Curve bounding plot - T(n) / ";
 							double[] rc = Input.getRatioConfig();
@@ -1913,7 +1909,7 @@ public class GraphPanel extends javax.swing.JPanel {
 				y = te.getMaxCost();
 			
 		} else if (graph_type == AMORTIZED_PLOT) 
-			y = rtn_info.getAmortizedValue(te.getSize());
+			y = rtn_info.getAmortizedValue(te);
 			
 		else if (this.graph_type == GraphPanel.FREQ_PLOT)
 			y = te.getCalls();
@@ -2208,7 +2204,7 @@ public class GraphPanel extends javax.swing.JPanel {
 					else if (graph_type == VAR_PLOT) 
 						y = te.getVar();
 					else if (graph_type == AMORTIZED_PLOT)
-						y = rtn_info.getAmortizedValue((int)x);
+						y = rtn_info.getAmortizedValue(te);
 					else if (graph_type == FREQ_PLOT)
 						y = te.getCalls();
 					else if (graph_type == MMM_PLOT) {

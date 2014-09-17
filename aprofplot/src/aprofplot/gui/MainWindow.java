@@ -98,7 +98,6 @@ public class MainWindow extends javax.swing.JFrame {
         jCheckBoxMenuItem6 = new javax.swing.JCheckBoxMenuItem();
         jCheckBoxMenuItem9 = new javax.swing.JCheckBoxMenuItem();
         jCheckBoxMenuItem8 = new javax.swing.JCheckBoxMenuItem();
-        jCheckBoxMenuItem25 = new javax.swing.JCheckBoxMenuItem();
         jButton12 = new javax.swing.JButton();
         jToolBar1 = new javax.swing.JToolBar();
         jButton3 = new javax.swing.JButton();
@@ -238,7 +237,6 @@ public class MainWindow extends javax.swing.JFrame {
         jCheckBoxMenuItem14 = new javax.swing.JCheckBoxMenuItem();
         jCheckBoxMenuItem17 = new javax.swing.JCheckBoxMenuItem();
         jCheckBoxMenuItem16 = new javax.swing.JCheckBoxMenuItem();
-        jCheckBoxMenuItem24 = new javax.swing.JCheckBoxMenuItem();
         jCheckBoxMenuItem1 = new javax.swing.JCheckBoxMenuItem();
         jMenu4 = new javax.swing.JMenu();
         jMenuItem3 = new javax.swing.JMenuItem();
@@ -334,15 +332,6 @@ public class MainWindow extends javax.swing.JFrame {
             }
         });
         jPopupMenu1.add(jCheckBoxMenuItem8);
-
-        jCheckBoxMenuItem25.setText("Alpha plot");
-        jCheckBoxMenuItem25.setToolTipText("");
-        jCheckBoxMenuItem25.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxMenuItem25ActionPerformed(evt);
-            }
-        });
-        jPopupMenu1.add(jCheckBoxMenuItem25);
 
         jButton12.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Filter-icon.png"))); // NOI18N
         jButton12.setToolTipText("Filter routines");
@@ -1130,14 +1119,6 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jMenu3.add(jCheckBoxMenuItem16);
 
-        jCheckBoxMenuItem24.setText("Alpha plot");
-        jCheckBoxMenuItem24.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxMenuItem24ActionPerformed(evt);
-            }
-        });
-        jMenu3.add(jCheckBoxMenuItem24);
-
         jCheckBoxMenuItem1.setText("Source code editor");
         jCheckBoxMenuItem1.setEnabled(false);
         jCheckBoxMenuItem1.addActionListener(new java.awt.event.ActionListener() {
@@ -1172,12 +1153,16 @@ public class MainWindow extends javax.swing.JFrame {
        contexts_divider = jSplitPane5.getSize().height / 2;
     }
     
+    private boolean isContextPanelVisible() {
+        return jScrollPane6.isVisible();
+    }
+    
     public boolean setVisibleContextsTable(boolean visible) {
        
        //System.out.println("Set visible");
        //Thread.dumpStack();
         
-       boolean old = jScrollPane6.isVisible();
+       boolean old = isContextPanelVisible();
        if (old)
           contexts_divider = jSplitPane5.getDividerLocation();
        
@@ -1319,23 +1304,38 @@ public class MainWindow extends javax.swing.JFrame {
 			
 			@Override
 			public AprofReport doInBackground() {
+
+                boolean failed = false;
+                
 				try {
-					setReport(new AprofReport(file), file);
-				} catch (Exception ex) {
+                    setReport(new AprofReport(file), file);
+                } catch (Exception ex) {
                     ex.printStackTrace();
-					System.out.println("Fail to load");
-					System.out.println(ex);
+                    failed = true;
+				}
+                
+                if (failed || report.hasFatalError()) {
                     jProgressBar1.setVisible(false);
                     jProgressBar1.setEnabled(false);
-                    failLoadReport(file, ex);
-				}
+                    failLoadReport(file);
+                    return null;
+                }
+                
+                if (report.hasWarnings())
+                    showWanrnings(report.getWarnings());
+
 				return report;
 			}
-			
+
 		};
 		worker.execute();
-		
 	}
+    
+    private void showWanrnings(String warnings) {
+         javax.swing.JOptionPane.showMessageDialog(this, 
+                warnings , "Warning", 
+                javax.swing.JOptionPane.INFORMATION_MESSAGE);
+    }
     
     public boolean isInputMetricRms() {
         
@@ -1347,14 +1347,12 @@ public class MainWindow extends javax.swing.JFrame {
         return true;
     }
     
-    private void failLoadReport(File file, Exception e) {
-        
-        //System.out.println(e);
-        //e.printStackTrace();
-        
+    private void failLoadReport(File file) {
+
         javax.swing.JOptionPane.showMessageDialog(this, 
                 "Couldn't open the chosen file", "Error", 
                 javax.swing.JOptionPane.ERROR_MESSAGE);
+    
     }
     
     @SuppressWarnings("unchecked")
@@ -1531,7 +1529,7 @@ public class MainWindow extends javax.swing.JFrame {
 		if (jCheckBoxMenuItem9.isSelected()) VarGraphPanel.clearData();
 		if (jCheckBoxMenuItem6.isSelected()) TotalCostGraphPanel.clearData();
 		if (jCheckBoxMenuItem7.isSelected()) AmortizedGraphPanel.clearData();
-		if (jCheckBoxMenuItem24.isSelected()) AlphaGraphPanel.setData(null);
+		//if (jCheckBoxMenuItem24.isSelected()) AlphaGraphPanel.setData(null);
         
         /*
         if (jCheckBoxMenuItem11.isSelected()) RtnGraphPanel.setData(null);
@@ -1550,6 +1548,9 @@ public class MainWindow extends javax.swing.JFrame {
                 saveSortingRoutinesTable();
 				m.setData(final_report);
                 restoreSortingRoutinesTable();
+                
+                // reset scrolling
+                jScrollPane1.getVerticalScrollBar().setValue(0);
                 
                 RoutinesTableModel m2 = (RoutinesTableModel)jTable3.getModel();
                 saveSortingContextsTable();
@@ -1602,8 +1603,19 @@ public class MainWindow extends javax.swing.JFrame {
 		
 		javax.swing.JFileChooser chooser = new javax.swing.JFileChooser();
 		String lastReportPath = Main.getLastReportPath();
-		if (!lastReportPath.equals("")) chooser.setCurrentDirectory(new java.io.File(lastReportPath));
-		javax.swing.filechooser.FileNameExtensionFilter filter = new javax.swing.filechooser.FileNameExtensionFilter("Aprof report files (*.aprof)", "aprof");
+		if (lastReportPath != null)
+            while (!lastReportPath.equals("")) {
+                
+                File f = new File(lastReportPath);
+                if (f.exists()) {
+                    chooser.setCurrentDirectory(f);
+                    break;
+                } else
+                    lastReportPath = f.getParent();
+                
+            }
+        
+        javax.swing.filechooser.FileNameExtensionFilter filter = new javax.swing.filechooser.FileNameExtensionFilter("Aprof report files (*.aprof)", "aprof");
 		chooser.setFileFilter(filter);
 		chooser.setAcceptAllFileFilterUsed(false);
 		int choice = chooser.showOpenDialog(this);
@@ -1888,7 +1900,7 @@ public class MainWindow extends javax.swing.JFrame {
         if (jCheckBoxMenuItem9.isSelected()) VarGraphPanel.setRoutine(r);
         if (jCheckBoxMenuItem6.isSelected()) TotalCostGraphPanel.setRoutine(r);
         if (jCheckBoxMenuItem7.isSelected()) AmortizedGraphPanel.setRoutine(r);
-        if (jCheckBoxMenuItem24.isSelected()) AlphaGraphPanel.setRoutine(r);
+        //if (jCheckBoxMenuItem24.isSelected()) AlphaGraphPanel.setRoutine(r);
 
         r.sortInputTuplesByInput();
         Iterator i = r.getInputTuplesIterator();
@@ -1905,7 +1917,8 @@ public class MainWindow extends javax.swing.JFrame {
             if (jCheckBoxMenuItem7.isSelected()) AmortizedGraphPanel.addPoint(te);
 
         }
-        if (jCheckBoxMenuItem24.isSelected()) AlphaGraphPanel.populateChart();
+        
+        //if (jCheckBoxMenuItem24.isSelected()) AlphaGraphPanel.populateChart();
 
         if (jCheckBoxMenuItem4.isSelected()) CostGraphPanel.maximize();
         if (jCheckBoxMenuItem8.isSelected()) ratioGraphPanel.maximize();
@@ -1917,7 +1930,8 @@ public class MainWindow extends javax.swing.JFrame {
             AmortizedGraphPanel.maximize();
             AmortizedGraphPanel.updateGraphTitle();
         }
-        if (jCheckBoxMenuItem24.isSelected()) AlphaGraphPanel.maximize();
+        
+        //if (jCheckBoxMenuItem24.isSelected()) AlphaGraphPanel.maximize();
         
         // enable/disable entries in export menu related to routine
         if (r == null) {
@@ -2309,7 +2323,7 @@ public class MainWindow extends javax.swing.JFrame {
 										+ " " + (int) s.getMaxSelfCost() 
 										+ " " + (long) s.getSumSelfCost()
                               );
-					out.format(" %.2f%n", rtn_info.getAmortizedValue(s.getSize()));
+					out.format(" %.5f%n", rtn_info.getAmortizedValue(s));
 
 				}
 				out.close();
@@ -2321,6 +2335,8 @@ public class MainWindow extends javax.swing.JFrame {
 			JOptionPane.showMessageDialog(this, "Error during export :(",
 					"Error", javax.swing.JOptionPane.ERROR_MESSAGE);
 			
+            e.printStackTrace();
+            
 		}
 		
 	}//GEN-LAST:event_jMenuItem11ActionPerformed
@@ -2351,13 +2367,16 @@ public class MainWindow extends javax.swing.JFrame {
 				tmp.createNewFile();
 				PrintWriter out = new PrintWriter(new FileWriter(tmp));
 		
+                out.println("# N_TUPLES TOTAL_CALLS INPUT_MIN INPUT_MAX COST_BALANCE_POINT \"NAME\"");
+                
 				for (int i = 0; i < els.size(); i++) {
 					Routine el = els.get(i);
-					out.println(el.getID() + " " +
-								(long) el.getInputTuplesCount() + " " +
-								(long) el.getTotalCost() + " " +
-								(long) el.getTotalCalls() + " " +
-								el.getName()
+					out.println(el.getInputTuplesCount() + " " +
+								el.getTotalCalls() + " " +
+                                el.getMinInput() + " " +
+                                el.getMaxInput() + " " +
+                                el.getCostBalancePoint() + " \"" +
+								el.getName() + "\""
 								);
 				}
 				out.close();
@@ -2514,7 +2533,7 @@ public class MainWindow extends javax.swing.JFrame {
 		chooser.setAcceptAllFileFilterUsed(false);
 		
 		String lastSourceDir = Main.getLastSourceDir();
-		if (!lastSourceDir.equals("")) 
+		if (lastSourceDir != null && !lastSourceDir.equals("")) 
 			chooser.setCurrentDirectory((new java.io.File(lastSourceDir)));
 		
 		if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
@@ -3003,21 +3022,6 @@ public class MainWindow extends javax.swing.JFrame {
 		
 		}
     }//GEN-LAST:event_jMenuItem20ActionPerformed
-
-    private void jCheckBoxMenuItem24ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem24ActionPerformed
-        
-        // Alpha plot checkbox (menubar)
-        if (jCheckBoxMenuItem24.isSelected()) addGraph(AlphaGraphPanel);
-		else removeGraph(AlphaGraphPanel);
-        
-    }//GEN-LAST:event_jCheckBoxMenuItem24ActionPerformed
-
-    private void jCheckBoxMenuItem25ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem25ActionPerformed
-        
-        // Alpha plot checkbox (toolbar)
-        if (jCheckBoxMenuItem25.isSelected()) addGraph(AlphaGraphPanel);
-		else removeGraph(AlphaGraphPanel);
-    }//GEN-LAST:event_jCheckBoxMenuItem25ActionPerformed
 
     private void jMenuItem21ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem21ActionPerformed
         
@@ -3609,12 +3613,11 @@ public class MainWindow extends javax.swing.JFrame {
                 jCheckBoxMenuItem21.setSelected(true);
                 jCheckBoxMenuItem23.setSelected(true);
                 break;
-            */
             case GraphPanel.ALPHA_PLOT:
                 jCheckBoxMenuItem25.setSelected(true);
                 jCheckBoxMenuItem24.setSelected(true);
                 break;
-				
+            */
 		}
 		
 		graph_visible++;
@@ -3711,14 +3714,13 @@ public class MainWindow extends javax.swing.JFrame {
             case GraphPanel.EXTERNAL_INPUT_PLOT:
                 jCheckBoxMenuItem21.setSelected(false);
                 jCheckBoxMenuItem23.setSelected(false);
-                break;
-            */
-                
+                break;    
             case GraphPanel.ALPHA_PLOT:
                 jCheckBoxMenuItem24.setSelected(false);
                 jCheckBoxMenuItem25.setSelected(false);
                 break;
-		}
+            */
+        }
 		
 		// This does not work...
 		//jPanel9.remove(g);
@@ -3790,11 +3792,11 @@ public class MainWindow extends javax.swing.JFrame {
 			if (exit == 0) return true;
 			
 		} catch (IOException ex) {
-			System.out.println("Fail to start a process [ctags installed test][1]");
+			System.out.println("Fail: error during check ctags");
 		} catch (IllegalThreadStateException i) {
-			System.out.println("Fail to start a process [ctags installed test][2]");
+			System.out.println("Fail: error checking ctags [1]");
 		} catch (InterruptedException ex) {
-			System.out.println("Fail to start a process [ctags installed test][3]");
+			System.out.println("Fail: error checking ctags [2]");
 		}
 		
 		return false;
@@ -4047,7 +4049,7 @@ public class MainWindow extends javax.swing.JFrame {
         return false;
     }
     
-    public boolean hasRvmsStats() {
+    public boolean hasDrmsStats() {
         
         if (report != null && report.hasInputStats())
             return true;
@@ -4137,8 +4139,6 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem16;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem17;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem18;
-    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem24;
-    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem25;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem4;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem5;
     private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem6;

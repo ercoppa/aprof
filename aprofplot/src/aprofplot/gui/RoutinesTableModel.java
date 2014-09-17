@@ -96,7 +96,7 @@ public class RoutinesTableModel extends AbstractTableModel {
         
         */
         
-        if (main != null && main.hasRvmsStats()) {
+        if (main != null && main.hasDrmsStats()) {
             
             columnNames.add("%Syscall");
             columnTypes.add(Double.class);
@@ -198,7 +198,7 @@ public class RoutinesTableModel extends AbstractTableModel {
             
             if (rtn instanceof ContextualizedRoutineInfo) {
                 ContextualizedRoutineInfo c = (ContextualizedRoutineInfo) rtn;
-                return c.getContextCount() > 1;
+                return c.getContextCount() >= 1;
             }
                 
 			return rtn instanceof RoutineContext;
@@ -272,14 +272,14 @@ public class RoutinesTableModel extends AbstractTableModel {
             */    
             case 8:
                     // % syscall
-                    if (main.hasRvmsStats()) {
-                        return rtn_info.getRatioSyscallInput() * 100;
+                    if (main.hasDrmsStats()) {
+                        return Math.round(rtn_info.getRatioSyscallInput() * 100);
                     }
                 
             case 9:
                     // % thread
-                    if (main.hasRvmsStats()) {
-                        return rtn_info.getRatioThreadInput() * 100;
+                    if (main.hasDrmsStats()) {
+                        return Math.round(rtn_info.getRatioThreadInput() * 100);
                     }
                 
 		}

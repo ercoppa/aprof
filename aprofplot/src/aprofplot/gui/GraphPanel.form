@@ -521,7 +521,7 @@
             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jButton4ActionPerformed"/>
           </Events>
           <AuxValues>
-            <AuxValue name="JavaCodeGenerator_ListenersCodePost" type="java.lang.String" value="if (graph_type != AMORTIZED_PLOT) jButton4.setVisible(false);"/>
+            <AuxValue name="JavaCodeGenerator_ListenersCodePost" type="java.lang.String" value="if (graph_type != AMORTIZED_PLOT)&#xa;    jButton4.setVisible(false);"/>
           </AuxValues>
         </Component>
         <Component class="javax.swing.JButton" name="jButton3">
