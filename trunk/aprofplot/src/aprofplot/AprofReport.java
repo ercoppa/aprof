@@ -33,20 +33,42 @@ public class AprofReport {
 	private ArrayList<RoutineContext> contexts = new ArrayList<RoutineContext>();
 	private HashSet<String> favorites = new HashSet<String>();;
 	private File file = null;
+    
+    // index 0: count of lines with zero input
+    // index 1: count of lines with zero cost
+    // index 2: count of incomplete lines
+    // index 3: count of broken contexts
+    // index 4: fatal error
+    private int[] parse_errors = new int[]{0, 0, 0, 0, 0};
 
 	public AprofReport(File f) throws Exception {
 
 		file = f;
-  
+        
+        if (file.length() <= 0) {
+            parse_errors[4] += 1;
+            System.err.println("Zero length report");
+            return;
+        }
+
 		// read report file
 		String str;
 		StringTokenizer tokenizer;
 		BufferedReader in = new BufferedReader(new FileReader(f));
         
+        //long lines = 0;
+        
+        System.out.println("Processing of report started");
 		while ((str = in.readLine()) != null) {
 			
 			//System.out.println(str);
-			
+            
+            /*
+            lines += 1;
+            if (lines % 1000 == 0)
+                System.out.println("Processed " + lines + " lines of the report");
+            */
+            
 			tokenizer = new StringTokenizer(str);
             if (!tokenizer.hasMoreTokens()) continue;
 			String token = tokenizer.nextToken();
@@ -100,9 +122,16 @@ public class AprofReport {
 				String id;
 			
 				Scanner s = new Scanner(str);
-                s.findInLine("r \"([^\"]+)\" \"([^\"]+)\" ([0-9]+)");
-                MatchResult result = s.match();
-
+                MatchResult result = null;
+                try {
+                    s.findInLine("r \"([^\"]+)\" \"([^\"]+)\" ([0-9]+)");
+                    result = s.match();
+                } catch (IllegalStateException e) {
+                    parse_errors[4] += 1;
+                    System.err.println("Invalid report format");
+                    return;
+                }
+                
 				rtn_name = result.group(1);
 				lib = result.group(2);
                 id = result.group(3);
@@ -139,25 +168,46 @@ public class AprofReport {
                     routines.set(r.getID(), r);
                 }
 				ContextualizedRoutineInfo rc = (ContextualizedRoutineInfo) r;
-				
-                RoutineContext c = contexts.get(context_id);
+				RoutineContext c = null;
+                
+                while (contexts.size() <= context_id) 
+                    contexts.add(null);
+                
+                c = contexts.get(context_id);
                 
                 RoutineContext p = null;
                 if (parent_id >= 0) p = contexts.get(parent_id);
                 
-                if (c == null)
-                    System.out.println("Missing context: " + str);
+                if (c == null) {
+                    System.err.println("Missing context: " + str);
+                    parse_errors[3] += 1;
+                    c = new RoutineContext();
+                    contexts.set(context_id, c);
+                } 
                 
                 c.setParent(p);
-				c.setOverallRoutine(rc);
-				rc.addContext(c);
+                c.setOverallRoutine(rc);
+                rc.addContext(c);
                 				
 				continue;
 			}
 
 			if (token.equals("p") || token.equals("q")) { // routine point
 				
+                if (!tokenizer.hasMoreTokens()) {
+                    parse_errors[2] += 1;
+                    System.err.println("Incomplete line: " + str);
+                    continue;
+                }
+                
                 int id = Integer.parseInt(tokenizer.nextToken());
+                
+                if (!tokenizer.hasMoreTokens()) {
+                    parse_errors[2] += 1;
+                    System.err.println("Incomplete line: " + str);
+                    continue;
+                }
+                
 				long input = Long.parseLong(tokenizer.nextToken());
 				
                 double min_cumul_cost = Double.parseDouble(tokenizer.nextToken());
@@ -202,7 +252,7 @@ public class AprofReport {
                     
                         sum_cumul_syscall = Long.parseLong(tokenizer.nextToken());
                         sum_cumul_thread = Long.parseLong(tokenizer.nextToken());
-                        
+
                         has_input_stats = true;
                     }
                     
@@ -215,6 +265,22 @@ public class AprofReport {
                         this.total_self_thread_input += sum_self_thread;
                         
                     }
+                }
+                
+                /*
+                if (input <= 0) {
+                    System.err.println("Skipping line (zero input): " + str);
+                    parse_errors[0] += 1;
+                    continue;
+                }
+                */
+                
+                if (min_cumul_cost == 0 || max_cumul_cost == 0 || 
+                    sum_cumul_cost == 0) {
+                    
+                    System.err.println("Skipping line (zero cost): " + str);
+                    parse_errors[1] += 1;
+                    continue;
                 }
                 
                 Input te = new Input(input, min_cumul_cost, max_cumul_cost, 
@@ -231,28 +297,25 @@ public class AprofReport {
                 } else {
                     
                     RoutineContext c = null;
-                    
+
                     try {
-                        
                         c = contexts.get(id);
-                        if (c == null)
-                            throw new IndexOutOfBoundsException();
-                        
                     } catch (IndexOutOfBoundsException e) {
-                        
-                        c = new RoutineContext();
                         while (contexts.size() <= id) contexts.add(null);
-                        contexts.set(id, c);
-                    
                     }
-                    
+
+                    if (c == null) {
+                        c = new RoutineContext();
+                        contexts.set(id, c);
+                    }
+                 
                     c.addInputTuple(te);
                 }
                 
 				continue;
 			}
 
-			if (token.equals("u")) { // demangled routine
+			if (token.equals("u")) { // mangled routine
 				
 				int index = Integer.parseInt(tokenizer.nextToken());
                 //System.out.println(index);
@@ -262,6 +325,19 @@ public class AprofReport {
 				}
                 name = name.trim();
 				routines.get(index).setMangledName(name);
+				
+				continue;
+			}
+            
+            if (token.equals("d")) { // old demangled routine
+				
+				int index = Integer.parseInt(tokenizer.nextToken());
+				String name = "";
+				while (tokenizer.hasMoreTokens()) {
+					name += (tokenizer.nextToken() + " ");
+				}
+                name = name.trim().replace("\"", "");
+				routines.get(index).setFullName(name);
 				
 				continue;
 			}
@@ -284,6 +360,8 @@ public class AprofReport {
         
 		if (hasContexts()) {
 			
+            System.out.println("Performing merge of context tuples...");
+            
 			Iterator it = routines.iterator();
 			while(it.hasNext()) {
 					
@@ -291,8 +369,11 @@ public class AprofReport {
 				r.mergeInputTupleLazyList();
 				
 			}	
+            
+            System.out.println("Merge of context tuples done.");
 		}
 		
+        System.out.println("Collecting statistics...");
 		for (int i = 0; i < routines.size(); i++) {
             
             if (routines.get(i) == null)
@@ -306,6 +387,11 @@ public class AprofReport {
 			total_calls += routines.get(i).getTotalCalls();
 			
         }
+        
+        if (this.input_metric == InputMetric.INVALID)
+            this.input_metric = InputMetric.RMS;
+        
+        System.out.println("Report processed correctly.");
 	}
 
     public HashMap<String, Routine> getHashMapRoutines() {
@@ -495,5 +581,31 @@ public class AprofReport {
 			}
 		});
 	}
+    
+    public boolean hasFatalError() {
+        return parse_errors[4] > 0;
+    }
+    
+    public boolean hasWarnings() {
+        return parse_errors[0] > 0 
+                || parse_errors[1] > 0
+                || parse_errors[2] > 0
+                || parse_errors[3] > 0;
+    }
+    
+    public String getWarnings() {
+        
+        String w = "";
+        if (parse_errors[0] > 0)
+            w += "Skipped " + parse_errors[0] + " zero input lines\n";
+        if (parse_errors[1] > 0)
+            w += "Skipped " + parse_errors[1] + " zero cost lines\n";
+        if (parse_errors[2] > 0)
+            w += "Skipped " + parse_errors[2] + " incomplete lines\n";
+        if (parse_errors[3] > 0)
+            w += "Skipped " + parse_errors[3] + " broken contexts\n";
+        
+        return w;
+    }
 }
 

@@ -51,12 +51,7 @@ public class RmsTableModel extends AbstractTableModel {
         columnNames.add("freq");
         columnTypes.add(Long.class);
         
-        if (main != null && !main.isInputMetricRms()) {
-            columnNames.add("Ext. input");
-            columnTypes.add(Double.class);
-        }
-        
-        if (main != null && main.hasRvmsStats()) {
+        if (main != null && main.hasDrmsStats()) {
             
             columnNames.add("%Thread");
             columnTypes.add(Double.class);
@@ -111,9 +106,8 @@ public class RmsTableModel extends AbstractTableModel {
 			case 2: return Math.ceil(te.getAvgCost() * 10) / 10;
 			case 3: return te.getMaxCost();
 			case 4: return te.getCalls();
-            case 5: return (1 - te.getRatioSumRmsRvms()) * 100;
-            case 6: return te.getRatioSyscallInput() * 100;
-            case 7: return te.getRatioThreadInput() * 100;
+            case 5: return Math.round(te.getRatioSyscallInput() * 100);
+            case 6: return Math.round(te.getRatioThreadInput() * 100);
 			//case 5: return te.getVar();
 			//case 6: return rtn.getAmortizedValue(te.getRms());
 			default: return null;
