@@ -15,6 +15,15 @@ public class RoutinesTableModel extends AbstractTableModel {
     private RoutinesTableModel contexts = null;
     private boolean is_table_routine = true;
 	
+    public enum COLUMN {
+        NAME, LIB, COST, N_INPUT, P_COST, COST_PLOT, CALL, P_CALL, P_THREAD,
+        P_SYSCALL, CONTEXT, CONTEXT_COLLAPSED, FIT_A, FIT_B, FIT_C, FIT_R2,
+        FAVORITE, LAST
+    }
+    
+    private COLUMN[] column_conf = defaultColumnConfig();
+    private Vector<COLUMN> column_index = null;
+    
 	public RoutinesTableModel(AprofReport report, MainWindow main,
                                 RoutinesTableModel contexts) {
 		setData(report);
@@ -28,106 +37,185 @@ public class RoutinesTableModel extends AbstractTableModel {
 		this.is_table_routine = is_table_routine;
 	}
 
-	private void updateColumns(boolean hasContext) {
+    private static COLUMN[] defaultColumnConfig() {
+        return new COLUMN[]{
+                                COLUMN.NAME,
+                                COLUMN.LIB,
+                                COLUMN.COST,
+                                COLUMN.N_INPUT,
+                                COLUMN.P_COST,
+                                COLUMN.COST_PLOT,
+                                COLUMN.CALL,
+                                COLUMN.P_CALL,
+                                COLUMN.P_SYSCALL,
+                                COLUMN.P_THREAD,
+                                COLUMN.FIT_A,
+                                COLUMN.FIT_B,
+                                COLUMN.FIT_C,
+                                COLUMN.FIT_R2,
+                                COLUMN.CONTEXT,
+                                COLUMN.CONTEXT_COLLAPSED,
+                                COLUMN.FAVORITE
+        };
+    }
+    
+    public void setColumnConfig(COLUMN[] config) {
+        column_conf = config;
+        updateColumns();
+        refresh();
+    }
+    
+    public COLUMN[] getColumnConfig() {
+        return column_conf.clone();
+    }
+    
+    public int getIndexOfColumn(COLUMN c) {
+        for (int i = 0; i < column_index.size(); i++)
+            if (c == column_index.get(i))
+                return i;
+        return -1;
+    }
+    
+    private void updateColumnIndexes() {
+        
+        column_index = new Vector<COLUMN>();
+        for (COLUMN c : column_conf) {
+            
+            if (c == COLUMN.P_SYSCALL
+                || c == COLUMN.P_THREAD)
+                if (report == null || !report.hasInputStats())
+                    continue;
+            
+            if (c == COLUMN.FIT_A 
+                || c == COLUMN.FIT_B 
+                || c == COLUMN.FIT_C
+                || c == COLUMN.FIT_R2)
+                if (report == null || !report.hasFitter() 
+                        || main == null || !main.isVisibleFittingData() )
+                    continue;
+            
+            if (c == COLUMN.CONTEXT
+                || c == COLUMN.CONTEXT_COLLAPSED)
+                if (report == null || !report.hasContexts())
+                    continue;
+            
+            column_index.add(c);
+        } 
+    }
+    
+	public void updateColumns() {
 		
         columnNames = new ArrayList<String>();
         columnTypes = new ArrayList<Class>();
+        updateColumnIndexes();
         
-        // Name
-        columnNames.add("Routine");
-        columnTypes.add(String.class);
-        
-        // Lib name
-        columnNames.add("Lib");
-        columnTypes.add(String.class);
-        
-        // Cost
-        if (Main.getRtnCostMode() == Input.CostType.CUMULATIVE)
-            columnNames.add("Cost (cumul.)");
-        else
-            columnNames.add("Cost (self)");
-        
-        columnTypes.add(Double.class);
-        
-        // # RMS
-        if (main == null || main.isInputMetricRms())
-            columnNames.add("#RMS");
-        else
-            columnNames.add("#DRMS");
-        columnTypes.add(Integer.class);
-        
-        // Cost %
-        if (Main.getRtnCostMode() == Input.CostType.CUMULATIVE)
-            columnNames.add("Cost % (cumul.)");
-        else
-            columnNames.add("Cost % (self)");
-        
-        columnTypes.add(Double.class);
-        
-        // Cost plot
-        if (Main.getChartCostMode() == Input.CostType.CUMULATIVE)
-            columnNames.add("Cost plot (cumul.)");
-        else
-            columnNames.add("Cost plot (self)");
-        
-        columnTypes.add(Routine.class);
-        
-        // Calls
-        columnNames.add("Calls");
-        columnTypes.add(Integer.class);
-        
-        // Calls %
-        columnNames.add("Calls %");
-        columnTypes.add(Double.class);
-        
-        /*
-        
-        // ratio RMS/RVMS
-        if (main != null && !main.isInputMetricRms()) {
-            columnNames.add("Ext. input");
-            columnTypes.add(Double.class);
-        }   
-        
-        // dii # RMS - # RVMS
-        if (main != null && main.hasDistinctRms()) {
-            columnNames.add("#RVMS - #RMS");
-            columnTypes.add(Long.class);
-        }
-        
-        */
-        
-        if (main != null && main.hasDrmsStats()) {
+        for (COLUMN c : column_index) {
             
-            columnNames.add("%Syscall");
-            columnTypes.add(Double.class);
+            switch (c) {
             
-            columnNames.add("%Thread");
-            columnTypes.add(Double.class);
-        
-        }
-        
-		if (hasContext) {
-            
-            if (is_table_routine) {
-                // Collapsed
-                columnNames.add("Collapsed");
-                columnTypes.add(Boolean.class);
+                case NAME:
+                    columnNames.add("Routine");
+                    columnTypes.add(String.class);
+                    break;
+                    
+                case LIB:
+                    columnNames.add("Binary");
+                    columnTypes.add(String.class);
+                    break;
+                    
+                case COST:
+                    if (Main.getRtnCostMode() == Input.CostType.CUMULATIVE)
+                        columnNames.add("Cost (cumul.)");
+                    else
+                        columnNames.add("Cost (self)");
+                    columnTypes.add(Double.class);
+                    break;
+                    
+                case N_INPUT:
+                    if (main == null || main.isInputMetricRms())
+                        columnNames.add("#RMS");
+                    else
+                        columnNames.add("#DRMS");
+                    columnTypes.add(Integer.class);
+                    break;
+                    
+                case P_COST:
+                    if (Main.getRtnCostMode() == Input.CostType.CUMULATIVE)
+                        columnNames.add("Cost % (cumul.)");
+                    else
+                        columnNames.add("Cost % (self)");
+                    columnTypes.add(Double.class);
+                    break;
+                
+                case COST_PLOT:    
+                    columnNames.add("Cost plot");
+                    columnTypes.add(Routine.class);
+                    break;
+                    
+                case CALL:
+                    columnNames.add("Calls");
+                    columnTypes.add(Integer.class);
+                    break;
+                    
+                case P_CALL:
+                    columnNames.add("Calls %");
+                    columnTypes.add(Double.class);
+                    break;
+                
+                case P_SYSCALL:
+                    columnNames.add("%Syscall");
+                    columnTypes.add(Double.class);
+                    break;
+                    
+                case P_THREAD:
+                    columnNames.add("%Thread");
+                    columnTypes.add(Double.class);
+                    break;
+                    
+                case FIT_A:
+                    columnNames.add("a");
+                    columnTypes.add(Double.class);
+                    break;
+                    
+                case FIT_B:
+                    columnNames.add("b");
+                    columnTypes.add(Double.class);
+                    break;
+                
+                case FIT_C:
+                    columnNames.add("c");
+                    columnTypes.add(Double.class);
+                    break;
+                
+                case FIT_R2:
+                    columnNames.add("r^2");
+                    columnTypes.add(Double.class);
+                    break;
+
+                case CONTEXT:
+                    columnNames.add("#Context");
+                    if (is_table_routine)
+                        columnTypes.add(Long.class);
+                    else
+                        columnTypes.add(String.class);
+                    break;
+                
+                case CONTEXT_COLLAPSED:
+                    if (is_table_routine) {
+                        columnNames.add("Collapsed");
+                        columnTypes.add(Boolean.class);
+                    }
+                    break;
+                
+                case FAVORITE:
+                    columnNames.add("Favorite");
+                    columnTypes.add(Boolean.class);
+                    break;
+                    
+                default:
+                    throw new RuntimeException("Invalid column: " + c);
             }
-            
-            // Context
-            columnNames.add("#Context");
-            
-            if (is_table_routine)
-                columnTypes.add(Long.class);
-            else
-                columnTypes.add(String.class);
-            
         }
-        
-        // Favorites
-        columnNames.add("Favorite");
-        columnTypes.add(Boolean.class);
-        
 	}
     
     public final void setElements(ArrayList<RoutineContext> list) {
@@ -136,10 +224,9 @@ public class RoutinesTableModel extends AbstractTableModel {
         if (list != null) {
             this.elements.addAll(list);
         }
-        updateColumns(true);
+        updateColumns();
         fireTableStructureChanged();
 		fireTableDataChanged();
-        
     }
 	
 	public final void setData(AprofReport report) {
@@ -149,15 +236,19 @@ public class RoutinesTableModel extends AbstractTableModel {
 		if (report != null) {
 		
 			elements = report.getRoutines();
-			updateColumns(report.hasContexts());
+			updateColumns();
 			//System.out.println("Report has context? " + report.hasContexts());
 		
 		} else
-			updateColumns(false);
+			updateColumns();
         
-		fireTableStructureChanged();
-		fireTableDataChanged();
+		refresh();
 	}
+    
+    public void refresh() {
+        fireTableStructureChanged();
+		fireTableDataChanged();
+    }
 
 	@Override
 	public Class getColumnClass(int columnIndex) {
@@ -185,14 +276,15 @@ public class RoutinesTableModel extends AbstractTableModel {
 	@Override
 	public boolean isCellEditable(int rowIndex, int columnIndex) {
 		
-		if (report == null) return false;
-		
-		// Fovourite
-		if (columnIndex == columnNames.size() - 1) return true;
-		
+		if (report == null) 
+            return false;
+        
+        if (column_index.get(columnIndex) == COLUMN.FAVORITE)
+            return true;
+
 		// Collapse context
 		if (is_table_routine && report.hasContexts() 
-                   && columnIndex == columnNames.size() - 3) {
+                   && column_index.get(columnIndex) == COLUMN.CONTEXT_COLLAPSED) {
 			
             Routine rtn = elements.get(rowIndex);
             
@@ -219,112 +311,94 @@ public class RoutinesTableModel extends AbstractTableModel {
 			return null;
 		}
 		
-		switch (columnIndex) {
-			
-			case 0: // Routine name
-					return rtn_info.getName();
-			
-			case 1: // Routine lib
-					return rtn_info.getImage();
-				
-			case 2: // Routine Total cost
-                    if (main.isDisplayCumulativeTotalCost())
-                        return rtn_info.getTotalCumulativeCost();
-                    else
-                        return rtn_info.getTotalSelfCost();
+        COLUMN c = this.column_index.get(columnIndex);
+		Fit f = null;
+        switch (c) {
+
+            case NAME:
+                return rtn_info.getName();
+
+            case LIB:
+                return rtn_info.getImage();
+
+            case COST:
+                if (main.isDisplayCumulativeTotalCost())
+                    return rtn_info.getTotalCumulativeCost();
+                else
+                    return rtn_info.getTotalSelfCost();
+
+            case N_INPUT:
+                return rtn_info.getInputTuplesCount();
+
+            case P_COST:
+                if (main.isDisplayCumulativeTotalCost())
+                    return Math.ceil((rtn_info.getTotalCumulativeCost() / 
+                            report.getTotalCost()) * 100  * 100) / 100;
+                else
+                    return Math.ceil((rtn_info.getTotalSelfCost() / 
+                            report.getTotalCost()) * 100  * 100) / 100;
                 
-			case 3: // # Rms
-					return rtn_info.getInputTuplesCount();
-			
-			case 4: // % total cost rtn wrt all rtns
-                    if (main.isDisplayCumulativeTotalCost())
-                        return Math.ceil((rtn_info.getTotalCumulativeCost() / 
-                                report.getTotalCost()) * 100  * 100) / 100;
-                    else
-                        return Math.ceil((rtn_info.getTotalSelfCost() / 
-                                report.getTotalCost()) * 100  * 100) / 100;
-			
-			case 5: // Cost Plot: we already set the renderer for Routine class
-					return rtn_info;
-				
-			case 6: // # calls
-					return rtn_info.getTotalCalls();
-				
-			case 7: // % of rtn calls wrt all rtns
-					return Math.ceil(((double)rtn_info.getTotalCalls() / 
-                            (double)report.getTotalCalls()) * 100 * 100) / 100;
-            
-            
-            /*
-            case 8:
-                    // sum(RMS) / sum (RVMS) 
-                    if (!main.isInputMetricRms()) {
-                        //System.out.println(rtn_info.getName()+ " " 
-                        //                + rtn_info.getRatioSumRmsRvms());
-                        return (1 - rtn_info.getRatioSumRmsRvms()) * 100;
-                    }
-                        
-            case 9:
-                    // # RVMS - # RVMS
-                    if (main.hasDistinctRms()) {
-                        return rtn_info.getSizeRmsList() - rtn_info.getCountRms();
-                    }
-            */    
-            case 8:
-                    // % syscall
-                    if (main.hasDrmsStats()) {
-                        return Math.round(rtn_info.getRatioSyscallInput() * 100);
-                    }
-                
-            case 9:
-                    // % thread
-                    if (main.hasDrmsStats()) {
-                        return Math.round(rtn_info.getRatioThreadInput() * 100);
-                    }
-                
-		}
-		
-		//System.out.println("Index requested: " + columnIndex + " over " + columnNames.length);
-        
-		if (report.hasContexts()) {
-			
-			if (is_table_routine && columnIndex == columnNames.size() - 3) { // Collapsed?
-				
-				if (rtn_info instanceof ContextualizedRoutineInfo) {
-                    
-                    ContextualizedRoutineInfo c = (ContextualizedRoutineInfo) rtn_info;
-                    return c.getCollapsed(); 
-                
-                } else return null;
-				
-			}
-			
-			if (columnIndex == columnNames.size() - 2) { // # context
-			
-				 if (rtn_info instanceof ContextualizedRoutineInfo)
+            case COST_PLOT:    
+                return rtn_info;
+
+            case CALL:
+                return rtn_info.getTotalCalls();
+
+            case P_CALL:
+                return Math.ceil(((double)rtn_info.getTotalCalls() / 
+                        (double)report.getTotalCalls()) * 100 * 100) / 100;
+
+            case P_SYSCALL:
+                return Math.round(rtn_info.getRatioSyscallInput() * 100);
+
+            case P_THREAD:
+                return Math.round(rtn_info.getRatioThreadInput() * 100);
+
+            case FIT_A:
+                f = this.report.getFit(rtn_info.getID());
+                if (f == null) return 0.0;
+                return f.getParams()[0];
+
+            case FIT_B:
+                f = this.report.getFit(rtn_info.getID());
+                if (f == null) return 0.0;
+                return f.getParams()[1];
+
+            case FIT_C:
+                f = this.report.getFit(rtn_info.getID());
+                if (f == null) return 0.0;
+                return f.getParams()[2];
+               
+            case FIT_R2:
+                f = this.report.getFit(rtn_info.getID());
+                if (f == null) return 0.0;
+                return f.getFitQuality();
+
+            case CONTEXT:
+                if (rtn_info instanceof ContextualizedRoutineInfo)
 					return ((ContextualizedRoutineInfo)rtn_info).getContextCount();
 				else if (rtn_info instanceof RoutineContext)
 					return ((RoutineContext)rtn_info).getContextId() + "/" + 
 							((RoutineContext)rtn_info).getOverallRoutine().getContextCount();
 				else return "0";
-				
-			}
-			
-		} 
-		
-		// Fav
-		if (columnIndex == columnNames.size() - 1) {
-			
-			String fav = "" + rtn_info.getID();
-			if (rtn_info instanceof RoutineContext)
-				fav += ("_" + ((RoutineContext)rtn_info).getContextId());
-			return report.isFavorite(fav);
 
-		}
-		
-		//throw new RuntimeException("Invalid Column index");
-		return null;
-		
+            case CONTEXT_COLLAPSED:
+                if (rtn_info instanceof ContextualizedRoutineInfo) {
+                    
+                    ContextualizedRoutineInfo co = (ContextualizedRoutineInfo) rtn_info;
+                    return co.getCollapsed(); 
+                
+                } else return null;
+                
+            case FAVORITE:
+                String fav = "" + rtn_info.getID();
+                if (rtn_info instanceof RoutineContext)
+                    fav += ("_" + ((RoutineContext)rtn_info).getContextId());
+                return report.isFavorite(fav);
+
+            default:
+                throw new RuntimeException("Invalid column: " + c);
+        }		
 	}
 
     public void loadContexts(Routine rtn, boolean null_hide) {
@@ -348,7 +422,6 @@ public class RoutinesTableModel extends AbstractTableModel {
         contexts.setElements(rtn_info.getContexts());
         main.restoreSortingContextsTable();
         main.setVisibleContextsTable(true);
-        
     }
     
 	public void collapseRoutine(Routine rtn) {
@@ -373,8 +446,9 @@ public class RoutinesTableModel extends AbstractTableModel {
 	@Override
 	public void setValueAt(final Object aValue, final int rowIndex, final int columnIndex) {
 		
+        COLUMN c = column_index.get(columnIndex);
 		if (is_table_routine && report.hasContexts() 
-                && columnIndex == columnNames.size() - 3) {
+                && c == COLUMN.CONTEXT_COLLAPSED) {
 			
 			//main.inhibit_selection(true);
 			final RoutinesTableModel me = this;
@@ -398,7 +472,7 @@ public class RoutinesTableModel extends AbstractTableModel {
 		
 			});
 			
-		} else if (columnIndex == columnNames.size() - 1) {
+		} else if (c == COLUMN.FAVORITE) {
 			
 			Routine rtn_info = elements.get(rowIndex);
 			String fav = ""+rtn_info.getID();
