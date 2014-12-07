@@ -2085,7 +2085,7 @@ public class GraphPanel extends javax.swing.JPanel {
 						
 		if (graph_type == GraphPanel.FREQ_PLOT) {
 
-			series[0].add(mean_x, sum_y, false);
+			series[11].add(mean_x, sum_y, false);
 
 		} else if (graph_type == MMM_PLOT) {
 
@@ -2167,7 +2167,7 @@ public class GraphPanel extends javax.swing.JPanel {
                 System.out.println(r.getName() + " " + x + " " + y + " " 
                         + r.getSizeRmsList() + " " + r.getCountRms());
                 */
-                series[0].add(x, y, false);
+                series[11].add(x, y, false);
                 
             }
             
@@ -2208,7 +2208,7 @@ public class GraphPanel extends javax.swing.JPanel {
             
             ArrayList<Double> list = rtn_info.estimateAmortizedConstant();
             for (int i = 0; i < list.size(); i += 2) {
-                series[0].add(list.get(i), list.get(i+1), false);
+                series[11].add(list.get(i), list.get(i+1), false);
                 //System.out.println(list.get(i) + " " + list.get(i+1));
             }
             
@@ -2235,7 +2235,6 @@ public class GraphPanel extends javax.swing.JPanel {
 		} else if (group_threshold > 1 && smooth_threshold == 1) {
 			
 			//rtn_info.sortRmsListByAccesses();
-			
 			
 			/*
 			try {
@@ -2297,24 +2296,27 @@ public class GraphPanel extends javax.swing.JPanel {
 						if (k > 0) {
 							double mean_x = (k == 0) ? sum_x : sum_x / k;
 							if (graph_type == GraphPanel.FREQ_PLOT) {
-								series[0].add(mean_x, sum_y);
+								series[11].add(mean_x, sum_y);
 								if (sum_y > max_y) max_y = sum_y;
 							} else if (graph_type == MMM_PLOT) {
 								double mean_y = (k == 0) ? sum_y : sum_y / k;
 								double mean_y2 = (k == 0) ? sum_y2 : sum_y2 / k;
 								double mean_y3 = (k == 0) ? sum_y3 : sum_y3 / k;
-								series[0].add(mean_x, mean_y);
+								series[11].add(mean_x, mean_y);
 								series[5].add(mean_x, mean_y2);
-								series[11].add(mean_x, mean_y3);
+								series[0].add(mean_x, mean_y3);
 							} else if (graph_type == AMORTIZED_PLOT) {
 								double mean_y = (k == 0) ? sum_y : sum_y / k;
-								series[0].add(mean_x, mean_y);
+								series[11].add(mean_x, mean_y);
 							} else {
 								double mean_y = (k == 0) ? sum_y : sum_y / k;
-								double index = Math.round(Math.log10(sum_occurrences) / Math.log10(2));
+								double index = 11;
+                                /*
+                                double index = Math.round(Math.log10(sum_occurrences) / Math.log10(2));
 								if (index > 11) index = 11;
 								if (index < 0) index = 0;
-								series[(int)index].add(mean_x, mean_y);
+								*/
+                                series[(int)index].add(mean_x, mean_y);
 								/*
 								if (graph_type == COST_PLOT)
 									out.println(mean_x + " " + mean_y);
@@ -2334,23 +2336,23 @@ public class GraphPanel extends javax.swing.JPanel {
 			if (k > 0) {
 				double mean_x = (k == 0) ? sum_x : sum_x / k;
 				if (graph_type == GraphPanel.FREQ_PLOT) {
-					series[0].add(mean_x, sum_y, false);
+					series[11].add(mean_x, sum_y, false);
 					if (sum_y > max_y) max_y = sum_y;
 				} else if (graph_type == MMM_PLOT) {
 					double mean_y = (k == 0) ? sum_y : sum_y / k;
 					double mean_y2 = (k == 0) ? sum_y2 : sum_y2 / k;
 					double mean_y3 = (k == 0) ? sum_y3 : sum_y3 / k;
-					series[0].add(mean_x, mean_y, false);
+					series[11].add(mean_x, mean_y, false);
 					series[5].add(mean_x, mean_y2, false);
-					series[11].add(mean_x, mean_y3, false);
+					series[0].add(mean_x, mean_y3, false);
 				} else if (graph_type == AMORTIZED_PLOT) {
 					double mean_y = (k == 0) ? sum_y : sum_y / k;
-					series[0].add(mean_x, mean_y, false);
+					series[11].add(mean_x, mean_y, false);
 				} else {
 					double mean_y = (k == 0) ? sum_y : sum_y / k;
-					double index = Math.round(Math.log10(sum_occurrences) / Math.log10(2));
+					double index = 11; /*Math.round(Math.log10(sum_occurrences) / Math.log10(2));
 					if (index > 11) index = 11;
-					if (index < 0) index = 0;
+					if (index < 0) index = 0;*/
 					series[(int)index].add(mean_x, mean_y, false);
 					
 					/*
@@ -2499,19 +2501,19 @@ public class GraphPanel extends javax.swing.JPanel {
                     
 				if (graph_type == MMM_PLOT) {
 
-					series[0].add(x, sum/n, false);
+					series[11].add(x, sum/n, false);
 					series[5].add(x, sum2/n, false);
-					series[11].add(x, sum3/n, false);
+					series[0].add(x, sum3/n, false);
 
 				} else if (graph_type == AMORTIZED_PLOT || graph_type == FREQ_PLOT) {
 
-					series[0].add(x, sum/n, false);
+					series[11].add(x, sum/n, false);
 
 				} else {
 
-					double index = Math.round(Math.log10(l[current % l.length].getCalls()) / Math.log10(2));
+					double index = 11; /*Math.round(Math.log10(l[current % l.length].getCalls()) / Math.log10(2));
 					if (index > 11) index = 11;
-					if (index < 0) index = 0;
+					if (index < 0) index = 0;*/
 					series[(int)index].add(x, sum/n, false);
 
 					/*
