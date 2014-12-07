@@ -102,10 +102,11 @@ public abstract class Routine implements Comparable<Routine> {
             total_cost += i.getSumCost();
             i.setAmortizedIndex(index++);
         }
-
+        
+        
         double sum_lower = 0;
         double sum_upper = total_cost;
-        
+        /*
         for (Input i : input_tuples) {
             
             sum_lower += i.getSumCost();
@@ -113,10 +114,11 @@ public abstract class Routine implements Comparable<Routine> {
 
             if (sum_lower * amortized_constant >= sum_upper) {
                 amortized_cut_index = i.getAmortizedIndex();
-                System.out.println("Computed cut index is: " + amortized_cut_index);
+                //System.out.println("Computed cut index is: " + amortized_cut_index);
                 break;
             }
         }
+        */
         
         sum_upper = total_cost;
         sum_lower = 0;
@@ -124,6 +126,7 @@ public abstract class Routine implements Comparable<Routine> {
         double min_charge = Double.MAX_VALUE; 
         double min_alpha = Double.MAX_VALUE; 
         long min_rms = Long.MAX_VALUE;
+        long cut_index = Long.MAX_VALUE;
         for (Input i : input_tuples) {
             
             sum_lower += i.getSumCost();
@@ -139,12 +142,18 @@ public abstract class Routine implements Comparable<Routine> {
                 min_charge = charge;
                 min_alpha = alpha;
                 min_rms = i.getSize();
+                cut_index = i.getAmortizedIndex();
             }
         }
         
+        amortized_cut_index = cut_index;
+        amortized_constant = min_alpha;
+        
+        /*
         System.out.println("Min alpha is: " + min_alpha);
         System.out.println("Given by rms: " + min_rms);
         System.out.println("Charge is: " + min_charge);
+        */
     }
 
     private void sortInputTuplesByAvgCost() {
@@ -293,62 +302,12 @@ public abstract class Routine implements Comparable<Routine> {
 		
         if (amortized_cut_index < 0)
             computeAmortizedCutIndex();
-        
-        if (sort_status != SortOrder.BY_INPUT) 
-            sortInputTuplesByInput();
-        
-        //System.out.println("Cut index is: " + amortized_cut_index);
-        System.out.println("Amortized constant: " + amortized_constant);
-        
+
         if (i.getAmortizedIndex() > amortized_cut_index) {
-            //System.out.println("Amortized cost: " + i.getSize() + " - " + 0);
             return 0;
         }
             
-        //System.out.println("Amortized cost: " + i.getSize() + " - " + amortized_constant * i.getAvgCost());
         return (1 + amortized_constant) * i.getAvgCost();
-        //return i.getAvgCost();
-        
-        /*
-		if (Main.getChartCostMode() != this.chart_cost_mode) {
-            this.chart_cost_mode = Main.getChartCostMode();
-            last_amortized_n = -1;
-        }
-        
-		long i = 0;
-		double am_value = 0;
-        double budget = 0;
-        double alpha = getAmortizedConstant();
-        
-		// Use cache if possible...
-		if (last_amortized_n != -1 && n >= last_amortized_n) {
-			budget = last_amortized_budget;
-			i = last_amortized_index + 1;
-		}
-        
-		for(; i < input_tuples.size(); i++) {
-			Input s = input_tuples.get((int)i);
-			if (s.getSize() > n) {
-				i--;
-				break;
-			}
-              
-            if (s.getSumCost() < budget) {
-                budget -= s.getSumCost();
-                am_value = 0;
-            } else {
-                am_value = ((alpha + 1) * s.getSumCost()) / s.getCalls(); 
-                budget = budget + (alpha * s.getSumCost()); 
-            }
-		}
-		
-		// Update cache
-		last_amortized_budget = budget;
-		last_amortized_n = n;
-		last_amortized_index = i;
-
-        return am_value;
-        */
 	}
     
     public ArrayList<Double> estimateAmortizedConstant() {

@@ -7,6 +7,7 @@ import java.awt.geom.Rectangle2D;
 import java.util.*;
 import javax.swing.Box;
 import org.jfree.chart.*;
+import org.jfree.chart.annotations.XYTextAnnotation;
 import org.jfree.chart.axis.*;
 import org.jfree.chart.plot.*;
 import org.jfree.chart.renderer.xy.*;
@@ -107,6 +108,8 @@ public class GraphPanel extends javax.swing.JPanel {
 				break;
 		}
 		
+        legend = false;
+        
 		chart = ChartFactory.createScatterPlot(
 												null, // title
 												null, // x axis label
@@ -118,14 +121,16 @@ public class GraphPanel extends javax.swing.JPanel {
 												false // urls?
 												);
 		
-		chart.setAntiAlias(false);
+		chart.setAntiAlias(true);
 		plot = (XYPlot) chart.getPlot();
 		plot.setBackgroundPaint(Color.WHITE);
 		plot.setAxisOffset(new RectangleInsets(0.0, 0.0, 0.0, 0.0));
 		plot.setDomainGridlinePaint(Color.LIGHT_GRAY);
 		plot.setRangeGridlinePaint(Color.LIGHT_GRAY);
-		if (legend) plot.setFixedLegendItems(buildLegend());
-		
+		if (legend) { 
+            plot.setFixedLegendItems(buildLegend());
+        }
+            
 		// For routine plot we use the standard renderer, instead for all other
 		// graph we use a custom sampling renderer
 		if (graph_type == RTN_PLOT || graph_type == RATIO_TUPLES_PLOT
@@ -144,7 +149,7 @@ public class GraphPanel extends javax.swing.JPanel {
 			
 			// Associate each series with a color, shape, line, etc
 			
-			renderer.setSeriesOutlinePaint(i, colors[i]);
+			renderer.setSeriesOutlinePaint(i, colors[colors.length-1 - i]);
 			if (graph_type == RTN_PLOT) {
 
 				renderer.setSeriesShape(i, new Rectangle2D.Double(-2.5, -2.5, 3.0, 3.0));
@@ -224,9 +229,19 @@ public class GraphPanel extends javax.swing.JPanel {
             } else {
 			
 				renderer.setSeriesShape(i, new Rectangle2D.Double(-2.5, -2.5, 3.0, 3.0));
-				renderer.setSeriesPaint(i, colors[i]);
+				renderer.setSeriesPaint(i, colors[colors.length-1 - i]);
 				((XYLineAndShapeRenderer)renderer).setUseOutlinePaint(true);
 			
+                if (graph_type == COST_PLOT && i == 0) {
+                    
+                    XYLineAndShapeRenderer r = (XYLineAndShapeRenderer) renderer;
+                    r.setUseOutlinePaint(false);
+                    renderer.setSeriesShape(i, new Rectangle2D.Double(-0.5, -0.5, 0.5, 0.5));
+                    r.setSeriesLinesVisible(i, true);
+                    r.setSeriesStroke(i, new BasicStroke(4f, BasicStroke.JOIN_ROUND,
+                            BasicStroke.JOIN_BEVEL));
+                }
+                
 			}
 		}
 		((XYLineAndShapeRenderer)renderer).setDrawOutlines(true);
@@ -265,9 +280,9 @@ public class GraphPanel extends javax.swing.JPanel {
 		LegendItemCollection legenditemcollection = new LegendItemCollection();
 		if (graph_type == MMM_PLOT) {
 			
-			LegendItem legenditem = new LegendItem("Maximum cost", "-", null, null, Plot.DEFAULT_LEGEND_ITEM_BOX, colors[11]);
-			LegendItem legenditem1 = new LegendItem("Average cost", "-", null, null, Plot.DEFAULT_LEGEND_ITEM_BOX, colors[5]);
-			LegendItem legenditem2 = new LegendItem("Minimum cost", "-", null, null, Plot.DEFAULT_LEGEND_ITEM_BOX, colors[0]);
+			LegendItem legenditem = new LegendItem("Worst", "-", null, null, Plot.DEFAULT_LEGEND_ITEM_BOX, colors[11]);
+			LegendItem legenditem1 = new LegendItem("Average", "-", null, null, Plot.DEFAULT_LEGEND_ITEM_BOX, colors[5]);
+			LegendItem legenditem2 = new LegendItem("Best", "-", null, null, Plot.DEFAULT_LEGEND_ITEM_BOX, colors[0]);
 			legenditemcollection.add(legenditem);
 			legenditemcollection.add(legenditem1);
 			legenditemcollection.add(legenditem2);
@@ -650,6 +665,9 @@ public class GraphPanel extends javax.swing.JPanel {
         groupMenuButtonGroup3.add(jRadioButtonMenuItem15);
 
         setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        setMaximumSize(new java.awt.Dimension(290, 250));
+        setMinimumSize(new java.awt.Dimension(290, 250));
+        setPreferredSize(new java.awt.Dimension(290, 250));
         setLayout(new javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS));
 
         jToolBar1.setBorder(null);
@@ -789,7 +807,7 @@ public class GraphPanel extends javax.swing.JPanel {
                 jButton4ActionPerformed(evt);
             }
         });
-        if (graph_type != AMORTIZED_PLOT)
+        if (true || graph_type != AMORTIZED_PLOT)
         jButton4.setVisible(false);
         jToolBar1.add(jButton4);
 
@@ -813,7 +831,7 @@ public class GraphPanel extends javax.swing.JPanel {
         jToolBar1.add(filler1);
 
         colorLegend1.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        if (graph_type == FREQ_PLOT
+        if (true || graph_type == FREQ_PLOT
             || graph_type == MMM_PLOT
             || graph_type == RTN_PLOT
             || graph_type == EXTERNAL_INPUT_PLOT
@@ -919,7 +937,7 @@ public class GraphPanel extends javax.swing.JPanel {
 				return "frequency";
 			
 			case AMORTIZED_PLOT:
-				return "α(rms)";
+				return "amortized cost";
 				
 			case RTN_PLOT: 
 				return "percentage of routines";
@@ -1029,15 +1047,23 @@ public class GraphPanel extends javax.swing.JPanel {
                 } else {
                     s = "DRMS frequency plot"; break;
                 }
-            case MMM_PLOT: s = "Min/Avg/Max cost plot"; break;
+            case MMM_PLOT: s = "Best/Avg/Worst cost plot"; break;
 			case TOTALCOST_PLOT: s = "Total cost plot"; break;
 			case VAR_PLOT: s = "Cost variance plot"; break;
 			case RTN_PLOT: s = "Program statistics plot"; break;
             case RATIO_TUPLES_PLOT: s = "Ratio #DRMS/#RMS plot"; break;
             case EXTERNAL_INPUT_PLOT: s = "External input plot"; break;
             case ALPHA_PLOT: s = "Alpha plot"; break;
-			case AMORTIZED_PLOT:  s = "Amortized cost plot"; break;
-			case 
+			case AMORTIZED_PLOT:  
+                s = "Amortized cost plot";
+                if (false && rtn_info != null) {
+                    double alpha = ((int)(rtn_info.getAmortizedConstant() * 1000));
+                    alpha /= 1000;
+                    s += " (α = " + alpha + ")";  
+                }
+                break;
+                
+            case 
                     RATIO_PLOT: s = "Curve bounding plot - T(n) / ";
 							double[] rc = Input.getRatioConfig();
 							int k = 0;
@@ -1050,7 +1076,7 @@ public class GraphPanel extends javax.swing.JPanel {
 								else s += "n^" + rc[0];
 							}
 							if (rc[1] != 0) {
-								if (rc[0] != 0) s += " * ";
+								if (rc[0] != 0) s += " ";
 								if (rc[1] == 1) s += "log(n)";
 								else s += "log(n)^" + rc[1];
 							}
@@ -1349,7 +1375,8 @@ public class GraphPanel extends javax.swing.JPanel {
 			java.awt.image.BufferedImage img =
 					new java.awt.image.BufferedImage(this.chartPanel.getWidth(),
 													this.chartPanel.getHeight(),
-													java.awt.image.BufferedImage.TYPE_INT_RGB);
+                                                    java.awt.image.BufferedImage.TYPE_INT_ARGB);
+													//java.awt.image.BufferedImage.TYPE_INT_RGB);
 			java.awt.Graphics2D g = img.createGraphics();
 			this.chartPanel.paint(g);
 			g.dispose();
@@ -1786,6 +1813,7 @@ public class GraphPanel extends javax.swing.JPanel {
         
 		disableNotification(true);
 		for (int i = 0; i < series.length; i++) series[i].clear();
+        plot.clearAnnotations();
 		disableNotification(false);
 		
 		if (this.rtn_info != null && graph_type != RTN_PLOT
@@ -1880,6 +1908,29 @@ public class GraphPanel extends javax.swing.JPanel {
 		
 	}
 	
+    public void addFittedLine(double a, double b, double c) {
+        if (graph_type != COST_PLOT) return;
+        if (rtn_info == null) return;
+        
+        series[11].clear();
+        plot.clearAnnotations();
+        
+        double max = rtn_info.getMaxInput() * 1.05;
+        long count = (long)(max / 50);
+        if (count <= 1) count = 1;
+        for (int i = 0; i < max; i += count) {
+            double fy = a + b * Math.pow(i, c);
+            series[0].add(i, fy, false);
+        } 
+        
+        String f = String.format("%.2f + %.2f * x^%.2f", a, b, c);
+        double top = rtn_info.getMaxCost() * 0.95;
+        XYTextAnnotation textAnnotaion = new XYTextAnnotation(f, count * 23, top);
+        Font font = textAnnotaion.getFont(); 
+        textAnnotaion.setFont(new Font(font.getFontName(), Font.BOLD, 11));
+        plot.addAnnotation(textAnnotaion); 
+    }
+    
 	private double getY(Input te, int slot) {
 		
         //System.out.println("Set getY");
@@ -1931,29 +1982,29 @@ public class GraphPanel extends javax.swing.JPanel {
 
 				if (graph_type == MMM_PLOT) {
 
-					series[0].add(x, getY(te, 0), false);
+					series[11].add(x, getY(te, 0), false);
 					series[5].add(x, getY(te, 1), false);
-					series[11].add(x, getY(te, 2), false);
+					series[0].add(x, getY(te, 2), false);
 
 				} else if (graph_type == FREQ_PLOT) {
 
-                    int index = 0;
+                    int index = 11;
                     /*
                     if (main_window.hasDistinctRms())
                         index = (int)(((double)1-te.getRatioSumRmsRvms())*10);
 					*/
                     series[index].add(x, getY(te, 0), false);
                 
-                } else if (graph_type == AMORTIZED_PLOT) {
+                } else if (graph_type == AMORTIZED_PLOT || graph_type == RATIO_PLOT) {
                     
-                    series[0].add(x, getY(te, 0), false);
+                    series[11].add(x, getY(te, 0), false);
                     
 				} else {
 
 					y = getY(te, 0);
-					double index = Math.round(Math.log10(te.getCalls()) / Math.log10(2));
+                    double index = 11.0; /*Math.round(Math.log10(te.getCalls()) / Math.log10(2));
 					if (index > 11) index = 11;
-					if (index < 0) index = 0;
+					if (index < 0) index = 0;*/
 					series[(int)index].add(x, y, false);
 
 				}
@@ -2009,6 +2060,8 @@ public class GraphPanel extends javax.swing.JPanel {
 		
 	}
 	
+    
+    
 	private void add_group_point() {
 		
 		double mean_x = sum_x / elem_slot;
@@ -2066,7 +2119,8 @@ public class GraphPanel extends javax.swing.JPanel {
         
 		for (int i = 0; i < series.length; i++) series[i].clear();
 		
-        if (graph_type == AMORTIZED_PLOT) updateGraphTitle();
+        if (graph_type == AMORTIZED_PLOT) 
+            updateGraphTitle();
         
         if (graph_type == RATIO_TUPLES_PLOT) {
         

@@ -277,7 +277,9 @@ public class Main {
 					s.findInLine("recent (.+)");
 					MatchResult result = s.match();
 					try {
-						recent_files.add(new File(result.group(1)));
+                        File f = new File(result.group(1));
+                        if (f.exists())
+    						recent_files.add(f);
 					} catch (Exception e) {
 						System.out.println("Recent file not valid. Ignored.");
 					}
@@ -287,6 +289,9 @@ public class Main {
 					while (tokenizer.hasMoreTokens())
 						lastSourceDir = lastSourceDir + " " +tokenizer.nextToken();
 				
+                    if (!(new File(lastSourceDir).exists()))
+                        lastSourceDir = null;
+                    
 				} else if(tag.equals("editor")) { // editor visible
 				
 					editor = true;
@@ -298,7 +303,8 @@ public class Main {
 			
 				} else { // last path
 					
-					lastReportPath = line;
+                    if (new File(line).exists())
+                        lastReportPath = line;
 					
 				}
 			

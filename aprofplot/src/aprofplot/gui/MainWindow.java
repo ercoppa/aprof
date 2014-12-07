@@ -1,6 +1,7 @@
 package aprofplot.gui;
 
 import aprofplot.*;
+import aprofplot.gui.RoutinesTableModel.COLUMN;
 import java.awt.Color;
 import java.awt.Component;
 import javax.swing.*;
@@ -9,6 +10,8 @@ import javax.swing.text.BadLocationException;
 import javax.swing.tree.*;
 import java.util.*;
 import java.io.*;
+import static javax.swing.UIManager.getSystemLookAndFeelClassName;
+import static javax.swing.UIManager.setLookAndFeel;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableRowSorter;
@@ -55,19 +58,22 @@ public class MainWindow extends javax.swing.JFrame {
 	// load function code of the selected entry in routine table in the editor?
 	private boolean linked_editor = true;
 	
+    private boolean fitting_mode = false;
+    
 	/** Creates new form MainWindow */
 	public MainWindow() {
 		
 		try {
-			
-			javax.swing.UIManager.setLookAndFeel(javax.swing.UIManager.getSystemLookAndFeelClassName());
+			setSize(875, 615);
+			setLookAndFeel(getSystemLookAndFeelClassName());
 			initComponents();
-			setExtendedState(MAXIMIZED_BOTH);
-			initGraph();
+			//setExtendedState(MAXIMIZED_BOTH);
+            initGraph();
 			refreshRecentFiles();
 			resetRoutineTableFilter();
             resetContextsTableFilter();
 			checkEditor();
+            setSize(875, 615);
             
 		} catch (Exception e) {
 		
@@ -110,6 +116,7 @@ public class MainWindow extends javax.swing.JFrame {
         jSeparator5 = new javax.swing.JToolBar.Separator();
         jToggleButton10 = new javax.swing.JToggleButton();
         jToggleButton1 = new javax.swing.JToggleButton();
+        jToggleButton3 = new javax.swing.JToggleButton();
         jToggleButton4 = new javax.swing.JToggleButton();
         jSeparator3 = new javax.swing.JToolBar.Separator();
         jButton8 = new javax.swing.JButton();
@@ -212,6 +219,7 @@ public class MainWindow extends javax.swing.JFrame {
         recentMenuItem5 = new javax.swing.JMenuItem();
         recentMenuItem6 = new javax.swing.JMenuItem();
         jMenuItem6 = new javax.swing.JMenuItem();
+        jMenuItem9 = new javax.swing.JMenuItem();
         jMenu6 = new javax.swing.JMenu();
         jMenuItem11 = new javax.swing.JMenuItem();
         jMenuItem12 = new javax.swing.JMenuItem();
@@ -491,6 +499,20 @@ public class MainWindow extends javax.swing.JFrame {
         });
         jToolBar1.add(jToggleButton1);
 
+        jToggleButton3.setFont(new java.awt.Font("Ubuntu", 1, 15)); // NOI18N
+        jToggleButton3.setText(" F ");
+        jToggleButton3.setToolTipText("Enable fitting mode");
+        jToggleButton3.setEnabled(false);
+        jToggleButton3.setFocusable(false);
+        jToggleButton3.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jToggleButton3.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jToggleButton3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jToggleButton3ActionPerformed(evt);
+            }
+        });
+        jToolBar1.add(jToggleButton3);
+
         jToggleButton4.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Unlink-icon.png"))); // NOI18N
         jToggleButton4.setSelected(true);
         jToggleButton4.setToolTipText("link/unlink plots");
@@ -605,7 +627,9 @@ public class MainWindow extends javax.swing.JFrame {
         jSplitPane4.setDividerLocation(0.75);
         jSplitPane4.setDividerSize(0);
 
-        jScrollPane5.setMinimumSize(new java.awt.Dimension(400, 300));
+        jScrollPane5.setMaximumSize(new java.awt.Dimension(600, 1));
+        jScrollPane5.setMinimumSize(new java.awt.Dimension(600, 150));
+        jScrollPane5.setPreferredSize(new java.awt.Dimension(600, 1));
 
         jPanel9.setLayout(new java.awt.GridLayout(6, 1));
         jScrollPane5.setViewportView(jPanel9);
@@ -927,6 +951,16 @@ public class MainWindow extends javax.swing.JFrame {
             }
         });
         jMenu1.add(jMenuItem6);
+
+        jMenuItem9.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_S, java.awt.event.InputEvent.CTRL_MASK));
+        jMenuItem9.setText("Add fitting log");
+        jMenuItem9.setEnabled(false);
+        jMenuItem9.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem9ActionPerformed(evt);
+            }
+        });
+        jMenu1.add(jMenuItem9);
 
         jMenu6.setText("Export");
         jMenu6.setEnabled(false);
@@ -1339,12 +1373,15 @@ public class MainWindow extends javax.swing.JFrame {
     
     public boolean isInputMetricRms() {
         
+        return true;
+        /*
         if (report == null) return true;
         
         if (report.getInputMetric() == AprofReport.InputMetric.DRMS)
             return false;
         
         return true;
+        */
     }
     
     private void failLoadReport(File file) {
@@ -1515,7 +1552,13 @@ public class MainWindow extends javax.swing.JFrame {
 		jMenu6.setEnabled(true);
 		jMenuItem12.setEnabled(true);
 		jMenuItem13.setEnabled(true);
-		
+        
+        // enable add fit
+        jMenuItem9.setEnabled(true);
+		jToggleButton3.setEnabled(false);
+        if (this.fitting_mode)
+            this.showFittingData(false);
+        
 		resetRoutineTableFilter();
 		
 		// Update some labels in the GUI
@@ -1575,6 +1618,11 @@ public class MainWindow extends javax.swing.JFrame {
 		
 	}
 
+    public void updateRoutineTableConfig(COLUMN[] config) {
+        RoutinesTableModel m = (RoutinesTableModel)jTable1.getModel();
+        m.setColumnConfig(config);
+    }
+    
 	private boolean saveForm() {
 	
 		if (jButton7.isEnabled()) {
@@ -1902,6 +1950,12 @@ public class MainWindow extends javax.swing.JFrame {
         if (jCheckBoxMenuItem7.isSelected()) AmortizedGraphPanel.setRoutine(r);
         //if (jCheckBoxMenuItem24.isSelected()) AlphaGraphPanel.setRoutine(r);
 
+        if (isVisibleFittingData() && jCheckBoxMenuItem4.isSelected()) {
+            Fit f = report.getFit(r.getID());
+            double[] p = f.getParams();
+            CostGraphPanel.addFittedLine(p[0], p[1], p[2]);
+        }
+        
         r.sortInputTuplesByInput();
         Iterator i = r.getInputTuplesIterator();
         while (i.hasNext()) {
@@ -2069,9 +2123,11 @@ public class MainWindow extends javax.swing.JFrame {
 		
 		// Routine filter button (corner routine table)
 		if (report != null) {
+            RoutinesTableModel m = (RoutinesTableModel)jTable1.getModel();
 			java.util.ArrayList<String> liblist = null;
 			liblist = report.getLibList();
-			(new RoutinesFilterDialog(this, true, liblist, routines_filter_criteria)).setVisible(true);
+			(new RoutinesFilterDialog(this, true, liblist, routines_filter_criteria,
+                m.getColumnConfig())).setVisible(true);
 		}
 	}//GEN-LAST:event_jButton5ActionPerformed
 
@@ -2166,11 +2222,14 @@ public class MainWindow extends javax.swing.JFrame {
 		ArrayList<File> r = Main.getRecentFiles();
 		if (entry < 0 || entry >= r.size()) return;
 	
-		java.io.File f = Main.getRecentFiles().get(entry);
+		File f = Main.getRecentFiles().get(entry);
         saveForm();
         disableSaveCommand();
         loadReport(f);
-		
+
+        if (f.exists())
+            Main.setLastReportPath(f.getParent());
+            
 	}
 	
 	private void recentMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_recentMenuItem1ActionPerformed
@@ -2687,10 +2746,12 @@ public class MainWindow extends javax.swing.JFrame {
         
         // Contexts filter button (corner contexts table)
 		if (rtn_info != null) {
+            RoutinesTableModel m = (RoutinesTableModel)jTable1.getModel();
 			ArrayList<String> liblist = null;
 			liblist = report.getLibList();
 			(new RoutinesFilterDialog(this, true, liblist, 
-                    contexts_filter_criteria, false)).setVisible(true);
+                    contexts_filter_criteria, false, m.getColumnConfig()))
+                .setVisible(true);
 		}
     }//GEN-LAST:event_jButton12ActionPerformed
 
@@ -3068,14 +3129,98 @@ public class MainWindow extends javax.swing.JFrame {
 		}
     }//GEN-LAST:event_jMenuItem21ActionPerformed
 
+    private void jMenuItem9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem9ActionPerformed
+        
+        // add fitting log
+        if (this.report == null) return;
+        
+        JFileChooser chooser = new JFileChooser();
+		chooser.setDialogTitle("Choose fitting log");
+		
+        String lastReportPath = Main.getLastReportPath();
+		if (lastReportPath != null)
+            while (!lastReportPath.equals("")) {
+                
+                File f = new File(lastReportPath);
+                if (f.exists()) {
+                    chooser.setCurrentDirectory(f);
+                    break;
+                } else
+                    lastReportPath = f.getParent();
+                
+            }
+        
+        FileNameExtensionFilter filter = 
+            new FileNameExtensionFilter("fitting log (*.fitlog)", "fitlog");
+        
+		chooser.setFileFilter(filter);
+		chooser.setAcceptAllFileFilterUsed(false);
+		int choice = chooser.showOpenDialog(this);
+		if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
+			File file = chooser.getSelectedFile();
+			report.addFitter(file);
+            
+            if (report.hasFitter())
+                jToggleButton3.setEnabled(true);
+		}
+    }//GEN-LAST:event_jMenuItem9ActionPerformed
+
+    private void jToggleButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton3ActionPerformed
+        showFittingData(!this.fitting_mode);
+    }//GEN-LAST:event_jToggleButton3ActionPerformed
+
+    public boolean isVisibleFittingData() {
+        return this.fitting_mode;
+    }
+    
+    private void showFittingData(boolean enable) {
+        
+        this.fitting_mode = enable;
+        
+        if (enable) {
+            
+            jSplitPane2.setRightComponent(null);
+            RoutinesTableModel m = (RoutinesTableModel)jTable1.getModel();
+            m.updateColumns();
+            m.refresh();
+            
+            routines_filter_criteria[4] = "0.1";
+            routines_filter_criteria[5] = "100";
+            routines_filter_criteria[6] = "0.92";
+            routines_filter_criteria[7] = "Hide";
+            refreshRoutinesTableFilter();
+            
+        } else {
+            RoutinesTableModel m = (RoutinesTableModel)jTable1.getModel();
+            m.updateColumns();
+            m.refresh();
+            jSplitPane2.setRightComponent(jTabbedPane1);
+            jSplitPane2.setResizeWeight(0.9);
+            jSplitPane2.setPreferredSize(new java.awt.Dimension(300, 300));
+            jSplitPane2.setDividerLocation(0.75);
+            
+            routines_filter_criteria[4] = null;
+            routines_filter_criteria[5] = null;
+            routines_filter_criteria[6] = null;
+            routines_filter_criteria[7] = null;
+            refreshRoutinesTableFilter();
+        }
+        
+    }
+    
 	private void resetRoutineTableFilter() {
 		
 		// reset filter over routine table
-		routines_filter_criteria = new String[4];
+		routines_filter_criteria = new String[8];
 		routines_filter_criteria[0] = null;
 		routines_filter_criteria[1] = null;
 		routines_filter_criteria[2] = null;
 		routines_filter_criteria[3] = "5";
+        routines_filter_criteria[4] = null;
+        routines_filter_criteria[5] = null;
+        routines_filter_criteria[6] = null;
+        routines_filter_criteria[7] = null;
+        
 		refreshRoutinesTableFilter();
 		
 	}
@@ -3105,8 +3250,10 @@ public class MainWindow extends javax.swing.JFrame {
 		routines_filter_criteria = criteria;
 		java.util.ArrayList<String> blacklist = Main.getBlackList();
 		
-		List<RowFilter<TableModel, Integer>> filters = new ArrayList<RowFilter<TableModel, Integer>>(4);
+		List<RowFilter<TableModel, Integer>> filters = new ArrayList<RowFilter<TableModel, Integer>>();
 		
+        RoutinesTableModel m = (RoutinesTableModel)jTable1.getModel();
+        
 		// Filtering based on blacklist
 		if (Main.getBlackListEnabled() && blacklist.size() > 0) {
 			
@@ -3126,15 +3273,18 @@ public class MainWindow extends javax.swing.JFrame {
 			filters.add(f);
 		}
 		
+        int index = -1;
+        
 		// Filtering based on % time
-		if (criteria[0] != null) {
+        index = m.getIndexOfColumn(COLUMN.P_COST);
+		if (criteria[0] != null && index >= 0) {
 			
 			List<RowFilter<TableModel,Integer>> timeperc_filters = new ArrayList<RowFilter<TableModel,Integer>>(2);
 			RowFilter<TableModel, Integer> timeperc_equal_filter = null;
 			RowFilter<TableModel, Integer> timeperc_greater_filter = null;
 			try {
-				timeperc_equal_filter = RowFilter.numberFilter(RowFilter.ComparisonType.EQUAL, new Double(Double.parseDouble(criteria[0])), 4);
-				timeperc_greater_filter = RowFilter.numberFilter(RowFilter.ComparisonType.AFTER, new Double(Double.parseDouble(criteria[0])), 4);
+				timeperc_equal_filter = RowFilter.numberFilter(RowFilter.ComparisonType.EQUAL, new Double(Double.parseDouble(criteria[0])), index);
+				timeperc_greater_filter = RowFilter.numberFilter(RowFilter.ComparisonType.AFTER, new Double(Double.parseDouble(criteria[0])), index);
 			} catch (java.util.regex.PatternSyntaxException e) {
 				return;
 			}
@@ -3145,12 +3295,13 @@ public class MainWindow extends javax.swing.JFrame {
 		}
 		
 		// Filtering based on library name
-		if (criteria[1] != null) {
-			
+        index = m.getIndexOfColumn(COLUMN.LIB);
+		if (criteria[1] != null && index >= 0) {
+            
 			List<RowFilter<TableModel,Integer>> lib_filters = new ArrayList<RowFilter<TableModel,Integer>>(1);
 			RowFilter<TableModel, Integer> lib_filter = null;
 			try {
-				lib_filter = javax.swing.RowFilter.regexFilter(criteria[1], 1);
+				lib_filter = javax.swing.RowFilter.regexFilter(criteria[1], index);
 			} catch (java.util.regex.PatternSyntaxException e) {
 				return;
 			}
@@ -3160,15 +3311,16 @@ public class MainWindow extends javax.swing.JFrame {
 		}
 		
 		// Filtering based on % of calls
-		if (criteria[2] != null) {
-			
+        index = m.getIndexOfColumn(COLUMN.P_CALL);
+		if (criteria[2] != null && index >= 0) {
+            
 			List<RowFilter<TableModel,Integer>> callsperc_filters = new ArrayList<RowFilter<TableModel,Integer>>(2);
 			javax.swing.RowFilter<TableModel, Integer> callsperc_equal_filter = null;
 			javax.swing.RowFilter<TableModel, Integer> callsperc_greater_filter = null;
 			try {
 				
-				callsperc_equal_filter = RowFilter.numberFilter(RowFilter.ComparisonType.EQUAL, new Double(Double.parseDouble(criteria[2])), 7);
-				callsperc_greater_filter = RowFilter.numberFilter(RowFilter.ComparisonType.AFTER, new Double(Double.parseDouble(criteria[2])), 7);
+				callsperc_equal_filter = RowFilter.numberFilter(RowFilter.ComparisonType.EQUAL, new Double(Double.parseDouble(criteria[2])), index);
+				callsperc_greater_filter = RowFilter.numberFilter(RowFilter.ComparisonType.AFTER, new Double(Double.parseDouble(criteria[2])), index);
 			
 			} catch (java.util.regex.PatternSyntaxException e) {
 				return;
@@ -3180,15 +3332,16 @@ public class MainWindow extends javax.swing.JFrame {
 		}
 		
 		// Filtering based on # rms
-		if (criteria[3] != null) {
+        index = m.getIndexOfColumn(COLUMN.N_INPUT);
+		if (criteria[3] != null && index >= 0) {
 			
 			List<RowFilter<TableModel,Integer>> avgratio_filters = new ArrayList<RowFilter<TableModel,Integer>>(2);
 			RowFilter<TableModel, Integer> avgratio_equal_filter = null;
 			RowFilter<TableModel, Integer> avgratio_greater_filter = null;
 			try {
 				
-				avgratio_equal_filter = RowFilter.numberFilter(RowFilter.ComparisonType.EQUAL, new Double(Double.parseDouble(criteria[3])), 3);
-				avgratio_greater_filter = RowFilter.numberFilter(RowFilter.ComparisonType.AFTER, new Double(Double.parseDouble(criteria[3])), 3);
+				avgratio_equal_filter = RowFilter.numberFilter(RowFilter.ComparisonType.EQUAL, new Double(Double.parseDouble(criteria[3])), index);
+				avgratio_greater_filter = RowFilter.numberFilter(RowFilter.ComparisonType.AFTER, new Double(Double.parseDouble(criteria[3])), index);
 			
 			} catch (java.util.regex.PatternSyntaxException e) {
 				return;
@@ -3199,6 +3352,78 @@ public class MainWindow extends javax.swing.JFrame {
 			filters.add(f6);
 		}
 
+        // Filtering based b bound values
+        index = m.getIndexOfColumn(COLUMN.FIT_B);
+		if (criteria[4] != null && criteria[5] != null && index >= 0) {
+            
+			List<RowFilter<TableModel,Integer>> avgratio_filters = new ArrayList<RowFilter<TableModel,Integer>>(2);
+			RowFilter<TableModel, Integer> avgratio_equal_filter = null;
+			RowFilter<TableModel, Integer> avgratio_greater_filter = null;
+            RowFilter<TableModel, Integer> avgratio_lesser_filter = null;
+			try {
+                
+				avgratio_lesser_filter = RowFilter
+                    .numberFilter(RowFilter.ComparisonType.AFTER, 
+                        Double.parseDouble(criteria[4]), index);
+				avgratio_greater_filter = RowFilter
+                    .numberFilter(RowFilter.ComparisonType.BEFORE, 
+                        Double.parseDouble(criteria[5]), index);
+                
+			} catch (java.util.regex.PatternSyntaxException e) {
+				return;
+			}
+			
+			avgratio_filters.add(avgratio_greater_filter);
+            avgratio_filters.add(avgratio_lesser_filter);
+			RowFilter<TableModel, Integer> f = RowFilter.andFilter(avgratio_filters);
+            filters.add(f);
+		}
+        
+        // Filtering fitting quality
+        index = m.getIndexOfColumn(COLUMN.FIT_R2);
+		if (criteria[6] != null && index >= 0) {
+
+			List<RowFilter<TableModel,Integer>> avgratio_filters = new ArrayList<RowFilter<TableModel,Integer>>(2);
+			RowFilter<TableModel, Integer> avgratio_equal_filter = null;
+			RowFilter<TableModel, Integer> avgratio_greater_filter = null;
+			try {
+                
+				avgratio_equal_filter = RowFilter
+                    .numberFilter(RowFilter.ComparisonType.EQUAL, 
+                        Double.parseDouble(criteria[6]), index);
+				avgratio_greater_filter = RowFilter
+                    .numberFilter(RowFilter.ComparisonType.AFTER, 
+                        Double.parseDouble(criteria[6]), index);
+			
+			} catch (java.util.regex.PatternSyntaxException e) {
+				return;
+			}
+			avgratio_filters.add(avgratio_equal_filter);
+			avgratio_filters.add(avgratio_greater_filter);
+			RowFilter<TableModel, Integer> f = RowFilter.orFilter(avgratio_filters);
+			filters.add(f);
+		}
+
+        // Filtering unfitted routine
+        index = m.getIndexOfColumn(COLUMN.FIT_A);
+		if (criteria[7] != null && index >= 0) {
+
+			List<RowFilter<TableModel,Integer>> avgratio_filters = new ArrayList<RowFilter<TableModel,Integer>>(2);
+			RowFilter<TableModel, Integer> avgratio_equal_filter = null;
+			try {
+                
+				avgratio_equal_filter = RowFilter
+                    .numberFilter(RowFilter.ComparisonType.NOT_EQUAL, 
+                        0.0, index);
+			
+			} catch (java.util.regex.PatternSyntaxException e) {
+				return;
+			}
+			avgratio_filters.add(avgratio_equal_filter);
+			RowFilter<TableModel, Integer> f = RowFilter.orFilter(avgratio_filters);
+			filters.add(f);
+		}
+        
 		routines_table_sorter.setRowFilter(RowFilter.andFilter(filters));
 	}
 
@@ -4051,6 +4276,9 @@ public class MainWindow extends javax.swing.JFrame {
     
     public boolean hasDrmsStats() {
         
+        if (isInputMetricRms())
+            return false;
+        
         if (report != null && report.hasInputStats())
             return true;
         
@@ -4182,6 +4410,7 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JMenuItem jMenuItem6;
     private javax.swing.JMenuItem jMenuItem7;
     private javax.swing.JMenuItem jMenuItem8;
+    private javax.swing.JMenuItem jMenuItem9;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel11;
     private javax.swing.JPanel jPanel2;
@@ -4224,6 +4453,7 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JToggleButton jToggleButton1;
     private javax.swing.JToggleButton jToggleButton10;
     private javax.swing.JToggleButton jToggleButton2;
+    private javax.swing.JToggleButton jToggleButton3;
     private javax.swing.JToggleButton jToggleButton4;
     private javax.swing.JToolBar jToolBar1;
     private javax.swing.JToolBar jToolBar2;

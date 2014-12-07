@@ -2,9 +2,11 @@ package aprofplot;
 
 import java.io.*;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.MatchResult;
 
-public class AprofReport {
+public class AprofReport {    
 
     public enum InputMetric {
         RMS, DRMS, INVALID
@@ -41,6 +43,8 @@ public class AprofReport {
     // index 4: fatal error
     private int[] parse_errors = new int[]{0, 0, 0, 0, 0};
 
+    private fitter fitter = null;
+    
 	public AprofReport(File f) throws Exception {
 
 		file = f;
@@ -606,6 +610,23 @@ public class AprofReport {
             w += "Skipped " + parse_errors[3] + " broken contexts\n";
         
         return w;
+    }
+    
+    public void addFitter(File fitlog) {
+        try {
+            this.fitter = new fitter(fitlog);
+        } catch (IOException ex) {
+            Logger.getLogger(AprofReport.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    public Fit getFit(long id) {
+        return fitter.getFit(id);
+    }
+    
+    public boolean hasFitter() {
+        if (fitter == null) return false;
+        return true;
     }
 }
 
