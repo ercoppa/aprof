@@ -25,7 +25,7 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RectangleInsets;
 
-public class Fit {
+public class FitModel {
     
 	/** Function: y = a0 + a1 * x ^ a2 */
 	public static class Function extends LMAFunction {

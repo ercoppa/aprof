@@ -417,6 +417,19 @@ public abstract class Routine implements Comparable<Routine> {
         return this.total_self_thread_input;
     }
     
+    public double[][] getRawData() {
+        double[] dx = new double[input_tuples.size()];
+        double[] dy = new double[input_tuples.size()];
+        for (int i = 0; i < input_tuples.size(); i++) {
+            double size = input_tuples.get(i).getSize();
+            if (size == 0)
+                size = 1.0;
+            dx[i] = size;
+            dy[i] = input_tuples.get(i).getCost();
+        }
+        return new double[][]{dx, dy};
+    }
+    
     // deprecated
     public double getRatioSumRmsRvms() { return 0; }
     public double getRatioRvmsRms() { return 0; }

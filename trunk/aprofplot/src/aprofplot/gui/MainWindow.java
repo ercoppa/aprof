@@ -160,6 +160,7 @@ public class MainWindow extends javax.swing.JFrame {
                 try {
                     if (renderer == null) {
                         System.out.println("Renderer is null");
+                        System.out.println("row: " + row + " col: " + column);
                         return null;
                     }
                     Component c = super.prepareRenderer(renderer, row, column);
@@ -953,7 +954,7 @@ public class MainWindow extends javax.swing.JFrame {
         jMenu1.add(jMenuItem6);
 
         jMenuItem9.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_S, java.awt.event.InputEvent.CTRL_MASK));
-        jMenuItem9.setText("Add fitting log");
+        jMenuItem9.setText("Run curve fitter");
         jMenuItem9.setEnabled(false);
         jMenuItem9.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -1556,6 +1557,7 @@ public class MainWindow extends javax.swing.JFrame {
         // enable add fit
         jMenuItem9.setEnabled(true);
 		jToggleButton3.setEnabled(false);
+        jToggleButton3.setSelected(false);
         if (this.fitting_mode)
             this.showFittingData(false);
         
@@ -3134,6 +3136,7 @@ public class MainWindow extends javax.swing.JFrame {
         // add fitting log
         if (this.report == null) return;
         
+        /*
         JFileChooser chooser = new JFileChooser();
 		chooser.setDialogTitle("Choose fitting log");
 		
@@ -3163,6 +3166,44 @@ public class MainWindow extends javax.swing.JFrame {
             if (report.hasFitter())
                 jToggleButton3.setEnabled(true);
 		}
+        */
+        
+        loading = true;
+		jProgressBar1.setVisible(true);
+		jProgressBar1.setEnabled(true);
+		
+		SwingWorker worker = new SwingWorker<Boolean, Void>() {
+			
+			@Override
+			public Boolean doInBackground() {
+
+                boolean failed = false;
+                
+				try {
+                    report.addFitter(null);
+                    if (report.hasFitter())
+                        jToggleButton3.setEnabled(true);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    failed = true;
+				}
+                
+                loading = false;
+                jProgressBar1.setVisible(false);
+                jProgressBar1.setEnabled(false);
+                
+                if (failed || report.hasFatalError()) {
+                    return false;
+                }
+                /*
+                if (report.hasWarnings())
+                    showWanrnings(report.getWarnings());
+                */
+				return true;
+			}
+
+		};
+		worker.execute();
     }//GEN-LAST:event_jMenuItem9ActionPerformed
 
     private void jToggleButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton3ActionPerformed

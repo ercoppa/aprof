@@ -107,8 +107,6 @@ public class GraphPanel extends javax.swing.JPanel {
 				legend = true;
 				break;
 		}
-		
-        legend = false;
         
 		chart = ChartFactory.createScatterPlot(
 												null, // title
@@ -1909,6 +1907,7 @@ public class GraphPanel extends javax.swing.JPanel {
 	}
 	
     public void addFittedLine(double a, double b, double c) {
+        
         if (graph_type != COST_PLOT) return;
         if (rtn_info == null) return;
         
@@ -1916,19 +1915,37 @@ public class GraphPanel extends javax.swing.JPanel {
         plot.clearAnnotations();
         
         double max = rtn_info.getMaxInput() * 1.05;
-        long count = (long)(max / 50);
+        long count = (long)(max / 300);
         if (count <= 1) count = 1;
         for (int i = 0; i < max; i += count) {
             double fy = a + b * Math.pow(i, c);
             series[0].add(i, fy, false);
         } 
+
+        String f = String.format("fit = %.2f + %.2f * x^%.2f", a, b, c);
         
-        String f = String.format("%.2f + %.2f * x^%.2f", a, b, c);
+        LegendItemCollection legenditemcollection = new LegendItemCollection();
+        /*
+        LegendItem legenditem1 = new LegendItem("", "-", null, null, 
+            Plot.DEFAULT_LEGEND_ITEM_BOX, colors[0]);
+        */
+        LegendItem legenditem2 = new LegendItem(f, "-", null, null, 
+            Plot.DEFAULT_LEGEND_ITEM_BOX, Color.RED);
+
+        //legenditemcollection.add(legenditem1);
+        legenditemcollection.add(legenditem2);
+        plot.setFixedLegendItems(legenditemcollection);
+        
+        if (chart.getLegend() == null)
+            chart.addLegend(new LegendTitle(plot));
+        
+        /*
         double top = rtn_info.getMaxCost() * 0.95;
-        XYTextAnnotation textAnnotaion = new XYTextAnnotation(f, count * 23, top);
+        XYTextAnnotation textAnnotaion = new XYTextAnnotation(f, max * 0.3, top);
         Font font = textAnnotaion.getFont(); 
         textAnnotaion.setFont(new Font(font.getFontName(), Font.BOLD, 11));
         plot.addAnnotation(textAnnotaion); 
+        */
     }
     
 	private double getY(Input te, int slot) {
@@ -2553,6 +2570,10 @@ public class GraphPanel extends javax.swing.JPanel {
         
 		for (int i = 0; i < series.length; i++) series[i].clear();
 
+        if (graph_type == COST_PLOT && chart.getLegend() != null) {
+            chart.removeLegend();
+        }
+        
         max_x = domainAxis.getUpperBound();
 		max_y = rangeAxis.getUpperBound();
         

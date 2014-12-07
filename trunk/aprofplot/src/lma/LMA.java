@@ -390,22 +390,22 @@ public class LMA {
 		iterationCount = 0;
 		if (Double.isNaN(calculateChi2())) throw new RuntimeException("INITIAL PARAMETERS ARE ILLEGAL.");
 		do {
-            System.out.println("\n\nIteratorn #" + iterationCount);
-            System.out.println("PARAM:\t" + ArrayToString(this.parameters));
+            //System.out.println("\n\nIteratorn #" + iterationCount);
+            //System.out.println("PARAM:\t" + ArrayToString(this.parameters));
             chi2 = calculateChi2();
-			System.out.println("CHI2:\t" + String.format("%.9f", chi2));
+			//System.out.println("CHI2:\t" + String.format("%.9f", chi2));
 			if (verbose) System.out.println(iterationCount + ": chi2 = " + chi2 + ", " + Arrays.toString(parameters));
 			updateAlpha();
-            System.out.println("ALPHA:\t" + alpha);
+            //System.out.println("ALPHA:\t" + alpha);
 			updateBeta();
-			System.out.println("BETHA:\t" + ArrayToString(beta));
+			//System.out.println("BETHA:\t" + ArrayToString(beta));
 			try {
 				solveIncrements();
-				System.out.println("IPARAM:\t" + ArrayToString(incrementedParameters));
+				//System.out.println("IPARAM:\t" + ArrayToString(incrementedParameters));
 				
 				incrementedChi2 = calculateIncrementedChi2();
 
-                System.out.println("ICHI2:\t" + incrementedChi2);
+                //System.out.println("ICHI2:\t" + incrementedChi2);
 
                 // The guess results to worse chi2 or NaN - make the step smaller
 				if (incrementedChi2 >= chi2 || Double.isNaN(incrementedChi2)) {
@@ -416,8 +416,8 @@ public class LMA {
 					lambda /= lambdaFactor;
 					updateParameters();
 				}
-                System.out.println("LAMBDA:\t" + String.format("%.9f", lambda));
-                System.out.println("PARAM:\t" + ArrayToString(this.parameters));
+                //System.out.println("LAMBDA:\t" + String.format("%.9f", lambda));
+                //System.out.println("PARAM:\t" + ArrayToString(this.parameters));
 			}
 			catch (LMAMatrix.InvertException e) {
 				// If the error happens on the last round, the fit has failed - throw the error out
@@ -435,14 +435,11 @@ public class LMA {
                     this.parameters = new double[]{0.5, 0.5, 0.5};
                     lambda = 0.000001;
                 }
-                System.out.println("LAMBDA:\t" + String.format("%.9f", lambda));
+                //System.out.println("LAMBDA:\t" + String.format("%.9f", lambda));
 
                 continue;
 			}
 			iterationCount++;
-
-            //if (iterationCount == 10)
-            ///    System.exit(0);
 
 		} while (!stop());
 		printEndReport();
@@ -480,7 +477,7 @@ public class LMA {
 	 */
 	public boolean stop() {
         boolean t = Math.abs(chi2 - incrementedChi2) < minDeltaChi2 || iterationCount > maxIterations;
-        System.out.println("Check stop: " + t + " " + chi2 + " " + incrementedChi2);
+        //System.out.println("Check stop: " + t + " " + chi2 + " " + incrementedChi2);
 		return t;
 	}
 	
@@ -499,7 +496,7 @@ public class LMA {
 		alpha.invert(); // throws InvertException if matrix is singular
 		//System.out.println("InvAlpha:\t" + alpha);
 		alpha.multiply(beta, da);
-		System.out.println("DA:\t" + ArrayToString(da));
+		//System.out.println("DA:\t" + ArrayToString(da));
 		for (int i = 0; i < parameters.length; i++) {
 			incrementedParameters[i] = parameters[i] + da[i];
 		}
@@ -736,4 +733,7 @@ public class LMA {
 		return function.generateData(this);
 	}
 	
+    public String parametersToString() {
+        return "(" + parameters[0] + ", " + parameters[1] + ", " + parameters[2] + ")"; 
+    }
 }
