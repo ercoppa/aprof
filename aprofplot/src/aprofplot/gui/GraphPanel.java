@@ -663,9 +663,6 @@ public class GraphPanel extends javax.swing.JPanel {
         groupMenuButtonGroup3.add(jRadioButtonMenuItem15);
 
         setBorder(javax.swing.BorderFactory.createEtchedBorder());
-        setMaximumSize(new java.awt.Dimension(290, 250));
-        setMinimumSize(new java.awt.Dimension(290, 250));
-        setPreferredSize(new java.awt.Dimension(290, 250));
         setLayout(new javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS));
 
         jToolBar1.setBorder(null);

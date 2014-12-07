@@ -625,12 +625,8 @@ public class MainWindow extends javax.swing.JFrame {
 
         jPanel3.setLayout(new java.awt.BorderLayout());
 
-        jSplitPane4.setDividerLocation(0.75);
-        jSplitPane4.setDividerSize(0);
-
-        jScrollPane5.setMaximumSize(new java.awt.Dimension(600, 1));
-        jScrollPane5.setMinimumSize(new java.awt.Dimension(600, 150));
-        jScrollPane5.setPreferredSize(new java.awt.Dimension(600, 1));
+        //jSplitPane4.setDividerLocation(0.75);
+        jSplitPane4.setDividerSize(5);
 
         jPanel9.setLayout(new java.awt.GridLayout(6, 1));
         jScrollPane5.setViewportView(jPanel9);
@@ -4080,6 +4076,7 @@ public class MainWindow extends javax.swing.JFrame {
 				jCheckBoxMenuItem1.setSelected(true);
 				jToggleButton1.setSelected(true);
 				jSplitPane4.setRightComponent(jPanel11);
+                //jSplitPane4.setDividerLocation(0.3);
 				editor_visible = true;
 				adjustGraphLayout();
 				
