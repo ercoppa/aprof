@@ -614,7 +614,7 @@ public class AprofReport {
     
     public void addFitter(File fitlog) {
         try {
-            this.fitter = new fitter(fitlog);
+            this.fitter = new fitter(this);
         } catch (IOException ex) {
             Logger.getLogger(AprofReport.class.getName()).log(Level.SEVERE, null, ex);
         }

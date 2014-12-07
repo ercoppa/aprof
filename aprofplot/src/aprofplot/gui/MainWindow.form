@@ -281,7 +281,7 @@
                 <Property name="accelerator" type="javax.swing.KeyStroke" editor="org.netbeans.modules.form.editors.KeyStrokeEditor">
                   <KeyStroke key="Ctrl+S"/>
                 </Property>
-                <Property name="text" type="java.lang.String" value="Add fitting log"/>
+                <Property name="text" type="java.lang.String" value="Run curve fitter"/>
                 <Property name="enabled" type="boolean" value="false"/>
               </Properties>
               <Events>
@@ -1273,7 +1273,7 @@
                               </Properties>
                               <AuxValues>
                                 <AuxValue name="JavaCodeGenerator_AddingCodePost" type="java.lang.String" value="restoreSortingContextsTable();&#xa;jTable3.setDefaultRenderer(Routine.class, new PlotThumbRenderer());&#xa;&#xa;jTable3.getSelectionModel().addListSelectionListener(new javax.swing.event.ListSelectionListener() {&#xa;    public void valueChanged(javax.swing.event.ListSelectionEvent evt) {&#xa;        jTable3ValueChanged(evt);&#xa;    }&#xa;});"/>
-                                <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new JTable(new RoutinesTableModel(this.report, this, false)) {&#xa;    public Component prepareRenderer(TableCellRenderer renderer, int row, int column)&#xa;    {&#xa;        try {&#xa;            if (renderer == null) {&#xa;                System.out.println(&quot;Renderer is null&quot;);&#xa;                return null;&#xa;            }&#xa;            Component c = super.prepareRenderer(renderer, row, column);&#xa;            if (c != null &amp;&amp; !c.getBackground().equals(getSelectionBackground())) {&#xa;                c.setBackground(java.awt.Color.WHITE);&#xa;            }&#xa;            return c;&#xa;        } catch(NullPointerException e) {&#xa;            System.out.println(&quot;row: &quot; + row + &quot; col: &quot; + column);&#xa;            return null;&#xa;        }&#xa;    }&#xa;}"/>
+                                <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new JTable(new RoutinesTableModel(this.report, this, false)) {&#xa;    public Component prepareRenderer(TableCellRenderer renderer, int row, int column)&#xa;    {&#xa;        try {&#xa;            if (renderer == null) {&#xa;                System.out.println(&quot;Renderer is null&quot;);&#xa;                System.out.println(&quot;row: &quot; + row + &quot; col: &quot; + column);&#xa;                return null;&#xa;            }&#xa;            Component c = super.prepareRenderer(renderer, row, column);&#xa;            if (c != null &amp;&amp; !c.getBackground().equals(getSelectionBackground())) {&#xa;                c.setBackground(java.awt.Color.WHITE);&#xa;            }&#xa;            return c;&#xa;        } catch(NullPointerException e) {&#xa;            System.out.println(&quot;row: &quot; + row + &quot; col: &quot; + column);&#xa;            return null;&#xa;        }&#xa;    }&#xa;}"/>
                               </AuxValues>
                             </Component>
                           </SubComponents>
