@@ -417,7 +417,8 @@ restart_if(IRExpr *condition)
 {
    vassert(typeOfIRExpr(irsb->tyenv, condition) == Ity_I1);
 
-   stmt(IRStmt_Exit(condition, Ijk_TInval, IRConst_U64(guest_IA_curr_instr),
+   stmt(IRStmt_Exit(condition, Ijk_InvalICache,
+                    IRConst_U64(guest_IA_curr_instr),
                     S390X_GUEST_OFFSET(guest_IA)));
 }
 
@@ -481,20 +482,36 @@ put_dpr_pair(UInt archreg, IRExpr *expr)
 
 /* Terminate the current IRSB with an emulation failure. */
 static void
-emulation_failure(VexEmNote fail_kind)
+emulation_failure_with_expr(IRExpr *emfailure)
 {
-   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_EMNOTE), mkU32(fail_kind)));
+   vassert(typeOfIRExpr(irsb->tyenv, emfailure) == Ity_I32);
+
+   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_EMNOTE), emfailure));
    dis_res->whatNext = Dis_StopHere;
    dis_res->jk_StopHere = Ijk_EmFail;
 }
 
+static void
+emulation_failure(VexEmNote fail_kind)
+{
+   emulation_failure_with_expr(mkU32(fail_kind));
+}
+
 /* Terminate the current IRSB with an emulation warning. */
+static void
+emulation_warning_with_expr(IRExpr *emwarning)
+{
+   vassert(typeOfIRExpr(irsb->tyenv, emwarning) == Ity_I32);
+
+   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_EMNOTE), emwarning));
+   dis_res->whatNext = Dis_StopHere;
+   dis_res->jk_StopHere = Ijk_EmWarn;
+}
+
 static void
 emulation_warning(VexEmNote warn_kind)
 {
-   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_EMNOTE), mkU32(warn_kind)));
-   dis_res->whatNext = Dis_StopHere;
-   dis_res->jk_StopHere = Ijk_EmWarn;
+   emulation_warning_with_expr(mkU32(warn_kind));
 }
 
 /*------------------------------------------------------------*/
@@ -7261,12 +7278,7 @@ s390_irgen_PFPO(void)
 
    /* Check validity of function code in GR 0 */
    assign(ef, s390_call_pfpo_helper(unop(Iop_32Uto64, mkexpr(gr0))));
-
-   /* fixs390: Function emulation_failure can be used if it takes argument as
-      IRExpr * instead of VexEmNote. */
-   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_EMNOTE), mkexpr(ef)));
-   dis_res->whatNext = Dis_StopHere;
-   dis_res->jk_StopHere = Ijk_EmFail;
+   emulation_failure_with_expr(mkexpr(ef));
 
    stmt(
         IRStmt_Exit(
@@ -7606,7 +7618,7 @@ s390_irgen_RISBG(UChar r1, UChar r2, UChar i3, UChar i4, UChar i5)
       put_gpr_dw0(r1, binop(Iop_And64, mkexpr(op2), mkU64(mask)));
    }
    assign(result, get_gpr_dw0(r1));
-   s390_cc_thunk_putS(S390_CC_OP_LOAD_AND_TEST, op2);
+   s390_cc_thunk_putS(S390_CC_OP_LOAD_AND_TEST, result);
 
    return "risbg";
 }
@@ -10862,9 +10874,9 @@ s390_irgen_EX_SS(UChar r, IRTemp addr2,
    stmt(IRStmt_Dirty(d));
 
    /* and restart */
-   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TISTART),
+   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_CMSTART),
                    mkU64(guest_IA_curr_instr)));
-   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TILEN), mkU64(4)));
+   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_CMLEN), mkU64(4)));
    restart_if(mkexpr(cond));
 
    ss.bytes = last_execute_target;
@@ -10893,15 +10905,15 @@ s390_irgen_EX(UChar r1, IRTemp addr2)
                              mkIRExprVec_1(load(Ity_I64, mkexpr(addr2))));
       stmt(IRStmt_Dirty(d));
       /* and restart */
-      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TISTART),
+      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_CMSTART),
                       mkU64(guest_IA_curr_instr)));
-      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TILEN), mkU64(4)));
+      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_CMLEN), mkU64(4)));
       restart_if(IRExpr_Const(IRConst_U1(True)));
 
       /* we know that this will be invalidated */
       put_IA(mkaddr_expr(guest_IA_next_instr));
       dis_res->whatNext = Dis_StopHere;
-      dis_res->jk_StopHere = Ijk_TInval;
+      dis_res->jk_StopHere = Ijk_InvalICache;
       break;
    }
 
@@ -10967,8 +10979,8 @@ s390_irgen_EX(UChar r1, IRTemp addr2)
       stmt(IRStmt_Dirty(d));
 
       /* and restart */
-      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TISTART), mkU64(guest_IA_curr_instr)));
-      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TILEN), mkU64(4)));
+      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_CMSTART), mkU64(guest_IA_curr_instr)));
+      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_CMLEN), mkU64(4)));
       restart_if(mkexpr(cond));
 
       /* Now comes the actual translation */
@@ -16362,16 +16374,16 @@ s390_decode_special_and_irgen(UChar *bytes)
          injecting here can change. In which case the translation has to
          be redone. For ease of handling, we simply invalidate all the
          time. */
-      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TISTART),
+      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_CMSTART),
                       mkU64(guest_IA_curr_instr)));
-      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_TILEN),
+      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_CMLEN),
                       mkU64(guest_IA_next_instr - guest_IA_curr_instr)));
       vassert(guest_IA_next_instr - guest_IA_curr_instr ==
               S390_SPECIAL_OP_PREAMBLE_SIZE + S390_SPECIAL_OP_SIZE);
 
       put_IA(mkaddr_expr(guest_IA_next_instr));
       dis_res->whatNext    = Dis_StopHere;
-      dis_res->jk_StopHere = Ijk_TInval;
+      dis_res->jk_StopHere = Ijk_InvalICache;
    } else {
       /* We don't know what it is. */
       return S390_DECODE_UNKNOWN_SPECIAL_INSN;
@@ -16514,10 +16526,10 @@ disInstr_S390_WRK(UChar *insn)
          incorrect address. */
       put_IA(mkaddr_expr(guest_IA_curr_instr));
 
+      dres.len         = 0;
       dres.whatNext    = Dis_StopHere;
       dres.jk_StopHere = Ijk_NoDecode;
       dres.continueAt  = 0;
-      dres.len         = 0;
    } else {
       /* Decode success */
       switch (dres.whatNext) {
@@ -16564,13 +16576,13 @@ disInstr_S390(IRSB        *irsb_IN,
               VexArch      guest_arch,
               VexArchInfo *archinfo,
               VexAbiInfo  *abiinfo,
-              Bool         host_bigendian,
+              VexEndness   host_endness,
               Bool         sigill_diag_IN)
 {
    vassert(guest_arch == VexArchS390X);
 
    /* The instruction decoder requires a big-endian machine. */
-   vassert(host_bigendian == True);
+   vassert(host_endness == VexEndnessBE);
 
    /* Set globals (see top of this file) */
    guest_IA_curr_instr = guest_IP;

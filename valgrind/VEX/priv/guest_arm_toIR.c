@@ -123,10 +123,10 @@
    not change during translation of the instruction.
 */
 
-/* CONST: is the host bigendian?  This has to do with float vs double
-   register accesses on VFP, but it's complex and not properly thought
-   out. */
-static Bool host_is_bigendian;
+/* CONST: what is the host's endianness?  This has to do with float vs
+   double register accesses on VFP, but it's complex and not properly
+   thought out. */
+static VexEndness host_endness;
 
 /* CONST: The guest address for the instruction currently being
    translated.  This is the real, "decoded" address (not subject
@@ -485,8 +485,8 @@ static IRExpr* align4if ( IRExpr* e, Bool b )
 #define OFFB_GEFLAG2  offsetof(VexGuestARMState,guest_GEFLAG2)
 #define OFFB_GEFLAG3  offsetof(VexGuestARMState,guest_GEFLAG3)
 
-#define OFFB_TISTART  offsetof(VexGuestARMState,guest_TISTART)
-#define OFFB_TILEN    offsetof(VexGuestARMState,guest_TILEN)
+#define OFFB_CMSTART  offsetof(VexGuestARMState,guest_CMSTART)
+#define OFFB_CMLEN    offsetof(VexGuestARMState,guest_CMLEN)
 
 
 /* ---------------- Integer registers ---------------- */
@@ -849,11 +849,11 @@ static Int floatGuestRegOffset ( UInt fregNo )
    Int off;
    vassert(fregNo < 32);
    off = doubleGuestRegOffset(fregNo >> 1);
-   if (host_is_bigendian) {
-      vassert(0);
-   } else {
+   if (host_endness == VexEndnessLE) {
       if (fregNo & 1)
          off += 4;
+   } else {
+      vassert(0);
    }
    return off;
 }
@@ -2864,15 +2864,40 @@ Bool dis_neon_vext ( UInt theInstr, IRTemp condT )
    HChar reg_t = Q ? 'q' : 'd';
 
    if (Q) {
-      putQReg(dreg, triop(Iop_ExtractV128, getQReg(nreg),
-               getQReg(mreg), mkU8(imm4)), condT);
+      putQReg(dreg, triop(Iop_SliceV128, /*hiV128*/getQReg(mreg),
+                          /*loV128*/getQReg(nreg), mkU8(imm4)), condT);
    } else {
-      putDRegI64(dreg, triop(Iop_Extract64, getDRegI64(nreg),
-                 getDRegI64(mreg), mkU8(imm4)), condT);
+      putDRegI64(dreg, triop(Iop_Slice64, /*hiI64*/getDRegI64(mreg),
+                             /*loI64*/getDRegI64(nreg), mkU8(imm4)), condT);
    }
    DIP("vext.8 %c%d, %c%d, %c%d, #%d\n", reg_t, dreg, reg_t, nreg,
                                          reg_t, mreg, imm4);
    return True;
+}
+
+/* Generate specific vector FP binary ops, possibly with a fake
+   rounding mode as required by the primop. */
+static
+IRExpr* binop_w_fake_RM ( IROp op, IRExpr* argL, IRExpr* argR )
+{
+   switch (op) {
+      case Iop_Add32Fx4:
+      case Iop_Sub32Fx4:
+      case Iop_Mul32Fx4:
+         return triop(op, get_FAKE_roundingmode(), argL, argR );
+      case Iop_Add32x4: case Iop_Add16x8:
+      case Iop_Sub32x4: case Iop_Sub16x8:
+      case Iop_Mul32x4: case Iop_Mul16x8:
+      case Iop_Mul32x2: case Iop_Mul16x4:
+      case Iop_Add32Fx2:
+      case Iop_Sub32Fx2:
+      case Iop_Mul32Fx2:
+      case Iop_PwAdd32Fx2:
+         return binop(op, argL, argR);
+      default:
+        ppIROp(op);
+        vassert(0);
+   }
 }
 
 /* VTBL, VTBX */
@@ -3632,8 +3657,8 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
       case 4:
          if (B == 0) {
             /* VSHL */
-            IROp op, sub_op;
-            IRTemp tmp;
+            IROp op = Iop_INVALID, sub_op = Iop_INVALID;
+            IRTemp tmp = IRTemp_INVALID;
             if (U) {
                switch (size) {
                   case 0: op = Q ? Iop_Shl8x16 : Iop_Shl8x8; break;
@@ -4601,7 +4626,8 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                   /* VABD  */
                   if (Q) {
                      assign(res, unop(Iop_Abs32Fx4,
-                                      binop(Iop_Sub32Fx4,
+                                      triop(Iop_Sub32Fx4,
+                                            get_FAKE_roundingmode(),
                                             mkexpr(arg_n),
                                             mkexpr(arg_m))));
                   } else {
@@ -4616,7 +4642,7 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                   break;
                }
             }
-            assign(res, binop(op, mkexpr(arg_n), mkexpr(arg_m)));
+            assign(res, binop_w_fake_RM(op, mkexpr(arg_n), mkexpr(arg_m)));
          } else {
             if (U == 0) {
                /* VMLA, VMLS  */
@@ -4641,9 +4667,11 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                      default: vassert(0);
                   }
                }
-               assign(res, binop(op2,
-                                 Q ? getQReg(dreg) : getDRegI64(dreg),
-                                 binop(op, mkexpr(arg_n), mkexpr(arg_m))));
+               assign(res, binop_w_fake_RM(
+                              op2,
+                              Q ? getQReg(dreg) : getDRegI64(dreg),
+                              binop_w_fake_RM(op, mkexpr(arg_n),
+                                                  mkexpr(arg_m))));
 
                DIP("vml%c.f32 %c%u, %c%u, %c%u\n",
                    P ? 's' : 'a', Q ? 'q' : 'd',
@@ -4654,7 +4682,7 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                if ((C >> 1) != 0)
                   return False;
                op = Q ? Iop_Mul32Fx4 : Iop_Mul32Fx2 ;
-               assign(res, binop(op, mkexpr(arg_n), mkexpr(arg_m)));
+               assign(res, binop_w_fake_RM(op, mkexpr(arg_n), mkexpr(arg_m)));
                DIP("vmul.f32 %c%u, %c%u, %c%u\n",
                    Q ? 'q' : 'd', dreg,
                    Q ? 'q' : 'd', nreg, Q ? 'q' : 'd', mreg);
@@ -4762,7 +4790,8 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                   /* VRECPS */
                   if ((theInstr >> 20) & 1)
                      return False;
-                  assign(res, binop(Q ? Iop_Recps32Fx4 : Iop_Recps32Fx2,
+                  assign(res, binop(Q ? Iop_RecipStep32Fx4
+                                      : Iop_RecipStep32Fx2,
                                     mkexpr(arg_n),
                                     mkexpr(arg_m)));
                   DIP("vrecps.f32 %c%u, %c%u, %c%u\n", Q ? 'q' : 'd', dreg,
@@ -4771,7 +4800,8 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                   /* VRSQRTS  */
                   if ((theInstr >> 20) & 1)
                      return False;
-                  assign(res, binop(Q ? Iop_Rsqrts32Fx4 : Iop_Rsqrts32Fx2,
+                  assign(res, binop(Q ? Iop_RSqrtStep32Fx4
+                                      : Iop_RSqrtStep32Fx2,
                                     mkexpr(arg_n),
                                     mkexpr(arg_m)));
                   DIP("vrsqrts.f32 %c%u, %c%u, %c%u\n", Q ? 'q' : 'd', dreg,
@@ -5104,7 +5134,7 @@ Bool dis_neon_data_3diff ( UInt theInstr, IRTemp condT )
             case 0: case 3:
                return False;
             case 1:
-               op = Iop_QDMulLong16Sx4;
+               op = Iop_QDMull16Sx4;
                cmp = Iop_CmpEQ16x4;
                add = P ? Iop_QSub32Sx4 : Iop_QAdd32Sx4;
                op2 = P ? Iop_Sub32x4 : Iop_Add32x4;
@@ -5113,7 +5143,7 @@ Bool dis_neon_data_3diff ( UInt theInstr, IRTemp condT )
                imm = (imm << 32) | imm;
                break;
             case 2:
-               op = Iop_QDMulLong32Sx2;
+               op = Iop_QDMull32Sx2;
                cmp = Iop_CmpEQ32x2;
                add = P ? Iop_QSub64Sx2 : Iop_QAdd64Sx2;
                op2 = P ? Iop_Sub64x2 : Iop_Add64x2;
@@ -5178,14 +5208,14 @@ Bool dis_neon_data_3diff ( UInt theInstr, IRTemp condT )
             case 3:
                return False;
             case 1:
-               op = Iop_QDMulLong16Sx4;
+               op = Iop_QDMull16Sx4;
                op2 = Iop_CmpEQ16x4;
                imm = 1LL << 15;
                imm = (imm << 16) | imm;
                imm = (imm << 32) | imm;
                break;
             case 2:
-               op = Iop_QDMulLong32Sx2;
+               op = Iop_QDMull32Sx2;
                op2 = Iop_CmpEQ32x2;
                imm = 1LL << 31;
                imm = (imm << 32) | imm;
@@ -5318,10 +5348,10 @@ Bool dis_neon_data_2reg_and_scalar ( UInt theInstr, IRTemp condT )
          }
       }
       op2 = INSN(10,10) ? sub : add;
-      assign(res, binop(op, mkexpr(arg_n), mkexpr(arg_m)));
+      assign(res, binop_w_fake_RM(op, mkexpr(arg_n), mkexpr(arg_m)));
       if (Q)
-         putQReg(dreg, binop(op2, getQReg(dreg), mkexpr(res)),
-               condT);
+         putQReg(dreg, binop_w_fake_RM(op2, getQReg(dreg), mkexpr(res)),
+                 condT);
       else
          putDRegI64(dreg, binop(op2, getDRegI64(dreg), mkexpr(res)),
                     condT);
@@ -5426,7 +5456,7 @@ Bool dis_neon_data_2reg_and_scalar ( UInt theInstr, IRTemp condT )
          case 3:
             return False;
          case 1:
-            op = Iop_QDMulLong16Sx4;
+            op = Iop_QDMull16Sx4;
             cmp = Iop_CmpEQ16x4;
             add = P ? Iop_QSub32Sx4 : Iop_QAdd32Sx4;
             op2 = P ? Iop_Sub32x4 : Iop_Add32x4;
@@ -5435,7 +5465,7 @@ Bool dis_neon_data_2reg_and_scalar ( UInt theInstr, IRTemp condT )
             imm = (imm << 32) | imm;
             break;
          case 2:
-            op = Iop_QDMulLong32Sx2;
+            op = Iop_QDMull32Sx2;
             cmp = Iop_CmpEQ32x2;
             add = P ? Iop_QSub64Sx2 : Iop_QAdd64Sx2;
             op2 = P ? Iop_Sub64x2 : Iop_Add64x2;
@@ -5548,7 +5578,7 @@ Bool dis_neon_data_2reg_and_scalar ( UInt theInstr, IRTemp condT )
                vassert(0);
          }
       }
-      assign(res, binop(op, mkexpr(arg_n), mkexpr(arg_m)));
+      assign(res, binop_w_fake_RM(op, mkexpr(arg_n), mkexpr(arg_m)));
       if (Q)
          putQReg(dreg, mkexpr(res), condT);
       else
@@ -5639,14 +5669,14 @@ Bool dis_neon_data_2reg_and_scalar ( UInt theInstr, IRTemp condT )
          case 3:
             return False;
          case 1:
-            op = Iop_QDMulLong16Sx4;
+            op = Iop_QDMull16Sx4;
             op2 = Iop_CmpEQ16x4;
             imm = 1LL << 15;
             imm = (imm << 16) | imm;
             imm = (imm << 32) | imm;
             break;
          case 2:
-            op = Iop_QDMulLong32Sx2;
+            op = Iop_QDMull32Sx2;
             op2 = Iop_CmpEQ32x2;
             imm = 1LL << 31;
             imm = (imm << 32) | imm;
@@ -6229,19 +6259,19 @@ Bool dis_neon_data_2reg_and_shift ( UInt theInstr, IRTemp condT )
             if (A & 1) {
                switch (size) {
                   case 0:
-                     op = Q ? Iop_QShlN8x16 : Iop_QShlN8x8;
+                     op = Q ? Iop_QShlNsatUU8x16 : Iop_QShlNsatUU8x8;
                      op_rev = Q ? Iop_ShrN8x16 : Iop_ShrN8x8;
                      break;
                   case 1:
-                     op = Q ? Iop_QShlN16x8 : Iop_QShlN16x4;
+                     op = Q ? Iop_QShlNsatUU16x8 : Iop_QShlNsatUU16x4;
                      op_rev = Q ? Iop_ShrN16x8 : Iop_ShrN16x4;
                      break;
                   case 2:
-                     op = Q ? Iop_QShlN32x4 : Iop_QShlN32x2;
+                     op = Q ? Iop_QShlNsatUU32x4 : Iop_QShlNsatUU32x2;
                      op_rev = Q ? Iop_ShrN32x4 : Iop_ShrN32x2;
                      break;
                   case 3:
-                     op = Q ? Iop_QShlN64x2 : Iop_QShlN64x1;
+                     op = Q ? Iop_QShlNsatUU64x2 : Iop_QShlNsatUU64x1;
                      op_rev = Q ? Iop_ShrN64x2 : Iop_Shr64;
                      break;
                   default:
@@ -6253,19 +6283,19 @@ Bool dis_neon_data_2reg_and_shift ( UInt theInstr, IRTemp condT )
             } else {
                switch (size) {
                   case 0:
-                     op = Q ? Iop_QShlN8Sx16 : Iop_QShlN8Sx8;
+                     op = Q ? Iop_QShlNsatSU8x16 : Iop_QShlNsatSU8x8;
                      op_rev = Q ? Iop_ShrN8x16 : Iop_ShrN8x8;
                      break;
                   case 1:
-                     op = Q ? Iop_QShlN16Sx8 : Iop_QShlN16Sx4;
+                     op = Q ? Iop_QShlNsatSU16x8 : Iop_QShlNsatSU16x4;
                      op_rev = Q ? Iop_ShrN16x8 : Iop_ShrN16x4;
                      break;
                   case 2:
-                     op = Q ? Iop_QShlN32Sx4 : Iop_QShlN32Sx2;
+                     op = Q ? Iop_QShlNsatSU32x4 : Iop_QShlNsatSU32x2;
                      op_rev = Q ? Iop_ShrN32x4 : Iop_ShrN32x2;
                      break;
                   case 3:
-                     op = Q ? Iop_QShlN64Sx2 : Iop_QShlN64Sx1;
+                     op = Q ? Iop_QShlNsatSU64x2 : Iop_QShlNsatSU64x1;
                      op_rev = Q ? Iop_ShrN64x2 : Iop_Shr64;
                      break;
                   default:
@@ -6280,19 +6310,19 @@ Bool dis_neon_data_2reg_and_shift ( UInt theInstr, IRTemp condT )
                return False;
             switch (size) {
                case 0:
-                  op = Q ? Iop_QSalN8x16 : Iop_QSalN8x8;
+                  op = Q ? Iop_QShlNsatSS8x16 : Iop_QShlNsatSS8x8;
                   op_rev = Q ? Iop_SarN8x16 : Iop_SarN8x8;
                   break;
                case 1:
-                  op = Q ? Iop_QSalN16x8 : Iop_QSalN16x4;
+                  op = Q ? Iop_QShlNsatSS16x8 : Iop_QShlNsatSS16x4;
                   op_rev = Q ? Iop_SarN16x8 : Iop_SarN16x4;
                   break;
                case 2:
-                  op = Q ? Iop_QSalN32x4 : Iop_QSalN32x2;
+                  op = Q ? Iop_QShlNsatSS32x4 : Iop_QShlNsatSS32x2;
                   op_rev = Q ? Iop_SarN32x4 : Iop_SarN32x2;
                   break;
                case 3:
-                  op = Q ? Iop_QSalN64x2 : Iop_QSalN64x1;
+                  op = Q ? Iop_QShlNsatSS64x2 : Iop_QShlNsatSS64x1;
                   op_rev = Q ? Iop_SarN64x2 : Iop_Sar64;
                   break;
                default:
@@ -6618,13 +6648,13 @@ Bool dis_neon_data_2reg_misc ( UInt theInstr, IRTemp condT )
                IROp op;
                switch (size) {
                   case 0:
-                     op = Q ? Iop_Reverse64_8x16 : Iop_Reverse64_8x8;
+                     op = Q ? Iop_Reverse8sIn64_x2 : Iop_Reverse8sIn64_x1;
                      break;
                   case 1:
-                     op = Q ? Iop_Reverse64_16x8 : Iop_Reverse64_16x4;
+                     op = Q ? Iop_Reverse16sIn64_x2 : Iop_Reverse16sIn64_x1;
                      break;
                   case 2:
-                     op = Q ? Iop_Reverse64_32x4 : Iop_Reverse64_32x2;
+                     op = Q ? Iop_Reverse32sIn64_x2 : Iop_Reverse32sIn64_x1;
                      break;
                   case 3:
                      return False;
@@ -6641,10 +6671,10 @@ Bool dis_neon_data_2reg_misc ( UInt theInstr, IRTemp condT )
                IROp op;
                switch (size) {
                   case 0:
-                     op = Q ? Iop_Reverse32_8x16 : Iop_Reverse32_8x8;
+                     op = Q ? Iop_Reverse8sIn32_x4 : Iop_Reverse8sIn32_x2;
                      break;
                   case 1:
-                     op = Q ? Iop_Reverse32_16x8 : Iop_Reverse32_16x4;
+                     op = Q ? Iop_Reverse16sIn32_x4 : Iop_Reverse16sIn32_x2;
                      break;
                   case 2:
                   case 3:
@@ -6662,7 +6692,7 @@ Bool dis_neon_data_2reg_misc ( UInt theInstr, IRTemp condT )
                IROp op;
                switch (size) {
                   case 0:
-                     op = Q ? Iop_Reverse16_8x16 : Iop_Reverse16_8x8;
+                     op = Q ? Iop_Reverse8sIn16_x8 : Iop_Reverse8sIn16_x4;
                      break;
                   case 1:
                   case 2:
@@ -6712,9 +6742,9 @@ Bool dis_neon_data_2reg_misc ( UInt theInstr, IRTemp condT )
                /* VCLS */
                IROp op;
                switch (size) {
-                  case 0: op = Q ? Iop_Cls8Sx16 : Iop_Cls8Sx8; break;
-                  case 1: op = Q ? Iop_Cls16Sx8 : Iop_Cls16Sx4; break;
-                  case 2: op = Q ? Iop_Cls32Sx4 : Iop_Cls32Sx2; break;
+                  case 0: op = Q ? Iop_Cls8x16 : Iop_Cls8x8; break;
+                  case 1: op = Q ? Iop_Cls16x8 : Iop_Cls16x4; break;
+                  case 2: op = Q ? Iop_Cls32x4 : Iop_Cls32x2; break;
                   case 3: return False;
                   default: vassert(0);
                }
@@ -6727,9 +6757,9 @@ Bool dis_neon_data_2reg_misc ( UInt theInstr, IRTemp condT )
                /* VCLZ */
                IROp op;
                switch (size) {
-                  case 0: op = Q ? Iop_Clz8Sx16 : Iop_Clz8Sx8; break;
-                  case 1: op = Q ? Iop_Clz16Sx8 : Iop_Clz16Sx4; break;
-                  case 2: op = Q ? Iop_Clz32Sx4 : Iop_Clz32Sx2; break;
+                  case 0: op = Q ? Iop_Clz8x16 : Iop_Clz8x8; break;
+                  case 1: op = Q ? Iop_Clz16x8 : Iop_Clz16x4; break;
+                  case 2: op = Q ? Iop_Clz32x4 : Iop_Clz32x2; break;
                   case 3: return False;
                   default: vassert(0);
                }
@@ -7461,11 +7491,11 @@ Bool dis_neon_data_2reg_misc ( UInt theInstr, IRTemp condT )
             if (size != 2)
                return False;
             if (Q) {
-               op = F ? Iop_Recip32Fx4 : Iop_Recip32x4;
+               op = F ? Iop_RecipEst32Fx4 : Iop_RecipEst32Ux4;
                putQReg(dreg, unop(op, getQReg(mreg)), condT);
                DIP("vrecpe.%c32 q%u, q%u\n", F ? 'f' : 'u', dreg, mreg);
             } else {
-               op = F ? Iop_Recip32Fx2 : Iop_Recip32x2;
+               op = F ? Iop_RecipEst32Fx2 : Iop_RecipEst32Ux2;
                putDRegI64(dreg, unop(op, getDRegI64(mreg)), condT);
                DIP("vrecpe.%c32 d%u, d%u\n", F ? 'f' : 'u', dreg, mreg);
             }
@@ -7478,10 +7508,10 @@ Bool dis_neon_data_2reg_misc ( UInt theInstr, IRTemp condT )
                return False;
             if (F) {
                /* fp */
-               op = Q ? Iop_Rsqrte32Fx4 : Iop_Rsqrte32Fx2;
+               op = Q ? Iop_RSqrtEst32Fx4 : Iop_RSqrtEst32Fx2;
             } else {
                /* unsigned int */
-               op = Q ? Iop_Rsqrte32x4 : Iop_Rsqrte32x2;
+               op = Q ? Iop_RSqrtEst32Ux4 : Iop_RSqrtEst32Ux2;
             }
             if (Q) {
                putQReg(dreg, unop(op, getQReg(mreg)), condT);
@@ -7946,7 +7976,7 @@ static void math_INTERLEAVE_2 (/*OUT*/IRTemp* i0, /*OUT*/IRTemp* i1,
    /* The following assumes that the guest is little endian, and hence
       that the memory-side (interleaved) data is stored
       little-endianly. */
-   vassert(i0 && *i1);
+   vassert(i0 && i1);
    /* This is pretty easy, since we have primitives directly to
       hand. */
    if (laneszB == 4) {
@@ -13499,6 +13529,49 @@ static Bool decode_CP10_CP11_instruction (
                         condT);
             DIP("fdivd%s d%u, d%u, d%u\n", nCC(conq), dD, dN, dM);
             goto decode_success_vfp;
+         case BITS4(1,0,1,0): /* VNFMS: -(d - n * m) (fused) */
+            /* XXXROUNDINGFIXME look up ARM reference for fused
+               multiply-add rounding */
+            putDReg(dD, triop(Iop_AddF64, rm,
+                              unop(Iop_NegF64, getDReg(dD)),
+                              triop(Iop_MulF64, rm,
+                                                getDReg(dN),
+                                                getDReg(dM))),
+                        condT);
+            DIP("vfnmsd%s d%u, d%u, d%u\n", nCC(conq), dD, dN, dM);
+            goto decode_success_vfp;
+         case BITS4(1,0,1,1): /* VNFMA: -(d + n * m) (fused) */
+            /* XXXROUNDINGFIXME look up ARM reference for fused
+               multiply-add rounding */
+            putDReg(dD, triop(Iop_AddF64, rm,
+                              unop(Iop_NegF64, getDReg(dD)),
+                              triop(Iop_MulF64, rm,
+                                                unop(Iop_NegF64, getDReg(dN)),
+                                                getDReg(dM))),
+                        condT);
+            DIP("vfnmad%s d%u, d%u, d%u\n", nCC(conq), dD, dN, dM);
+            goto decode_success_vfp;
+         case BITS4(1,1,0,0): /* VFMA: d + n * m (fused) */
+            /* XXXROUNDINGFIXME look up ARM reference for fused
+               multiply-add rounding */
+            putDReg(dD, triop(Iop_AddF64, rm,
+                              getDReg(dD),
+                              triop(Iop_MulF64, rm, getDReg(dN),
+                                                    getDReg(dM))),
+                        condT);
+            DIP("vfmad%s d%u, d%u, d%u\n", nCC(conq), dD, dN, dM);
+            goto decode_success_vfp;
+         case BITS4(1,1,0,1): /* VFMS: d + (-n * m) (fused) */
+            /* XXXROUNDINGFIXME look up ARM reference for fused
+               multiply-add rounding */
+            putDReg(dD, triop(Iop_AddF64, rm,
+                              getDReg(dD),
+                              triop(Iop_MulF64, rm,
+                                    unop(Iop_NegF64, getDReg(dN)),
+                                    getDReg(dM))),
+                        condT);
+            DIP("vfmsd%s d%u, d%u, d%u\n", nCC(conq), dD, dN, dM);
+            goto decode_success_vfp;
          default:
             break;
       }
@@ -13963,6 +14036,49 @@ static Bool decode_CP10_CP11_instruction (
                         condT);
             DIP("fdivs%s s%u, s%u, s%u\n", nCC(conq), fD, fN, fM);
             goto decode_success_vfp;
+         case BITS4(1,0,1,0): /* VNFMS: -(d - n * m) (fused) */
+            /* XXXROUNDINGFIXME look up ARM reference for fused
+               multiply-add rounding */
+            putFReg(fD, triop(Iop_AddF32, rm,
+                              unop(Iop_NegF32, getFReg(fD)),
+                              triop(Iop_MulF32, rm,
+                                                getFReg(fN),
+                                                getFReg(fM))),
+                        condT);
+            DIP("vfnmss%s s%u, s%u, s%u\n", nCC(conq), fD, fN, fM);
+            goto decode_success_vfp;
+         case BITS4(1,0,1,1): /* VNFMA: -(d + n * m) (fused) */
+            /* XXXROUNDINGFIXME look up ARM reference for fused
+               multiply-add rounding */
+            putFReg(fD, triop(Iop_AddF32, rm,
+                              unop(Iop_NegF32, getFReg(fD)),
+                              triop(Iop_MulF32, rm,
+                                                unop(Iop_NegF32, getFReg(fN)),
+                                                getFReg(fM))),
+                        condT);
+            DIP("vfnmas%s s%u, s%u, s%u\n", nCC(conq), fD, fN, fM);
+            goto decode_success_vfp;
+         case BITS4(1,1,0,0): /* VFMA: d + n * m (fused) */
+            /* XXXROUNDINGFIXME look up ARM reference for fused
+               multiply-add rounding */
+            putFReg(fD, triop(Iop_AddF32, rm,
+                              getFReg(fD),
+                              triop(Iop_MulF32, rm, getFReg(fN),
+                                                    getFReg(fM))),
+                        condT);
+            DIP("vfmas%s s%u, s%u, s%u\n", nCC(conq), fD, fN, fM);
+            goto decode_success_vfp;
+         case BITS4(1,1,0,1): /* VFMS: d + (-n * m) (fused) */
+            /* XXXROUNDINGFIXME look up ARM reference for fused
+               multiply-add rounding */
+            putFReg(fD, triop(Iop_AddF32, rm,
+                              getFReg(fD),
+                              triop(Iop_MulF32, rm,
+                                    unop(Iop_NegF32, getFReg(fN)),
+                                    getFReg(fM))),
+                        condT);
+            DIP("vfmss%s s%u, s%u, s%u\n", nCC(conq), fD, fN, fM);
+            goto decode_success_vfp;
          default:
             break;
       }
@@ -14330,17 +14446,18 @@ static Bool decode_NV_instruction ( /*MOD*/DisResult* dres,
    // Should only be called for NV instructions
    vassert(BITS4(1,1,1,1) == INSN_COND);
 
-   /* ------------------------ pld ------------------------ */
-   if (BITS8(0,1,0,1, 0, 1,0,1) == (INSN(27,20) & BITS8(1,1,1,1,0,1,1,1))
+   /* ------------------------ pld{w} ------------------------ */
+   if (BITS8(0,1,0,1, 0,0, 0,1) == (INSN(27,20) & BITS8(1,1,1,1, 0,0, 1,1))
        && BITS4(1,1,1,1) == INSN(15,12)) {
       UInt rN    = INSN(19,16);
       UInt imm12 = INSN(11,0);
       UInt bU    = INSN(23,23);
-      DIP("pld [r%u, #%c%u]\n", rN, bU ? '+' : '-', imm12);
+      UInt bR    = INSN(22,22);
+      DIP("pld%c [r%u, #%c%u]\n", bR ? ' ' : 'w', rN, bU ? '+' : '-', imm12);
       return True;
    }
 
-   if (BITS8(0,1,1,1, 0, 1,0,1) == (INSN(27,20) & BITS8(1,1,1,1,0,1,1,1))
+   if (BITS8(0,1,1,1, 0,0, 0,1) == (INSN(27,20) & BITS8(1,1,1,1, 0,0, 1,1))
        && BITS4(1,1,1,1) == INSN(15,12)
        && 0 == INSN(4,4)) {
       UInt rN   = INSN(19,16);
@@ -14348,7 +14465,8 @@ static Bool decode_NV_instruction ( /*MOD*/DisResult* dres,
       UInt imm5 = INSN(11,7);
       UInt sh2  = INSN(6,5);
       UInt bU   = INSN(23,23);
-      if (rM != 15) {
+      UInt bR   = INSN(22,22);
+      if (rM != 15 && (rN != 15 || bR)) {
          IRExpr* eaE = mk_EA_reg_plusminus_shifted_reg(rN, bU, rM,
                                                        sh2, imm5, dis_buf);
          IRTemp eaT = newTemp(Ity_I32);
@@ -14357,7 +14475,7 @@ static Bool decode_NV_instruction ( /*MOD*/DisResult* dres,
             by iropt a little later on. */
          vassert(eaE);
          assign(eaT, eaE);
-         DIP("pld %s\n", dis_buf);
+         DIP("pld%c %s\n", bR ? ' ' : 'w', dis_buf);
          return True;
       }
       /* fall through */
@@ -14577,11 +14695,11 @@ DisResult disInstr_ARM_WRK (
             // injecting here can change. In which case the translation has to
             // be redone. For ease of handling, we simply invalidate all the
             // time.
-            stmt(IRStmt_Put(OFFB_TISTART, mkU32(guest_R15_curr_instr_notENC)));
-            stmt(IRStmt_Put(OFFB_TILEN,   mkU32(20)));
+            stmt(IRStmt_Put(OFFB_CMSTART, mkU32(guest_R15_curr_instr_notENC)));
+            stmt(IRStmt_Put(OFFB_CMLEN,   mkU32(20)));
             llPutIReg(15, mkU32( guest_R15_curr_instr_notENC + 20 ));
             dres.whatNext    = Dis_StopHere;
-            dres.jk_StopHere = Ijk_TInval;
+            dres.jk_StopHere = Ijk_InvalICache;
             goto decode_success;
          }
          /* We don't know what it is.  Set opc1/opc2 so decode_failure
@@ -17205,9 +17323,10 @@ DisResult disInstr_ARM_WRK (
       now. */
    vassert(0 == (guest_R15_curr_instr_notENC & 3));
    llPutIReg( 15, mkU32(guest_R15_curr_instr_notENC) );
+   dres.len         = 0;
    dres.whatNext    = Dis_StopHere;
    dres.jk_StopHere = Ijk_NoDecode;
-   dres.len         = 0;
+   dres.continueAt  = 0;
    return dres;
 
   decode_success:
@@ -17422,11 +17541,11 @@ DisResult disInstr_THUMB_WRK (
             // injecting here can change. In which case the translation has to
             // be redone. For ease of handling, we simply invalidate all the
             // time.
-            stmt(IRStmt_Put(OFFB_TISTART, mkU32(guest_R15_curr_instr_notENC)));
-            stmt(IRStmt_Put(OFFB_TILEN,   mkU32(20)));
+            stmt(IRStmt_Put(OFFB_CMSTART, mkU32(guest_R15_curr_instr_notENC)));
+            stmt(IRStmt_Put(OFFB_CMLEN,   mkU32(20)));
             llPutIReg(15, mkU32( (guest_R15_curr_instr_notENC + 20) | 1 ));
             dres.whatNext    = Dis_StopHere;
-            dres.jk_StopHere = Ijk_TInval;
+            dres.jk_StopHere = Ijk_InvalICache;
             goto decode_success;
          }
          /* We don't know what it is.  Set insn0 so decode_failure
@@ -18203,9 +18322,9 @@ DisResult disInstr_THUMB_WRK (
             condT = IRTemp_INVALID;
             // now uncond
             /* non-interworking branch */
-            irsb->next = binop(Iop_Or32, mkexpr(res), mkU32(1));
-            irsb->jumpkind = Ijk_Boring;
-            dres.whatNext = Dis_StopHere;
+            llPutIReg(15, binop(Iop_Or32, mkexpr(res), mkU32(1)));
+            dres.jk_StopHere = Ijk_Boring;
+            dres.whatNext    = Dis_StopHere;
          }
          DIP("add(hi) r%u, r%u\n", rD, rM);
          goto decode_success;
@@ -20250,34 +20369,32 @@ DisResult disInstr_THUMB_WRK (
 
    /* --------------- LD/ST reg+imm12 --------------- */
    /* Loads and stores of the form:
-         op  Rt, [Rn, +#imm12]
+         op  Rt, [Rn, #+-imm12]
       where op is one of
          ldrb ldrh ldr  ldrsb ldrsh
          strb strh str
    */
    if (INSN0(15,9) == BITS7(1,1,1,1,1,0,0)) {
       Bool   valid  = True;
-      Bool   syned  = False;
+      Bool   syned  = INSN0(8,8) == 1;
       Bool   isST   = False;
       IRType ty     = Ity_I8;
+      UInt   bU     = INSN0(7,7); // 1: +imm   0: -imm
+                                  // -imm is only supported by literal versions
       const HChar* nm = "???";
 
-      switch (INSN0(8,4)) {
-         case BITS5(0,1,0,0,0):   // strb
+      switch (INSN0(6,4)) {
+         case BITS3(0,0,0):   // strb
             nm = "strb"; isST = True; break;
-         case BITS5(0,1,0,0,1):   // ldrb
-            nm = "ldrb"; break;
-         case BITS5(1,1,0,0,1):   // ldrsb
-            nm = "ldrsb"; syned = True; break;
-         case BITS5(0,1,0,1,0):   // strh
+         case BITS3(0,0,1):   // ldrb
+            nm = syned ? "ldrsb" : "ldrb"; break;
+         case BITS3(0,1,0):   // strh
             nm = "strh"; ty = Ity_I16; isST = True; break;
-         case BITS5(0,1,0,1,1):   // ldrh
-            nm = "ldrh"; ty = Ity_I16; break;
-         case BITS5(1,1,0,1,1):   // ldrsh
-            nm = "ldrsh"; ty = Ity_I16; syned = True; break;
-         case BITS5(0,1,1,0,0):   // str
+         case BITS3(0,1,1):   // ldrh
+            nm = syned ? "ldrsh" : "ldrh"; ty = Ity_I16; break;
+         case BITS3(1,0,0):   // str
             nm = "str"; ty = Ity_I32; isST = True; break;
-         case BITS5(0,1,1,0,1):
+         case BITS3(1,0,1):
             nm = "ldr"; ty = Ity_I32; break;  // ldr
          default:
             valid = False; break;
@@ -20288,25 +20405,27 @@ DisResult disInstr_THUMB_WRK (
       UInt imm12   = INSN1(11,0);
       Bool loadsPC = False;
 
-      if (ty == Ity_I8 || ty == Ity_I16) {
-         /* all 8- and 16-bit load and store cases have the
-            same exclusion set. */
-         if (rN == 15 || isBadRegT(rT))
+      if (rN != 15 && bU == 0) {
+         // only pc supports #-imm12
+         valid = False;
+      }
+
+      if (isST) {
+         if (syned) valid = False;
+         if (rN == 15 || rT == 15)
             valid = False;
       } else {
-         vassert(ty == Ity_I32);
-         if (isST) {
-            if (rN == 15 || rT == 15)
-               valid = False;
-         } else {
-            /* For a 32-bit load, rT == 15 is only allowable if we not
-               in an IT block, or are the last in it.  Need to insert
-               a dynamic check for that.  Also, in this particular
-               case, rN == 15 is allowable.  In this case however, the
-               value obtained for rN is (apparently)
-               "word-align(address of current insn + 4)". */
-            if (rT == 15)
+         /* For a 32-bit load, rT == 15 is only allowable if we are not
+            in an IT block, or are the last in it.  Need to insert
+            a dynamic check for that.  Also, in this particular
+            case, rN == 15 is allowable.  In this case however, the
+            value obtained for rN is (apparently)
+            "word-align(address of current insn + 4)". */
+         if (rT == 15) {
+            if (ty == Ity_I32)
                loadsPC = True;
+            else // Can't do it for B/H loads
+               valid = False;
          }
       }
 
@@ -20324,15 +20443,16 @@ DisResult disInstr_THUMB_WRK (
 
          IRTemp rNt = newTemp(Ity_I32);
          if (rN == 15) {
-            vassert(ty == Ity_I32 && !isST);
-            assign(rNt, binop(Iop_And32, getIRegT(rN), mkU32(~3)));
+            vassert(!isST);
+            assign(rNt, binop(Iop_And32, getIRegT(15), mkU32(~3)));
          } else {
             assign(rNt, getIRegT(rN));
          }
 
          IRTemp transAddr = newTemp(Ity_I32);
          assign(transAddr,
-                binop( Iop_Add32, mkexpr(rNt), mkU32(imm12) ));
+                binop(bU == 1 ? Iop_Add32 : Iop_Sub32,
+                      mkexpr(rNt), mkU32(imm12)));
 
          IRTemp oldRt = newTemp(Ity_I32);
          assign(oldRt, getIRegT(rT));
@@ -20387,9 +20507,8 @@ DisResult disInstr_THUMB_WRK (
                vassert(rT == 15);
                vassert(condT == IRTemp_INVALID); /* due to check above */
                llPutIReg(15, mkexpr(newRt));
-               irsb->next = mkexpr(newRt);
-               irsb->jumpkind = Ijk_Boring;  /* or _Ret ? */
-               dres.whatNext  = Dis_StopHere;
+               dres.jk_StopHere = Ijk_Boring;
+               dres.whatNext    = Dis_StopHere;
             }
          }
 
@@ -20401,7 +20520,7 @@ DisResult disInstr_THUMB_WRK (
 
    /* -------------- LDRD/STRD reg+/-#imm8 -------------- */
    /* Doubleword loads and stores of the form:
-         ldrd/strd  Rt, Rt2, [Rn, #-imm8]      or
+         ldrd/strd  Rt, Rt2, [Rn, #+/-imm8]    or
          ldrd/strd  Rt, Rt2, [Rn], #+/-imm8    or
          ldrd/strd  Rt, Rt2, [Rn, #+/-imm8]!  
    */
@@ -20419,12 +20538,17 @@ DisResult disInstr_THUMB_WRK (
       if (bP == 0 && bW == 0)                 valid = False;
       if (bW == 1 && (rN == rT || rN == rT2)) valid = False;
       if (isBadRegT(rT) || isBadRegT(rT2))    valid = False;
-      if (rN == 15)                           valid = False;
       if (bL == 1 && rT == rT2)               valid = False;
+      /* It's OK to use PC as the base register only in the
+         following case: ldrd Rt, Rt2, [PC, #+/-imm8] */
+      if (rN == 15 && (bL == 0/*store*/
+                       || bW == 1/*wb*/))     valid = False;
 
       if (valid) {
          IRTemp preAddr = newTemp(Ity_I32);
-         assign(preAddr, getIRegT(rN));
+         assign(preAddr, 15 == rN
+                           ? binop(Iop_And32, getIRegT(15), mkU32(~3U))
+                           : getIRegT(rN));
 
          IRTemp postAddr = newTemp(Ity_I32);
          assign(postAddr, binop(bU == 1 ? Iop_Add32 : Iop_Sub32,
@@ -21769,9 +21893,10 @@ DisResult disInstr_THUMB_WRK (
       now. */
    vassert(0 == (guest_R15_curr_instr_notENC & 1));
    llPutIReg( 15, mkU32(guest_R15_curr_instr_notENC | 1) );
+   dres.len         = 0;
    dres.whatNext    = Dis_StopHere;
    dres.jk_StopHere = Ijk_NoDecode;
-   dres.len         = 0;
+   dres.continueAt  = 0;
    return dres;
 
   decode_success:
@@ -21899,7 +22024,7 @@ DisResult disInstr_ARM ( IRSB*        irsb_IN,
                          VexArch      guest_arch,
                          VexArchInfo* archinfo,
                          VexAbiInfo*  abiinfo,
-                         Bool         host_bigendian_IN,
+                         VexEndness   host_endness_IN,
                          Bool         sigill_diag_IN )
 {
    DisResult dres;
@@ -21908,9 +22033,9 @@ DisResult disInstr_ARM ( IRSB*        irsb_IN,
    /* Set globals (see top of this file) */
    vassert(guest_arch == VexArchARM);
 
-   irsb              = irsb_IN;
-   host_is_bigendian = host_bigendian_IN;
-   __curr_is_Thumb   = isThumb;
+   irsb            = irsb_IN;
+   host_endness    = host_endness_IN;
+   __curr_is_Thumb = isThumb;
 
    if (isThumb) {
       guest_R15_curr_instr_notENC = (Addr32)guest_IP_ENCODED - 1;

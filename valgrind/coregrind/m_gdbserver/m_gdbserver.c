@@ -146,7 +146,7 @@ static HChar* sym (Addr addr, Bool is_code)
    if (w == 2) w = 0;
    buf[w][0] = '\0';
    if (is_code) {
-      VG_(describe_IP) (addr, buf[w], 200);
+      VG_(describe_IP) (addr, buf[w], 200, NULL);
    } else {
       VG_(get_datasym_and_offset) (addr, buf[w], 200, &offset);
    }
@@ -219,15 +219,19 @@ static void add_gs_address (Addr addr, GS_Kind kind, const HChar* from)
    VG_(HT_add_node)(gs_addresses, p);
    /* It should be sufficient to discard a range of 1.
       We use 2 to ensure the below is not sensitive to the presence
-      of thumb bit in the range of addresses to discard. */ 
-   VG_(discard_translations) (addr, 2, from);
+      of thumb bit in the range of addresses to discard. 
+      No need to discard translations for Vg_VgdbFull as all
+      instructions are in any case vgdb-instrumented. */
+   if (VG_(clo_vgdb) != Vg_VgdbFull)
+      VG_(discard_translations) (addr, 2, from);
 }
 
 static void remove_gs_address (GS_Address* g, const HChar* from)
 {
    VG_(HT_remove) (gs_addresses, g->addr);
-   // See add_gs_address for the explanation for the range 2 below.
-   VG_(discard_translations) (g->addr, 2, from);
+   // See add_gs_address for the explanation for condition and the range 2 below.
+   if (VG_(clo_vgdb) != Vg_VgdbFull)
+      VG_(discard_translations) (g->addr, 2, from);
    VG_(arena_free) (VG_AR_CORE, g);
 }
 
@@ -584,11 +588,22 @@ static void invalidate_current_ip (ThreadId tid, const HChar *who)
    invalidate_if_jump_not_yet_gdbserved (VG_(get_IP) (tid), who);
 }
 
+Bool VG_(gdbserver_init_done) (void)
+{
+   return gdbserver_called > 0;
+}
+
+Bool VG_(gdbserver_stop_at) (VgdbStopAt stopat)
+{
+   return gdbserver_called > 0 && VgdbStopAtiS(stopat, VG_(clo_vgdb_stop_at));
+}
+
 void VG_(gdbserver_prerun_action) (ThreadId tid)
 {
    // Using VG_(dyn_vgdb_error) allows the user to control if gdbserver
    // stops after a fork.
-   if (VG_(dyn_vgdb_error) == 0) {
+   if (VG_(dyn_vgdb_error) == 0 
+       || VgdbStopAtiS(VgdbStopAt_Startup, VG_(clo_vgdb_stop_at))) {
       /* The below call allows gdb to attach at startup
          before the first guest instruction is executed. */
       VG_(umsg)("(action at startup) vgdb me ... \n");
@@ -908,7 +923,11 @@ Bool VG_(gdbserver_activity) (ThreadId tid)
    switch (remote_desc_activity("VG_(gdbserver_activity)")) {
    case 0: ret = False; break;
    case 1: ret = True; break;
-   case 2: call_gdbserver (tid, init_reason); ret = False; break;
+   case 2: 
+      remote_finish(reset_after_error);
+      call_gdbserver (tid, init_reason); 
+      ret = False; 
+      break;
    default: vg_assert (0);
    }
    busy--;
@@ -1385,7 +1404,7 @@ static Bool is_zero_b (const HChar *s)
       return False;
 }
 
-void VG_(strtok_get_address_and_size) (Addr* address, 
+Bool VG_(strtok_get_address_and_size) (Addr* address, 
                                        SizeT* szB, 
                                        HChar **ssaveptr)
 {
@@ -1400,7 +1419,7 @@ void VG_(strtok_get_address_and_size) (Addr* address,
       VG_(gdb_printf) ("missing or malformed address\n");
       *address = (Addr) 0;
       *szB = 0;
-      return;
+      return False;
    }
    ws = VG_(strtok_r) (NULL, " ", ssaveptr);
    if (ws == NULL) {
@@ -1432,8 +1451,9 @@ void VG_(strtok_get_address_and_size) (Addr* address,
                        "hex 0x..... or dec ...... or binary .....b\n");
       *address = (Addr) 0;
       *szB = 0;
-      return;
+      return False;
    }
+   return True;
 }
 
 void VG_(gdbserver_status_output)(void)
@@ -1449,7 +1469,8 @@ void VG_(gdbserver_status_output)(void)
        "interrupts intr_tid %d gs_non_busy %d gs_busy %d tid_non_intr %d\n"
        "gdbserved addresses %d (-1 = not initialized)\n"
        "watchpoints %d (-1 = not initialized)\n"
-       "vgdb-error %d\n",
+       "vgdb-error %d\n"
+       "hostvisibility %s\n",
        gdbserver_called,
        valgrind_single_stepping(),
        
@@ -1460,5 +1481,6 @@ void VG_(gdbserver_status_output)(void)
        
        nr_gdbserved_addresses,
        nr_watchpoints,
-       VG_(dyn_vgdb_error));
+       VG_(dyn_vgdb_error),
+       hostvisibility ? "yes" : "no");
 }

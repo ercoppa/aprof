@@ -273,12 +273,19 @@ s390_amode_bx20(Int d, HReg b, HReg x)
 }
 
 
-/* Construct an AMODE for accessing the guest state at OFFSET */
+/* Construct an AMODE for accessing the guest state at OFFSET. 
+   OFFSET can be at most 3 * sizeof(VexGuestS390XState) + LibVEX_N_SPILL_BYTES
+   which may be too large for a B12 addressing mode. 
+   Use a B20 amode as a fallback which will be safe for any offset.
+*/
 s390_amode *
 s390_amode_for_guest_state(Int offset)
 {
    if (fits_unsigned_12bit(offset))
       return s390_amode_b12(offset, s390_hreg_guest_state_pointer());
+
+   if (fits_signed_20bit(offset))
+      return s390_amode_b20(offset, s390_hreg_guest_state_pointer());
 
    vpanic("invalid guest state offset");
 }
@@ -458,7 +465,6 @@ genSpill_S390(HInstr **i1, HInstr **i2, HReg rreg, Int offsetB, Bool mode64)
    s390_amode *am;
 
    vassert(offsetB >= 0);
-   vassert(offsetB <= (1 << 12));  /* because we use b12 amode */
    vassert(!hregIsVirtual(rreg));
 
    *i1 = *i2 = NULL;
@@ -485,7 +491,6 @@ genReload_S390(HInstr **i1, HInstr **i2, HReg rreg, Int offsetB, Bool mode64)
    s390_amode *am;
 
    vassert(offsetB >= 0);
-   vassert(offsetB <= (1 << 12));  /* because we use b12 amode */
    vassert(!hregIsVirtual(rreg));
 
    *i1 = *i2 = NULL;
@@ -5861,7 +5866,6 @@ s390_insn_bfp128_convert(UChar size, s390_bfp_conv_t tag, HReg dst_hi,
    } else {
       /* From 16 bytes to smaller size */
       vassert(is_valid_fp128_regpair(op_hi, op_lo));
-      vassert(hregIsInvalid(dst_lo));
    }
 
    insn->tag  = S390_INSN_BFP_CONVERT;
@@ -5891,11 +5895,11 @@ s390_insn_bfp128_convert_to(UChar size, s390_bfp_conv_t tag, HReg dst_hi,
 
 
 s390_insn *
-s390_insn_bfp128_convert_from(UChar size, s390_bfp_conv_t tag, HReg dst,
-                              HReg op_hi, HReg op_lo,
+s390_insn_bfp128_convert_from(UChar size, s390_bfp_conv_t tag, HReg dst_hi,
+                              HReg dst_lo, HReg op_hi, HReg op_lo,
                               s390_bfp_round_t rounding_mode)
 {
-   return s390_insn_bfp128_convert(size, tag, dst, INVALID_HREG, op_hi, op_lo,
+   return s390_insn_bfp128_convert(size, tag, dst_hi, dst_lo, op_hi, op_lo,
                                    rounding_mode);
 }
 
@@ -6192,7 +6196,6 @@ s390_insn_dfp128_convert(UChar size, s390_dfp_conv_t tag, HReg dst_hi,
    } else {
       /* From 16 bytes to smaller size */
       vassert(is_valid_fp128_regpair(op_hi, op_lo));
-      vassert(hregIsInvalid(dst_lo));
    }
 
    insn->tag  = S390_INSN_DFP_CONVERT;
@@ -6222,11 +6225,11 @@ s390_insn_dfp128_convert_to(UChar size, s390_dfp_conv_t tag, HReg dst_hi,
 
 
 s390_insn *
-s390_insn_dfp128_convert_from(UChar size, s390_dfp_conv_t tag, HReg dst,
-                              HReg op_hi, HReg op_lo,
+s390_insn_dfp128_convert_from(UChar size, s390_dfp_conv_t tag, HReg dst_hi,
+                              HReg dst_lo, HReg op_hi, HReg op_lo,
                               s390_dfp_round_t rounding_mode)
 {
-   return s390_insn_dfp128_convert(size, tag, dst, INVALID_HREG, op_hi, op_lo,
+   return s390_insn_dfp128_convert(size, tag, dst_hi, dst_lo, op_hi, op_lo,
                                    rounding_mode);
 }
 
@@ -6461,7 +6464,7 @@ s390_jump_kind_as_string(IRJumpKind kind)
    case Ijk_EmFail:      return "EmFail";
    case Ijk_NoDecode:    return "NoDecode";
    case Ijk_MapFail:     return "MapFail";
-   case Ijk_TInval:      return "Invalidate";
+   case Ijk_InvalICache: return "Invalidate";
    case Ijk_NoRedir:     return "NoRedir";
    case Ijk_SigTRAP:     return "SigTRAP";
    case Ijk_SigSEGV:     return "SigSEGV";
@@ -9780,7 +9783,7 @@ s390_insn_xassisted_emit(UChar *buf, const s390_insn *insn,
    case Ijk_EmFail:      trcval = VEX_TRC_JMP_EMFAIL;      break;
    case Ijk_MapFail:     trcval = VEX_TRC_JMP_MAPFAIL;     break;
    case Ijk_NoDecode:    trcval = VEX_TRC_JMP_NODECODE;    break;
-   case Ijk_TInval:      trcval = VEX_TRC_JMP_TINVAL;      break;
+   case Ijk_InvalICache: trcval = VEX_TRC_JMP_INVALICACHE; break;
    case Ijk_NoRedir:     trcval = VEX_TRC_JMP_NOREDIR;     break;
    case Ijk_SigTRAP:     trcval = VEX_TRC_JMP_SIGTRAP;     break;
    case Ijk_SigSEGV:     trcval = VEX_TRC_JMP_SIGSEGV;     break;
@@ -9828,7 +9831,8 @@ s390_insn_xassisted_emit(UChar *buf, const s390_insn *insn,
 
    The dispatch counter is a 32-bit value. */
 static UChar *
-s390_insn_evcheck_emit(UChar *buf, const s390_insn *insn)
+s390_insn_evcheck_emit(UChar *buf, const s390_insn *insn,
+                       VexEndness endness_host)
 {
    s390_amode *amode;
    UInt b, d;
@@ -9864,7 +9868,7 @@ s390_insn_evcheck_emit(UChar *buf, const s390_insn *insn)
    
    /* Make sure the size of the generated code is identical to the size
       returned by evCheckSzB_S390 */
-   vassert(evCheckSzB_S390() == code_end - code_begin);
+   vassert(evCheckSzB_S390(endness_host) == code_end - code_begin);
 
    return buf;
 }
@@ -9893,7 +9897,8 @@ s390_insn_profinc_emit(UChar *buf,
 
 Int
 emit_S390Instr(Bool *is_profinc, UChar *buf, Int nbuf, s390_insn *insn,
-               Bool mode64, void *disp_cp_chain_me_to_slowEP,
+               Bool mode64, VexEndness endness_host,
+               void *disp_cp_chain_me_to_slowEP,
                void *disp_cp_chain_me_to_fastEP, void *disp_cp_xindir,
                void *disp_cp_xassisted)
 {
@@ -10054,7 +10059,7 @@ emit_S390Instr(Bool *is_profinc, UChar *buf, Int nbuf, s390_insn *insn,
       break;
 
    case S390_INSN_EVCHECK:
-      end = s390_insn_evcheck_emit(buf, insn);
+      end = s390_insn_evcheck_emit(buf, insn, endness_host);
       break;
 
    case S390_INSN_XDIRECT:
@@ -10084,7 +10089,7 @@ emit_S390Instr(Bool *is_profinc, UChar *buf, Int nbuf, s390_insn *insn,
 /* Return the number of bytes emitted for an S390_INSN_EVCHECK.
    See s390_insn_evcheck_emit */
 Int
-evCheckSzB_S390(void)
+evCheckSzB_S390(VexEndness endness_host)
 {
    return s390_host_has_gie ? 18 : 24;
 }
@@ -10093,7 +10098,8 @@ evCheckSzB_S390(void)
 /* Patch the counter address into CODE_TO_PATCH as previously
    generated by s390_insn_profinc_emit. */
 VexInvalRange
-patchProfInc_S390(void *code_to_patch, ULong *location_of_counter)
+patchProfInc_S390(VexEndness endness_host,
+                  void *code_to_patch, ULong *location_of_counter)
 {
    vassert(sizeof(ULong *) == 8);
 
@@ -10111,10 +10117,13 @@ patchProfInc_S390(void *code_to_patch, ULong *location_of_counter)
 /* NB: what goes on here has to be very closely coordinated with the
    s390_insn_xdirect_emit code above. */
 VexInvalRange
-chainXDirect_S390(void *place_to_chain,
+chainXDirect_S390(VexEndness endness_host,
+                  void *place_to_chain,
                   void *disp_cp_chain_me_EXPECTED,
                   void *place_to_jump_to)
 {
+   vassert(endness_host == VexEndnessBE);
+
    /* What we're expecting to see @ PLACE_TO_CHAIN is:
 
         load  tchain_scratch, #disp_cp_chain_me_EXPECTED
@@ -10196,10 +10205,13 @@ chainXDirect_S390(void *place_to_chain,
 /* NB: what goes on here has to be very closely coordinated with the
    s390_insn_xdirect_emit code above. */
 VexInvalRange
-unchainXDirect_S390(void *place_to_unchain,
+unchainXDirect_S390(VexEndness endness_host,
+                    void *place_to_unchain,
                     void *place_to_jump_to_EXPECTED,
                     void *disp_cp_chain_me)
 {
+   vassert(endness_host == VexEndnessBE);
+
    /* What we're expecting to see @ PLACE_TO_UNCHAIN:
 
           load  tchain_scratch, #place_to_jump_to_EXPECTED

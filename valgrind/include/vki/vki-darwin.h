@@ -290,6 +290,9 @@ typedef uint32_t vki_u32;
 #define VKI_F_LOG2PHYS	F_LOG2PHYS
 #define VKI_F_GETPATH	F_GETPATH
 #define VKI_F_ADDSIGS	F_ADDSIGS
+#if DARWIN_VERS >= DARWIN_10_9
+# define VKI_F_ADDFILESIGS  F_ADDFILESIGS
+#endif
 #define VKI_F_FULLFSYNC	F_FULLFSYNC
 #define VKI_F_PATHPKG_CHECK	F_PATHPKG_CHECK
 #define VKI_F_FREEZE_FS	F_FREEZE_FS
@@ -786,6 +789,7 @@ typedef
 #include <sys/event.h>
 
 #define vki_kevent kevent
+#define vki_kevent64 kevent64_s
 
 
 #include <sys/ev.h>

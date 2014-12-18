@@ -63,7 +63,7 @@ void HG_(record_error_PthAPIerror)    ( Thread*, const HChar*, Word,
                                         const HChar* );
 
 /* see the implementation for meaning of these params */
-void HG_(record_error_LockOrder)      ( Thread*, Addr, Addr,
+void HG_(record_error_LockOrder)      ( Thread*, Lock*, Lock*,
                                         ExeContext*, ExeContext*,
                                         ExeContext* );
 
@@ -78,18 +78,6 @@ extern ULong HG_(stats__LockN_to_P_queries);
 extern ULong HG_(stats__LockN_to_P_get_map_size) ( void );
 extern ULong HG_(stats__string_table_queries);
 extern ULong HG_(stats__string_table_get_map_size) ( void );
-
-/* For error creation: map 'data_addr' to a malloc'd chunk, if any.
-   Slow linear search accelerated in some special cases normal hash
-   search of the mallocmeta table. This is an abuse of the normal file
-   structure since this is exported by hg_main.c, not hg_errors.c.  Oh
-   Well.  Returns True if found, False if not.  Zero-sized blocks are
-   considered to contain the searched-for address if they equal that
-   address. */
-Bool HG_(mm_find_containing_block)( /*OUT*/ExeContext** where,
-                                    /*OUT*/Addr*        payload,
-                                    /*OUT*/SizeT*       szB,
-                                    Addr                data_addr );
 
 #endif /* ! __HG_ERRORS_H */
 

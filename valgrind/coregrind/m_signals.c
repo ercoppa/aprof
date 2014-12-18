@@ -348,7 +348,7 @@ typedef struct SigQueue {
         (srP)->misc.PPC32.r_lr = (uc)->uc_regs->mc_gregs[VKI_PT_LNK]; \
       }
 
-#elif defined(VGP_ppc64_linux)
+#elif defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
 #  define VG_UCONTEXT_INSTR_PTR(uc)  ((uc)->uc_mcontext.gp_regs[VKI_PT_NIP])
 #  define VG_UCONTEXT_STACK_PTR(uc)  ((uc)->uc_mcontext.gp_regs[VKI_PT_R1])
    /* Dubious hack: if there is an error, only consider the lowest 8
@@ -384,6 +384,19 @@ typedef struct SigQueue {
         (srP)->misc.ARM.r12 = (uc)->uc_mcontext.arm_ip; \
         (srP)->misc.ARM.r11 = (uc)->uc_mcontext.arm_fp; \
         (srP)->misc.ARM.r7  = (uc)->uc_mcontext.arm_r7; \
+      }
+
+#elif defined(VGP_arm64_linux)
+#  define VG_UCONTEXT_INSTR_PTR(uc)       ((UWord)((uc)->uc_mcontext.pc))
+#  define VG_UCONTEXT_STACK_PTR(uc)       ((UWord)((uc)->uc_mcontext.sp))
+#  define VG_UCONTEXT_SYSCALL_SYSRES(uc)                        \
+      /* Convert the value in uc_mcontext.regs[0] into a SysRes. */ \
+      VG_(mk_SysRes_arm64_linux)( (uc)->uc_mcontext.regs[0] )
+#  define VG_UCONTEXT_TO_UnwindStartRegs(srP, uc)           \
+      { (srP)->r_pc = (uc)->uc_mcontext.pc;                 \
+        (srP)->r_sp = (uc)->uc_mcontext.sp;                 \
+        (srP)->misc.ARM64.x29 = (uc)->uc_mcontext.regs[29]; \
+        (srP)->misc.ARM64.x30 = (uc)->uc_mcontext.regs[30]; \
       }
 
 #elif defined(VGP_x86_darwin)
@@ -838,7 +851,7 @@ extern void my_sigreturn(void);
    "	sc\n" \
    ".previous\n"
 
-#elif defined(VGP_ppc64_linux)
+#elif defined(VGP_ppc64be_linux)
 #  define _MY_SIGRETURN(name) \
    ".align   2\n" \
    ".globl   my_sigreturn\n" \
@@ -853,6 +866,23 @@ extern void my_sigreturn(void);
    "	li	0, " #name "\n" \
    "	sc\n"
 
+#elif defined(VGP_ppc64le_linux)
+/* Little Endian supports ELF version 2.  In the future, it may
+ * support other versions.
+ */
+#  define _MY_SIGRETURN(name) \
+   ".align   2\n" \
+   ".globl   my_sigreturn\n" \
+   ".type    .my_sigreturn,@function\n" \
+   "my_sigreturn:\n" \
+   "#if _CALL_ELF == 2 \n" \
+   "0: addis        2,12,.TOC.-0b@ha\n" \
+   "   addi         2,2,.TOC.-0b@l\n" \
+   "   .localentry my_sigreturn,.-my_sigreturn\n" \
+   "#endif \n" \
+   "   sc\n" \
+   "   .size my_sigreturn,.-my_sigreturn\n"
+
 #elif defined(VGP_arm_linux)
 #  define _MY_SIGRETURN(name) \
    ".text\n" \
@@ -860,6 +890,15 @@ extern void my_sigreturn(void);
    "my_sigreturn:\n\t" \
    "    mov  r7, #" #name "\n\t" \
    "    svc  0x00000000\n" \
+   ".previous\n"
+
+#elif defined(VGP_arm64_linux)
+#  define _MY_SIGRETURN(name) \
+   ".text\n" \
+   ".globl my_sigreturn\n" \
+   "my_sigreturn:\n\t" \
+   "    mov  x8, #" #name "\n\t" \
+   "    svc  0x0\n" \
    ".previous\n"
 
 #elif defined(VGP_x86_darwin)
@@ -980,8 +1019,7 @@ static void handle_SCSS_change ( Bool force_update )
 #        if !defined(VGP_ppc32_linux) && \
             !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin) && \
             !defined(VGP_mips32_linux) && !defined(VGP_mips64_linux)
-         vg_assert(ksa_old.sa_restorer 
-                   == my_sigreturn);
+         vg_assert(ksa_old.sa_restorer == my_sigreturn);
 #        endif
          VG_(sigaddset)( &ksa_old.sa_mask, VKI_SIGKILL );
          VG_(sigaddset)( &ksa_old.sa_mask, VKI_SIGSTOP );

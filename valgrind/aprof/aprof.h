@@ -56,7 +56,7 @@
 #include "../coregrind/pub_core_options.h"
 #include "lookup_table.h"
 
-#define APROF_VERSION       "0.2.0"
+#define APROF_VERSION       "0.2.1"
 #define APROF_(str)         VGAPPEND(vgAprof_,str)
 #define APROF_TOOL          1   // useful for data-common.h
 #define REPORT_VERSION      6   // see documentation on our site:
@@ -319,8 +319,11 @@ inline ULong APROF_(time)(ThreadData * tdata) {
 #endif // COST == RDTSC
 
 /* internal functions of valgrind */
+extern
 const HChar* ML_(find_executable) (const HChar * exec);
-Bool VG_(get_fnname_no_cxx_demangle) (Addr a, Char* buf, Int nbuf);
+extern
+Bool VG_(get_fnname_no_cxx_demangle) ( Addr a, HChar* buf, Int nbuf,
+                                       InlIPCursor* iipc );
 
 // check for overflow (long)
 #define ADD(dest, inc) do { \

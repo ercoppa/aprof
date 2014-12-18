@@ -75,18 +75,18 @@ UInt APROF_(search_reports)(HChar *** reports, const HChar * path) {
     UInt capacity = 16;
     *reports = VG_(calloc)("report list", sizeof(HChar *), capacity);
 
-    struct vki_dirent * file;
+    struct vki_dirent64 * file;
     HChar buf[1024] = {0};
 
     while(1) {
 
-        Int res = VG_(getdents)(dir, (struct vki_dirent *) &buf, 1024);
+        Int res = VG_(getdents64)(dir, (struct vki_dirent64 *) &buf, 1024);
         if (res <= 0) break;
         
         Int i;
         for(i = 0; i < res; i += file->d_reclen) {
 
-            file = (struct vki_dirent *) (buf + i);
+            file = (struct vki_dirent64 *) (buf + i);
             
             // Invalid file name
             if (file->d_name == NULL) continue;

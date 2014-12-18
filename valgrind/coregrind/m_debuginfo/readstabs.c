@@ -36,7 +36,8 @@
 
 /* "on Linux (except android), or on Darwin" */
 #if (defined(VGO_linux) && \
-    !(defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)) \
+    !(defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android) \
+      || defined(VGPV_mips32_linux_android)) \
     || defined(VGO_darwin))
 
 #include "pub_core_basics.h"
@@ -54,7 +55,18 @@
 
 /* --- !!! --- EXTERNAL HEADERS start --- !!! --- */
 #if defined(VGO_linux)
-#  include <linux/a.out.h> /* stabs defns */
+/* stabs symbol list entry definition. */
+struct nlist {
+  union {
+    char *n_name;
+    struct nlist *n_next;
+    long n_strx;
+  } n_un;
+  unsigned char n_type;
+  char n_other;
+  short n_desc;
+  unsigned long n_value;
+};
 #elif defined(VGO_darwin)
 #  include <mach-o/nlist.h>
 #  define n_other n_sect
@@ -122,6 +134,12 @@ void ML_(read_debuginfo_stabs) ( DebugInfo* di,
       Addr     addr;          /* start of this line */
       Bool     first;         /* first line in function */
    } line = { 0, 0, 0, 0, False };
+
+   vg_assert (0);
+   /* Stab reader broken since debuginfo server (revision 13440)
+      See #if 0 for call to  ML_(read_debuginfo_stabs) in readelf.c.
+      If ever it is repaired, file.name above should be replaced by a fndn_ix
+      for performance reasons. */
 
    /* Ok.  It all looks plausible.  Go on and read debug data. 
          stab kinds: 100   N_SO     a source file name
@@ -269,7 +287,11 @@ void ML_(read_debuginfo_stabs) ( DebugInfo* di,
 
             if (line.addr != 0) {
                /* finish off previous line */
-               ML_(addLineInfo)(di, file.name, NULL, line.addr,
+               ML_(addLineInfo)(di, 
+                                ML_(addFnDn) (di,
+                                              file.name,
+                                              NULL),
+                                line.addr,
                                 addr, line.no + line.ovf * LINENO_OVERFLOW, i);
             }
 
@@ -293,7 +315,11 @@ void ML_(read_debuginfo_stabs) ( DebugInfo* di,
 
             if (line.addr != 0) {
                /* there was a previous */
-               ML_(addLineInfo)(di, file.name, NULL, line.addr,
+               ML_(addLineInfo)(di, 
+                                ML_(addFnDn)(di,
+                                             file.name,
+                                             NULL), 
+                                line.addr,
                                 addr, line.no + line.ovf * LINENO_OVERFLOW, i);
             }
 
@@ -352,7 +378,11 @@ void ML_(read_debuginfo_stabs) ( DebugInfo* di,
             }
 
             if (line.addr) {
-               ML_(addLineInfo)(di, file.name, NULL, line.addr,
+               ML_(addLineInfo)(di, 
+                                ML_(addFnDn) (di,
+                                              file.name,
+                                              NULL),
+                                line.addr,
                                 addr, line.no + line.ovf * LINENO_OVERFLOW, i);
                line.addr = 0;
             }

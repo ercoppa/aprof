@@ -3031,11 +3031,12 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
          addInstr(env, AMD64Instr_A87PushPop(m8_rsp, True/*push*/, 8));
          /* XXXROUNDINGFIXME */
          /* set roundingmode here */
+         /* Note that AMD64Instr_A87FpOp(Afp_TAN) sets the condition
+            codes.  I don't think that matters, since this insn
+            selector never generates such an instruction intervening
+            between an flag-setting instruction and a flag-using
+            instruction. */
          addInstr(env, AMD64Instr_A87FpOp(fpop));
-         if (e->Iex.Binop.op==Iop_TanF64) {
-            /* get rid of the extra 1.0 that fptan pushes */
-            addInstr(env, AMD64Instr_A87PushPop(m8_rsp, False/*pop*/, 8));
-         }
          addInstr(env, AMD64Instr_A87PushPop(m8_rsp, False/*pop*/, 8));
          addInstr(env, AMD64Instr_SseLdSt(True/*load*/, 8, dst, m8_rsp));
          return dst;
@@ -3225,9 +3226,9 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
-      case Iop_Recip32Fx4: op = Asse_RCPF;   goto do_32Fx4_unary;
-      case Iop_RSqrt32Fx4: op = Asse_RSQRTF; goto do_32Fx4_unary;
-      case Iop_Sqrt32Fx4:  op = Asse_SQRTF;  goto do_32Fx4_unary;
+      case Iop_RecipEst32Fx4: op = Asse_RCPF;   goto do_32Fx4_unary;
+      case Iop_RSqrtEst32Fx4: op = Asse_RSQRTF; goto do_32Fx4_unary;
+      case Iop_Sqrt32Fx4:     op = Asse_SQRTF;  goto do_32Fx4_unary;
       do_32Fx4_unary:
       {
          HReg arg = iselVecExpr(env, e->Iex.Unop.arg);
@@ -3245,9 +3246,9 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
-      case Iop_Recip32F0x4: op = Asse_RCPF;   goto do_32F0x4_unary;
-      case Iop_RSqrt32F0x4: op = Asse_RSQRTF; goto do_32F0x4_unary;
-      case Iop_Sqrt32F0x4:  op = Asse_SQRTF;  goto do_32F0x4_unary;
+      case Iop_RecipEst32F0x4: op = Asse_RCPF;   goto do_32F0x4_unary;
+      case Iop_RSqrtEst32F0x4: op = Asse_RSQRTF; goto do_32F0x4_unary;
+      case Iop_Sqrt32F0x4:     op = Asse_SQRTF;  goto do_32F0x4_unary;
       do_32F0x4_unary:
       {
          /* A bit subtle.  We have to copy the arg to the result
@@ -3355,12 +3356,8 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_CmpLT32Fx4: op = Asse_CMPLTF; goto do_32Fx4;
       case Iop_CmpLE32Fx4: op = Asse_CMPLEF; goto do_32Fx4;
       case Iop_CmpUN32Fx4: op = Asse_CMPUNF; goto do_32Fx4;
-      case Iop_Add32Fx4:   op = Asse_ADDF;   goto do_32Fx4;
-      case Iop_Div32Fx4:   op = Asse_DIVF;   goto do_32Fx4;
       case Iop_Max32Fx4:   op = Asse_MAXF;   goto do_32Fx4;
       case Iop_Min32Fx4:   op = Asse_MINF;   goto do_32Fx4;
-      case Iop_Mul32Fx4:   op = Asse_MULF;   goto do_32Fx4;
-      case Iop_Sub32Fx4:   op = Asse_SUBF;   goto do_32Fx4;
       do_32Fx4:
       {
          HReg argL = iselVecExpr(env, e->Iex.Binop.arg1);
@@ -3375,12 +3372,8 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_CmpLT64Fx2: op = Asse_CMPLTF; goto do_64Fx2;
       case Iop_CmpLE64Fx2: op = Asse_CMPLEF; goto do_64Fx2;
       case Iop_CmpUN64Fx2: op = Asse_CMPUNF; goto do_64Fx2;
-      case Iop_Add64Fx2:   op = Asse_ADDF;   goto do_64Fx2;
-      case Iop_Div64Fx2:   op = Asse_DIVF;   goto do_64Fx2;
       case Iop_Max64Fx2:   op = Asse_MAXF;   goto do_64Fx2;
       case Iop_Min64Fx2:   op = Asse_MINF;   goto do_64Fx2;
-      case Iop_Mul64Fx2:   op = Asse_MULF;   goto do_64Fx2;
-      case Iop_Sub64Fx2:   op = Asse_SUBF;   goto do_64Fx2;
       do_64Fx2:
       {
          HReg argL = iselVecExpr(env, e->Iex.Binop.arg1);
@@ -3660,6 +3653,47 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
    } /* switch (e->Iex.Binop.op) */
    } /* if (e->tag == Iex_Binop) */
 
+   if (e->tag == Iex_Triop) {
+   IRTriop *triop = e->Iex.Triop.details;
+   switch (triop->op) {
+
+      case Iop_Add64Fx2: op = Asse_ADDF; goto do_64Fx2_w_rm;
+      case Iop_Sub64Fx2: op = Asse_SUBF; goto do_64Fx2_w_rm;
+      case Iop_Mul64Fx2: op = Asse_MULF; goto do_64Fx2_w_rm;
+      case Iop_Div64Fx2: op = Asse_DIVF; goto do_64Fx2_w_rm;
+      do_64Fx2_w_rm:
+      {
+         HReg argL = iselVecExpr(env, triop->arg2);
+         HReg argR = iselVecExpr(env, triop->arg3);
+         HReg dst = newVRegV(env);
+         addInstr(env, mk_vMOVsd_RR(argL, dst));
+         /* XXXROUNDINGFIXME */
+         /* set roundingmode here */
+         addInstr(env, AMD64Instr_Sse64Fx2(op, argR, dst));
+         return dst;
+      }
+
+      case Iop_Add32Fx4: op = Asse_ADDF; goto do_32Fx4_w_rm;
+      case Iop_Sub32Fx4: op = Asse_SUBF; goto do_32Fx4_w_rm;
+      case Iop_Mul32Fx4: op = Asse_MULF; goto do_32Fx4_w_rm;
+      case Iop_Div32Fx4: op = Asse_DIVF; goto do_32Fx4_w_rm;
+      do_32Fx4_w_rm:
+      {
+         HReg argL = iselVecExpr(env, triop->arg2);
+         HReg argR = iselVecExpr(env, triop->arg3);
+         HReg dst = newVRegV(env);
+         addInstr(env, mk_vMOVsd_RR(argL, dst));
+         /* XXXROUNDINGFIXME */
+         /* set roundingmode here */
+         addInstr(env, AMD64Instr_Sse32Fx4(op, argR, dst));
+         return dst;
+      }
+
+      default:
+         break;
+   } /* switch (triop->op) */
+   } /* if (e->tag == Iex_Triop) */
+
    if (e->tag == Iex_ITE) { // VFD
       HReg r1  = iselVecExpr(env, e->Iex.ITE.iftrue);
       HReg r0  = iselVecExpr(env, e->Iex.ITE.iffalse);
@@ -3766,9 +3800,9 @@ static void iselDVecExpr_wrk ( /*OUT*/HReg* rHi, /*OUT*/HReg* rLo,
          return;
       }
 
-      case Iop_Recip32Fx8: op = Asse_RCPF;   goto do_32Fx8_unary;
-      case Iop_Sqrt32Fx8:  op = Asse_SQRTF;  goto do_32Fx8_unary;
-      case Iop_RSqrt32Fx8: op = Asse_RSQRTF; goto do_32Fx8_unary;
+      case Iop_RecipEst32Fx8: op = Asse_RCPF;   goto do_32Fx8_unary;
+      case Iop_Sqrt32Fx8:     op = Asse_SQRTF;  goto do_32Fx8_unary;
+      case Iop_RSqrtEst32Fx8: op = Asse_RSQRTF; goto do_32Fx8_unary;
       do_32Fx8_unary:
       {
          HReg argHi, argLo;
@@ -3851,10 +3885,6 @@ static void iselDVecExpr_wrk ( /*OUT*/HReg* rHi, /*OUT*/HReg* rLo,
    if (e->tag == Iex_Binop) {
    switch (e->Iex.Binop.op) {
 
-      case Iop_Add64Fx4:   op = Asse_ADDF;   goto do_64Fx4;
-      case Iop_Sub64Fx4:   op = Asse_SUBF;   goto do_64Fx4;
-      case Iop_Mul64Fx4:   op = Asse_MULF;   goto do_64Fx4;
-      case Iop_Div64Fx4:   op = Asse_DIVF;   goto do_64Fx4;
       case Iop_Max64Fx4:   op = Asse_MAXF;   goto do_64Fx4;
       case Iop_Min64Fx4:   op = Asse_MINF;   goto do_64Fx4;
       do_64Fx4:
@@ -3873,10 +3903,6 @@ static void iselDVecExpr_wrk ( /*OUT*/HReg* rHi, /*OUT*/HReg* rLo,
          return;
       }
 
-      case Iop_Add32Fx8:   op = Asse_ADDF;   goto do_32Fx8;
-      case Iop_Sub32Fx8:   op = Asse_SUBF;   goto do_32Fx8;
-      case Iop_Mul32Fx8:   op = Asse_MULF;   goto do_32Fx8;
-      case Iop_Div32Fx8:   op = Asse_DIVF;   goto do_32Fx8;
       case Iop_Max32Fx8:   op = Asse_MAXF;   goto do_32Fx8;
       case Iop_Min32Fx8:   op = Asse_MINF;   goto do_32Fx8;
       do_32Fx8:
@@ -4144,6 +4170,60 @@ static void iselDVecExpr_wrk ( /*OUT*/HReg* rHi, /*OUT*/HReg* rLo,
          break;
    } /* switch (e->Iex.Binop.op) */
    } /* if (e->tag == Iex_Binop) */
+
+   if (e->tag == Iex_Triop) {
+   IRTriop *triop = e->Iex.Triop.details;
+   switch (triop->op) {
+
+      case Iop_Add64Fx4: op = Asse_ADDF; goto do_64Fx4_w_rm;
+      case Iop_Sub64Fx4: op = Asse_SUBF; goto do_64Fx4_w_rm;
+      case Iop_Mul64Fx4: op = Asse_MULF; goto do_64Fx4_w_rm;
+      case Iop_Div64Fx4: op = Asse_DIVF; goto do_64Fx4_w_rm;
+      do_64Fx4_w_rm:
+      {
+         HReg argLhi, argLlo, argRhi, argRlo;
+         iselDVecExpr(&argLhi, &argLlo, env, triop->arg2);
+         iselDVecExpr(&argRhi, &argRlo, env, triop->arg3);
+         HReg dstHi = newVRegV(env);
+         HReg dstLo = newVRegV(env);
+         addInstr(env, mk_vMOVsd_RR(argLhi, dstHi));
+         addInstr(env, mk_vMOVsd_RR(argLlo, dstLo));
+         /* XXXROUNDINGFIXME */
+         /* set roundingmode here */
+         addInstr(env, AMD64Instr_Sse64Fx2(op, argRhi, dstHi));
+         addInstr(env, AMD64Instr_Sse64Fx2(op, argRlo, dstLo));
+         *rHi = dstHi;
+         *rLo = dstLo;
+         return;
+      }
+
+      case Iop_Add32Fx8: op = Asse_ADDF; goto do_32Fx8_w_rm;
+      case Iop_Sub32Fx8: op = Asse_SUBF; goto do_32Fx8_w_rm;
+      case Iop_Mul32Fx8: op = Asse_MULF; goto do_32Fx8_w_rm;
+      case Iop_Div32Fx8: op = Asse_DIVF; goto do_32Fx8_w_rm;
+      do_32Fx8_w_rm:
+      {
+         HReg argLhi, argLlo, argRhi, argRlo;
+         iselDVecExpr(&argLhi, &argLlo, env, triop->arg2);
+         iselDVecExpr(&argRhi, &argRlo, env, triop->arg3);
+         HReg dstHi = newVRegV(env);
+         HReg dstLo = newVRegV(env);
+         addInstr(env, mk_vMOVsd_RR(argLhi, dstHi));
+         addInstr(env, mk_vMOVsd_RR(argLlo, dstLo));
+         /* XXXROUNDINGFIXME */
+         /* set roundingmode here */
+         addInstr(env, AMD64Instr_Sse32Fx4(op, argRhi, dstHi));
+         addInstr(env, AMD64Instr_Sse32Fx4(op, argRlo, dstLo));
+         *rHi = dstHi;
+         *rLo = dstLo;
+         return;
+      }
+
+      default:
+         break;
+   } /* switch (triop->op) */
+   } /* if (e->tag == Iex_Triop) */
+
 
    if (e->tag == Iex_Qop && e->Iex.Qop.details->op == Iop_64x4toV256) {
       HReg        rsp     = hregAMD64_RSP();
@@ -4649,7 +4729,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          case Ijk_SigSEGV:
          case Ijk_SigTRAP:
          case Ijk_Sys_syscall:
-         case Ijk_TInval:
+         case Ijk_InvalICache:
          case Ijk_Yield:
          {
             HReg r = iselIntExpr_R(env, IRExpr_Const(stmt->Ist.Exit.dst));
@@ -4744,7 +4824,7 @@ static void iselNext ( ISelEnv* env,
       case Ijk_SigSEGV:
       case Ijk_SigTRAP:
       case Ijk_Sys_syscall:
-      case Ijk_TInval:
+      case Ijk_InvalICache:
       case Ijk_Yield: {
          HReg        r     = iselIntExpr_R(env, next);
          AMD64AMode* amRIP = AMD64AMode_IR(offsIP, hregAMD64_RBP());
@@ -4796,6 +4876,9 @@ HInstrArray* iselSB_AMD64 ( IRSB* bb,
                      | VEX_HWCAPS_AMD64_RDTSCP
                      | VEX_HWCAPS_AMD64_BMI
                      | VEX_HWCAPS_AMD64_AVX2)));
+
+   /* Check that the host's endianness is as expected. */
+   vassert(archinfo_host->endness == VexEndnessLE);
 
    /* Make up an initial environment to use. */
    env = LibVEX_Alloc(sizeof(ISelEnv));

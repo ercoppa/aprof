@@ -47,6 +47,8 @@
                                  // VG_IS_PAGE_ALIGNED
                                  // VG_PGROUNDDN, VG_PGROUNDUP
 
+#include "pub_core_libcassert.h" // VG_(exit_now)
+
 #include "pub_core_syscall.h"    // VG_(do_syscallN)
                                  // VG_(mk_SysRes_Error)
                                  // VG_(mk_SysRes_Success)
@@ -75,7 +77,7 @@ extern void   ML_(am_assert_fail) ( const HChar* expr,
                                     const HChar* fn );
 
 #define aspacem_assert(expr)                              \
-  ((void) ((expr) ? 0 :                                   \
+  ((void) (LIKELY(expr) ? 0 :                             \
            (ML_(am_assert_fail)(#expr,                    \
                                 __FILE__, __LINE__,       \
                                 __PRETTY_FUNCTION__))))

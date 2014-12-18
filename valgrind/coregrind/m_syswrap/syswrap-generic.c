@@ -60,12 +60,42 @@
 #include "pub_core_syswrap.h"
 #include "pub_core_tooliface.h"
 #include "pub_core_ume.h"
+#include "pub_core_stacks.h"
 
 #include "priv_types_n_macros.h"
 #include "priv_syswrap-generic.h"
 
 #include "config.h"
 
+
+void ML_(guess_and_register_stack) (Addr sp, ThreadState* tst)
+{
+   Bool debug = False;
+   NSegment const* seg;
+
+   /* We don't really know where the client stack is, because its
+      allocated by the client.  The best we can do is look at the
+      memory mappings and try to derive some useful information.  We
+      assume that sp starts near its highest possible value, and can
+      only go down to the start of the mmaped segment. */
+   seg = VG_(am_find_nsegment)(sp);
+   if (seg && seg->kind != SkResvn) {
+      tst->client_stack_highest_byte = (Addr)VG_PGROUNDUP(sp)-1;
+      tst->client_stack_szB = tst->client_stack_highest_byte - seg->start + 1;
+
+      VG_(register_stack)(seg->start, tst->client_stack_highest_byte);
+
+      if (debug)
+	 VG_(printf)("tid %d: guessed client stack range [%#lx-%#lx]\n",
+		     tst->tid, seg->start, tst->client_stack_highest_byte);
+   } else {
+      VG_(message)(Vg_UserMsg,
+                   "!? New thread %d starts with SP(%#lx) unmapped\n",
+		   tst->tid, sp);
+      tst->client_stack_highest_byte = 0;
+      tst->client_stack_szB  = 0;
+   }
+}
 
 /* Returns True iff address range is something the client can
    plausibly mess with: all of it is either already belongs to the
@@ -608,7 +638,7 @@ void ML_(record_fd_open_nameless)(ThreadId tid, Int fd)
 }
 
 static
-HChar *unix2name(struct vki_sockaddr_un *sa, UInt len, HChar *name)
+HChar *unix_to_name(struct vki_sockaddr_un *sa, UInt len, HChar *name)
 {
    if (sa == NULL || len == 0 || sa->sun_path[0] == '\0') {
       VG_(sprintf)(name, "<unknown>");
@@ -620,20 +650,80 @@ HChar *unix2name(struct vki_sockaddr_un *sa, UInt len, HChar *name)
 }
 
 static
-HChar *inet2name(struct vki_sockaddr_in *sa, UInt len, HChar *name)
+HChar *inet_to_name(struct vki_sockaddr_in *sa, UInt len, HChar *name)
 {
    if (sa == NULL || len == 0) {
       VG_(sprintf)(name, "<unknown>");
+   } else if (sa->sin_port == 0) {
+      VG_(sprintf)(name, "<unbound>");
    } else {
       UInt addr = VG_(ntohl)(sa->sin_addr.s_addr);
-      if (addr == 0) {
-         VG_(sprintf)(name, "<unbound>");
-      } else {
-         VG_(sprintf)(name, "%u.%u.%u.%u:%u",
-                      (addr>>24) & 0xFF, (addr>>16) & 0xFF,
-                      (addr>>8) & 0xFF, addr & 0xFF,
-                      VG_(ntohs)(sa->sin_port));
+      VG_(sprintf)(name, "%u.%u.%u.%u:%u",
+                   (addr>>24) & 0xFF, (addr>>16) & 0xFF,
+                   (addr>>8) & 0xFF, addr & 0xFF,
+                   VG_(ntohs)(sa->sin_port));
+   }
+
+   return name;
+}
+
+static
+void inet6_format(HChar *s, const UChar ip[16])
+{
+   static const unsigned char V4mappedprefix[12] = {0,0,0,0,0,0,0,0,0,0,0xff,0xff};
+
+   if (!VG_(memcmp)(ip, V4mappedprefix, 12)) {
+      struct vki_in_addr *sin_addr = (struct vki_in_addr *)(ip + 12);
+      UInt addr = VG_(ntohl)(sin_addr->s_addr);
+
+      VG_(sprintf)(s, "::ffff:%u.%u.%u.%u",
+                   (addr>>24) & 0xFF, (addr>>16) & 0xFF,
+                   (addr>>8) & 0xFF, addr & 0xFF);
+   } else {
+      Bool compressing = False;
+      Bool compressed = False;
+      Int len = 0;
+      Int i;
+
+      for (i = 0; i < 16; i += 2) {
+         UInt word = ((UInt)ip[i] << 8) | (UInt)ip[i+1];
+         if (word == 0 && !compressed) {
+            compressing = True;
+         } else {
+            if (compressing) {
+               compressing = False;
+               compressed = True;
+               s[len++] = ':';
+            }
+            if (i > 0) {
+               s[len++] = ':';
+            }
+            len += VG_(sprintf)(s + len, "%x", word);
+         }
       }
+
+      if (compressing) {
+         s[len++] = ':';
+         s[len++] = ':';
+      }
+
+      s[len++] = 0;
+   }
+
+   return;
+}
+
+static
+HChar *inet6_to_name(struct vki_sockaddr_in6 *sa, UInt len, HChar *name)
+{
+   if (sa == NULL || len == 0) {
+      VG_(sprintf)(name, "<unknown>");
+   } else if (sa->sin6_port == 0) {
+      VG_(sprintf)(name, "<unbound>");
+   } else {
+      char addr[128];
+      inet6_format(addr, (void *)&(sa->sin6_addr));
+      VG_(sprintf)(name, "[%s]:%u", addr, VG_(ntohs)(sa->sin6_port));
    }
 
    return name;
@@ -648,6 +738,7 @@ getsockdetails(Int fd)
    union u {
       struct vki_sockaddr a;
       struct vki_sockaddr_in in;
+      struct vki_sockaddr_in6 in6;
       struct vki_sockaddr_un un;
    } laddr;
    Int llen;
@@ -665,18 +756,34 @@ getsockdetails(Int fd)
 
          if (VG_(getpeername)(fd, (struct vki_sockaddr *)&paddr, &plen) != -1) {
             VG_(message)(Vg_UserMsg, "Open AF_INET socket %d: %s <-> %s\n", fd,
-                         inet2name(&(laddr.in), llen, lname),
-                         inet2name(&paddr, plen, pname));
+                         inet_to_name(&(laddr.in), llen, lname),
+                         inet_to_name(&paddr, plen, pname));
          } else {
             VG_(message)(Vg_UserMsg, "Open AF_INET socket %d: %s <-> unbound\n",
-                         fd, inet2name(&(laddr.in), llen, lname));
+                         fd, inet_to_name(&(laddr.in), llen, lname));
+         }
+         return;
+         }
+      case VKI_AF_INET6: {
+         static char lname[128];
+         static char pname[128];
+         struct vki_sockaddr_in6 paddr;
+         Int plen = sizeof(struct vki_sockaddr_in6);
+
+         if (VG_(getpeername)(fd, (struct vki_sockaddr *)&paddr, &plen) != -1) {
+            VG_(message)(Vg_UserMsg, "Open AF_INET6 socket %d: %s <-> %s\n", fd,
+                         inet6_to_name(&(laddr.in6), llen, lname),
+                         inet6_to_name(&paddr, plen, pname));
+         } else {
+            VG_(message)(Vg_UserMsg, "Open AF_INET6 socket %d: %s <-> unbound\n",
+                         fd, inet6_to_name(&(laddr.in6), llen, lname));
          }
          return;
          }
       case VKI_AF_UNIX: {
          static char lname[256];
          VG_(message)(Vg_UserMsg, "Open AF_UNIX socket %d: %s\n", fd,
-                      unix2name(&(laddr.un), llen, lname));
+                      unix_to_name(&(laddr.un), llen, lname));
          return;
          }
       default:
@@ -760,7 +867,7 @@ void VG_(init_preopened_fds)(void)
 // DDD: should probably use HAVE_PROC here or similar, instead.
 #if defined(VGO_linux)
    Int ret;
-   struct vki_dirent d;
+   struct vki_dirent64 d;
    SysRes f;
 
    f = VG_(open)("/proc/self/fd", VKI_O_RDONLY, 0);
@@ -769,7 +876,7 @@ void VG_(init_preopened_fds)(void)
       return;
    }
 
-   while ((ret = VG_(getdents)(sr_Res(f), &d, sizeof(d))) != 0) {
+   while ((ret = VG_(getdents64)(sr_Res(f), &d, sizeof(d))) != 0) {
       if (ret == -1)
          goto out;
 
@@ -850,7 +957,7 @@ void msghdr_foreachfield (
         struct vki_msghdr *msg,
         UInt length,
         void (*foreach_func)( ThreadId, Bool, const HChar *, Addr, SizeT ),
-        Bool recv
+        Bool rekv /* "recv" apparently shadows some header decl on OSX108 */
      )
 {
    HChar *fieldName;
@@ -871,16 +978,18 @@ void msghdr_foreachfield (
 
    /* msg_flags is completely ignored for send_mesg, recv_mesg doesn't read
       the field, but does write to it. */
-   if ( recv )
+   if ( rekv )
       foreach_func ( tid, False, fieldName, (Addr)&msg->msg_flags, sizeof( msg->msg_flags ) );
 
-   if ( msg->msg_name ) {
+   if ( ML_(safe_to_deref)(&msg->msg_name, sizeof (void *))
+        && msg->msg_name ) {
       VG_(sprintf) ( fieldName, "(%s.msg_name)", name );
       foreach_func ( tid, False, fieldName, 
                      (Addr)msg->msg_name, msg->msg_namelen );
    }
 
-   if ( msg->msg_iov ) {
+   if ( ML_(safe_to_deref)(&msg->msg_iov, sizeof (void *))
+        && msg->msg_iov ) {
       struct vki_iovec *iov = msg->msg_iov;
       UInt i;
 
@@ -898,7 +1007,8 @@ void msghdr_foreachfield (
       }
    }
 
-   if ( msg->msg_control ) 
+   if ( ML_(safe_to_deref) (&msg->msg_control, sizeof (void *))
+        && msg->msg_control )
    {
       VG_(sprintf) ( fieldName, "(%s.msg_control)", name );
       foreach_func ( tid, False, fieldName, 
@@ -941,9 +1051,12 @@ void pre_mem_read_sockaddr ( ThreadId tid,
    struct vki_sockaddr_un*  sun  = (struct vki_sockaddr_un *)sa;
    struct vki_sockaddr_in*  sin  = (struct vki_sockaddr_in *)sa;
    struct vki_sockaddr_in6* sin6 = (struct vki_sockaddr_in6 *)sa;
-#ifdef VKI_AF_BLUETOOTH
+#  ifdef VKI_AF_BLUETOOTH
    struct vki_sockaddr_rc*  rc   = (struct vki_sockaddr_rc *)sa;
-#endif
+#  endif
+#  ifdef VKI_AF_NETLINK
+   struct vki_sockaddr_nl*  nl   = (struct vki_sockaddr_nl *)sa;
+#  endif
 
    /* NULL/zero-length sockaddrs are legal */
    if ( sa == NULL || salen == 0 ) return;
@@ -984,18 +1097,37 @@ void pre_mem_read_sockaddr ( ThreadId tid,
             (Addr) &sin6->sin6_scope_id, sizeof (sin6->sin6_scope_id) );
          break;
 
-#ifdef VKI_AF_BLUETOOTH
+#     ifdef VKI_AF_BLUETOOTH
       case VKI_AF_BLUETOOTH:
          VG_(sprintf) ( outmsg, description, "rc_bdaddr" );
          PRE_MEM_READ( outmsg, (Addr) &rc->rc_bdaddr, sizeof (rc->rc_bdaddr) );
          VG_(sprintf) ( outmsg, description, "rc_channel" );
          PRE_MEM_READ( outmsg, (Addr) &rc->rc_channel, sizeof (rc->rc_channel) );
          break;
-#endif
+#     endif
+
+#     ifdef VKI_AF_NETLINK
+      case VKI_AF_NETLINK:
+         VG_(sprintf)(outmsg, description, "nl_pid");
+         PRE_MEM_READ(outmsg, (Addr)&nl->nl_pid, sizeof(nl->nl_pid));
+         VG_(sprintf)(outmsg, description, "nl_groups");
+         PRE_MEM_READ(outmsg, (Addr)&nl->nl_groups, sizeof(nl->nl_groups));
+         break;
+#     endif
+
+#     ifdef VKI_AF_UNSPEC
+      case VKI_AF_UNSPEC:
+         break;
+#     endif
 
       default:
-         VG_(sprintf) ( outmsg, description, "" );
-         PRE_MEM_READ( outmsg, (Addr) sa, salen );
+         /* No specific information about this address family.
+            Let's just check the full data following the family.
+            Note that this can give false positive if this (unknown)
+            struct sockaddr_???? has padding bytes between its elements. */
+         VG_(sprintf) ( outmsg, description, "sa_data" );
+         PRE_MEM_READ( outmsg, (Addr)&sa->sa_family + sizeof(sa->sa_family),
+                       salen );
          break;
    }
    
@@ -3110,7 +3242,7 @@ PRE(sys_getdents)
    *flags |= SfMayBlock;
    PRINT("sys_getdents ( %ld, %#lx, %ld )", ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "getdents",
-                 unsigned int, fd, struct linux_dirent *, dirp,
+                 unsigned int, fd, struct vki_dirent *, dirp,
                  unsigned int, count);
    PRE_MEM_WRITE( "getdents(dirp)", ARG2, ARG3 );
 }
@@ -3127,7 +3259,7 @@ PRE(sys_getdents64)
    *flags |= SfMayBlock;
    PRINT("sys_getdents64 ( %ld, %#lx, %ld )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "getdents64",
-                 unsigned int, fd, struct linux_dirent64 *, dirp,
+                 unsigned int, fd, struct vki_dirent64 *, dirp,
                  unsigned int, count);
    PRE_MEM_WRITE( "getdents64(dirp)", ARG2, ARG3 );
 }
@@ -3337,7 +3469,7 @@ void ML_(PRE_unknown_ioctl)(ThreadId tid, UWord request, UWord arg)
    
    UInt dir  = _VKI_IOC_DIR(request);
    UInt size = _VKI_IOC_SIZE(request);
-   if (VG_(strstr)(VG_(clo_sim_hints), "lax-ioctls") != NULL) {
+   if (SimHintiS(SimHint_lax_ioctls, VG_(clo_sim_hints))) {
       /* 
        * Be very lax about ioctl handling; the only
        * assumption is that the size is correct. Doesn't
@@ -3347,16 +3479,27 @@ void ML_(PRE_unknown_ioctl)(ThreadId tid, UWord request, UWord arg)
        * commands becomes very tiresome.
        */
    } else if (/* size == 0 || */ dir == _VKI_IOC_NONE) {
-      //VG_(message)(Vg_UserMsg, "UNKNOWN ioctl %#lx\n", request);
-      //VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
-      static Int moans = 3;
+      static UWord unknown_ioctl[10];
+      static Int moans = sizeof(unknown_ioctl) / sizeof(unknown_ioctl[0]);
+
       if (moans > 0 && !VG_(clo_xml)) {
-         moans--;
-         VG_(umsg)("Warning: noted but unhandled ioctl 0x%lx"
-                   " with no size/direction hints\n", request); 
-         VG_(umsg)("   This could cause spurious value errors to appear.\n");
-         VG_(umsg)("   See README_MISSING_SYSCALL_OR_IOCTL for "
-                   "guidance on writing a proper wrapper.\n" );
+         /* Check if have not already moaned for this request. */
+         UInt i;
+         for (i = 0; i < sizeof(unknown_ioctl)/sizeof(unknown_ioctl[0]); i++) {
+            if (unknown_ioctl[i] == request)
+               break;
+            if (unknown_ioctl[i] == 0) {
+               unknown_ioctl[i] = request;
+               moans--;
+               VG_(umsg)("Warning: noted but unhandled ioctl 0x%lx"
+                         " with no size/direction hints.\n", request); 
+               VG_(umsg)("   This could cause spurious value errors to appear.\n");
+               VG_(umsg)("   See README_MISSING_SYSCALL_OR_IOCTL for "
+                         "guidance on writing a proper wrapper.\n" );
+               //VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
+               return;
+            }
+         }
       }
    } else {
       //VG_(message)(Vg_UserMsg, "UNKNOWN ioctl %#lx\n", request);
@@ -3736,7 +3879,7 @@ PRE(sys_write)
       --sim-hints=enable-outer (used for self hosting). */
    ok = ML_(fd_allowed)(ARG1, "write", tid, False);
    if (!ok && ARG1 == 2/*stderr*/ 
-           && VG_(strstr)(VG_(clo_sim_hints),"enable-outer"))
+           && SimHintiS(SimHint_enable_outer, VG_(clo_sim_hints)))
       ok = True;
    if (!ok)
       SET_STATUS_Failure( VKI_EBADF );
@@ -3785,7 +3928,7 @@ PRE(sys_poll)
                     (Addr)(&ufds[i].fd), sizeof(ufds[i].fd) );
       PRE_MEM_READ( "poll(ufds.events)",
                     (Addr)(&ufds[i].events), sizeof(ufds[i].events) );
-      PRE_MEM_WRITE( "poll(ufds.reventss)",
+      PRE_MEM_WRITE( "poll(ufds.revents)",
                      (Addr)(&ufds[i].revents), sizeof(ufds[i].revents) );
    }
 }

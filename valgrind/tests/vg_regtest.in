@@ -6,7 +6,7 @@
 #  This file is part of Valgrind, a dynamic binary instrumentation
 #  framework.
 #
-#  Copyright (C) 2003 Nicholas Nethercote
+#  Copyright (C) 2003-2013 Nicholas Nethercote
 #     njn@valgrind.org
 #
 #  This program is free software; you can redistribute it and/or
@@ -243,6 +243,7 @@ sub process_command_line()
               . " --run-libc-freeres=no --sim-hints=enable-outer"
               . " --smc-check=all-non-file"
               . " --vgdb=no --trace-children=yes --read-var-info=no"
+              . " --read-inline-info=yes"
               . " --suppressions=" 
               . validate_program($tests_dir,"./tests/outer_inner.supp",1,0)
               . " --memcheck:leak-check=full --memcheck:show-reachable=no"
@@ -669,8 +670,8 @@ foreach my $f (@fs) {
         my $file = `basename $f`;   chomp $file;
         chdir($dir) or die "Could not change into $dir\n";
         do_one_test($dir, $file);
-        chdir($tests_dir);
     }
+    chdir($tests_dir);
 }
 summarise_results();
 

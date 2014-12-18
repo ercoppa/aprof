@@ -179,10 +179,17 @@ static void DRD_(init)(void)
    DRD_(set_main_thread_state)();
 }
 
+static __always_inline void DRD_(ignore_mutex_ordering)(pthread_mutex_t *mutex)
+{
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__DRD_IGNORE_MUTEX_ORDERING,
+                                   mutex, 0, 0, 0, 0);
+}
+
 static void DRD_(sema_init)(DrdSema* sema)
 {
-   DRD_IGNORE_VAR(sema->counter);
+   DRD_IGNORE_VAR(*sema);
    pthread_mutex_init(&sema->mutex, NULL);
+   DRD_(ignore_mutex_ordering)(&sema->mutex);
    sema->counter = 0;
    sema->waiters = 0;
 }
@@ -243,8 +250,15 @@ static void DRD_(sema_up)(DrdSema* sema)
  * statement because some of the PTHREAD_MUTEX_ macro's may have the same
  * value.
  */
-static MutexT DRD_(pthread_to_drd_mutex_type)(const int kind)
+static MutexT DRD_(pthread_to_drd_mutex_type)(int kind)
 {
+   /*
+    * See also PTHREAD_MUTEX_KIND_MASK_NP in glibc source file
+    * <nptl/pthreadP.h>.
+    */
+   kind &= PTHREAD_MUTEX_RECURSIVE | PTHREAD_MUTEX_ERRORCHECK |
+      PTHREAD_MUTEX_NORMAL | PTHREAD_MUTEX_DEFAULT;
+
    if (kind == PTHREAD_MUTEX_RECURSIVE)
       return mutex_type_recursive_mutex;
    else if (kind == PTHREAD_MUTEX_ERRORCHECK)
@@ -258,9 +272,7 @@ static MutexT DRD_(pthread_to_drd_mutex_type)(const int kind)
       return mutex_type_default_mutex;
 #endif
    else
-   {
       return mutex_type_invalid_mutex;
-   }
 }
 
 #define IS_ALIGNED(p) (((uintptr_t)(p) & (sizeof(*(p)) - 1)) == 0)
@@ -1096,6 +1108,8 @@ int pthread_rwlock_init_intercept(pthread_rwlock_t* rwlock,
    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PRE_RWLOCK_INIT,
                                    rwlock, 0, 0, 0, 0);
    CALL_FN_W_WW(ret, fn, rwlock, attr);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_RWLOCK_INIT,
+                                   rwlock, 0, 0, 0, 0);
    return ret;
 }
 
@@ -1110,6 +1124,8 @@ int pthread_rwlock_destroy_intercept(pthread_rwlock_t* rwlock)
    int   ret;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PRE_RWLOCK_DESTROY,
+                                   rwlock, 0, 0, 0, 0);
    CALL_FN_W_W(ret, fn, rwlock);
    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_RWLOCK_DESTROY,
                                    rwlock, 0, 0, 0, 0);
@@ -1157,14 +1173,15 @@ PTH_FUNCS(int,
           (pthread_rwlock_t* rwlock), (rwlock));
 
 static __always_inline
-int pthread_rwlock_timedrdlock_intercept(pthread_rwlock_t* rwlock)
+int pthread_rwlock_timedrdlock_intercept(pthread_rwlock_t* rwlock,
+                                         const struct timespec *timeout)
 {
    int   ret;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PRE_RWLOCK_RDLOCK,
                                    rwlock, 0, 0, 0, 0);
-   CALL_FN_W_W(ret, fn, rwlock);
+   CALL_FN_W_WW(ret, fn, rwlock, timeout);
    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_RWLOCK_RDLOCK,
                                    rwlock, ret == 0, 0, 0, 0);
    return ret;
@@ -1172,17 +1189,19 @@ int pthread_rwlock_timedrdlock_intercept(pthread_rwlock_t* rwlock)
 
 PTH_FUNCS(int,
           pthreadZurwlockZutimedrdlock, pthread_rwlock_timedrdlock_intercept,
-          (pthread_rwlock_t* rwlock), (rwlock));
+          (pthread_rwlock_t* rwlock, const struct timespec *timeout),
+          (rwlock, timeout));
 
 static __always_inline
-int pthread_rwlock_timedwrlock_intercept(pthread_rwlock_t* rwlock)
+int pthread_rwlock_timedwrlock_intercept(pthread_rwlock_t* rwlock,
+                                         const struct timespec *timeout)
 {
    int   ret;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PRE_RWLOCK_WRLOCK,
                                    rwlock, 0, 0, 0, 0);
-   CALL_FN_W_W(ret, fn, rwlock);
+   CALL_FN_W_WW(ret, fn, rwlock, timeout);
    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_RWLOCK_WRLOCK,
                                    rwlock, ret == 0, 0, 0, 0);
    return ret;
@@ -1190,7 +1209,8 @@ int pthread_rwlock_timedwrlock_intercept(pthread_rwlock_t* rwlock)
 
 PTH_FUNCS(int,
           pthreadZurwlockZutimedwrlock, pthread_rwlock_timedwrlock_intercept,
-          (pthread_rwlock_t* rwlock), (rwlock));
+          (pthread_rwlock_t* rwlock, const struct timespec *timeout),
+          (rwlock, timeout));
 
 static __always_inline
 int pthread_rwlock_tryrdlock_intercept(pthread_rwlock_t* rwlock)

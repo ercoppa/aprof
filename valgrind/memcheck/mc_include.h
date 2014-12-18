@@ -279,9 +279,8 @@ typedef
 #define R2S(r) (1 << (r))
 // Reachedness r is member of the Set s ?
 #define RiS(r,s) ((s) & R2S(r))
-// A set with all Reachedness:
-#define RallS \
-   (R2S(Reachable) | R2S(Possible) | R2S(IndirectLeak) | R2S(Unreached))
+// Returns a set containing all Reachedness
+UInt MC_(all_Reachedness)(void);
 
 /* For VALGRIND_COUNT_LEAKS client request */
 extern SizeT MC_(bytes_leaked);
@@ -441,11 +440,11 @@ Bool MC_(record_leak_error)     ( ThreadId tid,
                                   Bool print_record,
                                   Bool count_error );
 
-/* Parses a set of leak kinds (separated by ,).
-   and give the resulting set in *lks.
-   If parsing is succesful, returns True and *lks contains the resulting set.
-   else return False. */
-extern Bool MC_(parse_leak_kinds) ( const HChar* str0, UInt* lks );
+Bool MC_(record_fishy_value_error)  ( ThreadId tid, const HChar* function,
+                                      const HChar *argument_name, SizeT value );
+
+/* Leak kinds tokens to call VG_(parse_enum_set). */
+extern const HChar* MC_(parse_leak_kinds_tokens);
 
 /* prints a description of address a */
 void MC_(pp_describe_addr) (Addr a);
@@ -510,26 +509,28 @@ typedef
       LchStdString           =1,
       // Consider interior pointer pointing at the array of char in a
       // std::string as reachable.
-      LchNewArray            =2,
+      LchLength64            =2,
+      // Consider interior pointer pointing at offset 64bit of a block as
+      // reachable, when the first 8 bytes contains the block size - 8.
+      // Such length+interior pointers are used by e.g. sqlite3MemMalloc.
+      // On 64bit platforms LchNewArray will also match these blocks.
+      LchNewArray            =3,
       // Consider interior pointer pointing at second word of a new[] array as
       // reachable. Such interior pointers are used for arrays whose elements
       // have a destructor.
-      LchMultipleInheritance =3,
+      LchMultipleInheritance =4,
       // Conside interior pointer pointing just after what looks a vtable
       // as reachable.
   }
   LeakCheckHeuristic;
 
 // Nr of heuristics, including the LchNone heuristic.
-#define N_LEAK_CHECK_HEURISTICS 4
+#define N_LEAK_CHECK_HEURISTICS 5
 
 // Build mask to check or set Heuristic h membership
 #define H2S(h) (1 << (h))
-// CppHeuristic h is member of the Set s ?
-#define HiS(h,s) ((s) & R2S(h))
-// A set with all Heuristics:
-#define HallS \
-   (H2S(LchStdString) | H2S(LchNewArray) | H2S(LchMultipleInheritance))
+// Heuristic h is member of the Set s ?
+#define HiS(h,s) ((s) & H2S(h))
 
 /* Heuristics set to use for the leak search.
    Default : no heuristic. */
@@ -586,6 +587,9 @@ extern KeepStacktraces MC_(clo_keep_stacktraces);
    The default is 2.
 */
 extern Int MC_(clo_mc_level);
+
+/* Should we show mismatched frees?  Default: YES */
+extern Bool MC_(clo_show_mismatched_frees);
 
 
 /*------------------------------------------------------------*/

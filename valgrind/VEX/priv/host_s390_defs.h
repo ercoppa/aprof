@@ -665,8 +665,8 @@ s390_insn *s390_insn_bfp128_compare(UChar size, HReg dst, HReg op1_hi,
 s390_insn *s390_insn_bfp128_convert_to(UChar size, s390_bfp_conv_t,
                                        HReg dst_hi, HReg dst_lo, HReg op);
 s390_insn *s390_insn_bfp128_convert_from(UChar size, s390_bfp_conv_t,
-                                         HReg dst, HReg op_hi, HReg op_lo,
-                                         s390_bfp_round_t);
+                                         HReg dst_hi, HReg dst_lo, HReg op_hi,
+                                         HReg op_lo, s390_bfp_round_t);
 s390_insn *s390_insn_dfp_binop(UChar size, s390_dfp_binop_t, HReg dst,
                                HReg op2, HReg op3,
                                s390_dfp_round_t rounding_mode);
@@ -699,8 +699,8 @@ s390_insn *s390_insn_dfp128_compare(UChar size, s390_dfp_cmp_t, HReg dst,
 s390_insn *s390_insn_dfp128_convert_to(UChar size, s390_dfp_conv_t,
                                        HReg dst_hi, HReg dst_lo, HReg op);
 s390_insn *s390_insn_dfp128_convert_from(UChar size, s390_dfp_conv_t,
-                                         HReg dst, HReg op_hi, HReg op_lo,
-                                         s390_dfp_round_t);
+                                         HReg dst_hi, HReg dst_lo, HReg op_hi,
+                                         HReg op_lo, s390_dfp_round_t);
 s390_insn *s390_insn_dfp128_reround(UChar size, HReg dst_hi, HReg dst_lo,
                                     HReg op2, HReg op3_hi, HReg op3_lo,
                                     s390_dfp_round_t);
@@ -736,7 +736,7 @@ void  getRegUsage_S390Instr( HRegUsage *, s390_insn *, Bool );
 void  mapRegs_S390Instr    ( HRegRemap *, s390_insn *, Bool );
 Bool  isMove_S390Instr     ( s390_insn *, HReg *, HReg * );
 Int   emit_S390Instr       ( Bool *, UChar *, Int, s390_insn *, Bool,
-                             void *, void *, void *, void *);
+                             VexEndness, void *, void *, void *, void *);
 void  getAllocableRegs_S390( Int *, HReg **, Bool );
 void  genSpill_S390        ( HInstr **, HInstr **, HReg , Int , Bool );
 void  genReload_S390       ( HInstr **, HInstr **, HReg , Int , Bool );
@@ -745,19 +745,22 @@ HInstrArray *iselSB_S390   ( IRSB *, VexArch, VexArchInfo *, VexAbiInfo *,
                              Int, Int, Bool, Bool, Addr64);
 
 /* Return the number of bytes of code needed for an event check */
-Int evCheckSzB_S390(void);
+Int evCheckSzB_S390(VexEndness endness_host);
 
 /* Perform a chaining and unchaining of an XDirect jump. */
-VexInvalRange chainXDirect_S390(void *place_to_chain,
+VexInvalRange chainXDirect_S390(VexEndness endness_host,
+                                void *place_to_chain,
                                 void *disp_cp_chain_me_EXPECTED,
                                 void *place_to_jump_to);
 
-VexInvalRange unchainXDirect_S390(void *place_to_unchain,
+VexInvalRange unchainXDirect_S390(VexEndness endness_host,
+                                  void *place_to_unchain,
                                   void *place_to_jump_to_EXPECTED,
                                   void *disp_cp_chain_me);
 
 /* Patch the counter location into an existing ProfInc point. */
-VexInvalRange patchProfInc_S390(void  *code_to_patch,
+VexInvalRange patchProfInc_S390(VexEndness endness_host,
+                                void  *code_to_patch,
                                 ULong *location_of_counter);
 
 /* KLUDGE: See detailled comment in host_s390_defs.c. */

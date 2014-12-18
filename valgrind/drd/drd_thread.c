@@ -36,7 +36,6 @@
 #include "pub_tool_libcassert.h"  // tl_assert()
 #include "pub_tool_libcbase.h"    // VG_(strlen)()
 #include "pub_tool_libcprint.h"   // VG_(printf)()
-#include "pub_tool_libcproc.h"    // VG_(getenv)()
 #include "pub_tool_machine.h"
 #include "pub_tool_mallocfree.h"  // VG_(malloc)(), VG_(free)()
 #include "pub_tool_options.h"     // VG_(clo_backtrace_size)
@@ -68,6 +67,7 @@ static ThreadId s_vg_running_tid  = VG_INVALID_THREADID;
 DrdThreadId     DRD_(g_drd_running_tid) = DRD_INVALID_THREADID;
 ThreadInfo      DRD_(g_threadinfo)[DRD_N_THREADS];
 struct bitmap*  DRD_(g_conflict_set);
+Bool DRD_(verify_conflict_set);
 static Bool     s_trace_context_switches = False;
 static Bool     s_trace_conflict_set = False;
 static Bool     s_trace_conflict_set_bm = False;
@@ -255,16 +255,16 @@ static Bool DRD_(sane_ThreadInfo)(const ThreadInfo* const ti)
 {
    Segment* p;
 
-   for (p = ti->first; p; p = p->next) {
-      if (p->next && p->next->prev != p)
+   for (p = ti->sg_first; p; p = p->thr_next) {
+      if (p->thr_next && p->thr_next->thr_prev != p)
          return False;
-      if (p->next == 0 && p != ti->last)
+      if (p->thr_next == 0 && p != ti->sg_last)
          return False;
    }
-   for (p = ti->last; p; p = p->prev) {
-      if (p->prev && p->prev->next != p)
+   for (p = ti->sg_last; p; p = p->thr_prev) {
+      if (p->thr_prev && p->thr_prev->thr_next != p)
          return False;
-      if (p->prev == 0 && p != ti->first)
+      if (p->thr_prev == 0 && p != ti->sg_first)
          return False;
    }
    return True;
@@ -556,6 +556,9 @@ void DRD_(drd_thread_atfork_child)(const DrdThreadId tid)
 	 DRD_(thread_delete)(i, True);
       tl_assert(!DRD_(IsValidDrdThreadId(i)));
    }
+
+   DRD_(bm_cleanup)(DRD_(g_conflict_set));
+   DRD_(bm_init)(DRD_(g_conflict_set));
 }
 
 /** Called just before pthread_cancel(). */
@@ -1347,14 +1350,10 @@ void DRD_(thread_report_conflicting_segments)(const DrdThreadId tid,
  */
 static Bool thread_conflict_set_up_to_date(const DrdThreadId tid)
 {
-   static int do_verify_conflict_set = -1;
    Bool result;
    struct bitmap* computed_conflict_set = 0;
 
-   if (do_verify_conflict_set < 0)
-      do_verify_conflict_set = VG_(getenv)("DRD_VERIFY_CONFLICT_SET") != 0;
-
-   if (do_verify_conflict_set == 0)
+   if (!DRD_(verify_conflict_set))
       return True;
 
    thread_compute_conflict_set(&computed_conflict_set, tid);

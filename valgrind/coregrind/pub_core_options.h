@@ -36,7 +36,6 @@
 // plus some functions and macros for manipulating them.  Almost every
 // other module imports this one, if only for VG_(clo_verbosity).
 //--------------------------------------------------------------------
-
 #include "pub_tool_options.h"
 
 /* The max number of suppression files. */
@@ -68,8 +67,25 @@ typedef
 extern VgVgdb VG_(clo_vgdb);
 /* if > 0, checks every VG_(clo_vgdb_poll) BBS if vgdb wants to be served. */
 extern Int VG_(clo_vgdb_poll);
+
+/* Specify when Valgrind gdbserver stops the execution and wait
+   for a GDB to connect. */
+typedef
+   enum {                       // Stop :
+      VgdbStopAt_Startup,       // just before the client starts to execute.
+      VgdbStopAt_Exit,          // just before the client exits.
+      VgdbStopAt_ValgrindAbExit // on abnormal valgrind exit.
+   }
+   VgdbStopAt;
+// Build mask to check or set VgdbStop_At a membership
+#define VgdbStopAt2S(a) (1 << (a))
+// VgdbStopAt a is member of the Set s ?
+#define VgdbStopAtiS(a,s) ((s) & VgdbStopAt2S(a))
+extern UInt VG_(clo_vgdb_stop_at); // A set of VgdbStopAt reasons.
+
 /* prefix for the named pipes (FIFOs) used by vgdb/gdb to communicate with valgrind */
-extern const HChar* VG_(clo_vgdb_prefix);
+extern const HChar *VG_(clo_vgdb_prefix);
+
 /* if True, gdbserver in valgrind will expose a target description containing
    shadow registers */
 extern Bool  VG_(clo_vgdb_shadow_registers);
@@ -117,6 +133,8 @@ extern Bool  VG_(clo_time_stamp);
 /* The file descriptor to read for input.  default: 0 == stdin */
 extern Int   VG_(clo_input_fd);
 
+/* Whether or not to load the default suppressions. */
+extern Bool  VG_(clo_default_supp);
 /* The number of suppression files specified. */
 extern Int   VG_(clo_n_suppressions);
 /* The names of the suppression files. */
@@ -201,10 +219,28 @@ extern Int VG_(clo_redzone_size);
 /* DEBUG: display gory details for the k'th most popular error.
    default: Infinity. */
 extern Int   VG_(clo_dump_error);
+
 /* Engage miscellaneous weird hacks needed for some progs. */
-extern const HChar* VG_(clo_sim_hints);
+typedef
+   enum {
+      SimHint_lax_ioctls,
+      SimHint_fuse_compatible,
+      SimHint_enable_outer,
+      SimHint_no_inner_prefix,
+      SimHint_no_nptl_pthread_stackcache
+   }
+   SimHint;
+
+// Build mask to check or set SimHint a membership
+#define SimHint2S(a) (1 << (a))
+// SimHint h is member of the Set s ?
+#define SimHintiS(h,s) ((s) & SimHint2S(h))
+extern UInt VG_(clo_sim_hints);
+
 /* Show symbols in the form 'name+offset' ?  Default: NO */
 extern Bool VG_(clo_sym_offsets);
+/* Read DWARF3 inline info ? */
+extern Bool VG_(clo_read_inline_info);
 /* Read DWARF3 variable info even if tool doesn't ask for it? */
 extern Bool VG_(clo_read_var_info);
 /* Which prefix to strip from full source file paths, if any. */
@@ -275,6 +311,10 @@ extern Int VG_(clo_merge_recursive_frames);
 /* Max number of sectors that will be used by the translation code cache. */
 extern UInt VG_(clo_num_transtab_sectors);
 
+/* Only client requested fixed mapping can be done below 
+   VG_(clo_aspacem_minAddr). */
+extern Addr VG_(clo_aspacem_minAddr);
+
 /* Delay startup to allow GDB to be attached?  Default: NO */
 extern Bool VG_(clo_wait_for_gdb);
 
@@ -296,9 +336,21 @@ typedef
    auto-detected. */
 extern VgSmc VG_(clo_smc_check);
 
-/* String containing comma-separated names of minor kernel variants,
+/* A set of minor kernel variants,
    so they can be properly handled by m_syswrap. */
-extern const HChar* VG_(clo_kernel_variant);
+typedef
+   enum {
+      KernelVariant_bproc,
+      KernelVariant_android_no_hw_tls,
+      KernelVariant_android_gpu_sgx5xx,
+      KernelVariant_android_gpu_adreno3xx
+   }
+   KernelVariant;
+// Build mask to check or set KernelVariant a membership
+#define KernelVariant2S(v) (1 << (v))
+// KernelVariant v is member of the Set s ?
+#define KernelVariantiS(v,s) ((s) & KernelVariant2S(v))
+extern UInt VG_(clo_kernel_variant);
 
 /* Darwin-specific: automatically run /usr/bin/dsymutil to update
    .dSYM directories as necessary? */

@@ -89,10 +89,13 @@ extern SysRes VG_(dup2)   ( Int oldfd, Int newfd );
 extern Int    VG_(rename) ( const HChar* old_name, const HChar* new_name );
 extern Int    VG_(unlink) ( const HChar* file_name );
 
-extern Int    VG_(poll) (struct vki_pollfd *fds, Int nfds, Int timeout);
+extern SysRes VG_(poll) (struct vki_pollfd *fds, Int nfds, Int timeout);
 
 extern Int    VG_(readlink)( const HChar* path, HChar* buf, UInt bufsize );
-extern Int    VG_(getdents)( Int fd, struct vki_dirent *dirp, UInt count );
+
+#if defined(VGO_linux)
+extern Int    VG_(getdents64)( Int fd, struct vki_dirent64 *dirp, UInt count );
+#endif
 
 extern const HChar* VG_(basename)( const HChar* path );
 extern const HChar* VG_(dirname) ( const HChar* path );
