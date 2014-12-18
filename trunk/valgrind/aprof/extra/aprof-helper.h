@@ -71,8 +71,8 @@ struct linux_dirent {
 #define sr_isError(a)       (a < 0)
 #define umsg                EMSG 
 
-#define getdents(...)       syscall(SYS_getdents, __VA_ARGS__)
-#define vki_dirent          linux_dirent
+#define getdents64(...)     syscall(SYS_getdents, __VA_ARGS__)
+#define vki_dirent64        linux_dirent
 
 #define VKI_O_RDONLY        O_RDONLY 
 #define VKI_S_IRUSR         S_IRUSR

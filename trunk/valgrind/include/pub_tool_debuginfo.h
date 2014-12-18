@@ -120,14 +120,44 @@ Bool VG_(get_data_description)(
    It doesn't matter if debug info is present or not. */
 extern Bool VG_(get_objname)  ( Addr a, HChar* objname, Int n_objname );
 
+
+/* Cursor allowing to describe inlined function calls at an IP,
+   by doing successive calls to VG_(describe_IP). */
+typedef  struct _InlIPCursor InlIPCursor;
+
 /* Puts into 'buf' info about the code address %eip:  the address, function
    name (if known) and filename/line number (if known), like this:
 
       0x4001BF05: realloc (vg_replace_malloc.c:339)
 
    'n_buf' gives length of 'buf'.  Returns 'buf'.
+
+   eip can possibly corresponds to inlined function call(s).
+   To describe eip and the inlined function calls, the following must
+   be done:
+       InlIPCursor *iipc = VG_(new_IIPC)(eip);
+       do {
+          VG_(describe_IP)(eip, buf, n_buf, iipc);
+          ... use buf ...
+       } while (VG_(next_IIPC)(iipc));
+       VG_(delete_IIPC)(iipc);
+
+   To only describe eip, without the inlined calls at eip, give a NULL iipc:
+       VG_(describe_IP)(eip, buf, n_buf, NULL);   
 */
-extern HChar* VG_(describe_IP)(Addr eip, HChar* buf, Int n_buf);
+extern HChar* VG_(describe_IP)(Addr eip, HChar* buf, Int n_buf,
+                               InlIPCursor* iipc);
+
+/* Builds a IIPC (Inlined IP Cursor) to describe eip and all the inlined calls
+   at eip. Such a cursor must be deleted after use using VG_(delete_IIPC). */
+extern InlIPCursor* VG_(new_IIPC)(Addr eip);
+/* Move the cursor to the next call to describe.
+   Returns True if there are still calls to describe.
+   False if nothing to describe anymore. */
+extern Bool VG_(next_IIPC)(InlIPCursor *iipc);
+/* Free all memory associated with iipc. */
+extern void VG_(delete_IIPC)(InlIPCursor *iipc);
+
 
 
 /* Get an XArray of StackBlock which describe the stack (auto) blocks
@@ -206,24 +236,6 @@ PtrdiffT      VG_(DebugInfo_get_text_bias)   ( const DebugInfo *di );
    particular code address.  So it isn't safe to assume that the order
    of the list stays constant. */
 const DebugInfo* VG_(next_DebugInfo)    ( const DebugInfo *di );
-
-/* Functions for traversing all the symbols in a DebugInfo.  _howmany
-   tells how many symbol table entries there are.  _getidx retrieves
-   the n'th entry, for n in 0 .. _howmany-1.  You may not modify the
-   function names thereby acquired; if you want to do so, first strdup
-   them.  The primary name is returned in *pri_name, and *sec_names is
-   set either to NULL or to a NULL terminated vector containing
-   pointers to the secondary names. */
-Int  VG_(DebugInfo_syms_howmany) ( const DebugInfo *di );
-void VG_(DebugInfo_syms_getidx)  ( const DebugInfo *di, 
-                                   Int idx,
-                                   /*OUT*/Addr*    avma,
-                                   /*OUT*/Addr*    tocptr,
-                                   /*OUT*/UInt*    size,
-                                   /*OUT*/HChar**  pri_name,
-                                   /*OUT*/HChar*** sec_names,
-                                   /*OUT*/Bool*    isText,
-                                   /*OUT*/Bool*    isIFunc );
 
 /* A simple enumeration to describe the 'kind' of various kinds of
    segments that arise from the mapping of object files. */

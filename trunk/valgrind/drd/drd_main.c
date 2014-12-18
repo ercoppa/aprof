@@ -44,7 +44,7 @@
 #include "pub_tool_libcassert.h"  // tl_assert()
 #include "pub_tool_libcbase.h"    // VG_(strcmp)
 #include "pub_tool_libcprint.h"   // VG_(printf)
-#include "pub_tool_libcproc.h"
+#include "pub_tool_libcproc.h"    // VG_(getenv)()
 #include "pub_tool_machine.h"
 #include "pub_tool_mallocfree.h"  // VG_(malloc)(), VG_(free)()
 #include "pub_tool_options.h"     // command line options
@@ -121,6 +121,8 @@ static Bool DRD_(process_cmd_line_option)(const HChar* arg)
    else if VG_BOOL_CLO(arg, "--trace-semaphore",     trace_semaphore) {}
    else if VG_BOOL_CLO(arg, "--trace-suppr",         trace_suppression) {}
    else if VG_BOOL_CLO(arg, "--var-info",            s_var_info) {}
+   else if VG_BOOL_CLO(arg, "--verify-conflict-set", DRD_(verify_conflict_set))
+   {}
    else if VG_INT_CLO (arg, "--exclusive-threshold", exclusive_threshold_ms) {}
    else if VG_STR_CLO (arg, "--ptrace-addr",         ptrace_address) {}
    else if VG_INT_CLO (arg, "--shared-threshold",    shared_threshold_ms)    {}
@@ -262,6 +264,7 @@ static void DRD_(print_debug_usage)(void)
 "                              which data race detection is suppressed.\n"
 "    --trace-segment=yes|no    Trace segment actions [no].\n"
 "    --trace-suppr=yes|no      Trace all address suppression actions [no].\n"
+"    --verify-conflict-set=yes|no Verify conflict set consistency [no].\n"
 );
 }
 
@@ -276,6 +279,7 @@ static void drd_pre_mem_read(const CorePart part,
                              const Addr a,
                              const SizeT size)
 {
+   DRD_(thread_set_vg_running_tid)(VG_(get_running_tid)());
    if (size > 0)
    {
       DRD_(trace_load)(a, size);
@@ -879,6 +883,10 @@ void drd_pre_clo_init(void)
       if (smi)
          DRD_(thread_set_segment_merge_interval)(VG_(strtoll10)(smi, NULL));
    }
+
+   if (VG_(getenv)("DRD_VERIFY_CONFLICT_SET"))
+      DRD_(verify_conflict_set) = True;
+
 }
 
 

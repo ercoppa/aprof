@@ -483,7 +483,7 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
                     f->function_id = APROF_(runtime).next_function_id++;
                     
                     HChar * mangled = APROF_(new)(MANGLED_S, NAME_SIZE);
-                    if(VG_(get_fnname_no_cxx_demangle)(bb->key, (Char *) mangled, NAME_SIZE)) {
+                    if(VG_(get_fnname_no_cxx_demangle)(bb->key, mangled, NAME_SIZE, NULL)) {
                         
                         if (VG_(strcmp)(mangled, "(below main)") == 0) {
                             VG_(sprintf)(mangled, "below_main");

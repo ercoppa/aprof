@@ -213,6 +213,8 @@ void APROF_(print_report)(  FILE * report,
                 #if INPUT_STATS
                 if (r->input_metric == DRMS) {
                     
+                    // 0 0 is due to deprecated: sum of rms
+                    // sum of squares of rms
                     APROF_(fprintf)(report,
                                     " 0 0 %llu %llu %llu %llu",
                                     tuple->sum_cumul_syscall,

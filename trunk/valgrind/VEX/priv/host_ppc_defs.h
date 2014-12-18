@@ -522,6 +522,7 @@ typedef
 
       Pin_AvPerm,     /* AV permute (shuffle) */
       Pin_AvSel,      /* AV select */
+      Pin_AvSh,       /* AV shift left or right */
       Pin_AvShlDbl,   /* AV shift-left double by imm */
       Pin_AvSplat,    /* One elem repeated throughout dst */
       Pin_AvLdVSCR,   /* mtvscr */
@@ -855,6 +856,11 @@ typedef
             HReg ctl;
          } AvSel;
          struct {
+            Bool  shLeft;
+            HReg  dst;
+            PPCAMode* addr;
+         } AvSh;
+         struct {
             UChar shift;
             HReg  dst;
             HReg  srcL;
@@ -1077,6 +1083,7 @@ extern PPCInstr* PPCInstr_AvBin32Fx4 ( PPCAvFpOp op, HReg dst, HReg srcL, HReg s
 extern PPCInstr* PPCInstr_AvUn32Fx4  ( PPCAvFpOp op, HReg dst, HReg src );
 extern PPCInstr* PPCInstr_AvPerm     ( HReg dst, HReg srcL, HReg srcR, HReg ctl );
 extern PPCInstr* PPCInstr_AvSel      ( HReg ctl, HReg dst, HReg srcL, HReg srcR );
+extern PPCInstr* PPCInstr_AvSh       ( Bool shLeft, HReg dst, PPCAMode* am_addr );
 extern PPCInstr* PPCInstr_AvShlDbl   ( UChar shift, HReg dst, HReg srcL, HReg srcR );
 extern PPCInstr* PPCInstr_AvSplat    ( UChar sz, HReg dst, PPCVI5s* src );
 extern PPCInstr* PPCInstr_AvCMov     ( PPCCondCode, HReg dst, HReg src );
@@ -1138,6 +1145,7 @@ extern Bool         isMove_PPCInstr      ( PPCInstr*, HReg*, HReg* );
 extern Int          emit_PPCInstr        ( /*MB_MOD*/Bool* is_profInc,
                                            UChar* buf, Int nbuf, PPCInstr* i, 
                                            Bool mode64,
+                                           VexEndness endness_host,
                                            void* disp_cp_chain_me_to_slowEP,
                                            void* disp_cp_chain_me_to_fastEP,
                                            void* disp_cp_xindir,
@@ -1162,21 +1170,24 @@ extern HInstrArray* iselSB_PPC           ( IRSB*,
 /* How big is an event check?  This is kind of a kludge because it
    depends on the offsets of host_EvC_FAILADDR and
    host_EvC_COUNTER. */
-extern Int evCheckSzB_PPC ( void );
+extern Int evCheckSzB_PPC ( VexEndness endness_host );
 
 /* Perform a chaining and unchaining of an XDirect jump. */
-extern VexInvalRange chainXDirect_PPC ( void* place_to_chain,
+extern VexInvalRange chainXDirect_PPC ( VexEndness endness_host,
+                                        void* place_to_chain,
                                         void* disp_cp_chain_me_EXPECTED,
                                         void* place_to_jump_to,
                                         Bool  mode64 );
 
-extern VexInvalRange unchainXDirect_PPC ( void* place_to_unchain,
+extern VexInvalRange unchainXDirect_PPC ( VexEndness endness_host,
+                                          void* place_to_unchain,
                                           void* place_to_jump_to_EXPECTED,
                                           void* disp_cp_chain_me,
                                           Bool  mode64 );
 
 /* Patch the counter location into an existing ProfInc point. */
-extern VexInvalRange patchProfInc_PPC ( void*  place_to_patch,
+extern VexInvalRange patchProfInc_PPC ( VexEndness endness_host,
+                                        void*  place_to_patch,
                                         ULong* location_of_counter,
                                         Bool   mode64 );
 

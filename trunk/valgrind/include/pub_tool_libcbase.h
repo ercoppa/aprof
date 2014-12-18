@@ -111,6 +111,26 @@ extern HChar* VG_(strtok)         (HChar* s, const HChar* delim);
    False. */
 extern Bool VG_(parse_Addr) ( const HChar** ppc, Addr* result );
 
+/* Parse an "enum set" made of one or more words comma separated.
+   The allowed word values are given in 'tokens', separated by comma.
+   If a word in 'tokens' is found in 'input', the corresponding bit
+   will be set in *enum_set (words in 'tokens' are numbered starting from 0).
+   Using in 'tokens' the special token "-" (a minus character) indicates that
+   the corresponding bit position cannot be set.
+   In addition to the words specified in 'tokens', VG_(parse_enum_set)
+   automatically accept the word "none" to indicate an empty enum_set (0).
+   If allow_all, VG_(parse_enum_set) automatically accept the word "all"
+   to indicate an enum_set with all bits corresponding to the words in tokens
+    set.
+   If "none" or "all" is present in 'input', no other word can be given
+   in 'input'.
+   If parsing is successful, returns True and sets *enum_set.
+   If parsing fails, returns False. */
+extern Bool VG_(parse_enum_set) ( const HChar *tokens,
+                                  Bool  allow_all,
+                                  const HChar *input,
+                                  UInt *enum_set);
+
 /* Like strncpy(), but if 'src' is longer than 'ndest' inserts a '\0' as the
    last character. */
 extern void  VG_(strncpy_safely) ( HChar* dest, const HChar* src, SizeT ndest );
@@ -124,7 +144,7 @@ extern void* VG_(memmove)( void *d, const void *s, SizeT sz );
 extern void* VG_(memset) ( void *s, Int c, SizeT sz );
 extern Int   VG_(memcmp) ( const void* s1, const void* s2, SizeT n );
 
-/* Zero out up to 8 words quickly in-line.  Do not use this for blocks
+/* Zero out up to 12 words quickly in-line.  Do not use this for blocks
    of size which are unknown at compile time, since the whole point is
    for it to be inlined, and then for gcc to remove all code except
    for the relevant 'sz' case. */
@@ -135,6 +155,18 @@ static void VG_(bzero_inline) ( void* s, SizeT sz )
        && LIKELY(0 == (((Addr)s) & (Addr)(sizeof(UWord)-1)))) {
       UWord* p = (UWord*)s;
       switch (sz / (SizeT)sizeof(UWord)) {
+          case 12: p[0] = p[1] = p[2] = p[3]
+                  = p[4] = p[5] = p[6] = p[7] 
+                  = p[8] = p[9] = p[10] = p[11] = 0UL; return;
+          case 11: p[0] = p[1] = p[2] = p[3]
+                  = p[4] = p[5] = p[6] = p[7] 
+                  = p[8] = p[9] = p[10] = 0UL; return;
+          case 10: p[0] = p[1] = p[2] = p[3]
+                  = p[4] = p[5] = p[6] = p[7] 
+                  = p[8] = p[9] = 0UL; return;
+          case 9: p[0] = p[1] = p[2] = p[3]
+                  = p[4] = p[5] = p[6] = p[7] 
+                  = p[8] = 0UL; return;
           case 8: p[0] = p[1] = p[2] = p[3]
                   = p[4] = p[5] = p[6] = p[7] = 0UL; return;
           case 7: p[0] = p[1] = p[2] = p[3]
@@ -194,7 +226,6 @@ extern Int VG_(log2_64)( ULong x );
 // is NULL, it uses its own seed, which starts at zero.  If pSeed is
 // non-NULL, it uses and updates whatever pSeed points at.
 extern UInt VG_(random) ( /*MOD*/UInt* pSeed );
-#define VG_RAND_MAX (1ULL << 32)
 
 /* Update a running Adler-32 checksum with the bytes buf[0..len-1] and
    return the updated checksum. If buf is NULL, this function returns

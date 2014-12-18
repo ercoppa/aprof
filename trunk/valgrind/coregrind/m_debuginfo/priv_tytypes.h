@@ -116,6 +116,7 @@ typedef
          struct {
             HChar*  name; /* in mallocville */
             UWord   szB;
+            UWord   typeR;
             XArray* /* of UWord */ fieldRs;
             Bool    complete;
             Bool    isStruct;
@@ -132,7 +133,7 @@ typedef
          struct {
          } TyFn;
          struct {
-            UChar qual; /* C:const V:volatile */
+            UChar qual; /* C:const V:volatile R:restrict */
             UWord typeR;
          } TyQual;
          struct {

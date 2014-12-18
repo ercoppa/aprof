@@ -484,7 +484,7 @@ static Bool APROF_(cmd_line)(const HChar* argv) {
     
     if (APROF_(runtime).incremental_report && APROF_(runtime).collect_CCT) {
         
-        VG_(umsg)("Sorry \"--collect-cct\" can not be used with \"--collect-cct\".\n");
+        VG_(umsg)("Sorry \"--collect-cct\" can not be used with \"--single-log\".\n");
         VG_(umsg)("We plan to implement it in future releases.\n");
         return False;
     }

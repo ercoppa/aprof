@@ -868,7 +868,7 @@ static Bool chase_into_ok ( void* closureV, Addr64 addr64 )
    if (addr != VG_(redir_do_lookup)(addr, NULL))
       goto dontchase;
 
-#  if defined(VG_PLAT_USES_PPCTOC)
+#  if defined(VG_PLAT_USES_PPCTOC) || defined(VGP_ppc64le_linux)
    /* This needs to be at the start of its own block.  Don't chase. Re
       ULong_to_Ptr, be careful to ensure we only compare 32 bits on a
       32-bit target.*/
@@ -918,7 +918,7 @@ static IRExpr* mkU32 ( UInt n ) {
    return IRExpr_Const(IRConst_U32(n));
 }
 
-#if defined(VG_PLAT_USES_PPCTOC)
+#if defined(VG_PLAT_USES_PPCTOC) || defined(VGP_ppc64le_linux)
 static IRExpr* mkU8 ( UChar n ) {
    return IRExpr_Const(IRConst_U8(n));
 }
@@ -941,7 +941,7 @@ static void gen_PUSH ( IRSB* bb, IRExpr* e )
    IRTemp      t1;
    IRExpr*     one;
 
-#  if defined(VGP_ppc64_linux)
+#  if defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
    Int    stack_size       = VEX_GUEST_PPC64_REDIR_STACK_SIZE;
    Int    offB_REDIR_SP    = offsetof(VexGuestPPC64State,guest_REDIR_SP);
    Int    offB_REDIR_STACK = offsetof(VexGuestPPC64State,guest_REDIR_STACK);
@@ -1035,7 +1035,7 @@ static void gen_PUSH ( IRSB* bb, IRExpr* e )
 
 static IRTemp gen_POP ( IRSB* bb )
 {
-#  if defined(VGP_ppc64_linux)
+#  if defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
    Int    stack_size       = VEX_GUEST_PPC64_REDIR_STACK_SIZE;
    Int    offB_REDIR_SP    = offsetof(VexGuestPPC64State,guest_REDIR_SP);
    Int    offB_REDIR_STACK = offsetof(VexGuestPPC64State,guest_REDIR_STACK);
@@ -1118,6 +1118,10 @@ static IRTemp gen_POP ( IRSB* bb )
    return res;
 }
 
+#endif
+
+#if defined(VG_PLAT_USES_PPCTOC)
+
 /* Generate code to push LR and R2 onto this thread's redir stack,
    then set R2 to the new value (which is the TOC pointer to be used
    for the duration of the replacement function, as determined by
@@ -1127,7 +1131,7 @@ static IRTemp gen_POP ( IRSB* bb )
 
 static void gen_push_and_set_LR_R2 ( IRSB* bb, Addr64 new_R2_value )
 {
-#  if defined(VGP_ppc64_linux)
+#  if defined(VGP_ppc64be_linux)
    Addr64 bogus_RA  = (Addr64)&VG_(ppctoc_magic_redirect_return_stub);
    Int    offB_GPR2 = offsetof(VexGuestPPC64State,guest_GPR2);
    Int    offB_LR   = offsetof(VexGuestPPC64State,guest_LR);
@@ -1140,10 +1144,13 @@ static void gen_push_and_set_LR_R2 ( IRSB* bb, Addr64 new_R2_value )
 #    error Platform is not TOC-afflicted, fortunately
 #  endif
 }
+#endif
+
+#if defined(VG_PLAT_USES_PPCTOC) || defined(VGP_ppc64le_linux)
 
 static void gen_pop_R2_LR_then_bLR ( IRSB* bb )
 {
-#  if defined(VGP_ppc64_linux)
+#  if defined(VGP_ppc64be_linux)  || defined(VGP_ppc64le_linux)
    Int    offB_GPR2 = offsetof(VexGuestPPC64State,guest_GPR2);
    Int    offB_LR   = offsetof(VexGuestPPC64State,guest_LR);
    Int    offB_CIA  = offsetof(VexGuestPPC64State,guest_CIA);
@@ -1166,6 +1173,9 @@ static void gen_pop_R2_LR_then_bLR ( IRSB* bb )
 #    error Platform is not TOC-afflicted, fortunately
 #  endif
 }
+#endif
+
+#if defined(VG_PLAT_USES_PPCTOC) || defined(VGP_ppc64le_linux)
 
 static
 Bool mk_preamble__ppctoc_magic_return_stub ( void* closureV, IRSB* bb )
@@ -1186,6 +1196,30 @@ Bool mk_preamble__ppctoc_magic_return_stub ( void* closureV, IRSB* bb )
                    optimiser/instrumenter/backend. */
 }
 #endif
+
+#if defined(VGP_ppc64le_linux)
+/* Generate code to push LR and R2 onto this thread's redir stack.
+   Need to save R2 in case we redirect to a global entry point.  The
+   value of R2 is not preserved when entering the global entry point.
+   Need to make sure R2 gets restored on return.  Set LR to the magic
+   return stub, so we get to intercept the return and restore R2 and
+   L2 to the values saved here.
+
+   The existing infrastruture for the TOC enabled architectures is
+   being exploited here.  So, we need to enable a number of the
+   code sections used by VG_PLAT_USES_PPCTOC.
+*/
+
+static void gen_push_R2_and_set_LR ( IRSB* bb )
+{
+   Addr64 bogus_RA  = (Addr64)&VG_(ppctoc_magic_redirect_return_stub);
+   Int    offB_GPR2 = offsetof(VexGuestPPC64State,guest_GPR2);
+   Int    offB_LR   = offsetof(VexGuestPPC64State,guest_LR);
+   gen_PUSH( bb, IRExpr_Get(offB_LR,   Ity_I64) );
+   gen_PUSH( bb, IRExpr_Get(offB_GPR2, Ity_I64) );
+   addStmtToIRSB( bb, IRStmt_Put( offB_LR,   mkU64( bogus_RA )) );
+}
+#  endif
 
 /* --------------- END helpers for with-TOC platforms --------------- */
 
@@ -1244,6 +1278,19 @@ Bool mk_preamble__set_NRADDR_to_zero ( void* closureV, IRSB* bb )
      gen_push_and_set_LR_R2 ( bb, VG_(get_tocptr)( closure->readdr ) );
    }
 #  endif
+
+#if defined(VGP_ppc64le_linux)
+   VgCallbackClosure* closure = (VgCallbackClosure*)closureV;
+   Int offB_GPR12 = offsetof(VexGuestArchState, guest_GPR12);
+   addStmtToIRSB(bb, IRStmt_Put(offB_GPR12, mkU64(closure->readdr)));
+   addStmtToIRSB(bb,
+      IRStmt_Put(
+         offsetof(VexGuestArchState,guest_NRADDR_GPR2),
+         VG_WORDSIZE==8 ? mkU64(0) : mkU32(0)
+      )
+   );
+   gen_push_R2_and_set_LR ( bb );
+#endif
    return False;
 }
 
@@ -1277,7 +1324,7 @@ Bool mk_preamble__set_NRADDR_to_nraddr ( void* closureV, IRSB* bb )
    Int offB_GPR25 = offsetof(VexGuestMIPS64State, guest_r25);
    addStmtToIRSB(bb, IRStmt_Put(offB_GPR25, mkU64(closure->readdr)));
 #  endif
-#  if defined(VGP_ppc64_linux)
+#  if defined(VG_PLAT_USES_PPCTOC) && !defined(VGP_ppc64le_linux)
    addStmtToIRSB( 
       bb,
       IRStmt_Put( 
@@ -1288,6 +1335,22 @@ Bool mk_preamble__set_NRADDR_to_nraddr ( void* closureV, IRSB* bb )
    );
    gen_push_and_set_LR_R2 ( bb, VG_(get_tocptr)( closure->readdr ) );
 #  endif
+#if defined(VGP_ppc64le_linux)
+   /* This saves the r2 before leaving the function.  We need to move
+    * guest_NRADDR_GPR2 back to R2 on return.
+    */
+   Int offB_GPR12 = offsetof(VexGuestArchState, guest_GPR12);
+   addStmtToIRSB(
+      bb,
+      IRStmt_Put(
+         offsetof(VexGuestArchState,guest_NRADDR_GPR2),
+         IRExpr_Get(offsetof(VexGuestArchState,guest_GPR2),
+                    VG_WORDSIZE==8 ? Ity_I64 : Ity_I32)
+      )
+   );
+   addStmtToIRSB(bb, IRStmt_Put(offB_GPR12, mkU64(closure->readdr)));
+   gen_push_R2_and_set_LR ( bb );
+#endif
    return False;
 }
 
@@ -1389,13 +1452,23 @@ Bool VG_(translate) ( ThreadId tid,
       HChar name1[512] = "";
       HChar name2[512] = "";
       name1[0] = name2[0] = 0;
-      ok = VG_(get_fnname_w_offset)(nraddr, name1, 512);
+      ok = VG_(get_fnname_w_offset)(nraddr, name1, sizeof(name1));
       if (!ok) VG_(strcpy)(name1, "???");
-      ok = VG_(get_fnname_w_offset)(addr, name2, 512);
+      ok = VG_(get_fnname_w_offset)(addr, name2, sizeof(name2));
       if (!ok) VG_(strcpy)(name2, "???");
+      /* Try also to get the soname (not the filename) of the "from"
+         object.  This makes it much easier to debug redirection
+         problems. */
+      const HChar* nraddr_soname = "???";
+      DebugInfo*   nraddr_di     = VG_(find_DebugInfo)(nraddr);
+      if (nraddr_di) {
+         const HChar* t = VG_(DebugInfo_get_soname)(nraddr_di);
+         if (t)
+            nraddr_soname = t;
+      }
       VG_(message)(Vg_DebugMsg, 
-                   "REDIR: 0x%llx (%s) redirected to 0x%llx (%s)\n",
-                   nraddr, name1,
+                   "REDIR: 0x%llx (%s:%s) redirected to 0x%llx (%s)\n",
+                   nraddr, nraddr_soname, name1,
                    addr, name2 );
    }
 
@@ -1475,7 +1548,8 @@ Bool VG_(translate) ( ThreadId tid,
    if (kind == T_Redir_Wrap)
       preamble_fn = mk_preamble__set_NRADDR_to_nraddr;
 
-#  if defined(VG_PLAT_USES_PPCTOC)
+   /* LE we setup the LR */
+#  if defined(VG_PLAT_USES_PPCTOC) || defined(VGP_ppc64le_linux)
    if (ULong_to_Ptr(nraddr)
        == (void*)&VG_(ppctoc_magic_redirect_return_stub)) {
       /* If entering the special return stub, this means a wrapped or
@@ -1511,12 +1585,16 @@ Bool VG_(translate) ( ThreadId tid,
 #  if defined(VGP_ppc32_linux)
    vex_abiinfo.guest_ppc_zap_RZ_at_blr        = False;
    vex_abiinfo.guest_ppc_zap_RZ_at_bl         = NULL;
-   vex_abiinfo.host_ppc32_regalign_int64_args = True;
 #  endif
-#  if defined(VGP_ppc64_linux)
+#  if defined(VGP_ppc64be_linux)
    vex_abiinfo.guest_ppc_zap_RZ_at_blr        = True;
    vex_abiinfo.guest_ppc_zap_RZ_at_bl         = const_True;
    vex_abiinfo.host_ppc_calls_use_fndescrs    = True;
+#  endif
+#  if defined(VGP_ppc64le_linux)
+   vex_abiinfo.guest_ppc_zap_RZ_at_blr        = True;
+   vex_abiinfo.guest_ppc_zap_RZ_at_bl         = const_True;
+   vex_abiinfo.host_ppc_calls_use_fndescrs    = False;
 #  endif
 
    /* Set up closure args. */
@@ -1641,8 +1719,7 @@ Bool VG_(translate) ( ThreadId tid,
                                 tmpbuf_used,
                                 tres.n_sc_extents > 0,
                                 tres.offs_profInc,
-                                tres.n_guest_instrs,
-                                vex_arch );
+                                tres.n_guest_instrs );
       } else {
           vg_assert(tres.offs_profInc == -1); /* -1 == unset */
           VG_(add_to_unredir_transtab)( &vge,

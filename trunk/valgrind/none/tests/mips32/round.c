@@ -32,11 +32,11 @@ const char *flt_round_op_names[] = {
 };
 
 const double fs_d[] = {
-   0, 456.25, 3, -1,                                                            
-   1384.5, -7.25, 1000000000, -5786.25,                                         
-   1752, 0.015625, 0.03125, -248562.75,                                     
-   -45786.5, 456, 34.03125, 45786.75,                                        
-   1752065, 107, -45667.25, -7,                                                 
+   0, 456.25, 3, -1,
+   1384.5, -7.25, 1000000000, -5786.25,
+   1752, 0.015625, 0.03125, -248562.75,
+   -45786.5, 456, 34.03125, 45786.75,
+   1752065, 107, -45667.25, -7,
    -347856.5, 356047, -1.25, 23.0625
 };
 
@@ -132,31 +132,19 @@ void set_rounding_mode(round_mode_t mode)
 {
    switch(mode) {
       case TO_NEAREST:
-         __asm__ volatile("cfc1 $t0, $31\n\t"
-                          "srl $t0, 2\n\t"
-                          "sll $t0, 2\n\t"
-                          "ctc1 $t0, $31\n\t");
+         __asm__ volatile("ctc1 $zero, $31"  "\n\t");
          break;
       case TO_ZERO:
-         __asm__ volatile("cfc1 $t0, $31\n\t"
-                          "srl $t0, 2\n\t"
-                          "sll $t0, 2\n\t"
-                          "addiu $t0, 1\n\t"
-                          "ctc1 $t0, $31\n\t");
+         __asm__ volatile("li    $t0, 0x1"  "\n\t"
+                          "ctc1  $t0, $31"  "\n\t");
          break;
       case TO_PLUS_INFINITY:
-         __asm__ volatile("cfc1 $t0, $31\n\t"
-                          "srl $t0, 2\n\t"
-                          "sll $t0, 2\n\t"
-                          "addiu $t0, 2\n\t"
-                          "ctc1 $t0, $31\n\t");
+          __asm__ volatile("li    $t0, 0x2"  "\n\t"
+                           "ctc1  $t0, $31"  "\n\t");
          break;
       case TO_MINUS_INFINITY:
-         __asm__ volatile("cfc1 $t0, $31\n\t"
-                          "srl $t0, 2\n\t"
-                          "sll $t0, 2\n\t"
-                          "addiu $t0, 3\n\t"
-                          "ctc1 $t0, $31\n\t");
+          __asm__ volatile("li    $t0, 0x3"  "\n\t"
+                           "ctc1  $t0, $31"  "\n\t");
          break;
    }
 }
@@ -165,7 +153,9 @@ int directedRoundingMode(flt_dir_op_t op) {
    int fd_w = 0;
    int i;
    int fcsr = 0;
+   round_mode_t rm = TO_NEAREST;
    for (i = 0; i < 24; i++) {
+      set_rounding_mode(rm);
       switch(op) {
          case CEILWS:
               UNOPfw("ceil.w.s");
@@ -215,7 +205,7 @@ int directedRoundingMode(flt_dir_op_t op) {
    return 0;
 }
 
-int FCSRRoundingMode(flt_round_op_t op1) 
+int FCSRRoundingMode(flt_round_op_t op1)
 {
    double fd_d = 0;
    float fd_f = 0;
@@ -223,7 +213,7 @@ int FCSRRoundingMode(flt_round_op_t op1)
    int i;
    int fcsr = 0;
    round_mode_t rm;
-   for (rm = TO_NEAREST; rm <= TO_MINUS_INFINITY; rm ++) { 
+   for (rm = TO_NEAREST; rm <= TO_MINUS_INFINITY; rm ++) {
       set_rounding_mode(rm);
       printf("roundig mode: %s\n", round_mode_name[rm]);
       for (i = 0; i < 24; i++) {
@@ -278,7 +268,7 @@ int main()
    for (op = CEILWS; op <= TRUNCWD; op++) {
       directedRoundingMode(op);
    }
-   
+
    printf("-------------------------- %s --------------------------\n",
         "test FPU Conversion Operations Using the FCSR Rounding Mode");
    for (op1 = CVTDS; op1 <= CVTWD; op1++) {

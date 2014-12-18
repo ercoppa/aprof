@@ -265,8 +265,8 @@ void ML_(pp_TyEnt_C_ishly)( XArray* /* of TyEnt */ tyents,
          VG_(printf)("&&");
          break;
       case Te_TyEnum:
-         if (!ent->Te.TyEnum.name) goto unhandled;
-         VG_(printf)("enum %s", ent->Te.TyEnum.name);
+         VG_(printf)("enum %s", ent->Te.TyEnum.name ? ent->Te.TyEnum.name
+                                                    : "<anonymous>" );
          break;
       case Te_TyStOrUn:
          VG_(printf)("%s %s",
@@ -287,8 +287,8 @@ void ML_(pp_TyEnt_C_ishly)( XArray* /* of TyEnt */ tyents,
          }
          break;
       case Te_TyTyDef:
-         if (!ent->Te.TyTyDef.name) goto unhandled;
-         VG_(printf)("%s", ent->Te.TyTyDef.name);
+         VG_(printf)("%s", ent->Te.TyTyDef.name ? ent->Te.TyTyDef.name
+                                                : "<anonymous>" );
          break;
       case Te_TyFn:
          VG_(printf)("%s", "<function_type>");
@@ -297,6 +297,7 @@ void ML_(pp_TyEnt_C_ishly)( XArray* /* of TyEnt */ tyents,
          switch (ent->Te.TyQual.qual) {
             case 'C': VG_(printf)("const "); break;
             case 'V': VG_(printf)("volatile "); break;
+            case 'R': VG_(printf)("restrict "); break;
             default: goto unhandled;
          }
          ML_(pp_TyEnt_C_ishly)(tyents, ent->Te.TyQual.typeR);
@@ -785,7 +786,8 @@ XArray* /*HChar*/ ML_(describe_type)( /*OUT*/PtrdiffT* residual_offset,
             PtrdiffT   offMin = 0, offMax1 = 0;
             if (!ty->Te.TyStOrUn.isStruct) goto done;
             fieldRs = ty->Te.TyStOrUn.fieldRs;
-            if ((!fieldRs) || VG_(sizeXA)(fieldRs) == 0) goto done;
+            if (((!fieldRs) || VG_(sizeXA)(fieldRs) == 0)
+                && (ty->Te.TyStOrUn.typeR == 0)) goto done;
             for (i = 0; i < VG_(sizeXA)( fieldRs ); i++ ) {
                fieldR = *(UWord*)VG_(indexXA)( fieldRs, i );
                field = ML_(TyEnts__index_by_cuOff)(tyents, NULL, fieldR);
@@ -831,8 +833,14 @@ XArray* /*HChar*/ ML_(describe_type)( /*OUT*/PtrdiffT* residual_offset,
             }
             /* Did we find a suitable field? */
             vg_assert(i >= 0 && i <= VG_(sizeXA)( fieldRs ));
-            if (i == VG_(sizeXA)( fieldRs ))
-               goto done; /* No.  Give up. */
+            if (i == VG_(sizeXA)( fieldRs )) {
+               ty = ML_(TyEnts__index_by_cuOff)(tyents, NULL,
+                                                   ty->Te.TyStOrUn.typeR);
+               vg_assert(ty);
+               if (ty->tag == Te_UNKNOWN) goto done;
+               vg_assert(ML_(TyEnt__is_type)(ty));
+               continue;
+            }
             /* Yes.  'field' is it. */
             vg_assert(field);
             if (!field->Te.Field.name) goto done;

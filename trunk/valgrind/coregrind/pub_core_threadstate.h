@@ -84,10 +84,12 @@ typedef
    typedef VexGuestAMD64State VexGuestArchState;
 #elif defined(VGA_ppc32)
    typedef VexGuestPPC32State VexGuestArchState;
-#elif defined(VGA_ppc64)
+#elif defined(VGA_ppc64be) || defined(VGA_ppc64le)
    typedef VexGuestPPC64State VexGuestArchState;
 #elif defined(VGA_arm)
    typedef VexGuestARMState   VexGuestArchState;
+#elif defined(VGA_arm64)
+   typedef VexGuestARM64State VexGuestArchState;
 #elif defined(VGA_s390x)
    typedef VexGuestS390XState VexGuestArchState;
 #elif defined(VGA_mips32)
@@ -251,6 +253,10 @@ typedef
             UWord protection;
          } mach_vm_map;
          struct {
+            ULong size;
+            int copy;
+         } mach_vm_remap;
+         struct {
             Addr thread;
             UWord flavor;
          } thread_get_state;
@@ -335,11 +341,11 @@ typedef struct {
    /* The allocated size of this thread's stack */
    SizeT client_stack_szB;
 
-   /* Address of the highest legitimate word in this stack.  This is
+   /* Address of the highest legitimate byte in this stack.  This is
       used for error messages only -- not critical for execution
       correctness.  Is is set for all stacks, specifically including
       ThreadId == 1 (the main thread). */
-   Addr client_stack_highest_word;
+   Addr client_stack_highest_byte;
 
    /* Alternate signal stack */
    vki_stack_t altstack;

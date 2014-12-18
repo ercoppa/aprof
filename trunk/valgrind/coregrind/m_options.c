@@ -47,14 +47,17 @@ VexControl VG_(clo_vex_control);
 Bool   VG_(clo_error_limit)    = True;
 Int    VG_(clo_error_exitcode) = 0;
 
-#if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android)
+#if defined(VGPV_arm_linux_android) || defined(VGPV_x86_linux_android) \
+    || defined(VGPV_mips32_linux_android)
 VgVgdb VG_(clo_vgdb)           = Vg_VgdbNo; // currently disabled on Android
 #else
 VgVgdb VG_(clo_vgdb)           = Vg_VgdbYes;
 #endif
 Int    VG_(clo_vgdb_poll)      = 5000; 
 Int    VG_(clo_vgdb_error)     = 999999999;
-const HChar* VG_(clo_vgdb_prefix)    = NULL;
+UInt   VG_(clo_vgdb_stop_at)   = 0;
+const HChar *VG_(clo_vgdb_prefix)    = NULL;
+const HChar *VG_(arg_vgdb_prefix)    = NULL;
 Bool   VG_(clo_vgdb_shadow_registers) = False;
 
 Bool   VG_(clo_db_attach)      = False;
@@ -75,6 +78,7 @@ HChar* VG_(clo_log_fname_expanded) = NULL;
 HChar* VG_(clo_xml_fname_expanded) = NULL;
 Bool   VG_(clo_time_stamp)     = False;
 Int    VG_(clo_input_fd)       = 0; /* stdin */
+Bool   VG_(clo_default_supp)   = True;
 Int    VG_(clo_n_suppressions) = 0;
 const HChar* VG_(clo_suppressions)[VG_CLO_MAX_SFILES];
 Int    VG_(clo_n_fullpath_after) = 0;
@@ -108,8 +112,9 @@ Int    VG_(clo_redzone_size)   = -1;
 Int    VG_(clo_dump_error)     = 0;
 Int    VG_(clo_backtrace_size) = 12;
 Int    VG_(clo_merge_recursive_frames) = 0; // default value: no merge
-const HChar* VG_(clo_sim_hints)      = NULL;
+UInt   VG_(clo_sim_hints)      = 0;
 Bool   VG_(clo_sym_offsets)    = False;
+Bool   VG_(clo_read_inline_info) = False; // Or should be put it to True by default ???
 Bool   VG_(clo_read_var_info)  = False;
 Int    VG_(clo_n_req_tsyms)    = 0;
 const HChar* VG_(clo_req_tsyms)[VG_CLO_MAX_REQ_TSYMS];
@@ -122,7 +127,7 @@ Word   VG_(clo_max_stackframe) = 2000000;
 Word   VG_(clo_main_stacksize) = 0; /* use client's rlimit.stack */
 Bool   VG_(clo_wait_for_gdb)   = False;
 VgSmc  VG_(clo_smc_check)      = Vg_SmcStack;
-const HChar* VG_(clo_kernel_variant) = NULL;
+UInt   VG_(clo_kernel_variant) = 0;
 Bool   VG_(clo_dsymutil)       = False;
 Bool   VG_(clo_sigill_diag)    = True;
 UInt   VG_(clo_unw_stack_scan_thresh) = 0; /* disabled by default */
@@ -165,18 +170,8 @@ HChar* VG_(expand_file_name)(const HChar* option_name, const HChar* format)
       goto bad;
    }
 
-   // If 'format' starts with a '/', do not prefix with startup dir.
-   if (format[0] != '/') {
-      j += VG_(strlen)(base_dir);
-   }
-
-   // The 10 is slop, it should be enough in most cases.
-   len = j + VG_(strlen)(format) + 10;
+   len = VG_(strlen)(format) + 1;
    out = VG_(malloc)( "options.efn.1", len );
-   if (format[0] != '/') {
-      VG_(strcpy)(out, base_dir);
-      out[j++] = '/';
-   }
 
 #define ENSURE_THIS_MUCH_SPACE(x) \
    if (j + x >= len) { \
@@ -209,32 +204,24 @@ HChar* VG_(expand_file_name)(const HChar* option_name, const HChar* format)
             i++;
             if ('{' == format[i]) {
                // Get the env var name, print its contents.
-               const HChar* qualname;
-               HChar* qual;
-               i++;
-               qualname = &format[i];
+               HChar *qual;
+               Int begin_qualname = ++i;
                while (True) {
                   if (0 == format[i]) {
                      VG_(fmsg)("%s: malformed %%q specifier\n", option_name);
                      goto bad;
                   } else if ('}' == format[i]) {
-                     // Temporarily replace the '}' with NUL to extract var
-                     // name.
-                     // FIXME: this is not safe as FORMAT is sometimes a
-                     // string literal which may reside in read-only memory
-                    ((HChar *)format)[i] = 0;
+                     Int qualname_len = i - begin_qualname;
+                     HChar qualname[qualname_len + 1];
+                     VG_(strncpy)(qualname, format + begin_qualname,
+                                  qualname_len);
+                     qualname[qualname_len] = '\0';
                      qual = VG_(getenv)(qualname);
                      if (NULL == qual) {
                         VG_(fmsg)("%s: environment variable %s is not set\n",
                                   option_name, qualname);
-                     // FIXME: this is not safe as FORMAT is sometimes a
-                     // string literal which may reside in read-only memory
-                        ((HChar *)format)[i] = '}';  // Put the '}' back.
                         goto bad;
                      }
-                     // FIXME: this is not safe as FORMAT is sometimes a
-                     // string literal which may reside in read-only memory
-                     ((HChar *)format)[i] = '}';     // Put the '}' back.
                      i++;
                      break;
                   }
@@ -257,6 +244,18 @@ HChar* VG_(expand_file_name)(const HChar* option_name, const HChar* format)
    }
    ENSURE_THIS_MUCH_SPACE(1);
    out[j++] = 0;
+
+   // If 'out' is not an absolute path name, prefix it with the startup dir.
+   if (out[0] != '/') {
+      len = VG_(strlen)(base_dir) + 1 + VG_(strlen)(out) + 1;
+
+      HChar *absout = VG_(malloc)("options.efn.4", len);
+      VG_(strcpy)(absout, base_dir);
+      VG_(strcat)(absout, "/");
+      VG_(strcat)(absout, out);
+      VG_(free)(out);
+      out = absout;
+   }
 
    return out;
 

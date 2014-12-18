@@ -168,6 +168,25 @@ UInt VG_(printf_xml) ( const HChar *format, ... )
    return ret;
 }
 
+static UInt emit_WRK ( const HChar* format, va_list vargs )
+{
+   if (VG_(clo_xml)) {
+      return VG_(vprintf_xml)(format, vargs);
+   } else if (VG_(log_output_sink).fd == -2) {
+      return VG_(vprintf) (format, vargs);
+   } else {
+      return VG_(vmessage)(Vg_UserMsg, format, vargs);
+   }
+}
+UInt VG_(emit) ( const HChar* format, ... )
+{
+   UInt ret;
+   va_list vargs;
+   va_start(vargs, format);
+   ret = emit_WRK(format, vargs);
+   va_end(vargs);
+   return ret;
+}
 
 /* --------- sprintf --------- */
 
@@ -403,7 +422,8 @@ static void add_to__vmessage_buf ( HChar c, void *p )
       // (useful to run regression tests in an outer/inner setup
       // and avoid the diff failing due to these unexpected '>').
       depth = RUNNING_ON_VALGRIND;
-      if (depth > 0 && !VG_(strstr)(VG_(clo_sim_hints), "no-inner-prefix")) {
+      if (depth > 0 
+          && !SimHintiS(SimHint_no_inner_prefix, VG_(clo_sim_hints))) {
          if (depth > 10)
             depth = 10; // ?!?!
          for (i = 0; i < depth; i++) {

@@ -248,7 +248,6 @@ static SysRes do_clone (ThreadId ptid,
    ThreadState * ctst = VG_ (get_ThreadState) (ctid);
    UInt ret = 0;
    UWord * stack;
-   NSegment const *seg;
    SysRes res;
    vki_sigset_t blockall, savedmask;
 
@@ -283,22 +282,8 @@ static SysRes do_clone (ThreadId ptid,
       See #226116. */ 
 
    ctst->os_state.threadgroup = ptst->os_state.threadgroup;
-   seg = VG_ (am_find_nsegment) ((Addr) sp);
 
-   if (seg && seg->kind != SkResvn) {
-      ctst->client_stack_highest_word = (Addr) VG_PGROUNDUP (sp);
-      ctst->client_stack_szB = ctst->client_stack_highest_word - seg->start;
-      VG_ (register_stack) (seg->start, ctst->client_stack_highest_word);
-      if (debug)
-         VG_ (printf) ("tid %d: guessed client stack range %#lx-%#lx\n",
-
-      ctid, seg->start, VG_PGROUNDUP (sp));
-   } else {
-      VG_ (message) (Vg_UserMsg,
-                     "!? New thread %d starts with sp+%#lx) unmapped\n",
-                     ctid, sp);
-      ctst->client_stack_szB = 0;
-   }
+   ML_(guess_and_register_stack) (sp, ctst);
 
    VG_TRACK (pre_thread_ll_create, ptid, ctid);
    if (flags & VKI_CLONE_SETTLS) {
@@ -1121,15 +1106,19 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_timerfd_gettime,        sys_timerfd_gettime),         // 322
    LINXY (__NR_timerfd_settime,        sys_timerfd_settime),         // 323
    LINXY (__NR_signalfd4,              sys_signalfd4),               // 324
-   LINX_ (__NR_eventfd2,               sys_eventfd2),                // 325
+   LINXY (__NR_eventfd2,               sys_eventfd2),                // 325
    //..
    LINXY (__NR_pipe2,                  sys_pipe2),                   // 328
    LINXY (__NR_inotify_init1,          sys_inotify_init1),           // 329
    //..
    LINXY (__NR_prlimit64,              sys_prlimit64),               // 338
    //..
+   LINXY (__NR_clock_adjtime,          sys_clock_adjtime),           // 341
+   //..
    LINXY (__NR_process_vm_readv,       sys_process_vm_readv),        // 345
-   LINX_ (__NR_process_vm_writev,      sys_process_vm_writev)        // 346
+   LINX_ (__NR_process_vm_writev,      sys_process_vm_writev),       // 346
+   //..
+   LINXY(__NR_getrandom,               sys_getrandom)                // 353
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry) (UInt sysno)

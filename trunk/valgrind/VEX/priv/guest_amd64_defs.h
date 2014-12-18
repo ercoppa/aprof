@@ -60,7 +60,7 @@ DisResult disInstr_AMD64 ( IRSB*        irbb,
                            VexArch      guest_arch,
                            VexArchInfo* archinfo,
                            VexAbiInfo*  abiinfo,
-                           Bool         host_bigendian,
+                           VexEndness   host_endness,
                            Bool         sigill_diag );
 
 /* Used by the optimiser to specialise calls to helpers. */
@@ -170,8 +170,10 @@ extern void  amd64g_dirtyhelper_CPUID_avx_and_cx16 ( VexGuestAMD64State* st );
 
 extern void  amd64g_dirtyhelper_FINIT ( VexGuestAMD64State* );
 
-extern void      amd64g_dirtyhelper_FXSAVE  ( VexGuestAMD64State*, HWord );
-extern VexEmNote amd64g_dirtyhelper_FXRSTOR ( VexGuestAMD64State*, HWord );
+extern void      amd64g_dirtyhelper_FXSAVE_ALL_EXCEPT_XMM
+                    ( VexGuestAMD64State*, HWord );
+extern VexEmNote amd64g_dirtyhelper_FXRSTOR_ALL_EXCEPT_XMM
+                    ( VexGuestAMD64State*, HWord );
 
 extern ULong amd64g_dirtyhelper_RDTSC ( void );
 extern void  amd64g_dirtyhelper_RDTSCP ( VexGuestAMD64State* st );
