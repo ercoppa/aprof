@@ -6,7 +6,15 @@ import static aprofplot.gui.GraphPanel.Status.*;
 import aprofplot.jfreechart.SamplingXYLineAndShapeRenderer;
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.*;
+import javax.imageio.ImageIO;
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
+import javax.swing.JRadioButtonMenuItem;
+import javax.swing.MenuElement;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import org.jfree.chart.*;
 import org.jfree.chart.axis.*;
 import org.jfree.chart.plot.*;
@@ -196,40 +204,40 @@ public class GraphPanel extends javax.swing.JPanel {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jPopupMenu1 = new javax.swing.JPopupMenu();
+        GroupMenu = new javax.swing.JPopupMenu();
         groupMenuButtonGroup = new javax.swing.ButtonGroup();
-        jRadioButtonMenuItem1 = new javax.swing.JRadioButtonMenuItem();
-        jRadioButtonMenuItem2 = new javax.swing.JRadioButtonMenuItem();
-        jRadioButtonMenuItem3 = new javax.swing.JRadioButtonMenuItem();
-        jRadioButtonMenuItem4 = new javax.swing.JRadioButtonMenuItem();
-        jRadioButtonMenuItem5 = new javax.swing.JRadioButtonMenuItem();
-        jRadioButtonMenuItem6 = new javax.swing.JRadioButtonMenuItem();
-        jPopupMenu2 = new javax.swing.JPopupMenu();
-        jMenuItem1 = new javax.swing.JMenuItem();
-        jMenuItem2 = new javax.swing.JMenuItem();
-        jMenuItem3 = new javax.swing.JMenuItem();
-        jMenuItem4 = new javax.swing.JMenuItem();
-        jMenuItem5 = new javax.swing.JMenuItem();
-        jMenuItem6 = new javax.swing.JMenuItem();
-        jMenuItem7 = new javax.swing.JMenuItem();
-        jMenuItem8 = new javax.swing.JMenuItem();
-        jMenuItem9 = new javax.swing.JMenuItem();
-        jMenuItem10 = new javax.swing.JMenuItem();
-        jMenuItem11 = new javax.swing.JMenuItem();
-        jMenuItem12 = new javax.swing.JMenuItem();
-        jMenuItem13 = new javax.swing.JMenuItem();
-        jMenuItem14 = new javax.swing.JMenuItem();
-        jPopupMenu3 = new javax.swing.JPopupMenu();
+        GroupThresholdButton1 = new javax.swing.JRadioButtonMenuItem();
+        GroupThresholdButton2 = new javax.swing.JRadioButtonMenuItem();
+        GroupThresholdButton3 = new javax.swing.JRadioButtonMenuItem();
+        GroupThresholdButton4 = new javax.swing.JRadioButtonMenuItem();
+        GroupThresholdButton5 = new javax.swing.JRadioButtonMenuItem();
+        GroupThresholdButton6 = new javax.swing.JRadioButtonMenuItem();
+        RatioMenu = new javax.swing.JPopupMenu();
+        RatioFunction1 = new javax.swing.JMenuItem();
+        RatioFunction2 = new javax.swing.JMenuItem();
+        RatioFunction3 = new javax.swing.JMenuItem();
+        RatioFunction4 = new javax.swing.JMenuItem();
+        RatioFunction5 = new javax.swing.JMenuItem();
+        RatioFunction6 = new javax.swing.JMenuItem();
+        RatioFunction7 = new javax.swing.JMenuItem();
+        RatioFunction8 = new javax.swing.JMenuItem();
+        RatioFunction9 = new javax.swing.JMenuItem();
+        RatioFunction10 = new javax.swing.JMenuItem();
+        RatioFunction11 = new javax.swing.JMenuItem();
+        RatioFunction12 = new javax.swing.JMenuItem();
+        RationFunction13 = new javax.swing.JMenuItem();
+        RatioFunction14 = new javax.swing.JMenuItem();
+        CostMenu = new javax.swing.JPopupMenu();
         WorstCostButton = new javax.swing.JRadioButtonMenuItem();
         AverageCostButton = new javax.swing.JRadioButtonMenuItem();
         BestCostButton = new javax.swing.JRadioButtonMenuItem();
-        jPopupMenu4 = new javax.swing.JPopupMenu();
-        jRadioButtonMenuItem10 = new javax.swing.JRadioButtonMenuItem();
-        jRadioButtonMenuItem11 = new javax.swing.JRadioButtonMenuItem();
-        jRadioButtonMenuItem12 = new javax.swing.JRadioButtonMenuItem();
-        jRadioButtonMenuItem13 = new javax.swing.JRadioButtonMenuItem();
-        jRadioButtonMenuItem14 = new javax.swing.JRadioButtonMenuItem();
-        jRadioButtonMenuItem15 = new javax.swing.JRadioButtonMenuItem();
+        SmoothMenu = new javax.swing.JPopupMenu();
+        SmoothThresholdButton1 = new javax.swing.JRadioButtonMenuItem();
+        SmoothThresholdButton2 = new javax.swing.JRadioButtonMenuItem();
+        SmoothThresholdButton3 = new javax.swing.JRadioButtonMenuItem();
+        SmoothThresholdButton4 = new javax.swing.JRadioButtonMenuItem();
+        SmoothThresholdButton5 = new javax.swing.JRadioButtonMenuItem();
+        SmoothThresholdButton6 = new javax.swing.JRadioButtonMenuItem();
         jToolBar1 = new javax.swing.JToolBar();
         XLogToggle = new javax.swing.JToggleButton();
         YLogToggle = new javax.swing.JToggleButton();
@@ -243,198 +251,198 @@ public class GraphPanel extends javax.swing.JPanel {
         filler1 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 0), new java.awt.Dimension(0, 0), new java.awt.Dimension(0, 0));
         colorLegend1 = new aprofplot.gui.ColorLegend();
 
-        jPopupMenu1.addPopupMenuListener(new javax.swing.event.PopupMenuListener() {
+        GroupMenu.addPopupMenuListener(new javax.swing.event.PopupMenuListener() {
             public void popupMenuCanceled(javax.swing.event.PopupMenuEvent evt) {
             }
             public void popupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent evt) {
-                jPopupMenu1PopupMenuWillBecomeInvisible(evt);
+                GroupMenuPopupMenuWillBecomeInvisible(evt);
             }
             public void popupMenuWillBecomeVisible(javax.swing.event.PopupMenuEvent evt) {
             }
         });
 
-        jRadioButtonMenuItem1.setSelected(true);
-        jRadioButtonMenuItem1.setText("1");
-        jRadioButtonMenuItem1.addActionListener(new java.awt.event.ActionListener() {
+        GroupThresholdButton1.setSelected(true);
+        GroupThresholdButton1.setText("1");
+        GroupThresholdButton1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jRadioButtonMenuItem1ActionPerformed(evt);
+                GroupThresholdButton1ActionPerformed(evt);
             }
         });
-        jPopupMenu1.add(jRadioButtonMenuItem1);
+        GroupMenu.add(GroupThresholdButton1);
 
-        jRadioButtonMenuItem2.setText("2");
-        jRadioButtonMenuItem2.addActionListener(new java.awt.event.ActionListener() {
+        GroupThresholdButton2.setText("2");
+        GroupThresholdButton2.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jRadioButtonMenuItem2ActionPerformed(evt);
+                GroupThresholdButton2ActionPerformed(evt);
             }
         });
-        jPopupMenu1.add(jRadioButtonMenuItem2);
+        GroupMenu.add(GroupThresholdButton2);
 
-        jRadioButtonMenuItem3.setText("3");
-        jRadioButtonMenuItem3.addActionListener(new java.awt.event.ActionListener() {
+        GroupThresholdButton3.setText("3");
+        GroupThresholdButton3.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jRadioButtonMenuItem3ActionPerformed(evt);
+                GroupThresholdButton3ActionPerformed(evt);
             }
         });
-        jPopupMenu1.add(jRadioButtonMenuItem3);
+        GroupMenu.add(GroupThresholdButton3);
 
-        jRadioButtonMenuItem4.setText("4");
-        jRadioButtonMenuItem4.addActionListener(new java.awt.event.ActionListener() {
+        GroupThresholdButton4.setText("4");
+        GroupThresholdButton4.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jRadioButtonMenuItem4ActionPerformed(evt);
+                GroupThresholdButton4ActionPerformed(evt);
             }
         });
-        jPopupMenu1.add(jRadioButtonMenuItem4);
+        GroupMenu.add(GroupThresholdButton4);
 
-        jRadioButtonMenuItem5.setText("5");
-        jRadioButtonMenuItem5.addActionListener(new java.awt.event.ActionListener() {
+        GroupThresholdButton5.setText("5");
+        GroupThresholdButton5.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jRadioButtonMenuItem5ActionPerformed(evt);
+                GroupThresholdButton5ActionPerformed(evt);
             }
         });
-        jPopupMenu1.add(jRadioButtonMenuItem5);
+        GroupMenu.add(GroupThresholdButton5);
 
-        jRadioButtonMenuItem6.setText("6");
-        jRadioButtonMenuItem6.addActionListener(new java.awt.event.ActionListener() {
+        GroupThresholdButton6.setText("6");
+        GroupThresholdButton6.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jRadioButtonMenuItem6ActionPerformed(evt);
+                GroupThresholdButton6ActionPerformed(evt);
             }
         });
-        jPopupMenu1.add(jRadioButtonMenuItem6);
-        groupMenuButtonGroup.add(jRadioButtonMenuItem1);
-        groupMenuButtonGroup.add(jRadioButtonMenuItem2);
-        groupMenuButtonGroup.add(jRadioButtonMenuItem3);
-        groupMenuButtonGroup.add(jRadioButtonMenuItem4);
-        groupMenuButtonGroup.add(jRadioButtonMenuItem5);
-        groupMenuButtonGroup.add(jRadioButtonMenuItem6);
+        GroupMenu.add(GroupThresholdButton6);
+        groupMenuButtonGroup.add(GroupThresholdButton1);
+        groupMenuButtonGroup.add(GroupThresholdButton2);
+        groupMenuButtonGroup.add(GroupThresholdButton3);
+        groupMenuButtonGroup.add(GroupThresholdButton4);
+        groupMenuButtonGroup.add(GroupThresholdButton5);
+        groupMenuButtonGroup.add(GroupThresholdButton6);
 
-        jPopupMenu2.addPopupMenuListener(new javax.swing.event.PopupMenuListener() {
+        RatioMenu.addPopupMenuListener(new javax.swing.event.PopupMenuListener() {
             public void popupMenuCanceled(javax.swing.event.PopupMenuEvent evt) {
             }
             public void popupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent evt) {
-                jPopupMenu2PopupMenuWillBecomeInvisible(evt);
+                RatioMenuPopupMenuWillBecomeInvisible(evt);
             }
             public void popupMenuWillBecomeVisible(javax.swing.event.PopupMenuEvent evt) {
             }
         });
 
-        jMenuItem1.setText("T(n)/n ");
-        jMenuItem1.addActionListener(new java.awt.event.ActionListener() {
+        RatioFunction1.setText("T(n)/n ");
+        RatioFunction1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem1ActionPerformed(evt);
+                RatioFunction1ActionPerformed(evt);
             }
         });
-        jPopupMenu2.add(jMenuItem1);
+        RatioMenu.add(RatioFunction1);
 
-        jMenuItem2.setText("T(n)/(n log log n) ");
-        jMenuItem2.addActionListener(new java.awt.event.ActionListener() {
+        RatioFunction2.setText("T(n)/(n log log n) ");
+        RatioFunction2.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem2ActionPerformed(evt);
+                RatioFunction2ActionPerformed(evt);
             }
         });
-        jPopupMenu2.add(jMenuItem2);
+        RatioMenu.add(RatioFunction2);
 
-        jMenuItem3.setText("T(n)/(n log n) ");
-        jMenuItem3.addActionListener(new java.awt.event.ActionListener() {
+        RatioFunction3.setText("T(n)/(n log n) ");
+        RatioFunction3.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem3ActionPerformed(evt);
+                RatioFunction3ActionPerformed(evt);
             }
         });
-        jPopupMenu2.add(jMenuItem3);
+        RatioMenu.add(RatioFunction3);
 
-        jMenuItem4.setText("T(n)/n^1.5 ");
-        jMenuItem4.addActionListener(new java.awt.event.ActionListener() {
+        RatioFunction4.setText("T(n)/n^1.5 ");
+        RatioFunction4.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem4ActionPerformed(evt);
+                RatioFunction4ActionPerformed(evt);
             }
         });
-        jPopupMenu2.add(jMenuItem4);
+        RatioMenu.add(RatioFunction4);
 
-        jMenuItem5.setText("T(n)/n^2 ");
-        jMenuItem5.addActionListener(new java.awt.event.ActionListener() {
+        RatioFunction5.setText("T(n)/n^2 ");
+        RatioFunction5.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem5ActionPerformed(evt);
+                RatioFunction5ActionPerformed(evt);
             }
         });
-        jPopupMenu2.add(jMenuItem5);
+        RatioMenu.add(RatioFunction5);
 
-        jMenuItem6.setText("T(n)/n^2.5 ");
-        jMenuItem6.addActionListener(new java.awt.event.ActionListener() {
+        RatioFunction6.setText("T(n)/n^2.5 ");
+        RatioFunction6.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem6ActionPerformed(evt);
+                RatioFunction6ActionPerformed(evt);
             }
         });
-        jPopupMenu2.add(jMenuItem6);
+        RatioMenu.add(RatioFunction6);
 
-        jMenuItem7.setText("T(n)/n^3 ");
-        jMenuItem7.addActionListener(new java.awt.event.ActionListener() {
+        RatioFunction7.setText("T(n)/n^3 ");
+        RatioFunction7.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem7ActionPerformed(evt);
+                RatioFunction7ActionPerformed(evt);
             }
         });
-        jPopupMenu2.add(jMenuItem7);
+        RatioMenu.add(RatioFunction7);
 
-        jMenuItem8.setText("*= log log n");
-        jMenuItem8.addActionListener(new java.awt.event.ActionListener() {
+        RatioFunction8.setText("*= log log n");
+        RatioFunction8.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem8ActionPerformed(evt);
+                RatioFunction8ActionPerformed(evt);
             }
         });
-        jPopupMenu2.add(jMenuItem8);
+        RatioMenu.add(RatioFunction8);
 
-        jMenuItem9.setText("/= log log n");
-        jMenuItem9.addActionListener(new java.awt.event.ActionListener() {
+        RatioFunction9.setText("/= log log n");
+        RatioFunction9.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem9ActionPerformed(evt);
+                RatioFunction9ActionPerformed(evt);
             }
         });
-        jPopupMenu2.add(jMenuItem9);
+        RatioMenu.add(RatioFunction9);
 
-        jMenuItem10.setText("*= log n");
-        jMenuItem10.addActionListener(new java.awt.event.ActionListener() {
+        RatioFunction10.setText("*= log n");
+        RatioFunction10.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem10ActionPerformed(evt);
+                RatioFunction10ActionPerformed(evt);
             }
         });
-        jPopupMenu2.add(jMenuItem10);
+        RatioMenu.add(RatioFunction10);
 
-        jMenuItem11.setText("/= log n");
-        jMenuItem11.addActionListener(new java.awt.event.ActionListener() {
+        RatioFunction11.setText("/= log n");
+        RatioFunction11.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem11ActionPerformed(evt);
+                RatioFunction11ActionPerformed(evt);
             }
         });
-        jPopupMenu2.add(jMenuItem11);
+        RatioMenu.add(RatioFunction11);
 
-        jMenuItem12.setText("*= (log log n)^eps ...");
-        jMenuItem12.addActionListener(new java.awt.event.ActionListener() {
+        RatioFunction12.setText("*= (log log n)^eps ...");
+        RatioFunction12.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem12ActionPerformed(evt);
+                RatioFunction12ActionPerformed(evt);
             }
         });
-        jPopupMenu2.add(jMenuItem12);
+        RatioMenu.add(RatioFunction12);
 
-        jMenuItem13.setText("*= (log n)^eps ...");
-        jMenuItem13.addActionListener(new java.awt.event.ActionListener() {
+        RationFunction13.setText("*= (log n)^eps ...");
+        RationFunction13.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem13ActionPerformed(evt);
+                RationFunction13ActionPerformed(evt);
             }
         });
-        jPopupMenu2.add(jMenuItem13);
+        RatioMenu.add(RationFunction13);
 
-        jMenuItem14.setText("*= n^eps ...");
-        jMenuItem14.addActionListener(new java.awt.event.ActionListener() {
+        RatioFunction14.setText("*= n^eps ...");
+        RatioFunction14.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem14ActionPerformed(evt);
+                RatioFunction14ActionPerformed(evt);
             }
         });
-        jPopupMenu2.add(jMenuItem14);
+        RatioMenu.add(RatioFunction14);
 
-        jPopupMenu3.addPopupMenuListener(new javax.swing.event.PopupMenuListener() {
+        CostMenu.addPopupMenuListener(new javax.swing.event.PopupMenuListener() {
             public void popupMenuCanceled(javax.swing.event.PopupMenuEvent evt) {
             }
             public void popupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent evt) {
-                jPopupMenu3PopupMenuWillBecomeInvisible(evt);
+                CostMenuPopupMenuWillBecomeInvisible(evt);
             }
             public void popupMenuWillBecomeVisible(javax.swing.event.PopupMenuEvent evt) {
             }
@@ -448,7 +456,7 @@ public class GraphPanel extends javax.swing.JPanel {
                 WorstCostButtonActionPerformed(evt);
             }
         });
-        jPopupMenu3.add(WorstCostButton);
+        CostMenu.add(WorstCostButton);
 
         AverageCostButton.setSelected(true);
         AverageCostButton.setText("Average");
@@ -457,7 +465,7 @@ public class GraphPanel extends javax.swing.JPanel {
                 AverageCostButtonActionPerformed(evt);
             }
         });
-        jPopupMenu3.add(AverageCostButton);
+        CostMenu.add(AverageCostButton);
 
         BestCostButton.setSelected(true);
         BestCostButton.setText("Best");
@@ -466,83 +474,83 @@ public class GraphPanel extends javax.swing.JPanel {
                 BestCostButtonActionPerformed(evt);
             }
         });
-        jPopupMenu3.add(BestCostButton);
+        CostMenu.add(BestCostButton);
 
         groupMenuButtonGroup2.add(WorstCostButton);
         groupMenuButtonGroup2.add(AverageCostButton);
         groupMenuButtonGroup2.add(BestCostButton);
 
-        jPopupMenu4.addPopupMenuListener(new javax.swing.event.PopupMenuListener() {
+        SmoothMenu.addPopupMenuListener(new javax.swing.event.PopupMenuListener() {
             public void popupMenuCanceled(javax.swing.event.PopupMenuEvent evt) {
             }
             public void popupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent evt) {
-                jPopupMenu4PopupMenuWillBecomeInvisible(evt);
+                SmoothMenuPopupMenuWillBecomeInvisible(evt);
             }
             public void popupMenuWillBecomeVisible(javax.swing.event.PopupMenuEvent evt) {
             }
         });
 
-        jRadioButtonMenuItem10.setSelected(true);
-        jRadioButtonMenuItem10.setText("1");
-        jRadioButtonMenuItem10.addActionListener(new java.awt.event.ActionListener() {
+        SmoothThresholdButton1.setSelected(true);
+        SmoothThresholdButton1.setText("1");
+        SmoothThresholdButton1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jRadioButtonMenuItem10ActionPerformed(evt);
+                SmoothThresholdButton1ActionPerformed(evt);
             }
         });
-        jPopupMenu4.add(jRadioButtonMenuItem10);
+        SmoothMenu.add(SmoothThresholdButton1);
 
-        jRadioButtonMenuItem11.setSelected(true);
-        jRadioButtonMenuItem11.setText("2");
-        jRadioButtonMenuItem11.addActionListener(new java.awt.event.ActionListener() {
+        SmoothThresholdButton2.setSelected(true);
+        SmoothThresholdButton2.setText("2");
+        SmoothThresholdButton2.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jRadioButtonMenuItem11ActionPerformed(evt);
+                SmoothThresholdButton2ActionPerformed(evt);
             }
         });
-        jPopupMenu4.add(jRadioButtonMenuItem11);
+        SmoothMenu.add(SmoothThresholdButton2);
 
-        jRadioButtonMenuItem12.setSelected(true);
-        jRadioButtonMenuItem12.setText("3");
-        jRadioButtonMenuItem12.addActionListener(new java.awt.event.ActionListener() {
+        SmoothThresholdButton3.setSelected(true);
+        SmoothThresholdButton3.setText("3");
+        SmoothThresholdButton3.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jRadioButtonMenuItem12ActionPerformed(evt);
+                SmoothThresholdButton3ActionPerformed(evt);
             }
         });
-        jPopupMenu4.add(jRadioButtonMenuItem12);
+        SmoothMenu.add(SmoothThresholdButton3);
 
-        jRadioButtonMenuItem13.setSelected(true);
-        jRadioButtonMenuItem13.setText("4");
-        jRadioButtonMenuItem13.addActionListener(new java.awt.event.ActionListener() {
+        SmoothThresholdButton4.setSelected(true);
+        SmoothThresholdButton4.setText("4");
+        SmoothThresholdButton4.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jRadioButtonMenuItem13ActionPerformed(evt);
+                SmoothThresholdButton4ActionPerformed(evt);
             }
         });
-        jPopupMenu4.add(jRadioButtonMenuItem13);
+        SmoothMenu.add(SmoothThresholdButton4);
 
-        jRadioButtonMenuItem14.setSelected(true);
-        jRadioButtonMenuItem14.setText("5");
-        jRadioButtonMenuItem14.addActionListener(new java.awt.event.ActionListener() {
+        SmoothThresholdButton5.setSelected(true);
+        SmoothThresholdButton5.setText("5");
+        SmoothThresholdButton5.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jRadioButtonMenuItem14ActionPerformed(evt);
+                SmoothThresholdButton5ActionPerformed(evt);
             }
         });
-        jPopupMenu4.add(jRadioButtonMenuItem14);
+        SmoothMenu.add(SmoothThresholdButton5);
 
-        jRadioButtonMenuItem15.setSelected(true);
-        jRadioButtonMenuItem15.setText("6");
-        jRadioButtonMenuItem15.addActionListener(new java.awt.event.ActionListener() {
+        SmoothThresholdButton6.setSelected(true);
+        SmoothThresholdButton6.setText("6");
+        SmoothThresholdButton6.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jRadioButtonMenuItem15ActionPerformed(evt);
+                SmoothThresholdButton6ActionPerformed(evt);
             }
         });
-        jPopupMenu4.add(jRadioButtonMenuItem15);
+        SmoothMenu.add(SmoothThresholdButton6);
 
         groupMenuButtonGroup3 = new javax.swing.ButtonGroup();
-        groupMenuButtonGroup3.add(jRadioButtonMenuItem10);
-        groupMenuButtonGroup3.add(jRadioButtonMenuItem11);
-        groupMenuButtonGroup3.add(jRadioButtonMenuItem12);
-        groupMenuButtonGroup3.add(jRadioButtonMenuItem13);
-        groupMenuButtonGroup3.add(jRadioButtonMenuItem14);
-        groupMenuButtonGroup3.add(jRadioButtonMenuItem15);
+        groupMenuButtonGroup3.add(SmoothThresholdButton1);
+        groupMenuButtonGroup3.add(SmoothThresholdButton2);
+        groupMenuButtonGroup3.add(SmoothThresholdButton3);
+        groupMenuButtonGroup3.add(SmoothThresholdButton4);
+        groupMenuButtonGroup3.add(SmoothThresholdButton5);
+        groupMenuButtonGroup3.add(SmoothThresholdButton6);
 
         setBorder(javax.swing.BorderFactory.createEtchedBorder());
         setLayout(new javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS));
@@ -587,6 +595,8 @@ public class GraphPanel extends javax.swing.JPanel {
                 pointAggregationMenuActionPerformed(evt);
             }
         });
+        if (graph_type == AMORTIZED_PLOT)
+        pointAggregationMenu.setVisible(false);
         jToolBar1.add(pointAggregationMenu);
 
         ratioMenu.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/RatioType-icon.png"))); // NOI18N
@@ -644,6 +654,8 @@ public class GraphPanel extends javax.swing.JPanel {
                 smoothMenuActionPerformed(evt);
             }
         });
+        if (graph_type == AMORTIZED_PLOT)
+        smoothMenu.setVisible(false);
         jToolBar1.add(smoothMenu);
 
         alphaChooser.setFont(new java.awt.Font("Arial", 1, 20)); // NOI18N
@@ -695,7 +707,6 @@ public class GraphPanel extends javax.swing.JPanel {
 
     private void chartMouseReleased() {
 
-        //System.out.println(this.getSize(null));
         double cmin_x = domainAxis.getLowerBound();
         double cmax_x = domainAxis.getUpperBound();
         double cmin_y = rangeAxis.getLowerBound();
@@ -753,11 +764,8 @@ public class GraphPanel extends javax.swing.JPanel {
     }
 
     private String getXLabel() {
-
         switch (graph_type) {
-
             default:
-
                 if (main_window.isInputMetricRms()) {
                     return "read memory size";
                 } else {
@@ -767,7 +775,6 @@ public class GraphPanel extends javax.swing.JPanel {
     }
 
     private String getYLabel() {
-
         switch (graph_type) {
 
             case RATIO_PLOT:
@@ -789,19 +796,15 @@ public class GraphPanel extends javax.swing.JPanel {
         String label = getXLabel();
 
         if (x_log_scale) {
-
             LogarithmicAxis newDomainAxis = new LogarithmicAxis(label);
             newDomainAxis.setAllowNegativesFlag(false);
             newDomainAxis.setStrictValuesFlag(false);
             newDomainAxis.setStandardTickUnits(LogarithmicAxis.createIntegerTickUnits());
             this.domainAxis = newDomainAxis;
-
         } else {
-
             NumberAxis newDomainAxis = new NumberAxis(label);
             this.domainAxis = newDomainAxis;
             this.domainAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
-
         }
 
         if (!reset && status == ZOOMED) {
@@ -818,17 +821,13 @@ public class GraphPanel extends javax.swing.JPanel {
         String label = getYLabel();
 
         if (y_log_scale) {
-
             LogarithmicAxis newRangeAxis = new LogarithmicAxis(label);
             newRangeAxis.setAllowNegativesFlag(false);
             newRangeAxis.setStrictValuesFlag(false);
             this.rangeAxis = newRangeAxis;
-
         } else {
-
             NumberAxis newRangeAxis = new NumberAxis(label);
             this.rangeAxis = newRangeAxis;
-
         }
 
         if (!reset && status == ZOOMED) {
@@ -981,32 +980,32 @@ public class GraphPanel extends javax.swing.JPanel {
 
     public void setSmoothThreshold(int t) {
 
-        if (rtn_info == null) {
+        if (rtn_info == null || graph_type == AMORTIZED_PLOT) {
             return;
         }
 
         // reset grouping
         group_threshold = 1;
-        jRadioButtonMenuItem1.setSelected(true);
+        GroupThresholdButton1.setSelected(true);
 
         switch (t) {
             case 1:
-                jRadioButtonMenuItem10.setSelected(true);
+                SmoothThresholdButton1.setSelected(true);
                 break;
             case 2:
-                jRadioButtonMenuItem11.setSelected(true);
+                SmoothThresholdButton2.setSelected(true);
                 break;
             case 3:
-                jRadioButtonMenuItem12.setSelected(true);
+                SmoothThresholdButton3.setSelected(true);
                 break;
             case 4:
-                jRadioButtonMenuItem13.setSelected(true);
+                SmoothThresholdButton4.setSelected(true);
                 break;
             case 5:
-                jRadioButtonMenuItem14.setSelected(true);
+                SmoothThresholdButton5.setSelected(true);
                 break;
             case 6:
-                jRadioButtonMenuItem15.setSelected(true);
+                SmoothThresholdButton6.setSelected(true);
                 break;
         }
 
@@ -1016,32 +1015,32 @@ public class GraphPanel extends javax.swing.JPanel {
 
     public void setGroupThreshold(int t) {
 
-        if (rtn_info == null) {
+        if (rtn_info == null || graph_type == AMORTIZED_PLOT) {
             return;
         }
 
         // Reset smoothing
         smooth_threshold = 1;
-        jRadioButtonMenuItem10.setSelected(true);
+        SmoothThresholdButton1.setSelected(true);
 
         switch (t) {
             case 1:
-                jRadioButtonMenuItem1.setSelected(true);
+                GroupThresholdButton1.setSelected(true);
                 break;
             case 2:
-                jRadioButtonMenuItem2.setSelected(true);
+                GroupThresholdButton2.setSelected(true);
                 break;
             case 3:
-                jRadioButtonMenuItem3.setSelected(true);
+                GroupThresholdButton3.setSelected(true);
                 break;
             case 4:
-                jRadioButtonMenuItem4.setSelected(true);
+                GroupThresholdButton4.setSelected(true);
                 break;
             case 5:
-                jRadioButtonMenuItem5.setSelected(true);
+                GroupThresholdButton5.setSelected(true);
                 break;
             case 6:
-                jRadioButtonMenuItem6.setSelected(true);
+                GroupThresholdButton6.setSelected(true);
                 break;
         }
 
@@ -1067,15 +1066,15 @@ public class GraphPanel extends javax.swing.JPanel {
 
     private void updateMinimalTicks() {
 
-        if (!x_log_scale && max_x < 10) {
-            //System.out.println("Set minimal ticks");
+        if (!x_log_scale && max_x < 2)
             domainAxis.setTickUnit(new NumberTickUnit(max_x / 10));
-        }
+        else if (domainAxis.getTickUnit().getSize() != 1.0)
+            domainAxis.setTickUnit(new NumberTickUnit(1));
 
-        if (!y_log_scale && max_y < 10) {
+        if (!y_log_scale && max_y < 2) 
             rangeAxis.setTickUnit(new NumberTickUnit(max_y / 10));
-        }
-
+        else if (rangeAxis.getTickUnit().getSize() != 1.0)
+            rangeAxis.setTickUnit(new NumberTickUnit(1));
     }
 
 	private void XLogToggleActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_XLogToggleActionPerformed
@@ -1088,90 +1087,74 @@ public class GraphPanel extends javax.swing.JPanel {
 	}//GEN-LAST:event_XLogToggleActionPerformed
 
 	private void YLogToggleActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_YLogToggleActionPerformed
-
         // Y logscale button
         boolean logscale = YLogToggle.isSelected();
         setYLogScale(logscale);
         if (this.main_window.arePlotsLinked()) {
             main_window.setYLogScaleAll(graph_type, logscale);
         }
-
 	}//GEN-LAST:event_YLogToggleActionPerformed
 
 	private void pointAggregationMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pointAggregationMenuActionPerformed
-
         // Grouping button
         if (pointAggregationMenu.isSelected()) {
-            jPopupMenu1.show(pointAggregationMenu, 0, pointAggregationMenu.getHeight());
+            GroupMenu.show(pointAggregationMenu, 0, pointAggregationMenu.getHeight());
         } else {
-            jPopupMenu1.setVisible(false);
+            GroupMenu.setVisible(false);
         }
-
 	}//GEN-LAST:event_pointAggregationMenuActionPerformed
 
-	private void jPopupMenu1PopupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent evt) {//GEN-FIRST:event_jPopupMenu1PopupMenuWillBecomeInvisible
+	private void GroupMenuPopupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent evt) {//GEN-FIRST:event_GroupMenuPopupMenuWillBecomeInvisible
         pointAggregationMenu.setSelected(false);
-	}//GEN-LAST:event_jPopupMenu1PopupMenuWillBecomeInvisible
+	}//GEN-LAST:event_GroupMenuPopupMenuWillBecomeInvisible
 
-	private void jRadioButtonMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem1ActionPerformed
-
+	private void GroupThresholdButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_GroupThresholdButton1ActionPerformed
         // Grouping menu > first entry
         setGroupThreshold(1);
         if (this.main_window.arePlotsLinked()) {
             main_window.setGroupThresholdAll(graph_type, 1);
         }
+	}//GEN-LAST:event_GroupThresholdButton1ActionPerformed
 
-	}//GEN-LAST:event_jRadioButtonMenuItem1ActionPerformed
-
-	private void jRadioButtonMenuItem2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem2ActionPerformed
-
+	private void GroupThresholdButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_GroupThresholdButton2ActionPerformed
         // Grouping menu > second entry
         setGroupThreshold(2);
         if (this.main_window.arePlotsLinked()) {
             main_window.setGroupThresholdAll(graph_type, 2);
         }
+	}//GEN-LAST:event_GroupThresholdButton2ActionPerformed
 
-	}//GEN-LAST:event_jRadioButtonMenuItem2ActionPerformed
-
-	private void jRadioButtonMenuItem3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem3ActionPerformed
-
+	private void GroupThresholdButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_GroupThresholdButton3ActionPerformed
         // Grouping menu > third entry
         setGroupThreshold(3);
         if (this.main_window.arePlotsLinked()) {
             main_window.setGroupThresholdAll(graph_type, 3);
         }
+	}//GEN-LAST:event_GroupThresholdButton3ActionPerformed
 
-	}//GEN-LAST:event_jRadioButtonMenuItem3ActionPerformed
-
-	private void jRadioButtonMenuItem4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem4ActionPerformed
-
+	private void GroupThresholdButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_GroupThresholdButton4ActionPerformed
         // Grouping menu > fourth entry
         setGroupThreshold(4);
         if (this.main_window.arePlotsLinked()) {
             main_window.setGroupThresholdAll(graph_type, 4);
         }
+	}//GEN-LAST:event_GroupThresholdButton4ActionPerformed
 
-	}//GEN-LAST:event_jRadioButtonMenuItem4ActionPerformed
-
-	private void jRadioButtonMenuItem5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem5ActionPerformed
-
+	private void GroupThresholdButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_GroupThresholdButton5ActionPerformed
         // Grouping menu > fifth entry
         setGroupThreshold(5);
         if (this.main_window.arePlotsLinked()) {
             main_window.setGroupThresholdAll(graph_type, 5);
         }
+	}//GEN-LAST:event_GroupThresholdButton5ActionPerformed
 
-	}//GEN-LAST:event_jRadioButtonMenuItem5ActionPerformed
-
-	private void jRadioButtonMenuItem6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem6ActionPerformed
-
+	private void GroupThresholdButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_GroupThresholdButton6ActionPerformed
         // Grouping menu > sixth entry
         setGroupThreshold(6);
         if (this.main_window.arePlotsLinked()) {
             main_window.setGroupThresholdAll(graph_type, 6);
         }
-
-	}//GEN-LAST:event_jRadioButtonMenuItem6ActionPerformed
+	}//GEN-LAST:event_GroupThresholdButton6ActionPerformed
 
 	private void exportButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exportButtonActionPerformed
 
@@ -1207,131 +1190,105 @@ public class GraphPanel extends javax.swing.JPanel {
                 throw new RuntimeException("Invalid chart");
         }
 
-        java.io.File f = new java.io.File(filename);
-        javax.swing.JFileChooser chooser = new javax.swing.JFileChooser();
+        File f = new File(filename);
+        JFileChooser chooser = new JFileChooser();
         String lastReportPath = Main.getLastReportPath();
         if (!lastReportPath.equals("")) {
             chooser.setCurrentDirectory(new java.io.File(lastReportPath));
         }
-        javax.swing.filechooser.FileNameExtensionFilter filter = new javax.swing.filechooser.FileNameExtensionFilter("PNG images", "png");
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("PNG images", "png");
         chooser.setFileFilter(filter);
         chooser.setAcceptAllFileFilterUsed(false);
         chooser.setSelectedFile(f);
         int choice = chooser.showSaveDialog(this.getParent());
-        if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
+        if (choice == JFileChooser.APPROVE_OPTION) {
             f = chooser.getSelectedFile();
-            java.awt.image.BufferedImage img
-                = new java.awt.image.BufferedImage(this.chartPanel.getWidth(),
-                    this.chartPanel.getHeight(),
-                    java.awt.image.BufferedImage.TYPE_INT_ARGB);
-            //java.awt.image.BufferedImage.TYPE_INT_RGB);
-            java.awt.Graphics2D g = img.createGraphics();
+            BufferedImage img = new BufferedImage(this.chartPanel.getWidth(),
+                                    this.chartPanel.getHeight(),
+                                    BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g = img.createGraphics();
             this.chartPanel.paint(g);
             g.dispose();
             try {
-                javax.imageio.ImageIO.write(img, "png", f);
+                ImageIO.write(img, "png", f);
             } catch (Exception e) {
-                javax.swing.JOptionPane.showMessageDialog(this,
+                JOptionPane.showMessageDialog(this,
                     "Couldn't save the selected graph image", "Error",
-                    javax.swing.JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.ERROR_MESSAGE);
             }
         }
 	}//GEN-LAST:event_exportButtonActionPerformed
 
 	private void ratioMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ratioMenuActionPerformed
-
         // Ration menu button
         if (ratioMenu.isSelected()) {
-            jPopupMenu2.show(ratioMenu, 0, ratioMenu.getHeight());
+            RatioMenu.show(ratioMenu, 0, ratioMenu.getHeight());
         } else {
-            jPopupMenu2.setVisible(false);
+            RatioMenu.setVisible(false);
         }
-
 	}//GEN-LAST:event_ratioMenuActionPerformed
 
-	private void jPopupMenu2PopupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent evt) {//GEN-FIRST:event_jPopupMenu2PopupMenuWillBecomeInvisible
+	private void RatioMenuPopupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent evt) {//GEN-FIRST:event_RatioMenuPopupMenuWillBecomeInvisible
         ratioMenu.setSelected(false);
-	}//GEN-LAST:event_jPopupMenu2PopupMenuWillBecomeInvisible
+	}//GEN-LAST:event_RatioMenuPopupMenuWillBecomeInvisible
 
-	private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
-
+	private void RatioFunction1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RatioFunction1ActionPerformed
         // ratio menu > first entry
         double[] rc = {1, 0, 0};
         Input.setRatioConfig(rc);
         updateGraphTitle();
         refresh(true);
-        main_window.refreshTables();
+	}//GEN-LAST:event_RatioFunction1ActionPerformed
 
-	}//GEN-LAST:event_jMenuItem1ActionPerformed
-
-	private void jMenuItem2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem2ActionPerformed
-
-        // // ratio menu > second entry
+	private void RatioFunction2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RatioFunction2ActionPerformed
+        // ratio menu > second entry
         double[] rc = {1, 0, 1};
         Input.setRatioConfig(rc);
         updateGraphTitle();
         refresh(true);
-        main_window.refreshTables();
+	}//GEN-LAST:event_RatioFunction2ActionPerformed
 
-	}//GEN-LAST:event_jMenuItem2ActionPerformed
-
-	private void jMenuItem3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem3ActionPerformed
-
-        // // ratio menu > third entry
+	private void RatioFunction3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RatioFunction3ActionPerformed
+        // ratio menu > third entry
         double[] rc = {1, 1, 0};
         Input.setRatioConfig(rc);
         updateGraphTitle();
         refresh(true);
-        main_window.refreshTables();
+	}//GEN-LAST:event_RatioFunction3ActionPerformed
 
-	}//GEN-LAST:event_jMenuItem3ActionPerformed
-
-	private void jMenuItem4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem4ActionPerformed
-
+	private void RatioFunction4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RatioFunction4ActionPerformed
         // ratio menu > fourth entry
         double[] rc = {1.5, 0, 0};
         Input.setRatioConfig(rc);
         updateGraphTitle();
         refresh(true);
-        main_window.refreshTables();
+	}//GEN-LAST:event_RatioFunction4ActionPerformed
 
-	}//GEN-LAST:event_jMenuItem4ActionPerformed
-
-	private void jMenuItem5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem5ActionPerformed
-
+	private void RatioFunction5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RatioFunction5ActionPerformed
         // ratio menu > fifth entry
         double[] rc = {2, 0, 0};
         Input.setRatioConfig(rc);
         updateGraphTitle();
         refresh(true);
-        main_window.refreshTables();
+	}//GEN-LAST:event_RatioFunction5ActionPerformed
 
-	}//GEN-LAST:event_jMenuItem5ActionPerformed
-
-	private void jMenuItem6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem6ActionPerformed
-
+	private void RatioFunction6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RatioFunction6ActionPerformed
         // ratio menu > sixth entry
         double[] rc = {2.5, 0, 0};
         Input.setRatioConfig(rc);
         updateGraphTitle();
         refresh(true);
-        main_window.refreshTables();
+	}//GEN-LAST:event_RatioFunction6ActionPerformed
 
-	}//GEN-LAST:event_jMenuItem6ActionPerformed
-
-	private void jMenuItem7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem7ActionPerformed
-
+	private void RatioFunction7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RatioFunction7ActionPerformed
         // ratio menu > seventh entry
         double[] rc = {3, 0, 0};
         Input.setRatioConfig(rc);
         updateGraphTitle();
         refresh(true);
-        main_window.refreshTables();
+	}//GEN-LAST:event_RatioFunction7ActionPerformed
 
-	}//GEN-LAST:event_jMenuItem7ActionPerformed
-
-	private void jMenuItem8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem8ActionPerformed
-
+	private void RatioFunction8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RatioFunction8ActionPerformed
         // ratio menu > eighth entry
         double[] rc = Input.getRatioConfig();
         rc[2]--;
@@ -1342,24 +1299,18 @@ public class GraphPanel extends javax.swing.JPanel {
         Input.setRatioConfig(rc);
         updateGraphTitle();
         refresh(true);
-        main_window.refreshTables();
+	}//GEN-LAST:event_RatioFunction8ActionPerformed
 
-	}//GEN-LAST:event_jMenuItem8ActionPerformed
-
-	private void jMenuItem9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem9ActionPerformed
-
+	private void RatioFunction9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RatioFunction9ActionPerformed
         // ratio menu > ninth entry
         double[] rc = Input.getRatioConfig();
         rc[2]++;
         Input.setRatioConfig(rc);
         updateGraphTitle();
         refresh(true);
-        main_window.refreshTables();
+	}//GEN-LAST:event_RatioFunction9ActionPerformed
 
-	}//GEN-LAST:event_jMenuItem9ActionPerformed
-
-	private void jMenuItem10ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem10ActionPerformed
-
+	private void RatioFunction10ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RatioFunction10ActionPerformed
         // ratio menu > 10-th entry
         double[] rc = Input.getRatioConfig();
         rc[1]--;
@@ -1370,24 +1321,18 @@ public class GraphPanel extends javax.swing.JPanel {
         Input.setRatioConfig(rc);
         updateGraphTitle();
         refresh(true);
-        main_window.refreshTables();
+	}//GEN-LAST:event_RatioFunction10ActionPerformed
 
-	}//GEN-LAST:event_jMenuItem10ActionPerformed
-
-	private void jMenuItem11ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem11ActionPerformed
-
+	private void RatioFunction11ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RatioFunction11ActionPerformed
         // ratio menu > 11-th entry
         double[] rc = Input.getRatioConfig();
         rc[1]++;
         Input.setRatioConfig(rc);
         updateGraphTitle();
         refresh(true);
-        main_window.refreshTables();
+	}//GEN-LAST:event_RatioFunction11ActionPerformed
 
-	}//GEN-LAST:event_jMenuItem11ActionPerformed
-
-	private void jMenuItem12ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem12ActionPerformed
-
+	private void RatioFunction12ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RatioFunction12ActionPerformed
         // ratio menu > 12-th entry
         double exp = 0;
         try {
@@ -1407,12 +1352,9 @@ public class GraphPanel extends javax.swing.JPanel {
         Input.setRatioConfig(rc);
         updateGraphTitle();
         refresh(true);
-        main_window.refreshTables();
+	}//GEN-LAST:event_RatioFunction12ActionPerformed
 
-	}//GEN-LAST:event_jMenuItem12ActionPerformed
-
-	private void jMenuItem13ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem13ActionPerformed
-
+	private void RationFunction13ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RationFunction13ActionPerformed
         // ratio menu > 13-th entry
         double exp = 0;
         try {
@@ -1432,11 +1374,9 @@ public class GraphPanel extends javax.swing.JPanel {
         Input.setRatioConfig(rc);
         updateGraphTitle();
         refresh(true);
-        main_window.refreshTables();
-	}//GEN-LAST:event_jMenuItem13ActionPerformed
+	}//GEN-LAST:event_RationFunction13ActionPerformed
 
-	private void jMenuItem14ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem14ActionPerformed
-
+	private void RatioFunction14ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RatioFunction14ActionPerformed
         // ratio menu > 14-th entry
         double exp = 0;
         try {
@@ -1456,141 +1396,115 @@ public class GraphPanel extends javax.swing.JPanel {
         Input.setRatioConfig(rc);
         updateGraphTitle();
         refresh(true);
-        main_window.refreshTables();
-
-	}//GEN-LAST:event_jMenuItem14ActionPerformed
+	}//GEN-LAST:event_RatioFunction14ActionPerformed
 
 	private void costTypeMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_costTypeMenuActionPerformed
-
         // Cost type menu
         if (costTypeMenu.isSelected()) {
-            jPopupMenu3.show(costTypeMenu, 0, costTypeMenu.getHeight());
+            CostMenu.show(costTypeMenu, 0, costTypeMenu.getHeight());
         } else {
-            jPopupMenu3.setVisible(false);
+            CostMenu.setVisible(false);
         }
 	}//GEN-LAST:event_costTypeMenuActionPerformed
 
-	private void jPopupMenu3PopupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent evt) {//GEN-FIRST:event_jPopupMenu3PopupMenuWillBecomeInvisible
+	private void CostMenuPopupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent evt) {//GEN-FIRST:event_CostMenuPopupMenuWillBecomeInvisible
         costTypeMenu.setSelected(false);
-	}//GEN-LAST:event_jPopupMenu3PopupMenuWillBecomeInvisible
+	}//GEN-LAST:event_CostMenuPopupMenuWillBecomeInvisible
 
 	private void WorstCostButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_WorstCostButtonActionPerformed
-
         cost_type = Input.CostKind.WORST;
         if (main_window.arePlotsLinked()) {
             main_window.setGroupCostAll(graph_type, cost_type);
         }
         refresh(true);
-
 	}//GEN-LAST:event_WorstCostButtonActionPerformed
 
 	private void AverageCostButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_AverageCostButtonActionPerformed
-
         cost_type = Input.CostKind.AVG;
         if (main_window.arePlotsLinked()) {
             main_window.setGroupCostAll(graph_type, cost_type);
         }
         refresh(true);
-
 	}//GEN-LAST:event_AverageCostButtonActionPerformed
 
 	private void BestCostButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BestCostButtonActionPerformed
-
         cost_type = Input.CostKind.BEST;
         if (main_window.arePlotsLinked()) {
             main_window.setGroupCostAll(graph_type, cost_type);
         }
         refresh(true);
-
 	}//GEN-LAST:event_BestCostButtonActionPerformed
 
 	private void smoothMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_smoothMenuActionPerformed
-
         // Smooth point window button
         if (smoothMenu.isSelected()) {
-            jPopupMenu4.show(smoothMenu, 0, smoothMenu.getHeight());
+            SmoothMenu.show(smoothMenu, 0, smoothMenu.getHeight());
         } else {
-            jPopupMenu4.setVisible(false);
+            SmoothMenu.setVisible(false);
         }
-
 	}//GEN-LAST:event_smoothMenuActionPerformed
 
-	private void jPopupMenu4PopupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent evt) {//GEN-FIRST:event_jPopupMenu4PopupMenuWillBecomeInvisible
+	private void SmoothMenuPopupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent evt) {//GEN-FIRST:event_SmoothMenuPopupMenuWillBecomeInvisible
         smoothMenu.setSelected(false);
-	}//GEN-LAST:event_jPopupMenu4PopupMenuWillBecomeInvisible
+	}//GEN-LAST:event_SmoothMenuPopupMenuWillBecomeInvisible
 
-	private void jRadioButtonMenuItem10ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem10ActionPerformed
-
+	private void SmoothThresholdButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SmoothThresholdButton1ActionPerformed
         // Smooth window menu: 1-th entry
         setSmoothThreshold(1);
         if (this.main_window.arePlotsLinked()) {
             main_window.setSmoothThresholdAll(graph_type, 1);
         }
+	}//GEN-LAST:event_SmoothThresholdButton1ActionPerformed
 
-	}//GEN-LAST:event_jRadioButtonMenuItem10ActionPerformed
-
-	private void jRadioButtonMenuItem11ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem11ActionPerformed
-
+	private void SmoothThresholdButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SmoothThresholdButton2ActionPerformed
         // Smooth window menu: 2-th entry
         setSmoothThreshold(2);
         if (this.main_window.arePlotsLinked()) {
             main_window.setSmoothThresholdAll(graph_type, 2);
         }
+	}//GEN-LAST:event_SmoothThresholdButton2ActionPerformed
 
-	}//GEN-LAST:event_jRadioButtonMenuItem11ActionPerformed
-
-	private void jRadioButtonMenuItem12ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem12ActionPerformed
-
+	private void SmoothThresholdButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SmoothThresholdButton3ActionPerformed
         // Smooth window menu: 3-th entry
         setSmoothThreshold(3);
         if (this.main_window.arePlotsLinked()) {
             main_window.setSmoothThresholdAll(graph_type, 3);
         }
+	}//GEN-LAST:event_SmoothThresholdButton3ActionPerformed
 
-	}//GEN-LAST:event_jRadioButtonMenuItem12ActionPerformed
-
-	private void jRadioButtonMenuItem13ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem13ActionPerformed
-
+	private void SmoothThresholdButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SmoothThresholdButton4ActionPerformed
         // Smooth window menu: 4-th entry
         setSmoothThreshold(4);
         if (this.main_window.arePlotsLinked()) {
             main_window.setSmoothThresholdAll(graph_type, 4);
-        }
+       }
+	}//GEN-LAST:event_SmoothThresholdButton4ActionPerformed
 
-	}//GEN-LAST:event_jRadioButtonMenuItem13ActionPerformed
-
-	private void jRadioButtonMenuItem14ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem14ActionPerformed
-
+	private void SmoothThresholdButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SmoothThresholdButton5ActionPerformed
         // Smooth window menu: 5-th entry
         setSmoothThreshold(5);
         if (this.main_window.arePlotsLinked()) {
             main_window.setSmoothThresholdAll(graph_type, 5);
         }
+	}//GEN-LAST:event_SmoothThresholdButton5ActionPerformed
 
-	}//GEN-LAST:event_jRadioButtonMenuItem14ActionPerformed
-
-	private void jRadioButtonMenuItem15ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonMenuItem15ActionPerformed
-
+	private void SmoothThresholdButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SmoothThresholdButton6ActionPerformed
         // Smooth window menu: 6-th entry
         setSmoothThreshold(6);
         if (this.main_window.arePlotsLinked()) {
             main_window.setSmoothThresholdAll(graph_type, 6);
         }
-
-	}//GEN-LAST:event_jRadioButtonMenuItem15ActionPerformed
+	}//GEN-LAST:event_SmoothThresholdButton6ActionPerformed
 
 	private void zoomOutButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_zoomOutButtonActionPerformed
-
         // Zoom out button pressed
         maximize();
         zoomResetVisible(false);
-
         //chartPanel.repaint();
 	}//GEN-LAST:event_zoomOutButtonActionPerformed
 
     private void alphaChooserActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_alphaChooserActionPerformed
-
-        // ratio menu > 14-th entry
+        /*
         double alpha = 1.0;
         if (rtn_info != null) {
             alpha = rtn_info.getAmortizedConstant();
@@ -1612,7 +1526,7 @@ public class GraphPanel extends javax.swing.JPanel {
         rtn_info.invalidAmortizedCache();
         rtn_info.setAmortizedConstant(alpha);
         refresh(true);
-        //main_window.refreshTables();
+        */
     }//GEN-LAST:event_alphaChooserActionPerformed
 
     private boolean filterRms(Input t) {
@@ -1677,9 +1591,9 @@ public class GraphPanel extends javax.swing.JPanel {
 
             // reset temp global vars
             group_threshold = 1;
-            jRadioButtonMenuItem1.setSelected(true);
+            GroupThresholdButton1.setSelected(true);
             smooth_threshold = 1;
-            jRadioButtonMenuItem10.setSelected(true);
+            SmoothThresholdButton1.setSelected(true);
 
             elem_slot = 0;
             slot_start = 0;
@@ -1690,85 +1604,36 @@ public class GraphPanel extends javax.swing.JPanel {
             sum_occ = 0;
 
             if (rtn_info.getInputTuplesCount() <= 0) {
-
-                jRadioButtonMenuItem1.setText("0");
-                jRadioButtonMenuItem2.setText("0");
-                jRadioButtonMenuItem3.setText("0");
-                jRadioButtonMenuItem4.setText("0");
-                jRadioButtonMenuItem5.setText("0");
-                jRadioButtonMenuItem6.setText("0");
-                jRadioButtonMenuItem10.setText("0");
-                jRadioButtonMenuItem11.setText("0");
-                jRadioButtonMenuItem12.setText("0");
-                jRadioButtonMenuItem13.setText("0");
-                jRadioButtonMenuItem14.setText("0");
-                jRadioButtonMenuItem15.setText("0");
-
+                GroupThresholdButton1.setText("0");
+                GroupThresholdButton2.setText("0");
+                GroupThresholdButton3.setText("0");
+                GroupThresholdButton4.setText("0");
+                GroupThresholdButton5.setText("0");
+                GroupThresholdButton6.setText("0");
+                SmoothThresholdButton1.setText("0");
+                SmoothThresholdButton2.setText("0");
+                SmoothThresholdButton3.setText("0");
+                SmoothThresholdButton4.setText("0");
+                SmoothThresholdButton5.setText("0");
+                SmoothThresholdButton6.setText("0");
                 return;
-
             }
 
-            jRadioButtonMenuItem1.setText(Integer.toString((int) Math.pow(group_threshold_base, 0)));
-            jRadioButtonMenuItem2.setText(Integer.toString((int) Math.pow(group_threshold_base, 1)));
-            jRadioButtonMenuItem3.setText(Integer.toString((int) Math.pow(group_threshold_base, 2)));
-            jRadioButtonMenuItem4.setText(Integer.toString((int) Math.pow(group_threshold_base, 3)));
-            jRadioButtonMenuItem5.setText(Integer.toString((int) Math.pow(group_threshold_base, 4)));
-            jRadioButtonMenuItem6.setText(Integer.toString((int) Math.pow(group_threshold_base, 5)));
-
-            int val = (int) Math.pow(smooth_threshold_base, 0);
-            if (rtn_info.getInputTuplesCount() > 0 && val >= rtn_info.getInputTuplesCount()) {
-                val = rtn_info.getInputTuplesCount() - 1;
+            MenuElement[] me = GroupMenu.getSubElements();
+            for (int i = 0; i < me.length; i++) {
+                int val = (int) Math.pow(group_threshold_base, i);
+                ((JRadioButtonMenuItem) me[i]).setText(Integer.toString(val));
             }
-            if (rtn_info.getInputTuplesCount() > 0 && val % 2 == 0) {
-                val++; // we want an odd number...
-            }
-            jRadioButtonMenuItem10.setText(Integer.toString(val));
-
-            val = (int) Math.pow(smooth_threshold_base, 1);
-            if (rtn_info.getInputTuplesCount() > 0 && val >= rtn_info.getInputTuplesCount()) {
-                val = rtn_info.getInputTuplesCount() - 1;
-            }
-            if (rtn_info.getInputTuplesCount() > 0 && val % 2 == 0) {
-                val++;
-            }
-            jRadioButtonMenuItem11.setText(Integer.toString(val));
-
-            val = (int) Math.pow(smooth_threshold_base, 2);
-            if (rtn_info.getInputTuplesCount() > 0 && val >= rtn_info.getInputTuplesCount()) {
-                val = rtn_info.getInputTuplesCount() - 1;
-            }
-            if (rtn_info.getInputTuplesCount() > 0 && val % 2 == 0) {
-                val++;
-            }
-            jRadioButtonMenuItem12.setText(Integer.toString(val));
-
-            val = (int) Math.pow(smooth_threshold_base, 3);
-            if (rtn_info.getInputTuplesCount() > 0 && val >= rtn_info.getInputTuplesCount()) {
-                val = rtn_info.getInputTuplesCount() - 1;
-            }
-            if (rtn_info.getInputTuplesCount() > 0 && val % 2 == 0) {
-                val++;
-            }
-            jRadioButtonMenuItem13.setText(Integer.toString(val));
-
-            val = (int) Math.pow(smooth_threshold_base, 4);
-            if (rtn_info.getInputTuplesCount() > 0 && val >= rtn_info.getInputTuplesCount()) {
-                val = rtn_info.getInputTuplesCount() - 1;
-            }
-            if (rtn_info.getInputTuplesCount() > 0 && val % 2 == 0) {
-                val++;
-            }
-            jRadioButtonMenuItem14.setText(Integer.toString(val));
-
-            val = (int) Math.pow(smooth_threshold_base, 5);
-            if (rtn_info.getInputTuplesCount() > 0 && val >= rtn_info.getInputTuplesCount()) {
-                val = rtn_info.getInputTuplesCount() - 1;
-            }
-            if (rtn_info.getInputTuplesCount() > 0 && val % 2 == 0) {
-                val++;
-            }
-            jRadioButtonMenuItem15.setText(Integer.toString(val));
-
+            
+            me = SmoothMenu.getSubElements();
+            for (int i = 0; i < me.length; i++) {
+                int val = (int) Math.pow(smooth_threshold_base, i);
+                if (val >= rtn_info.getInputTuplesCount())
+                    val = rtn_info.getInputTuplesCount() - 1;
+                if (val % 2 == 0)
+                    val++; // we want an odd number...
+               ((JRadioButtonMenuItem) me[i]).setText(Integer.toString(val));
+            }            
         }
     }
 
@@ -1797,28 +1662,15 @@ public class GraphPanel extends javax.swing.JPanel {
         String f = String.format("fit = %.2f + %.2f * x^%.2f", a, b, c);
 
         LegendItemCollection legenditemcollection = new LegendItemCollection();
-        /*
-         LegendItem legenditem1 = new LegendItem("", "-", null, null, 
-         Plot.DEFAULT_LEGEND_ITEM_BOX, colors[0]);
-         */
         LegendItem legenditem2 = new LegendItem(f, "-", null, null,
             Plot.DEFAULT_LEGEND_ITEM_BOX, Color.RED);
 
-        //legenditemcollection.add(legenditem1);
         legenditemcollection.add(legenditem2);
         plot.setFixedLegendItems(legenditemcollection);
 
         if (chart.getLegend() == null) {
             chart.addLegend(new LegendTitle(plot));
         }
-
-        /*
-         double top = rtn_info.getMaxCost() * 0.95;
-         XYTextAnnotation textAnnotaion = new XYTextAnnotation(f, max * 0.3, top);
-         Font font = textAnnotaion.getFont(); 
-         textAnnotaion.setFont(new Font(font.getFontName(), Font.BOLD, 11));
-         plot.addAnnotation(textAnnotaion); 
-         */
     }
 
     private double getY(Input te, int slot) {
@@ -1876,10 +1728,6 @@ public class GraphPanel extends javax.swing.JPanel {
                 } else if (graph_type == FREQ_PLOT) {
 
                     int index = 11;
-                    /*
-                     if (main_window.hasDistinctRms())
-                     index = (int)(((double)1-te.getRatioSumRmsRvms())*10);
-                     */
                     series[index].add(x, getY(te, 0), false);
 
                 } else if (graph_type == AMORTIZED_PLOT || graph_type == RATIO_PLOT) {
@@ -1889,20 +1737,16 @@ public class GraphPanel extends javax.swing.JPanel {
                 } else {
 
                     y = getY(te, 0);
-                    double index = 11.0; /*Math.round(Math.log10(te.getCalls()) / Math.log10(2));
-                     if (index > 11) index = 11;
-                     if (index < 0) index = 0;*/
-
+                    double index = 11 - Math.round(Math.log10(te.getCalls()) / Math.log10(2));
+                    if (index > 11) index = 11;
+                    if (index < 0) index = 0;
                     series[(int) index].add(x, y, false);
-
                 }
-
             }
 
         } else if (group_threshold > 1 && smooth_threshold == 1) {
 
             int current_slot = (int) ((int) x - (x % group_threshold));
-
             if (current_slot != slot_start) {
 
                 // Ok, this rms is for a new slot, so we need to create
@@ -1944,11 +1788,8 @@ public class GraphPanel extends javax.swing.JPanel {
 
             //throw new RuntimeException("Not yet implemented :(");
         } else {
-
             throw new RuntimeException("Group and smooth threshold cannot be both greater than one");
-
         }
-
     }
 
     private void add_group_point() {
@@ -1997,7 +1838,6 @@ public class GraphPanel extends javax.swing.JPanel {
         }
 
         elem_slot = 0;
-
     }
 
     /*
@@ -2007,8 +1847,6 @@ public class GraphPanel extends javax.swing.JPanel {
      */
     public void populateChart() {
 
-        //System.out.println("Inside populate chart");
-        //Thread.dumpStack();
         for (int i = 0; i < series.length; i++) {
             series[i].clear();
         }
@@ -2036,19 +1874,6 @@ public class GraphPanel extends javax.swing.JPanel {
             //System.out.println("Terminated populate");
         } else if (group_threshold > 1 && smooth_threshold == 1) {
 
-            //rtn_info.sortRmsListByAccesses();
-            /*
-             try {
-			
-             File tmp = null;
-             PrintWriter out = null;
-             if (graph_type == COST_PLOT) {
-             AprofReport report = main_winmain_dow.getCurrentReport();
-             tmp = new File(report.getName() + "-" + this.rtn_info.getName() + ".rprof_" + group_threshold);
-             tmp.createNewFile();
-             out = new PrintWriter(new FileWriter(tmp));
-             }
-             */
             int n_y = 1;
             if (graph_type == MMM_PLOT) {
                 n_y = 3;
@@ -2075,8 +1900,6 @@ public class GraphPanel extends javax.swing.JPanel {
                         y = te.getSumCost();
                     } else if (graph_type == VAR_PLOT) {
                         y = te.getVar();
-                    } else if (graph_type == AMORTIZED_PLOT) {
-                        y = rtn_info.getAmortizedValue(te);
                     } else if (graph_type == FREQ_PLOT) {
                         y = te.getCalls();
                     } else if (graph_type == MMM_PLOT) {
@@ -2118,17 +1941,10 @@ public class GraphPanel extends javax.swing.JPanel {
                                 series[11].add(mean_x, mean_y);
                             } else {
                                 double mean_y = (k == 0) ? sum_y : sum_y / k;
-                                double index = 11;
-                                /*
-                                 double index = Math.round(Math.log10(sum_occurrences) / Math.log10(2));
-                                 if (index > 11) index = 11;
-                                 if (index < 0) index = 0;
-                                 */
+                                double index = 11 - Math.round(Math.log10(sum_occurrences) / Math.log10(2));
+                                if (index > 11) index = 11;
+                                if (index < 0) index = 0;
                                 series[(int) index].add(mean_x, mean_y);
-                                /*
-                                 if (graph_type == COST_PLOT)
-                                 out.println(mean_x + " " + mean_y);
-                                 */
                             }
                             sum_x = x;
                             sum_y = y;
@@ -2159,29 +1975,14 @@ public class GraphPanel extends javax.swing.JPanel {
                     series[11].add(mean_x, mean_y, false);
                     series[5].add(mean_x, mean_y2, false);
                     series[0].add(mean_x, mean_y3, false);
-                } else if (graph_type == AMORTIZED_PLOT) {
-                    double mean_y = (k == 0) ? sum_y : sum_y / k;
-                    series[11].add(mean_x, mean_y, false);
                 } else {
                     double mean_y = (k == 0) ? sum_y : sum_y / k;
-                    double index = 11; /*Math.round(Math.log10(sum_occurrences) / Math.log10(2));
-                     if (index > 11) index = 11;
-                     if (index < 0) index = 0;*/
-
+                    double index = 11 - Math.round(Math.log10(sum_occurrences) / Math.log10(2));
+                    if (index > 11) index = 11;
+                    if (index < 0) index = 0;
                     series[(int) index].add(mean_x, mean_y, false);
-
-                    /*
-                     if (graph_type == COST_PLOT)
-                     out.println(mean_x + " " + mean_y);
-                     */
                 }
             }
-            /*
-             out.close();
-			
-             } catch(java.io.IOException e) {
-             }
-             */
 
         } else if (smooth_threshold > 1 && group_threshold == 1) {
 
@@ -2239,9 +2040,6 @@ public class GraphPanel extends javax.swing.JPanel {
 
                     // add to the list
                     l[head % l.length] = te;
-                    if (graph_type == AMORTIZED_PLOT) {
-                        lm[head % lm.length] = y;
-                    }
 
                     head++;
 
@@ -2257,66 +2055,42 @@ public class GraphPanel extends javax.swing.JPanel {
                     c++;
                     add--;
                     //System.out.println("Aggiungo elemento");
-
                 }
 
                 if (n >= t || c == 0) {
 
                     // update sum
-                    if (graph_type == AMORTIZED_PLOT) {
+                    //System.out.println("Rimuovo elemento  - tail: " + tail);
+                    removed = l[tail % l.length];
+                    tail++;
+                    //System.out.println("tail incremented... " +  tail);
 
-                        double amortized_old = lm[tail++ % l.length];
-                        sum -= amortized_old;
+                    sum -= getY(removed, 0);
+                    if (graph_type == MMM_PLOT) {
 
-                    } else {
+                        sum2 -= getY(removed, 1);
+                        sum3 -= getY(removed, 2);
 
-                        //System.out.println("Rimuovo elemento  - tail: " + tail);
+                    }
+                    
+                    //System.out.println("Sottratto: " +  getY(removed, 0));
+                    n--;
+
+                    if (add > 0) {
+
+                        //System.out.println("Rimuovo elemento - tail: " + tail);
                         removed = l[tail % l.length];
                         tail++;
                         //System.out.println("tail incremented... " +  tail);
 
                         sum -= getY(removed, 0);
                         if (graph_type == MMM_PLOT) {
-
                             sum2 -= getY(removed, 1);
                             sum3 -= getY(removed, 2);
-
                         }
-
-                    }
-
-                    //System.out.println("Sottratto: " +  getY(removed, 0));
-                    n--;
-
-                    if (add > 0) {
-
-                        // update sum
-                        if (graph_type == AMORTIZED_PLOT) {
-
-                            double amortized_old = lm[tail++ % l.length];
-                            sum -= amortized_old;
-
-                        } else {
-
-                            //System.out.println("Rimuovo elemento - tail: " + tail);
-                            removed = l[tail % l.length];
-                            tail++;
-                            //System.out.println("tail incremented... " +  tail);
-
-                            sum -= getY(removed, 0);
-                            if (graph_type == MMM_PLOT) {
-
-                                sum2 -= getY(removed, 1);
-                                sum3 -= getY(removed, 2);
-
-                            }
-
-                        }
-
+                        
                         n--;
-
                     }
-
                 }
 
                 n += c;
@@ -2330,40 +2104,23 @@ public class GraphPanel extends javax.swing.JPanel {
                     series[5].add(x, sum2 / n, false);
                     series[0].add(x, sum3 / n, false);
 
-                } else if (graph_type == AMORTIZED_PLOT || graph_type == FREQ_PLOT) {
-
-                    series[11].add(x, sum / n, false);
-
                 } else {
 
-                    double index = 11; /*Math.round(Math.log10(l[current % l.length].getCalls()) / Math.log10(2));
-                     if (index > 11) index = 11;
-                     if (index < 0) index = 0;*/
-
+                    double index = 11 - Math.round(Math.log10(l[current % l.length].getCalls()) / Math.log10(2));
+                    if (index > 11) index = 11;
+                    if (index < 0) index = 0;
                     series[(int) index].add(x, sum / n, false);
-
-                    /*
-                     if (graph_type == COST_PLOT)
-                     System.out.println("Sum is now: " + sum + " with n: " + n + 
-                     " current value: " + getY(l[current % l.length], 0) +
-                     " removed value: " +  getY(removed, 0)
-                     + " tail: " + tail);
-                     */
                 }
 
                 if (current++ != 0 && n == 1) {
                     break;
                 }
                 //System.out.println("Current incremented... " + current);
-
             }
 
         } else {
-
             throw new RuntimeException("Smooth and group threshold cannot be both greater than 1");
-
         }
-
     }
 
     public void setPerformanceMonitor(PerformanceMonitor p) {
@@ -2372,7 +2129,7 @@ public class GraphPanel extends javax.swing.JPanel {
     }
 
     /*
-     * When possibile avoid use of this method, better share elaboration
+     * When possible avoid use of this method, better share elaboration
      * between all active graphs (e.g. iteration over rms list)
      */
     public void setData(Routine r) {
@@ -2409,12 +2166,13 @@ public class GraphPanel extends javax.swing.JPanel {
         updateYAxis(true);
 
         disableNotification(false);
-
         System.gc();
     }
 
     private void refresh(boolean resetAxis) {
 
+        System.out.println("Refreshing chart " + graph_type);
+        
         if (perf != null) {
             perf.start(this, PerformanceMonitor.ELABORATE);
         }
@@ -2432,7 +2190,6 @@ public class GraphPanel extends javax.swing.JPanel {
         }
 
         System.gc();
-
     }
 
     private void disableNotification(boolean disable) {
@@ -2450,14 +2207,42 @@ public class GraphPanel extends javax.swing.JPanel {
                 series[i].setNotify(true);
             }
             chart.setNotify(true);
-
         }
-
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JRadioButtonMenuItem AverageCostButton;
     private javax.swing.JRadioButtonMenuItem BestCostButton;
+    private javax.swing.JPopupMenu CostMenu;
+    private javax.swing.JPopupMenu GroupMenu;
+    private javax.swing.JRadioButtonMenuItem GroupThresholdButton1;
+    private javax.swing.JRadioButtonMenuItem GroupThresholdButton2;
+    private javax.swing.JRadioButtonMenuItem GroupThresholdButton3;
+    private javax.swing.JRadioButtonMenuItem GroupThresholdButton4;
+    private javax.swing.JRadioButtonMenuItem GroupThresholdButton5;
+    private javax.swing.JRadioButtonMenuItem GroupThresholdButton6;
+    private javax.swing.JMenuItem RatioFunction1;
+    private javax.swing.JMenuItem RatioFunction10;
+    private javax.swing.JMenuItem RatioFunction11;
+    private javax.swing.JMenuItem RatioFunction12;
+    private javax.swing.JMenuItem RatioFunction14;
+    private javax.swing.JMenuItem RatioFunction2;
+    private javax.swing.JMenuItem RatioFunction3;
+    private javax.swing.JMenuItem RatioFunction4;
+    private javax.swing.JMenuItem RatioFunction5;
+    private javax.swing.JMenuItem RatioFunction6;
+    private javax.swing.JMenuItem RatioFunction7;
+    private javax.swing.JMenuItem RatioFunction8;
+    private javax.swing.JMenuItem RatioFunction9;
+    private javax.swing.JPopupMenu RatioMenu;
+    private javax.swing.JMenuItem RationFunction13;
+    private javax.swing.JPopupMenu SmoothMenu;
+    private javax.swing.JRadioButtonMenuItem SmoothThresholdButton1;
+    private javax.swing.JRadioButtonMenuItem SmoothThresholdButton2;
+    private javax.swing.JRadioButtonMenuItem SmoothThresholdButton3;
+    private javax.swing.JRadioButtonMenuItem SmoothThresholdButton4;
+    private javax.swing.JRadioButtonMenuItem SmoothThresholdButton5;
+    private javax.swing.JRadioButtonMenuItem SmoothThresholdButton6;
     private javax.swing.JRadioButtonMenuItem WorstCostButton;
     private javax.swing.JToggleButton XLogToggle;
     private javax.swing.JToggleButton YLogToggle;
@@ -2466,36 +2251,6 @@ public class GraphPanel extends javax.swing.JPanel {
     private javax.swing.JToggleButton costTypeMenu;
     private javax.swing.JButton exportButton;
     private javax.swing.Box.Filler filler1;
-    private javax.swing.JMenuItem jMenuItem1;
-    private javax.swing.JMenuItem jMenuItem10;
-    private javax.swing.JMenuItem jMenuItem11;
-    private javax.swing.JMenuItem jMenuItem12;
-    private javax.swing.JMenuItem jMenuItem13;
-    private javax.swing.JMenuItem jMenuItem14;
-    private javax.swing.JMenuItem jMenuItem2;
-    private javax.swing.JMenuItem jMenuItem3;
-    private javax.swing.JMenuItem jMenuItem4;
-    private javax.swing.JMenuItem jMenuItem5;
-    private javax.swing.JMenuItem jMenuItem6;
-    private javax.swing.JMenuItem jMenuItem7;
-    private javax.swing.JMenuItem jMenuItem8;
-    private javax.swing.JMenuItem jMenuItem9;
-    private javax.swing.JPopupMenu jPopupMenu1;
-    private javax.swing.JPopupMenu jPopupMenu2;
-    private javax.swing.JPopupMenu jPopupMenu3;
-    private javax.swing.JPopupMenu jPopupMenu4;
-    private javax.swing.JRadioButtonMenuItem jRadioButtonMenuItem1;
-    private javax.swing.JRadioButtonMenuItem jRadioButtonMenuItem10;
-    private javax.swing.JRadioButtonMenuItem jRadioButtonMenuItem11;
-    private javax.swing.JRadioButtonMenuItem jRadioButtonMenuItem12;
-    private javax.swing.JRadioButtonMenuItem jRadioButtonMenuItem13;
-    private javax.swing.JRadioButtonMenuItem jRadioButtonMenuItem14;
-    private javax.swing.JRadioButtonMenuItem jRadioButtonMenuItem15;
-    private javax.swing.JRadioButtonMenuItem jRadioButtonMenuItem2;
-    private javax.swing.JRadioButtonMenuItem jRadioButtonMenuItem3;
-    private javax.swing.JRadioButtonMenuItem jRadioButtonMenuItem4;
-    private javax.swing.JRadioButtonMenuItem jRadioButtonMenuItem5;
-    private javax.swing.JRadioButtonMenuItem jRadioButtonMenuItem6;
     private javax.swing.JToolBar jToolBar1;
     private javax.swing.JToggleButton pointAggregationMenu;
     private javax.swing.JToggleButton ratioMenu;
