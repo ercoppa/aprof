@@ -6,64 +6,72 @@ import java.util.Vector;
 
 public class RoutinesFilterDialog extends javax.swing.JDialog {
 
-	/** Creates new form RoutinesFilterDialog - modal means if it's a blocking activity */
-	public RoutinesFilterDialog(java.awt.Frame parent, boolean modal, 
-            java.util.ArrayList<String> v, String[] criteria,
-            boolean is_routine_table, COLUMN[] config) {
-		
-		super(parent, modal);
+    /**
+     * Creates new form RoutinesFilterDialog - modal means if it's a blocking
+     * activity
+     */
+    public RoutinesFilterDialog(java.awt.Frame parent, boolean modal,
+        java.util.ArrayList<String> v, String[] criteria,
+        boolean is_routine_table, COLUMN[] config) {
+
+        super(parent, modal);
         this.is_routine_table = is_routine_table;
-        
-		liblist = v;
-		initComponents();
-		
-		if (liblist != null) jCheckBox1.setEnabled(true);
-		
-		setResizable(false);
-		setSize(260, 300);
-		setLocationRelativeTo(parent);
-		
-		if (criteria == null) return;
-		
-		// Time
-		if (criteria[0] != null) {
-			jCheckBox1.setSelected(true);
-			jTextField1.setEnabled(true);
-			jTextField1.setText(criteria[0]);
-		}
-		
-		// lib
-		if (criteria[1] != null) {
-			jCheckBox2.setSelected(true);
-			jComboBox1.setEnabled(true);
-			jComboBox1.setSelectedItem(criteria[1]);
-		}
-		
-		// Calls
-		if (criteria[2] != null) {
-			jCheckBox3.setSelected(true);
-			jTextField2.setEnabled(true);
-			jTextField2.setText(criteria[2]);
-		}
-		
-		// # Rms
-		if (criteria[3] != null) {
-			jCheckBox5.setSelected(true);
-			jTextField4.setEnabled(true);
-			jTextField4.setText(criteria[3]);
-		}
-	
-        if (((MainWindow)this.getParent()).isInputMetricRms())
+
+        liblist = v;
+        initComponents();
+
+        if (liblist != null) {
+            jCheckBox1.setEnabled(true);
+        }
+
+        setResizable(false);
+        setSize(260, 300);
+        setLocationRelativeTo(parent);
+
+        if (criteria == null) {
+            return;
+        }
+
+        // Time
+        if (criteria[0] != null) {
+            jCheckBox1.setSelected(true);
+            jTextField1.setEnabled(true);
+            jTextField1.setText(criteria[0]);
+        }
+
+        // lib
+        if (criteria[1] != null) {
+            jCheckBox2.setSelected(true);
+            jComboBox1.setEnabled(true);
+            jComboBox1.setSelectedItem(criteria[1]);
+        }
+
+        // Calls
+        if (criteria[2] != null) {
+            jCheckBox3.setSelected(true);
+            jTextField2.setEnabled(true);
+            jTextField2.setText(criteria[2]);
+        }
+
+        // # Rms
+        if (criteria[3] != null) {
+            jCheckBox5.setSelected(true);
+            jTextField4.setEnabled(true);
+            jTextField4.setText(criteria[3]);
+        }
+
+        if (((MainWindow) this.getParent()).isInputMetricRms()) {
             jCheckBox5.setText("#RMS");
-        else
+        } else {
             jCheckBox5.setText("#DRMS");
-        
-        if (!((MainWindow)this.getParent()).isVisibleFittingData()) {
+        }
+
+        if (!((MainWindow) this.getParent()).isVisibleFittingData()) {
             jPanel8.setVisible(false);
             jPanel9.setVisible(false);
             jPanel10.setVisible(false);
         } else {
-            
+
             if (criteria[4] != null && criteria[5] != null) {
                 jCheckBox6.setSelected(true);
                 jTextField5.setEnabled(true);
@@ -71,55 +79,88 @@ public class RoutinesFilterDialog extends javax.swing.JDialog {
                 jTextField6.setEnabled(true);
                 jTextField6.setText(criteria[5]);
             }
-            
+
             if (criteria[6] != null) {
                 jCheckBox7.setSelected(true);
                 jTextField7.setEnabled(true);
                 jTextField7.setText(criteria[6]);
             }
-            
+
             if (criteria[7] != null) {
                 jCheckBox8.setSelected(true);
             }
         }
-        
+
         for (COLUMN c : config) {
-            switch(c) {
-                case NAME: break;
-                case LIB: jCheckBox4.setSelected(true); break;
-                case COST: jCheckBox9.setSelected(true); break;
-                case N_INPUT: jCheckBox10.setSelected(true); break;
-                case P_COST: jCheckBox11.setSelected(true); break;
-                case COST_PLOT: jCheckBox12.setSelected(true); break;
-                case CALL: jCheckBox13.setSelected(true); break;
-                case P_CALL: jCheckBox14.setSelected(true); break;
-                case P_SYSCALL: jCheckBox15.setSelected(true); break;
-                case P_THREAD: jCheckBox16.setSelected(true); break;
-                case FIT_A: jCheckBox17.setSelected(true); break;
-                case FIT_B: jCheckBox18.setSelected(true); break;
-                case FIT_C: jCheckBox19.setSelected(true); break;
-                case FIT_R2: jCheckBox20.setSelected(true); break;
-                case CONTEXT: jCheckBox22.setSelected(true); break;
-                case CONTEXT_COLLAPSED: jCheckBox23.setSelected(true); break;
-                case FAVORITE: jCheckBox21.setSelected(true); break;
+            switch (c) {
+                case NAME:
+                    break;
+                case LIB:
+                    jCheckBox4.setSelected(true);
+                    break;
+                case COST:
+                    jCheckBox9.setSelected(true);
+                    break;
+                case N_INPUT:
+                    jCheckBox10.setSelected(true);
+                    break;
+                case P_COST:
+                    jCheckBox11.setSelected(true);
+                    break;
+                case COST_PLOT:
+                    jCheckBox12.setSelected(true);
+                    break;
+                case CALL:
+                    jCheckBox13.setSelected(true);
+                    break;
+                case P_CALL:
+                    jCheckBox14.setSelected(true);
+                    break;
+                case P_SYSCALL:
+                    jCheckBox15.setSelected(true);
+                    break;
+                case P_THREAD:
+                    jCheckBox16.setSelected(true);
+                    break;
+                case FIT_A:
+                    jCheckBox17.setSelected(true);
+                    break;
+                case FIT_B:
+                    jCheckBox18.setSelected(true);
+                    break;
+                case FIT_C:
+                    jCheckBox19.setSelected(true);
+                    break;
+                case FIT_R2:
+                    jCheckBox20.setSelected(true);
+                    break;
+                case CONTEXT:
+                    jCheckBox22.setSelected(true);
+                    break;
+                case CONTEXT_COLLAPSED:
+                    jCheckBox23.setSelected(true);
+                    break;
+                case FAVORITE:
+                    jCheckBox21.setSelected(true);
+                    break;
                 default:
                     throw new RuntimeException("Invalid column: " + c);
 
             }
         }
-	}
-    
-    public RoutinesFilterDialog(java.awt.Frame parent, boolean modal, 
-            java.util.ArrayList<String> v, String[] criteria, COLUMN[] config) {
+    }
+
+    public RoutinesFilterDialog(java.awt.Frame parent, boolean modal,
+        java.util.ArrayList<String> v, String[] criteria, COLUMN[] config) {
         this(parent, modal, v, criteria, true, config);
     }
 
-	/** This method is called from within the constructor to
-	 * initialize the form.
-	 * WARNING: Do NOT modify this code. The content of this method is
-	 * always regenerated by the Form Editor.
-	 */
-	@SuppressWarnings("unchecked")
+    /**
+     * This method is called from within the constructor to initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is always
+     * regenerated by the Form Editor.
+     */
+    @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
@@ -491,97 +532,158 @@ public class RoutinesFilterDialog extends javax.swing.JDialog {
     }// </editor-fold>//GEN-END:initComponents
 
 	private void jCheckBox1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBox1ActionPerformed
-		
-		// % time checkbox
-		if (jCheckBox1.isSelected()) jTextField1.setEnabled(true);
-		else jTextField1.setEnabled(false);
-		
+
+        // % time checkbox
+        if (jCheckBox1.isSelected()) {
+            jTextField1.setEnabled(true);
+        } else {
+            jTextField1.setEnabled(false);
+        }
+
 	}//GEN-LAST:event_jCheckBox1ActionPerformed
 
 	private void jCheckBox3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBox3ActionPerformed
-		
-		// % calls checkbox
-		if (jCheckBox3.isSelected()) jTextField2.setEnabled(true);
-		else jTextField2.setEnabled(false);
-		
+
+        // % calls checkbox
+        if (jCheckBox3.isSelected()) {
+            jTextField2.setEnabled(true);
+        } else {
+            jTextField2.setEnabled(false);
+        }
+
 	}//GEN-LAST:event_jCheckBox3ActionPerformed
 
 	private void jCheckBox2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBox2ActionPerformed
-		
-		// lib checkbox
-		if (jCheckBox2.isSelected()) jComboBox1.setEnabled(true);
-		else jComboBox1.setEnabled(false);
-		
+
+        // lib checkbox
+        if (jCheckBox2.isSelected()) {
+            jComboBox1.setEnabled(true);
+        } else {
+            jComboBox1.setEnabled(false);
+        }
+
 	}//GEN-LAST:event_jCheckBox2ActionPerformed
 
 	private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-		
-		// pressed OK button
-		if (validateUserInput()) {
-			
-			this.dispose();
-			String[] criteria = new String[8];
-			
-			if (jCheckBox1.isSelected()) criteria[0] = jTextField1.getText();
-			if (jCheckBox2.isSelected()) criteria[1] = (String) jComboBox1.getSelectedItem();
-			if (jCheckBox3.isSelected()) criteria[2] = jTextField2.getText();
-			if (jCheckBox5.isSelected()) criteria[3] = jTextField4.getText();
-            
+
+        // pressed OK button
+        if (validateUserInput()) {
+
+            this.dispose();
+            String[] criteria = new String[8];
+
+            if (jCheckBox1.isSelected()) {
+                criteria[0] = jTextField1.getText();
+            }
+            if (jCheckBox2.isSelected()) {
+                criteria[1] = (String) jComboBox1.getSelectedItem();
+            }
+            if (jCheckBox3.isSelected()) {
+                criteria[2] = jTextField2.getText();
+            }
+            if (jCheckBox5.isSelected()) {
+                criteria[3] = jTextField4.getText();
+            }
+
             // b values
-			if (jCheckBox6.isSelected()) criteria[4] = jTextField5.getText();
-            if (jCheckBox6.isSelected()) criteria[5] = jTextField6.getText();
-            
+            if (jCheckBox6.isSelected()) {
+                criteria[4] = jTextField5.getText();
+            }
+            if (jCheckBox6.isSelected()) {
+                criteria[5] = jTextField6.getText();
+            }
+
             // fitting quality
-            if (jCheckBox7.isSelected()) criteria[6] = jTextField7.getText();
-            
+            if (jCheckBox7.isSelected()) {
+                criteria[6] = jTextField7.getText();
+            }
+
             // hide unfitted routine
-            if (jCheckBox5.isSelected()) criteria[7] = "hide";
-            
+            if (jCheckBox5.isSelected()) {
+                criteria[7] = "hide";
+            }
+
             Vector<COLUMN> conf = new Vector<COLUMN>();
             conf.add(COLUMN.NAME);
-            if (jCheckBox4.isSelected()) conf.add(COLUMN.LIB);
-            if (jCheckBox9.isSelected()) conf.add(COLUMN.COST);
-            if (jCheckBox10.isSelected()) conf.add(COLUMN.N_INPUT);
-            if (jCheckBox11.isSelected()) conf.add(COLUMN.P_COST);
-            if (jCheckBox12.isSelected()) conf.add(COLUMN.COST_PLOT);
-            if (jCheckBox13.isSelected()) conf.add(COLUMN.CALL);
-            if (jCheckBox14.isSelected()) conf.add(COLUMN.P_CALL);
-            if (jCheckBox15.isSelected()) conf.add(COLUMN.P_SYSCALL);
-            if (jCheckBox16.isSelected()) conf.add(COLUMN.P_THREAD);
-            if (jCheckBox17.isSelected()) conf.add(COLUMN.FIT_A);
-            if (jCheckBox18.isSelected()) conf.add(COLUMN.FIT_B);
-            if (jCheckBox19.isSelected()) conf.add(COLUMN.FIT_C);
-            if (jCheckBox20.isSelected()) conf.add(COLUMN.FIT_R2);
-            if (jCheckBox22.isSelected()) conf.add(COLUMN.CONTEXT);
-            if (jCheckBox23.isSelected()) conf.add(COLUMN.CONTEXT_COLLAPSED);
-            if (jCheckBox21.isSelected()) conf.add(COLUMN.FAVORITE);
+            if (jCheckBox4.isSelected()) {
+                conf.add(COLUMN.LIB);
+            }
+            if (jCheckBox9.isSelected()) {
+                conf.add(COLUMN.COST);
+            }
+            if (jCheckBox10.isSelected()) {
+                conf.add(COLUMN.N_INPUT);
+            }
+            if (jCheckBox11.isSelected()) {
+                conf.add(COLUMN.P_COST);
+            }
+            if (jCheckBox12.isSelected()) {
+                conf.add(COLUMN.COST_PLOT);
+            }
+            if (jCheckBox13.isSelected()) {
+                conf.add(COLUMN.CALL);
+            }
+            if (jCheckBox14.isSelected()) {
+                conf.add(COLUMN.P_CALL);
+            }
+            if (jCheckBox15.isSelected()) {
+                conf.add(COLUMN.P_SYSCALL);
+            }
+            if (jCheckBox16.isSelected()) {
+                conf.add(COLUMN.P_THREAD);
+            }
+            if (jCheckBox17.isSelected()) {
+                conf.add(COLUMN.FIT_A);
+            }
+            if (jCheckBox18.isSelected()) {
+                conf.add(COLUMN.FIT_B);
+            }
+            if (jCheckBox19.isSelected()) {
+                conf.add(COLUMN.FIT_C);
+            }
+            if (jCheckBox20.isSelected()) {
+                conf.add(COLUMN.FIT_R2);
+            }
+            if (jCheckBox22.isSelected()) {
+                conf.add(COLUMN.CONTEXT);
+            }
+            if (jCheckBox23.isSelected()) {
+                conf.add(COLUMN.CONTEXT_COLLAPSED);
+            }
+            if (jCheckBox21.isSelected()) {
+                conf.add(COLUMN.FAVORITE);
+            }
             COLUMN[] config = conf.toArray(new COLUMN[conf.size()]);
-            ((MainWindow)this.getParent()).updateRoutineTableConfig(config);
-            
-            if (is_routine_table)
-    			((MainWindow)this.getParent()).setRoutinesTableFilter(criteria);
-            else
-                ((MainWindow)this.getParent()).setContextsTableFilter(criteria);
+            ((MainWindow) this.getParent()).updateRoutineTableConfig(config);
+
+            if (is_routine_table) {
+                ((MainWindow) this.getParent()).setRoutinesTableFilter(criteria);
+            } else {
+                ((MainWindow) this.getParent()).setContextsTableFilter(criteria);
+            }
         }
 	}//GEN-LAST:event_jButton1ActionPerformed
 
 	private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-		
-		// Pressed CANCEL button
-		this.dispose();
-		
+
+        // Pressed CANCEL button
+        this.dispose();
+
 	}//GEN-LAST:event_jButton2ActionPerformed
 
 	private void jCheckBox5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBox5ActionPerformed
-		
-		// # rms checkbox
-		if (jCheckBox5.isSelected()) jTextField4.setEnabled(true);
-		else jTextField4.setEnabled(false);
-		
+
+        // # rms checkbox
+        if (jCheckBox5.isSelected()) {
+            jTextField4.setEnabled(true);
+        } else {
+            jTextField4.setEnabled(false);
+        }
+
 	}//GEN-LAST:event_jCheckBox5ActionPerformed
 
     private void jCheckBox6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBox6ActionPerformed
-        
+
         // b checkbox
         if (jCheckBox6.isSelected()) {
             jTextField5.setEnabled(true);
@@ -590,15 +692,18 @@ public class RoutinesFilterDialog extends javax.swing.JDialog {
             jTextField5.setEnabled(false);
             jTextField6.setEnabled(false);
         }
-        
+
     }//GEN-LAST:event_jCheckBox6ActionPerformed
 
     private void jCheckBox7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBox7ActionPerformed
-        
+
         // fitting qualiy checkbox
-		if (jCheckBox7.isSelected()) jTextField7.setEnabled(true);
-		else jTextField7.setEnabled(false);
-        
+        if (jCheckBox7.isSelected()) {
+            jTextField7.setEnabled(true);
+        } else {
+            jTextField7.setEnabled(false);
+        }
+
     }//GEN-LAST:event_jCheckBox7ActionPerformed
 
     private void jCheckBox8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBox8ActionPerformed
@@ -669,96 +774,104 @@ public class RoutinesFilterDialog extends javax.swing.JDialog {
         // TODO add your handling code here:
     }//GEN-LAST:event_jCheckBox23ActionPerformed
 
-   private boolean validateUserInput() {
-	   
-	   if (jCheckBox1.isSelected()) {
-		   
-		   try{
-			
-			   double time_perc = Double.parseDouble(jTextField1.getText());
-			   if (time_perc < 0 || time_perc > 100) throw (new Exception());
-		   
-		   } catch (Exception e) {
-			
-			   javax.swing.JOptionPane.showMessageDialog(this,
-														 "Time % must be a positive decimal\nwithin the range 0-100",
-														 "Invalid input",
-														 javax.swing.JOptionPane.ERROR_MESSAGE);
-			   return false;
-		   }
-	   }
-	   
-	   if (jCheckBox3.isSelected()) {
-		
-		   try{
-			
-			   double calls_perc = Double.parseDouble(jTextField2.getText());
-			   if (calls_perc < 0 || calls_perc > 100) throw (new Exception());
-		   
-		   } catch (Exception e) {
-			
-			   javax.swing.JOptionPane.showMessageDialog(this,
-														 "Calls % must be a positive decimal\nwithin the range 0-100",
-														 "Invalid input",
-														 javax.swing.JOptionPane.ERROR_MESSAGE);
-			   return false;
-		   
-		   }
-	   }
+    private boolean validateUserInput() {
 
-	   if (jCheckBox5.isSelected()) {
-		   
-		   try {
-			
-			   double n_rms = Double.parseDouble(jTextField4.getText());
-			   if (n_rms < 0 || n_rms != Math.ceil(n_rms)) throw (new Exception());
-		   
-		   } catch (Exception e) {
-			   javax.swing.JOptionPane.showMessageDialog(this,
-														 "#Rms must be a positive integer",
-														 "Invalid input",
-														 javax.swing.JOptionPane.ERROR_MESSAGE);
-			   return false;
-		   }
+        if (jCheckBox1.isSelected()) {
 
-	   }
-       
-       if (jCheckBox6.isSelected()) {
-		   
-		   try {
-			
-			   double b_down = Double.parseDouble(jTextField5.getText());
-               double b_up = Double.parseDouble(jTextField6.getText());
-               
-		   } catch (Exception e) {
-			   javax.swing.JOptionPane.showMessageDialog(this,
-														 "b bound values must be valid",
-														 "Invalid input",
-														 javax.swing.JOptionPane.ERROR_MESSAGE);
-			   return false;
-		   }
+            try {
 
-	   }
-       
-       if (jCheckBox7.isSelected()) {
-		   
-		   try {
-			
-			   double q = Double.parseDouble(jTextField7.getText());
-			   if (q < 0 || q > 1.0) throw (new Exception());
-		   
-		   } catch (Exception e) {
-			   javax.swing.JOptionPane.showMessageDialog(this,
-														 "Fitting quality must be in the range [0, 1.0]",
-														 "Invalid input",
-														 javax.swing.JOptionPane.ERROR_MESSAGE);
-			   return false;
-		   }
+                double time_perc = Double.parseDouble(jTextField1.getText());
+                if (time_perc < 0 || time_perc > 100) {
+                    throw (new Exception());
+                }
 
-	   }
-       
-	   return true;
-   }
+            } catch (Exception e) {
+
+                javax.swing.JOptionPane.showMessageDialog(this,
+                    "Time % must be a positive decimal\nwithin the range 0-100",
+                    "Invalid input",
+                    javax.swing.JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+        }
+
+        if (jCheckBox3.isSelected()) {
+
+            try {
+
+                double calls_perc = Double.parseDouble(jTextField2.getText());
+                if (calls_perc < 0 || calls_perc > 100) {
+                    throw (new Exception());
+                }
+
+            } catch (Exception e) {
+
+                javax.swing.JOptionPane.showMessageDialog(this,
+                    "Calls % must be a positive decimal\nwithin the range 0-100",
+                    "Invalid input",
+                    javax.swing.JOptionPane.ERROR_MESSAGE);
+                return false;
+
+            }
+        }
+
+        if (jCheckBox5.isSelected()) {
+
+            try {
+
+                double n_rms = Double.parseDouble(jTextField4.getText());
+                if (n_rms < 0 || n_rms != Math.ceil(n_rms)) {
+                    throw (new Exception());
+                }
+
+            } catch (Exception e) {
+                javax.swing.JOptionPane.showMessageDialog(this,
+                    "#Rms must be a positive integer",
+                    "Invalid input",
+                    javax.swing.JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+
+        }
+
+        if (jCheckBox6.isSelected()) {
+
+            try {
+
+                double b_down = Double.parseDouble(jTextField5.getText());
+                double b_up = Double.parseDouble(jTextField6.getText());
+
+            } catch (Exception e) {
+                javax.swing.JOptionPane.showMessageDialog(this,
+                    "b bound values must be valid",
+                    "Invalid input",
+                    javax.swing.JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+
+        }
+
+        if (jCheckBox7.isSelected()) {
+
+            try {
+
+                double q = Double.parseDouble(jTextField7.getText());
+                if (q < 0 || q > 1.0) {
+                    throw (new Exception());
+                }
+
+            } catch (Exception e) {
+                javax.swing.JOptionPane.showMessageDialog(this,
+                    "Fitting quality must be in the range [0, 1.0]",
+                    "Invalid input",
+                    javax.swing.JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+
+        }
+
+        return true;
+    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;

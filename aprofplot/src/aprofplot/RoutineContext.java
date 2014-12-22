@@ -3,96 +3,100 @@ package aprofplot;
 import java.util.*;
 
 public class RoutineContext extends Routine {
-	
-	private int context_id;
-	private RoutineContext parent;
-	private ContextualizedRoutineInfo overall; 
 
-    public RoutineContext() {}
-    
-	public RoutineContext(RoutineContext parent, ContextualizedRoutineInfo overall) {					
-		this.parent = parent;
-		this.overall = overall;
-	}
+    private int context_id;
+    private RoutineContext parent;
+    private ContextualizedRoutineInfo overall;
 
-	public void addInputTuple(Input r) {
-		addInput(r);
-		if (overall != null) overall.addInputTupleLazy(r);
-	}
+    public RoutineContext() {
+    }
 
-	public void setParent(RoutineContext p) {
-		parent = p;
-	}
-	
-	public void setOverallRoutine(ContextualizedRoutineInfo o) {
-		overall = o;
-	}
+    public RoutineContext(RoutineContext parent, ContextualizedRoutineInfo overall) {
+        this.parent = parent;
+        this.overall = overall;
+    }
 
-	public void setContextId(int id) {
-		context_id = id;
-	}
+    public void addInputTuple(Input r) {
+        addInput(r);
+        if (overall != null) {
+            overall.addInputTupleLazy(r);
+        }
+    }
 
-	public int getContextId() {
-		return context_id;
-	}
+    public void setParent(RoutineContext p) {
+        parent = p;
+    }
 
-	@Override
-	public int getID() {
-		return overall.getID();
-	}
+    public void setOverallRoutine(ContextualizedRoutineInfo o) {
+        overall = o;
+    }
 
-	@Override
-	public String getImage() {
-		return overall.getImage();
-	}
+    public void setContextId(int id) {
+        context_id = id;
+    }
 
-	@Override
-	public String getName() {
-		return overall.getName();
-	}
-	
-	@Override
-	public String getFullName() {
-		return overall.getFullName();
-	}
-	
-	@Override
-	public String getMangledName() {
-		return overall.getMangledName();
-	}
+    public int getContextId() {
+        return context_id;
+    }
 
-	public RoutineContext getParent() {
-		return parent;
-	}
+    @Override
+    public int getID() {
+        return overall.getID();
+    }
 
-	public ContextualizedRoutineInfo getOverallRoutine() {
-		return overall;
-	}
+    @Override
+    public String getImage() {
+        return overall.getImage();
+    }
 
-	@Override
-	public boolean equals(Object o) {
-		if (o != null && getClass().equals(o.getClass())) {
-			RoutineContext rtn_info = (RoutineContext)o;
-			return (rtn_info.getID() == this.getID() &&
-					rtn_info.getContextId() == this.getContextId());
-		}
-		else return false;
-	}
+    @Override
+    public String getName() {
+        return overall.getName();
+    }
 
-	@Override
-	public int hashCode() {
-		int hash = 7;
-		hash = 67 * hash + this.context_id;
-		return hash;
-	}
+    @Override
+    public String getFullName() {
+        return overall.getFullName();
+    }
 
-	@Override
-	public String toString() {
-		return this.getName() + " (" + this.getContextId() +  "/" 
-				+ this.getOverallRoutine().getContextCount() + ")";
-	}
+    @Override
+    public String getMangledName() {
+        return overall.getMangledName();
+    }
 
-	 public ArrayList<RoutineContext> getStackTrace() {
+    public RoutineContext getParent() {
+        return parent;
+    }
+
+    public ContextualizedRoutineInfo getOverallRoutine() {
+        return overall;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o != null && getClass().equals(o.getClass())) {
+            RoutineContext rtn_info = (RoutineContext) o;
+            return (rtn_info.getID() == this.getID()
+                && rtn_info.getContextId() == this.getContextId());
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 67 * hash + this.context_id;
+        return hash;
+    }
+
+    @Override
+    public String toString() {
+        return this.getName() + " (" + this.getContextId() + "/"
+            + this.getOverallRoutine().getContextCount() + ")";
+    }
+
+    public ArrayList<RoutineContext> getStackTrace() {
         ArrayList<RoutineContext> res = new ArrayList<RoutineContext>();
         RoutineContext current = this;
         while (current != null) {
@@ -101,5 +105,5 @@ public class RoutineContext extends Routine {
         }
         return res;
     }
-     
+
 }
