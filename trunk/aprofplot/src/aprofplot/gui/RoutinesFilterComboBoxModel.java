@@ -6,44 +6,50 @@ import javax.swing.event.*;
 
 public class RoutinesFilterComboBoxModel implements ComboBoxModel {
 
-	private int selectedIndex;
-	private ArrayList<String> elements;
+    private int selectedIndex;
+    private ArrayList<String> elements;
 
-	public RoutinesFilterComboBoxModel(ArrayList<String> v) {
-		selectedIndex = -1;
-		elements = v;
-	}
-	
-	@Override
-	public void setSelectedItem(Object o) {
-		selectedIndex = elements.indexOf(o);
-	}
+    public RoutinesFilterComboBoxModel(ArrayList<String> v) {
+        selectedIndex = -1;
+        elements = v;
+    }
 
-	@Override
-	public Object getSelectedItem() {
-		if (selectedIndex < 0) return null;
-		return elements.get(selectedIndex);
-	}
+    @Override
+    public void setSelectedItem(Object o) {
+        selectedIndex = elements.indexOf(o);
+    }
 
-	@Override
-	public Object getElementAt(int index) {
-		if (elements == null || index >= elements.size()) return null;
-		return elements.get(index);
-	}
+    @Override
+    public Object getSelectedItem() {
+        if (selectedIndex < 0) {
+            return null;
+        }
+        return elements.get(selectedIndex);
+    }
 
-	@Override
-	public int getSize() {
-		if (elements == null) return 0;
-		return elements.size();
-	}
+    @Override
+    public Object getElementAt(int index) {
+        if (elements == null || index >= elements.size()) {
+            return null;
+        }
+        return elements.get(index);
+    }
 
-	@Override
-	public void addListDataListener(ListDataListener l) {
-		//not used
-	}
+    @Override
+    public int getSize() {
+        if (elements == null) {
+            return 0;
+        }
+        return elements.size();
+    }
 
-	@Override
-	public void removeListDataListener(ListDataListener l) {
-		//not used
-	}
+    @Override
+    public void addListDataListener(ListDataListener l) {
+        //not used
+    }
+
+    @Override
+    public void removeListDataListener(ListDataListener l) {
+        //not used
+    }
 }
