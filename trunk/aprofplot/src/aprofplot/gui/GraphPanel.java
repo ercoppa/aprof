@@ -1809,21 +1809,12 @@ public class GraphPanel extends javax.swing.JPanel {
             mean_y = sum_y3 / elem_slot;
             series[11].add(mean_x, mean_y, false);
 
-        } else if (graph_type == AMORTIZED_PLOT) {
-
-            double mean_y = sum_y / elem_slot;
-            series[0].add(mean_x, mean_y, false);
-
         } else {
 
             double mean_y = sum_y / elem_slot;
-            double index = Math.round(Math.log10(sum_occ) / Math.log10(2));
-            if (index > 11) {
-                index = 11;
-            }
-            if (index < 0) {
-                index = 0;
-            }
+            double index = 11 - Math.round(Math.log10(sum_occ) / Math.log10(2));
+            if (index > 11) index = 11;
+            if (index < 0) index = 0;
             series[(int) index].add(mean_x, mean_y, false);
 
         }
