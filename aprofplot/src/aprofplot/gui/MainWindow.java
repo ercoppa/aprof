@@ -11,6 +11,9 @@ import javax.swing.text.BadLocationException;
 import javax.swing.tree.*;
 import java.util.*;
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import static javax.swing.UIManager.getSystemLookAndFeelClassName;
 import static javax.swing.UIManager.setLookAndFeel;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -65,6 +68,29 @@ public final class MainWindow extends javax.swing.JFrame {
     ArrayList<GraphPanel> graphs = new ArrayList<GraphPanel>();
     ArrayList<Boolean> graphs_enabled = new ArrayList<Boolean>();
     
+    private TableRowSorter<TableModel> routines_table_sorter = null;
+    private List<RowSorter.SortKey> routines_sort = null;
+
+    private TableRowSorter<TableModel> rms_table_sorter = null;
+    private List<RowSorter.SortKey> rms_sort = null;
+
+    private TableRowSorter<TableModel> contexts_table_sorter = null;
+    private List<javax.swing.RowSorter.SortKey> contexts_sort = null;
+
+    private RSyntaxTextArea textArea = null;
+    private Object highlight_line = null;
+
+    private int stack_trace_divider = -1;
+    private int contexts_divider = -1;
+    private String[] contexts_filter_criteria = null;
+    private String[] routines_filter_criteria = null;
+    private String[] rms_filter_criteria = new String[4];
+    private AprofReport report = null;
+    private boolean linked_plots = true;
+    private JMenuItem[] recentMenuItems = new JMenuItem[6];
+    
+    final ProgressDialog progress; 
+    
     /**
      * Creates new form MainWindow
      */
@@ -99,8 +125,14 @@ public final class MainWindow extends javax.swing.JFrame {
             e.printStackTrace();
             System.exit(1);
         }
+        
+        progress = new ProgressDialog(this, true);
     }
 
+    public void postStart() {
+        contexts_divider = jSplitPane5.getSize().height / 2;
+    }
+    
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -167,7 +199,7 @@ public final class MainWindow extends javax.swing.JFrame {
         jLabel3 = new javax.swing.JLabel();
         jSplitPane5 = new javax.swing.JSplitPane();
         jScrollPane6 = new javax.swing.JScrollPane();
-        jTable3 = new JTable(new RoutinesTableModel(this.report, this, false)) {
+        ContextTable = new JTable(new RoutinesTableModel(this.report, this, false)) {
             public Component prepareRenderer(TableCellRenderer renderer, int row, int column)
             {
                 try {
@@ -188,7 +220,7 @@ public final class MainWindow extends javax.swing.JFrame {
             }
         };
         jScrollPane1 = new javax.swing.JScrollPane();
-        jTable1 = new JTable(new RoutinesTableModel(this.report, this, ((RoutinesTableModel)jTable3.getModel()))) {
+        RoutineTable = new JTable(new RoutinesTableModel(this.report, this, ((RoutinesTableModel)ContextTable.getModel()))) {
             public Component prepareRenderer(TableCellRenderer renderer, int row, int column)
             {
                 try {
@@ -211,14 +243,14 @@ public final class MainWindow extends javax.swing.JFrame {
         jSplitPane3 = new javax.swing.JSplitPane();
         jPanel4 = new javax.swing.JPanel();
         jScrollPane2 = new javax.swing.JScrollPane();
-        jTable2 = new javax.swing.JTable();
+        InputTupleTable = new javax.swing.JTable();
         jPanel5 = new javax.swing.JPanel();
         jLabel2 = new javax.swing.JLabel();
         jScrollPane3 = new javax.swing.JScrollPane();
-        jList1 = new javax.swing.JList();
+        StackTrace = new javax.swing.JList();
         jPanel8 = new javax.swing.JPanel();
         jScrollPane4 = new javax.swing.JScrollPane();
-        jTree1 = new javax.swing.JTree();
+        ContextTree = new javax.swing.JTree();
         MenuBar = new javax.swing.JMenuBar();
         FileMenu = new javax.swing.JMenu();
         NewWindowMenuEntry = new javax.swing.JMenuItem();
@@ -237,7 +269,6 @@ public final class MainWindow extends javax.swing.JFrame {
         ExportMenu = new javax.swing.JMenu();
         ExportRoutineProfileEntry = new javax.swing.JMenuItem();
         ExportProgramProfileEntry = new javax.swing.JMenuItem();
-        ExportProgramStatsEntry = new javax.swing.JMenuItem();
         ExportInputVolumeEntry = new javax.swing.JMenuItem();
         ExportRichnessEntry = new javax.swing.JMenuItem();
         ExportThreadInputEntry = new javax.swing.JMenuItem();
@@ -719,13 +750,13 @@ public final class MainWindow extends javax.swing.JFrame {
         jScrollPane6.setVerticalScrollBarPolicy(javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
         jScrollPane6.setEnabled(false);
 
-        jTable3.setRowHeight(52);
-        jTable3.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
-        jScrollPane6.setViewportView(jTable3);
+        ContextTable.setRowHeight(52);
+        ContextTable.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+        jScrollPane6.setViewportView(ContextTable);
         restoreSortingContextsTable();
-        jTable3.setDefaultRenderer(Routine.class, new PlotThumbRenderer());
+        ContextTable.setDefaultRenderer(Routine.class, new PlotThumbRenderer());
 
-        jTable3.getSelectionModel().addListSelectionListener(new javax.swing.event.ListSelectionListener() {
+        ContextTable.getSelectionModel().addListSelectionListener(new javax.swing.event.ListSelectionListener() {
             public void valueChanged(javax.swing.event.ListSelectionEvent evt) {
                 jTable3ValueChanged(evt);
             }
@@ -735,30 +766,30 @@ public final class MainWindow extends javax.swing.JFrame {
 
         jScrollPane1.setVerticalScrollBarPolicy(javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 
-        jTable1.setDoubleBuffered(true);
+        RoutineTable.setDoubleBuffered(true);
         //jTable1.setAutoCreateColumnsFromModel(false);
-        jTable1.setRowHeight(52);
-        jTable1.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+        RoutineTable.setRowHeight(52);
+        RoutineTable.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         restoreSortingRoutinesTable();
-        jTable1.setDefaultRenderer(Routine.class, new PlotThumbRenderer());
-        jTable1.addMouseListener(new java.awt.event.MouseAdapter() {
+        RoutineTable.setDefaultRenderer(Routine.class, new PlotThumbRenderer());
+        RoutineTable.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
-                jTable1MouseClicked(evt);
+                RoutineTableMouseClicked(evt);
             }
         });
-        jTable1.getSelectionModel().addListSelectionListener(new javax.swing.event.ListSelectionListener() {
+        RoutineTable.getSelectionModel().addListSelectionListener(new javax.swing.event.ListSelectionListener() {
             public void valueChanged(javax.swing.event.ListSelectionEvent evt) {
-                jTable1ValueChanged(evt);
+                RoutineTableSelection(evt);
             }
         });
         /*
-        jTable1.getModel().addTableModelListener(new javax.swing.event.TableModelListener() {
+        RoutineTable.getModel().addTableModelListener(new javax.swing.event.TableModelListener() {
             public void tableChanged(javax.swing.event.TableModelEvent evt) {
                 jTable1TableChanged(evt);
             }
         });
         */
-        jScrollPane1.setViewportView(jTable1);
+        jScrollPane1.setViewportView(RoutineTable);
 
         jSplitPane5.setTopComponent(jScrollPane1);
 
@@ -775,15 +806,15 @@ public final class MainWindow extends javax.swing.JFrame {
         jScrollPane2.setVerticalScrollBarPolicy(javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
         jScrollPane2.setPreferredSize(new java.awt.Dimension(550, 450));
 
-        jTable2.setModel(new RmsTableModel(this));
-        jTable2.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+        InputTupleTable.setModel(new RmsTableModel(this));
+        InputTupleTable.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         restoreSortingRmsTable();
-        jTable2.getSelectionModel().addListSelectionListener(new javax.swing.event.ListSelectionListener() {
+        InputTupleTable.getSelectionModel().addListSelectionListener(new javax.swing.event.ListSelectionListener() {
             public void valueChanged(javax.swing.event.ListSelectionEvent evt) {
                 jTable2ValueChanged(evt);
             }
         });
-        jScrollPane2.setViewportView(jTable2);
+        jScrollPane2.setViewportView(InputTupleTable);
 
         jPanel4.add(jScrollPane2, java.awt.BorderLayout.CENTER);
 
@@ -795,13 +826,13 @@ public final class MainWindow extends javax.swing.JFrame {
         jLabel2.setText("Stack trace");
         jPanel5.add(jLabel2, java.awt.BorderLayout.NORTH);
 
-        jList1.setModel(new StackTraceListModel());
-        jList1.addMouseListener(new java.awt.event.MouseAdapter() {
+        StackTrace.setModel(new StackTraceListModel());
+        StackTrace.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
-                jList1MouseClicked(evt);
+                StackTraceMouseClicked(evt);
             }
         });
-        jScrollPane3.setViewportView(jList1);
+        jScrollPane3.setViewportView(StackTrace);
 
         jPanel5.add(jScrollPane3, java.awt.BorderLayout.CENTER);
 
@@ -813,9 +844,9 @@ public final class MainWindow extends javax.swing.JFrame {
         jPanel8.setPreferredSize(new java.awt.Dimension(164, 362));
         jPanel8.setLayout(new java.awt.BorderLayout());
 
-        jTree1.setModel(new DefaultTreeModel(null));
-        jTree1.setRootVisible(false);
-        jScrollPane4.setViewportView(jTree1);
+        ContextTree.setModel(new DefaultTreeModel(null));
+        ContextTree.setRootVisible(false);
+        jScrollPane4.setViewportView(ContextTree);
 
         jPanel8.add(jScrollPane4, java.awt.BorderLayout.CENTER);
 
@@ -963,15 +994,6 @@ public final class MainWindow extends javax.swing.JFrame {
             }
         });
         ExportMenu.add(ExportProgramProfileEntry);
-
-        ExportProgramStatsEntry.setText("Program statistics...");
-        ExportProgramStatsEntry.setEnabled(false);
-        ExportProgramStatsEntry.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                ExportProgramStatsEntryActionPerformed(evt);
-            }
-        });
-        ExportMenu.add(ExportProgramStatsEntry);
 
         ExportInputVolumeEntry.setText("Input volume...");
         ExportInputVolumeEntry.addActionListener(new java.awt.event.ActionListener() {
@@ -1138,37 +1160,461 @@ public final class MainWindow extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    public void postStart() {
-        contexts_divider = jSplitPane5.getSize().height / 2;
+    protected void loadReport(final File file) {
+
+        loading = true;
+        SwingWorker worker = new SwingWorker<AprofReport, Void>() {
+            
+            @Override
+            public AprofReport doInBackground() {
+
+                boolean failed = false;
+
+                try {
+                    setReport(new AprofReport(file), file);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    failed = true;
+                }
+
+                showProgress(false);
+                
+                if (failed || report.hasFatalError()) {
+                    failLoadReport(file);
+                    return null;
+                }
+
+                if (report.hasWarnings()) {
+                    showWanrnings(report.getWarnings());
+                }
+
+                return report;
+            }
+
+        };
+        worker.execute();
+        showProgress(true);
     }
 
-    private boolean isContextPanelVisible() {
-        return jScrollPane6.isVisible();
+    private void setReport(AprofReport report, File file) throws Exception {
+
+        this.report = report;
+        Main.addRecentFile(file);
+        refreshRecentFiles();
+
+        // reload button
+        ReloadButton.setEnabled(true);
+        ReloadButton.setToolTipText("Reload this report");
+
+        // enable entries in export menu
+        ExportMenu.setEnabled(true);
+        ExportProgramProfileEntry.setEnabled(true);
+
+        // enable add fit
+        FitMenuEntry.setEnabled(true);
+        FitButton.setEnabled(false);
+        FitButton.setSelected(false);
+        if (this.fitting_mode) {
+            this.showFittingData(false);
+        }
+
+        resetRoutineTableFilter();
+
+        // Update some labels in the GUI
+        updateGUI(file);
+
+        // Clear all graphs
+        for (GraphPanel g : graphs)
+            g.clearData();
+
+        // Update routine table: we change data in table, this must be done by swing thread
+        final AprofReport final_report = report;
+        SwingUtilities.invokeAndWait(new Runnable() {
+
+            @Override
+            public void run() {
+        
+                RoutinesTableModel m = (RoutinesTableModel) RoutineTable.getModel();
+                saveSortingRoutinesTable();
+                m.setData(final_report);
+                restoreSortingRoutinesTable();
+
+                // reset scrolling
+                jScrollPane1.getVerticalScrollBar().setValue(0);
+
+                RoutinesTableModel m2 = (RoutinesTableModel) ContextTable.getModel();
+                saveSortingContextsTable();
+                m2.setData(final_report);
+                restoreSortingContextsTable();
+
+                // Clear routinr profile
+                ((RmsTableModel) InputTupleTable.getModel()).setData(null);
+                ((RmsTableModel) InputTupleTable.getModel()).refreshStructure();
+
+                graphs.get(FREQ_PLOT.ordinal()).updateGraphTitle();
+            }
+        });             
+    }
+    
+    private void loadRoutine(Routine r) {
+
+        this.rtn_info = r;
+
+        if (r == null) {
+
+            ((RmsTableModel) InputTupleTable.getModel()).setData(null);
+
+            if (isVisibleContextsTable()) {
+                ((RoutinesTableModel) RoutineTable.getModel()).loadContexts(null, false);
+            }
+
+            ((StackTraceListModel) StackTrace.getModel()).setData(null);
+
+            //System.out.println("Reset routine");
+            //Thread.dumpStack();
+            RoutineLabel.setText("");
+
+            for (GraphPanel g : graphs)
+                g.clearData();
+
+            ExportRoutineProfileEntry.setEnabled(false);
+            ExportMenu.setEnabled(false);
+            
+            //updateContextTree(null);
+            // Initially hide stack trace panel
+            setVisibleStackTrace(false);
+            return;
+        }
+
+        //System.out.println("Refresh routine");
+        String name = r.getName();
+
+        if (r instanceof RoutineContext) {
+            name += (" (" + ((RoutineContext) r).getContextId() + "/"
+                + ((RoutineContext) r).getOverallRoutine().getContextCount()
+                + ")");
+        }
+        RoutineLabel.setText(name);
+
+        // Load function source code in the editor
+        if (linked_editor) {
+            loadFunctionInTextEditor(name);
+        }
+
+        perf.start(this, PerformanceMonitor.ELABORATE);
+
+        ArrayList<GraphPanel> active_graphs = new ArrayList<GraphPanel>();
+        for (int i = 0; i < graphs_enabled.size(); i++)
+            if (graphs_enabled.get(i))
+                active_graphs.add(graphs.get(i));
+                
+        for (GraphPanel g : active_graphs)     
+            g.setRoutine(r);
+        
+        /*
+        if (isVisibleFittingData() && jCheckBoxMenuItem4.isSelected()) {
+            Fit f = report.getFit(r.getID());
+            double[] p = f.getParams();
+            CostGraphPanel.addFittedLine(p[0], p[1], p[2]);
+        }
+        */
+        
+        r.sortInputTuplesByInput();
+        for (Input i : r)
+            for (GraphPanel g : active_graphs)     
+                g.addPoint(i);
+    
+        for (GraphPanel g : active_graphs) {
+            g.maximize();
+        }
+        
+        if (graphs_enabled.get(AMORTIZED_PLOT.ordinal()))
+            graphs.get(AMORTIZED_PLOT.ordinal()).updateGraphTitle();
+
+        // enable/disable entries in export menu related to routine
+        ExportRoutineProfileEntry.setEnabled(true);
+        ExportMenu.setEnabled(true);
+        
+        // Update routine profile panel
+        ((RmsTableModel) InputTupleTable.getModel()).setData(r);
+
+        if (r instanceof ContextualizedRoutineInfo) {
+            ((RoutinesTableModel) RoutineTable.getModel()).loadContexts(r, true);
+            refreshContextsTableFilter();
+        }
+
+        // Update stack trace panel
+        if (r instanceof RoutineContext) {
+
+            ((StackTraceListModel) StackTrace.getModel()).setData(((RoutineContext) r).getStackTrace());
+            setVisibleStackTrace(true);
+
+        } else {
+
+            ((StackTraceListModel) StackTrace.getModel()).setData(null);
+            setVisibleStackTrace(false);
+
+        }
+
+        perf.stop(this, PerformanceMonitor.ELABORATE);
+        System.gc();
+        //updateContextTree(r);
+    }
+    
+    public void refreshRoutine() {
+        loadRoutine(this.rtn_info);
+    }
+    
+    private void showProgress(boolean enable){
+        loading = enable;
+        progress.setVisible(enable);
+    }
+    
+    /*
+     * graph management
+     */
+
+    private void initGraph() {
+
+        // Init graphs:
+        for (GraphPanel.Type t : GraphPanel.Type.values()) {
+            GraphPanel g = new GraphPanel(t, this);
+            g.setPerformanceMonitor(perf);
+            graphs.add(g);
+            graphs_enabled.add(false);
+        }
+
+        ArrayList<GraphPanel.Type> graph_order = Main.getGraphOrder();
+        // Reset graph order (addGraph will set this later)
+        Main.setGraphOrder(new ArrayList<GraphPanel.Type>());
+        for (GraphPanel.Type t : graph_order) {
+            addGraph(t);
+        }
     }
 
+    private void editGraph(GraphPanel.Type t, boolean enable) {
+        if (enable) 
+            addGraph(t);
+        else
+            removeGraph(t);
+    }
+    
+    private void addGraph(GraphPanel.Type t) {
+
+        GraphPanel g = graphs.get(t.ordinal());
+        graphs_enabled.set(t.ordinal(), true);
+        switch (g.getGraphType()) {
+
+            case COST_PLOT:
+                CostPlotButton.setSelected(true);
+                CostPlotMenuEntry.setSelected(true);
+                break;
+
+            case MMM_PLOT:
+                MMMPlotButton.setSelected(true);
+                MMMPlotMenuEntry.setSelected(true);
+                break;
+
+            case TOTALCOST_PLOT:
+                TotalCostPlotButton.setSelected(true);
+                TotalCostPlotMenuEntry.setSelected(true);
+                break;
+
+            case AMORTIZED_PLOT:
+                AmortizedPlotButton.setSelected(true);
+                AmortizedPlotMenuEntry.setSelected(true);
+                break;
+
+            case RATIO_PLOT:
+                RatioPlotButton.setSelected(true);
+                RatioPlotMenuEntry.setSelected(true);
+                break;
+
+            case VAR_PLOT:
+                VarPlotButton.setSelected(true);
+                VarianceCostPlotMenuEntry.setSelected(true);
+                break;
+
+            case FREQ_PLOT:
+                FrequencyPlotButton.setSelected(true);
+                FrequencyPlotMenuEntry.setSelected(true);
+                break;
+        }
+
+        graph_visible++;
+        ArrayList<GraphPanel.Type> go = Main.getGraphOrder();
+
+        if (append_graph) {
+
+            jPanel9.add(g);
+            go.add(g.getGraphType());
+
+        } else {
+
+            Component[] l = jPanel9.getComponents();
+            int i;
+            for (i = 0; i < l.length; i++) {
+
+                if (!(l[i] instanceof GraphPanel)) {
+                    continue;
+                }
+                GraphPanel cg = (GraphPanel) l[i];
+                if (cg.getGraphPriority() > g.getGraphPriority()) {
+                    break;
+                }
+
+            }
+
+            if (i >= l.length) {
+                jPanel9.add(g);
+            } else {
+                jPanel9.add(g, i);
+            }
+
+            // Update graph order
+            if (i >= go.size()) {
+                go.add(g.getGraphType());
+            } else {
+                go.add(i, g.getGraphType());
+            }
+
+        }
+
+        g.setVisible(true);
+        g.setData(this.rtn_info);
+        Main.setGraphOrder(go);
+        adjustGraphLayout();
+    }
+    
+    private void removeGraph(GraphPanel.Type t) {
+
+        GraphPanel g = graphs.get(t.ordinal());
+        graphs_enabled.set(t.ordinal(), false);
+        switch (g.getGraphType()) {
+
+            case COST_PLOT:
+                jPanel9.remove(g);
+                CostPlotButton.setSelected(false);
+                CostPlotMenuEntry.setSelected(false);
+                break;
+
+            case MMM_PLOT:
+                MMMPlotButton.setSelected(false);
+                MMMPlotMenuEntry.setSelected(false);
+                break;
+
+            case TOTALCOST_PLOT:
+                TotalCostPlotButton.setSelected(false);
+                TotalCostPlotMenuEntry.setSelected(false);
+                break;
+
+            case AMORTIZED_PLOT:
+                AmortizedPlotButton.setSelected(false);
+                AmortizedPlotMenuEntry.setSelected(false);
+                break;
+
+            case RATIO_PLOT:
+                TotalCostPlotButton.setSelected(false);
+                RatioPlotMenuEntry.setSelected(false);
+                break;
+
+            case VAR_PLOT:
+                VarPlotButton.setSelected(false);
+                VarianceCostPlotMenuEntry.setSelected(false);
+                break;
+
+            case FREQ_PLOT:
+                FrequencyPlotButton.setSelected(false);
+                FrequencyPlotMenuEntry.setSelected(false);
+                break;
+        }
+
+        // This does not work...
+        //jPanel9.remove(g);
+        // So:
+        Component[] l = jPanel9.getComponents();
+        ArrayList<GraphPanel.Type> graph_order = new ArrayList<GraphPanel.Type>();
+        for (int i = 0; i < l.length; i++) {
+
+            if (l[i] instanceof GraphPanel) {
+                if (g.getGraphType() == ((GraphPanel) l[i]).getGraphType()) {
+                    jPanel9.remove(i);
+                } else {
+                    graph_order.add(((GraphPanel) l[i]).getGraphType());
+                }
+            }
+        }
+
+        graph_visible--;
+        adjustGraphLayout();
+        g.setVisible(false);
+        Main.setGraphOrder(graph_order);
+    }
+
+    private void adjustGraphLayout() {
+
+        if (editor_visible) {
+            jPanel9.setLayout(new BoxLayout(jPanel9, BoxLayout.Y_AXIS));
+            jPanel9.revalidate();
+            return;
+        }
+
+        if (graph_visible == 4) {
+            if (fake == null) {
+                fake = new JPanel();
+            }
+            jPanel9.add(fake);
+        } else if (graph_visible == 7) {
+            if (fake == null) {
+                fake = new JPanel();
+            }
+            if (fake2 == null) {
+                fake2 = new JPanel();
+            }
+            jPanel9.add(fake);
+            jPanel9.add(fake2);
+        } else {
+            if (fake != null) {
+                jPanel9.remove(fake);
+            }
+            if (fake2 != null) {
+                jPanel9.remove(fake2);
+            }
+            fake = null;
+            fake2 = null;
+        }
+
+        if (graph_visible <= 3) {
+            jPanel9.setLayout(new java.awt.GridLayout(1, 3));
+        } else if (graph_visible <= 6) {
+            jPanel9.setLayout(new java.awt.GridLayout(2, 3));
+        } else if (graph_visible <= 9) {
+            jPanel9.setLayout(new java.awt.GridLayout(3, 3));
+        }
+
+        jPanel9.revalidate();
+    }
+    
+    /*
+     * Contexts
+     */
+    
     public boolean setVisibleContextsTable(boolean visible) {
-
-        //System.out.println("Set visible");
-        //Thread.dumpStack();
-        boolean old = isContextPanelVisible();
+        boolean old = isVisibleContextsTable();
         if (old) {
             contexts_divider = jSplitPane5.getDividerLocation();
         }
 
         if (visible) {
-
             jSplitPane5.setDividerSize(6);
             jSplitPane5.setDividerLocation(contexts_divider);
             jScrollPane6.setVisible(visible);
             //scrollToVisibleRoutinesTable();
-
         } else {
-
             jScrollPane6.setVisible(visible);
             jSplitPane5.setDividerSize(0);
             jSplitPane5.setDividerLocation(1.0);
         }
-
         return old;
     }
 
@@ -1176,6 +1622,10 @@ public final class MainWindow extends javax.swing.JFrame {
         return jScrollPane6.isVisible();
     }
 
+    /*
+     * Source Code editor
+     */
+    
     public void checkEditor() {
 
         if (isCtagsInstalled()) {
@@ -1200,11 +1650,294 @@ public final class MainWindow extends javax.swing.JFrame {
             }
         }
     }
+    
+    private void createTextEditor() {
 
-    public AprofReport getCurrentReport() {
-        return report;
+        if (textArea != null) {
+            return;
+        }
+
+        textArea = new RSyntaxTextArea(10, 10);
+        textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_CPLUSPLUS);
+        textArea.setCodeFoldingEnabled(true);
+        textArea.setAntiAliasingEnabled(true);
+        textArea.setEditable(false);
+
+        JPopupMenu popup = textArea.getPopupMenu();
+        popup.addSeparator();
+        ActionEditor a = new ActionEditor();
+        a.setMainWindow(this);
+        popup.add(new JMenuItem(a));
+
+        RTextScrollPane sp = new RTextScrollPane(textArea);
+        sp.setFoldIndicatorEnabled(true);
+        jPanel11.add(sp);
     }
 
+    private boolean isCtagsInstalled() {
+
+        ProcessBuilder pb = new ProcessBuilder(Main.getCtagsPath(), "--version");
+        try {
+
+            Process p = pb.start();
+            p.waitFor();
+            int exit = p.exitValue();
+            if (exit == 0) {
+                return true;
+            }
+
+        } catch (IOException ex) {
+            System.out.println("Fail: error during check ctags");
+        } catch (IllegalThreadStateException i) {
+            System.out.println("Fail: error checking ctags [1]");
+        } catch (InterruptedException ex) {
+            System.out.println("Fail: error checking ctags [2]");
+        }
+
+        return false;
+
+    }
+
+    private void showTextEditor(boolean show) {
+
+        if (show) {
+
+            if (!editor_visible) {
+
+                //System.out.println("Show editor");
+                Main.setEditorVisible(true);
+                SourceMenuEntry.setSelected(true);
+                SourceButton.setSelected(true);
+                jSplitPane4.setRightComponent(jPanel11);
+                //jSplitPane4.setDividerLocation(0.3);
+                editor_visible = true;
+                adjustGraphLayout();
+
+                SwingUtilities.invokeLater(new Runnable() {
+
+                    @Override
+                    public void run() {
+
+                        if (!RoutineLabel.getText().equals("")) {
+                            System.out.println("Function selected " + RoutineLabel.getText());
+                            loadFunctionInTextEditor(RoutineLabel.getText());
+                        }
+
+                    }
+                });
+
+            }
+
+        } else {
+
+            if (editor_visible) {
+
+                //System.out.println("Hide editor");
+                Main.setEditorVisible(false);
+                SourceMenuEntry.setSelected(false);
+                SourceButton.setSelected(false);
+                jSplitPane4.setRightComponent(null);
+                editor_visible = false;
+                adjustGraphLayout();
+            }
+        }
+    }
+    
+        private String cleanCPPSignature(String sig) {
+
+        int index = sig.indexOf("(");
+        if (index >= 0) {
+            sig = sig.substring(0, index);
+        }
+
+        index = sig.indexOf("<");
+        while (index >= 0) {
+
+            int index2 = sig.indexOf(">", index);
+            if (index2 < 0) { // fail :( 
+                System.out.println("I need to clean function name " + sig
+                    + " but I failed... BUG");
+                break;
+            }
+            String sig_a = sig.substring(0, index);
+            String sig_b = sig.substring(index2 + 1);
+            sig = sig_a + sig_b;
+
+            index = sig.indexOf("<");
+
+        }
+
+        index = sig.lastIndexOf(" ");
+        if (index >= 0) {
+            sig = sig.substring(index + 1);
+        }
+
+        //System.out.println(sig);
+        return sig;
+    }
+
+    public void loadFunctionInTextEditor(String name) {
+
+        if (sym == null) {
+            return;
+        }
+        if (!editor_visible) {
+            return;
+        }
+
+        name = cleanCPPSignature(name);
+
+        loading = true;
+        Symbol s = sym.get(name);
+
+        if (s == null) {
+
+            //System.out.println("Function " + name + " was not found in the symbol table");
+            try {
+                /*
+                 final String error = "Source code of this function not found\n";
+                 textArea.read(new StringReader(error + "\n"), null);
+                 if (highlight_line != null) textArea.removeLineHighlight(highlight_line);
+                 highlight_line = textArea.addLineHighlight(0, Color.RED);
+                 */
+                final JFrame m = this;
+                SwingUtilities.invokeLater(new Runnable() {
+
+                    @Override
+                    public void run() {
+
+                        javax.swing.JOptionPane.showMessageDialog(m, "Source code of the function not found");
+                        //textArea.setCaretPosition(error.length());
+                        loading = false;
+                    }
+                });
+
+            } catch (Exception ex) {
+                //
+            }
+            /*
+             jComboBox1.setSelectedIndex(-1);
+             jComboBox1.repaint();
+             */
+            return;
+
+        }
+
+        Iterator i = files.iterator();
+        int k = 0;
+        while (i.hasNext()) {
+
+            String file = (String) i.next();
+            if (file.equals(s.getFile())) {
+                break;
+            }
+            k++;
+        }
+        final int selected = k;
+        //System.out.println("K is " + k);
+
+        File f = new File(s.getFile());
+        int count = s.getLine() - 1;
+        int offset = 0;
+        try {
+
+            BufferedReader r = new BufferedReader(new FileReader(f));
+            textArea.read(r, null);
+            r.close();
+
+            // calculate offset
+            r = new BufferedReader(new FileReader(f));
+            String line = null;
+
+            while (count > 0 && (line = r.readLine()) != null) {
+
+                offset += line.length() + 1;
+                count--;
+
+            }
+
+            r.close();
+
+        } catch (Exception ex) {
+            //System.out.println(ex);
+        }
+
+        final int f_offset = offset;
+        try {
+
+            if (highlight_line != null) {
+                textArea.removeLineHighlight(highlight_line);
+            }
+            highlight_line = textArea.addLineHighlight(s.getLine() - 1, Color.ORANGE);
+
+        } catch (BadLocationException ex) {
+            //
+        }
+
+        SwingUtilities.invokeLater(new Runnable() {
+
+            @Override
+            public void run() {
+                textArea.setCaretPosition(f_offset);
+                jComboBox1.setSelectedIndex(selected);
+                jComboBox1.repaint();
+                loading = false;
+            }
+        });
+
+    }
+    
+    private void findRoutineByNameInSource() {
+
+        if (sym == null) {
+            return;
+        }
+        String query = jTextField2.getText().toLowerCase();
+
+        if (query.equals("")) {
+            return;
+        }
+
+        Set s = sym.keySet();
+        Object[] a = s.toArray();
+        int index = source_index;
+
+        //System.out.println(source_index);
+        while (index < a.length) {
+
+            String name = (String) a[index++];
+            if (name.toLowerCase().contains(query)) {
+                source_index = index;
+                loadFunctionInTextEditor(name);
+                return;
+            }
+
+        }
+
+        if (source_index > 0) {
+
+            index = 0;
+            while (index < a.length && index < source_index) {
+
+                String name = (String) a[index++];
+                if (name.contains(query)) {
+                    source_index = index;
+                    loadFunctionInTextEditor(name);
+                    return;
+                }
+
+            }
+            source_index = 0;
+
+        }
+
+        javax.swing.JOptionPane.showMessageDialog(this, "text not found");
+    }
+    
+    /*
+     * Stack Trace
+     */
+    
     private void setVisibleStackTrace(boolean show) {
 
         if (jPanel5.isVisible()) {
@@ -1230,6 +1963,11 @@ public final class MainWindow extends javax.swing.JFrame {
         }
     }
 
+    
+    /*
+     * Recent files
+     */
+    
     protected final void refreshRecentFiles() {
         hideRecentMenuItems();
         ArrayList<File> recent = Main.getRecentFiles();
@@ -1254,6 +1992,169 @@ public final class MainWindow extends javax.swing.JFrame {
         RecentEntry6.setVisible(false);
     }
 
+    private void loadRecentFile(int entry) {
+
+        ArrayList<File> r = Main.getRecentFiles();
+        if (entry < 0 || entry >= r.size()) {
+            return;
+        }
+
+        File f = Main.getRecentFiles().get(entry);
+        saveForm();
+        disableSaveCommand();
+        loadReport(f);
+
+        if (f.exists()) {
+            Main.setLastReportPath(f.getParent());
+        }
+
+    }
+    
+    /*
+     * Dialogs
+     */
+    
+    private void showWanrnings(String warnings) {
+        JOptionPane.showMessageDialog(this,
+            warnings, "Warning",
+            JOptionPane.INFORMATION_MESSAGE);
+    }
+    
+    private void failLoadReport(File file) {
+       JOptionPane.showMessageDialog(this,
+            "Couldn't open the chosen file", "Error",
+            JOptionPane.ERROR_MESSAGE);
+    }
+    
+    private boolean saveForm() {
+
+        if (SaveButton.isEnabled()) {
+            int choice = javax.swing.JOptionPane.showConfirmDialog(this,
+                "Do you want to save changes to this report?",
+                "Unsaved changes",
+                javax.swing.JOptionPane.YES_NO_CANCEL_OPTION,
+                javax.swing.JOptionPane.QUESTION_MESSAGE);
+            if (choice == javax.swing.JOptionPane.CANCEL_OPTION) {
+                return false;
+            }
+            if (choice == javax.swing.JOptionPane.OK_OPTION) {
+                try {
+                    report.save();
+                } catch (Exception e) {
+                    javax.swing.JOptionPane.showMessageDialog(this, "Can't save report", "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+                }
+            }
+
+        }
+        return true;
+    }
+
+    private void openFile() {
+
+        saveForm();
+        disableSaveCommand();
+
+        javax.swing.JFileChooser chooser = new javax.swing.JFileChooser();
+        String lastReportPath = Main.getLastReportPath();
+        if (lastReportPath != null) {
+            while (!lastReportPath.equals("")) {
+
+                File f = new File(lastReportPath);
+                if (f.exists()) {
+                    chooser.setCurrentDirectory(f);
+                    break;
+                } else {
+                    lastReportPath = f.getParent();
+                }
+
+            }
+        }
+
+        javax.swing.filechooser.FileNameExtensionFilter filter = new javax.swing.filechooser.FileNameExtensionFilter("Aprof report files (*.aprof)", "aprof");
+        chooser.setFileFilter(filter);
+        chooser.setAcceptAllFileFilterUsed(false);
+        int choice = chooser.showOpenDialog(this);
+        if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
+            java.io.File file = chooser.getSelectedFile();
+            Main.setLastReportPath(file.getParent());
+            loadReport(file);
+        }
+
+    }
+
+    private void chooseSourceDirectory() {
+
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Set source code directory");
+        chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        chooser.setAcceptAllFileFilterUsed(false);
+
+        String lastSourceDir = Main.getLastSourceDir();
+        if (lastSourceDir != null && !lastSourceDir.equals("")) {
+            chooser.setCurrentDirectory((new java.io.File(lastSourceDir)));
+        }
+
+        if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+
+            loading = true;
+
+            source_dir = chooser.getSelectedFile().getPath();
+            Main.setLastSourceDir(chooser.getSelectedFile().getPath());
+            //System.out.println("Selected directory: " + source_dir);
+            final ctagsParser c = new ctagsParser(chooser.getSelectedFile());
+            final ProgressDialog p = new ProgressDialog(this, true);
+            SwingWorker worker = new SwingWorker<Boolean, Void>() {
+
+                @Override
+                public Boolean doInBackground() {
+
+                    sym = c.getSymbols();
+                    files = c.getFiles();
+                    jTextField2.setEnabled(true);
+                    jButton11.setEnabled(true);
+                    p.setVisible(false);
+                    jToggleButton2.setEnabled(true);
+                    loading = false;
+
+                    SwingUtilities.invokeLater(new Runnable() {
+
+                        @Override
+                        public void run() {
+
+                            jComboBox1.setModel(new ListFilesEditorModel<String>(files));
+                            jComboBox1.setEnabled(true);
+
+                            if (!RoutineLabel.getText().equals("")) {
+                                //System.out.println("Function selected " + jLabel7.getText());
+                                loadFunctionInTextEditor(RoutineLabel.getText());
+                            } else {
+
+                                try {
+                                    textArea.read(new StringReader(""), null);
+                                } catch (IOException ex) {
+                                    //
+                                }
+
+                            }
+
+                        }
+                    });
+
+                    return true;
+
+                }
+
+            };
+            worker.execute();
+            p.setVisible(true);
+        }
+
+    }
+    
+    /*
+     * Update GUI labels, getter/setter
+     */
+    
     private void updateGUI(File file) {
 
         this.setTitle(file.toString() + " - aprof-plot");
@@ -1274,52 +2175,6 @@ public final class MainWindow extends javax.swing.JFrame {
         }
     }
 
-    protected void loadReport(final File file) {
-
-        //System.out.println("Loading[1]: " + file);
-        loading = true;
-        final ProgressDialog p = new ProgressDialog(this, true);
-
-        SwingWorker worker;
-        worker = new SwingWorker<AprofReport, Void>() {
-            
-            @Override
-            public AprofReport doInBackground() {
-
-                boolean failed = false;
-
-                try {
-                    setReport(new AprofReport(file), file);
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    failed = true;
-                }
-
-                p.setVisible(false);
-                
-                if (failed || report.hasFatalError()) {
-                    failLoadReport(file);
-                    return null;
-                }
-
-                if (report.hasWarnings()) {
-                    showWanrnings(report.getWarnings());
-                }
-
-                return report;
-            }
-
-        };
-        worker.execute();
-        p.setVisible(true);
-    }
-
-    private void showWanrnings(String warnings) {
-        JOptionPane.showMessageDialog(this,
-            warnings, "Warning",
-            JOptionPane.INFORMATION_MESSAGE);
-    }
-
     public boolean isInputMetricRms() {
 
         if (report == null) 
@@ -1330,13 +2185,148 @@ public final class MainWindow extends javax.swing.JFrame {
 
         return true;
     }
-
-    private void failLoadReport(File file) {
-       JOptionPane.showMessageDialog(this,
-            "Couldn't open the chosen file", "Error",
-            JOptionPane.ERROR_MESSAGE);
+    
+    protected boolean arePlotsLinked() {
+        return this.linked_plots;
     }
 
+    protected void setXLogScaleAll(GraphPanel.Type graph_type, boolean log) {
+        // this method is called by one graph, we notify to all others...
+        for (GraphPanel g : graphs)
+            if (g.getGraphType() != graph_type)
+                g.setXLogScale(log);
+    }
+
+    protected void setYLogScaleAll(GraphPanel.Type graph_type, boolean log) {
+        // this method is called by one graph, we notify to all others...
+        for (GraphPanel g : graphs)
+            if (g.getGraphType() != graph_type)
+                g.setYLogScale(log);
+    }
+
+    protected void setGroupThresholdAll(GraphPanel.Type graph_type, int threshold) {
+        // this method is called by one graph, we notify to all others...
+        for (GraphPanel g : graphs)
+            if (g.getGraphType() != graph_type)
+                g.setGroupThreshold(threshold);
+    }
+
+    protected void setSmoothThresholdAll(GraphPanel.Type graph_type, int threshold) {
+        // this method is called by one graph, we notify to all others...
+        for (GraphPanel g : graphs)
+            if (g.getGraphType() != graph_type)
+                g.setSmoothThreshold(threshold);
+    }
+
+    protected void setGroupCostAll(GraphPanel.Type graph_type, Input.CostKind cost_type) {
+        // this method is called by one graph, we notify to all others..
+        for (GraphPanel g : graphs)
+            if (g.getGraphType() != graph_type)
+                g.setGroupCost(cost_type);
+    }
+
+    public void enableSaveCommand() {
+        SaveButton.setEnabled(true);
+        SaveMenuEntry.setEnabled(true);
+    }
+
+    public void disableSaveCommand() {
+        SaveButton.setEnabled(false);
+        SaveMenuEntry.setEnabled(false);
+    }
+    
+        public boolean hasDistinctRms() {
+
+        if (report != null && report.hasDistinctRms()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public boolean hasDrmsStats() {
+
+        if (isInputMetricRms()) {
+            return false;
+        }
+
+        if (report != null && report.hasInputStats()) {
+            return true;
+        }
+
+        return false;
+    }
+    
+    public boolean isDisplayCumulativeTotalCost() {
+
+        if (Main.getRtnCostMode() == Input.CostType.CUMULATIVE) {
+            return true;
+        }
+        return false;
+
+    }
+
+    public boolean isChartCumulativeCost() {
+
+        if (Main.getChartCostMode() == Input.CostType.CUMULATIVE) {
+            return true;
+        }
+        return false;
+
+    }
+    
+    /*
+     * Routine table
+     */
+
+    private void RoutineTableSelection(javax.swing.event.ListSelectionEvent evt) {
+
+        if (loading) {
+            return;
+        }
+        loading_routine = true;
+
+        int viewIndex = RoutineTable.getSelectedRow();
+        if (viewIndex >= 0) {
+
+            int modelIndex = RoutineTable.convertRowIndexToModel(viewIndex);
+            Routine r = ((RoutinesTableModel) RoutineTable.getModel()).getRoutine(modelIndex);
+
+            if (rtn_info == r) {
+                return;
+            }
+            //System.out.println("Selected row in routine table");
+            loadRoutine(r);
+
+        } else {
+
+            if (rtn_info == null) {
+                return;
+            }
+            //System.out.println("Invalid selectin in routine table");
+            setVisibleContextsTable(false);
+            loadRoutine(null);
+
+        }
+
+        scrollToVisibleRoutinesTable();
+        loading_routine = false;
+    }
+    
+    public void scrollToVisibleRoutinesTable() {
+
+        int viewIndex = RoutineTable.getSelectedRow();
+        // Scroll routine table to visible; thanks to fiontan
+        if (RoutineTable.getParent() instanceof javax.swing.JViewport) {
+            javax.swing.JViewport viewport = (javax.swing.JViewport) RoutineTable.getParent();
+            java.awt.Rectangle rect = RoutineTable.getCellRect(viewIndex, 0, true);
+            java.awt.Point pos = viewport.getViewPosition();
+            rect.translate(-pos.x, -pos.y);
+            viewport.scrollRectToVisible(rect);
+        }
+
+    }
+    
     @SuppressWarnings("unchecked")
     public void saveSortingRoutinesTable() {
         routines_sort = (List<RowSorter.SortKey>) routines_table_sorter.getSortKeys();
@@ -1346,8 +2336,8 @@ public final class MainWindow extends javax.swing.JFrame {
 
         if (routines_table_sorter == null) {
 
-            routines_table_sorter = new TableRowSorter<TableModel>(jTable1.getModel());
-            jTable1.setRowSorter(routines_table_sorter);
+            routines_table_sorter = new TableRowSorter<TableModel>(RoutineTable.getModel());
+            RoutineTable.setRowSorter(routines_table_sorter);
 
         }
 
@@ -1372,8 +2362,8 @@ public final class MainWindow extends javax.swing.JFrame {
 
         if (rms_table_sorter == null) {
 
-            rms_table_sorter = new TableRowSorter<TableModel>(jTable2.getModel());
-            jTable2.setRowSorter(rms_table_sorter);
+            rms_table_sorter = new TableRowSorter<TableModel>(InputTupleTable.getModel());
+            InputTupleTable.setRowSorter(rms_table_sorter);
 
         }
 
@@ -1397,8 +2387,8 @@ public final class MainWindow extends javax.swing.JFrame {
 
         if (contexts_table_sorter == null) {
 
-            contexts_table_sorter = new TableRowSorter<TableModel>(jTable3.getModel());
-            jTable3.setRowSorter(contexts_table_sorter);
+            contexts_table_sorter = new TableRowSorter<TableModel>(ContextTable.getModel());
+            ContextTable.setRowSorter(contexts_table_sorter);
 
         }
 
@@ -1493,147 +2483,28 @@ public final class MainWindow extends javax.swing.JFrame {
         }
     }
 
-    private void setReport(AprofReport report, File file) throws Exception {
-
-        this.report = report;
-        Main.addRecentFile(file);
-        refreshRecentFiles();
-
-        // reload button
-        ReloadButton.setEnabled(true);
-        ReloadButton.setToolTipText("Reload this report");
-
-        // enable entries in export menu
-        ExportMenu.setEnabled(true);
-        ExportProgramProfileEntry.setEnabled(true);
-        ExportProgramStatsEntry.setEnabled(true);
-
-        // enable add fit
-        FitMenuEntry.setEnabled(true);
-        FitButton.setEnabled(false);
-        FitButton.setSelected(false);
-        if (this.fitting_mode) {
-            this.showFittingData(false);
-        }
-
-        resetRoutineTableFilter();
-
-        // Update some labels in the GUI
-        updateGUI(file);
-
-        // Clear all graphs
-        for (GraphPanel g : graphs)
-            g.clearData();
-
-        // Update routine table: we change data in table, this must be done by swing thread
-        final AprofReport final_report = report;
-        final ProgressDialog p = new ProgressDialog(this, true);
+    public void updateRoutineTableConfig(final COLUMN[] config) {
         SwingUtilities.invokeLater(new Runnable() {
-
             @Override
             public void run() {
-
-                RoutinesTableModel m = (RoutinesTableModel) jTable1.getModel();
-                saveSortingRoutinesTable();
-                m.setData(final_report);
-                restoreSortingRoutinesTable();
-
-                // reset scrolling
-                jScrollPane1.getVerticalScrollBar().setValue(0);
-
-                RoutinesTableModel m2 = (RoutinesTableModel) jTable3.getModel();
-                saveSortingContextsTable();
-                m2.setData(final_report);
-                restoreSortingContextsTable();
-
-                // Clear routinr profile
-                ((RmsTableModel) jTable2.getModel()).setData(null);
-                ((RmsTableModel) jTable2.getModel()).refreshStructure();
-
-                graphs.get(FREQ_PLOT.ordinal()).updateGraphTitle();
-
-                p.setVisible(false);
-                loading = false;
-
+                RoutinesTableModel m = (RoutinesTableModel) RoutineTable.getModel();
+                m.setColumnConfig(config);
             }
-
         });
-
     }
-
-    public void updateRoutineTableConfig(COLUMN[] config) {
-        RoutinesTableModel m = (RoutinesTableModel) jTable1.getModel();
-        m.setColumnConfig(config);
-    }
-
-    private boolean saveForm() {
-
-        if (SaveButton.isEnabled()) {
-            int choice = javax.swing.JOptionPane.showConfirmDialog(this,
-                "Do you want to save changes to this report?",
-                "Unsaved changes",
-                javax.swing.JOptionPane.YES_NO_CANCEL_OPTION,
-                javax.swing.JOptionPane.QUESTION_MESSAGE);
-            if (choice == javax.swing.JOptionPane.CANCEL_OPTION) {
-                return false;
-            }
-            if (choice == javax.swing.JOptionPane.OK_OPTION) {
-                try {
-                    report.save();
-                } catch (Exception e) {
-                    javax.swing.JOptionPane.showMessageDialog(this, "Can't save report", "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
-                }
-            }
-
-        }
-        return true;
-    }
-
-    private void openFile() {
-
-        saveForm();
-        disableSaveCommand();
-
-        javax.swing.JFileChooser chooser = new javax.swing.JFileChooser();
-        String lastReportPath = Main.getLastReportPath();
-        if (lastReportPath != null) {
-            while (!lastReportPath.equals("")) {
-
-                File f = new File(lastReportPath);
-                if (f.exists()) {
-                    chooser.setCurrentDirectory(f);
-                    break;
-                } else {
-                    lastReportPath = f.getParent();
-                }
-
-            }
-        }
-
-        javax.swing.filechooser.FileNameExtensionFilter filter = new javax.swing.filechooser.FileNameExtensionFilter("Aprof report files (*.aprof)", "aprof");
-        chooser.setFileFilter(filter);
-        chooser.setAcceptAllFileFilterUsed(false);
-        int choice = chooser.showOpenDialog(this);
-        if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
-            java.io.File file = chooser.getSelectedFile();
-            Main.setLastReportPath(file.getParent());
-            loadReport(file);
-        }
-
-    }
-
+    
     protected void refreshTables() {
 
-        int viewIndex = jTable1.getSelectedRow();
-        int viewIndex2 = jTable2.getSelectedRow();
-        ((RmsTableModel) jTable2.getModel()).setData(rtn_info);
+        int viewIndex = RoutineTable.getSelectedRow();
+        int viewIndex2 = InputTupleTable.getSelectedRow();
+        ((RmsTableModel) InputTupleTable.getModel()).setData(rtn_info);
         if (viewIndex2 >= 0) {
-            int modelIndex2 = jTable1.convertRowIndexToModel(viewIndex2);
-            viewIndex2 = jTable1.convertRowIndexToView(modelIndex2);
-            jTable2.setRowSelectionInterval(viewIndex2, viewIndex2);
-            if (jTable2.getParent() instanceof javax.swing.JViewport) { // Scroll to visible; thanks to fiontan
-                javax.swing.JViewport viewport = (javax.swing.JViewport) jTable2.getParent();
-                java.awt.Rectangle rect = jTable2.getCellRect(viewIndex2, 0, true);
+            int modelIndex2 = RoutineTable.convertRowIndexToModel(viewIndex2);
+            viewIndex2 = RoutineTable.convertRowIndexToView(modelIndex2);
+            InputTupleTable.setRowSelectionInterval(viewIndex2, viewIndex2);
+            if (InputTupleTable.getParent() instanceof javax.swing.JViewport) { // Scroll to visible; thanks to fiontan
+                javax.swing.JViewport viewport = (javax.swing.JViewport) InputTupleTable.getParent();
+                java.awt.Rectangle rect = InputTupleTable.getCellRect(viewIndex2, 0, true);
                 java.awt.Point pos = viewport.getViewPosition();
                 rect.translate(-pos.x, -pos.y);
                 viewport.scrollRectToVisible(rect);
@@ -1643,7 +2514,7 @@ public final class MainWindow extends javax.swing.JFrame {
 
     public void refreshRoutinesTable() {
         saveSortingRoutinesTable();
-        ((RoutinesTableModel) jTable1.getModel()).setData(report);
+        ((RoutinesTableModel) RoutineTable.getModel()).setData(report);
         setRoutinesTableFilter(routines_filter_criteria);
         restoreSortingRoutinesTable();
     }
@@ -1653,10 +2524,10 @@ public final class MainWindow extends javax.swing.JFrame {
         if (isVisibleContextsTable()) {
 
             if (rtn_info instanceof RoutineContext) {
-                ((RoutinesTableModel) jTable1.getModel()).loadContexts(
+                ((RoutinesTableModel) RoutineTable.getModel()).loadContexts(
                     ((RoutineContext) rtn_info).getOverallRoutine(), true);
             } else {
-                ((RoutinesTableModel) jTable1.getModel()).loadContexts(rtn_info, true);
+                ((RoutinesTableModel) RoutineTable.getModel()).loadContexts(rtn_info, true);
             }
         }
         //setRoutinesTableFilter(routines_filter_criteria);
@@ -1665,235 +2536,12 @@ public final class MainWindow extends javax.swing.JFrame {
 
     public void refreshRmsTable(boolean skip_refresh_plot) {
         saveSortingRmsTable();
-        ((RmsTableModel) jTable2.getModel()).setData(rtn_info);
-        ((RmsTableModel) jTable2.getModel()).refreshStructure();
+        ((RmsTableModel) InputTupleTable.getModel()).setData(rtn_info);
+        ((RmsTableModel) InputTupleTable.getModel()).refreshStructure();
         if (skip_refresh_plot) {
             refreshRmsTableFilter();
         }
         restoreSortingRmsTable();
-    }
-
-    protected boolean arePlotsLinked() {
-        return this.linked_plots;
-    }
-
-    protected void setXLogScaleAll(GraphPanel.Type graph_type, boolean log) {
-        // this method is called by one graph, we notify to all others...
-        for (GraphPanel g : graphs)
-            if (g.getGraphType() != graph_type)
-                g.setXLogScale(log);
-    }
-
-    protected void setYLogScaleAll(GraphPanel.Type graph_type, boolean log) {
-        // this method is called by one graph, we notify to all others...
-        for (GraphPanel g : graphs)
-            if (g.getGraphType() != graph_type)
-                g.setYLogScale(log);
-    }
-
-    protected void setGroupThresholdAll(GraphPanel.Type graph_type, int threshold) {
-        // this method is called by one graph, we notify to all others...
-        for (GraphPanel g : graphs)
-            if (g.getGraphType() != graph_type)
-                g.setGroupThreshold(threshold);
-    }
-
-    protected void setSmoothThresholdAll(GraphPanel.Type graph_type, int threshold) {
-        // this method is called by one graph, we notify to all others...
-        for (GraphPanel g : graphs)
-            if (g.getGraphType() != graph_type)
-                g.setSmoothThreshold(threshold);
-    }
-
-    protected void setGroupCostAll(GraphPanel.Type graph_type, Input.CostKind cost_type) {
-        // this method is called by one graph, we notify to all others..
-        for (GraphPanel g : graphs)
-            if (g.getGraphType() != graph_type)
-                g.setGroupCost(cost_type);
-    }
-
-	private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
-
-        if (!saveForm()) {
-            return;
-        }
-        Main.removeWindow(this);
-        this.dispose();
-
-	}//GEN-LAST:event_formWindowClosing
-
-	private void NewWindowMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_NewWindowMenuEntryActionPerformed
-        Main.newWindow();
-	}//GEN-LAST:event_NewWindowMenuEntryActionPerformed
-
-	private void ExitMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ExitMenuEntryActionPerformed
-        formWindowClosing(null);
-	}//GEN-LAST:event_ExitMenuEntryActionPerformed
-
-	private void OpenButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_OpenButtonActionPerformed
-
-        openFile();
-
-	}//GEN-LAST:event_OpenButtonActionPerformed
-
-    public void inhibit_selection(boolean inhibit) {
-
-        loading = inhibit;
-
-    }
-
-    private void loadRoutine(Routine r) {
-
-        this.rtn_info = r;
-
-        if (r == null) {
-
-            ((RmsTableModel) jTable2.getModel()).setData(null);
-
-            if (isVisibleContextsTable()) {
-                ((RoutinesTableModel) jTable1.getModel()).loadContexts(null, false);
-            }
-
-            ((StackTraceListModel) jList1.getModel()).setData(null);
-
-            //System.out.println("Reset routine");
-            //Thread.dumpStack();
-            RoutineLabel.setText("");
-
-            for (GraphPanel g : graphs)
-                g.clearData();
-
-            ExportRoutineProfileEntry.setEnabled(false);
-            ExportMenu.setEnabled(false);
-            
-            //updateContextTree(null);
-            // Initially hide stack trace panel
-            setVisibleStackTrace(false);
-            return;
-        }
-
-        //System.out.println("Refresh routine");
-        String name = r.getName();
-
-        if (r instanceof RoutineContext) {
-            name += (" (" + ((RoutineContext) r).getContextId() + "/"
-                + ((RoutineContext) r).getOverallRoutine().getContextCount()
-                + ")");
-        }
-        RoutineLabel.setText(name);
-
-        // Load function source code in the editor
-        if (linked_editor) {
-            loadFunctionInTextEditor(name);
-        }
-
-        perf.start(this, PerformanceMonitor.ELABORATE);
-
-        ArrayList<GraphPanel> active_graphs = new ArrayList<GraphPanel>();
-        for (int i = 0; i < graphs_enabled.size(); i++)
-            if (graphs_enabled.get(i))
-                active_graphs.add(graphs.get(i));
-                
-        for (GraphPanel g : active_graphs)     
-            g.setRoutine(r);
-        
-        /*
-        if (isVisibleFittingData() && jCheckBoxMenuItem4.isSelected()) {
-            Fit f = report.getFit(r.getID());
-            double[] p = f.getParams();
-            CostGraphPanel.addFittedLine(p[0], p[1], p[2]);
-        }
-        */
-        
-        r.sortInputTuplesByInput();
-        for (Input i : r)
-            for (GraphPanel g : active_graphs)     
-                g.addPoint(i);
-    
-        for (GraphPanel g : active_graphs) {
-            g.maximize();
-        }
-        
-        if (graphs_enabled.get(AMORTIZED_PLOT.ordinal()))
-            graphs.get(AMORTIZED_PLOT.ordinal()).updateGraphTitle();
-
-        // enable/disable entries in export menu related to routine
-        ExportRoutineProfileEntry.setEnabled(true);
-        ExportMenu.setEnabled(true);
-        
-        // Update routine profile panel
-        ((RmsTableModel) jTable2.getModel()).setData(r);
-
-        if (r instanceof ContextualizedRoutineInfo) {
-            ((RoutinesTableModel) jTable1.getModel()).loadContexts(r, true);
-            refreshContextsTableFilter();
-        }
-
-        // Update stack trace panel
-        if (r instanceof RoutineContext) {
-
-            ((StackTraceListModel) jList1.getModel()).setData(((RoutineContext) r).getStackTrace());
-            setVisibleStackTrace(true);
-
-        } else {
-
-            ((StackTraceListModel) jList1.getModel()).setData(null);
-            setVisibleStackTrace(false);
-
-        }
-
-        perf.stop(this, PerformanceMonitor.ELABORATE);
-        System.gc();
-        //updateContextTree(r);
-    }
-
-    private void jTable1ValueChanged(javax.swing.event.ListSelectionEvent evt) {
-
-        if (loading) {
-            return;
-        }
-        loading_routine = true;
-
-        int viewIndex = jTable1.getSelectedRow();
-        if (viewIndex >= 0) {
-
-            int modelIndex = jTable1.convertRowIndexToModel(viewIndex);
-            Routine r = ((RoutinesTableModel) jTable1.getModel()).getRoutine(modelIndex);
-
-            if (rtn_info == r) {
-                return;
-            }
-            //System.out.println("Selected row in routine table");
-            loadRoutine(r);
-
-        } else {
-
-            if (rtn_info == null) {
-                return;
-            }
-            //System.out.println("Invalid selectin in routine table");
-            setVisibleContextsTable(false);
-            loadRoutine(null);
-
-        }
-
-        scrollToVisibleRoutinesTable();
-        loading_routine = false;
-
-    }
-
-    public void scrollToVisibleRoutinesTable() {
-
-        int viewIndex = jTable1.getSelectedRow();
-        // Scroll routine table to visible; thanks to fiontan
-        if (jTable1.getParent() instanceof javax.swing.JViewport) {
-            javax.swing.JViewport viewport = (javax.swing.JViewport) jTable1.getParent();
-            java.awt.Rectangle rect = jTable1.getCellRect(viewIndex, 0, true);
-            java.awt.Point pos = viewport.getViewPosition();
-            rect.translate(-pos.x, -pos.y);
-            viewport.scrollRectToVisible(rect);
-        }
-
     }
 
     private void jTable3ValueChanged(javax.swing.event.ListSelectionEvent evt) {
@@ -1902,15 +2550,15 @@ public final class MainWindow extends javax.swing.JFrame {
             return;
         }
 
-        int viewIndex = jTable3.getSelectedRow();
+        int viewIndex = ContextTable.getSelectedRow();
         if (viewIndex >= 0) {
 
-            if (viewIndex >= jTable3.getRowCount()) {
+            if (viewIndex >= ContextTable.getRowCount()) {
                 //System.out.println("Invalid row index:" + viewIndex);
             }
 
-            int modelIndex = jTable3.convertRowIndexToModel(viewIndex);
-            Routine r = ((RoutinesTableModel) jTable3.getModel()).getRoutine(modelIndex);
+            int modelIndex = ContextTable.convertRowIndexToModel(viewIndex);
+            Routine r = ((RoutinesTableModel) ContextTable.getModel()).getRoutine(modelIndex);
 
             if (this.rtn_info == r) {
                 return;
@@ -1934,9 +2582,9 @@ public final class MainWindow extends javax.swing.JFrame {
         }
 
         // Scroll routine table to visible; thanks to fiontan
-        if (jTable1.getParent() instanceof javax.swing.JViewport) {
-            javax.swing.JViewport viewport = (javax.swing.JViewport) jTable3.getParent();
-            java.awt.Rectangle rect = jTable3.getCellRect(viewIndex, 0, true);
+        if (RoutineTable.getParent() instanceof javax.swing.JViewport) {
+            javax.swing.JViewport viewport = (javax.swing.JViewport) ContextTable.getParent();
+            java.awt.Rectangle rect = ContextTable.getCellRect(viewIndex, 0, true);
             java.awt.Point pos = viewport.getViewPosition();
             rect.translate(-pos.x, -pos.y);
             viewport.scrollRectToVisible(rect);
@@ -1946,1013 +2594,58 @@ public final class MainWindow extends javax.swing.JFrame {
     private void jTable2ValueChanged(javax.swing.event.ListSelectionEvent evt) {
 
         // Scroll routine profile panel to visible; thanks to fiontan
-        int viewIndex = jTable2.getSelectedRow();
-        if (jTable2.getParent() instanceof javax.swing.JViewport) {
-            javax.swing.JViewport viewport = (javax.swing.JViewport) jTable2.getParent();
-            java.awt.Rectangle rect = jTable2.getCellRect(viewIndex, 0, true);
+        int viewIndex = InputTupleTable.getSelectedRow();
+        if (InputTupleTable.getParent() instanceof javax.swing.JViewport) {
+            javax.swing.JViewport viewport = (javax.swing.JViewport) InputTupleTable.getParent();
+            java.awt.Rectangle rect = InputTupleTable.getCellRect(viewIndex, 0, true);
             java.awt.Point pos = viewport.getViewPosition();
             rect.translate(-pos.x, -pos.y);
             viewport.scrollRectToVisible(rect);
         }
 
     }
-
-	private void SearchButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SearchButtonActionPerformed
-        // search button
-        findRoutineByName();
-	}//GEN-LAST:event_SearchButtonActionPerformed
-
-	private void SearchFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SearchFieldActionPerformed
-        // search text field
-        findRoutineByName();
-	}//GEN-LAST:event_SearchFieldActionPerformed
-
-	private void FilterTuplesButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_FilterTuplesButtonActionPerformed
-        // Routine profile filter button (corner routine profile panel)
-        if (((RmsTableModel) jTable2.getModel()).getRowCount() > 0) {
-            (new RmsFilterDialog(this, true, rms_filter_criteria)).setVisible(true);
-        }
-	}//GEN-LAST:event_FilterTuplesButtonActionPerformed
-
-	private void OpenFileMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_OpenFileMenuEntryActionPerformed
-        // Menu: File > Open file
-        openFile();
-	}//GEN-LAST:event_OpenFileMenuEntryActionPerformed
-
-	private void NewWindowButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_NewWindowButtonActionPerformed
-        // Menu: File > New window
-        Main.newWindow();
-	}//GEN-LAST:event_NewWindowButtonActionPerformed
-
-	private void AboutMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_AboutMenuEntryActionPerformed
-        // Menu: Help > About
-        (new AboutDialog(this, true)).setVisible(true);
-	}//GEN-LAST:event_AboutMenuEntryActionPerformed
-
-	private void LinkButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_LinkButtonActionPerformed
-        // Link plots button
-        if (LinkButton.isSelected()) {
-            linked_plots = true;
-        } else {
-            linked_plots = false;
-        }
-	}//GEN-LAST:event_LinkButtonActionPerformed
-
-    public void enableSaveCommand() {
-        SaveButton.setEnabled(true);
-        SaveMenuEntry.setEnabled(true);
-    }
-
-    public void disableSaveCommand() {
-        SaveButton.setEnabled(false);
-        SaveMenuEntry.setEnabled(false);
-    }
-
-	private void SaveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SaveButtonActionPerformed
-        // Save button
-        try {
-            report.save();
-        } catch (Exception e) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Can't save report", "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
-            //System.out.println(e.getMessage());
-            //e.printStackTrace();
-        } finally {
-            disableSaveCommand();
-        }
-	}//GEN-LAST:event_SaveButtonActionPerformed
-
-	private void SaveMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SaveMenuEntryActionPerformed
-        // Menu: File > Save
-        SaveButtonActionPerformed(null);
-	}//GEN-LAST:event_SaveMenuEntryActionPerformed
-
-	private void SettingsMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SettingsMenuEntryActionPerformed
-        // Menu: Edit > Settings
-        (new SettingsDialog(this, true)).setVisible(true);
-	}//GEN-LAST:event_SettingsMenuEntryActionPerformed
-
-	private void SettingButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SettingButtonActionPerformed
-        // Settings button
-        (new SettingsDialog(this, true)).setVisible(true);
-	}//GEN-LAST:event_SettingButtonActionPerformed
-
-    private void loadRecentFile(int entry) {
-
-        ArrayList<File> r = Main.getRecentFiles();
-        if (entry < 0 || entry >= r.size()) {
-            return;
-        }
-
-        File f = Main.getRecentFiles().get(entry);
-        saveForm();
-        disableSaveCommand();
-        loadReport(f);
-
-        if (f.exists()) {
-            Main.setLastReportPath(f.getParent());
-        }
-
-    }
-
-	private void RecentEntry1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RecentEntry1ActionPerformed
-        // Menu: File > Open recent file > (first entry)
-        loadRecentFile(0);
-	}//GEN-LAST:event_RecentEntry1ActionPerformed
-
-	private void RecentEntry2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RecentEntry2ActionPerformed
-        // Menu: File > Open recent file > (second entry)
-        loadRecentFile(1);
-	}//GEN-LAST:event_RecentEntry2ActionPerformed
-
-	private void RecentEntry3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RecentEntry3ActionPerformed
-        // Menu: File > Open recent file > (third entry)
-        loadRecentFile(2);
-	}//GEN-LAST:event_RecentEntry3ActionPerformed
-
-	private void RecentEntry4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RecentEntry4ActionPerformed
-        // Menu: File > Open recent file > (fourth entry)
-        loadRecentFile(3);
-	}//GEN-LAST:event_RecentEntry4ActionPerformed
-
-	private void RecentEntry5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RecentEntry5ActionPerformed
-        // Menu: File > Open recent file > (fifth entry)
-        loadRecentFile(4);
-	}//GEN-LAST:event_RecentEntry5ActionPerformed
-
-	private void RecentEntry6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RecentEntry6ActionPerformed
-        // Menu: File > Open recent file > (sixth entry)
-        loadRecentFile(5);
-	}//GEN-LAST:event_RecentEntry6ActionPerformed
-
-	private void jSplitPane1AncestorResized(java.awt.event.HierarchyEvent evt) {//GEN-FIRST:event_jSplitPane1AncestorResized
-        // Moved divider btw graphs and routine panels
-        jSplitPane1.setDividerLocation(0.5);
-	}//GEN-LAST:event_jSplitPane1AncestorResized
-
-	private void jSplitPane2AncestorResized(java.awt.event.HierarchyEvent evt) {//GEN-FIRST:event_jSplitPane2AncestorResized
-        // Moved divider btw routine table and routine profile panel
-        jSplitPane2.setDividerLocation(0.75);
-	}//GEN-LAST:event_jSplitPane2AncestorResized
-
-	private void jList1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jList1MouseClicked
-        // Clicked on an entry inside stack trace panel
-        if (evt.getButton() == java.awt.event.MouseEvent.BUTTON1 && evt.getClickCount() == 2) {
-            int previousSelectedIndex = jTable1.getSelectedRow();
-            Routine previousSelectedRtn = ((RoutinesTableModel) jTable1.getModel()).getRoutine(jTable1.convertRowIndexToModel(previousSelectedIndex));
-            int index = jList1.getSelectedIndex();
-            if (index < 0) {
-                return;
+    
+    private void findRoutineByName() {
+        String query = SearchField.getText().toLowerCase();
+        if (RoutineTable.getRowCount() > 0 && !query.equals("")) {
+            int i = RoutineTable.getSelectedRow();
+            if (i < 0) {
+                i = 0;
             }
-            //System.out.println("jList1 double-clicked: selected index: " + index);
-            Routine r = ((StackTraceListModel) jList1.getModel()).getContext(index);
-            int modelIndex = ((RoutinesTableModel) jTable1.getModel()).getIndex(r);
-            if (modelIndex < 0) {
-                //routine is collapsed
-                ContextualizedRoutineInfo urtn = ((RoutineContext) r).getOverallRoutine();
-                if (urtn.getCollapsed()) {
-                    ((RoutinesTableModel) jTable1.getModel()).expandRoutine(urtn);
-                }
-                modelIndex = ((RoutinesTableModel) jTable1.getModel()).getIndex(r);
-                if (modelIndex < 0) {
-                    modelIndex = ((RoutinesTableModel) jTable1.getModel()).getIndex(previousSelectedRtn);
-                    int viewIndex = jTable1.convertRowIndexToView(modelIndex);
-                    jTable1.setRowSelectionInterval(viewIndex, viewIndex);
-                    JOptionPane.showMessageDialog(this, "The selected routine is filtererd or blacklisted\nand cannot be displayed");
-                    return;
-                }
+            int size = RoutineTable.getRowCount();
+            i++;
+            if (i >= size) {
+                i = 0;
             }
-            int viewIndex = jTable1.convertRowIndexToView(modelIndex);
-            if (viewIndex < 0) {
-                resetRoutineTableFilter();
-                viewIndex = jTable1.convertRowIndexToView(modelIndex);
-                if (viewIndex < 0) {
-                    modelIndex = ((RoutinesTableModel) jTable1.getModel()).getIndex(previousSelectedRtn);
-                    viewIndex = jTable1.convertRowIndexToView(modelIndex);
-                    jTable1.setRowSelectionInterval(viewIndex, viewIndex);
-                    JOptionPane.showMessageDialog(this, "The selected routine is blacklisted\nand cannot be displayed");
-                    return;
-                }
-            }
-            jTable1.setRowSelectionInterval(viewIndex, viewIndex);
-        }
-	}//GEN-LAST:event_jList1MouseClicked
-
-	private void ReloadButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ReloadButtonActionPerformed
-        // Reload button
-        try {
-            File file;
-            if (report == null) { // Reload last recent report
-                ArrayList<File> r = Main.getRecentFiles();
-                if (r.size() <= 0) {
-                    return;
-                }
-                file = r.get(0);
-            } else { // Reload current report
-                file = new File(this.report.getName());
-            }
-            loadReport(file);
-            Main.addRecentFile(file);
-            this.refreshRecentFiles();
-        } catch (Exception e) {
-            javax.swing.JOptionPane.showMessageDialog(this,
-                "Couldn't open the selected file", "Error",
-                javax.swing.JOptionPane.ERROR_MESSAGE);
-            //e.printStackTrace();
-        }
-
-	}//GEN-LAST:event_ReloadButtonActionPerformed
-
-	private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
-        setExtendedState(MAXIMIZED_BOTH);
-	}//GEN-LAST:event_formWindowOpened
-
-	private void ExportRoutineProfileEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ExportRoutineProfileEntryActionPerformed
-
-        // Menu: File > Export > Routine profile 
-        if (this.rtn_info == null) {
-            return;
-        }
-
-        Iterator it = rtn_info.getInputTuplesIterator();
-        try {
-
-            File tmp = new File(this.report.getName() + "-"
-                + this.rtn_info.getName() + ".dat");
-
-            JFileChooser chooser = new javax.swing.JFileChooser();
-            String lastReportPath = Main.getLastReportPath();
-            if (!lastReportPath.equals("")) {
-                chooser.setCurrentDirectory(new File(lastReportPath));
-            }
-
-            FileNameExtensionFilter filter = new FileNameExtensionFilter("Routine profile", "dat");
-            chooser.setFileFilter(filter);
-            chooser.setAcceptAllFileFilterUsed(false);
-            chooser.setSelectedFile(tmp);
-            int choice = chooser.showSaveDialog(this);
-
-            if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
-
-                tmp = chooser.getSelectedFile();
-                tmp.createNewFile();
-                PrintWriter out = new PrintWriter(new FileWriter(tmp));
-
-                out.println("# RMS CUMUL_MIN CUMUL_MAX CUMUL_SUM "
-                    + "REAL_SUM OCC SELF_SUM SELF_MIN SELF_MAX AM");
-
-                while (it.hasNext()) {
-
-                    Input s = (Input) it.next();
-                    out.print(s.getSize() + " " + (int) s.getMinCumulativeCost()
-                        + " " + (int) s.getMaxCumulativeCost()
-                        + " " + (long) s.getSumCumulativeCost()
-                        + " " + (long) s.getSumCumulativeRealCost()
-                        + " " + (long) s.getCalls()
-                        + " " + (int) s.getMinSelfCost()
-                        + " " + (int) s.getMaxSelfCost()
-                        + " " + (long) s.getSumSelfCost()
-                    );
-                    out.format(" %.5f%n", rtn_info.getAmortizedValue(s));
-
-                }
-                out.close();
-
-            }
-
-        } catch (java.io.IOException e) {
-
-            JOptionPane.showMessageDialog(this, "Error during export :(",
-                "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
-
-            e.printStackTrace();
-        }
-	}//GEN-LAST:event_ExportRoutineProfileEntryActionPerformed
-
-	private void ExportProgramProfileEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ExportProgramProfileEntryActionPerformed
-
-        // Menu: File > Export > Program profile
-        ArrayList<Routine> els = this.report.getRoutines();
-        try {
-
-            File tmp = new File(this.report.getName() + ".dat");
-
-            JFileChooser chooser = new javax.swing.JFileChooser();
-            String lastReportPath = Main.getLastReportPath();
-            if (!lastReportPath.equals("")) {
-                chooser.setCurrentDirectory(new File(lastReportPath));
-            }
-
-            FileNameExtensionFilter filter = new FileNameExtensionFilter("Program profile", "dat");
-            chooser.setFileFilter(filter);
-            chooser.setAcceptAllFileFilterUsed(false);
-            chooser.setSelectedFile(tmp);
-            int choice = chooser.showSaveDialog(this.getParent());
-
-            if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
-
-                tmp = chooser.getSelectedFile();
-                tmp.createNewFile();
-                PrintWriter out = new PrintWriter(new FileWriter(tmp));
-
-                out.println("# N_TUPLES TOTAL_CALLS INPUT_MIN INPUT_MAX COST_BALANCE_POINT \"NAME\"");
-
-                for (Routine el : els) {
-                    out.println(el.getInputTuplesCount() + " "
-                        + el.getTotalCalls() + " "
-                        + el.getMinInput() + " "
-                        + el.getMaxInput() + " "
-                        + el.getCostBalancePoint() + " \""
-                        + el.getName() + "\""
-                    );
-                }
-                out.close();
-            }
-
-        } catch (java.io.IOException e) {
-
-            JOptionPane.showMessageDialog(this, "Error during export :(",
-                "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
-
-        }
-
-	}//GEN-LAST:event_ExportProgramProfileEntryActionPerformed
-
-	private void ExportProgramStatsEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ExportProgramStatsEntryActionPerformed
-
-	}//GEN-LAST:event_ExportProgramStatsEntryActionPerformed
-
-	private void GraphButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_GraphButtonActionPerformed
-        // Graph button
-        if (GraphButton.isSelected()) {
-            GraphMenu.show(GraphButton, 0, GraphButton.getHeight());
-        } else {
-            GraphMenu.setVisible(false);
-        }
-	}//GEN-LAST:event_GraphButtonActionPerformed
-
-	private void GraphMenuPopupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent evt) {//GEN-FIRST:event_GraphMenuPopupMenuWillBecomeInvisible
-        GraphButton.setSelected(false);
-	}//GEN-LAST:event_GraphMenuPopupMenuWillBecomeInvisible
-
-	private void CostPlotButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_CostPlotButtonActionPerformed
-        // Graph menu button: cost plot
-        editGraph(COST_PLOT, CostPlotButton.isSelected());
-	}//GEN-LAST:event_CostPlotButtonActionPerformed
-
-	private void MMMPlotButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_MMMPlotButtonActionPerformed
-        // Graph menu button: MMM plot
-        editGraph(MMM_PLOT, MMMPlotButton.isSelected());
-	}//GEN-LAST:event_MMMPlotButtonActionPerformed
-
-	private void TotalCostPlotButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_TotalCostPlotButtonActionPerformed
-        // Graph menu button: total cost plot
-        editGraph(TOTALCOST_PLOT, TotalCostPlotButton.isSelected());
-	}//GEN-LAST:event_TotalCostPlotButtonActionPerformed
-
-	private void AmortizedPlotButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_AmortizedPlotButtonActionPerformed
-        // Graph menu button: amortized plot
-        editGraph(AMORTIZED_PLOT, AmortizedPlotButton.isSelected());
-	}//GEN-LAST:event_AmortizedPlotButtonActionPerformed
-
-	private void RatioPlotButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RatioPlotButtonActionPerformed
-        // Graph menu button: ratio plot
-        editGraph(RATIO_PLOT, RatioPlotButton.isSelected());
-	}//GEN-LAST:event_RatioPlotButtonActionPerformed
-
-	private void VarPlotButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_VarPlotButtonActionPerformed
-        // Graph menu button: var plot
-        editGraph(VAR_PLOT, VarPlotButton.isSelected());
-	}//GEN-LAST:event_VarPlotButtonActionPerformed
-
-	private void FrequencyPlotButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_FrequencyPlotButtonActionPerformed
-        // Graph menu button: freq plot
-        editGraph(FREQ_PLOT, FrequencyPlotButton.isSelected());
-	}//GEN-LAST:event_FrequencyPlotButtonActionPerformed
-
-	private void CostPlotMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_CostPlotMenuEntryActionPerformed
-        // Graph menu button: cost plot
-        editGraph(COST_PLOT, CostPlotMenuEntry.isSelected());
-	}//GEN-LAST:event_CostPlotMenuEntryActionPerformed
-
-	private void MMMPlotMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_MMMPlotMenuEntryActionPerformed
-        // Graph menu button: MMM plot
-        editGraph(MMM_PLOT, MMMPlotMenuEntry.isSelected());
-	}//GEN-LAST:event_MMMPlotMenuEntryActionPerformed
-
-	private void TotalCostPlotMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_TotalCostPlotMenuEntryActionPerformed
-        // Graph menu button: total cost plot
-        editGraph(TOTALCOST_PLOT, TotalCostPlotMenuEntry.isSelected());
-	}//GEN-LAST:event_TotalCostPlotMenuEntryActionPerformed
-
-	private void AmortizedPlotMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_AmortizedPlotMenuEntryActionPerformed
-        // Graph menu button: amortized plot
-        editGraph(AMORTIZED_PLOT, AmortizedPlotMenuEntry.isSelected());
-	}//GEN-LAST:event_AmortizedPlotMenuEntryActionPerformed
-
-	private void RatioPlotMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RatioPlotMenuEntryActionPerformed
-        // Graph menu button: ratio plot
-        editGraph(RATIO_PLOT, RatioPlotMenuEntry.isSelected());
-	}//GEN-LAST:event_RatioPlotMenuEntryActionPerformed
-
-	private void VarianceCostPlotMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_VarianceCostPlotMenuEntryActionPerformed
-        // Graph menu button: var plot
-        editGraph(VAR_PLOT, VarianceCostPlotMenuEntry.isSelected());
-	}//GEN-LAST:event_VarianceCostPlotMenuEntryActionPerformed
-
-	private void FrequencyPlotMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_FrequencyPlotMenuEntryActionPerformed
-        // Graph menu button: freq plot
-        editGraph(FREQ_PLOT, FrequencyPlotMenuEntry.isSelected());
-	}//GEN-LAST:event_FrequencyPlotMenuEntryActionPerformed
-
-    private void chooseSourceDirectory() {
-
-        JFileChooser chooser = new JFileChooser();
-        chooser.setDialogTitle("Set source code directory");
-        chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        chooser.setAcceptAllFileFilterUsed(false);
-
-        String lastSourceDir = Main.getLastSourceDir();
-        if (lastSourceDir != null && !lastSourceDir.equals("")) {
-            chooser.setCurrentDirectory((new java.io.File(lastSourceDir)));
-        }
-
-        if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-
-            loading = true;
-
-            source_dir = chooser.getSelectedFile().getPath();
-            Main.setLastSourceDir(chooser.getSelectedFile().getPath());
-            //System.out.println("Selected directory: " + source_dir);
-            final ctagsParser c = new ctagsParser(chooser.getSelectedFile());
-            final ProgressDialog p = new ProgressDialog(this, true);
-            SwingWorker worker = new SwingWorker<Boolean, Void>() {
-
-                @Override
-                public Boolean doInBackground() {
-
-                    sym = c.getSymbols();
-                    files = c.getFiles();
-                    jTextField2.setEnabled(true);
-                    jButton11.setEnabled(true);
-                    p.setVisible(false);
-                    jToggleButton2.setEnabled(true);
-                    loading = false;
-
-                    SwingUtilities.invokeLater(new Runnable() {
-
-                        @Override
-                        public void run() {
-
-                            jComboBox1.setModel(new ListFilesEditorModel<String>(files));
-                            jComboBox1.setEnabled(true);
-
-                            if (!RoutineLabel.getText().equals("")) {
-                                //System.out.println("Function selected " + jLabel7.getText());
-                                loadFunctionInTextEditor(RoutineLabel.getText());
-                            } else {
-
-                                try {
-                                    textArea.read(new StringReader(""), null);
-                                } catch (IOException ex) {
-                                    //
-                                }
-
-                            }
-
-                        }
-                    });
-
-                    return true;
-
-                }
-
-            };
-            worker.execute();
-            p.setVisible(true);
-        }
-
-    }
-
-	private void SetSourceDirMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SetSourceDirMenuEntryActionPerformed
-        chooseSourceDirectory();
-	}//GEN-LAST:event_SetSourceDirMenuEntryActionPerformed
-
-	private void SourceDirectoryButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SourceDirectoryButtonActionPerformed
-        chooseSourceDirectory();
-	}//GEN-LAST:event_SourceDirectoryButtonActionPerformed
-
-	private void SourceMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SourceMenuEntryActionPerformed
-        if (SourceMenuEntry.isSelected()) {
-            showTextEditor(true);
-        } else {
-            showTextEditor(false);
-        }
-	}//GEN-LAST:event_SourceMenuEntryActionPerformed
-
-	private void SourceButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SourceButtonActionPerformed
-
-        if (LinkButton.isSelected()) {
-            if (!editor_visible) {
-                showTextEditor(true);
-            } else {
-                showTextEditor(false);
-            }
-        }
-
-	}//GEN-LAST:event_SourceButtonActionPerformed
-
-	private void jComboBox1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBox1ActionPerformed
-
-        if (loading) {
-            return;
-        }
-        String file = (String) jComboBox1.getSelectedItem();
-        //System.out.println(file);
-
-        File f = new File(file);
-        try {
-
-            BufferedReader r = new BufferedReader(new FileReader(f));
-            textArea.read(r, null);
-            r.close();
-
-        } catch (Exception ex) {
-            //
-        }
-
-        if (highlight_line != null) {
-            textArea.removeLineHighlight(highlight_line);
-        }
-        textArea.setCaretPosition(0);
-
-	}//GEN-LAST:event_jComboBox1ActionPerformed
-
-	private void jButton11ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton11ActionPerformed
-
-        // Search routine in source code
-        findRoutineByNameInSource();
-
-	}//GEN-LAST:event_jButton11ActionPerformed
-
-	private void jTextField2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField2ActionPerformed
-
-        // Search routine in source code
-        findRoutineByNameInSource();
-
-	}//GEN-LAST:event_jTextField2ActionPerformed
-
-	private void jToggleButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton2ActionPerformed
-
-        // Load function code selected in the routine table
-        if (jToggleButton2.isSelected()) {
-            linked_editor = true;
-            if (!RoutineLabel.getText().equals("")) {
-                loadFunctionInTextEditor(RoutineLabel.getText());
-            }
-        } else {
-            linked_editor = false;
-        }
-
-	}//GEN-LAST:event_jToggleButton2ActionPerformed
-
-    private void jTable1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable1MouseClicked
-        loading_routine = true;
-        jTable1ValueChanged(null);
-        loading_routine = false;
-    }//GEN-LAST:event_jTable1MouseClicked
-
-    private void FilterContextsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_FilterContextsButtonActionPerformed
-        // Contexts filter button (corner contexts table)
-        if (rtn_info != null) {
-            RoutinesTableModel m = (RoutinesTableModel) jTable1.getModel();
-            ArrayList<String> liblist = report.getLibList();
-            (new RoutinesFilterDialog(this, true, liblist,
-                contexts_filter_criteria, false, m.getColumnConfig()))
-                .setVisible(true);
-        }
-    }//GEN-LAST:event_FilterContextsButtonActionPerformed
-
-    private void ExportInputVolumeEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ExportInputVolumeEntryActionPerformed
-
-        // Menu: File > Export > Input volume...
-        if (report == null) {
-            return;
-        }
-        report.sortRoutinesByExternalInput();
-        ArrayList<Routine> rr = report.getRoutines();
-
-        try {
-
-            File tmp = new File(this.report.getName() + "_input_volume.dat");
-
-            JFileChooser chooser = new javax.swing.JFileChooser();
-            String lastReportPath = Main.getLastReportPath();
-            if (!lastReportPath.equals("")) {
-                chooser.setCurrentDirectory(new File(lastReportPath));
-            }
-
-            FileNameExtensionFilter filter = new FileNameExtensionFilter("Program profile", "dat");
-            chooser.setFileFilter(filter);
-            chooser.setAcceptAllFileFilterUsed(false);
-            chooser.setSelectedFile(tmp);
-            int choice = chooser.showSaveDialog(this.getParent());
-
-            if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
-
-                tmp = chooser.getSelectedFile();
-                tmp.createNewFile();
-                PrintWriter out = new PrintWriter(new FileWriter(tmp));
-
-                out.format("# Percent Input_Volume*100 %n");
-                for (int i = 0; i < rr.size(); i++) {
-
-                    Routine r = rr.get(i);
-                    double x = ((double) i + 1) / (((double) rr.size()) / 100);
-                    double y = (1 - r.getRatioSumRmsRvms()) * 100;
-
-                    out.format("%.1f %.1f%n", x, y);
-                }
-                out.close();
-
-            }
-
-        } catch (java.io.IOException e) {
-
-            JOptionPane.showMessageDialog(this, "Error during export :(",
-                "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
-
-        }
-
-    }//GEN-LAST:event_ExportInputVolumeEntryActionPerformed
-
-    private void ExportRichnessEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ExportRichnessEntryActionPerformed
-
-        // Menu: File > Export > profile routine richness...
-        if (report == null) {
-            return;
-        }
-        report.sortRoutinesByRatioTuples();
-        ArrayList<Routine> rr = report.getRoutines();
-
-        try {
-
-            File tmp = new File(this.report.getName() + "_profile_richness.dat");
-
-            JFileChooser chooser = new javax.swing.JFileChooser();
-            String lastReportPath = Main.getLastReportPath();
-            if (!lastReportPath.equals("")) {
-                chooser.setCurrentDirectory(new File(lastReportPath));
-            }
-
-            FileNameExtensionFilter filter = new FileNameExtensionFilter("Program profile", "dat");
-            chooser.setFileFilter(filter);
-            chooser.setAcceptAllFileFilterUsed(false);
-            chooser.setSelectedFile(tmp);
-            int choice = chooser.showSaveDialog(this.getParent());
-
-            if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
-
-                tmp = chooser.getSelectedFile();
-                tmp.createNewFile();
-                PrintWriter out = new PrintWriter(new FileWriter(tmp));
-
-                out.format("# Percent Routine_Profile_Richness%n");
-                //out.format("0 100%n");
-                for (int i = 0; i < rr.size(); i++) {
-
-                    Routine r = rr.get(i);
-                    double x = ((double) i + 1) / (((double) rr.size()) / 100);
-                    double y = r.getRatioRvmsRms() * 100;
-
-                    out.format("%.1f %.1f%n", x, y);
-                }
-                out.close();
-
-            }
-
-        } catch (java.io.IOException e) {
-
-            JOptionPane.showMessageDialog(this, "Error during export :(",
-                "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
-
-        }
-    }//GEN-LAST:event_ExportRichnessEntryActionPerformed
-
-    private void ExportThreadInputEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ExportThreadInputEntryActionPerformed
-
-        // Menu: File > Export > thread input...
-        if (report == null) {
-            return;
-        }
-        report.sortRoutinesByThreadInput();
-        ArrayList<Routine> rr = report.getRoutines();
-
-        try {
-
-            File tmp = new File(this.report.getName() + "_thread_input.dat");
-
-            JFileChooser chooser = new javax.swing.JFileChooser();
-            String lastReportPath = Main.getLastReportPath();
-            if (!lastReportPath.equals("")) {
-                chooser.setCurrentDirectory(new File(lastReportPath));
-            }
-
-            FileNameExtensionFilter filter = new FileNameExtensionFilter("Program profile", "dat");
-            chooser.setFileFilter(filter);
-            chooser.setAcceptAllFileFilterUsed(false);
-            chooser.setSelectedFile(tmp);
-            int choice = chooser.showSaveDialog(this.getParent());
-
-            if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
-
-                tmp = chooser.getSelectedFile();
-                tmp.createNewFile();
-                PrintWriter out = new PrintWriter(new FileWriter(tmp));
-
-                out.format("# Percent Thread_Input%n");
-                out.format("0 100%n");
-                for (int i = 0; i < rr.size(); i++) {
-
-                    Routine r = rr.get(i);
-                    double x = ((double) i + 1) / (((double) rr.size()) / 100);
-                    double y = r.getRatioThreadInput() * 100;
-
-                    out.format("%.1f %.1f%n", x, y);
-                }
-                out.close();
-
-            }
-
-        } catch (java.io.IOException e) {
-
-            JOptionPane.showMessageDialog(this, "Error during export :(",
-                "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
-
-        }
-    }//GEN-LAST:event_ExportThreadInputEntryActionPerformed
-
-    private void extractInputStats() {
-
-    }
-
-    private void ExportSyscallInputEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ExportSyscallInputEntryActionPerformed
-
-        // Menu: File > Export > external input...
-        if (report == null) {
-            return;
-        }
-        report.sortRoutinesBySyscallInput();
-        ArrayList<Routine> rr = report.getRoutines();
-
-        try {
-
-            File tmp = new File(this.report.getName() + "_external_input.dat");
-
-            JFileChooser chooser = new javax.swing.JFileChooser();
-            String lastReportPath = Main.getLastReportPath();
-            if (!lastReportPath.equals("")) {
-                chooser.setCurrentDirectory(new File(lastReportPath));
-            }
-
-            FileNameExtensionFilter filter = new FileNameExtensionFilter("Program profile", "dat");
-            chooser.setFileFilter(filter);
-            chooser.setAcceptAllFileFilterUsed(false);
-            chooser.setSelectedFile(tmp);
-            int choice = chooser.showSaveDialog(this.getParent());
-
-            if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
-
-                tmp = chooser.getSelectedFile();
-                tmp.createNewFile();
-                PrintWriter out = new PrintWriter(new FileWriter(tmp));
-
-                out.format("# Percent External_input%n");
-                out.format("0 100%n");
-                for (int i = 0; i < rr.size(); i++) {
-
-                    Routine r = rr.get(i);
-                    double x = ((double) i + 1) / (((double) rr.size()) / 100);
-                    double y = r.getRatioSyscallInput() * 100;
-
-                    out.format("%.1f %.1f%n", x, y);
-                }
-                out.close();
-
-            }
-
-        } catch (java.io.IOException e) {
-
-            JOptionPane.showMessageDialog(this, "Error during export :(",
-                "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
-
-        }
-    }//GEN-LAST:event_ExportSyscallInputEntryActionPerformed
-
-    private void ExportInducedAccessEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ExportInducedAccessEntryActionPerformed
-
-        // Menu: File > Export > induced accesses...
-        if (report == null) {
-            return;
-        }
-        report.sortRoutinesByDynamicInput();
-        ArrayList<Routine> rr = report.getRoutines();
-
-        try {
-
-            File tmp = new File(this.report.getName() + "_induced_accesses.dat");
-
-            JFileChooser chooser = new javax.swing.JFileChooser();
-            String lastReportPath = Main.getLastReportPath();
-            if (!lastReportPath.equals("")) {
-                chooser.setCurrentDirectory(new File(lastReportPath));
-            }
-
-            FileNameExtensionFilter filter = new FileNameExtensionFilter("Program profile", "dat");
-            chooser.setFileFilter(filter);
-            chooser.setAcceptAllFileFilterUsed(false);
-            chooser.setSelectedFile(tmp);
-            int choice = chooser.showSaveDialog(this.getParent());
-
-            if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
-
-                tmp = chooser.getSelectedFile();
-                tmp.createNewFile();
-                PrintWriter out = new PrintWriter(new FileWriter(tmp));
-
-                out.format("# Percent External_input Thread_input%n");
-
-                int k = 1;
-                for (Routine r : rr) {
-                    if (r.getInputTuplesCount() < 5) {
-                        continue;
+            int start = i;
+            while (true) {
+                Routine rtn = ((RoutinesTableModel) RoutineTable.getModel()).getRoutine(RoutineTable.convertRowIndexToModel(i));
+                if (rtn.getName().toLowerCase().contains(query)) {
+                    RoutineTable.setRowSelectionInterval(i, i);
+                    if (RoutineTable.getParent() instanceof javax.swing.JViewport) { // Scroll to visible; thanks to fiontan
+                        javax.swing.JViewport viewport = (javax.swing.JViewport) RoutineTable.getParent();
+                        java.awt.Rectangle rect = RoutineTable.getCellRect(i, 0, true);
+                        java.awt.Point pos = viewport.getViewPosition();
+                        rect.translate(-pos.x, -pos.y);
+                        viewport.scrollRectToVisible(rect);
                     }
- 
-                    double x = k++;
-                    double y = r.getRatioSyscallInput() * 100;
-                    double z = r.getRatioThreadInput() * 100;
-
-                    out.format("%.1f %.1f %.1f%n", x, y, z);
+                    return;
                 }
-                out.close();
-
-            }
-
-        } catch (java.io.IOException e) {
-
-            JOptionPane.showMessageDialog(this, "Error during export :(",
-                "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
-
-        }
-
-    }//GEN-LAST:event_ExportInducedAccessEntryActionPerformed
-
-    private void ExportSelfInducedAccessEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ExportSelfInducedAccessEntryActionPerformed
-
-        // Menu: File > Export > self induced accesses...
-        if (report == null) {
-            return;
-        }
-
-        try {
-
-            File tmp = new File(this.report.getName() + "_self_induced_accesses.dat");
-
-            JFileChooser chooser = new javax.swing.JFileChooser();
-            String lastReportPath = Main.getLastReportPath();
-            if (!lastReportPath.equals("")) {
-                chooser.setCurrentDirectory(new File(lastReportPath));
-            }
-
-            FileNameExtensionFilter filter = new FileNameExtensionFilter("Program profile", "dat");
-            chooser.setFileFilter(filter);
-            chooser.setAcceptAllFileFilterUsed(false);
-            chooser.setSelectedFile(tmp);
-            int choice = chooser.showSaveDialog(this.getParent());
-
-            if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
-
-                tmp = chooser.getSelectedFile();
-                tmp.createNewFile();
-                PrintWriter out = new PrintWriter(new FileWriter(tmp));
-
-                out.format("#Self_External_input Self_Thread_input%n");
-
-                out.println(report.getTotalSelfSyscallInput() + " "
-                    + report.getTotalSelfThreadInput());
-
-                double x = report.getTotalSelfSyscallInput() + report.getTotalSelfThreadInput();
-                double y = (report.getTotalSelfSyscallInput() / x) * 100;
-                double z = (report.getTotalSelfThreadInput() / x) * 100;
-
-                out.format("%.1f %.1f%n", y, z);
-
-                out.close();
-
-            }
-
-        } catch (java.io.IOException e) {
-
-            JOptionPane.showMessageDialog(this, "Error during export :(",
-                "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
-
-        }
-    }//GEN-LAST:event_ExportSelfInducedAccessEntryActionPerformed
-
-    private void FitMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_FitMenuEntryActionPerformed
-
-        // add fitting log
-        if (this.report == null) {
-            return;
-        }
-
-        loading = true;
-        final ProgressDialog p = new ProgressDialog(this, true);
-        SwingWorker worker;
-        worker = new SwingWorker<Boolean, Void>() {
-            
-            @Override
-            public Boolean doInBackground() {
-
-                boolean failed = false;
-
-                try {
-                    report.addFitter(null);
-                    if (report.hasFitter()) {
-                        FitButton.setEnabled(true);
-                    }
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    failed = true;
+                i++;
+                if (i >= size) {
+                    i = 0;
                 }
-
-                p.setVisible(false);
-                loading = false;
-
-                if (failed || report.hasFatalError()) {
-                    return false;
+                if (i == start) {
+                    //not found
+                    javax.swing.JOptionPane.showMessageDialog(this, "text not found");
+                    return;
                 }
-
-                return true;
             }
-
-        };
-        worker.execute();
-        p.setVisible(true);
-    }//GEN-LAST:event_FitMenuEntryActionPerformed
-
-    private void FitButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_FitButtonActionPerformed
-        showFittingData(!this.fitting_mode);
-    }//GEN-LAST:event_FitButtonActionPerformed
-
-    private void FilterRoutinesButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_FilterRoutinesButtonActionPerformed
-        // Routine filter button (corner routine table)
-        if (report != null) {
-            RoutinesTableModel m = (RoutinesTableModel) jTable1.getModel();
-            ArrayList<String> liblist = report.getLibList();
-            (new RoutinesFilterDialog(this, true, liblist, routines_filter_criteria,
-                m.getColumnConfig())).setVisible(true);
         }
-    }//GEN-LAST:event_FilterRoutinesButtonActionPerformed
-
-    public boolean isVisibleFittingData() {
-        return this.fitting_mode;
     }
+    
 
-    private void showFittingData(boolean enable) {
-
-        this.fitting_mode = enable;
-
-        if (enable) {
-
-            jSplitPane2.setRightComponent(null);
-            RoutinesTableModel m = (RoutinesTableModel) jTable1.getModel();
-            m.updateColumns();
-            m.refresh();
-
-            routines_filter_criteria[4] = "0.1";
-            routines_filter_criteria[5] = "100";
-            routines_filter_criteria[6] = "0.92";
-            routines_filter_criteria[7] = "Hide";
-            refreshRoutinesTableFilter();
-
-        } else {
-            RoutinesTableModel m = (RoutinesTableModel) jTable1.getModel();
-            m.updateColumns();
-            m.refresh();
-            jSplitPane2.setRightComponent(jTabbedPane1);
-            jSplitPane2.setResizeWeight(0.9);
-            jSplitPane2.setPreferredSize(new java.awt.Dimension(300, 300));
-            jSplitPane2.setDividerLocation(0.75);
-
-            routines_filter_criteria[4] = null;
-            routines_filter_criteria[5] = null;
-            routines_filter_criteria[6] = null;
-            routines_filter_criteria[7] = null;
-            refreshRoutinesTableFilter();
-        }
-
-    }
-
+    
     private void resetRoutineTableFilter() {
 
         // reset filter over routine table
@@ -2997,7 +2690,7 @@ public final class MainWindow extends javax.swing.JFrame {
 
         List<RowFilter<TableModel, Integer>> filters = new ArrayList<RowFilter<TableModel, Integer>>();
 
-        RoutinesTableModel m = (RoutinesTableModel) jTable1.getModel();
+        RoutinesTableModel m = (RoutinesTableModel) RoutineTable.getModel();
 
         // Filtering based on blacklist
         if (Main.getBlackListEnabled() && blacklist.size() > 0) {
@@ -3335,682 +3028,884 @@ public final class MainWindow extends javax.swing.JFrame {
         rms_table_sorter.setRowFilter(javax.swing.RowFilter.andFilter(filters));
     }
 
-    private void findRoutineByName() {
-        String query = SearchField.getText().toLowerCase();
-        if (jTable1.getRowCount() > 0 && !query.equals("")) {
-            int i = jTable1.getSelectedRow();
-            if (i < 0) {
-                i = 0;
-            }
-            int size = jTable1.getRowCount();
-            i++;
-            if (i >= size) {
-                i = 0;
-            }
-            int start = i;
-            while (true) {
-                Routine rtn = ((RoutinesTableModel) jTable1.getModel()).getRoutine(jTable1.convertRowIndexToModel(i));
-                if (rtn.getName().toLowerCase().contains(query)) {
-                    jTable1.setRowSelectionInterval(i, i);
-                    if (jTable1.getParent() instanceof javax.swing.JViewport) { // Scroll to visible; thanks to fiontan
-                        javax.swing.JViewport viewport = (javax.swing.JViewport) jTable1.getParent();
-                        java.awt.Rectangle rect = jTable1.getCellRect(i, 0, true);
-                        java.awt.Point pos = viewport.getViewPosition();
-                        rect.translate(-pos.x, -pos.y);
-                        viewport.scrollRectToVisible(rect);
-                    }
-                    return;
-                }
-                i++;
-                if (i >= size) {
-                    i = 0;
-                }
-                if (i == start) {
-                    //not found
-                    javax.swing.JOptionPane.showMessageDialog(this, "text not found");
-                    return;
-                }
-            }
-        }
+        /*
+     * Fitting mode
+     */
+    
+    public boolean isVisibleFittingData() {
+        return this.fitting_mode;
     }
 
-    private void findRoutineByNameInSource() {
+    private void showFittingData(boolean enable) {
+        this.fitting_mode = enable;
+        if (enable) {
 
-        if (sym == null) {
+            jSplitPane2.setRightComponent(null);
+            RoutinesTableModel m = (RoutinesTableModel) RoutineTable.getModel();
+            m.updateColumns();
+            m.refresh();
+
+            routines_filter_criteria[4] = "0.1";
+            routines_filter_criteria[5] = "100";
+            routines_filter_criteria[6] = "0.92";
+            routines_filter_criteria[7] = "Hide";
+            refreshRoutinesTableFilter();
+            
+        } else {
+            
+            RoutinesTableModel m = (RoutinesTableModel) RoutineTable.getModel();
+            m.updateColumns();
+            m.refresh();
+            jSplitPane2.setRightComponent(jTabbedPane1);
+            jSplitPane2.setResizeWeight(0.9);
+            jSplitPane2.setPreferredSize(new java.awt.Dimension(300, 300));
+            jSplitPane2.setDividerLocation(0.75);
+
+            routines_filter_criteria[4] = null;
+            routines_filter_criteria[5] = null;
+            routines_filter_criteria[6] = null;
+            routines_filter_criteria[7] = null;
+            refreshRoutinesTableFilter();
+        }
+    }
+    
+	private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
+        if (!saveForm()) {
             return;
         }
-        String query = jTextField2.getText().toLowerCase();
+        Main.removeWindow(this);
+        this.dispose();
+	}//GEN-LAST:event_formWindowClosing
 
-        if (query.equals("")) {
-            return;
+	private void NewWindowMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_NewWindowMenuEntryActionPerformed
+        Main.newWindow();
+	}//GEN-LAST:event_NewWindowMenuEntryActionPerformed
+
+	private void ExitMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ExitMenuEntryActionPerformed
+        formWindowClosing(null);
+	}//GEN-LAST:event_ExitMenuEntryActionPerformed
+
+	private void OpenButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_OpenButtonActionPerformed
+        openFile();
+	}//GEN-LAST:event_OpenButtonActionPerformed
+
+	private void SearchButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SearchButtonActionPerformed
+        // search button
+        findRoutineByName();
+	}//GEN-LAST:event_SearchButtonActionPerformed
+
+	private void SearchFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SearchFieldActionPerformed
+        // search text field
+        findRoutineByName();
+	}//GEN-LAST:event_SearchFieldActionPerformed
+
+	private void FilterTuplesButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_FilterTuplesButtonActionPerformed
+        // Routine profile filter button (corner routine profile panel)
+        if (((RmsTableModel) InputTupleTable.getModel()).getRowCount() > 0) {
+            (new RmsFilterDialog(this, true, rms_filter_criteria)).setVisible(true);
         }
+	}//GEN-LAST:event_FilterTuplesButtonActionPerformed
 
-        Set s = sym.keySet();
-        Object[] a = s.toArray();
-        int index = source_index;
+	private void OpenFileMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_OpenFileMenuEntryActionPerformed
+        // Menu: File > Open file
+        openFile();
+	}//GEN-LAST:event_OpenFileMenuEntryActionPerformed
 
-        //System.out.println(source_index);
-        while (index < a.length) {
+	private void NewWindowButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_NewWindowButtonActionPerformed
+        // Menu: File > New window
+        Main.newWindow();
+	}//GEN-LAST:event_NewWindowButtonActionPerformed
 
-            String name = (String) a[index++];
-            if (name.toLowerCase().contains(query)) {
-                source_index = index;
-                loadFunctionInTextEditor(name);
+	private void AboutMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_AboutMenuEntryActionPerformed
+        // Menu: Help > About
+        (new AboutDialog(this, true)).setVisible(true);
+	}//GEN-LAST:event_AboutMenuEntryActionPerformed
+
+	private void LinkButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_LinkButtonActionPerformed
+        // Link plots button
+        if (LinkButton.isSelected()) {
+            linked_plots = true;
+        } else {
+            linked_plots = false;
+        }
+	}//GEN-LAST:event_LinkButtonActionPerformed
+
+	private void SaveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SaveButtonActionPerformed
+        // Save button
+        try {
+            report.save();
+        } catch (Exception e) {
+            javax.swing.JOptionPane.showMessageDialog(this, "Can't save report", "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+            //System.out.println(e.getMessage());
+            //e.printStackTrace();
+        } finally {
+            disableSaveCommand();
+        }
+	}//GEN-LAST:event_SaveButtonActionPerformed
+
+	private void SaveMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SaveMenuEntryActionPerformed
+        // Menu: File > Save
+        SaveButtonActionPerformed(null);
+	}//GEN-LAST:event_SaveMenuEntryActionPerformed
+
+	private void SettingsMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SettingsMenuEntryActionPerformed
+        // Menu: Edit > Settings
+        (new SettingsDialog(this, true)).setVisible(true);
+	}//GEN-LAST:event_SettingsMenuEntryActionPerformed
+
+	private void SettingButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SettingButtonActionPerformed
+        // Settings button
+        (new SettingsDialog(this, true)).setVisible(true);
+	}//GEN-LAST:event_SettingButtonActionPerformed
+
+	private void RecentEntry1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RecentEntry1ActionPerformed
+        // Menu: File > Open recent file > (first entry)
+        loadRecentFile(0);
+	}//GEN-LAST:event_RecentEntry1ActionPerformed
+
+	private void RecentEntry2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RecentEntry2ActionPerformed
+        // Menu: File > Open recent file > (second entry)
+        loadRecentFile(1);
+	}//GEN-LAST:event_RecentEntry2ActionPerformed
+
+	private void RecentEntry3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RecentEntry3ActionPerformed
+        // Menu: File > Open recent file > (third entry)
+        loadRecentFile(2);
+	}//GEN-LAST:event_RecentEntry3ActionPerformed
+
+	private void RecentEntry4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RecentEntry4ActionPerformed
+        // Menu: File > Open recent file > (fourth entry)
+        loadRecentFile(3);
+	}//GEN-LAST:event_RecentEntry4ActionPerformed
+
+	private void RecentEntry5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RecentEntry5ActionPerformed
+        // Menu: File > Open recent file > (fifth entry)
+        loadRecentFile(4);
+	}//GEN-LAST:event_RecentEntry5ActionPerformed
+
+	private void RecentEntry6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RecentEntry6ActionPerformed
+        // Menu: File > Open recent file > (sixth entry)
+        loadRecentFile(5);
+	}//GEN-LAST:event_RecentEntry6ActionPerformed
+
+	private void jSplitPane1AncestorResized(java.awt.event.HierarchyEvent evt) {//GEN-FIRST:event_jSplitPane1AncestorResized
+        // Moved divider btw graphs and routine panels
+        jSplitPane1.setDividerLocation(0.5);
+	}//GEN-LAST:event_jSplitPane1AncestorResized
+
+	private void jSplitPane2AncestorResized(java.awt.event.HierarchyEvent evt) {//GEN-FIRST:event_jSplitPane2AncestorResized
+        // Moved divider btw routine table and routine profile panel
+        jSplitPane2.setDividerLocation(0.75);
+	}//GEN-LAST:event_jSplitPane2AncestorResized
+
+	private void StackTraceMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_StackTraceMouseClicked
+        // Clicked on an entry inside stack trace panel
+        if (evt.getButton() == java.awt.event.MouseEvent.BUTTON1 && evt.getClickCount() == 2) {
+            int previousSelectedIndex = RoutineTable.getSelectedRow();
+            Routine previousSelectedRtn = ((RoutinesTableModel) RoutineTable.getModel()).getRoutine(RoutineTable.convertRowIndexToModel(previousSelectedIndex));
+            int index = StackTrace.getSelectedIndex();
+            if (index < 0) {
                 return;
             }
-
-        }
-
-        if (source_index > 0) {
-
-            index = 0;
-            while (index < a.length && index < source_index) {
-
-                String name = (String) a[index++];
-                if (name.contains(query)) {
-                    source_index = index;
-                    loadFunctionInTextEditor(name);
+            //System.out.println("jList1 double-clicked: selected index: " + index);
+            Routine r = ((StackTraceListModel) StackTrace.getModel()).getContext(index);
+            int modelIndex = ((RoutinesTableModel) RoutineTable.getModel()).getIndex(r);
+            if (modelIndex < 0) {
+                //routine is collapsed
+                ContextualizedRoutineInfo urtn = ((RoutineContext) r).getOverallRoutine();
+                if (urtn.getCollapsed()) {
+                    ((RoutinesTableModel) RoutineTable.getModel()).expandRoutine(urtn);
+                }
+                modelIndex = ((RoutinesTableModel) RoutineTable.getModel()).getIndex(r);
+                if (modelIndex < 0) {
+                    modelIndex = ((RoutinesTableModel) RoutineTable.getModel()).getIndex(previousSelectedRtn);
+                    int viewIndex = RoutineTable.convertRowIndexToView(modelIndex);
+                    RoutineTable.setRowSelectionInterval(viewIndex, viewIndex);
+                    JOptionPane.showMessageDialog(this, "The selected routine is filtererd or blacklisted\nand cannot be displayed");
                     return;
                 }
-
             }
-            source_index = 0;
-
-        }
-
-        javax.swing.JOptionPane.showMessageDialog(this, "text not found");
-
-    }
-
-    private void initGraph() {
-
-        // Init graphs:
-        for (GraphPanel.Type t : GraphPanel.Type.values()) {
-            GraphPanel g = new GraphPanel(t, this);
-            g.setPerformanceMonitor(perf);
-            graphs.add(g);
-            graphs_enabled.add(false);
-        }
-
-        ArrayList<GraphPanel.Type> graph_order = Main.getGraphOrder();
-        // Reset graph order (addGraph will set this later)
-        Main.setGraphOrder(new ArrayList<GraphPanel.Type>());
-        for (GraphPanel.Type t : graph_order) {
-            addGraph(t);
-        }
-    }
-
-    private void editGraph(GraphPanel.Type t, boolean enable) {
-        if (enable) 
-            addGraph(t);
-        else
-            removeGraph(t);
-    }
-    
-    private void addGraph(GraphPanel.Type t) {
-
-        GraphPanel g = graphs.get(t.ordinal());
-        graphs_enabled.set(t.ordinal(), true);
-        switch (g.getGraphType()) {
-
-            case COST_PLOT:
-                CostPlotButton.setSelected(true);
-                CostPlotMenuEntry.setSelected(true);
-                break;
-
-            case MMM_PLOT:
-                MMMPlotButton.setSelected(true);
-                MMMPlotMenuEntry.setSelected(true);
-                break;
-
-            case TOTALCOST_PLOT:
-                TotalCostPlotButton.setSelected(true);
-                TotalCostPlotMenuEntry.setSelected(true);
-                break;
-
-            case AMORTIZED_PLOT:
-                AmortizedPlotButton.setSelected(true);
-                AmortizedPlotMenuEntry.setSelected(true);
-                break;
-
-            case RATIO_PLOT:
-                RatioPlotButton.setSelected(true);
-                RatioPlotMenuEntry.setSelected(true);
-                break;
-
-            case VAR_PLOT:
-                VarPlotButton.setSelected(true);
-                VarianceCostPlotMenuEntry.setSelected(true);
-                break;
-
-            case FREQ_PLOT:
-                FrequencyPlotButton.setSelected(true);
-                FrequencyPlotMenuEntry.setSelected(true);
-                break;
-        }
-
-        graph_visible++;
-
-        ArrayList<GraphPanel.Type> go = Main.getGraphOrder();
-
-        if (append_graph) {
-
-            jPanel9.add(g);
-            go.add(g.getGraphType());
-
-        } else {
-
-            Component[] l = jPanel9.getComponents();
-            int i;
-            for (i = 0; i < l.length; i++) {
-
-                if (!(l[i] instanceof GraphPanel)) {
-                    continue;
-                }
-                GraphPanel cg = (GraphPanel) l[i];
-                if (cg.getGraphPriority() > g.getGraphPriority()) {
-                    break;
-                }
-
-            }
-
-            if (i >= l.length) {
-                jPanel9.add(g);
-            } else {
-                jPanel9.add(g, i);
-            }
-
-            // Update graph order
-            if (i >= go.size()) {
-                go.add(g.getGraphType());
-            } else {
-                go.add(i, g.getGraphType());
-            }
-
-        }
-
-        g.setVisible(true);
-        g.setData(this.rtn_info);
-        Main.setGraphOrder(go);
-        adjustGraphLayout();
-
-    }
-    
-    private void removeGraph(GraphPanel.Type t) {
-
-        GraphPanel g = graphs.get(t.ordinal());
-        graphs_enabled.set(t.ordinal(), false);
-        switch (g.getGraphType()) {
-
-            case COST_PLOT:
-                jPanel9.remove(g);
-                CostPlotButton.setSelected(false);
-                CostPlotMenuEntry.setSelected(false);
-                break;
-
-            case MMM_PLOT:
-                MMMPlotButton.setSelected(false);
-                MMMPlotMenuEntry.setSelected(false);
-                break;
-
-            case TOTALCOST_PLOT:
-                TotalCostPlotButton.setSelected(false);
-                TotalCostPlotMenuEntry.setSelected(false);
-                break;
-
-            case AMORTIZED_PLOT:
-                AmortizedPlotButton.setSelected(false);
-                AmortizedPlotMenuEntry.setSelected(false);
-                break;
-
-            case RATIO_PLOT:
-                TotalCostPlotButton.setSelected(false);
-                RatioPlotMenuEntry.setSelected(false);
-                break;
-
-            case VAR_PLOT:
-                VarPlotButton.setSelected(false);
-                VarianceCostPlotMenuEntry.setSelected(false);
-                break;
-
-            case FREQ_PLOT:
-                FrequencyPlotButton.setSelected(false);
-                FrequencyPlotMenuEntry.setSelected(false);
-                break;
-        }
-
-        // This does not work...
-        //jPanel9.remove(g);
-        // So:
-        Component[] l = jPanel9.getComponents();
-        ArrayList<GraphPanel.Type> graph_order = new ArrayList<GraphPanel.Type>();
-        for (int i = 0; i < l.length; i++) {
-
-            if (l[i] instanceof GraphPanel) {
-                if (g.getGraphType() == ((GraphPanel) l[i]).getGraphType()) {
-                    jPanel9.remove(i);
-                } else {
-                    graph_order.add(((GraphPanel) l[i]).getGraphType());
+            int viewIndex = RoutineTable.convertRowIndexToView(modelIndex);
+            if (viewIndex < 0) {
+                resetRoutineTableFilter();
+                viewIndex = RoutineTable.convertRowIndexToView(modelIndex);
+                if (viewIndex < 0) {
+                    modelIndex = ((RoutinesTableModel) RoutineTable.getModel()).getIndex(previousSelectedRtn);
+                    viewIndex = RoutineTable.convertRowIndexToView(modelIndex);
+                    RoutineTable.setRowSelectionInterval(viewIndex, viewIndex);
+                    JOptionPane.showMessageDialog(this, "The selected routine is blacklisted\nand cannot be displayed");
+                    return;
                 }
             }
-
+            RoutineTable.setRowSelectionInterval(viewIndex, viewIndex);
         }
+	}//GEN-LAST:event_StackTraceMouseClicked
 
-        graph_visible--;
-        adjustGraphLayout();
-        g.setVisible(false);
-        Main.setGraphOrder(graph_order);
+	private void ReloadButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ReloadButtonActionPerformed
+        // Reload button
+        try {
+            File file;
+            if (report == null) { // Reload last recent report
+                ArrayList<File> r = Main.getRecentFiles();
+                if (r.size() <= 0) {
+                    return;
+                }
+                file = r.get(0);
+            } else { // Reload current report
+                file = new File(this.report.getName());
+            }
+            loadReport(file);
+            Main.addRecentFile(file);
+            this.refreshRecentFiles();
+        } catch (Exception e) {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                "Couldn't open the selected file", "Error",
+                javax.swing.JOptionPane.ERROR_MESSAGE);
+            //e.printStackTrace();
+        }
+	}//GEN-LAST:event_ReloadButtonActionPerformed
 
-    }
+	private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
+        setExtendedState(MAXIMIZED_BOTH);
+	}//GEN-LAST:event_formWindowOpened
 
-    private void adjustGraphLayout() {
-
-        if (editor_visible) {
-
-            jPanel9.setLayout(new BoxLayout(jPanel9, BoxLayout.Y_AXIS));
-            jPanel9.revalidate();
+	private void ExportRoutineProfileEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ExportRoutineProfileEntryActionPerformed
+        // Menu: File > Export > Routine profile 
+        if (this.rtn_info == null) {
             return;
-
         }
 
-        if (graph_visible == 4) {
-            if (fake == null) {
-                fake = new JPanel();
-            }
-            jPanel9.add(fake);
-        } else if (graph_visible == 7) {
-            if (fake == null) {
-                fake = new JPanel();
-            }
-            if (fake2 == null) {
-                fake2 = new JPanel();
-            }
-            jPanel9.add(fake);
-            jPanel9.add(fake2);
-        } else {
-            if (fake != null) {
-                jPanel9.remove(fake);
-            }
-            if (fake2 != null) {
-                jPanel9.remove(fake2);
-            }
-            fake = null;
-            fake2 = null;
-        }
-
-        if (graph_visible <= 3) {
-            jPanel9.setLayout(new java.awt.GridLayout(1, 3));
-        } else if (graph_visible <= 6) {
-            jPanel9.setLayout(new java.awt.GridLayout(2, 3));
-        } else if (graph_visible <= 9) {
-            jPanel9.setLayout(new java.awt.GridLayout(3, 3));
-        }
-
-        jPanel9.revalidate();
-
-    }
-
-    private boolean isCtagsInstalled() {
-
-        ProcessBuilder pb = new ProcessBuilder(Main.getCtagsPath(), "--version");
+        Iterator it = rtn_info.getInputTuplesIterator();
         try {
 
-            Process p = pb.start();
-            p.waitFor();
-            int exit = p.exitValue();
-            if (exit == 0) {
-                return true;
+            File tmp = new File(this.report.getName() + "-"
+                + this.rtn_info.getName() + ".dat");
+
+            JFileChooser chooser = new javax.swing.JFileChooser();
+            String lastReportPath = Main.getLastReportPath();
+            if (!lastReportPath.equals("")) {
+                chooser.setCurrentDirectory(new File(lastReportPath));
             }
 
-        } catch (IOException ex) {
-            System.out.println("Fail: error during check ctags");
-        } catch (IllegalThreadStateException i) {
-            System.out.println("Fail: error checking ctags [1]");
-        } catch (InterruptedException ex) {
-            System.out.println("Fail: error checking ctags [2]");
+            FileNameExtensionFilter filter = new FileNameExtensionFilter("Routine profile", "dat");
+            chooser.setFileFilter(filter);
+            chooser.setAcceptAllFileFilterUsed(false);
+            chooser.setSelectedFile(tmp);
+            int choice = chooser.showSaveDialog(this);
+
+            if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
+
+                tmp = chooser.getSelectedFile();
+                tmp.createNewFile();
+                PrintWriter out = new PrintWriter(new FileWriter(tmp));
+
+                out.println("# RMS CUMUL_MIN CUMUL_MAX CUMUL_SUM "
+                    + "REAL_SUM OCC SELF_SUM SELF_MIN SELF_MAX AM");
+
+                while (it.hasNext()) {
+
+                    Input s = (Input) it.next();
+                    out.print(s.getSize() + " " + (int) s.getMinCumulativeCost()
+                        + " " + (int) s.getMaxCumulativeCost()
+                        + " " + (long) s.getSumCumulativeCost()
+                        + " " + (long) s.getSumCumulativeRealCost()
+                        + " " + (long) s.getCalls()
+                        + " " + (int) s.getMinSelfCost()
+                        + " " + (int) s.getMaxSelfCost()
+                        + " " + (long) s.getSumSelfCost()
+                    );
+                    out.format(" %.5f%n", rtn_info.getAmortizedValue(s));
+
+                }
+                out.close();
+
+            }
+
+        } catch (java.io.IOException e) {
+            JOptionPane.showMessageDialog(this, "Error during export :(",
+                "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
         }
+	}//GEN-LAST:event_ExportRoutineProfileEntryActionPerformed
 
-        return false;
+	private void ExportProgramProfileEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ExportProgramProfileEntryActionPerformed
+        // Menu: File > Export > Program profile
+        ArrayList<Routine> els = this.report.getRoutines();
+        try {
 
-    }
+            File tmp = new File(this.report.getName() + ".dat");
 
-    private void showTextEditor(boolean show) {
-
-        if (show) {
-
-            if (!editor_visible) {
-
-                //System.out.println("Show editor");
-                Main.setEditorVisible(true);
-                SourceMenuEntry.setSelected(true);
-                SourceButton.setSelected(true);
-                jSplitPane4.setRightComponent(jPanel11);
-                //jSplitPane4.setDividerLocation(0.3);
-                editor_visible = true;
-                adjustGraphLayout();
-
-                SwingUtilities.invokeLater(new Runnable() {
-
-                    @Override
-                    public void run() {
-
-                        if (!RoutineLabel.getText().equals("")) {
-                            System.out.println("Function selected " + RoutineLabel.getText());
-                            loadFunctionInTextEditor(RoutineLabel.getText());
-                        }
-
-                    }
-                });
-
+            JFileChooser chooser = new javax.swing.JFileChooser();
+            String lastReportPath = Main.getLastReportPath();
+            if (!lastReportPath.equals("")) {
+                chooser.setCurrentDirectory(new File(lastReportPath));
             }
 
+            FileNameExtensionFilter filter = new FileNameExtensionFilter("Program profile", "dat");
+            chooser.setFileFilter(filter);
+            chooser.setAcceptAllFileFilterUsed(false);
+            chooser.setSelectedFile(tmp);
+            int choice = chooser.showSaveDialog(this.getParent());
+
+            if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
+
+                tmp = chooser.getSelectedFile();
+                tmp.createNewFile();
+                PrintWriter out = new PrintWriter(new FileWriter(tmp));
+
+                out.println("# N_TUPLES TOTAL_CALLS INPUT_MIN INPUT_MAX COST_BALANCE_POINT \"NAME\"");
+
+                for (Routine el : els) {
+                    out.println(el.getInputTuplesCount() + " "
+                        + el.getTotalCalls() + " "
+                        + el.getMinInput() + " "
+                        + el.getMaxInput() + " "
+                        + el.getCostBalancePoint() + " \""
+                        + el.getName() + "\""
+                    );
+                }
+                out.close();
+            }
+
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Error during export :(",
+                "Error", JOptionPane.ERROR_MESSAGE);
+        }
+	}//GEN-LAST:event_ExportProgramProfileEntryActionPerformed
+
+	private void GraphButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_GraphButtonActionPerformed
+        // Graph button
+        if (GraphButton.isSelected()) {
+            GraphMenu.show(GraphButton, 0, GraphButton.getHeight());
         } else {
-
-            if (editor_visible) {
-
-                //System.out.println("Hide editor");
-                Main.setEditorVisible(false);
-                SourceMenuEntry.setSelected(false);
-                SourceButton.setSelected(false);
-                jSplitPane4.setRightComponent(null);
-                editor_visible = false;
-                adjustGraphLayout();
-
-            }
-
+            GraphMenu.setVisible(false);
         }
+	}//GEN-LAST:event_GraphButtonActionPerformed
 
-    }
+	private void GraphMenuPopupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent evt) {//GEN-FIRST:event_GraphMenuPopupMenuWillBecomeInvisible
+        GraphButton.setSelected(false);
+	}//GEN-LAST:event_GraphMenuPopupMenuWillBecomeInvisible
 
-    private void createTextEditor() {
+	private void CostPlotButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_CostPlotButtonActionPerformed
+        // Graph menu button: cost plot
+        editGraph(COST_PLOT, CostPlotButton.isSelected());
+	}//GEN-LAST:event_CostPlotButtonActionPerformed
 
-        if (textArea != null) {
+	private void MMMPlotButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_MMMPlotButtonActionPerformed
+        // Graph menu button: MMM plot
+        editGraph(MMM_PLOT, MMMPlotButton.isSelected());
+	}//GEN-LAST:event_MMMPlotButtonActionPerformed
+
+	private void TotalCostPlotButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_TotalCostPlotButtonActionPerformed
+        // Graph menu button: total cost plot
+        editGraph(TOTALCOST_PLOT, TotalCostPlotButton.isSelected());
+	}//GEN-LAST:event_TotalCostPlotButtonActionPerformed
+
+	private void AmortizedPlotButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_AmortizedPlotButtonActionPerformed
+        // Graph menu button: amortized plot
+        editGraph(AMORTIZED_PLOT, AmortizedPlotButton.isSelected());
+	}//GEN-LAST:event_AmortizedPlotButtonActionPerformed
+
+	private void RatioPlotButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RatioPlotButtonActionPerformed
+        // Graph menu button: ratio plot
+        editGraph(RATIO_PLOT, RatioPlotButton.isSelected());
+	}//GEN-LAST:event_RatioPlotButtonActionPerformed
+
+	private void VarPlotButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_VarPlotButtonActionPerformed
+        // Graph menu button: var plot
+        editGraph(VAR_PLOT, VarPlotButton.isSelected());
+	}//GEN-LAST:event_VarPlotButtonActionPerformed
+
+	private void FrequencyPlotButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_FrequencyPlotButtonActionPerformed
+        // Graph menu button: freq plot
+        editGraph(FREQ_PLOT, FrequencyPlotButton.isSelected());
+	}//GEN-LAST:event_FrequencyPlotButtonActionPerformed
+
+	private void CostPlotMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_CostPlotMenuEntryActionPerformed
+        // Graph menu button: cost plot
+        editGraph(COST_PLOT, CostPlotMenuEntry.isSelected());
+	}//GEN-LAST:event_CostPlotMenuEntryActionPerformed
+
+	private void MMMPlotMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_MMMPlotMenuEntryActionPerformed
+        // Graph menu button: MMM plot
+        editGraph(MMM_PLOT, MMMPlotMenuEntry.isSelected());
+	}//GEN-LAST:event_MMMPlotMenuEntryActionPerformed
+
+	private void TotalCostPlotMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_TotalCostPlotMenuEntryActionPerformed
+        // Graph menu button: total cost plot
+        editGraph(TOTALCOST_PLOT, TotalCostPlotMenuEntry.isSelected());
+	}//GEN-LAST:event_TotalCostPlotMenuEntryActionPerformed
+
+	private void AmortizedPlotMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_AmortizedPlotMenuEntryActionPerformed
+        // Graph menu button: amortized plot
+        editGraph(AMORTIZED_PLOT, AmortizedPlotMenuEntry.isSelected());
+	}//GEN-LAST:event_AmortizedPlotMenuEntryActionPerformed
+
+	private void RatioPlotMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RatioPlotMenuEntryActionPerformed
+        // Graph menu button: ratio plot
+        editGraph(RATIO_PLOT, RatioPlotMenuEntry.isSelected());
+	}//GEN-LAST:event_RatioPlotMenuEntryActionPerformed
+
+	private void VarianceCostPlotMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_VarianceCostPlotMenuEntryActionPerformed
+        // Graph menu button: var plot
+        editGraph(VAR_PLOT, VarianceCostPlotMenuEntry.isSelected());
+	}//GEN-LAST:event_VarianceCostPlotMenuEntryActionPerformed
+
+	private void FrequencyPlotMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_FrequencyPlotMenuEntryActionPerformed
+        // Graph menu button: freq plot
+        editGraph(FREQ_PLOT, FrequencyPlotMenuEntry.isSelected());
+	}//GEN-LAST:event_FrequencyPlotMenuEntryActionPerformed
+    
+	private void SetSourceDirMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SetSourceDirMenuEntryActionPerformed
+        chooseSourceDirectory();
+	}//GEN-LAST:event_SetSourceDirMenuEntryActionPerformed
+
+	private void SourceDirectoryButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SourceDirectoryButtonActionPerformed
+        chooseSourceDirectory();
+	}//GEN-LAST:event_SourceDirectoryButtonActionPerformed
+
+	private void SourceMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SourceMenuEntryActionPerformed
+        if (SourceMenuEntry.isSelected()) {
+            showTextEditor(true);
+        } else {
+            showTextEditor(false);
+        }
+	}//GEN-LAST:event_SourceMenuEntryActionPerformed
+
+	private void SourceButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SourceButtonActionPerformed
+        if (LinkButton.isSelected()) {
+            if (!editor_visible) {
+                showTextEditor(true);
+            } else {
+                showTextEditor(false);
+            }
+        }
+	}//GEN-LAST:event_SourceButtonActionPerformed
+
+	private void jComboBox1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBox1ActionPerformed
+        if (loading) {
             return;
         }
+        String file = (String) jComboBox1.getSelectedItem();
 
-        textArea = new RSyntaxTextArea(10, 10);
-        textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_CPLUSPLUS);
-        //textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_C);
-        textArea.setCodeFoldingEnabled(true);
-        textArea.setAntiAliasingEnabled(true);
-        textArea.setEditable(false);
-
-        JPopupMenu popup = textArea.getPopupMenu();
-        popup.addSeparator();
-        ActionEditor a = new ActionEditor();
-        a.setMainWindow(this);
-        popup.add(new JMenuItem(a));
-
-        RTextScrollPane sp = new RTextScrollPane(textArea);
-        sp.setFoldIndicatorEnabled(true);
-        //Gutter gutter = sp.getGutter();
-        //gutter.setBookmarkingEnabled(true);
-        //gutter.setBookmarkIcon(new ImageIcon(getClass().getResource("/aprofplot/gui/resources/bookmark.png")));
-        jPanel11.add(sp);
-
-        /*
-         SwingUtilities.invokeLater(new Runnable() {
-			
-         @Override
-         public void run() { 
-         textArea.setCaretPosition(textArea.getText().length() / 2);
-         }
-         });
-         */
-    }
-
-    private String cleanCPPSignature(String sig) {
-
-        int index = sig.indexOf("(");
-        if (index >= 0) {
-            sig = sig.substring(0, index);
-        }
-
-        index = sig.indexOf("<");
-        while (index >= 0) {
-
-            int index2 = sig.indexOf(">", index);
-            if (index2 < 0) { // fail :( 
-                System.out.println("I need to clean function name " + sig
-                    + " but I failed... BUG");
-                break;
-            }
-            String sig_a = sig.substring(0, index);
-            String sig_b = sig.substring(index2 + 1);
-            sig = sig_a + sig_b;
-
-            index = sig.indexOf("<");
-
-        }
-
-        index = sig.lastIndexOf(" ");
-        if (index >= 0) {
-            sig = sig.substring(index + 1);
-        }
-
-        //System.out.println(sig);
-        return sig;
-    }
-
-    public void loadFunctionInTextEditor(String name) {
-
-        if (sym == null) {
-            return;
-        }
-        if (!editor_visible) {
-            return;
-        }
-
-        name = cleanCPPSignature(name);
-
-        loading = true;
-        Symbol s = sym.get(name);
-
-        if (s == null) {
-
-            //System.out.println("Function " + name + " was not found in the symbol table");
-            try {
-                /*
-                 final String error = "Source code of this function not found\n";
-                 textArea.read(new StringReader(error + "\n"), null);
-                 if (highlight_line != null) textArea.removeLineHighlight(highlight_line);
-                 highlight_line = textArea.addLineHighlight(0, Color.RED);
-                 */
-                final JFrame m = this;
-                SwingUtilities.invokeLater(new Runnable() {
-
-                    @Override
-                    public void run() {
-
-                        javax.swing.JOptionPane.showMessageDialog(m, "Source code of the function not found");
-                        //textArea.setCaretPosition(error.length());
-                        loading = false;
-                    }
-                });
-
-            } catch (Exception ex) {
-                //
-            }
-            /*
-             jComboBox1.setSelectedIndex(-1);
-             jComboBox1.repaint();
-             */
-            return;
-
-        }
-
-        Iterator i = files.iterator();
-        int k = 0;
-        while (i.hasNext()) {
-
-            String file = (String) i.next();
-            if (file.equals(s.getFile())) {
-                break;
-            }
-            k++;
-        }
-        final int selected = k;
-        //System.out.println("K is " + k);
-
-        File f = new File(s.getFile());
-        int count = s.getLine() - 1;
-        int offset = 0;
+        File f = new File(file);
         try {
 
             BufferedReader r = new BufferedReader(new FileReader(f));
             textArea.read(r, null);
             r.close();
 
-            // calculate offset
-            r = new BufferedReader(new FileReader(f));
-            String line = null;
-
-            while (count > 0 && (line = r.readLine()) != null) {
-
-                offset += line.length() + 1;
-                count--;
-
-            }
-
-            r.close();
-
         } catch (Exception ex) {
-            //System.out.println(ex);
-        }
-
-        final int f_offset = offset;
-        try {
-
-            if (highlight_line != null) {
-                textArea.removeLineHighlight(highlight_line);
-            }
-            highlight_line = textArea.addLineHighlight(s.getLine() - 1, Color.ORANGE);
-
-        } catch (BadLocationException ex) {
             //
         }
 
-        SwingUtilities.invokeLater(new Runnable() {
+        if (highlight_line != null) {
+            textArea.removeLineHighlight(highlight_line);
+        }
+        textArea.setCaretPosition(0);
+	}//GEN-LAST:event_jComboBox1ActionPerformed
 
-            @Override
-            public void run() {
-                textArea.setCaretPosition(f_offset);
-                jComboBox1.setSelectedIndex(selected);
-                jComboBox1.repaint();
-                loading = false;
+	private void jButton11ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton11ActionPerformed
+        // Search routine in source code
+        findRoutineByNameInSource();
+	}//GEN-LAST:event_jButton11ActionPerformed
+
+	private void jTextField2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField2ActionPerformed
+        // Search routine in source code
+        findRoutineByNameInSource();
+	}//GEN-LAST:event_jTextField2ActionPerformed
+
+	private void jToggleButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton2ActionPerformed
+        // Load function code selected in the routine table
+        if (jToggleButton2.isSelected()) {
+            linked_editor = true;
+            if (!RoutineLabel.getText().equals("")) {
+                loadFunctionInTextEditor(RoutineLabel.getText());
             }
-        });
-
-    }
-
-    public boolean isDisplayCumulativeTotalCost() {
-
-        if (Main.getRtnCostMode() == Input.CostType.CUMULATIVE) {
-            return true;
+        } else {
+            linked_editor = false;
         }
-        return false;
+	}//GEN-LAST:event_jToggleButton2ActionPerformed
 
-    }
+    private void RoutineTableMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_RoutineTableMouseClicked
+        loading_routine = true;
+        RoutineTableSelection(null);
+        loading_routine = false;
+    }//GEN-LAST:event_RoutineTableMouseClicked
 
-    public boolean isChartCumulativeCost() {
-
-        if (Main.getChartCostMode() == Input.CostType.CUMULATIVE) {
-            return true;
+    private void FilterContextsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_FilterContextsButtonActionPerformed
+        // Contexts filter button (corner contexts table)
+        if (rtn_info != null) {
+            RoutinesTableModel m = (RoutinesTableModel) RoutineTable.getModel();
+            ArrayList<String> liblist = report.getLibList();
+            (new RoutinesFilterDialog(this, true, liblist,
+                contexts_filter_criteria, false, m.getColumnConfig()))
+                .setVisible(true);
         }
-        return false;
+    }//GEN-LAST:event_FilterContextsButtonActionPerformed
 
-    }
+    private void ExportInputVolumeEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ExportInputVolumeEntryActionPerformed
+        // Menu: File > Export > Input volume...
+        if (report == null) {
+            return;
+        }
+        report.sortRoutinesByExternalInput();
+        ArrayList<Routine> rr = report.getRoutines();
 
-    public void refreshRoutine() {
-        //System.out.println("Refreshing...");
-        loadRoutine(this.rtn_info);
-    }
+        try {
 
-    public boolean hasDistinctRms() {
+            File tmp = new File(this.report.getName() + "_input_volume.dat");
 
-        if (report != null && report.hasDistinctRms()) {
-            return true;
+            JFileChooser chooser = new javax.swing.JFileChooser();
+            String lastReportPath = Main.getLastReportPath();
+            if (!lastReportPath.equals("")) {
+                chooser.setCurrentDirectory(new File(lastReportPath));
+            }
+
+            FileNameExtensionFilter filter = new FileNameExtensionFilter("Program profile", "dat");
+            chooser.setFileFilter(filter);
+            chooser.setAcceptAllFileFilterUsed(false);
+            chooser.setSelectedFile(tmp);
+            int choice = chooser.showSaveDialog(this.getParent());
+
+            if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
+
+                tmp = chooser.getSelectedFile();
+                tmp.createNewFile();
+                PrintWriter out = new PrintWriter(new FileWriter(tmp));
+
+                out.format("# Percent Input_Volume*100 %n");
+                for (int i = 0; i < rr.size(); i++) {
+
+                    Routine r = rr.get(i);
+                    double x = ((double) i + 1) / (((double) rr.size()) / 100);
+                    double y = (1 - r.getRatioSumRmsRvms()) * 100;
+
+                    out.format("%.1f %.1f%n", x, y);
+                }
+                out.close();
+
+            }
+
+        } catch (java.io.IOException e) {
+            JOptionPane.showMessageDialog(this, "Error during export :(",
+                "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }//GEN-LAST:event_ExportInputVolumeEntryActionPerformed
+
+    private void ExportRichnessEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ExportRichnessEntryActionPerformed
+        // Menu: File > Export > profile routine richness...
+        if (report == null) {
+            return;
+        }
+        report.sortRoutinesByRatioTuples();
+        ArrayList<Routine> rr = report.getRoutines();
+
+        try {
+
+            File tmp = new File(this.report.getName() + "_profile_richness.dat");
+
+            JFileChooser chooser = new javax.swing.JFileChooser();
+            String lastReportPath = Main.getLastReportPath();
+            if (!lastReportPath.equals("")) {
+                chooser.setCurrentDirectory(new File(lastReportPath));
+            }
+
+            FileNameExtensionFilter filter = new FileNameExtensionFilter("Program profile", "dat");
+            chooser.setFileFilter(filter);
+            chooser.setAcceptAllFileFilterUsed(false);
+            chooser.setSelectedFile(tmp);
+            int choice = chooser.showSaveDialog(this.getParent());
+
+            if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
+
+                tmp = chooser.getSelectedFile();
+                tmp.createNewFile();
+                PrintWriter out = new PrintWriter(new FileWriter(tmp));
+
+                out.format("# Percent Routine_Profile_Richness%n");
+                //out.format("0 100%n");
+                for (int i = 0; i < rr.size(); i++) {
+
+                    Routine r = rr.get(i);
+                    double x = ((double) i + 1) / (((double) rr.size()) / 100);
+                    double y = r.getRatioRvmsRms() * 100;
+
+                    out.format("%.1f %.1f%n", x, y);
+                }
+                out.close();
+
+            }
+
+        } catch (java.io.IOException e) {
+            JOptionPane.showMessageDialog(this, "Error during export :(",
+                "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }//GEN-LAST:event_ExportRichnessEntryActionPerformed
+
+    private void ExportThreadInputEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ExportThreadInputEntryActionPerformed
+        // Menu: File > Export > thread input...
+        if (report == null) {
+            return;
+        }
+        report.sortRoutinesByThreadInput();
+        ArrayList<Routine> rr = report.getRoutines();
+
+        try {
+
+            File tmp = new File(this.report.getName() + "_thread_input.dat");
+
+            JFileChooser chooser = new javax.swing.JFileChooser();
+            String lastReportPath = Main.getLastReportPath();
+            if (!lastReportPath.equals("")) {
+                chooser.setCurrentDirectory(new File(lastReportPath));
+            }
+
+            FileNameExtensionFilter filter = new FileNameExtensionFilter("Program profile", "dat");
+            chooser.setFileFilter(filter);
+            chooser.setAcceptAllFileFilterUsed(false);
+            chooser.setSelectedFile(tmp);
+            int choice = chooser.showSaveDialog(this.getParent());
+
+            if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
+
+                tmp = chooser.getSelectedFile();
+                tmp.createNewFile();
+                PrintWriter out = new PrintWriter(new FileWriter(tmp));
+
+                out.format("# Percent Thread_Input%n");
+                out.format("0 100%n");
+                for (int i = 0; i < rr.size(); i++) {
+
+                    Routine r = rr.get(i);
+                    double x = ((double) i + 1) / (((double) rr.size()) / 100);
+                    double y = r.getRatioThreadInput() * 100;
+
+                    out.format("%.1f %.1f%n", x, y);
+                }
+                out.close();
+
+            }
+
+        } catch (java.io.IOException e) {
+            JOptionPane.showMessageDialog(this, "Error during export :(",
+                "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }//GEN-LAST:event_ExportThreadInputEntryActionPerformed
+
+    private void ExportSyscallInputEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ExportSyscallInputEntryActionPerformed
+        // Menu: File > Export > external input...
+        if (report == null) {
+            return;
+        }
+        report.sortRoutinesBySyscallInput();
+        ArrayList<Routine> rr = report.getRoutines();
+
+        try {
+
+            File tmp = new File(this.report.getName() + "_external_input.dat");
+
+            JFileChooser chooser = new javax.swing.JFileChooser();
+            String lastReportPath = Main.getLastReportPath();
+            if (!lastReportPath.equals("")) {
+                chooser.setCurrentDirectory(new File(lastReportPath));
+            }
+
+            FileNameExtensionFilter filter = new FileNameExtensionFilter("Program profile", "dat");
+            chooser.setFileFilter(filter);
+            chooser.setAcceptAllFileFilterUsed(false);
+            chooser.setSelectedFile(tmp);
+            int choice = chooser.showSaveDialog(this.getParent());
+
+            if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
+
+                tmp = chooser.getSelectedFile();
+                tmp.createNewFile();
+                PrintWriter out = new PrintWriter(new FileWriter(tmp));
+
+                out.format("# Percent External_input%n");
+                out.format("0 100%n");
+                for (int i = 0; i < rr.size(); i++) {
+
+                    Routine r = rr.get(i);
+                    double x = ((double) i + 1) / (((double) rr.size()) / 100);
+                    double y = r.getRatioSyscallInput() * 100;
+
+                    out.format("%.1f %.1f%n", x, y);
+                }
+                out.close();
+
+            }
+
+        } catch (java.io.IOException e) {
+            JOptionPane.showMessageDialog(this, "Error during export :(",
+                "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }//GEN-LAST:event_ExportSyscallInputEntryActionPerformed
+
+    private void ExportInducedAccessEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ExportInducedAccessEntryActionPerformed
+        // Menu: File > Export > induced accesses...
+        if (report == null) {
+            return;
+        }
+        report.sortRoutinesByDynamicInput();
+        ArrayList<Routine> rr = report.getRoutines();
+
+        try {
+
+            File tmp = new File(this.report.getName() + "_induced_accesses.dat");
+
+            JFileChooser chooser = new javax.swing.JFileChooser();
+            String lastReportPath = Main.getLastReportPath();
+            if (!lastReportPath.equals("")) {
+                chooser.setCurrentDirectory(new File(lastReportPath));
+            }
+
+            FileNameExtensionFilter filter = new FileNameExtensionFilter("Program profile", "dat");
+            chooser.setFileFilter(filter);
+            chooser.setAcceptAllFileFilterUsed(false);
+            chooser.setSelectedFile(tmp);
+            int choice = chooser.showSaveDialog(this.getParent());
+
+            if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
+
+                tmp = chooser.getSelectedFile();
+                tmp.createNewFile();
+                PrintWriter out = new PrintWriter(new FileWriter(tmp));
+
+                out.format("# Percent External_input Thread_input%n");
+
+                int k = 1;
+                for (Routine r : rr) {
+                    if (r.getInputTuplesCount() < 5) {
+                        continue;
+                    }
+ 
+                    double x = k++;
+                    double y = r.getRatioSyscallInput() * 100;
+                    double z = r.getRatioThreadInput() * 100;
+
+                    out.format("%.1f %.1f %.1f%n", x, y, z);
+                }
+                out.close();
+
+            }
+
+        } catch (java.io.IOException e) {
+            JOptionPane.showMessageDialog(this, "Error during export :(",
+               "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }//GEN-LAST:event_ExportInducedAccessEntryActionPerformed
+
+    private void ExportSelfInducedAccessEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ExportSelfInducedAccessEntryActionPerformed
+        // Menu: File > Export > self induced accesses...
+        if (report == null) {
+            return;
         }
 
-        return false;
-    }
+        try {
 
-    public boolean hasDrmsStats() {
+            File tmp = new File(this.report.getName() + "_self_induced_accesses.dat");
 
-        if (isInputMetricRms()) {
-            return false;
+            JFileChooser chooser = new javax.swing.JFileChooser();
+            String lastReportPath = Main.getLastReportPath();
+            if (!lastReportPath.equals("")) {
+                chooser.setCurrentDirectory(new File(lastReportPath));
+            }
+
+            FileNameExtensionFilter filter = new FileNameExtensionFilter("Program profile", "dat");
+            chooser.setFileFilter(filter);
+            chooser.setAcceptAllFileFilterUsed(false);
+            chooser.setSelectedFile(tmp);
+            int choice = chooser.showSaveDialog(this.getParent());
+
+            if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
+
+                tmp = chooser.getSelectedFile();
+                tmp.createNewFile();
+                PrintWriter out = new PrintWriter(new FileWriter(tmp));
+
+                out.format("#Self_External_input Self_Thread_input%n");
+
+                out.println(report.getTotalSelfSyscallInput() + " "
+                    + report.getTotalSelfThreadInput());
+
+                double x = report.getTotalSelfSyscallInput() + report.getTotalSelfThreadInput();
+                double y = (report.getTotalSelfSyscallInput() / x) * 100;
+                double z = (report.getTotalSelfThreadInput() / x) * 100;
+
+                out.format("%.1f %.1f%n", y, z);
+
+                out.close();
+
+            }
+
+        } catch (java.io.IOException e) {
+            JOptionPane.showMessageDialog(this, "Error during export :(",
+                "Error", JOptionPane.ERROR_MESSAGE);
+
+        }
+    }//GEN-LAST:event_ExportSelfInducedAccessEntryActionPerformed
+
+    private void FitMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_FitMenuEntryActionPerformed
+        // add fitting log
+        if (this.report == null) {
+            return;
         }
 
-        if (report != null && report.hasInputStats()) {
-            return true;
+        loading = true;
+        final ProgressDialog p = new ProgressDialog(this, true);
+        SwingWorker worker;
+        worker = new SwingWorker<Boolean, Void>() {
+            
+            @Override
+            public Boolean doInBackground() {
+
+                boolean failed = false;
+
+                try {
+                    report.addFitter(null);
+                    if (report.hasFitter()) {
+                        FitButton.setEnabled(true);
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    failed = true;
+                }
+
+                p.setVisible(false);
+                loading = false;
+
+                if (failed || report.hasFatalError()) {
+                    return false;
+                }
+                return true;
+            }
+        };
+        worker.execute();
+        p.setVisible(true);
+    }//GEN-LAST:event_FitMenuEntryActionPerformed
+
+    private void FitButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_FitButtonActionPerformed
+        showFittingData(!this.fitting_mode);
+    }//GEN-LAST:event_FitButtonActionPerformed
+
+    private void FilterRoutinesButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_FilterRoutinesButtonActionPerformed
+        // Routine filter button (corner routine table)
+        if (report != null) {
+            RoutinesTableModel m = (RoutinesTableModel) RoutineTable.getModel();
+            ArrayList<String> liblist = report.getLibList();
+            (new RoutinesFilterDialog(this, true, liblist, routines_filter_criteria,
+                m.getColumnConfig())).setVisible(true);
         }
+    }//GEN-LAST:event_FilterRoutinesButtonActionPerformed
 
-        return false;
-    }
-
-	// For now we decide to disable context tree panel 
-	/*
-     private void expandContextTree() {
-     for (int i = 0; i < jTree1.getRowCount(); i++) {
-     jTree1.expandRow(i);
-     }
-     }
-
-     private void addBranchToTree(DefaultMutableTreeNode root, ArrayList<RoutineContext> branch) {
-     if (root.getChildCount() == 0) {
-     DefaultMutableTreeNode currentNode = root;
-     for (int i = branch.size() - 1; i >= 0; i--) {
-     DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(branch.get(i));
-     currentNode.add(newNode);
-     currentNode = newNode;
-     }
-     }
-     else {
-     DefaultMutableTreeNode currentNode = root;
-     int i = branch.size() - 1;
-     for (; i >= 0; i--) {
-     boolean pathFound = false;
-     for (int j = 0; j < currentNode.getChildCount(); j++) {
-     DefaultMutableTreeNode child = (DefaultMutableTreeNode)currentNode.getChildAt(j);
-     if (child.getUserObject().equals(branch.get(i))) {
-     currentNode = child;
-     pathFound = true;
-     break;
-     }
-     }
-     if (!pathFound) break;
-     }
-     for (; i >= 0; i--) {
-     DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(branch.get(i));
-     currentNode.add(newNode);
-     currentNode = newNode;
-     }
-     }
-     }
-
-     private void updateContextTree(Routine rtn) {
-     DefaultTreeModel treeModel = (DefaultTreeModel)jTree1.getModel();
-     if (rtn instanceof ContextualizedRoutineInfo){
-     DefaultMutableTreeNode root = new DefaultMutableTreeNode("context trees:");
-     ContextualizedRoutineInfo urtn = (ContextualizedRoutineInfo)rtn;
-     for (int i = 0; i < urtn.getContextCount(); i++) {
-     RoutineContext crtn = urtn.getContexts().get(i);
-     ArrayList<RoutineContext> branch = new ArrayList<RoutineContext>();
-     while (crtn != null) {
-     branch.add(crtn);
-     crtn = crtn.getParent();
-     }
-     addBranchToTree(root, branch);
-     }
-     treeModel.setRoot(root);
-     expandContextTree();
-     } else treeModel.setRoot(null);
-     }
-     */
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JMenuItem AboutMenuEntry;
     private javax.swing.JCheckBoxMenuItem AmortizedPlotButton;
     private javax.swing.JCheckBoxMenuItem AmortizedPlotMenuEntry;
+    private javax.swing.JTable ContextTable;
+    private javax.swing.JTree ContextTree;
     private javax.swing.JCheckBoxMenuItem CostPlotButton;
     private javax.swing.JCheckBoxMenuItem CostPlotMenuEntry;
     private javax.swing.JMenu EditMenu;
@@ -4019,7 +3914,6 @@ public final class MainWindow extends javax.swing.JFrame {
     private javax.swing.JMenuItem ExportInputVolumeEntry;
     private javax.swing.JMenu ExportMenu;
     private javax.swing.JMenuItem ExportProgramProfileEntry;
-    private javax.swing.JMenuItem ExportProgramStatsEntry;
     private javax.swing.JMenuItem ExportRichnessEntry;
     private javax.swing.JMenuItem ExportRoutineProfileEntry;
     private javax.swing.JMenuItem ExportSelfInducedAccessEntry;
@@ -4036,6 +3930,7 @@ public final class MainWindow extends javax.swing.JFrame {
     private javax.swing.JToggleButton GraphButton;
     private javax.swing.JPopupMenu GraphMenu;
     private javax.swing.JMenu HelpMenu;
+    private javax.swing.JTable InputTupleTable;
     private javax.swing.JToggleButton LinkButton;
     private javax.swing.JCheckBoxMenuItem MMMPlotButton;
     private javax.swing.JCheckBoxMenuItem MMMPlotMenuEntry;
@@ -4055,6 +3950,7 @@ public final class MainWindow extends javax.swing.JFrame {
     private javax.swing.JMenu RecentMenu;
     private javax.swing.JButton ReloadButton;
     private javax.swing.JLabel RoutineLabel;
+    private javax.swing.JTable RoutineTable;
     private javax.swing.JButton SaveButton;
     private javax.swing.JMenuItem SaveMenuEntry;
     private javax.swing.JButton SearchButton;
@@ -4065,6 +3961,7 @@ public final class MainWindow extends javax.swing.JFrame {
     private javax.swing.JToggleButton SourceButton;
     private javax.swing.JButton SourceDirectoryButton;
     private javax.swing.JCheckBoxMenuItem SourceMenuEntry;
+    private javax.swing.JList StackTrace;
     private javax.swing.JCheckBoxMenuItem TotalCostPlotButton;
     private javax.swing.JCheckBoxMenuItem TotalCostPlotMenuEntry;
     private javax.swing.JCheckBoxMenuItem VarPlotButton;
@@ -4080,7 +3977,6 @@ public final class MainWindow extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel8;
     private javax.swing.JLabel jLabel9;
-    private javax.swing.JList jList1;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel11;
     private javax.swing.JPanel jPanel2;
@@ -4112,36 +4008,10 @@ public final class MainWindow extends javax.swing.JFrame {
     private javax.swing.JSplitPane jSplitPane4;
     private javax.swing.JSplitPane jSplitPane5;
     private javax.swing.JTabbedPane jTabbedPane1;
-    private javax.swing.JTable jTable1;
-    private javax.swing.JTable jTable2;
-    private javax.swing.JTable jTable3;
     private javax.swing.JTextField jTextField2;
     private javax.swing.JToggleButton jToggleButton2;
     private javax.swing.JToolBar jToolBar1;
     private javax.swing.JToolBar jToolBar2;
-    private javax.swing.JTree jTree1;
     // End of variables declaration//GEN-END:variables
-
-
-    private TableRowSorter<TableModel> routines_table_sorter = null;
-    private List<RowSorter.SortKey> routines_sort = null;
-
-    private TableRowSorter<TableModel> rms_table_sorter = null;
-    private List<RowSorter.SortKey> rms_sort = null;
-
-    private TableRowSorter<TableModel> contexts_table_sorter = null;
-    private List<javax.swing.RowSorter.SortKey> contexts_sort = null;
-
-    private RSyntaxTextArea textArea = null;
-    private Object highlight_line = null;
-
-    private int stack_trace_divider = -1;
-    private int contexts_divider = -1;
-    private String[] contexts_filter_criteria = null;
-    private String[] routines_filter_criteria = null;
-    private String[] rms_filter_criteria = new String[4];
-    private AprofReport report = null;
-    private boolean linked_plots = true;
-    private JMenuItem[] recentMenuItems = new JMenuItem[6];
 
 }

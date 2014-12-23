@@ -507,7 +507,7 @@ public class RoutinesFilterDialog extends javax.swing.JDialog {
 
         jPanel2.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 3, 3, 3));
         jPanel2.setRequestFocusEnabled(false);
-        jPanel2.setLayout(new java.awt.GridLayout());
+        jPanel2.setLayout(new java.awt.GridLayout(1, 0));
 
         jButton1.setText("    Ok    ");
         jButton1.addActionListener(new java.awt.event.ActionListener() {
@@ -532,40 +532,33 @@ public class RoutinesFilterDialog extends javax.swing.JDialog {
     }// </editor-fold>//GEN-END:initComponents
 
 	private void jCheckBox1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBox1ActionPerformed
-
         // % time checkbox
         if (jCheckBox1.isSelected()) {
             jTextField1.setEnabled(true);
         } else {
             jTextField1.setEnabled(false);
         }
-
 	}//GEN-LAST:event_jCheckBox1ActionPerformed
 
 	private void jCheckBox3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBox3ActionPerformed
-
         // % calls checkbox
         if (jCheckBox3.isSelected()) {
             jTextField2.setEnabled(true);
         } else {
             jTextField2.setEnabled(false);
         }
-
 	}//GEN-LAST:event_jCheckBox3ActionPerformed
 
 	private void jCheckBox2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBox2ActionPerformed
-
         // lib checkbox
         if (jCheckBox2.isSelected()) {
             jComboBox1.setEnabled(true);
         } else {
             jComboBox1.setEnabled(false);
         }
-
 	}//GEN-LAST:event_jCheckBox2ActionPerformed
 
 	private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-
         // pressed OK button
         if (validateUserInput()) {
 
@@ -665,25 +658,20 @@ public class RoutinesFilterDialog extends javax.swing.JDialog {
 	}//GEN-LAST:event_jButton1ActionPerformed
 
 	private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-
         // Pressed CANCEL button
         this.dispose();
-
 	}//GEN-LAST:event_jButton2ActionPerformed
 
 	private void jCheckBox5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBox5ActionPerformed
-
         // # rms checkbox
         if (jCheckBox5.isSelected()) {
             jTextField4.setEnabled(true);
         } else {
             jTextField4.setEnabled(false);
         }
-
 	}//GEN-LAST:event_jCheckBox5ActionPerformed
 
     private void jCheckBox6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBox6ActionPerformed
-
         // b checkbox
         if (jCheckBox6.isSelected()) {
             jTextField5.setEnabled(true);
@@ -692,18 +680,15 @@ public class RoutinesFilterDialog extends javax.swing.JDialog {
             jTextField5.setEnabled(false);
             jTextField6.setEnabled(false);
         }
-
     }//GEN-LAST:event_jCheckBox6ActionPerformed
 
     private void jCheckBox7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBox7ActionPerformed
-
         // fitting qualiy checkbox
         if (jCheckBox7.isSelected()) {
             jTextField7.setEnabled(true);
         } else {
             jTextField7.setEnabled(false);
         }
-
     }//GEN-LAST:event_jCheckBox7ActionPerformed
 
     private void jCheckBox8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBox8ActionPerformed

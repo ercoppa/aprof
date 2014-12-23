@@ -312,15 +312,6 @@
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="ExportProgramProfileEntryActionPerformed"/>
                   </Events>
                 </MenuItem>
-                <MenuItem class="javax.swing.JMenuItem" name="ExportProgramStatsEntry">
-                  <Properties>
-                    <Property name="text" type="java.lang.String" value="Program statistics..."/>
-                    <Property name="enabled" type="boolean" value="false"/>
-                  </Properties>
-                  <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="ExportProgramStatsEntryActionPerformed"/>
-                  </Events>
-                </MenuItem>
                 <MenuItem class="javax.swing.JMenuItem" name="ExportInputVolumeEntry">
                   <Properties>
                     <Property name="text" type="java.lang.String" value="Input volume..."/>
@@ -1194,7 +1185,7 @@
 
                           <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
                           <SubComponents>
-                            <Component class="javax.swing.JTable" name="jTable3">
+                            <Component class="javax.swing.JTable" name="ContextTable">
                               <Properties>
                                 <Property name="rowHeight" type="int" value="52"/>
                                 <Property name="selectionModel" type="javax.swing.ListSelectionModel" editor="org.netbeans.modules.form.editors2.JTableSelectionModelEditor">
@@ -1202,7 +1193,7 @@
                                 </Property>
                               </Properties>
                               <AuxValues>
-                                <AuxValue name="JavaCodeGenerator_AddingCodePost" type="java.lang.String" value="restoreSortingContextsTable();&#xa;jTable3.setDefaultRenderer(Routine.class, new PlotThumbRenderer());&#xa;&#xa;jTable3.getSelectionModel().addListSelectionListener(new javax.swing.event.ListSelectionListener() {&#xa;    public void valueChanged(javax.swing.event.ListSelectionEvent evt) {&#xa;        jTable3ValueChanged(evt);&#xa;    }&#xa;});"/>
+                                <AuxValue name="JavaCodeGenerator_AddingCodePost" type="java.lang.String" value="restoreSortingContextsTable();&#xa;ContextTable.setDefaultRenderer(Routine.class, new PlotThumbRenderer());&#xa;&#xa;ContextTable.getSelectionModel().addListSelectionListener(new javax.swing.event.ListSelectionListener() {&#xa;    public void valueChanged(javax.swing.event.ListSelectionEvent evt) {&#xa;        jTable3ValueChanged(evt);&#xa;    }&#xa;});"/>
                                 <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new JTable(new RoutinesTableModel(this.report, this, false)) {&#xa;    public Component prepareRenderer(TableCellRenderer renderer, int row, int column)&#xa;    {&#xa;        try {&#xa;            if (renderer == null) {&#xa;                System.out.println(&quot;Renderer is null&quot;);&#xa;                System.out.println(&quot;row: &quot; + row + &quot; col: &quot; + column);&#xa;                return null;&#xa;            }&#xa;            Component c = super.prepareRenderer(renderer, row, column);&#xa;            if (c != null &amp;&amp; !c.getBackground().equals(getSelectionBackground())) {&#xa;                c.setBackground(java.awt.Color.WHITE);&#xa;            }&#xa;            return c;&#xa;        } catch(NullPointerException e) {&#xa;            System.out.println(&quot;row: &quot; + row + &quot; col: &quot; + column);&#xa;            return null;&#xa;        }&#xa;    }&#xa;}"/>
                               </AuxValues>
                             </Component>
@@ -1223,7 +1214,7 @@
 
                           <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
                           <SubComponents>
-                            <Component class="javax.swing.JTable" name="jTable1">
+                            <Component class="javax.swing.JTable" name="RoutineTable">
                               <Properties>
                                 <Property name="doubleBuffered" type="boolean" value="true" postCode="//jTable1.setAutoCreateColumnsFromModel(false);"/>
                                 <Property name="rowHeight" type="int" value="52"/>
@@ -1232,12 +1223,12 @@
                                 </Property>
                               </Properties>
                               <Events>
-                                <EventHandler event="mouseClicked" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="jTable1MouseClicked"/>
+                                <EventHandler event="mouseClicked" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="RoutineTableMouseClicked"/>
                               </Events>
                               <AuxValues>
-                                <AuxValue name="JavaCodeGenerator_AddingCodePre" type="java.lang.String" value="jTable1.getSelectionModel().addListSelectionListener(new javax.swing.event.ListSelectionListener() {&#xa;    public void valueChanged(javax.swing.event.ListSelectionEvent evt) {&#xa;        jTable1ValueChanged(evt);&#xa;    }&#xa;});&#xa;/*&#xa;jTable1.getModel().addTableModelListener(new javax.swing.event.TableModelListener() {&#xa;    public void tableChanged(javax.swing.event.TableModelEvent evt) {&#xa;        jTable1TableChanged(evt);&#xa;    }&#xa;});&#xa;*/"/>
-                                <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new JTable(new RoutinesTableModel(this.report, this, ((RoutinesTableModel)jTable3.getModel()))) {&#xa;    public Component prepareRenderer(TableCellRenderer renderer, int row, int column)&#xa;    {&#xa;        try {&#xa;            if (renderer == null) {&#xa;                System.out.println(&quot;Renderer is null&quot;);&#xa;                return null;&#xa;            }&#xa;            Component c = super.prepareRenderer(renderer, row, column);&#xa;            if (c != null &amp;&amp; !c.getBackground().equals(getSelectionBackground())) {&#xa;                c.setBackground(java.awt.Color.WHITE);&#xa;            }&#xa;            return c;&#xa;        } catch(NullPointerException e) {&#xa;            System.out.println(&quot;row: &quot; + row + &quot; col: &quot; + column);&#xa;            return null;&#xa;        }&#xa;    }&#xa;}"/>
-                                <AuxValue name="JavaCodeGenerator_InitCodePost" type="java.lang.String" value="restoreSortingRoutinesTable();&#xa;jTable1.setDefaultRenderer(Routine.class, new PlotThumbRenderer());"/>
+                                <AuxValue name="JavaCodeGenerator_AddingCodePre" type="java.lang.String" value="RoutineTable.getSelectionModel().addListSelectionListener(new javax.swing.event.ListSelectionListener() {&#xa;    public void valueChanged(javax.swing.event.ListSelectionEvent evt) {&#xa;        RoutineTableSelection(evt);&#xa;    }&#xa;});&#xa;/*&#xa;RoutineTable.getModel().addTableModelListener(new javax.swing.event.TableModelListener() {&#xa;    public void tableChanged(javax.swing.event.TableModelEvent evt) {&#xa;        jTable1TableChanged(evt);&#xa;    }&#xa;});&#xa;*/"/>
+                                <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new JTable(new RoutinesTableModel(this.report, this, ((RoutinesTableModel)ContextTable.getModel()))) {&#xa;    public Component prepareRenderer(TableCellRenderer renderer, int row, int column)&#xa;    {&#xa;        try {&#xa;            if (renderer == null) {&#xa;                System.out.println(&quot;Renderer is null&quot;);&#xa;                return null;&#xa;            }&#xa;            Component c = super.prepareRenderer(renderer, row, column);&#xa;            if (c != null &amp;&amp; !c.getBackground().equals(getSelectionBackground())) {&#xa;                c.setBackground(java.awt.Color.WHITE);&#xa;            }&#xa;            return c;&#xa;        } catch(NullPointerException e) {&#xa;            System.out.println(&quot;row: &quot; + row + &quot; col: &quot; + column);&#xa;            return null;&#xa;        }&#xa;    }&#xa;}"/>
+                                <AuxValue name="JavaCodeGenerator_InitCodePost" type="java.lang.String" value="restoreSortingRoutinesTable();&#xa;RoutineTable.setDefaultRenderer(Routine.class, new PlotThumbRenderer());"/>
                               </AuxValues>
                             </Component>
                           </SubComponents>
@@ -1312,7 +1303,7 @@
 
                               <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
                               <SubComponents>
-                                <Component class="javax.swing.JTable" name="jTable2">
+                                <Component class="javax.swing.JTable" name="InputTupleTable">
                                   <Properties>
                                     <Property name="model" type="javax.swing.table.TableModel" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
                                       <Connection code="new RmsTableModel(this)" type="code"/>
@@ -1322,7 +1313,7 @@
                                     </Property>
                                   </Properties>
                                   <AuxValues>
-                                    <AuxValue name="JavaCodeGenerator_AddingCodePre" type="java.lang.String" value="jTable2.getSelectionModel().addListSelectionListener(new javax.swing.event.ListSelectionListener() {&#xa;            public void valueChanged(javax.swing.event.ListSelectionEvent evt) {&#xa;                jTable2ValueChanged(evt);&#xa;            }&#xa;        });"/>
+                                    <AuxValue name="JavaCodeGenerator_AddingCodePre" type="java.lang.String" value="InputTupleTable.getSelectionModel().addListSelectionListener(new javax.swing.event.ListSelectionListener() {&#xa;            public void valueChanged(javax.swing.event.ListSelectionEvent evt) {&#xa;                jTable2ValueChanged(evt);&#xa;            }&#xa;        });"/>
                                     <AuxValue name="JavaCodeGenerator_InitCodePost" type="java.lang.String" value="restoreSortingRmsTable();"/>
                                   </AuxValues>
                                 </Component>
@@ -1365,14 +1356,14 @@
 
                               <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
                               <SubComponents>
-                                <Component class="javax.swing.JList" name="jList1">
+                                <Component class="javax.swing.JList" name="StackTrace">
                                   <Properties>
                                     <Property name="model" type="javax.swing.ListModel" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
                                       <Connection code="new StackTraceListModel()" type="code"/>
                                     </Property>
                                   </Properties>
                                   <Events>
-                                    <EventHandler event="mouseClicked" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="jList1MouseClicked"/>
+                                    <EventHandler event="mouseClicked" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="StackTraceMouseClicked"/>
                                   </Events>
                                 </Component>
                               </SubComponents>
@@ -1414,7 +1405,7 @@
 
                           <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
                           <SubComponents>
-                            <Component class="javax.swing.JTree" name="jTree1">
+                            <Component class="javax.swing.JTree" name="ContextTree">
                               <Properties>
                                 <Property name="model" type="javax.swing.tree.TreeModel" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
                                   <Connection code="new DefaultTreeModel(null)" type="code"/>
