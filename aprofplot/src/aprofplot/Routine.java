@@ -2,7 +2,7 @@ package aprofplot;
 
 import java.util.*;
 
-public abstract class Routine implements Comparable<Routine> {
+public abstract class Routine implements Comparable<Routine>, Iterable<Input> {
 
     // Some statistics about the routine
     private double min_cumulative_cost = Double.MAX_VALUE;
@@ -27,6 +27,11 @@ public abstract class Routine implements Comparable<Routine> {
     private long total_cumulative_thread_input = 0;
     private long total_self_syscall_input = 0;
     private long total_self_thread_input = 0;
+
+    @Override
+    public Iterator<Input> iterator() {
+        return getInputTuplesIterator();
+    }
 
     public enum SortOrder {
 
@@ -255,7 +260,7 @@ public abstract class Routine implements Comparable<Routine> {
         return input_tuples.size();
     }
 
-    public Iterator getInputTuplesIterator() {
+    public Iterator<Input> getInputTuplesIterator() {
         sortInputTuplesByInput();
         return input_tuples.iterator();
     }

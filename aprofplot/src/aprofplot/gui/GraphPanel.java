@@ -958,7 +958,8 @@ public class GraphPanel extends javax.swing.JPanel {
 
     public void setGroupCost(Input.CostKind cost_type) {
 
-        if (cost_type == this.cost_type) {
+        boolean applicable = graph_type == COST_PLOT || graph_type == RATIO_PLOT;
+        if (cost_type == this.cost_type || !applicable) {
             return;
         }
 
@@ -2136,6 +2137,9 @@ public class GraphPanel extends javax.swing.JPanel {
 
     public void clearData() {
 
+        if (rtn_info == null)
+            return;
+        
         disableNotification(true);
 
         rtn_info = null;
