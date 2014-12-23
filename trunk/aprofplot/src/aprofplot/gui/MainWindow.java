@@ -20,7 +20,7 @@ import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
-public class MainWindow extends javax.swing.JFrame {
+public final class MainWindow extends javax.swing.JFrame {
 
     private Routine rtn_info = null;
     private int graph_visible = 0;
@@ -38,7 +38,7 @@ public class MainWindow extends javax.swing.JFrame {
     // Are we loading a new report?
     private boolean loading = false;
 
-    // are we a routine with context with a click mouse event?
+    // is a routine with context with a click mouse event?
     private boolean loading_routine = false;
 
     // Is the editor visible ?
@@ -60,32 +60,45 @@ public class MainWindow extends javax.swing.JFrame {
     private boolean linked_editor = true;
 
     private boolean fitting_mode = false;
-
+    
+    // graphs
+    ArrayList<GraphPanel> graphs = new ArrayList<GraphPanel>();
+    ArrayList<Boolean> graphs_enabled = new ArrayList<Boolean>();
+    
     /**
      * Creates new form MainWindow
      */
     public MainWindow() {
 
         try {
-            setSize(875, 615);
+            //setSize(875, 615);
             setLookAndFeel(getSystemLookAndFeelClassName());
             initComponents();
-            //setExtendedState(MAXIMIZED_BOTH);
+            setExtendedState(MAXIMIZED_BOTH);
             initGraph();
             refreshRecentFiles();
             resetRoutineTableFilter();
             resetContextsTableFilter();
             checkEditor();
-            setSize(875, 615);
+            //setSize(875, 615);
 
-        } catch (Exception e) {
-
-            System.out.println("Fatal error during start of MainWindow [1]");
+        } catch (ClassNotFoundException e) {
+            System.out.println("Fatal error during start of MainWindow");
             e.printStackTrace();
             System.exit(1);
-
+        } catch (InstantiationException e) {
+            System.out.println("Fatal error during start of MainWindow");
+            e.printStackTrace();
+            System.exit(1);
+        } catch (IllegalAccessException e) {
+            System.out.println("Fatal error during start of MainWindow");
+            e.printStackTrace();
+            System.exit(1);
+        } catch (UnsupportedLookAndFeelException e) {
+            System.out.println("Fatal error during start of MainWindow");
+            e.printStackTrace();
+            System.exit(1);
         }
-
     }
 
     /**
@@ -97,37 +110,35 @@ public class MainWindow extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jButton5 = new javax.swing.JButton();
-        jButton4 = new javax.swing.JButton();
-        jPopupMenu1 = new javax.swing.JPopupMenu();
-        jCheckBoxMenuItem4 = new javax.swing.JCheckBoxMenuItem();
-        jCheckBoxMenuItem7 = new javax.swing.JCheckBoxMenuItem();
-        jCheckBoxMenuItem10 = new javax.swing.JCheckBoxMenuItem();
-        jCheckBoxMenuItem5 = new javax.swing.JCheckBoxMenuItem();
-        jCheckBoxMenuItem6 = new javax.swing.JCheckBoxMenuItem();
-        jCheckBoxMenuItem9 = new javax.swing.JCheckBoxMenuItem();
-        jCheckBoxMenuItem8 = new javax.swing.JCheckBoxMenuItem();
-        jButton12 = new javax.swing.JButton();
+        FilterRoutinesButton = new javax.swing.JButton();
+        FilterTuplesButton = new javax.swing.JButton();
+        GraphMenu = new javax.swing.JPopupMenu();
+        CostPlotButton = new javax.swing.JCheckBoxMenuItem();
+        AmortizedPlotButton = new javax.swing.JCheckBoxMenuItem();
+        FrequencyPlotButton = new javax.swing.JCheckBoxMenuItem();
+        MMMPlotButton = new javax.swing.JCheckBoxMenuItem();
+        TotalCostPlotButton = new javax.swing.JCheckBoxMenuItem();
+        VarPlotButton = new javax.swing.JCheckBoxMenuItem();
+        RatioPlotButton = new javax.swing.JCheckBoxMenuItem();
+        FilterContextsButton = new javax.swing.JButton();
         jToolBar1 = new javax.swing.JToolBar();
-        jButton3 = new javax.swing.JButton();
-        jButton1 = new javax.swing.JButton();
-        jButton7 = new javax.swing.JButton();
-        jButton10 = new javax.swing.JButton();
-        jButton9 = new javax.swing.JButton();
+        NewWindowButton = new javax.swing.JButton();
+        OpenButton = new javax.swing.JButton();
+        SaveButton = new javax.swing.JButton();
+        SourceDirectoryButton = new javax.swing.JButton();
+        ReloadButton = new javax.swing.JButton();
         jSeparator2 = new javax.swing.JToolBar.Separator();
-        jButton6 = new javax.swing.JButton();
-        jSeparator5 = new javax.swing.JToolBar.Separator();
-        jToggleButton10 = new javax.swing.JToggleButton();
-        jToggleButton1 = new javax.swing.JToggleButton();
-        jToggleButton3 = new javax.swing.JToggleButton();
-        jToggleButton4 = new javax.swing.JToggleButton();
+        GraphButton = new javax.swing.JToggleButton();
+        SourceButton = new javax.swing.JToggleButton();
+        FitButton = new javax.swing.JToggleButton();
+        LinkButton = new javax.swing.JToggleButton();
         jSeparator3 = new javax.swing.JToolBar.Separator();
-        jButton8 = new javax.swing.JButton();
+        SettingButton = new javax.swing.JButton();
         jSeparator6 = new javax.swing.JToolBar.Separator();
-        jTextField1 = new javax.swing.JTextField();
-        jButton2 = new javax.swing.JButton();
+        SearchField = new javax.swing.JTextField();
+        SearchButton = new javax.swing.JButton();
         jSeparator7 = new javax.swing.JToolBar.Separator();
-        jLabel7 = new javax.swing.JLabel();
+        RoutineLabel = new javax.swing.JLabel();
         jPanel1 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         jLabel4 = new javax.swing.JLabel();
@@ -135,7 +146,6 @@ public class MainWindow extends javax.swing.JFrame {
         jLabel6 = new javax.swing.JLabel();
         jLabel9 = new javax.swing.JLabel();
         jLabel8 = new javax.swing.JLabel();
-        jProgressBar1 = new javax.swing.JProgressBar();
         jPanel2 = new javax.swing.JPanel();
         jSplitPane1 = new javax.swing.JSplitPane();
         jPanel3 = new javax.swing.JPanel();
@@ -209,152 +219,149 @@ public class MainWindow extends javax.swing.JFrame {
         jPanel8 = new javax.swing.JPanel();
         jScrollPane4 = new javax.swing.JScrollPane();
         jTree1 = new javax.swing.JTree();
-        jMenuBar1 = new javax.swing.JMenuBar();
-        jMenu1 = new javax.swing.JMenu();
-        jMenuItem1 = new javax.swing.JMenuItem();
+        MenuBar = new javax.swing.JMenuBar();
+        FileMenu = new javax.swing.JMenu();
+        NewWindowMenuEntry = new javax.swing.JMenuItem();
         jSeparator1 = new javax.swing.JSeparator();
-        jMenuItem5 = new javax.swing.JMenuItem();
-        jMenuItem8 = new javax.swing.JMenuItem();
-        jMenu5 = new javax.swing.JMenu();
-        recentMenuItem1 = new javax.swing.JMenuItem();
-        recentMenuItem2 = new javax.swing.JMenuItem();
-        recentMenuItem3 = new javax.swing.JMenuItem();
-        recentMenuItem4 = new javax.swing.JMenuItem();
-        recentMenuItem5 = new javax.swing.JMenuItem();
-        recentMenuItem6 = new javax.swing.JMenuItem();
-        jMenuItem6 = new javax.swing.JMenuItem();
-        jMenuItem9 = new javax.swing.JMenuItem();
-        jMenu6 = new javax.swing.JMenu();
-        jMenuItem11 = new javax.swing.JMenuItem();
-        jMenuItem12 = new javax.swing.JMenuItem();
-        jMenuItem13 = new javax.swing.JMenuItem();
-        jMenuItem14 = new javax.swing.JMenuItem();
-        jMenuItem15 = new javax.swing.JMenuItem();
-        jMenuItem16 = new javax.swing.JMenuItem();
-        jMenuItem17 = new javax.swing.JMenuItem();
-        jMenuItem19 = new javax.swing.JMenuItem();
-        jMenuItem20 = new javax.swing.JMenuItem();
-        jMenuItem18 = new javax.swing.JMenuItem();
-        jMenuItem21 = new javax.swing.JMenuItem();
-        jMenuItem7 = new javax.swing.JMenuItem();
+        OpenFileMenuEntry = new javax.swing.JMenuItem();
+        SetSourceDirMenuEntry = new javax.swing.JMenuItem();
+        RecentMenu = new javax.swing.JMenu();
+        RecentEntry1 = new javax.swing.JMenuItem();
+        RecentEntry2 = new javax.swing.JMenuItem();
+        RecentEntry3 = new javax.swing.JMenuItem();
+        RecentEntry4 = new javax.swing.JMenuItem();
+        RecentEntry5 = new javax.swing.JMenuItem();
+        RecentEntry6 = new javax.swing.JMenuItem();
+        SaveMenuEntry = new javax.swing.JMenuItem();
+        FitMenuEntry = new javax.swing.JMenuItem();
+        ExportMenu = new javax.swing.JMenu();
+        ExportRoutineProfileEntry = new javax.swing.JMenuItem();
+        ExportProgramProfileEntry = new javax.swing.JMenuItem();
+        ExportProgramStatsEntry = new javax.swing.JMenuItem();
+        ExportInputVolumeEntry = new javax.swing.JMenuItem();
+        ExportRichnessEntry = new javax.swing.JMenuItem();
+        ExportThreadInputEntry = new javax.swing.JMenuItem();
+        ExportSyscallInputEntry = new javax.swing.JMenuItem();
+        ExportInducedAccessEntry = new javax.swing.JMenuItem();
+        ExportSelfInducedAccessEntry = new javax.swing.JMenuItem();
         jSeparator4 = new javax.swing.JSeparator();
-        jMenuItem2 = new javax.swing.JMenuItem();
-        jMenu2 = new javax.swing.JMenu();
-        jMenuItem4 = new javax.swing.JMenuItem();
-        jMenu3 = new javax.swing.JMenu();
-        jCheckBoxMenuItem12 = new javax.swing.JCheckBoxMenuItem();
-        jCheckBoxMenuItem15 = new javax.swing.JCheckBoxMenuItem();
-        jCheckBoxMenuItem18 = new javax.swing.JCheckBoxMenuItem();
-        jCheckBoxMenuItem13 = new javax.swing.JCheckBoxMenuItem();
-        jCheckBoxMenuItem14 = new javax.swing.JCheckBoxMenuItem();
-        jCheckBoxMenuItem17 = new javax.swing.JCheckBoxMenuItem();
-        jCheckBoxMenuItem16 = new javax.swing.JCheckBoxMenuItem();
-        jCheckBoxMenuItem1 = new javax.swing.JCheckBoxMenuItem();
-        jMenu4 = new javax.swing.JMenu();
-        jMenuItem3 = new javax.swing.JMenuItem();
+        ExitMenuEntry = new javax.swing.JMenuItem();
+        EditMenu = new javax.swing.JMenu();
+        SettingsMenuEntry = new javax.swing.JMenuItem();
+        ViewMenu = new javax.swing.JMenu();
+        CostPlotMenuEntry = new javax.swing.JCheckBoxMenuItem();
+        AmortizedPlotMenuEntry = new javax.swing.JCheckBoxMenuItem();
+        FrequencyPlotMenuEntry = new javax.swing.JCheckBoxMenuItem();
+        MMMPlotMenuEntry = new javax.swing.JCheckBoxMenuItem();
+        TotalCostPlotMenuEntry = new javax.swing.JCheckBoxMenuItem();
+        VarianceCostPlotMenuEntry = new javax.swing.JCheckBoxMenuItem();
+        RatioPlotMenuEntry = new javax.swing.JCheckBoxMenuItem();
+        SourceMenuEntry = new javax.swing.JCheckBoxMenuItem();
+        HelpMenu = new javax.swing.JMenu();
+        AboutMenuEntry = new javax.swing.JMenuItem();
 
-        jButton5.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Filter-icon.png"))); // NOI18N
-        jButton5.setToolTipText("Filter routines");
-        jButton5.setBorder(null);
-        jButton5.setMaximumSize(new java.awt.Dimension(28, 28));
-        jButton5.setMinimumSize(new java.awt.Dimension(28, 28));
-        jButton5.setPreferredSize(new java.awt.Dimension(28, 28));
-        jScrollPane1.setCorner(javax.swing.ScrollPaneConstants.UPPER_RIGHT_CORNER, jButton5);
-        jButton5.addActionListener(new java.awt.event.ActionListener() {
+        FilterRoutinesButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Filter-icon.png"))); // NOI18N
+        FilterRoutinesButton.setToolTipText("Filter routines");
+        FilterRoutinesButton.setBorder(null);
+        FilterRoutinesButton.setMaximumSize(new java.awt.Dimension(28, 28));
+        FilterRoutinesButton.setMinimumSize(new java.awt.Dimension(28, 28));
+        FilterRoutinesButton.setPreferredSize(new java.awt.Dimension(28, 28));
+        jScrollPane1.setCorner(javax.swing.ScrollPaneConstants.UPPER_RIGHT_CORNER, FilterRoutinesButton);
+        FilterRoutinesButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton5ActionPerformed(evt);
+                FilterRoutinesButtonActionPerformed(evt);
             }
         });
 
-        jButton4.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Filter-icon.png"))); // NOI18N
-        jButton4.setToolTipText("Filter rms");
-        jButton4.setBorder(null);
-        jButton4.setMaximumSize(new java.awt.Dimension(28, 28));
-        jButton4.setMinimumSize(new java.awt.Dimension(28, 28));
-        jButton4.setPreferredSize(new java.awt.Dimension(28, 28));
-        jScrollPane2.setCorner(javax.swing.ScrollPaneConstants.UPPER_RIGHT_CORNER, jButton4);
-        jButton4.addActionListener(new java.awt.event.ActionListener() {
+        FilterTuplesButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Filter-icon.png"))); // NOI18N
+        FilterTuplesButton.setToolTipText("Filter rms");
+        FilterTuplesButton.setBorder(null);
+        FilterTuplesButton.setMaximumSize(new java.awt.Dimension(28, 28));
+        FilterTuplesButton.setMinimumSize(new java.awt.Dimension(28, 28));
+        FilterTuplesButton.setPreferredSize(new java.awt.Dimension(28, 28));
+        jScrollPane2.setCorner(javax.swing.ScrollPaneConstants.UPPER_RIGHT_CORNER, FilterTuplesButton);
+        FilterTuplesButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton4ActionPerformed(evt);
+                FilterTuplesButtonActionPerformed(evt);
             }
         });
 
-        jPopupMenu1.addPopupMenuListener(new javax.swing.event.PopupMenuListener() {
+        GraphMenu.addPopupMenuListener(new javax.swing.event.PopupMenuListener() {
             public void popupMenuCanceled(javax.swing.event.PopupMenuEvent evt) {
             }
             public void popupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent evt) {
-                jPopupMenu1PopupMenuWillBecomeInvisible(evt);
+                GraphMenuPopupMenuWillBecomeInvisible(evt);
             }
             public void popupMenuWillBecomeVisible(javax.swing.event.PopupMenuEvent evt) {
             }
         });
 
-        jCheckBoxMenuItem4.setText("Cost plot");
-        jCheckBoxMenuItem4.addActionListener(new java.awt.event.ActionListener() {
+        CostPlotButton.setText("Cost plot");
+        CostPlotButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxMenuItem4ActionPerformed(evt);
+                CostPlotButtonActionPerformed(evt);
             }
         });
-        jPopupMenu1.add(jCheckBoxMenuItem4);
+        GraphMenu.add(CostPlotButton);
 
-        jCheckBoxMenuItem7.setText("Amortized cost plot");
-        jCheckBoxMenuItem7.addActionListener(new java.awt.event.ActionListener() {
+        AmortizedPlotButton.setText("Amortized cost plot");
+        AmortizedPlotButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxMenuItem7ActionPerformed(evt);
+                AmortizedPlotButtonActionPerformed(evt);
             }
         });
-        jPopupMenu1.add(jCheckBoxMenuItem7);
+        GraphMenu.add(AmortizedPlotButton);
 
-        jCheckBoxMenuItem10.setText("Rms frequency plot");
-        jCheckBoxMenuItem10.addActionListener(new java.awt.event.ActionListener() {
+        FrequencyPlotButton.setText("Rms frequency plot");
+        FrequencyPlotButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxMenuItem10ActionPerformed(evt);
+                FrequencyPlotButtonActionPerformed(evt);
             }
         });
-        jPopupMenu1.add(jCheckBoxMenuItem10);
+        GraphMenu.add(FrequencyPlotButton);
 
-        jCheckBoxMenuItem5.setText("Min/Avg/Max cost plot");
-        jCheckBoxMenuItem5.addActionListener(new java.awt.event.ActionListener() {
+        MMMPlotButton.setText("Best/Avg/Worst cost plot");
+        MMMPlotButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxMenuItem5ActionPerformed(evt);
+                MMMPlotButtonActionPerformed(evt);
             }
         });
-        jPopupMenu1.add(jCheckBoxMenuItem5);
+        GraphMenu.add(MMMPlotButton);
 
-        jCheckBoxMenuItem6.setText("Total cost plot");
-        jCheckBoxMenuItem6.addActionListener(new java.awt.event.ActionListener() {
+        TotalCostPlotButton.setText("Total cost plot");
+        TotalCostPlotButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxMenuItem6ActionPerformed(evt);
+                TotalCostPlotButtonActionPerformed(evt);
             }
         });
-        jPopupMenu1.add(jCheckBoxMenuItem6);
+        GraphMenu.add(TotalCostPlotButton);
 
-        jCheckBoxMenuItem9.setText("Cost variance plot");
-        jCheckBoxMenuItem9.addActionListener(new java.awt.event.ActionListener() {
+        VarPlotButton.setText("Cost variance plot");
+        VarPlotButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxMenuItem9ActionPerformed(evt);
+                VarPlotButtonActionPerformed(evt);
             }
         });
-        jPopupMenu1.add(jCheckBoxMenuItem9);
+        GraphMenu.add(VarPlotButton);
 
-        jCheckBoxMenuItem8.setText("Curve bounding plot");
-        jCheckBoxMenuItem8.addActionListener(new java.awt.event.ActionListener() {
+        RatioPlotButton.setText("Curve bounding plot");
+        RatioPlotButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxMenuItem8ActionPerformed(evt);
+                RatioPlotButtonActionPerformed(evt);
             }
         });
-        jPopupMenu1.add(jCheckBoxMenuItem8);
+        GraphMenu.add(RatioPlotButton);
 
-        jButton12.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Filter-icon.png"))); // NOI18N
-        jButton12.setToolTipText("Filter routines");
-        jButton12.setBorder(null);
-        jButton12.setMaximumSize(new java.awt.Dimension(28, 28));
-        jButton12.setMinimumSize(new java.awt.Dimension(28, 28));
-        jButton12.setPreferredSize(new java.awt.Dimension(28, 28));
-        jScrollPane6.setCorner(javax.swing.ScrollPaneConstants.UPPER_RIGHT_CORNER, jButton12);
-        jButton12.addActionListener(new java.awt.event.ActionListener() {
+        FilterContextsButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Filter-icon.png"))); // NOI18N
+        FilterContextsButton.setToolTipText("Filter routines");
+        FilterContextsButton.setBorder(null);
+        FilterContextsButton.setMaximumSize(new java.awt.Dimension(28, 28));
+        FilterContextsButton.setMinimumSize(new java.awt.Dimension(28, 28));
+        FilterContextsButton.setPreferredSize(new java.awt.Dimension(28, 28));
+        jScrollPane6.setCorner(javax.swing.ScrollPaneConstants.UPPER_RIGHT_CORNER, FilterContextsButton);
+        FilterContextsButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton12ActionPerformed(evt);
+                FilterContextsButtonActionPerformed(evt);
             }
         });
 
@@ -374,213 +381,195 @@ public class MainWindow extends javax.swing.JFrame {
         jToolBar1.setRollover(true);
         jToolBar1.setMargin(new java.awt.Insets(0, 3, 0, 0));
 
-        jButton3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/NewWindow-icon.png"))); // NOI18N
-        jButton3.setToolTipText("open a new window");
-        jButton3.setBorder(null);
-        jButton3.setFocusable(false);
-        jButton3.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-        jButton3.setMinimumSize(new java.awt.Dimension(28, 28));
-        jButton3.setPreferredSize(new java.awt.Dimension(28, 28));
-        jButton3.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
-        jButton3.addActionListener(new java.awt.event.ActionListener() {
+        NewWindowButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/NewWindow-icon.png"))); // NOI18N
+        NewWindowButton.setToolTipText("open a new window");
+        NewWindowButton.setBorder(null);
+        NewWindowButton.setFocusable(false);
+        NewWindowButton.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        NewWindowButton.setMinimumSize(new java.awt.Dimension(28, 28));
+        NewWindowButton.setPreferredSize(new java.awt.Dimension(28, 28));
+        NewWindowButton.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        NewWindowButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton3ActionPerformed(evt);
+                NewWindowButtonActionPerformed(evt);
             }
         });
-        jToolBar1.add(jButton3);
+        jToolBar1.add(NewWindowButton);
 
-        jButton1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Open-icon.png"))); // NOI18N
-        jButton1.setToolTipText("open an Aprof report file");
-        jButton1.setBorder(null);
-        jButton1.setFocusable(false);
-        jButton1.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-        jButton1.setMaximumSize(new java.awt.Dimension(28, 28));
-        jButton1.setPreferredSize(new java.awt.Dimension(28, 28));
-        jButton1.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
-        jButton1.addActionListener(new java.awt.event.ActionListener() {
+        OpenButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Open-icon.png"))); // NOI18N
+        OpenButton.setToolTipText("open an Aprof report file");
+        OpenButton.setBorder(null);
+        OpenButton.setFocusable(false);
+        OpenButton.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        OpenButton.setMaximumSize(new java.awt.Dimension(28, 28));
+        OpenButton.setPreferredSize(new java.awt.Dimension(28, 28));
+        OpenButton.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        OpenButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton1ActionPerformed(evt);
+                OpenButtonActionPerformed(evt);
             }
         });
-        jToolBar1.add(jButton1);
+        jToolBar1.add(OpenButton);
 
-        jButton7.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Save-icon.png"))); // NOI18N
-        jButton7.setToolTipText("save report changes");
-        jButton7.setBorder(null);
-        jButton7.setEnabled(false);
-        jButton7.setFocusable(false);
-        jButton7.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-        jButton7.setMaximumSize(new java.awt.Dimension(28, 28));
-        jButton7.setMinimumSize(new java.awt.Dimension(28, 28));
-        jButton7.setPreferredSize(new java.awt.Dimension(28, 28));
-        jButton7.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
-        jButton7.addActionListener(new java.awt.event.ActionListener() {
+        SaveButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Save-icon.png"))); // NOI18N
+        SaveButton.setToolTipText("save report changes");
+        SaveButton.setBorder(null);
+        SaveButton.setEnabled(false);
+        SaveButton.setFocusable(false);
+        SaveButton.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        SaveButton.setMaximumSize(new java.awt.Dimension(28, 28));
+        SaveButton.setMinimumSize(new java.awt.Dimension(28, 28));
+        SaveButton.setPreferredSize(new java.awt.Dimension(28, 28));
+        SaveButton.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        SaveButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton7ActionPerformed(evt);
+                SaveButtonActionPerformed(evt);
             }
         });
-        jToolBar1.add(jButton7);
+        jToolBar1.add(SaveButton);
 
-        jButton10.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/fs-directory.png"))); // NOI18N
-        jButton10.setToolTipText("Set source code directory");
-        jButton10.setBorder(null);
-        jButton10.setEnabled(false);
-        jButton10.setFocusable(false);
-        jButton10.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-        jButton10.setMaximumSize(new java.awt.Dimension(28, 28));
-        jButton10.setMinimumSize(new java.awt.Dimension(28, 28));
-        jButton10.setPreferredSize(new java.awt.Dimension(28, 28));
-        jButton10.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
-        jButton10.addActionListener(new java.awt.event.ActionListener() {
+        SourceDirectoryButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/fs-directory.png"))); // NOI18N
+        SourceDirectoryButton.setToolTipText("Set source code directory");
+        SourceDirectoryButton.setBorder(null);
+        SourceDirectoryButton.setEnabled(false);
+        SourceDirectoryButton.setFocusable(false);
+        SourceDirectoryButton.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        SourceDirectoryButton.setMaximumSize(new java.awt.Dimension(28, 28));
+        SourceDirectoryButton.setMinimumSize(new java.awt.Dimension(28, 28));
+        SourceDirectoryButton.setPreferredSize(new java.awt.Dimension(28, 28));
+        SourceDirectoryButton.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        SourceDirectoryButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton10ActionPerformed(evt);
+                SourceDirectoryButtonActionPerformed(evt);
             }
         });
-        jToolBar1.add(jButton10);
+        jToolBar1.add(SourceDirectoryButton);
 
-        jButton9.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/refresh.png"))); // NOI18N
-        jButton9.setToolTipText("Reload last recent report");
-        jButton9.setBorder(null);
-        jButton9.setEnabled(false);
+        ReloadButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/refresh.png"))); // NOI18N
+        ReloadButton.setToolTipText("Reload last recent report");
+        ReloadButton.setBorder(null);
+        ReloadButton.setEnabled(false);
         ArrayList<File> r = Main.getRecentFiles();
         if (r.size() > 0) {
-            jButton9.setEnabled(true);
+            ReloadButton.setEnabled(true);
         }
-        jButton9.setFocusable(false);
-        jButton9.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-        jButton9.setMaximumSize(new java.awt.Dimension(28, 28));
-        jButton9.setMinimumSize(new java.awt.Dimension(28, 28));
-        jButton9.setPreferredSize(new java.awt.Dimension(28, 28));
-        jButton9.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
-        jButton9.addActionListener(new java.awt.event.ActionListener() {
+        ReloadButton.setFocusable(false);
+        ReloadButton.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        ReloadButton.setMaximumSize(new java.awt.Dimension(28, 28));
+        ReloadButton.setMinimumSize(new java.awt.Dimension(28, 28));
+        ReloadButton.setPreferredSize(new java.awt.Dimension(28, 28));
+        ReloadButton.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        ReloadButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton9ActionPerformed(evt);
+                ReloadButtonActionPerformed(evt);
             }
         });
-        jToolBar1.add(jButton9);
+        jToolBar1.add(ReloadButton);
         jToolBar1.add(jSeparator2);
 
-        jButton6.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Merge-icon.png"))); // NOI18N
-        jButton6.setToolTipText("merge two or more aprof report files");
-        jButton6.setBorder(null);
-        jButton6.setEnabled(false);
-        jButton6.setFocusable(false);
-        jButton6.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-        jButton6.setMaximumSize(new java.awt.Dimension(28, 28));
-        jButton6.setMinimumSize(new java.awt.Dimension(28, 28));
-        jButton6.setPreferredSize(new java.awt.Dimension(28, 28));
-        jButton6.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
-        jButton6.addActionListener(new java.awt.event.ActionListener() {
+        GraphButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/statistics.png"))); // NOI18N
+        GraphButton.setToolTipText("Select graphs to be shown");
+        GraphButton.setFocusable(false);
+        GraphButton.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        GraphButton.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        GraphButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton6ActionPerformed(evt);
+                GraphButtonActionPerformed(evt);
             }
         });
-        jToolBar1.add(jButton6);
-        jToolBar1.add(jSeparator5);
+        jToolBar1.add(GraphButton);
 
-        jToggleButton10.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/statistics.png"))); // NOI18N
-        jToggleButton10.setToolTipText("Select graphs to be shown");
-        jToggleButton10.setFocusable(false);
-        jToggleButton10.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-        jToggleButton10.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
-        jToggleButton10.addActionListener(new java.awt.event.ActionListener() {
+        SourceButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/editor.png"))); // NOI18N
+        SourceButton.setToolTipText("Show source code editor");
+        SourceButton.setEnabled(false);
+        SourceButton.setFocusable(false);
+        SourceButton.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        SourceButton.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        SourceButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jToggleButton10ActionPerformed(evt);
+                SourceButtonActionPerformed(evt);
             }
         });
-        jToolBar1.add(jToggleButton10);
+        jToolBar1.add(SourceButton);
 
-        jToggleButton1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/editor.png"))); // NOI18N
-        jToggleButton1.setToolTipText("Show source code editor");
-        jToggleButton1.setEnabled(false);
-        jToggleButton1.setFocusable(false);
-        jToggleButton1.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-        jToggleButton1.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
-        jToggleButton1.addActionListener(new java.awt.event.ActionListener() {
+        FitButton.setFont(new java.awt.Font("Ubuntu", 1, 15)); // NOI18N
+        FitButton.setText(" F ");
+        FitButton.setToolTipText("Enable fitting mode");
+        FitButton.setEnabled(false);
+        FitButton.setFocusable(false);
+        FitButton.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        FitButton.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        FitButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jToggleButton1ActionPerformed(evt);
+                FitButtonActionPerformed(evt);
             }
         });
-        jToolBar1.add(jToggleButton1);
+        jToolBar1.add(FitButton);
 
-        jToggleButton3.setFont(new java.awt.Font("Ubuntu", 1, 15)); // NOI18N
-        jToggleButton3.setText(" F ");
-        jToggleButton3.setToolTipText("Enable fitting mode");
-        jToggleButton3.setEnabled(false);
-        jToggleButton3.setFocusable(false);
-        jToggleButton3.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-        jToggleButton3.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
-        jToggleButton3.addActionListener(new java.awt.event.ActionListener() {
+        LinkButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Unlink-icon.png"))); // NOI18N
+        LinkButton.setSelected(true);
+        LinkButton.setToolTipText("link/unlink plots");
+        LinkButton.setFocusable(false);
+        LinkButton.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        LinkButton.setRolloverIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Unlink-icon.png"))); // NOI18N
+        LinkButton.setRolloverSelectedIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Link-icon.png"))); // NOI18N
+        LinkButton.setSelectedIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Link-icon.png"))); // NOI18N
+        LinkButton.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        LinkButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jToggleButton3ActionPerformed(evt);
+                LinkButtonActionPerformed(evt);
             }
         });
-        jToolBar1.add(jToggleButton3);
-
-        jToggleButton4.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Unlink-icon.png"))); // NOI18N
-        jToggleButton4.setSelected(true);
-        jToggleButton4.setToolTipText("link/unlink plots");
-        jToggleButton4.setFocusable(false);
-        jToggleButton4.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-        jToggleButton4.setRolloverIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Unlink-icon.png"))); // NOI18N
-        jToggleButton4.setRolloverSelectedIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Link-icon.png"))); // NOI18N
-        jToggleButton4.setSelectedIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Link-icon.png"))); // NOI18N
-        jToggleButton4.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
-        jToggleButton4.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jToggleButton4ActionPerformed(evt);
-            }
-        });
-        jToolBar1.add(jToggleButton4);
+        jToolBar1.add(LinkButton);
         jToolBar1.add(jSeparator3);
 
-        jButton8.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Settings-icon.png"))); // NOI18N
-        jButton8.setToolTipText("settings");
-        jButton8.setBorder(null);
-        jButton8.setFocusable(false);
-        jButton8.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-        jButton8.setMaximumSize(new java.awt.Dimension(28, 28));
-        jButton8.setMinimumSize(new java.awt.Dimension(28, 28));
-        jButton8.setPreferredSize(new java.awt.Dimension(28, 28));
-        jButton8.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
-        jButton8.addActionListener(new java.awt.event.ActionListener() {
+        SettingButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Settings-icon.png"))); // NOI18N
+        SettingButton.setToolTipText("settings");
+        SettingButton.setBorder(null);
+        SettingButton.setFocusable(false);
+        SettingButton.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        SettingButton.setMaximumSize(new java.awt.Dimension(28, 28));
+        SettingButton.setMinimumSize(new java.awt.Dimension(28, 28));
+        SettingButton.setPreferredSize(new java.awt.Dimension(28, 28));
+        SettingButton.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        SettingButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton8ActionPerformed(evt);
+                SettingButtonActionPerformed(evt);
             }
         });
-        jToolBar1.add(jButton8);
+        jToolBar1.add(SettingButton);
         jToolBar1.add(jSeparator6);
 
-        jTextField1.setMaximumSize(new java.awt.Dimension(150, 27));
-        jTextField1.setMinimumSize(new java.awt.Dimension(100, 27));
-        jTextField1.setPreferredSize(new java.awt.Dimension(150, 27));
-        jTextField1.addActionListener(new java.awt.event.ActionListener() {
+        SearchField.setMaximumSize(new java.awt.Dimension(150, 27));
+        SearchField.setMinimumSize(new java.awt.Dimension(100, 27));
+        SearchField.setPreferredSize(new java.awt.Dimension(150, 27));
+        SearchField.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jTextField1ActionPerformed(evt);
+                SearchFieldActionPerformed(evt);
             }
         });
         //jToolBar1.add(javax.swing.Box.createHorizontalGlue());
-        jToolBar1.add(jTextField1);
+        jToolBar1.add(SearchField);
 
-        jButton2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Search-icon.png"))); // NOI18N
-        jButton2.setToolTipText("find in routines");
-        jButton2.setBorder(null);
-        jButton2.setFocusable(false);
-        jButton2.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-        jButton2.setMaximumSize(new java.awt.Dimension(28, 28));
-        jButton2.setMinimumSize(new java.awt.Dimension(28, 28));
-        jButton2.setPreferredSize(new java.awt.Dimension(28, 28));
-        jButton2.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
-        jButton2.addActionListener(new java.awt.event.ActionListener() {
+        SearchButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/aprofplot/gui/resources/Search-icon.png"))); // NOI18N
+        SearchButton.setToolTipText("find in routines");
+        SearchButton.setBorder(null);
+        SearchButton.setFocusable(false);
+        SearchButton.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        SearchButton.setMaximumSize(new java.awt.Dimension(28, 28));
+        SearchButton.setMinimumSize(new java.awt.Dimension(28, 28));
+        SearchButton.setPreferredSize(new java.awt.Dimension(28, 28));
+        SearchButton.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        SearchButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton2ActionPerformed(evt);
+                SearchButtonActionPerformed(evt);
             }
         });
-        jToolBar1.add(jButton2);
+        jToolBar1.add(SearchButton);
         jToolBar1.add(jSeparator7);
 
-        jLabel7.setFont(new java.awt.Font("DejaVu Sans", 1, 13)); // NOI18N
-        jToolBar1.add(jLabel7);
+        RoutineLabel.setFont(new java.awt.Font("DejaVu Sans", 1, 13)); // NOI18N
+        jToolBar1.add(RoutineLabel);
 
         getContentPane().add(jToolBar1, java.awt.BorderLayout.NORTH);
 
@@ -603,14 +592,6 @@ public class MainWindow extends javax.swing.JFrame {
         jPanel1.add(jLabel6);
         jPanel1.add(jLabel9);
         jPanel1.add(jLabel8);
-
-        jProgressBar1.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 10, 1, 1));
-        jProgressBar1.setBorderPainted(false);
-        jProgressBar1.setEnabled(false);
-        jProgressBar1.setIndeterminate(true);
-        jProgressBar1.setMaximumSize(new java.awt.Dimension(150, 18));
-        jProgressBar1.setVisible(false);
-        jPanel1.add(jProgressBar1);
 
         getContentPane().add(jPanel1, java.awt.BorderLayout.SOUTH);
 
@@ -850,335 +831,309 @@ public class MainWindow extends javax.swing.JFrame {
 
         getContentPane().add(jPanel2, java.awt.BorderLayout.CENTER);
 
-        jMenu1.setMnemonic('f');
-        jMenu1.setText("File");
+        FileMenu.setMnemonic('f');
+        FileMenu.setText("File");
 
-        jMenuItem1.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_N, java.awt.event.InputEvent.CTRL_MASK));
-        jMenuItem1.setMnemonic('n');
-        jMenuItem1.setText("New window");
-        jMenuItem1.addActionListener(new java.awt.event.ActionListener() {
+        NewWindowMenuEntry.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_N, java.awt.event.InputEvent.CTRL_MASK));
+        NewWindowMenuEntry.setMnemonic('n');
+        NewWindowMenuEntry.setText("New window");
+        NewWindowMenuEntry.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem1ActionPerformed(evt);
+                NewWindowMenuEntryActionPerformed(evt);
             }
         });
-        jMenu1.add(jMenuItem1);
-        jMenu1.add(jSeparator1);
+        FileMenu.add(NewWindowMenuEntry);
+        FileMenu.add(jSeparator1);
 
-        jMenuItem5.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, java.awt.event.InputEvent.SHIFT_MASK | java.awt.event.InputEvent.CTRL_MASK));
-        jMenuItem5.setMnemonic('o');
-        jMenuItem5.setText("Open file...");
-        jMenuItem5.addActionListener(new java.awt.event.ActionListener() {
+        OpenFileMenuEntry.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, java.awt.event.InputEvent.SHIFT_MASK | java.awt.event.InputEvent.CTRL_MASK));
+        OpenFileMenuEntry.setMnemonic('o');
+        OpenFileMenuEntry.setText("Open file...");
+        OpenFileMenuEntry.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem5ActionPerformed(evt);
+                OpenFileMenuEntryActionPerformed(evt);
             }
         });
-        jMenu1.add(jMenuItem5);
+        FileMenu.add(OpenFileMenuEntry);
 
-        jMenuItem8.setText("Set source directory");
-        jMenuItem8.setEnabled(false);
-        jMenuItem8.addActionListener(new java.awt.event.ActionListener() {
+        SetSourceDirMenuEntry.setText("Set source directory");
+        SetSourceDirMenuEntry.setEnabled(false);
+        SetSourceDirMenuEntry.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem8ActionPerformed(evt);
+                SetSourceDirMenuEntryActionPerformed(evt);
             }
         });
-        jMenu1.add(jMenuItem8);
+        FileMenu.add(SetSourceDirMenuEntry);
 
-        jMenu5.setMnemonic('r');
-        jMenu5.setText("Open recent file");
+        RecentMenu.setMnemonic('r');
+        RecentMenu.setText("Open recent file");
 
-        recentMenuItem1.setText("recent file");
-        recentMenuItem1.addActionListener(new java.awt.event.ActionListener() {
+        RecentEntry1.setText("recent file");
+        RecentEntry1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                recentMenuItem1ActionPerformed(evt);
+                RecentEntry1ActionPerformed(evt);
             }
         });
-        jMenu5.add(recentMenuItem1);
-        recentMenuItems[0] = recentMenuItem1;
+        RecentMenu.add(RecentEntry1);
+        recentMenuItems[0] = RecentEntry1;
 
-        recentMenuItem2.setText("recent file");
-        recentMenuItem2.addActionListener(new java.awt.event.ActionListener() {
+        RecentEntry2.setText("recent file");
+        RecentEntry2.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                recentMenuItem2ActionPerformed(evt);
+                RecentEntry2ActionPerformed(evt);
             }
         });
-        jMenu5.add(recentMenuItem2);
-        recentMenuItems[1] = recentMenuItem2;
+        RecentMenu.add(RecentEntry2);
+        recentMenuItems[1] = RecentEntry2;
 
-        recentMenuItem3.setText("recent file");
-        recentMenuItem3.addActionListener(new java.awt.event.ActionListener() {
+        RecentEntry3.setText("recent file");
+        RecentEntry3.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                recentMenuItem3ActionPerformed(evt);
+                RecentEntry3ActionPerformed(evt);
             }
         });
-        jMenu5.add(recentMenuItem3);
-        recentMenuItems[2] = recentMenuItem3;
+        RecentMenu.add(RecentEntry3);
+        recentMenuItems[2] = RecentEntry3;
 
-        recentMenuItem4.setText("recent file");
-        recentMenuItem4.addActionListener(new java.awt.event.ActionListener() {
+        RecentEntry4.setText("recent file");
+        RecentEntry4.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                recentMenuItem4ActionPerformed(evt);
+                RecentEntry4ActionPerformed(evt);
             }
         });
-        jMenu5.add(recentMenuItem4);
-        recentMenuItems[3] = recentMenuItem4;
+        RecentMenu.add(RecentEntry4);
+        recentMenuItems[3] = RecentEntry4;
 
-        recentMenuItem5.setText("recent file");
-        recentMenuItem5.addActionListener(new java.awt.event.ActionListener() {
+        RecentEntry5.setText("recent file");
+        RecentEntry5.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                recentMenuItem5ActionPerformed(evt);
+                RecentEntry5ActionPerformed(evt);
             }
         });
-        jMenu5.add(recentMenuItem5);
-        recentMenuItems[4] = recentMenuItem5;
+        RecentMenu.add(RecentEntry5);
+        recentMenuItems[4] = RecentEntry5;
 
-        recentMenuItem6.setText("recent file");
-        recentMenuItem6.addActionListener(new java.awt.event.ActionListener() {
+        RecentEntry6.setText("recent file");
+        RecentEntry6.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                recentMenuItem6ActionPerformed(evt);
+                RecentEntry6ActionPerformed(evt);
             }
         });
-        jMenu5.add(recentMenuItem6);
-        recentMenuItems[5] = recentMenuItem6;
+        RecentMenu.add(RecentEntry6);
+        recentMenuItems[5] = RecentEntry6;
 
-        jMenu1.add(jMenu5);
+        FileMenu.add(RecentMenu);
 
-        jMenuItem6.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_S, java.awt.event.InputEvent.CTRL_MASK));
-        jMenuItem6.setText("Save");
-        jMenuItem6.setEnabled(false);
-        jMenuItem6.addActionListener(new java.awt.event.ActionListener() {
+        SaveMenuEntry.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_S, java.awt.event.InputEvent.CTRL_MASK));
+        SaveMenuEntry.setText("Save");
+        SaveMenuEntry.setEnabled(false);
+        SaveMenuEntry.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem6ActionPerformed(evt);
+                SaveMenuEntryActionPerformed(evt);
             }
         });
-        jMenu1.add(jMenuItem6);
+        FileMenu.add(SaveMenuEntry);
 
-        jMenuItem9.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_S, java.awt.event.InputEvent.CTRL_MASK));
-        jMenuItem9.setText("Run curve fitter");
-        jMenuItem9.setEnabled(false);
-        jMenuItem9.addActionListener(new java.awt.event.ActionListener() {
+        FitMenuEntry.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_S, java.awt.event.InputEvent.CTRL_MASK));
+        FitMenuEntry.setText("Run curve fitter");
+        FitMenuEntry.setEnabled(false);
+        FitMenuEntry.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem9ActionPerformed(evt);
+                FitMenuEntryActionPerformed(evt);
             }
         });
-        jMenu1.add(jMenuItem9);
+        FileMenu.add(FitMenuEntry);
 
-        jMenu6.setText("Export");
-        jMenu6.setEnabled(false);
+        ExportMenu.setText("Export");
+        ExportMenu.setEnabled(false);
 
-        jMenuItem11.setText("Routine profile...");
-        jMenuItem11.setEnabled(false);
-        jMenuItem11.addActionListener(new java.awt.event.ActionListener() {
+        ExportRoutineProfileEntry.setText("Routine profile...");
+        ExportRoutineProfileEntry.setEnabled(false);
+        ExportRoutineProfileEntry.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem11ActionPerformed(evt);
+                ExportRoutineProfileEntryActionPerformed(evt);
             }
         });
-        jMenu6.add(jMenuItem11);
+        ExportMenu.add(ExportRoutineProfileEntry);
 
-        jMenuItem12.setText("Program profile...");
-        jMenuItem12.setEnabled(false);
-        jMenuItem12.addActionListener(new java.awt.event.ActionListener() {
+        ExportProgramProfileEntry.setText("Program profile...");
+        ExportProgramProfileEntry.setEnabled(false);
+        ExportProgramProfileEntry.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem12ActionPerformed(evt);
+                ExportProgramProfileEntryActionPerformed(evt);
             }
         });
-        jMenu6.add(jMenuItem12);
+        ExportMenu.add(ExportProgramProfileEntry);
 
-        jMenuItem13.setText("Program statistics...");
-        jMenuItem13.setEnabled(false);
-        jMenuItem13.addActionListener(new java.awt.event.ActionListener() {
+        ExportProgramStatsEntry.setText("Program statistics...");
+        ExportProgramStatsEntry.setEnabled(false);
+        ExportProgramStatsEntry.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem13ActionPerformed(evt);
+                ExportProgramStatsEntryActionPerformed(evt);
             }
         });
-        jMenu6.add(jMenuItem13);
+        ExportMenu.add(ExportProgramStatsEntry);
 
-        jMenuItem14.setText("Input volume...");
-        jMenuItem14.addActionListener(new java.awt.event.ActionListener() {
+        ExportInputVolumeEntry.setText("Input volume...");
+        ExportInputVolumeEntry.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem14ActionPerformed(evt);
+                ExportInputVolumeEntryActionPerformed(evt);
             }
         });
-        jMenu6.add(jMenuItem14);
+        ExportMenu.add(ExportInputVolumeEntry);
 
-        jMenuItem15.setText("Routine profile richness...");
-        jMenuItem15.addActionListener(new java.awt.event.ActionListener() {
+        ExportRichnessEntry.setText("Routine profile richness...");
+        ExportRichnessEntry.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem15ActionPerformed(evt);
+                ExportRichnessEntryActionPerformed(evt);
             }
         });
-        jMenu6.add(jMenuItem15);
+        ExportMenu.add(ExportRichnessEntry);
 
-        jMenuItem16.setText("Thread input...");
-        jMenuItem16.addActionListener(new java.awt.event.ActionListener() {
+        ExportThreadInputEntry.setText("Thread input...");
+        ExportThreadInputEntry.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem16ActionPerformed(evt);
+                ExportThreadInputEntryActionPerformed(evt);
             }
         });
-        jMenu6.add(jMenuItem16);
+        ExportMenu.add(ExportThreadInputEntry);
 
-        jMenuItem17.setText("External input...");
-        jMenuItem17.addActionListener(new java.awt.event.ActionListener() {
+        ExportSyscallInputEntry.setText("External input...");
+        ExportSyscallInputEntry.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem17ActionPerformed(evt);
+                ExportSyscallInputEntryActionPerformed(evt);
             }
         });
-        jMenu6.add(jMenuItem17);
+        ExportMenu.add(ExportSyscallInputEntry);
 
-        jMenuItem19.setText("Induced accesses...");
-        jMenuItem19.addActionListener(new java.awt.event.ActionListener() {
+        ExportInducedAccessEntry.setText("Induced accesses...");
+        ExportInducedAccessEntry.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem19ActionPerformed(evt);
+                ExportInducedAccessEntryActionPerformed(evt);
             }
         });
-        jMenu6.add(jMenuItem19);
+        ExportMenu.add(ExportInducedAccessEntry);
 
-        jMenuItem20.setText("Self induced accesses...");
-        jMenuItem20.addActionListener(new java.awt.event.ActionListener() {
+        ExportSelfInducedAccessEntry.setText("Self induced accesses...");
+        ExportSelfInducedAccessEntry.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem20ActionPerformed(evt);
+                ExportSelfInducedAccessEntryActionPerformed(evt);
             }
         });
-        jMenu6.add(jMenuItem20);
+        ExportMenu.add(ExportSelfInducedAccessEntry);
 
-        jMenuItem18.setText("All input stats...");
-        jMenuItem18.addActionListener(new java.awt.event.ActionListener() {
+        FileMenu.add(ExportMenu);
+        FileMenu.add(jSeparator4);
+
+        ExitMenuEntry.setMnemonic('x');
+        ExitMenuEntry.setText("Exit");
+        ExitMenuEntry.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem18ActionPerformed(evt);
+                ExitMenuEntryActionPerformed(evt);
             }
         });
-        jMenu6.add(jMenuItem18);
+        FileMenu.add(ExitMenuEntry);
 
-        jMenuItem21.setText("Alpha values...");
-        jMenuItem21.setEnabled(false);
-        jMenuItem21.addActionListener(new java.awt.event.ActionListener() {
+        MenuBar.add(FileMenu);
+
+        EditMenu.setMnemonic('e');
+        EditMenu.setText("Edit");
+
+        SettingsMenuEntry.setMnemonic('s');
+        SettingsMenuEntry.setText("Settings...");
+        SettingsMenuEntry.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem21ActionPerformed(evt);
+                SettingsMenuEntryActionPerformed(evt);
             }
         });
-        jMenu6.add(jMenuItem21);
+        EditMenu.add(SettingsMenuEntry);
 
-        jMenu1.add(jMenu6);
+        MenuBar.add(EditMenu);
 
-        jMenuItem7.setText("Merge...");
-        jMenuItem7.setEnabled(false);
-        jMenuItem7.addActionListener(new java.awt.event.ActionListener() {
+        ViewMenu.setMnemonic('v');
+        ViewMenu.setText("View");
+
+        CostPlotMenuEntry.setText("Cost plot");
+        CostPlotMenuEntry.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem7ActionPerformed(evt);
+                CostPlotMenuEntryActionPerformed(evt);
             }
         });
-        jMenu1.add(jMenuItem7);
-        jMenu1.add(jSeparator4);
+        ViewMenu.add(CostPlotMenuEntry);
 
-        jMenuItem2.setMnemonic('x');
-        jMenuItem2.setText("Exit");
-        jMenuItem2.addActionListener(new java.awt.event.ActionListener() {
+        AmortizedPlotMenuEntry.setText("Amortized cost plot");
+        AmortizedPlotMenuEntry.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem2ActionPerformed(evt);
+                AmortizedPlotMenuEntryActionPerformed(evt);
             }
         });
-        jMenu1.add(jMenuItem2);
+        ViewMenu.add(AmortizedPlotMenuEntry);
 
-        jMenuBar1.add(jMenu1);
-
-        jMenu2.setMnemonic('e');
-        jMenu2.setText("Edit");
-
-        jMenuItem4.setMnemonic('s');
-        jMenuItem4.setText("Settings...");
-        jMenuItem4.addActionListener(new java.awt.event.ActionListener() {
+        FrequencyPlotMenuEntry.setText("Frequency plot");
+        FrequencyPlotMenuEntry.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem4ActionPerformed(evt);
+                FrequencyPlotMenuEntryActionPerformed(evt);
             }
         });
-        jMenu2.add(jMenuItem4);
+        ViewMenu.add(FrequencyPlotMenuEntry);
 
-        jMenuBar1.add(jMenu2);
-
-        jMenu3.setMnemonic('v');
-        jMenu3.setText("View");
-
-        jCheckBoxMenuItem12.setText("Cost plot");
-        jCheckBoxMenuItem12.addActionListener(new java.awt.event.ActionListener() {
+        MMMPlotMenuEntry.setText("Best/Avg/Worst cost plot");
+        MMMPlotMenuEntry.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxMenuItem12ActionPerformed(evt);
+                MMMPlotMenuEntryActionPerformed(evt);
             }
         });
-        jMenu3.add(jCheckBoxMenuItem12);
+        ViewMenu.add(MMMPlotMenuEntry);
 
-        jCheckBoxMenuItem15.setText("Amortized cost plot");
-        jCheckBoxMenuItem15.addActionListener(new java.awt.event.ActionListener() {
+        TotalCostPlotMenuEntry.setText("Total cost plot");
+        TotalCostPlotMenuEntry.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxMenuItem15ActionPerformed(evt);
+                TotalCostPlotMenuEntryActionPerformed(evt);
             }
         });
-        jMenu3.add(jCheckBoxMenuItem15);
+        ViewMenu.add(TotalCostPlotMenuEntry);
 
-        jCheckBoxMenuItem18.setText("Rms frequency plot");
-        jCheckBoxMenuItem18.addActionListener(new java.awt.event.ActionListener() {
+        VarianceCostPlotMenuEntry.setText("Cost variance plot");
+        VarianceCostPlotMenuEntry.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxMenuItem18ActionPerformed(evt);
+                VarianceCostPlotMenuEntryActionPerformed(evt);
             }
         });
-        jMenu3.add(jCheckBoxMenuItem18);
+        ViewMenu.add(VarianceCostPlotMenuEntry);
 
-        jCheckBoxMenuItem13.setText("Min/Avg/Max cost plot");
-        jCheckBoxMenuItem13.addActionListener(new java.awt.event.ActionListener() {
+        RatioPlotMenuEntry.setText("Curve bounding plot");
+        RatioPlotMenuEntry.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxMenuItem13ActionPerformed(evt);
+                RatioPlotMenuEntryActionPerformed(evt);
             }
         });
-        jMenu3.add(jCheckBoxMenuItem13);
+        ViewMenu.add(RatioPlotMenuEntry);
 
-        jCheckBoxMenuItem14.setText("Total cost plot");
-        jCheckBoxMenuItem14.addActionListener(new java.awt.event.ActionListener() {
+        SourceMenuEntry.setText("Source code editor");
+        SourceMenuEntry.setEnabled(false);
+        SourceMenuEntry.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxMenuItem14ActionPerformed(evt);
+                SourceMenuEntryActionPerformed(evt);
             }
         });
-        jMenu3.add(jCheckBoxMenuItem14);
+        ViewMenu.add(SourceMenuEntry);
 
-        jCheckBoxMenuItem17.setText("Cost variance plot");
-        jCheckBoxMenuItem17.addActionListener(new java.awt.event.ActionListener() {
+        MenuBar.add(ViewMenu);
+
+        HelpMenu.setMnemonic('h');
+        HelpMenu.setText("Help");
+
+        AboutMenuEntry.setMnemonic('a');
+        AboutMenuEntry.setText("About");
+        AboutMenuEntry.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxMenuItem17ActionPerformed(evt);
+                AboutMenuEntryActionPerformed(evt);
             }
         });
-        jMenu3.add(jCheckBoxMenuItem17);
+        HelpMenu.add(AboutMenuEntry);
 
-        jCheckBoxMenuItem16.setText("Curve bounding plot");
-        jCheckBoxMenuItem16.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxMenuItem16ActionPerformed(evt);
-            }
-        });
-        jMenu3.add(jCheckBoxMenuItem16);
+        MenuBar.add(HelpMenu);
 
-        jCheckBoxMenuItem1.setText("Source code editor");
-        jCheckBoxMenuItem1.setEnabled(false);
-        jCheckBoxMenuItem1.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxMenuItem1ActionPerformed(evt);
-            }
-        });
-        jMenu3.add(jCheckBoxMenuItem1);
-
-        jMenuBar1.add(jMenu3);
-
-        jMenu4.setMnemonic('h');
-        jMenu4.setText("Help");
-
-        jMenuItem3.setMnemonic('a');
-        jMenuItem3.setText("About");
-        jMenuItem3.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem3ActionPerformed(evt);
-            }
-        });
-        jMenu4.add(jMenuItem3);
-
-        jMenuBar1.add(jMenu4);
-
-        setJMenuBar(jMenuBar1);
+        setJMenuBar(MenuBar);
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -1225,10 +1180,10 @@ public class MainWindow extends javax.swing.JFrame {
 
         if (isCtagsInstalled()) {
 
-            jMenuItem8.setEnabled(true);
-            jButton10.setEnabled(true);
-            jCheckBoxMenuItem1.setEnabled(true);
-            jToggleButton1.setEnabled(true);
+            SetSourceDirMenuEntry.setEnabled(true);
+            SourceDirectoryButton.setEnabled(true);
+            SourceMenuEntry.setEnabled(true);
+            SourceButton.setEnabled(true);
             createTextEditor();
             if (Main.getEditorVisible()) {
                 showTextEditor(true);
@@ -1236,16 +1191,14 @@ public class MainWindow extends javax.swing.JFrame {
 
         } else {
 
-            jMenuItem8.setEnabled(false);
-            jButton10.setEnabled(false);
-            jCheckBoxMenuItem1.setEnabled(false);
-            jToggleButton1.setEnabled(false);
+            SetSourceDirMenuEntry.setEnabled(false);
+            SourceDirectoryButton.setEnabled(false);
+            SourceMenuEntry.setEnabled(false);
+            SourceButton.setEnabled(false);
             if (Main.getEditorVisible()) {
                 showTextEditor(false);
             }
-
         }
-
     }
 
     public AprofReport getCurrentReport() {
@@ -1279,11 +1232,11 @@ public class MainWindow extends javax.swing.JFrame {
 
     protected final void refreshRecentFiles() {
         hideRecentMenuItems();
-        java.util.ArrayList<java.io.File> recent = Main.getRecentFiles();
+        ArrayList<File> recent = Main.getRecentFiles();
         if (recent.isEmpty()) {
-            jMenu5.setEnabled(false);
+            RecentMenu.setEnabled(false);
         } else {
-            jMenu5.setEnabled(true);
+            RecentMenu.setEnabled(true);
             for (int i = 0; i < recent.size(); i++) {
                 recentMenuItems[i].setText(recent.get(i).getName());
                 recentMenuItems[i].setVisible(true);
@@ -1292,16 +1245,16 @@ public class MainWindow extends javax.swing.JFrame {
     }
 
     private void hideRecentMenuItems() {
-        jMenu5.setEnabled(false);
-        recentMenuItem1.setVisible(false);
-        recentMenuItem2.setVisible(false);
-        recentMenuItem3.setVisible(false);
-        recentMenuItem4.setVisible(false);
-        recentMenuItem5.setVisible(false);
-        recentMenuItem6.setVisible(false);
+        RecentMenu.setEnabled(false);
+        RecentEntry1.setVisible(false);
+        RecentEntry2.setVisible(false);
+        RecentEntry3.setVisible(false);
+        RecentEntry4.setVisible(false);
+        RecentEntry5.setVisible(false);
+        RecentEntry6.setVisible(false);
     }
 
-    private void updateGUI(java.io.File file) {
+    private void updateGUI(File file) {
 
         this.setTitle(file.toString() + " - aprof-plot");
         jLabel3.setText("Profile report for " + report.getAppName() + " (" + report.getCommandLine() + ")");
@@ -1309,37 +1262,27 @@ public class MainWindow extends javax.swing.JFrame {
         jLabel4.setText(" Contexts: " + report.getContextsCount() + " ");
         String tcos = String.format(" Total cost: %d ", (long) report.getTotalCost());
         jLabel5.setText(tcos);
-        /*
-         if (report.getTotalCost() < 10000)
-         jLabel5.setText(" Total cost: " + report.getTotalCost() + " ");
-         else {
-         double exp = Math.log10(report.getTotalCost());
-         String exp10 = String.format("%.2f", exp);
-         jLabel5.setText(" Total cost: 10^" + exp10  + " ");
-         }
-         */
         jLabel6.setText(" Calls: " + report.getTotalCalls() + " ");
-        jLabel7.setText("");
+        RoutineLabel.setText("");
 
         if (this.isInputMetricRms()) {
-            jCheckBoxMenuItem18.setText("RMS frequency plot");
-            jCheckBoxMenuItem10.setText("RMS frequency plot");
+            FrequencyPlotMenuEntry.setText("RMS frequency plot");
+            FrequencyPlotButton.setText("RMS frequency plot");
         } else {
-            jCheckBoxMenuItem18.setText("DRMS frequency plot");
-            jCheckBoxMenuItem10.setText("DRMS frequency plot");
+            FrequencyPlotMenuEntry.setText("DRMS frequency plot");
+            FrequencyPlotButton.setText("DRMS frequency plot");
         }
-
     }
 
     protected void loadReport(final File file) {
 
         //System.out.println("Loading[1]: " + file);
         loading = true;
-        jProgressBar1.setVisible(true);
-        jProgressBar1.setEnabled(true);
+        final ProgressDialog p = new ProgressDialog(this, true);
 
-        SwingWorker worker = new SwingWorker<AprofReport, Void>() {
-
+        SwingWorker worker;
+        worker = new SwingWorker<AprofReport, Void>() {
+            
             @Override
             public AprofReport doInBackground() {
 
@@ -1352,9 +1295,9 @@ public class MainWindow extends javax.swing.JFrame {
                     failed = true;
                 }
 
+                p.setVisible(false);
+                
                 if (failed || report.hasFatalError()) {
-                    jProgressBar1.setVisible(false);
-                    jProgressBar1.setEnabled(false);
                     failLoadReport(file);
                     return null;
                 }
@@ -1368,33 +1311,30 @@ public class MainWindow extends javax.swing.JFrame {
 
         };
         worker.execute();
+        p.setVisible(true);
     }
 
     private void showWanrnings(String warnings) {
-        javax.swing.JOptionPane.showMessageDialog(this,
+        JOptionPane.showMessageDialog(this,
             warnings, "Warning",
-            javax.swing.JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.INFORMATION_MESSAGE);
     }
 
     public boolean isInputMetricRms() {
 
+        if (report == null) 
+            return true;
+
+        if (report.getInputMetric() == AprofReport.InputMetric.DRMS)
+            return false;
+
         return true;
-        /*
-         if (report == null) return true;
-        
-         if (report.getInputMetric() == AprofReport.InputMetric.DRMS)
-         return false;
-        
-         return true;
-         */
     }
 
     private void failLoadReport(File file) {
-
-        javax.swing.JOptionPane.showMessageDialog(this,
+       JOptionPane.showMessageDialog(this,
             "Couldn't open the chosen file", "Error",
-            javax.swing.JOptionPane.ERROR_MESSAGE);
-
+            JOptionPane.ERROR_MESSAGE);
     }
 
     @SuppressWarnings("unchecked")
@@ -1421,7 +1361,6 @@ public class MainWindow extends javax.swing.JFrame {
 
         routines_table_sorter.setSortKeys(routines_sort);
         routines_table_sorter.setSortable(5, false);
-
     }
 
     @SuppressWarnings("unchecked")
@@ -1475,7 +1414,6 @@ public class MainWindow extends javax.swing.JFrame {
 
         contexts_table_sorter.setSortKeys(contexts_sort);
         contexts_table_sorter.setSortable(5, false);
-
     }
 
     private void setComparatorContexts() {
@@ -1504,9 +1442,9 @@ public class MainWindow extends javax.swing.JFrame {
                     int i1 = t.indexOf("/");
                     int i2 = t1.indexOf("/");
 
-                    int c1 = 0;
+                    int c1;
                     int c1_n = 0;
-                    int c2 = 0;
+                    int c2;
                     int c2_n = 0;
 
                     if (i1 < 0) {
@@ -1557,28 +1495,23 @@ public class MainWindow extends javax.swing.JFrame {
 
     private void setReport(AprofReport report, File file) throws Exception {
 
-        /*
-         boolean oldReportHasContext = false;
-         if (this.report != null && this.report.hasContexts())
-         oldReportHasContext = true;
-         */
         this.report = report;
         Main.addRecentFile(file);
         refreshRecentFiles();
 
         // reload button
-        jButton9.setEnabled(true);
-        jButton9.setToolTipText("Reload this report");
+        ReloadButton.setEnabled(true);
+        ReloadButton.setToolTipText("Reload this report");
 
         // enable entries in export menu
-        jMenu6.setEnabled(true);
-        jMenuItem12.setEnabled(true);
-        jMenuItem13.setEnabled(true);
+        ExportMenu.setEnabled(true);
+        ExportProgramProfileEntry.setEnabled(true);
+        ExportProgramStatsEntry.setEnabled(true);
 
         // enable add fit
-        jMenuItem9.setEnabled(true);
-        jToggleButton3.setEnabled(false);
-        jToggleButton3.setSelected(false);
+        FitMenuEntry.setEnabled(true);
+        FitButton.setEnabled(false);
+        FitButton.setSelected(false);
         if (this.fitting_mode) {
             this.showFittingData(false);
         }
@@ -1589,36 +1522,12 @@ public class MainWindow extends javax.swing.JFrame {
         updateGUI(file);
 
         // Clear all graphs
-        if (jCheckBoxMenuItem4.isSelected()) {
-            CostGraphPanel.clearData();
-        }
-        if (jCheckBoxMenuItem8.isSelected()) {
-            ratioGraphPanel.clearData();
-        }
-        if (jCheckBoxMenuItem10.isSelected()) {
-            freqGraphPanel.clearData();
-        }
-        if (jCheckBoxMenuItem5.isSelected()) {
-            MMMGraphPanel.clearData();
-        }
-        if (jCheckBoxMenuItem9.isSelected()) {
-            VarGraphPanel.clearData();
-        }
-        if (jCheckBoxMenuItem6.isSelected()) {
-            TotalCostGraphPanel.clearData();
-        }
-        if (jCheckBoxMenuItem7.isSelected()) {
-            AmortizedGraphPanel.clearData();
-        }
-		//if (jCheckBoxMenuItem24.isSelected()) AlphaGraphPanel.setData(null);
+        for (GraphPanel g : graphs)
+            g.clearData();
 
-        /*
-         if (jCheckBoxMenuItem11.isSelected()) RtnGraphPanel.setData(null);
-         if (jCheckBoxMenuItem22.isSelected()) RatioTuplesGraphPanel.setData(null);
-         if (jCheckBoxMenuItem23.isSelected()) ExternalInputGraphPanel.setData(null);
-         */
         // Update routine table: we change data in table, this must be done by swing thread
         final AprofReport final_report = report;
+        final ProgressDialog p = new ProgressDialog(this, true);
         SwingUtilities.invokeLater(new Runnable() {
 
             @Override
@@ -1641,10 +1550,9 @@ public class MainWindow extends javax.swing.JFrame {
                 ((RmsTableModel) jTable2.getModel()).setData(null);
                 ((RmsTableModel) jTable2.getModel()).refreshStructure();
 
-                freqGraphPanel.updateGraphTitle();
+                graphs.get(FREQ_PLOT.ordinal()).updateGraphTitle();
 
-                jProgressBar1.setVisible(false);
-                jProgressBar1.setEnabled(false);
+                p.setVisible(false);
                 loading = false;
 
             }
@@ -1660,7 +1568,7 @@ public class MainWindow extends javax.swing.JFrame {
 
     private boolean saveForm() {
 
-        if (jButton7.isEnabled()) {
+        if (SaveButton.isEnabled()) {
             int choice = javax.swing.JOptionPane.showConfirmDialog(this,
                 "Do you want to save changes to this report?",
                 "Unsaved changes",
@@ -1770,121 +1678,38 @@ public class MainWindow extends javax.swing.JFrame {
     }
 
     protected void setXLogScaleAll(GraphPanel.Type graph_type, boolean log) {
-
         // this method is called by one graph, we notify to all others...
-        if (graph_type != COST_PLOT) {
-            CostGraphPanel.setXLogScale(log);
-        }
-        if (graph_type != RATIO_PLOT) {
-            ratioGraphPanel.setXLogScale(log);
-        }
-        if (graph_type != FREQ_PLOT) {
-            freqGraphPanel.setXLogScale(log);
-        }
-        if (graph_type != MMM_PLOT) {
-            MMMGraphPanel.setXLogScale(log);
-        }
-        if (graph_type != VAR_PLOT) {
-            VarGraphPanel.setXLogScale(log);
-        }
-        if (graph_type != TOTALCOST_PLOT) {
-            TotalCostGraphPanel.setXLogScale(log);
-        }
-        if (graph_type != AMORTIZED_PLOT) {
-            AmortizedGraphPanel.setXLogScale(log);
-        }
+        for (GraphPanel g : graphs)
+            if (g.getGraphType() != graph_type)
+                g.setXLogScale(log);
     }
 
     protected void setYLogScaleAll(GraphPanel.Type graph_type, boolean log) {
-
         // this method is called by one graph, we notify to all others...
-        if (graph_type != COST_PLOT) {
-            CostGraphPanel.setYLogScale(log);
-        }
-        if (graph_type != RATIO_PLOT) {
-            ratioGraphPanel.setYLogScale(log);
-        }
-        if (graph_type != FREQ_PLOT) {
-            freqGraphPanel.setYLogScale(log);
-        }
-        if (graph_type != MMM_PLOT) {
-            MMMGraphPanel.setYLogScale(log);
-        }
-        if (graph_type != TOTALCOST_PLOT) {
-            TotalCostGraphPanel.setYLogScale(log);
-        }
-        if (graph_type != VAR_PLOT) {
-            VarGraphPanel.setYLogScale(log);
-        }
-        if (graph_type != AMORTIZED_PLOT) {
-            AmortizedGraphPanel.setYLogScale(log);
-        }
+        for (GraphPanel g : graphs)
+            if (g.getGraphType() != graph_type)
+                g.setYLogScale(log);
     }
 
     protected void setGroupThresholdAll(GraphPanel.Type graph_type, int threshold) {
-
         // this method is called by one graph, we notify to all others...
-        if (graph_type != COST_PLOT) {
-            CostGraphPanel.setGroupThreshold(threshold);
-        }
-        if (graph_type != RATIO_PLOT) {
-            ratioGraphPanel.setGroupThreshold(threshold);
-        }
-        if (graph_type != FREQ_PLOT) {
-            freqGraphPanel.setGroupThreshold(threshold);
-        }
-        if (graph_type != MMM_PLOT) {
-            MMMGraphPanel.setGroupThreshold(threshold);
-        }
-        if (graph_type != TOTALCOST_PLOT) {
-            TotalCostGraphPanel.setGroupThreshold(threshold);
-        }
-        if (graph_type != VAR_PLOT) {
-            VarGraphPanel.setGroupThreshold(threshold);
-        }
-        if (graph_type != AMORTIZED_PLOT) {
-            AmortizedGraphPanel.setGroupThreshold(threshold);
-        }
-
+        for (GraphPanel g : graphs)
+            if (g.getGraphType() != graph_type)
+                g.setGroupThreshold(threshold);
     }
 
     protected void setSmoothThresholdAll(GraphPanel.Type graph_type, int threshold) {
-
         // this method is called by one graph, we notify to all others...
-        if (graph_type != COST_PLOT) {
-            CostGraphPanel.setSmoothThreshold(threshold);
-        }
-        if (graph_type != RATIO_PLOT) {
-            ratioGraphPanel.setSmoothThreshold(threshold);
-        }
-        if (graph_type != FREQ_PLOT) {
-            freqGraphPanel.setSmoothThreshold(threshold);
-        }
-        if (graph_type != MMM_PLOT) {
-            MMMGraphPanel.setSmoothThreshold(threshold);
-        }
-        if (graph_type != TOTALCOST_PLOT) {
-            TotalCostGraphPanel.setSmoothThreshold(threshold);
-        }
-        if (graph_type != VAR_PLOT) {
-            VarGraphPanel.setSmoothThreshold(threshold);
-        }
-        if (graph_type != AMORTIZED_PLOT) {
-            AmortizedGraphPanel.setSmoothThreshold(threshold);
-        }
-
+        for (GraphPanel g : graphs)
+            if (g.getGraphType() != graph_type)
+                g.setSmoothThreshold(threshold);
     }
 
     protected void setGroupCostAll(GraphPanel.Type graph_type, Input.CostKind cost_type) {
-
-        // this method is called by one graph, we notify to all others...
-        if (graph_type != COST_PLOT) {
-            this.CostGraphPanel.setGroupCost(cost_type);
-        }
-        if (graph_type != RATIO_PLOT) {
-            this.ratioGraphPanel.setGroupCost(cost_type);
-        }
-
+        // this method is called by one graph, we notify to all others..
+        for (GraphPanel g : graphs)
+            if (g.getGraphType() != graph_type)
+                g.setGroupCost(cost_type);
     }
 
 	private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
@@ -1897,19 +1722,19 @@ public class MainWindow extends javax.swing.JFrame {
 
 	}//GEN-LAST:event_formWindowClosing
 
-	private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
+	private void NewWindowMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_NewWindowMenuEntryActionPerformed
         Main.newWindow();
-	}//GEN-LAST:event_jMenuItem1ActionPerformed
+	}//GEN-LAST:event_NewWindowMenuEntryActionPerformed
 
-	private void jMenuItem2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem2ActionPerformed
+	private void ExitMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ExitMenuEntryActionPerformed
         formWindowClosing(null);
-	}//GEN-LAST:event_jMenuItem2ActionPerformed
+	}//GEN-LAST:event_ExitMenuEntryActionPerformed
 
-	private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+	private void OpenButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_OpenButtonActionPerformed
 
         openFile();
 
-	}//GEN-LAST:event_jButton1ActionPerformed
+	}//GEN-LAST:event_OpenButtonActionPerformed
 
     public void inhibit_selection(boolean inhibit) {
 
@@ -1933,30 +1758,14 @@ public class MainWindow extends javax.swing.JFrame {
 
             //System.out.println("Reset routine");
             //Thread.dumpStack();
-            jLabel7.setText("");
+            RoutineLabel.setText("");
 
-            if (jCheckBoxMenuItem4.isSelected()) {
-                CostGraphPanel.clearData();
-            }
-            if (jCheckBoxMenuItem7.isSelected()) {
-                AmortizedGraphPanel.clearData();
-            }
-            if (jCheckBoxMenuItem10.isSelected()) {
-                freqGraphPanel.clearData();
-            }
-            if (jCheckBoxMenuItem5.isSelected()) {
-                MMMGraphPanel.clearData();
-            }
-            if (jCheckBoxMenuItem6.isSelected()) {
-                TotalCostGraphPanel.clearData();
-            }
-            if (jCheckBoxMenuItem9.isSelected()) {
-                VarGraphPanel.clearData();
-            }
-            if (jCheckBoxMenuItem8.isSelected()) {
-                ratioGraphPanel.clearData();
-            }
+            for (GraphPanel g : graphs)
+                g.clearData();
 
+            ExportRoutineProfileEntry.setEnabled(false);
+            ExportMenu.setEnabled(false);
+            
             //updateContextTree(null);
             // Initially hide stack trace panel
             setVisibleStackTrace(false);
@@ -1971,118 +1780,47 @@ public class MainWindow extends javax.swing.JFrame {
                 + ((RoutineContext) r).getOverallRoutine().getContextCount()
                 + ")");
         }
-        jLabel7.setText(name);
+        RoutineLabel.setText(name);
 
         // Load function source code in the editor
         if (linked_editor) {
             loadFunctionInTextEditor(name);
         }
 
-        // Update all graph (except routine graph)
-        /*
-         if (jCheckBoxMenuItem4.isSelected()) CostGraphPanel.setData(r);
-         if (jCheckBoxMenuItem8.isSelected()) ratioGraphPanel.setData(r);
-         if (jCheckBoxMenuItem10.isSelected()) freqGraphPanel.setData(r);
-         if (jCheckBoxMenuItem5.isSelected()) MMMGraphPanel.setData(r);
-         if (jCheckBoxMenuItem9.isSelected()) VarGraphPanel.setData(r);
-         if (jCheckBoxMenuItem6.isSelected()) TotalCostGraphPanel.setData(r);
-         if (jCheckBoxMenuItem7.isSelected()) AmortizedGraphPanel.setData(r);
-         */
         perf.start(this, PerformanceMonitor.ELABORATE);
 
-        if (jCheckBoxMenuItem4.isSelected()) {
-            CostGraphPanel.setRoutine(r);
-        }
-        if (jCheckBoxMenuItem8.isSelected()) {
-            ratioGraphPanel.setRoutine(r);
-        }
-        if (jCheckBoxMenuItem10.isSelected()) {
-            freqGraphPanel.setRoutine(r);
-        }
-        if (jCheckBoxMenuItem5.isSelected()) {
-            MMMGraphPanel.setRoutine(r);
-        }
-        if (jCheckBoxMenuItem9.isSelected()) {
-            VarGraphPanel.setRoutine(r);
-        }
-        if (jCheckBoxMenuItem6.isSelected()) {
-            TotalCostGraphPanel.setRoutine(r);
-        }
-        if (jCheckBoxMenuItem7.isSelected()) {
-            AmortizedGraphPanel.setRoutine(r);
-        }
-        //if (jCheckBoxMenuItem24.isSelected()) AlphaGraphPanel.setRoutine(r);
-
+        ArrayList<GraphPanel> active_graphs = new ArrayList<GraphPanel>();
+        for (int i = 0; i < graphs_enabled.size(); i++)
+            if (graphs_enabled.get(i))
+                active_graphs.add(graphs.get(i));
+                
+        for (GraphPanel g : active_graphs)     
+            g.setRoutine(r);
+        
+        /*
         if (isVisibleFittingData() && jCheckBoxMenuItem4.isSelected()) {
             Fit f = report.getFit(r.getID());
             double[] p = f.getParams();
             CostGraphPanel.addFittedLine(p[0], p[1], p[2]);
         }
-
+        */
+        
         r.sortInputTuplesByInput();
-        Iterator i = r.getInputTuplesIterator();
-        while (i.hasNext()) {
+        for (Input i : r)
+            for (GraphPanel g : active_graphs)     
+                g.addPoint(i);
+    
+        for (GraphPanel g : active_graphs) {
+            g.maximize();
+        }
+        
+        if (graphs_enabled.get(AMORTIZED_PLOT.ordinal()))
+            graphs.get(AMORTIZED_PLOT.ordinal()).updateGraphTitle();
 
-            Input te = (Input) i.next();
-
-            if (jCheckBoxMenuItem4.isSelected()) {
-                CostGraphPanel.addPoint(te);
-            }
-            if (jCheckBoxMenuItem8.isSelected()) {
-                ratioGraphPanel.addPoint(te);
-            }
-            if (jCheckBoxMenuItem10.isSelected()) {
-                freqGraphPanel.addPoint(te);
-            }
-            if (jCheckBoxMenuItem5.isSelected()) {
-                MMMGraphPanel.addPoint(te);
-            }
-            if (jCheckBoxMenuItem9.isSelected()) {
-                VarGraphPanel.addPoint(te);
-            }
-            if (jCheckBoxMenuItem6.isSelected()) {
-                TotalCostGraphPanel.addPoint(te);
-            }
-            if (jCheckBoxMenuItem7.isSelected()) {
-                AmortizedGraphPanel.addPoint(te);
-            }
-
-        }
-
-        //if (jCheckBoxMenuItem24.isSelected()) AlphaGraphPanel.populateChart();
-        if (jCheckBoxMenuItem4.isSelected()) {
-            CostGraphPanel.maximize();
-        }
-        if (jCheckBoxMenuItem8.isSelected()) {
-            ratioGraphPanel.maximize();
-        }
-        if (jCheckBoxMenuItem10.isSelected()) {
-            freqGraphPanel.maximize();
-        }
-        if (jCheckBoxMenuItem5.isSelected()) {
-            MMMGraphPanel.maximize();
-        }
-        if (jCheckBoxMenuItem9.isSelected()) {
-            VarGraphPanel.maximize();
-        }
-        if (jCheckBoxMenuItem6.isSelected()) {
-            TotalCostGraphPanel.maximize();
-        }
-        if (jCheckBoxMenuItem7.isSelected()) {
-            AmortizedGraphPanel.maximize();
-            AmortizedGraphPanel.updateGraphTitle();
-        }
-
-        //if (jCheckBoxMenuItem24.isSelected()) AlphaGraphPanel.maximize();
         // enable/disable entries in export menu related to routine
-        if (r == null) {
-            jMenuItem11.setEnabled(false);
-            jMenuItem21.setEnabled(false);
-        } else {
-            jMenuItem11.setEnabled(true);
-            jMenuItem21.setEnabled(true);
-        }
-
+        ExportRoutineProfileEntry.setEnabled(true);
+        ExportMenu.setEnabled(true);
+        
         // Update routine profile panel
         ((RmsTableModel) jTable2.getModel()).setData(r);
 
@@ -2107,7 +1845,6 @@ public class MainWindow extends javax.swing.JFrame {
         perf.stop(this, PerformanceMonitor.ELABORATE);
         System.gc();
         //updateContextTree(r);
-
     }
 
     private void jTable1ValueChanged(javax.swing.event.ListSelectionEvent evt) {
@@ -2220,75 +1957,58 @@ public class MainWindow extends javax.swing.JFrame {
 
     }
 
-	private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
-
-        // Routine filter button (corner routine table)
-        if (report != null) {
-            RoutinesTableModel m = (RoutinesTableModel) jTable1.getModel();
-            java.util.ArrayList<String> liblist = null;
-            liblist = report.getLibList();
-            (new RoutinesFilterDialog(this, true, liblist, routines_filter_criteria,
-                m.getColumnConfig())).setVisible(true);
-        }
-	}//GEN-LAST:event_jButton5ActionPerformed
-
-	private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+	private void SearchButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SearchButtonActionPerformed
         // search button
         findRoutineByName();
-	}//GEN-LAST:event_jButton2ActionPerformed
+	}//GEN-LAST:event_SearchButtonActionPerformed
 
-	private void jTextField1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField1ActionPerformed
+	private void SearchFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SearchFieldActionPerformed
         // search text field
         findRoutineByName();
-	}//GEN-LAST:event_jTextField1ActionPerformed
+	}//GEN-LAST:event_SearchFieldActionPerformed
 
-	private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
+	private void FilterTuplesButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_FilterTuplesButtonActionPerformed
         // Routine profile filter button (corner routine profile panel)
         if (((RmsTableModel) jTable2.getModel()).getRowCount() > 0) {
             (new RmsFilterDialog(this, true, rms_filter_criteria)).setVisible(true);
         }
-	}//GEN-LAST:event_jButton4ActionPerformed
+	}//GEN-LAST:event_FilterTuplesButtonActionPerformed
 
-	private void jMenuItem5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem5ActionPerformed
+	private void OpenFileMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_OpenFileMenuEntryActionPerformed
         // Menu: File > Open file
         openFile();
-	}//GEN-LAST:event_jMenuItem5ActionPerformed
+	}//GEN-LAST:event_OpenFileMenuEntryActionPerformed
 
-	private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
+	private void NewWindowButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_NewWindowButtonActionPerformed
         // Menu: File > New window
         Main.newWindow();
-	}//GEN-LAST:event_jButton3ActionPerformed
+	}//GEN-LAST:event_NewWindowButtonActionPerformed
 
-	private void jMenuItem3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem3ActionPerformed
+	private void AboutMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_AboutMenuEntryActionPerformed
         // Menu: Help > About
         (new AboutDialog(this, true)).setVisible(true);
-	}//GEN-LAST:event_jMenuItem3ActionPerformed
+	}//GEN-LAST:event_AboutMenuEntryActionPerformed
 
-	private void jToggleButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton4ActionPerformed
+	private void LinkButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_LinkButtonActionPerformed
         // Link plots button
-        if (jToggleButton4.isSelected()) {
+        if (LinkButton.isSelected()) {
             linked_plots = true;
         } else {
             linked_plots = false;
         }
-	}//GEN-LAST:event_jToggleButton4ActionPerformed
-
-	private void jButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton6ActionPerformed
-        // Repor merge button
-        (new MergeReportsDialog(this, true)).setVisible(true);
-	}//GEN-LAST:event_jButton6ActionPerformed
+	}//GEN-LAST:event_LinkButtonActionPerformed
 
     public void enableSaveCommand() {
-        jButton7.setEnabled(true);
-        jMenuItem6.setEnabled(true);
+        SaveButton.setEnabled(true);
+        SaveMenuEntry.setEnabled(true);
     }
 
     public void disableSaveCommand() {
-        jButton7.setEnabled(false);
-        jMenuItem6.setEnabled(false);
+        SaveButton.setEnabled(false);
+        SaveMenuEntry.setEnabled(false);
     }
 
-	private void jButton7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton7ActionPerformed
+	private void SaveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SaveButtonActionPerformed
         // Save button
         try {
             report.save();
@@ -2299,27 +2019,22 @@ public class MainWindow extends javax.swing.JFrame {
         } finally {
             disableSaveCommand();
         }
-	}//GEN-LAST:event_jButton7ActionPerformed
+	}//GEN-LAST:event_SaveButtonActionPerformed
 
-	private void jMenuItem6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem6ActionPerformed
+	private void SaveMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SaveMenuEntryActionPerformed
         // Menu: File > Save
-        jButton7ActionPerformed(null);
-	}//GEN-LAST:event_jMenuItem6ActionPerformed
+        SaveButtonActionPerformed(null);
+	}//GEN-LAST:event_SaveMenuEntryActionPerformed
 
-	private void jMenuItem4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem4ActionPerformed
+	private void SettingsMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SettingsMenuEntryActionPerformed
         // Menu: Edit > Settings
         (new SettingsDialog(this, true)).setVisible(true);
-	}//GEN-LAST:event_jMenuItem4ActionPerformed
+	}//GEN-LAST:event_SettingsMenuEntryActionPerformed
 
-	private void jButton8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton8ActionPerformed
+	private void SettingButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SettingButtonActionPerformed
         // Settings button
         (new SettingsDialog(this, true)).setVisible(true);
-	}//GEN-LAST:event_jButton8ActionPerformed
-
-	private void jMenuItem7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem7ActionPerformed
-        // Menu: File > Merge
-        (new MergeReportsDialog(this, true)).setVisible(true);
-	}//GEN-LAST:event_jMenuItem7ActionPerformed
+	}//GEN-LAST:event_SettingButtonActionPerformed
 
     private void loadRecentFile(int entry) {
 
@@ -2339,35 +2054,35 @@ public class MainWindow extends javax.swing.JFrame {
 
     }
 
-	private void recentMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_recentMenuItem1ActionPerformed
+	private void RecentEntry1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RecentEntry1ActionPerformed
         // Menu: File > Open recent file > (first entry)
         loadRecentFile(0);
-	}//GEN-LAST:event_recentMenuItem1ActionPerformed
+	}//GEN-LAST:event_RecentEntry1ActionPerformed
 
-	private void recentMenuItem2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_recentMenuItem2ActionPerformed
+	private void RecentEntry2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RecentEntry2ActionPerformed
         // Menu: File > Open recent file > (second entry)
         loadRecentFile(1);
-	}//GEN-LAST:event_recentMenuItem2ActionPerformed
+	}//GEN-LAST:event_RecentEntry2ActionPerformed
 
-	private void recentMenuItem3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_recentMenuItem3ActionPerformed
+	private void RecentEntry3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RecentEntry3ActionPerformed
         // Menu: File > Open recent file > (third entry)
         loadRecentFile(2);
-	}//GEN-LAST:event_recentMenuItem3ActionPerformed
+	}//GEN-LAST:event_RecentEntry3ActionPerformed
 
-	private void recentMenuItem4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_recentMenuItem4ActionPerformed
+	private void RecentEntry4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RecentEntry4ActionPerformed
         // Menu: File > Open recent file > (fourth entry)
         loadRecentFile(3);
-	}//GEN-LAST:event_recentMenuItem4ActionPerformed
+	}//GEN-LAST:event_RecentEntry4ActionPerformed
 
-	private void recentMenuItem5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_recentMenuItem5ActionPerformed
+	private void RecentEntry5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RecentEntry5ActionPerformed
         // Menu: File > Open recent file > (fifth entry)
         loadRecentFile(4);
-	}//GEN-LAST:event_recentMenuItem5ActionPerformed
+	}//GEN-LAST:event_RecentEntry5ActionPerformed
 
-	private void recentMenuItem6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_recentMenuItem6ActionPerformed
+	private void RecentEntry6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RecentEntry6ActionPerformed
         // Menu: File > Open recent file > (sixth entry)
         loadRecentFile(5);
-	}//GEN-LAST:event_recentMenuItem6ActionPerformed
+	}//GEN-LAST:event_RecentEntry6ActionPerformed
 
 	private void jSplitPane1AncestorResized(java.awt.event.HierarchyEvent evt) {//GEN-FIRST:event_jSplitPane1AncestorResized
         // Moved divider btw graphs and routine panels
@@ -2422,10 +2137,10 @@ public class MainWindow extends javax.swing.JFrame {
         }
 	}//GEN-LAST:event_jList1MouseClicked
 
-	private void jButton9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton9ActionPerformed
+	private void ReloadButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ReloadButtonActionPerformed
         // Reload button
         try {
-            File file = null;
+            File file;
             if (report == null) { // Reload last recent report
                 ArrayList<File> r = Main.getRecentFiles();
                 if (r.size() <= 0) {
@@ -2445,13 +2160,13 @@ public class MainWindow extends javax.swing.JFrame {
             //e.printStackTrace();
         }
 
-	}//GEN-LAST:event_jButton9ActionPerformed
+	}//GEN-LAST:event_ReloadButtonActionPerformed
 
 	private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
         setExtendedState(MAXIMIZED_BOTH);
 	}//GEN-LAST:event_formWindowOpened
 
-	private void jMenuItem11ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem11ActionPerformed
+	private void ExportRoutineProfileEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ExportRoutineProfileEntryActionPerformed
 
         // Menu: File > Export > Routine profile 
         if (this.rtn_info == null) {
@@ -2510,12 +2225,10 @@ public class MainWindow extends javax.swing.JFrame {
                 "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
 
             e.printStackTrace();
-
         }
+	}//GEN-LAST:event_ExportRoutineProfileEntryActionPerformed
 
-	}//GEN-LAST:event_jMenuItem11ActionPerformed
-
-	private void jMenuItem12ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem12ActionPerformed
+	private void ExportProgramProfileEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ExportProgramProfileEntryActionPerformed
 
         // Menu: File > Export > Program profile
         ArrayList<Routine> els = this.report.getRoutines();
@@ -2543,8 +2256,7 @@ public class MainWindow extends javax.swing.JFrame {
 
                 out.println("# N_TUPLES TOTAL_CALLS INPUT_MIN INPUT_MAX COST_BALANCE_POINT \"NAME\"");
 
-                for (int i = 0; i < els.size(); i++) {
-                    Routine el = els.get(i);
+                for (Routine el : els) {
                     out.println(el.getInputTuplesCount() + " "
                         + el.getTotalCalls() + " "
                         + el.getMinInput() + " "
@@ -2554,7 +2266,6 @@ public class MainWindow extends javax.swing.JFrame {
                     );
                 }
                 out.close();
-
             }
 
         } catch (java.io.IOException e) {
@@ -2564,182 +2275,94 @@ public class MainWindow extends javax.swing.JFrame {
 
         }
 
-	}//GEN-LAST:event_jMenuItem12ActionPerformed
+	}//GEN-LAST:event_ExportProgramProfileEntryActionPerformed
 
-	private void jMenuItem13ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem13ActionPerformed
+	private void ExportProgramStatsEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ExportProgramStatsEntryActionPerformed
 
-	}//GEN-LAST:event_jMenuItem13ActionPerformed
+	}//GEN-LAST:event_ExportProgramStatsEntryActionPerformed
 
-	private void jToggleButton10ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton10ActionPerformed
-
+	private void GraphButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_GraphButtonActionPerformed
         // Graph button
-        if (jToggleButton10.isSelected()) {
-            jPopupMenu1.show(jToggleButton10, 0, jToggleButton10.getHeight());
+        if (GraphButton.isSelected()) {
+            GraphMenu.show(GraphButton, 0, GraphButton.getHeight());
         } else {
-            jPopupMenu1.setVisible(false);
+            GraphMenu.setVisible(false);
         }
+	}//GEN-LAST:event_GraphButtonActionPerformed
 
-	}//GEN-LAST:event_jToggleButton10ActionPerformed
+	private void GraphMenuPopupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent evt) {//GEN-FIRST:event_GraphMenuPopupMenuWillBecomeInvisible
+        GraphButton.setSelected(false);
+	}//GEN-LAST:event_GraphMenuPopupMenuWillBecomeInvisible
 
-	private void jPopupMenu1PopupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent evt) {//GEN-FIRST:event_jPopupMenu1PopupMenuWillBecomeInvisible
-
-        jToggleButton10.setSelected(false);
-
-	}//GEN-LAST:event_jPopupMenu1PopupMenuWillBecomeInvisible
-
-	private void jCheckBoxMenuItem4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem4ActionPerformed
-
+	private void CostPlotButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_CostPlotButtonActionPerformed
         // Graph menu button: cost plot
-        if (jCheckBoxMenuItem4.isSelected()) {
-            addGraph(CostGraphPanel);
-        } else {
-            removeGraph(CostGraphPanel);
-        }
+        editGraph(COST_PLOT, CostPlotButton.isSelected());
+	}//GEN-LAST:event_CostPlotButtonActionPerformed
 
-	}//GEN-LAST:event_jCheckBoxMenuItem4ActionPerformed
-
-	private void jCheckBoxMenuItem5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem5ActionPerformed
-
+	private void MMMPlotButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_MMMPlotButtonActionPerformed
         // Graph menu button: MMM plot
-        if (jCheckBoxMenuItem5.isSelected()) {
-            addGraph(MMMGraphPanel);
-        } else {
-            removeGraph(MMMGraphPanel);
-        }
+        editGraph(MMM_PLOT, MMMPlotButton.isSelected());
+	}//GEN-LAST:event_MMMPlotButtonActionPerformed
 
-	}//GEN-LAST:event_jCheckBoxMenuItem5ActionPerformed
-
-	private void jCheckBoxMenuItem6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem6ActionPerformed
-
+	private void TotalCostPlotButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_TotalCostPlotButtonActionPerformed
         // Graph menu button: total cost plot
-        if (jCheckBoxMenuItem6.isSelected()) {
-            addGraph(TotalCostGraphPanel);
-        } else {
-            removeGraph(TotalCostGraphPanel);
-        }
+        editGraph(TOTALCOST_PLOT, TotalCostPlotButton.isSelected());
+	}//GEN-LAST:event_TotalCostPlotButtonActionPerformed
 
-	}//GEN-LAST:event_jCheckBoxMenuItem6ActionPerformed
-
-	private void jCheckBoxMenuItem7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem7ActionPerformed
-
+	private void AmortizedPlotButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_AmortizedPlotButtonActionPerformed
         // Graph menu button: amortized plot
-        if (jCheckBoxMenuItem7.isSelected()) {
-            addGraph(AmortizedGraphPanel);
-        } else {
-            removeGraph(AmortizedGraphPanel);
-        }
+        editGraph(AMORTIZED_PLOT, AmortizedPlotButton.isSelected());
+	}//GEN-LAST:event_AmortizedPlotButtonActionPerformed
 
-	}//GEN-LAST:event_jCheckBoxMenuItem7ActionPerformed
-
-	private void jCheckBoxMenuItem8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem8ActionPerformed
-
+	private void RatioPlotButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RatioPlotButtonActionPerformed
         // Graph menu button: ratio plot
-        if (jCheckBoxMenuItem8.isSelected()) {
-            addGraph(ratioGraphPanel);
-        } else {
-            removeGraph(ratioGraphPanel);
-        }
+        editGraph(RATIO_PLOT, RatioPlotButton.isSelected());
+	}//GEN-LAST:event_RatioPlotButtonActionPerformed
 
-	}//GEN-LAST:event_jCheckBoxMenuItem8ActionPerformed
-
-	private void jCheckBoxMenuItem9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem9ActionPerformed
-
+	private void VarPlotButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_VarPlotButtonActionPerformed
         // Graph menu button: var plot
-        if (jCheckBoxMenuItem9.isSelected()) {
-            addGraph(VarGraphPanel);
-        } else {
-            removeGraph(VarGraphPanel);
-        }
+        editGraph(VAR_PLOT, VarPlotButton.isSelected());
+	}//GEN-LAST:event_VarPlotButtonActionPerformed
 
-	}//GEN-LAST:event_jCheckBoxMenuItem9ActionPerformed
-
-	private void jCheckBoxMenuItem10ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem10ActionPerformed
-
+	private void FrequencyPlotButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_FrequencyPlotButtonActionPerformed
         // Graph menu button: freq plot
-        if (jCheckBoxMenuItem10.isSelected()) {
-            addGraph(freqGraphPanel);
-        } else {
-            removeGraph(freqGraphPanel);
-        }
+        editGraph(FREQ_PLOT, FrequencyPlotButton.isSelected());
+	}//GEN-LAST:event_FrequencyPlotButtonActionPerformed
 
-	}//GEN-LAST:event_jCheckBoxMenuItem10ActionPerformed
-
-	private void jCheckBoxMenuItem12ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem12ActionPerformed
-
+	private void CostPlotMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_CostPlotMenuEntryActionPerformed
         // Graph menu button: cost plot
-        if (jCheckBoxMenuItem12.isSelected()) {
-            addGraph(CostGraphPanel);
-        } else {
-            removeGraph(CostGraphPanel);
-        }
+        editGraph(COST_PLOT, CostPlotMenuEntry.isSelected());
+	}//GEN-LAST:event_CostPlotMenuEntryActionPerformed
 
-	}//GEN-LAST:event_jCheckBoxMenuItem12ActionPerformed
-
-	private void jCheckBoxMenuItem13ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem13ActionPerformed
-
+	private void MMMPlotMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_MMMPlotMenuEntryActionPerformed
         // Graph menu button: MMM plot
-        if (jCheckBoxMenuItem13.isSelected()) {
-            addGraph(MMMGraphPanel);
-        } else {
-            removeGraph(MMMGraphPanel);
-        }
+        editGraph(MMM_PLOT, MMMPlotMenuEntry.isSelected());
+	}//GEN-LAST:event_MMMPlotMenuEntryActionPerformed
 
-	}//GEN-LAST:event_jCheckBoxMenuItem13ActionPerformed
-
-	private void jCheckBoxMenuItem14ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem14ActionPerformed
-
+	private void TotalCostPlotMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_TotalCostPlotMenuEntryActionPerformed
         // Graph menu button: total cost plot
-        if (jCheckBoxMenuItem14.isSelected()) {
-            addGraph(TotalCostGraphPanel);
-        } else {
-            removeGraph(TotalCostGraphPanel);
-        }
+        editGraph(TOTALCOST_PLOT, TotalCostPlotMenuEntry.isSelected());
+	}//GEN-LAST:event_TotalCostPlotMenuEntryActionPerformed
 
-	}//GEN-LAST:event_jCheckBoxMenuItem14ActionPerformed
-
-	private void jCheckBoxMenuItem15ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem15ActionPerformed
-
+	private void AmortizedPlotMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_AmortizedPlotMenuEntryActionPerformed
         // Graph menu button: amortized plot
-        if (jCheckBoxMenuItem15.isSelected()) {
-            addGraph(AmortizedGraphPanel);
-        } else {
-            removeGraph(AmortizedGraphPanel);
-        }
+        editGraph(AMORTIZED_PLOT, AmortizedPlotMenuEntry.isSelected());
+	}//GEN-LAST:event_AmortizedPlotMenuEntryActionPerformed
 
-	}//GEN-LAST:event_jCheckBoxMenuItem15ActionPerformed
-
-	private void jCheckBoxMenuItem16ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem16ActionPerformed
-
+	private void RatioPlotMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_RatioPlotMenuEntryActionPerformed
         // Graph menu button: ratio plot
-        if (jCheckBoxMenuItem16.isSelected()) {
-            addGraph(ratioGraphPanel);
-        } else {
-            removeGraph(ratioGraphPanel);
-        }
+        editGraph(RATIO_PLOT, RatioPlotMenuEntry.isSelected());
+	}//GEN-LAST:event_RatioPlotMenuEntryActionPerformed
 
-	}//GEN-LAST:event_jCheckBoxMenuItem16ActionPerformed
-
-	private void jCheckBoxMenuItem17ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem17ActionPerformed
-
+	private void VarianceCostPlotMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_VarianceCostPlotMenuEntryActionPerformed
         // Graph menu button: var plot
-        if (jCheckBoxMenuItem17.isSelected()) {
-            addGraph(VarGraphPanel);
-        } else {
-            removeGraph(VarGraphPanel);
-        }
+        editGraph(VAR_PLOT, VarianceCostPlotMenuEntry.isSelected());
+	}//GEN-LAST:event_VarianceCostPlotMenuEntryActionPerformed
 
-	}//GEN-LAST:event_jCheckBoxMenuItem17ActionPerformed
-
-	private void jCheckBoxMenuItem18ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem18ActionPerformed
-
+	private void FrequencyPlotMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_FrequencyPlotMenuEntryActionPerformed
         // Graph menu button: freq plot
-        if (jCheckBoxMenuItem18.isSelected()) {
-            addGraph(freqGraphPanel);
-        } else {
-            removeGraph(freqGraphPanel);
-        }
-
-	}//GEN-LAST:event_jCheckBoxMenuItem18ActionPerformed
+        editGraph(FREQ_PLOT, FrequencyPlotMenuEntry.isSelected());
+	}//GEN-LAST:event_FrequencyPlotMenuEntryActionPerformed
 
     private void chooseSourceDirectory() {
 
@@ -2755,15 +2378,13 @@ public class MainWindow extends javax.swing.JFrame {
 
         if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 
-            jProgressBar1.setVisible(true);
-            jProgressBar1.setEnabled(true);
             loading = true;
 
             source_dir = chooser.getSelectedFile().getPath();
             Main.setLastSourceDir(chooser.getSelectedFile().getPath());
             //System.out.println("Selected directory: " + source_dir);
             final ctagsParser c = new ctagsParser(chooser.getSelectedFile());
-
+            final ProgressDialog p = new ProgressDialog(this, true);
             SwingWorker worker = new SwingWorker<Boolean, Void>() {
 
                 @Override
@@ -2773,8 +2394,7 @@ public class MainWindow extends javax.swing.JFrame {
                     files = c.getFiles();
                     jTextField2.setEnabled(true);
                     jButton11.setEnabled(true);
-                    jProgressBar1.setVisible(false);
-                    jProgressBar1.setEnabled(false);
+                    p.setVisible(false);
                     jToggleButton2.setEnabled(true);
                     loading = false;
 
@@ -2786,9 +2406,9 @@ public class MainWindow extends javax.swing.JFrame {
                             jComboBox1.setModel(new ListFilesEditorModel<String>(files));
                             jComboBox1.setEnabled(true);
 
-                            if (!jLabel7.getText().equals("")) {
+                            if (!RoutineLabel.getText().equals("")) {
                                 //System.out.println("Function selected " + jLabel7.getText());
-                                loadFunctionInTextEditor(jLabel7.getText());
+                                loadFunctionInTextEditor(RoutineLabel.getText());
                             } else {
 
                                 try {
@@ -2808,37 +2428,30 @@ public class MainWindow extends javax.swing.JFrame {
 
             };
             worker.execute();
-
-            //System.out.println("Collected " + l.size() + " symbols");
+            p.setVisible(true);
         }
 
     }
 
-	private void jMenuItem8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem8ActionPerformed
-
+	private void SetSourceDirMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SetSourceDirMenuEntryActionPerformed
         chooseSourceDirectory();
+	}//GEN-LAST:event_SetSourceDirMenuEntryActionPerformed
 
-	}//GEN-LAST:event_jMenuItem8ActionPerformed
-
-	private void jButton10ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton10ActionPerformed
-
+	private void SourceDirectoryButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SourceDirectoryButtonActionPerformed
         chooseSourceDirectory();
+	}//GEN-LAST:event_SourceDirectoryButtonActionPerformed
 
-	}//GEN-LAST:event_jButton10ActionPerformed
-
-	private void jCheckBoxMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem1ActionPerformed
-
-        if (jCheckBoxMenuItem1.isSelected()) {
+	private void SourceMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SourceMenuEntryActionPerformed
+        if (SourceMenuEntry.isSelected()) {
             showTextEditor(true);
         } else {
             showTextEditor(false);
         }
+	}//GEN-LAST:event_SourceMenuEntryActionPerformed
 
-	}//GEN-LAST:event_jCheckBoxMenuItem1ActionPerformed
+	private void SourceButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SourceButtonActionPerformed
 
-	private void jToggleButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton1ActionPerformed
-
-        if (jToggleButton4.isSelected()) {
+        if (LinkButton.isSelected()) {
             if (!editor_visible) {
                 showTextEditor(true);
             } else {
@@ -2846,7 +2459,7 @@ public class MainWindow extends javax.swing.JFrame {
             }
         }
 
-	}//GEN-LAST:event_jToggleButton1ActionPerformed
+	}//GEN-LAST:event_SourceButtonActionPerformed
 
 	private void jComboBox1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBox1ActionPerformed
 
@@ -2893,8 +2506,8 @@ public class MainWindow extends javax.swing.JFrame {
         // Load function code selected in the routine table
         if (jToggleButton2.isSelected()) {
             linked_editor = true;
-            if (!jLabel7.getText().equals("")) {
-                loadFunctionInTextEditor(jLabel7.getText());
+            if (!RoutineLabel.getText().equals("")) {
+                loadFunctionInTextEditor(RoutineLabel.getText());
             }
         } else {
             linked_editor = false;
@@ -2908,20 +2521,18 @@ public class MainWindow extends javax.swing.JFrame {
         loading_routine = false;
     }//GEN-LAST:event_jTable1MouseClicked
 
-    private void jButton12ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton12ActionPerformed
-
+    private void FilterContextsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_FilterContextsButtonActionPerformed
         // Contexts filter button (corner contexts table)
         if (rtn_info != null) {
             RoutinesTableModel m = (RoutinesTableModel) jTable1.getModel();
-            ArrayList<String> liblist = null;
-            liblist = report.getLibList();
+            ArrayList<String> liblist = report.getLibList();
             (new RoutinesFilterDialog(this, true, liblist,
                 contexts_filter_criteria, false, m.getColumnConfig()))
                 .setVisible(true);
         }
-    }//GEN-LAST:event_jButton12ActionPerformed
+    }//GEN-LAST:event_FilterContextsButtonActionPerformed
 
-    private void jMenuItem14ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem14ActionPerformed
+    private void ExportInputVolumeEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ExportInputVolumeEntryActionPerformed
 
         // Menu: File > Export > Input volume...
         if (report == null) {
@@ -2972,9 +2583,9 @@ public class MainWindow extends javax.swing.JFrame {
 
         }
 
-    }//GEN-LAST:event_jMenuItem14ActionPerformed
+    }//GEN-LAST:event_ExportInputVolumeEntryActionPerformed
 
-    private void jMenuItem15ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem15ActionPerformed
+    private void ExportRichnessEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ExportRichnessEntryActionPerformed
 
         // Menu: File > Export > profile routine richness...
         if (report == null) {
@@ -3025,9 +2636,9 @@ public class MainWindow extends javax.swing.JFrame {
                 "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
 
         }
-    }//GEN-LAST:event_jMenuItem15ActionPerformed
+    }//GEN-LAST:event_ExportRichnessEntryActionPerformed
 
-    private void jMenuItem16ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem16ActionPerformed
+    private void ExportThreadInputEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ExportThreadInputEntryActionPerformed
 
         // Menu: File > Export > thread input...
         if (report == null) {
@@ -3078,13 +2689,13 @@ public class MainWindow extends javax.swing.JFrame {
                 "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
 
         }
-    }//GEN-LAST:event_jMenuItem16ActionPerformed
+    }//GEN-LAST:event_ExportThreadInputEntryActionPerformed
 
     private void extractInputStats() {
 
     }
 
-    private void jMenuItem17ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem17ActionPerformed
+    private void ExportSyscallInputEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ExportSyscallInputEntryActionPerformed
 
         // Menu: File > Export > external input...
         if (report == null) {
@@ -3135,19 +2746,9 @@ public class MainWindow extends javax.swing.JFrame {
                 "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
 
         }
-    }//GEN-LAST:event_jMenuItem17ActionPerformed
+    }//GEN-LAST:event_ExportSyscallInputEntryActionPerformed
 
-    private void jMenuItem18ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem18ActionPerformed
-
-        this.jMenuItem14ActionPerformed(evt);
-        this.jMenuItem15ActionPerformed(evt);
-        this.jMenuItem16ActionPerformed(evt);
-        this.jMenuItem17ActionPerformed(evt);
-        this.jMenuItem19ActionPerformed(evt);
-
-    }//GEN-LAST:event_jMenuItem18ActionPerformed
-
-    private void jMenuItem19ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem19ActionPerformed
+    private void ExportInducedAccessEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ExportInducedAccessEntryActionPerformed
 
         // Menu: File > Export > induced accesses...
         if (report == null) {
@@ -3181,17 +2782,11 @@ public class MainWindow extends javax.swing.JFrame {
                 out.format("# Percent External_input Thread_input%n");
 
                 int k = 1;
-                for (int i = 0; i < rr.size(); i++) {
-
-                    Routine r = rr.get(i);
+                for (Routine r : rr) {
                     if (r.getInputTuplesCount() < 5) {
                         continue;
                     }
-                    /*
-                     System.out.println("Routine " 
-                     + i + " tuples " + r.getSizeRmsList());
-                    
-                     */
+ 
                     double x = k++;
                     double y = r.getRatioSyscallInput() * 100;
                     double z = r.getRatioThreadInput() * 100;
@@ -3209,9 +2804,9 @@ public class MainWindow extends javax.swing.JFrame {
 
         }
 
-    }//GEN-LAST:event_jMenuItem19ActionPerformed
+    }//GEN-LAST:event_ExportInducedAccessEntryActionPerformed
 
-    private void jMenuItem20ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem20ActionPerformed
+    private void ExportSelfInducedAccessEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ExportSelfInducedAccessEntryActionPerformed
 
         // Menu: File > Export > self induced accesses...
         if (report == null) {
@@ -3261,100 +2856,20 @@ public class MainWindow extends javax.swing.JFrame {
                 "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
 
         }
-    }//GEN-LAST:event_jMenuItem20ActionPerformed
+    }//GEN-LAST:event_ExportSelfInducedAccessEntryActionPerformed
 
-    private void jMenuItem21ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem21ActionPerformed
-
-        // Menu: File > Export > alpha values
-        if (report == null || rtn_info == null) {
-            return;
-        }
-
-        try {
-
-            File tmp = new File(this.report.getName() + "_alpha.dat");
-
-            JFileChooser chooser = new javax.swing.JFileChooser();
-            String lastReportPath = Main.getLastReportPath();
-            if (!lastReportPath.equals("")) {
-                chooser.setCurrentDirectory(new File(lastReportPath));
-            }
-
-            FileNameExtensionFilter filter = new FileNameExtensionFilter("Alpha values", "dat");
-            chooser.setFileFilter(filter);
-            chooser.setAcceptAllFileFilterUsed(false);
-            chooser.setSelectedFile(tmp);
-            int choice = chooser.showSaveDialog(this.getParent());
-
-            if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
-
-                tmp = chooser.getSelectedFile();
-                tmp.createNewFile();
-                PrintWriter out = new PrintWriter(new FileWriter(tmp));
-
-                out.format("# alpha points %n");
-
-                ArrayList<Double> list = rtn_info.estimateAmortizedConstant();
-                for (int i = 0; i < list.size(); i += 2) {
-                    out.format("%.3f %.0f%n", list.get(i), list.get(i + 1));
-                }
-
-                out.close();
-
-            }
-
-        } catch (java.io.IOException e) {
-
-            JOptionPane.showMessageDialog(this, "Error during export :(",
-                "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
-
-        }
-    }//GEN-LAST:event_jMenuItem21ActionPerformed
-
-    private void jMenuItem9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem9ActionPerformed
+    private void FitMenuEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_FitMenuEntryActionPerformed
 
         // add fitting log
         if (this.report == null) {
             return;
         }
 
-        /*
-         JFileChooser chooser = new JFileChooser();
-         chooser.setDialogTitle("Choose fitting log");
-		
-         String lastReportPath = Main.getLastReportPath();
-         if (lastReportPath != null)
-         while (!lastReportPath.equals("")) {
-                
-         File f = new File(lastReportPath);
-         if (f.exists()) {
-         chooser.setCurrentDirectory(f);
-         break;
-         } else
-         lastReportPath = f.getParent();
-                
-         }
-        
-         FileNameExtensionFilter filter = 
-         new FileNameExtensionFilter("fitting log (*.fitlog)", "fitlog");
-        
-         chooser.setFileFilter(filter);
-         chooser.setAcceptAllFileFilterUsed(false);
-         int choice = chooser.showOpenDialog(this);
-         if (choice == javax.swing.JFileChooser.APPROVE_OPTION) {
-         File file = chooser.getSelectedFile();
-         report.addFitter(file);
-            
-         if (report.hasFitter())
-         jToggleButton3.setEnabled(true);
-         }
-         */
         loading = true;
-        jProgressBar1.setVisible(true);
-        jProgressBar1.setEnabled(true);
-
-        SwingWorker worker = new SwingWorker<Boolean, Void>() {
-
+        final ProgressDialog p = new ProgressDialog(this, true);
+        SwingWorker worker;
+        worker = new SwingWorker<Boolean, Void>() {
+            
             @Override
             public Boolean doInBackground() {
 
@@ -3363,34 +2878,41 @@ public class MainWindow extends javax.swing.JFrame {
                 try {
                     report.addFitter(null);
                     if (report.hasFitter()) {
-                        jToggleButton3.setEnabled(true);
+                        FitButton.setEnabled(true);
                     }
                 } catch (Exception ex) {
                     ex.printStackTrace();
                     failed = true;
                 }
 
+                p.setVisible(false);
                 loading = false;
-                jProgressBar1.setVisible(false);
-                jProgressBar1.setEnabled(false);
 
                 if (failed || report.hasFatalError()) {
                     return false;
                 }
-                /*
-                 if (report.hasWarnings())
-                 showWanrnings(report.getWarnings());
-                 */
+
                 return true;
             }
 
         };
         worker.execute();
-    }//GEN-LAST:event_jMenuItem9ActionPerformed
+        p.setVisible(true);
+    }//GEN-LAST:event_FitMenuEntryActionPerformed
 
-    private void jToggleButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton3ActionPerformed
+    private void FitButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_FitButtonActionPerformed
         showFittingData(!this.fitting_mode);
-    }//GEN-LAST:event_jToggleButton3ActionPerformed
+    }//GEN-LAST:event_FitButtonActionPerformed
+
+    private void FilterRoutinesButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_FilterRoutinesButtonActionPerformed
+        // Routine filter button (corner routine table)
+        if (report != null) {
+            RoutinesTableModel m = (RoutinesTableModel) jTable1.getModel();
+            ArrayList<String> liblist = report.getLibList();
+            (new RoutinesFilterDialog(this, true, liblist, routines_filter_criteria,
+                m.getColumnConfig())).setVisible(true);
+        }
+    }//GEN-LAST:event_FilterRoutinesButtonActionPerformed
 
     public boolean isVisibleFittingData() {
         return this.fitting_mode;
@@ -3481,12 +3003,11 @@ public class MainWindow extends javax.swing.JFrame {
         if (Main.getBlackListEnabled() && blacklist.size() > 0) {
 
             List<RowFilter<TableModel, Integer>> blacklist_filters = new ArrayList<RowFilter<TableModel, Integer>>();
-            for (int i = 0; i < blacklist.size(); i++) {
-
-                RowFilter<TableModel, Integer> blacklist_filter = null;
+            for (String blacklist1 : blacklist) {
+                RowFilter<TableModel, Integer> blacklist_filter;
                 try {
-                    blacklist_filter = RowFilter.regexFilter(blacklist.get(i).replace(".", "\\."), 0);
-                } catch (java.util.regex.PatternSyntaxException e) {
+                    blacklist_filter = RowFilter.regexFilter(blacklist1.replace(".", "\\."), 0);
+                }catch (java.util.regex.PatternSyntaxException e) {
                     return;
                 }
                 blacklist_filters.add(RowFilter.notFilter(blacklist_filter));
@@ -3496,18 +3017,16 @@ public class MainWindow extends javax.swing.JFrame {
             filters.add(f);
         }
 
-        int index = -1;
-
         // Filtering based on % time
-        index = m.getIndexOfColumn(COLUMN.P_COST);
+        int index = m.getIndexOfColumn(COLUMN.P_COST);
         if (criteria[0] != null && index >= 0) {
 
             List<RowFilter<TableModel, Integer>> timeperc_filters = new ArrayList<RowFilter<TableModel, Integer>>(2);
-            RowFilter<TableModel, Integer> timeperc_equal_filter = null;
-            RowFilter<TableModel, Integer> timeperc_greater_filter = null;
+            RowFilter<TableModel, Integer> timeperc_equal_filter;
+            RowFilter<TableModel, Integer> timeperc_greater_filter;
             try {
-                timeperc_equal_filter = RowFilter.numberFilter(RowFilter.ComparisonType.EQUAL, new Double(Double.parseDouble(criteria[0])), index);
-                timeperc_greater_filter = RowFilter.numberFilter(RowFilter.ComparisonType.AFTER, new Double(Double.parseDouble(criteria[0])), index);
+                timeperc_equal_filter = RowFilter.numberFilter(RowFilter.ComparisonType.EQUAL, Double.parseDouble(criteria[0]), index);
+                timeperc_greater_filter = RowFilter.numberFilter(RowFilter.ComparisonType.AFTER, Double.parseDouble(criteria[0]), index);
             } catch (java.util.regex.PatternSyntaxException e) {
                 return;
             }
@@ -3522,7 +3041,7 @@ public class MainWindow extends javax.swing.JFrame {
         if (criteria[1] != null && index >= 0) {
 
             List<RowFilter<TableModel, Integer>> lib_filters = new ArrayList<RowFilter<TableModel, Integer>>(1);
-            RowFilter<TableModel, Integer> lib_filter = null;
+            RowFilter<TableModel, Integer> lib_filter;
             try {
                 lib_filter = javax.swing.RowFilter.regexFilter(criteria[1], index);
             } catch (java.util.regex.PatternSyntaxException e) {
@@ -3538,13 +3057,11 @@ public class MainWindow extends javax.swing.JFrame {
         if (criteria[2] != null && index >= 0) {
 
             List<RowFilter<TableModel, Integer>> callsperc_filters = new ArrayList<RowFilter<TableModel, Integer>>(2);
-            javax.swing.RowFilter<TableModel, Integer> callsperc_equal_filter = null;
-            javax.swing.RowFilter<TableModel, Integer> callsperc_greater_filter = null;
+            javax.swing.RowFilter<TableModel, Integer> callsperc_equal_filter;
+            javax.swing.RowFilter<TableModel, Integer> callsperc_greater_filter;
             try {
-
-                callsperc_equal_filter = RowFilter.numberFilter(RowFilter.ComparisonType.EQUAL, new Double(Double.parseDouble(criteria[2])), index);
-                callsperc_greater_filter = RowFilter.numberFilter(RowFilter.ComparisonType.AFTER, new Double(Double.parseDouble(criteria[2])), index);
-
+                callsperc_equal_filter = RowFilter.numberFilter(RowFilter.ComparisonType.EQUAL, Double.parseDouble(criteria[2]), index);
+                callsperc_greater_filter = RowFilter.numberFilter(RowFilter.ComparisonType.AFTER, Double.parseDouble(criteria[2]), index);
             } catch (java.util.regex.PatternSyntaxException e) {
                 return;
             }
@@ -3559,13 +3076,11 @@ public class MainWindow extends javax.swing.JFrame {
         if (criteria[3] != null && index >= 0) {
 
             List<RowFilter<TableModel, Integer>> avgratio_filters = new ArrayList<RowFilter<TableModel, Integer>>(2);
-            RowFilter<TableModel, Integer> avgratio_equal_filter = null;
-            RowFilter<TableModel, Integer> avgratio_greater_filter = null;
+            RowFilter<TableModel, Integer> avgratio_equal_filter;
+            RowFilter<TableModel, Integer> avgratio_greater_filter;
             try {
-
-                avgratio_equal_filter = RowFilter.numberFilter(RowFilter.ComparisonType.EQUAL, new Double(Double.parseDouble(criteria[3])), index);
-                avgratio_greater_filter = RowFilter.numberFilter(RowFilter.ComparisonType.AFTER, new Double(Double.parseDouble(criteria[3])), index);
-
+                avgratio_equal_filter = RowFilter.numberFilter(RowFilter.ComparisonType.EQUAL, Double.parseDouble(criteria[3]), index);
+                avgratio_greater_filter = RowFilter.numberFilter(RowFilter.ComparisonType.AFTER, Double.parseDouble(criteria[3]), index);
             } catch (java.util.regex.PatternSyntaxException e) {
                 return;
             }
@@ -3580,9 +3095,9 @@ public class MainWindow extends javax.swing.JFrame {
         if (criteria[4] != null && criteria[5] != null && index >= 0) {
 
             List<RowFilter<TableModel, Integer>> avgratio_filters = new ArrayList<RowFilter<TableModel, Integer>>(2);
-            RowFilter<TableModel, Integer> avgratio_equal_filter = null;
-            RowFilter<TableModel, Integer> avgratio_greater_filter = null;
-            RowFilter<TableModel, Integer> avgratio_lesser_filter = null;
+            RowFilter<TableModel, Integer> avgratio_equal_filter;
+            RowFilter<TableModel, Integer> avgratio_greater_filter;
+            RowFilter<TableModel, Integer> avgratio_lesser_filter;
             try {
 
                 avgratio_lesser_filter = RowFilter
@@ -3607,8 +3122,8 @@ public class MainWindow extends javax.swing.JFrame {
         if (criteria[6] != null && index >= 0) {
 
             List<RowFilter<TableModel, Integer>> avgratio_filters = new ArrayList<RowFilter<TableModel, Integer>>(2);
-            RowFilter<TableModel, Integer> avgratio_equal_filter = null;
-            RowFilter<TableModel, Integer> avgratio_greater_filter = null;
+            RowFilter<TableModel, Integer> avgratio_equal_filter;
+            RowFilter<TableModel, Integer> avgratio_greater_filter;
             try {
 
                 avgratio_equal_filter = RowFilter
@@ -3632,7 +3147,7 @@ public class MainWindow extends javax.swing.JFrame {
         if (criteria[7] != null && index >= 0) {
 
             List<RowFilter<TableModel, Integer>> avgratio_filters = new ArrayList<RowFilter<TableModel, Integer>>(2);
-            RowFilter<TableModel, Integer> avgratio_equal_filter = null;
+            RowFilter<TableModel, Integer> avgratio_equal_filter;
             try {
 
                 avgratio_equal_filter = RowFilter
@@ -3661,12 +3176,11 @@ public class MainWindow extends javax.swing.JFrame {
         if (Main.getBlackListEnabled() && blacklist.size() > 0) {
 
             List<RowFilter<TableModel, Integer>> blacklist_filters = new ArrayList<RowFilter<TableModel, Integer>>();
-            for (int i = 0; i < blacklist.size(); i++) {
-
-                RowFilter<TableModel, Integer> blacklist_filter = null;
+            for (String blacklist1 : blacklist) {
+                RowFilter<TableModel, Integer> blacklist_filter;
                 try {
-                    blacklist_filter = RowFilter.regexFilter(blacklist.get(i).replace(".", "\\."), 0);
-                } catch (java.util.regex.PatternSyntaxException e) {
+                    blacklist_filter = RowFilter.regexFilter(blacklist1.replace(".", "\\."), 0);
+                }catch (java.util.regex.PatternSyntaxException e) {
                     return;
                 }
                 blacklist_filters.add(RowFilter.notFilter(blacklist_filter));
@@ -3680,11 +3194,11 @@ public class MainWindow extends javax.swing.JFrame {
         if (criteria[0] != null) {
 
             List<RowFilter<TableModel, Integer>> timeperc_filters = new ArrayList<RowFilter<TableModel, Integer>>(2);
-            RowFilter<TableModel, Integer> timeperc_equal_filter = null;
-            RowFilter<TableModel, Integer> timeperc_greater_filter = null;
+            RowFilter<TableModel, Integer> timeperc_equal_filter;
+            RowFilter<TableModel, Integer> timeperc_greater_filter;
             try {
-                timeperc_equal_filter = RowFilter.numberFilter(RowFilter.ComparisonType.EQUAL, new Double(Double.parseDouble(criteria[0])), 4);
-                timeperc_greater_filter = RowFilter.numberFilter(RowFilter.ComparisonType.AFTER, new Double(Double.parseDouble(criteria[0])), 4);
+                timeperc_equal_filter = RowFilter.numberFilter(RowFilter.ComparisonType.EQUAL, Double.parseDouble(criteria[0]), 4);
+                timeperc_greater_filter = RowFilter.numberFilter(RowFilter.ComparisonType.AFTER, Double.parseDouble(criteria[0]), 4);
             } catch (java.util.regex.PatternSyntaxException e) {
                 return;
             }
@@ -3698,7 +3212,7 @@ public class MainWindow extends javax.swing.JFrame {
         if (criteria[1] != null) {
 
             List<RowFilter<TableModel, Integer>> lib_filters = new ArrayList<RowFilter<TableModel, Integer>>(1);
-            RowFilter<TableModel, Integer> lib_filter = null;
+            RowFilter<TableModel, Integer> lib_filter;
             try {
                 lib_filter = javax.swing.RowFilter.regexFilter(criteria[1], 1);
             } catch (java.util.regex.PatternSyntaxException e) {
@@ -3713,13 +3227,11 @@ public class MainWindow extends javax.swing.JFrame {
         if (criteria[2] != null) {
 
             List<RowFilter<TableModel, Integer>> callsperc_filters = new ArrayList<RowFilter<TableModel, Integer>>(2);
-            javax.swing.RowFilter<TableModel, Integer> callsperc_equal_filter = null;
-            javax.swing.RowFilter<TableModel, Integer> callsperc_greater_filter = null;
+            javax.swing.RowFilter<TableModel, Integer> callsperc_equal_filter;
+            javax.swing.RowFilter<TableModel, Integer> callsperc_greater_filter;
             try {
-
-                callsperc_equal_filter = RowFilter.numberFilter(RowFilter.ComparisonType.EQUAL, new Double(Double.parseDouble(criteria[2])), 7);
-                callsperc_greater_filter = RowFilter.numberFilter(RowFilter.ComparisonType.AFTER, new Double(Double.parseDouble(criteria[2])), 7);
-
+                callsperc_equal_filter = RowFilter.numberFilter(RowFilter.ComparisonType.EQUAL, Double.parseDouble(criteria[2]), 7);
+                callsperc_greater_filter = RowFilter.numberFilter(RowFilter.ComparisonType.AFTER, Double.parseDouble(criteria[2]), 7);
             } catch (java.util.regex.PatternSyntaxException e) {
                 return;
             }
@@ -3733,13 +3245,11 @@ public class MainWindow extends javax.swing.JFrame {
         if (criteria[3] != null) {
 
             List<RowFilter<TableModel, Integer>> avgratio_filters = new ArrayList<RowFilter<TableModel, Integer>>(2);
-            RowFilter<TableModel, Integer> avgratio_equal_filter = null;
-            RowFilter<TableModel, Integer> avgratio_greater_filter = null;
+            RowFilter<TableModel, Integer> avgratio_equal_filter;
+            RowFilter<TableModel, Integer> avgratio_greater_filter;
             try {
-
-                avgratio_equal_filter = RowFilter.numberFilter(RowFilter.ComparisonType.EQUAL, new Double(Double.parseDouble(criteria[3])), 3);
-                avgratio_greater_filter = RowFilter.numberFilter(RowFilter.ComparisonType.AFTER, new Double(Double.parseDouble(criteria[3])), 3);
-
+                avgratio_equal_filter = RowFilter.numberFilter(RowFilter.ComparisonType.EQUAL, Double.parseDouble(criteria[3]), 3);
+                avgratio_greater_filter = RowFilter.numberFilter(RowFilter.ComparisonType.AFTER, Double.parseDouble(criteria[3]), 3);
             } catch (java.util.regex.PatternSyntaxException e) {
                 return;
             }
@@ -3758,27 +3268,8 @@ public class MainWindow extends javax.swing.JFrame {
     }
 
     private void refreshPlotFilter() {
-        if (CostGraphPanel != null) {
-            CostGraphPanel.refreshFilter();
-        }
-        if (ratioGraphPanel != null) {
-            ratioGraphPanel.refreshFilter();
-        }
-        if (freqGraphPanel != null) {
-            freqGraphPanel.refreshFilter();
-        }
-        if (MMMGraphPanel != null) {
-            MMMGraphPanel.refreshFilter();
-        }
-        if (TotalCostGraphPanel != null) {
-            TotalCostGraphPanel.refreshFilter();
-        }
-        if (VarGraphPanel != null) {
-            VarGraphPanel.refreshFilter();
-        }
-        if (AmortizedGraphPanel != null) {
-            AmortizedGraphPanel.refreshFilter();
-        }
+        for (GraphPanel g : graphs)
+            g.refreshFilter();
     }
 
     protected void refreshRmsTableFilter() {
@@ -3796,11 +3287,11 @@ public class MainWindow extends javax.swing.JFrame {
         if (criteria[0] != null) {
 
             List<javax.swing.RowFilter<javax.swing.table.TableModel, Integer>> time_filters = new java.util.ArrayList<javax.swing.RowFilter<javax.swing.table.TableModel, Integer>>(2);
-            RowFilter<javax.swing.table.TableModel, Integer> time_equal_filter = null;
-            RowFilter<javax.swing.table.TableModel, Integer> time_greater_filter = null;
+            RowFilter<javax.swing.table.TableModel, Integer> time_equal_filter;
+            RowFilter<javax.swing.table.TableModel, Integer> time_greater_filter;
             try {
-                time_equal_filter = RowFilter.numberFilter(RowFilter.ComparisonType.EQUAL, new Double(Double.parseDouble(criteria[0])), 3);
-                time_greater_filter = RowFilter.numberFilter(RowFilter.ComparisonType.AFTER, new Double(Double.parseDouble(criteria[0])), 3);
+                time_equal_filter = RowFilter.numberFilter(RowFilter.ComparisonType.EQUAL, Double.parseDouble(criteria[0]), 3);
+                time_greater_filter = RowFilter.numberFilter(RowFilter.ComparisonType.AFTER, Double.parseDouble(criteria[0]), 3);
             } catch (java.util.regex.PatternSyntaxException e) {
                 return;
             }
@@ -3813,11 +3304,11 @@ public class MainWindow extends javax.swing.JFrame {
         if (criteria[1] != null) {
 
             List<javax.swing.RowFilter<TableModel, Integer>> ratio_filters = new ArrayList<RowFilter<TableModel, Integer>>(2);
-            RowFilter<TableModel, Integer> rms_equal_filter = null;
-            RowFilter<TableModel, Integer> rms_greater_filter = null;
+            RowFilter<TableModel, Integer> rms_equal_filter;
+            RowFilter<TableModel, Integer> rms_greater_filter;
             try {
-                rms_equal_filter = javax.swing.RowFilter.numberFilter(javax.swing.RowFilter.ComparisonType.EQUAL, new Double(Double.parseDouble(criteria[1])), 0);
-                rms_greater_filter = javax.swing.RowFilter.numberFilter(javax.swing.RowFilter.ComparisonType.AFTER, new Double(Double.parseDouble(criteria[1])), 0);
+                rms_equal_filter = javax.swing.RowFilter.numberFilter(javax.swing.RowFilter.ComparisonType.EQUAL, Double.parseDouble(criteria[1]), 0);
+                rms_greater_filter = javax.swing.RowFilter.numberFilter(javax.swing.RowFilter.ComparisonType.AFTER, Double.parseDouble(criteria[1]), 0);
             } catch (java.util.regex.PatternSyntaxException e) {
                 return;
             }
@@ -3828,11 +3319,11 @@ public class MainWindow extends javax.swing.JFrame {
         }
         if (criteria[2] != null) {
             List<RowFilter<TableModel, Integer>> freq_filters = new ArrayList<RowFilter<TableModel, Integer>>(2);
-            RowFilter<TableModel, Integer> freq_equal_filter = null;
-            RowFilter<TableModel, Integer> freq_greater_filter = null;
+            RowFilter<TableModel, Integer> freq_equal_filter;
+            RowFilter<TableModel, Integer> freq_greater_filter;
             try {
-                freq_equal_filter = RowFilter.numberFilter(RowFilter.ComparisonType.EQUAL, new Double(Double.parseDouble(criteria[2])), 4);
-                freq_greater_filter = RowFilter.numberFilter(RowFilter.ComparisonType.AFTER, new Double(Double.parseDouble(criteria[2])), 4);
+                freq_equal_filter = RowFilter.numberFilter(RowFilter.ComparisonType.EQUAL, Double.parseDouble(criteria[2]), 4);
+                freq_greater_filter = RowFilter.numberFilter(RowFilter.ComparisonType.AFTER, Double.parseDouble(criteria[2]), 4);
             } catch (java.util.regex.PatternSyntaxException e) {
                 return;
             }
@@ -3845,7 +3336,7 @@ public class MainWindow extends javax.swing.JFrame {
     }
 
     private void findRoutineByName() {
-        String query = jTextField1.getText().toLowerCase();
+        String query = SearchField.getText().toLowerCase();
         if (jTable1.getRowCount() > 0 && !query.equals("")) {
             int i = jTable1.getSelectedRow();
             if (i < 0) {
@@ -3934,113 +3425,67 @@ public class MainWindow extends javax.swing.JFrame {
     private void initGraph() {
 
         // Init graphs:
-        CostGraphPanel = new GraphPanel(COST_PLOT, this);
-        ratioGraphPanel = new GraphPanel(RATIO_PLOT, this);
-        freqGraphPanel = new GraphPanel(FREQ_PLOT, this);
-        MMMGraphPanel = new GraphPanel(MMM_PLOT, this);
-        TotalCostGraphPanel = new GraphPanel(TOTALCOST_PLOT, this);
-        VarGraphPanel = new GraphPanel(VAR_PLOT, this);
-        AmortizedGraphPanel = new GraphPanel(AMORTIZED_PLOT, this);
-
-        // Set performance monitor
-        CostGraphPanel.setPerformanceMonitor(perf);
-        ratioGraphPanel.setPerformanceMonitor(perf);
-        freqGraphPanel.setPerformanceMonitor(perf);
-        MMMGraphPanel.setPerformanceMonitor(perf);
-        TotalCostGraphPanel.setPerformanceMonitor(perf);
-        VarGraphPanel.setPerformanceMonitor(perf);
-        AmortizedGraphPanel.setPerformanceMonitor(perf);
+        for (GraphPanel.Type t : GraphPanel.Type.values()) {
+            GraphPanel g = new GraphPanel(t, this);
+            g.setPerformanceMonitor(perf);
+            graphs.add(g);
+            graphs_enabled.add(false);
+        }
 
         ArrayList<GraphPanel.Type> graph_order = Main.getGraphOrder();
         // Reset graph order (addGraph will set this later)
         Main.setGraphOrder(new ArrayList<GraphPanel.Type>());
-        for (int i = 0; i < graph_order.size(); i++) {
-
-            GraphPanel.Type graph_type = graph_order.get(i);
-            GraphPanel g = null;
-
-            switch (graph_type) {
-
-                case COST_PLOT:
-                    g = CostGraphPanel;
-                    break;
-
-                case RATIO_PLOT:
-                    g = ratioGraphPanel;
-                    break;
-
-                case FREQ_PLOT:
-                    g = freqGraphPanel;
-                    break;
-
-                case MMM_PLOT:
-                    g = MMMGraphPanel;
-                    break;
-
-                case TOTALCOST_PLOT:
-                    g = TotalCostGraphPanel;
-                    break;
-
-                case VAR_PLOT:
-                    g = VarGraphPanel;
-                    break;
-
-                case AMORTIZED_PLOT:
-                    g = AmortizedGraphPanel;
-                    break;
-
-                default:
-                    throw new RuntimeException("Invalid graph type");
-
-            }
-
-            addGraph(g);
-
+        for (GraphPanel.Type t : graph_order) {
+            addGraph(t);
         }
-
     }
 
-    private void addGraph(GraphPanel g) {
+    private void editGraph(GraphPanel.Type t, boolean enable) {
+        if (enable) 
+            addGraph(t);
+        else
+            removeGraph(t);
+    }
+    
+    private void addGraph(GraphPanel.Type t) {
 
-        if (g == null) {
-            return;
-        }
-
+        GraphPanel g = graphs.get(t.ordinal());
+        graphs_enabled.set(t.ordinal(), true);
         switch (g.getGraphType()) {
 
             case COST_PLOT:
-                jCheckBoxMenuItem4.setSelected(true);
-                jCheckBoxMenuItem12.setSelected(true);
+                CostPlotButton.setSelected(true);
+                CostPlotMenuEntry.setSelected(true);
                 break;
 
             case MMM_PLOT:
-                jCheckBoxMenuItem5.setSelected(true);
-                jCheckBoxMenuItem13.setSelected(true);
+                MMMPlotButton.setSelected(true);
+                MMMPlotMenuEntry.setSelected(true);
                 break;
 
             case TOTALCOST_PLOT:
-                jCheckBoxMenuItem6.setSelected(true);
-                jCheckBoxMenuItem14.setSelected(true);
+                TotalCostPlotButton.setSelected(true);
+                TotalCostPlotMenuEntry.setSelected(true);
                 break;
 
             case AMORTIZED_PLOT:
-                jCheckBoxMenuItem7.setSelected(true);
-                jCheckBoxMenuItem15.setSelected(true);
+                AmortizedPlotButton.setSelected(true);
+                AmortizedPlotMenuEntry.setSelected(true);
                 break;
 
             case RATIO_PLOT:
-                jCheckBoxMenuItem8.setSelected(true);
-                jCheckBoxMenuItem16.setSelected(true);
+                RatioPlotButton.setSelected(true);
+                RatioPlotMenuEntry.setSelected(true);
                 break;
 
             case VAR_PLOT:
-                jCheckBoxMenuItem9.setSelected(true);
-                jCheckBoxMenuItem17.setSelected(true);
+                VarPlotButton.setSelected(true);
+                VarianceCostPlotMenuEntry.setSelected(true);
                 break;
 
             case FREQ_PLOT:
-                jCheckBoxMenuItem10.setSelected(true);
-                jCheckBoxMenuItem18.setSelected(true);
+                FrequencyPlotButton.setSelected(true);
+                FrequencyPlotMenuEntry.setSelected(true);
                 break;
         }
 
@@ -4056,7 +3501,7 @@ public class MainWindow extends javax.swing.JFrame {
         } else {
 
             Component[] l = jPanel9.getComponents();
-            int i = 0;
+            int i;
             for (i = 0; i < l.length; i++) {
 
                 if (!(l[i] instanceof GraphPanel)) {
@@ -4090,49 +3535,47 @@ public class MainWindow extends javax.swing.JFrame {
         adjustGraphLayout();
 
     }
+    
+    private void removeGraph(GraphPanel.Type t) {
 
-    private void removeGraph(GraphPanel g) {
-
-        if (g == null) {
-            return;
-        }
-
+        GraphPanel g = graphs.get(t.ordinal());
+        graphs_enabled.set(t.ordinal(), false);
         switch (g.getGraphType()) {
 
             case COST_PLOT:
                 jPanel9.remove(g);
-                jCheckBoxMenuItem4.setSelected(false);
-                jCheckBoxMenuItem12.setSelected(false);
+                CostPlotButton.setSelected(false);
+                CostPlotMenuEntry.setSelected(false);
                 break;
 
             case MMM_PLOT:
-                jCheckBoxMenuItem5.setSelected(false);
-                jCheckBoxMenuItem13.setSelected(false);
+                MMMPlotButton.setSelected(false);
+                MMMPlotMenuEntry.setSelected(false);
                 break;
 
             case TOTALCOST_PLOT:
-                jCheckBoxMenuItem6.setSelected(false);
-                jCheckBoxMenuItem14.setSelected(false);
+                TotalCostPlotButton.setSelected(false);
+                TotalCostPlotMenuEntry.setSelected(false);
                 break;
 
             case AMORTIZED_PLOT:
-                jCheckBoxMenuItem7.setSelected(false);
-                jCheckBoxMenuItem15.setSelected(false);
+                AmortizedPlotButton.setSelected(false);
+                AmortizedPlotMenuEntry.setSelected(false);
                 break;
 
             case RATIO_PLOT:
-                jCheckBoxMenuItem6.setSelected(false);
-                jCheckBoxMenuItem16.setSelected(false);
+                TotalCostPlotButton.setSelected(false);
+                RatioPlotMenuEntry.setSelected(false);
                 break;
 
             case VAR_PLOT:
-                jCheckBoxMenuItem9.setSelected(false);
-                jCheckBoxMenuItem17.setSelected(false);
+                VarPlotButton.setSelected(false);
+                VarianceCostPlotMenuEntry.setSelected(false);
                 break;
 
             case FREQ_PLOT:
-                jCheckBoxMenuItem10.setSelected(false);
-                jCheckBoxMenuItem18.setSelected(false);
+                FrequencyPlotButton.setSelected(false);
+                FrequencyPlotMenuEntry.setSelected(false);
                 break;
         }
 
@@ -4239,8 +3682,8 @@ public class MainWindow extends javax.swing.JFrame {
 
                 //System.out.println("Show editor");
                 Main.setEditorVisible(true);
-                jCheckBoxMenuItem1.setSelected(true);
-                jToggleButton1.setSelected(true);
+                SourceMenuEntry.setSelected(true);
+                SourceButton.setSelected(true);
                 jSplitPane4.setRightComponent(jPanel11);
                 //jSplitPane4.setDividerLocation(0.3);
                 editor_visible = true;
@@ -4251,9 +3694,9 @@ public class MainWindow extends javax.swing.JFrame {
                     @Override
                     public void run() {
 
-                        if (!jLabel7.getText().equals("")) {
-                            System.out.println("Function selected " + jLabel7.getText());
-                            loadFunctionInTextEditor(jLabel7.getText());
+                        if (!RoutineLabel.getText().equals("")) {
+                            System.out.println("Function selected " + RoutineLabel.getText());
+                            loadFunctionInTextEditor(RoutineLabel.getText());
                         }
 
                     }
@@ -4267,8 +3710,8 @@ public class MainWindow extends javax.swing.JFrame {
 
                 //System.out.println("Hide editor");
                 Main.setEditorVisible(false);
-                jCheckBoxMenuItem1.setSelected(false);
-                jToggleButton1.setSelected(false);
+                SourceMenuEntry.setSelected(false);
+                SourceButton.setSelected(false);
                 jSplitPane4.setRightComponent(null);
                 editor_visible = false;
                 adjustGraphLayout();
@@ -4565,33 +4008,69 @@ public class MainWindow extends javax.swing.JFrame {
      }
      */
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButton1;
-    private javax.swing.JButton jButton10;
+    private javax.swing.JMenuItem AboutMenuEntry;
+    private javax.swing.JCheckBoxMenuItem AmortizedPlotButton;
+    private javax.swing.JCheckBoxMenuItem AmortizedPlotMenuEntry;
+    private javax.swing.JCheckBoxMenuItem CostPlotButton;
+    private javax.swing.JCheckBoxMenuItem CostPlotMenuEntry;
+    private javax.swing.JMenu EditMenu;
+    private javax.swing.JMenuItem ExitMenuEntry;
+    private javax.swing.JMenuItem ExportInducedAccessEntry;
+    private javax.swing.JMenuItem ExportInputVolumeEntry;
+    private javax.swing.JMenu ExportMenu;
+    private javax.swing.JMenuItem ExportProgramProfileEntry;
+    private javax.swing.JMenuItem ExportProgramStatsEntry;
+    private javax.swing.JMenuItem ExportRichnessEntry;
+    private javax.swing.JMenuItem ExportRoutineProfileEntry;
+    private javax.swing.JMenuItem ExportSelfInducedAccessEntry;
+    private javax.swing.JMenuItem ExportSyscallInputEntry;
+    private javax.swing.JMenuItem ExportThreadInputEntry;
+    private javax.swing.JMenu FileMenu;
+    private javax.swing.JButton FilterContextsButton;
+    private javax.swing.JButton FilterRoutinesButton;
+    private javax.swing.JButton FilterTuplesButton;
+    private javax.swing.JToggleButton FitButton;
+    private javax.swing.JMenuItem FitMenuEntry;
+    private javax.swing.JCheckBoxMenuItem FrequencyPlotButton;
+    private javax.swing.JCheckBoxMenuItem FrequencyPlotMenuEntry;
+    private javax.swing.JToggleButton GraphButton;
+    private javax.swing.JPopupMenu GraphMenu;
+    private javax.swing.JMenu HelpMenu;
+    private javax.swing.JToggleButton LinkButton;
+    private javax.swing.JCheckBoxMenuItem MMMPlotButton;
+    private javax.swing.JCheckBoxMenuItem MMMPlotMenuEntry;
+    private javax.swing.JMenuBar MenuBar;
+    private javax.swing.JButton NewWindowButton;
+    private javax.swing.JMenuItem NewWindowMenuEntry;
+    private javax.swing.JButton OpenButton;
+    private javax.swing.JMenuItem OpenFileMenuEntry;
+    private javax.swing.JCheckBoxMenuItem RatioPlotButton;
+    private javax.swing.JCheckBoxMenuItem RatioPlotMenuEntry;
+    private javax.swing.JMenuItem RecentEntry1;
+    private javax.swing.JMenuItem RecentEntry2;
+    private javax.swing.JMenuItem RecentEntry3;
+    private javax.swing.JMenuItem RecentEntry4;
+    private javax.swing.JMenuItem RecentEntry5;
+    private javax.swing.JMenuItem RecentEntry6;
+    private javax.swing.JMenu RecentMenu;
+    private javax.swing.JButton ReloadButton;
+    private javax.swing.JLabel RoutineLabel;
+    private javax.swing.JButton SaveButton;
+    private javax.swing.JMenuItem SaveMenuEntry;
+    private javax.swing.JButton SearchButton;
+    private javax.swing.JTextField SearchField;
+    private javax.swing.JMenuItem SetSourceDirMenuEntry;
+    private javax.swing.JButton SettingButton;
+    private javax.swing.JMenuItem SettingsMenuEntry;
+    private javax.swing.JToggleButton SourceButton;
+    private javax.swing.JButton SourceDirectoryButton;
+    private javax.swing.JCheckBoxMenuItem SourceMenuEntry;
+    private javax.swing.JCheckBoxMenuItem TotalCostPlotButton;
+    private javax.swing.JCheckBoxMenuItem TotalCostPlotMenuEntry;
+    private javax.swing.JCheckBoxMenuItem VarPlotButton;
+    private javax.swing.JCheckBoxMenuItem VarianceCostPlotMenuEntry;
+    private javax.swing.JMenu ViewMenu;
     private javax.swing.JButton jButton11;
-    private javax.swing.JButton jButton12;
-    private javax.swing.JButton jButton2;
-    private javax.swing.JButton jButton3;
-    private javax.swing.JButton jButton4;
-    private javax.swing.JButton jButton5;
-    private javax.swing.JButton jButton6;
-    private javax.swing.JButton jButton7;
-    private javax.swing.JButton jButton8;
-    private javax.swing.JButton jButton9;
-    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem1;
-    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem10;
-    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem12;
-    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem13;
-    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem14;
-    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem15;
-    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem16;
-    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem17;
-    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem18;
-    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem4;
-    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem5;
-    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem6;
-    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem7;
-    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem8;
-    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem9;
     private javax.swing.JComboBox<String> jComboBox1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
@@ -4599,37 +4078,9 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
-    private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
     private javax.swing.JLabel jLabel9;
     private javax.swing.JList jList1;
-    private javax.swing.JMenu jMenu1;
-    private javax.swing.JMenu jMenu2;
-    private javax.swing.JMenu jMenu3;
-    private javax.swing.JMenu jMenu4;
-    private javax.swing.JMenu jMenu5;
-    private javax.swing.JMenu jMenu6;
-    private javax.swing.JMenuBar jMenuBar1;
-    private javax.swing.JMenuItem jMenuItem1;
-    private javax.swing.JMenuItem jMenuItem11;
-    private javax.swing.JMenuItem jMenuItem12;
-    private javax.swing.JMenuItem jMenuItem13;
-    private javax.swing.JMenuItem jMenuItem14;
-    private javax.swing.JMenuItem jMenuItem15;
-    private javax.swing.JMenuItem jMenuItem16;
-    private javax.swing.JMenuItem jMenuItem17;
-    private javax.swing.JMenuItem jMenuItem18;
-    private javax.swing.JMenuItem jMenuItem19;
-    private javax.swing.JMenuItem jMenuItem2;
-    private javax.swing.JMenuItem jMenuItem20;
-    private javax.swing.JMenuItem jMenuItem21;
-    private javax.swing.JMenuItem jMenuItem3;
-    private javax.swing.JMenuItem jMenuItem4;
-    private javax.swing.JMenuItem jMenuItem5;
-    private javax.swing.JMenuItem jMenuItem6;
-    private javax.swing.JMenuItem jMenuItem7;
-    private javax.swing.JMenuItem jMenuItem8;
-    private javax.swing.JMenuItem jMenuItem9;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel11;
     private javax.swing.JPanel jPanel2;
@@ -4639,8 +4090,6 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel6;
     private javax.swing.JPanel jPanel8;
     private javax.swing.JPanel jPanel9;
-    private javax.swing.JPopupMenu jPopupMenu1;
-    private javax.swing.JProgressBar jProgressBar1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
@@ -4653,7 +4102,6 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JToolBar.Separator jSeparator2;
     private javax.swing.JToolBar.Separator jSeparator3;
     private javax.swing.JSeparator jSeparator4;
-    private javax.swing.JToolBar.Separator jSeparator5;
     private javax.swing.JToolBar.Separator jSeparator6;
     private javax.swing.JToolBar.Separator jSeparator7;
     private javax.swing.JToolBar.Separator jSeparator8;
@@ -4667,29 +4115,13 @@ public class MainWindow extends javax.swing.JFrame {
     private javax.swing.JTable jTable1;
     private javax.swing.JTable jTable2;
     private javax.swing.JTable jTable3;
-    private javax.swing.JTextField jTextField1;
     private javax.swing.JTextField jTextField2;
-    private javax.swing.JToggleButton jToggleButton1;
-    private javax.swing.JToggleButton jToggleButton10;
     private javax.swing.JToggleButton jToggleButton2;
-    private javax.swing.JToggleButton jToggleButton3;
-    private javax.swing.JToggleButton jToggleButton4;
     private javax.swing.JToolBar jToolBar1;
     private javax.swing.JToolBar jToolBar2;
     private javax.swing.JTree jTree1;
-    private javax.swing.JMenuItem recentMenuItem1;
-    private javax.swing.JMenuItem recentMenuItem2;
-    private javax.swing.JMenuItem recentMenuItem3;
-    private javax.swing.JMenuItem recentMenuItem4;
-    private javax.swing.JMenuItem recentMenuItem5;
-    private javax.swing.JMenuItem recentMenuItem6;
     // End of variables declaration//GEN-END:variables
 
-    // Graphs
-    private GraphPanel CostGraphPanel, ratioGraphPanel,
-        freqGraphPanel, MMMGraphPanel,
-        TotalCostGraphPanel, VarGraphPanel,
-        AmortizedGraphPanel;
 
     private TableRowSorter<TableModel> routines_table_sorter = null;
     private List<RowSorter.SortKey> routines_sort = null;
