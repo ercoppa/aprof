@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2011-2013 Philippe Waroquiers
+   Copyright (C) 2011-2015 Philippe Waroquiers
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -33,12 +33,9 @@
 #include "pub_core_libcproc.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_mallocfree.h"
-#include "pub_core_libcsetjmp.h"
 #include "pub_core_threadstate.h"
 #include "pub_core_gdbserver.h"
 #include "pub_core_options.h"
-#include "pub_core_libcsetjmp.h"
-#include "pub_core_threadstate.h"
 #include "pub_core_transtab.h"
 #include "pub_core_hashtable.h"
 #include "pub_core_xarray.h"
@@ -140,15 +137,21 @@ static void call_gdbserver ( ThreadId tid , CallReason reason);
    oldest result. */
 static HChar* sym (Addr addr, Bool is_code)
 {
-   static HChar buf[2][200];
+   static HChar *buf[2];
    static int w = 0;
    PtrdiffT offset;
    if (w == 2) w = 0;
-   buf[w][0] = '\0';
+
    if (is_code) {
-      VG_(describe_IP) (addr, buf[w], 200, NULL);
+      const HChar *name;
+      name = VG_(describe_IP) (addr, NULL);
+      if (buf[w]) VG_(free)(buf[w]);
+      buf[w] = VG_(strdup)("gdbserver sym", name);
    } else {
-      VG_(get_datasym_and_offset) (addr, buf[w], 200, &offset);
+      const HChar *name;
+      VG_(get_datasym_and_offset) (addr, &name, &offset);
+      if (buf[w]) VG_(free)(buf[w]);
+      buf[w] = VG_(strdup)("gdbserver sym", name);
    }
    return buf[w++];
 }
@@ -161,13 +164,11 @@ static int gdbserver_exited = 0;
 /* alloc and free functions for xarray and similar. */
 static void* gs_alloc (const HChar* cc, SizeT sz)
 {
-   void* res = VG_(arena_malloc)(VG_AR_CORE, cc, sz);
-   vg_assert (res);
-   return res;
+   return VG_(malloc)(cc, sz);
 }
 static void gs_free (void* ptr)
 {
-   VG_(arena_free)(VG_AR_CORE, ptr);
+   VG_(free)(ptr);
 }
 
 typedef
@@ -196,7 +197,7 @@ typedef
 
    Note for ARM: addr in GS_Address is the value without the thumb bit set.
 */
-static VgHashTable gs_addresses = NULL;
+static VgHashTable *gs_addresses = NULL;
 
 // Transform addr in the form stored in the list of addresses.
 // For the ARM architecture, we store it with the thumb bit set to 0.
@@ -213,7 +214,7 @@ static void add_gs_address (Addr addr, GS_Kind kind, const HChar* from)
 {
    GS_Address *p;
 
-   p = VG_(arena_malloc)(VG_AR_CORE, from, sizeof(GS_Address));
+   p = VG_(malloc)(from, sizeof(GS_Address));
    p->addr = HT_addr (addr);
    p->kind = kind;
    VG_(HT_add_node)(gs_addresses, p);
@@ -232,7 +233,7 @@ static void remove_gs_address (GS_Address* g, const HChar* from)
    // See add_gs_address for the explanation for condition and the range 2 below.
    if (VG_(clo_vgdb) != Vg_VgdbFull)
       VG_(discard_translations) (g->addr, 2, from);
-   VG_(arena_free) (VG_AR_CORE, g);
+   VG_(free) (g);
 }
 
 const HChar* VG_(ppPointKind) (PointKind kind)
@@ -374,8 +375,7 @@ Bool VG_(gdbserver_point) (PointKind kind, Bool insert,
    g = lookup_gs_watch (addr, len, kind, &g_ix);
    if (insert) {
       if (g == NULL) {
-         g = VG_(arena_malloc)(VG_AR_CORE, "gdbserver_point watchpoint",
-                               sizeof(GS_Watch));
+         g = VG_(malloc)("gdbserver_point watchpoint", sizeof(GS_Watch));
          g->addr = addr;
          g->len  = len;
          g->kind = kind;
@@ -388,7 +388,7 @@ Bool VG_(gdbserver_point) (PointKind kind, Bool insert,
    } else {
       if (g != NULL) {
          VG_(removeIndexXA) (gs_watches, g_ix);
-         VG_(arena_free) (VG_AR_CORE, g);
+         VG_(free) (g);
       } else {
          dlog(1, 
               "VG_(gdbserver_point) addr %p len %d kind %s already deleted?\n",
@@ -425,7 +425,7 @@ Bool VG_(is_watched)(PointKind kind, Addr addr, Int szB)
    vg_assert (kind == access_watchpoint 
               || kind == read_watchpoint 
               || kind == write_watchpoint);
-   dlog(1, "tid %d VG_(is_watched) %s addr %p szB %d\n",
+   dlog(1, "tid %u VG_(is_watched) %s addr %p szB %d\n",
         tid, VG_(ppPointKind) (kind), C2v(addr), szB);
 
    for (i = 0; i < n_elems; i++) {
@@ -486,7 +486,7 @@ Bool VG_(is_watched)(PointKind kind, Addr addr, Int szB)
 }
 
 /* Returns the reason for which gdbserver instrumentation is needed */
-static VgVgdb VG_(gdbserver_instrumentation_needed) (VexGuestExtents* vge)
+static VgVgdb VG_(gdbserver_instrumentation_needed) (const VexGuestExtents* vge)
 {
    GS_Address* g;
    int e;
@@ -542,7 +542,7 @@ static void clear_gdbserved_addresses(Bool clear_only_jumps)
    int i;
 
    dlog(1,
-        "clear_gdbserved_addresses: scanning hash table nodes %d\n", 
+        "clear_gdbserved_addresses: scanning hash table nodes %u\n", 
         VG_(HT_count_nodes) (gs_addresses));
    ag = (GS_Address**) VG_(HT_to_array) (gs_addresses, &n_elems);
    for (i = 0; i < n_elems; i++)
@@ -622,7 +622,7 @@ void VG_(gdbserver_prerun_action) (ThreadId tid)
    data from its parent */
 static void gdbserver_cleanup_in_child_after_fork(ThreadId me)
 {
-   dlog(1, "thread %d gdbserver_cleanup_in_child_after_fork pid %d\n",
+   dlog(1, "thread %u gdbserver_cleanup_in_child_after_fork pid %d\n",
         me, VG_(getpid) ());
 
    /* finish connection inheritated from parent */
@@ -663,7 +663,7 @@ static void call_gdbserver ( ThreadId tid , CallReason reason)
    Addr saved_pc;
 
    dlog(1, 
-        "entering call_gdbserver %s ... pid %d tid %d status %s "
+        "entering call_gdbserver %s ... pid %d tid %u status %s "
         "sched_jmpbuf_valid %d\n",
         ppCallReason (reason),
         VG_(getpid) (), tid, VG_(name_of_ThreadStatus)(tst->status),
@@ -754,7 +754,7 @@ static void call_gdbserver ( ThreadId tid , CallReason reason)
       Otherwise we just return to continue executing the
       current block. */
    if (VG_(get_IP) (tid) != saved_pc) {
-      dlog(1, "tid %d %s PC changed from %s to %s\n",
+      dlog(1, "tid %u %s PC changed from %s to %s\n",
            tid, VG_(name_of_ThreadStatus) (tst->status),
            sym(saved_pc, /* is_code */ True),
            sym(VG_(get_IP) (tid), /* is_code */ True));
@@ -773,7 +773,7 @@ static void call_gdbserver ( ThreadId tid , CallReason reason)
 }
 
 /* busy > 0 when gdbserver is currently being called.
-   busy is used to to avoid vgdb invoking gdbserver
+   busy is used to avoid vgdb invoking gdbserver
    while gdbserver by Valgrind. */
 static volatile int busy = 0;
 
@@ -790,7 +790,7 @@ void VG_(gdbserver) ( ThreadId tid )
       if (gdbserver_called == 0) {
          dlog(1, "VG_(gdbserver) called to terminate, nothing to terminate\n");
       } else if (gdbserver_exited) {
-         dlog(0, "VG_(gdbserver) called to terminate again %d\n",
+         dlog(1, "VG_(gdbserver) called to terminate again %d\n",
               gdbserver_exited);
       } else {
          gdbserver_terminate();
@@ -828,6 +828,7 @@ static int interrupts_non_interruptible = 0;
 
 static void give_control_back_to_vgdb(void)
 {
+#if !defined(VGO_solaris)
    /* cause a SIGSTOP to be sent to ourself, so that vgdb takes control.
       vgdb will then restore the stack so as to resume the activity
       before the ptrace (typically do_syscall_WRK). */
@@ -840,8 +841,17 @@ static void give_control_back_to_vgdb(void)
       ptrace handling. */
    vg_assert2(0, 
               "vgdb did not took control. Did you kill vgdb ?\n"
-              "busy %d vgdb_interrupted_tid %d\n",
+              "busy %d vgdb_interrupted_tid %u\n",
               busy, vgdb_interrupted_tid);
+#else /* defined(VGO_solaris) */
+   /* On Solaris, this code is run within the context of an agent thread
+      (see vgdb-invoker-solaris.c and "PCAGENT" control message in
+      proc(4)). Exit the agent thread now.
+    */
+   SysRes sres = VG_(do_syscall0)(SYS_lwp_exit);
+   if (sr_isError(sres))
+      vg_assert2(0, "The agent thread could not be exited\n");
+#endif /* !defined(VGO_solaris) */
 }
 
 /* Using ptrace calls, vgdb will force an invocation of gdbserver.
@@ -902,12 +912,12 @@ void VG_(invoke_gdbserver) ( int check )
       From here onwards, function calls are ok: it is
       safe to call valgrind core functions: all threads are blocked in
       a system call or are yielding or ... */
-   dlog(1, "invoke_gdbserver running_tid %d vgdb_interrupted_tid %d\n",
+   dlog(1, "invoke_gdbserver running_tid %u vgdb_interrupted_tid %u\n",
         VG_(running_tid), vgdb_interrupted_tid);
    call_gdbserver (vgdb_interrupted_tid, vgdb_reason);
    vgdb_interrupted_tid = 0;
    dlog(1,
-        "exit invoke_gdbserver running_tid %d\n", VG_(running_tid));
+        "exit invoke_gdbserver running_tid %u\n", VG_(running_tid));
    give_control_back_to_vgdb();
 
    vg_assert2(0, "end of invoke_gdbserver reached");
@@ -934,14 +944,42 @@ Bool VG_(gdbserver_activity) (ThreadId tid)
    return ret;
 }
 
-Bool VG_(gdbserver_report_signal) (Int vki_sigNo, ThreadId tid)
+static void dlog_signal (const HChar *who, const vki_siginfo_t *info,
+                         ThreadId tid)
 {
-   dlog(1, "VG core calling VG_(gdbserver_report_signal) "
-        "vki_nr %d %s gdb_nr %d %s tid %d\n", 
-        vki_sigNo, VG_(signame)(vki_sigNo),
-        target_signal_from_host (vki_sigNo),
-        target_signal_to_name(target_signal_from_host (vki_sigNo)), 
+   dlog(1, "VG core calling %s "
+        "vki_nr %d %s gdb_nr %u %s tid %u\n", 
+        who,
+        info->si_signo, VG_(signame)(info->si_signo),
+        target_signal_from_host (info->si_signo),
+        target_signal_to_name(target_signal_from_host (info->si_signo)), 
         tid);
+
+}
+
+void VG_(gdbserver_report_fatal_signal) (const vki_siginfo_t *info,
+                                         ThreadId tid)
+{
+   dlog_signal("VG_(gdbserver_report_fatal_signal)", info, tid);
+
+   if (remote_connected()) {
+      dlog(1, "already connected, assuming already reported\n");
+      return;
+   }
+
+   VG_(umsg)("(action on fatal signal) vgdb me ... \n");
+
+   /* indicate to gdbserver that there is a signal */
+   gdbserver_signal_encountered (info);
+
+   /* let gdbserver do some work, e.g. show the signal to the user */
+   call_gdbserver (tid, signal_reason);
+   
+}
+
+Bool VG_(gdbserver_report_signal) (vki_siginfo_t *info, ThreadId tid)
+{
+   dlog_signal("VG_(gdbserver_report_signal)", info, tid);
 
    /* if gdbserver is currently not connected, then signal
       is to be given to the process */
@@ -952,19 +990,20 @@ Bool VG_(gdbserver_report_signal) (Int vki_sigNo, ThreadId tid)
    /* if gdb has informed gdbserver that this signal can be
       passed directly without informing gdb, then signal is
       to be given to the process. */
-   if (pass_signals[target_signal_from_host(vki_sigNo)]) {
+   if (pass_signals[target_signal_from_host(info->si_signo)]) {
       dlog(1, "pass_signals => pass\n");
       return True;
    }
    
    /* indicate to gdbserver that there is a signal */
-   gdbserver_signal_encountered (vki_sigNo);
+   gdbserver_signal_encountered (info);
 
-   /* let gdbserver do some work, e.g. show the signal to the user */
+   /* let gdbserver do some work, e.g. show the signal to the user.
+      User can also decide to ignore the signal or change the signal. */
    call_gdbserver (tid, signal_reason);
    
    /* ask gdbserver what is the final decision */
-   if (gdbserver_deliver_signal (vki_sigNo)) {
+   if (gdbserver_deliver_signal (info)) {
       dlog(1, "gdbserver deliver signal\n");
       return True;
    } else {
@@ -975,7 +1014,7 @@ Bool VG_(gdbserver_report_signal) (Int vki_sigNo, ThreadId tid)
 
 void VG_(gdbserver_exit) (ThreadId tid, VgSchedReturnCode tids_schedretcode)
 {
-   dlog(1, "VG core calling VG_(gdbserver_exit) tid %d will exit\n", tid);
+   dlog(1, "VG core calling VG_(gdbserver_exit) tid %u will exit\n", tid);
    if (remote_connected()) {
       /* Make sure vgdb knows we are about to die and why. */
       switch(tids_schedretcode) {
@@ -1066,8 +1105,8 @@ void VG_(helperc_invalidate_if_not_gdbserved) ( Addr addr )
 
 static void VG_(add_stmt_call_invalidate_if_not_gdbserved)
      ( IRSB* sb_in,
-       VexGuestLayout* layout, 
-       VexGuestExtents* vge,
+       const VexGuestLayout* layout, 
+       const VexGuestExtents* vge,
        IRTemp jmp, 
        IRSB* irsb)
 {
@@ -1104,8 +1143,8 @@ static void VG_(add_stmt_call_invalidate_if_not_gdbserved)
    debugger statement will be inserted for all instructions of a block. */
 static void VG_(add_stmt_call_gdbserver) 
      (IRSB* sb_in,                /* block being translated */
-      VexGuestLayout* layout, 
-      VexGuestExtents* vge,
+      const VexGuestLayout* layout, 
+      const VexGuestExtents* vge,
       IRType gWordTy, IRType hWordTy,
       Addr  iaddr,                /* Addr of instruction being instrumented */
       UChar delta,                /* delta to add to iaddr to obtain IP */
@@ -1179,8 +1218,8 @@ static void VG_(add_stmt_call_gdbserver)
    or VG_(add_stmt_call_invalidate_if_not_gdbserved).  */
 static void VG_(add_stmt_call_invalidate_exit_target_if_not_gdbserved)
    (IRSB* sb_in,
-    VexGuestLayout* layout,
-    VexGuestExtents* vge,
+    const VexGuestLayout* layout,
+    const VexGuestExtents* vge,
     IRType gWordTy,
     IRSB* irsb)
 {
@@ -1198,8 +1237,8 @@ static void VG_(add_stmt_call_invalidate_exit_target_if_not_gdbserved)
 
 IRSB* VG_(instrument_for_gdbserver_if_needed)
      (IRSB* sb_in,
-      VexGuestLayout* layout,
-      VexGuestExtents* vge,
+      const VexGuestLayout* layout,
+      const VexGuestExtents* vge,
       IRType gWordTy, IRType hWordTy)
 {
    IRSB* sb_out;
@@ -1466,7 +1505,7 @@ void VG_(gdbserver_status_output)(void)
    VG_(umsg)
       ("nr of calls to gdbserver: %d\n"
        "single stepping %d\n"
-       "interrupts intr_tid %d gs_non_busy %d gs_busy %d tid_non_intr %d\n"
+       "interrupts intr_tid %u gs_non_busy %d gs_busy %d tid_non_intr %d\n"
        "gdbserved addresses %d (-1 = not initialized)\n"
        "watchpoints %d (-1 = not initialized)\n"
        "vgdb-error %d\n"

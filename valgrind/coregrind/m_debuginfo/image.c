@@ -9,7 +9,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2013-2013 Mozilla Foundation
+   Copyright (C) 2013-2015 Mozilla Foundation
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -46,8 +46,10 @@
 
 #include "minilzo.h"
 
+/* These values (1024 entries of 8192 bytes each) gives a cache
+   size of 8MB. */
 #define CACHE_ENTRY_SIZE_BITS (12+1)
-#define CACHE_N_ENTRIES       32
+#define CACHE_N_ENTRIES       1024
 
 #define CACHE_ENTRY_SIZE      (1 << CACHE_ENTRY_SIZE_BITS)
 
@@ -104,7 +106,7 @@ static void write_UInt_le ( /*OUT*/UChar* dst, UInt n )
    }
 }
 
-static UInt read_UInt_le ( UChar* src )
+static UInt read_UInt_le ( const UChar* src )
 {
    UInt r = 0;
    Int i;
@@ -124,7 +126,7 @@ static void write_ULong_le ( /*OUT*/UChar* dst, ULong n )
    }
 }
 
-static ULong read_ULong_le ( UChar* src )
+static ULong read_ULong_le ( const UChar* src )
 {
    ULong r = 0;
    Int i;
@@ -168,7 +170,7 @@ static Int my_read ( Int fd, UChar* buf, Int len )
    fd has been set in blocking mode.  If it returns with the number of
    bytes written < len, it means that either fd was closed, or there was
    an error on it. */
-static Int my_write ( Int fd, UChar* buf, Int len )
+static Int my_write ( Int fd, const UChar* buf, Int len )
 {
    Int nWritten = 0;
    while (1) {
@@ -212,7 +214,7 @@ static void give_up__image_overrun(void)
    return the frame it sends back.  Caller owns the resulting frame
    and must free it.  A NULL return means the transaction failed for
    some reason. */
-static Frame* do_transaction ( Int sd, Frame* req )
+static Frame* do_transaction ( Int sd, const Frame* req )
 {
    if (0) VG_(printf)("CLIENT: send %c%c%c%c\n",
                       req->data[0], req->data[1], req->data[2], req->data[3]);
@@ -311,7 +313,8 @@ static Frame* mk_Frame_asciiz ( const HChar* tag, const HChar* str )
    return f;
 }
 
-static Bool parse_Frame_le64 ( Frame* fr, const HChar* tag, /*OUT*/ULong* n1 )
+static Bool parse_Frame_le64 ( const Frame* fr, const HChar* tag,
+                               /*OUT*/ULong* n1 )
 {
    vg_assert(VG_(strlen)(tag) == 4);
    if (!fr || !fr->data) return False;
@@ -322,7 +325,7 @@ static Bool parse_Frame_le64 ( Frame* fr, const HChar* tag, /*OUT*/ULong* n1 )
    return True;
 }
 
-static Bool parse_Frame_le64_le64 ( Frame* fr, const HChar* tag,
+static Bool parse_Frame_le64_le64 ( const Frame* fr, const HChar* tag,
                                     /*OUT*/ULong* n1, /*OUT*/ULong* n2 )
 {
    vg_assert(VG_(strlen)(tag) == 4);
@@ -335,7 +338,7 @@ static Bool parse_Frame_le64_le64 ( Frame* fr, const HChar* tag,
    return True;
 }
 
-static Bool parse_Frame_asciiz ( Frame* fr, const HChar* tag,
+static Bool parse_Frame_asciiz ( const Frame* fr, const HChar* tag,
                                  /*OUT*/UChar** str )
 {
    vg_assert(VG_(strlen)(tag) == 4);
@@ -362,7 +365,7 @@ static Bool parse_Frame_asciiz ( Frame* fr, const HChar* tag,
 }
 
 static Bool parse_Frame_le64_le64_le64_bytes (
-               Frame* fr, const HChar* tag,
+               const Frame* fr, const HChar* tag,
                /*OUT*/ULong* n1, /*OUT*/ULong* n2, /*OUT*/ULong* n3,
                /*OUT*/UChar** data, /*OUT*/ULong* n_data 
             )
@@ -387,13 +390,29 @@ static DiOffT block_round_down ( DiOffT i )
 }
 
 /* Is this offset inside this CEnt? */
-static inline Bool is_in_CEnt ( CEnt* cent, DiOffT off )
+static inline Bool is_in_CEnt ( const CEnt* cent, DiOffT off )
 {
    /* This assertion is checked by set_CEnt, so checking it here has
       no benefit, whereas skipping it does remove it from the hottest
       path. */
    /* vg_assert(cent->used > 0 && cent->used <= CACHE_ENTRY_SIZE); */
-   return cent->off <= off && off < cent->off + cent->used;
+   /* What we want to return is:
+        cent->off <= off && off < cent->off + cent->used;
+      This is however a very hot path, so here's alternative that uses
+      only one conditional branch, using the following transformation,
+      where all quantities are unsigned:
+              x >= LO && x < LO+N
+         -->  x-LO >= 0 && x-LO < LO+N-LO
+         -->  x-LO >= 0 && x-LO < N
+         -->  x-LO < N
+      This is however only valid when the original bounds, that is, LO
+      .. LO+N-1, do not wrap around the end of the address space.  That
+      is, we require that LO <= LO+N-1.  But that's OK .. we don't
+      expect wraparounds in CEnts or for that matter any object
+      allocated from C-land.  See Hacker's Delight, Chapter 4.1,
+      "Checking Bounds of Integers", for more details.
+   */
+   return off - cent->off < cent->used;
 }
 
 /* Allocate a new CEnt, connect it to |img|, and return its index. */
@@ -426,7 +445,7 @@ static void move_CEnt_to_top ( DiImage* img, UInt entNo )
    the given offset.  It is this function that brings data into the
    cache, either by reading the local file or pulling it from the
    remote server. */
-static void set_CEnt ( DiImage* img, UInt entNo, DiOffT off )
+static void set_CEnt ( const DiImage* img, UInt entNo, DiOffT off )
 {
    SizeT len;
    DiOffT off_orig = off;
@@ -455,7 +474,7 @@ static void set_CEnt ( DiImage* img, UInt entNo, DiOffT off )
       UInt delay = now - t_last;
       t_last = now;
       nread += len;
-      VG_(printf)("XXXXXXXX (tot %lld) read %ld offset %lld  %u\n", 
+      VG_(printf)("XXXXXXXX (tot %'llu)  read %'lu  offset %'llu  delay %'u\n", 
                   nread, len, off, delay);
    }
 
@@ -766,17 +785,31 @@ void ML_(img_done)(DiImage* img)
    ML_(dinfo_free)(img);
 }
 
-DiOffT ML_(img_size)(DiImage* img)
+DiOffT ML_(img_size)(const DiImage* img)
 {
    vg_assert(img);
    return img->size;
 }
 
-inline Bool ML_(img_valid)(DiImage* img, DiOffT offset, SizeT size)
+inline Bool ML_(img_valid)(const DiImage* img, DiOffT offset, SizeT size)
 {
    vg_assert(img);
    vg_assert(offset != DiOffT_INVALID);
    return img->size > 0 && offset + size <= (DiOffT)img->size;
+}
+
+__attribute__((noinline))
+static void ensure_valid_failed (const DiImage* img, DiOffT offset, SizeT size,
+                                 const HChar* caller)
+{
+   VG_(umsg)("Valgrind: debuginfo reader: ensure_valid failed:\n");
+   VG_(umsg)("Valgrind:   during call to %s\n", caller);
+   VG_(umsg)("Valgrind:   request for range [%llu, +%lu) exceeds\n",
+             offset, size);
+   VG_(umsg)("Valgrind:   valid image size of %lu for image:\n",
+             img->size);
+   VG_(umsg)("Valgrind:   \"%s\"\n", img->source.name);
+   give_up__image_overrun();
 }
 
 /* Check the given range is valid, and if not, shut down the system.
@@ -784,19 +817,13 @@ inline Bool ML_(img_valid)(DiImage* img, DiOffT offset, SizeT size)
    image, which normally means the image is corrupted somehow, or the
    caller is buggy.  Recovering is too complex, and we have
    probably-corrupt debuginfo, so just give up. */
-static void ensure_valid(DiImage* img, DiOffT offset, SizeT size,
+static void ensure_valid(const DiImage* img, DiOffT offset, SizeT size,
                          const HChar* caller)
 {
    if (LIKELY(ML_(img_valid)(img, offset, size)))
       return;
-   VG_(umsg)("Valgrind: debuginfo reader: ensure_valid failed:\n");
-   VG_(umsg)("Valgrind:   during call to %s\n", caller);
-   VG_(umsg)("Valgrind:   request for range [%llu, +%llu) exceeds\n",
-             (ULong)offset, (ULong)size);
-   VG_(umsg)("Valgrind:   valid image size of %llu for image:\n",
-             (ULong)img->size);
-   VG_(umsg)("Valgrind:   \"%s\"\n", img->source.name);
-   give_up__image_overrun();
+   else
+      ensure_valid_failed(img, offset, size, caller);
 }
 
 
@@ -825,7 +852,7 @@ SizeT ML_(img_get_some)(/*OUT*/void* dst,
    dstU[0] = get(img, offset);
    /* Now just read as many bytes as we can (or need) directly out of
       entry zero, without bothering to call |get| each time. */
-   CEnt* ce = img->ces[0];
+   const CEnt* ce = img->ces[0];
    vg_assert(ce && ce->used >= 1);
    vg_assert(is_in_CEnt(ce, offset));
    SizeT nToCopy = size - 1;
@@ -877,7 +904,7 @@ Int ML_(img_strcmp_c)(DiImage* img, DiOffT off1, const HChar* str2)
    ensure_valid(img, off1, 1, "ML_(img_strcmp_c)");
    while (True) {
       UChar c1 = get(img, off1);
-      UChar c2 = *(UChar*)str2;
+      UChar c2 = *(const UChar*)str2;
       if (c1 < c2) return -1;
       if (c1 > c2) return 1;
       if (c1 == 0) return 0;

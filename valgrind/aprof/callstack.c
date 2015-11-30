@@ -318,10 +318,11 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
         bb->key = target;
         
         /* Obtain section kind of this BB */
-        bb->obj_section = VG_(DebugInfo_sect_kind)(NULL, 0, target);
+        bb->obj_section = VG_(DebugInfo_sect_kind)(NULL, target);
         
         /* Function name buffer */
-        HChar * fn = APROF_(new)(FN_NAME_S, NAME_SIZE);
+        const HChar * fn = NULL;
+        HChar * buf = NULL;
         
         /* 
          * Are we entering a new function? Ask to Valgrind
@@ -330,16 +331,17 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
          * the case, we try different stategies to capture a call, see
          * later.
          */
-        bb->is_entry = VG_(get_fnname_if_entry)(target, fn, NAME_SIZE);
+        bb->is_entry = VG_(get_fnname_if_entry)(target, &fn);
         
         /* If is not entry, we need anyway info about this function */
         Bool info_fn = True; 
         if (!bb->is_entry) {
-            info_fn = VG_(get_fnname)(target, fn, NAME_SIZE);
+            info_fn = VG_(get_fnname)(target, &fn);
         }
 
         if (info_fn && VG_(strcmp)(fn, "(below main)") == 0) {
-            VG_(sprintf)(fn, "below_main");
+			fn = "below_main";
+			//VG_(sprintf)(fn, "below_main");
         }
         
         if (info_fn && VG_(strcmp)(fn, "_dl_runtime_resolve") == 0) {
@@ -353,7 +355,7 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
         UInt hash = 0;
         if (info_fn) {
             
-            hash = APROF_(str_hash)((HChar *)fn);
+            hash = APROF_(str_hash)(fn);
             f = HT_lookup(APROF_(runtime).fn_ht, hash);
             
             while (f != NULL && VG_(strcmp)(f->name, fn) != 0) {
@@ -373,7 +375,7 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
             UInt hash_obj = 0;
             if (obj_name != NULL) {
                 
-                hash_obj = APROF_(str_hash)((HChar *) obj_name);
+                hash_obj = APROF_(str_hash)(obj_name);
                 obj = HT_lookup(APROF_(runtime).obj_ht, hash_obj);
                 
                 while (obj != NULL && VG_(strcmp)(obj->name, obj_name) != 0) {
@@ -407,7 +409,7 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
                 if (search_runtime_resolve(obj_name, obj_start, obj_size)) {
                     
                     bb->is_dl_runtime_resolve = True;
-                    VG_(sprintf)(fn, "_dl_runtime_resolve");
+                    fn = "_dl_runtime_resolve";
                     info_fn = True;
                 }
             }
@@ -423,7 +425,7 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
             ) 
         {
             bb->is_dl_runtime_resolve = True;
-            VG_(sprintf)(fn, "_dl_runtime_resolve");
+            fn = "_dl_runtime_resolve";
             info_fn = True;
         }
         
@@ -436,10 +438,14 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
         Bool unknown = False;
         if (!info_fn) {
             
+            buf = APROF_(new)(FN_NAME_S, NAME_SIZE);
+            
             if (bb->obj_section == Vg_SectPLT)
-                VG_(sprintf)(fn, "PLT_%p", (void *) bb->key);
+                VG_(sprintf)(buf, "PLT_%p", (void *) bb->key);
             else 
-                VG_(sprintf)(fn, "%p", (void *)bb->key);
+                VG_(sprintf)(buf, "%p", (void *) bb->key);
+                
+            fn = buf;
                 
             info_fn = True;
             unknown = True;
@@ -469,10 +475,10 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
                  * the wasted space
                  */
                 HChar * fn_c = VG_(strdup)("fn_name", fn);
-                VG_(free)(fn);
-                fn = fn_c;
-                
-                f->name = fn;
+                if (unknown) {
+					VG_(free)(buf);
+				}
+                f->name = fn_c;
                 
                 if (unknown) f->discard = True;
                 else {
@@ -482,36 +488,28 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
                     
                     f->function_id = APROF_(runtime).next_function_id++;
                     
-                    HChar * mangled = APROF_(new)(MANGLED_S, NAME_SIZE);
-                    if(VG_(get_fnname_no_cxx_demangle)(bb->key, mangled, NAME_SIZE, NULL)) {
+                    const HChar * mangled = NULL;
+                    if(VG_(get_fnname_no_cxx_demangle)(bb->key, &mangled, NULL)) {
                         
                         if (VG_(strcmp)(mangled, "(below main)") == 0) {
-                            VG_(sprintf)(mangled, "below_main");
+							mangled = "below_main";
                         }
 
-                        if (VG_(strcmp)(f->name, mangled) == 0) {
-                            APROF_(delete)(MANGLED_S, mangled); 
-                        } else {
-                            
-                            /* try min wasted space */
-                            char * mangled_c = VG_(strdup)("mangle_name", mangled);
-                            VG_(free)(mangled);
-                            mangled = mangled_c;
-                            f->mangled = mangled;
+                        if (VG_(strcmp)(f->name, mangled) != 0) {
+                            f->mangled = VG_(strdup)("MANGLE", mangled);
                         }
                     
-                    } else 
-                        APROF_(delete)(MANGLED_S, mangled);
+                    } 
                 }
                 
                 f->obj = obj;
                 HT_add_node(APROF_(runtime).fn_ht, f->key, f);
 
             } else
-                APROF_(delete)(FN_NAME_S, fn);
+                APROF_(delete)(FN_NAME_S, buf);
             
-        } else 
-            APROF_(delete)(FN_NAME_S, fn);
+        } else
+			 APROF_(delete)(FN_NAME_S, buf);
         
         #if SKIP_DL_RUNTIME
         if (bb->is_dl_runtime_resolve) 
@@ -736,7 +734,7 @@ Bool APROF_(trace_function)(ThreadId tid, UWord * arg, UWord * ret) {
         APROF_(add_alloc)(FN_NAME);
         #endif
         
-        if (!VG_(get_fnname)(target, rtn_name, NAME_SIZE))
+        if (!VG_(get_fnname)(target, &rtn_name))
             VG_(sprintf)(rtn_name, "%p", (void *) target);
         
         Function * fn = NULL;
@@ -759,20 +757,13 @@ Bool APROF_(trace_function)(ThreadId tid, UWord * arg, UWord * ret) {
                 APROF_(add_alloc)(FNS);
                 #endif
                 
-                char * mangled = VG_(calloc)("mangled", NAME_SIZE, 1);
-                #if DEBUG
-                APROF_(assert)(mangled != NULL, "mangled name not allocable");
-                #endif
-                if(    VG_(get_fnname_no_cxx_demangle)(target, mangled, NAME_SIZE)
+                const HChar * mangled = NULL;
+                if(    VG_(get_fnname_no_cxx_demangle)(target, &mangled, NULL)
                     && VG_(strcmp)(rtn_name, mangled) != 0
                     ) {
-                    fn->mangled = mangled;
-                    
-                    #if DEBUG_ALLOCATION
-                    APROF_(add_alloc)(MANGLED);
-                    #endif
-                    
-                } else VG_(free)(mangled);
+
+                    fn->mangled = VG_(strdup)("MANGLE", mangled);
+                } 
                 
                 DebugInfo * di = VG_(find_DebugInfo)(target);
                 #if DEBUG

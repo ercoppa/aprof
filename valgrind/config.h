@@ -4,6 +4,12 @@
 /* Define to 1 if you're using Bionic */
 /* #undef BIONIC_LIBC */
 
+/* DARWIN_VERS value for Mac OS X 10.10 */
+/* #undef DARWIN_10_10 */
+
+/* DARWIN_VERS value for Mac OS X 10.11 */
+/* #undef DARWIN_10_11 */
+
 /* DARWIN_VERS value for Mac OS X 10.5 */
 /* #undef DARWIN_10_5 */
 
@@ -29,73 +35,26 @@
 /* #undef DISABLE_PTHREAD_SPINLOCK_INTERCEPT */
 
 /* configured to run as an inner Valgrind */
-#define ENABLE_INNER 1
+/* #undef ENABLE_INNER */
 
 /* path to GDB */
 #define GDB_PATH "/usr/bin/gdb"
 
-/* Define to 1 if you're using glibc 2.10.x */
-/* #undef GLIBC_2_10 */
+/* Define to 1 if index() and strlen() have been optimized heavily (x86 glibc
+   >= 2.12) */
+#define GLIBC_MANDATORY_INDEX_AND_STRLEN_REDIRECT 1
 
-/* Define to 1 if you're using glibc 2.11.x */
-/* #undef GLIBC_2_11 */
-
-/* Define to 1 if you're using glibc 2.12.x */
-/* #undef GLIBC_2_12 */
-
-/* Define to 1 if you're using glibc 2.13.x */
-/* #undef GLIBC_2_13 */
-
-/* Define to 1 if you're using glibc 2.14.x */
-/* #undef GLIBC_2_14 */
-
-/* Define to 1 if you're using glibc 2.15.x */
-/* #undef GLIBC_2_15 */
-
-/* Define to 1 if you're using glibc 2.16.x */
-/* #undef GLIBC_2_16 */
-
-/* Define to 1 if you're using glibc 2.17.x */
-/* #undef GLIBC_2_17 */
-
-/* Define to 1 if you're using glibc 2.18.x */
-/* #undef GLIBC_2_18 */
-
-/* Define to 1 if you're using glibc 2.19.x */
-#define GLIBC_2_19 1
-
-/* Define to 1 if you're using glibc 2.2.x */
-/* #undef GLIBC_2_2 */
-
-/* Define to 1 if you're using glibc 2.20.x */
-/* #undef GLIBC_2_20 */
-
-/* Define to 1 if you're using glibc 2.3.x */
-/* #undef GLIBC_2_3 */
-
-/* Define to 1 if you're using glibc 2.4.x */
-/* #undef GLIBC_2_4 */
-
-/* Define to 1 if you're using glibc 2.5.x */
-/* #undef GLIBC_2_5 */
-
-/* Define to 1 if you're using glibc 2.6.x */
-/* #undef GLIBC_2_6 */
-
-/* Define to 1 if you're using glibc 2.7.x */
-/* #undef GLIBC_2_7 */
-
-/* Define to 1 if you're using glibc 2.8.x */
-/* #undef GLIBC_2_8 */
-
-/* Define to 1 if you're using glibc 2.9.x */
-/* #undef GLIBC_2_9 */
+/* Define to 1 if strlen() has been optimized heavily (amd64 glibc >= 2.10) */
+#define GLIBC_MANDATORY_STRLEN_REDIRECT 1
 
 /* Define to 1 if gcc/as can do Altivec. */
 /* #undef HAS_ALTIVEC */
 
 /* Define to 1 if you have the <asm/unistd.h> header file. */
 #define HAVE_ASM_UNISTD_H 1
+
+/* Define to 1 if as supports fxsave64/fxrstor64. */
+#define HAVE_AS_AMD64_FXSAVE64 1
 
 /* Define to 1 if as supports floating point phased out category. */
 /* #undef HAVE_AS_PPC_FPPO */
@@ -110,6 +69,15 @@
 /* Define to 1 if g++ supports __sync_bool_compare_and_swap() and
    __sync_add_and_fetch() */
 #define HAVE_BUILTIN_ATOMIC_CXX 1
+
+/* Define to 1 if compiler provides __builtin_clz(). */
+#define HAVE_BUILTIN_CLZ 1
+
+/* Define to 1 if compiler provides __builtin_ctz(). */
+#define HAVE_BUILTIN_CTZ 1
+
+/* Define to 1 if compiler provides __builtin_popcount(). */
+#define HAVE_BUILTIN_POPCOUT 1
 
 /* Define to 1 if you have the `clock_gettime' function. */
 #define HAVE_CLOCK_GETTIME 1
@@ -149,6 +117,9 @@
 
 /* Define to 1 if you have the `rt' library (-lrt). */
 #define HAVE_LIBRT 1
+
+/* Define to 1 if you have the `scf' library (-lscf). */
+/* #undef HAVE_LIBSCF */
 
 /* Define to 1 if you have the `mallinfo' function. */
 #define HAVE_MALLINFO 1
@@ -298,6 +269,9 @@
 /* Define to 1 if you have the <sys/poll.h> header file. */
 #define HAVE_SYS_POLL_H 1
 
+/* Define to 1 if you have the <sys/prctl.h> header file. */
+#define HAVE_SYS_PRCTL_H 1
+
 /* Define to 1 if you have the <sys/signalfd.h> header file. */
 #define HAVE_SYS_SIGNALFD_H 1
 
@@ -331,12 +305,6 @@
 /* Define to 1 if you have the `utimensat' function. */
 #define HAVE_UTIMENSAT 1
 
-/* Define to 1 if you're using Linux 2.4.x */
-/* #undef KERNEL_2_4 */
-
-/* Define to 1 if you're using Linux 2.6.x or Linux 3.x */
-#define KERNEL_2_6 1
-
 /* configured default page size 4k */
 #define MIPS_PAGE_SHIFT 12
 
@@ -350,7 +318,7 @@
 #define PACKAGE_NAME "Valgrind"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "Valgrind 3.10.1"
+#define PACKAGE_STRING "Valgrind 3.11.0"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "valgrind"
@@ -359,7 +327,86 @@
 #define PACKAGE_URL ""
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "3.10.1"
+#define PACKAGE_VERSION "3.11.0"
+
+/* Define to 1 if you have the new `execve' syscall which accepts flags. */
+/* #undef SOLARIS_EXECVE_SYSCALL_TAKES_FLAGS */
+
+/* Define to 1 if you have the new `frealpathat' syscall. */
+/* #undef SOLARIS_FREALPATHAT_SYSCALL */
+
+/* Define to 1 if you have the new `gethrt' fasttrap. */
+/* #undef SOLARIS_GETHRT_FASTTRAP */
+
+/* Define to 1 if you have the new `get_zone_offset' fasttrap. */
+/* #undef SOLARIS_GETZONEOFFSET_FASTTRAP */
+
+/* Default platform for Valgrind launcher. */
+/* #undef SOLARIS_LAUNCHER_DEFAULT_PLATFORM */
+
+/* Define to 1 if you have the new `lwp_name' syscall. */
+/* #undef SOLARIS_LWP_NAME_SYSCALL */
+
+/* Define to 1 if you have the new `lwp_sigqueue' syscall. */
+/* #undef SOLARIS_LWP_SIGQUEUE_SYSCALL */
+
+/* Define to 1 if you have the new `lwp_sigqueue' syscall which accepts pid.
+   */
+/* #undef SOLARIS_LWP_SIGQUEUE_SYSCALL_TAKES_PID */
+
+/* Define to 1 if you have the new `accept' syscall. */
+/* #undef SOLARIS_NEW_ACCEPT_SYSCALL */
+
+/* Define to 1 if you have the new `pipe' syscall. */
+/* #undef SOLARIS_NEW_PIPE_SYSCALL */
+
+/* Define to 1 if nscd attaches to /system/volatile/name_service_door. */
+/* #undef SOLARIS_NSCD_DOOR_SYSTEM_VOLATILE */
+
+/* Define to 1 if you have the old Solaris syscalls. */
+/* #undef SOLARIS_OLD_SYSCALLS */
+
+/* Define to 1 if you have /proc/self/cmdline. */
+/* #undef SOLARIS_PROC_CMDLINE */
+
+/* Define to 1 if you have the `prxregset_t' type. */
+/* #undef SOLARIS_PRXREGSET_T */
+
+/* Version number of the repository door cache protocol. */
+/* #undef SOLARIS_REPCACHE_PROTOCOL_VERSION */
+
+/* Define to 1 if you have the new `sysstat' segment reservation. */
+/* #undef SOLARIS_RESERVE_SYSSTAT_ADDR */
+
+/* Define to 1 if you have the new `sysstat_zone' segment reservation. */
+/* #undef SOLARIS_RESERVE_SYSSTAT_ZONE_ADDR */
+
+/* Define to 1 if you have the `IPC_XSTAT64', `SHMADV', `SHM_ADV_GET',
+   `SHM_ADV_SET' and `SHMGET_OSM' constants. */
+/* #undef SOLARIS_SHM_NEW */
+
+/* Define to 1 if you have the `spawn' syscall. */
+/* #undef SOLARIS_SPAWN_SYSCALL */
+
+/* Define to 1 if you have the `TNDB_GET_TNIP' constant. */
+/* #undef SOLARIS_TNDB_GET_TNIP */
+
+/* Define to 1 if you have the `TSOL_GETCLEARANCE' and `TSOL_SETCLEARANCE'
+   constants. */
+/* #undef SOLARIS_TSOL_CLEARANCE */
+
+/* Define to 1 if you have the `utimensat' syscall. */
+/* #undef SOLARIS_UTIMENSAT_SYSCALL */
+
+/* Define to 1 if you have the `utimesys' syscall. */
+/* #undef SOLARIS_UTIMESYS_SYSCALL */
+
+/* Define to 1 if you have the new `uuidsys' syscall. */
+/* #undef SOLARIS_UUIDSYS_SYSCALL */
+
+/* Define to 1 if you have the `ZONE_LIST_DEFUNCT' and `ZONE_GETATTR_DEFUNC'
+   constants. */
+/* #undef SOLARIS_ZONE_DEFUNCT */
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
@@ -368,7 +415,7 @@
 #define TIME_WITH_SYS_TIME 1
 
 /* Version number of package */
-#define VERSION "3.10.1"
+#define VERSION "3.11.0"
 
 /* Temporary files directory */
 #define VG_TMPDIR "/tmp"

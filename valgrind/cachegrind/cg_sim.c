@@ -7,7 +7,7 @@
    This file is part of Cachegrind, a Valgrind tool for cache
    profiling programs.
 
-   Copyright (C) 2002-2013 Nicholas Nethercote
+   Copyright (C) 2002-2015 Nicholas Nethercote
       njn@valgrind.org
 
    This program is free software; you can redistribute it and/or
@@ -46,7 +46,7 @@ typedef struct {
    Int          sets_min_1;
    Int          line_size_bits;
    Int          tag_shift;
-   HChar        desc_line[128];
+   HChar        desc_line[128];         /* large enough */
    UWord*       tags;
 } cache_t2;
 
@@ -155,7 +155,7 @@ Bool cachesim_ref_is_miss(cache_t2* c, Addr a, UChar size)
       }
       return cachesim_setref_is_miss(c, set2, tag2);
    }
-   VG_(printf)("addr: %lx  size: %u  blocks: %ld %ld",
+   VG_(printf)("addr: %lx  size: %u  blocks: %lu %lu",
                a, size, block1, block2);
    VG_(tool_panic)("item straddles more than two cache sets");
    /* not reached */

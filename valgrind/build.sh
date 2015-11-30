@@ -9,7 +9,7 @@ echo $DIR
 ./configure --prefix=$DIR/inst && make && make install && \
 
 # DEBUG
-#./configure --prefix=$DIR/inst  --enable-inner && make && make install && \
+#./configure --prefix=$DIR/inst  --enable-inner && make && make install #&& \
 #valgrind --sim-hints=enable-outer --trace-children=yes  --smc-check=all-non-file  --run-libc-freeres=no --tool=memcheck --leak-check=full ./valgrind/inst/bin/valgrind --vgdb-prefix=./valgrind/ --tool=aprof ls
 
 cd $DIR/aprof/extra/ && \
@@ -25,7 +25,7 @@ echo "#  You can run aprof-helper with:"
 echo -e "#  \t$DIR/inst/bin/aprof-helper [OPTIONS] [report.aprof]"
 echo "#"
 echo "#"
-echo "#  More info at: https://code.google.com/p/aprof/"
+echo "#  More info at: https://github.com/ercoppa/aprof"
 echo "#"
 echo "################################################################"
 echo ""

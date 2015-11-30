@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2013 Julian Seward
+   Copyright (C) 2000-2015 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -43,7 +43,7 @@
 // statement.  This lets us say "x = VG_TDICT_CALL(...)" in the required
 // places, while still checking the assertion.
 #define VG_TDICT_CALL(fn, args...) \
-   ( tl_assert2(VG_(tdict).fn, \
+   ( vg_assert2(VG_(tdict).fn, \
                 "you forgot to set VgToolInterface function '" #fn "'"), \
      VG_(tdict).fn(args) )
 
@@ -110,30 +110,30 @@ typedef struct {
    void  (*tool_post_clo_init)(void);
    IRSB* (*tool_instrument)   (VgCallbackClosure*,
                                IRSB*, 
-                               VexGuestLayout*, VexGuestExtents*, 
-                               VexArchInfo*, IRType, IRType);
+                               const VexGuestLayout*, const VexGuestExtents*, 
+                               const VexArchInfo*, IRType, IRType);
    void  (*tool_fini)         (Int);
 
    // VG_(needs).core_errors
    // (none)
    
    // VG_(needs).tool_errors
-   Bool  (*tool_eq_Error)                    (VgRes, Error*, Error*);
-   void  (*tool_before_pp_Error)             (Error*);
-   void  (*tool_pp_Error)                    (Error*);
+   Bool  (*tool_eq_Error)                  (VgRes, const Error*, const Error*);
+   void  (*tool_before_pp_Error)           (const Error*);
+   void  (*tool_pp_Error)                  (const Error*);
    Bool  tool_show_ThreadIDs_for_errors;
-   UInt  (*tool_update_extra)                (Error*);
+   UInt  (*tool_update_extra)                (const Error*);
    Bool  (*tool_recognised_suppression)      (const HChar*, Supp*);
    Bool  (*tool_read_extra_suppression_info) (Int, HChar**, SizeT*, Int*,
                                               Supp*);
-   Bool  (*tool_error_matches_suppression)   (Error*, Supp*);
-   const HChar* (*tool_get_error_name)       (Error*);
-   Bool  (*tool_get_extra_suppression_info)  (Error*,/*OUT*/HChar*,Int);
-   Bool  (*tool_print_extra_suppression_use) (Supp*,/*OUT*/HChar*,Int);
-   void  (*tool_update_extra_suppression_use) (Error*, Supp*);
+   Bool  (*tool_error_matches_suppression)   (const Error*, const Supp*);
+   const HChar* (*tool_get_error_name)       (const Error*);
+   SizeT (*tool_get_extra_suppression_info)  (const Error*,/*OUT*/HChar*,Int);
+   SizeT (*tool_print_extra_suppression_use) (const Supp*,/*OUT*/HChar*,Int);
+   void  (*tool_update_extra_suppression_use) (const Error*, const Supp*);
 
    // VG_(needs).superblock_discards
-   void (*tool_discard_superblock_info)(Addr64, VexGuestExtents);
+   void (*tool_discard_superblock_info)(Addr, VexGuestExtents);
 
    // VG_(needs).command_line_options
    Bool (*tool_process_cmd_line_option)(const HChar*);
@@ -232,6 +232,9 @@ typedef struct {
    void (*track_post_reg_write)(CorePart, ThreadId,               PtrdiffT, SizeT);
    void (*track_post_reg_write_clientcall_return)(ThreadId, PtrdiffT, SizeT,
                                                   Addr);
+
+   void (*track_copy_mem_to_reg)(CorePart, ThreadId, Addr, PtrdiffT, SizeT);
+   void (*track_copy_reg_to_mem)(CorePart, ThreadId, PtrdiffT, Addr, SizeT);
 
    void (*track_start_client_code)(ThreadId, ULong);
    void (*track_stop_client_code) (ThreadId, ULong);

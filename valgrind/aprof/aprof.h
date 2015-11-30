@@ -251,7 +251,7 @@ Bool APROF_(trace_function)(ThreadId tid, UWord * arg, UWord * ret);
     void APROF_(remove_alloc)(UWord type);
     void APROF_(print_alloc)(void);
     #define vgAprof_new(kind, size)     (APROF_(add_alloc)(kind), VG_(calloc)("aprof", size, 1))
-    #define vgAprof_delete(kind, ptr)   do { VG_(free)(ptr); APROF_(remove_alloc)(kind); } while(0);
+    #define vgAprof_delete(kind, ptr)   do { if (prt != NULL) {VG_(free)(ptr); APROF_(remove_alloc)(kind);}} while(0);
 #else // DEBUG_ALLOCATION
     #define vgAprof_add_alloc(type)
     #define vgAprof_remove_alloc(type)
@@ -322,8 +322,8 @@ inline ULong APROF_(time)(ThreadData * tdata) {
 extern
 const HChar* ML_(find_executable) (const HChar * exec);
 extern
-Bool VG_(get_fnname_no_cxx_demangle) ( Addr a, HChar* buf, Int nbuf,
-                                       InlIPCursor* iipc );
+Bool VG_(get_fnname_no_cxx_demangle) ( Addr a, const HChar** buf,
+                                       const InlIPCursor* iipc );
 
 // check for overflow (long)
 #define ADD(dest, inc) do { \

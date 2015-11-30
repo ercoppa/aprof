@@ -8,7 +8,7 @@
    This file is part of Helgrind, a Valgrind tool for detecting errors
    in threaded programs.
 
-   Copyright (C) 2007-2013 OpenWorks Ltd
+   Copyright (C) 2007-2015 OpenWorks Ltd
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
@@ -33,6 +33,7 @@
 #include "pub_tool_libcbase.h"
 #include "pub_tool_libcassert.h"
 #include "pub_tool_libcprint.h"
+#include "pub_tool_stacktrace.h"
 #include "pub_tool_execontext.h"
 #include "pub_tool_errormgr.h"
 #include "pub_tool_wordfm.h"
@@ -40,6 +41,7 @@
 #include "pub_tool_debuginfo.h"
 #include "pub_tool_threadstate.h"
 #include "pub_tool_options.h"     // VG_(clo_xml)
+#include "pub_tool_aspacemgr.h"
 #include "pub_tool_addrinfo.h"
 
 #include "hg_basics.h"
@@ -76,7 +78,6 @@ static HChar* string_table_strdup ( const HChar* str ) {
    if (!string_table) {
       string_table = VG_(newFM)( HG_(zalloc), "hg.sts.1",
                                  HG_(free), string_table_cmp );
-      tl_assert(string_table);
    }
    if (VG_(lookupFM)( string_table,
                       NULL, (UWord*)&copy, (UWord)str )) {
@@ -85,7 +86,6 @@ static HChar* string_table_strdup ( const HChar* str ) {
       return copy;
    } else {
       copy = HG_(strdup)("hg.sts.2", str);
-      tl_assert(copy);
       VG_(addToFM)( string_table, (UWord)copy, (UWord)copy );
       return copy;
    }
@@ -165,7 +165,6 @@ static Lock* mk_LockP_from_LockN ( Lock* lkn,
    if (!map_LockN_to_P) {
       map_LockN_to_P = VG_(newFM)( HG_(zalloc), "hg.mLPfLN.1",
                                    HG_(free), lock_unique_cmp );
-      tl_assert(map_LockN_to_P);
    }
    if (!VG_(lookupFM)( map_LockN_to_P, NULL, (UWord*)&lkp, (UWord)lkn)) {
       lkp = HG_(zalloc)( "hg.mLPfLN.2", sizeof(Lock) );
@@ -186,6 +185,18 @@ static Lock* mk_LockP_from_LockN ( Lock* lkn,
    return lkp;
 }
 
+static Int sort_by_guestaddr(const void* n1, const void* n2)
+{
+   const Lock* l1 = *(const Lock *const *)n1;
+   const Lock* l2 = *(const Lock *const *)n2;
+
+   Addr a1 = l1 == Lock_INVALID ? 0 : l1->guestaddr;
+   Addr a2 = l2 == Lock_INVALID ? 0 : l2->guestaddr;
+   if (a1 < a2) return -1;
+   if (a1 > a2) return 1;
+   return 0;
+}
+
 /* Expand a WordSet of LockN*'s into a NULL-terminated vector of
    LockP*'s.  Any LockN's that can't be converted into a LockP
    (because they have been freed, see comment on mk_LockP_from_LockN)
@@ -202,7 +213,6 @@ Lock** enumerate_WordSet_into_LockP_vector( WordSetU* univ_lsets,
    UWord  nLocks = HG_(cardinalityWS)(univ_lsets, lockset);
    Lock** lockPs = HG_(zalloc)( "hg.eWSiLPa",
                                 (nLocks+1) * sizeof(Lock*) );
-   tl_assert(lockPs);
    tl_assert(lockPs[nLocks] == NULL); /* pre-NULL terminated */
    UWord* lockNs  = NULL;
    UWord  nLockNs = 0;
@@ -218,6 +228,10 @@ Lock** enumerate_WordSet_into_LockP_vector( WordSetU* univ_lsets,
       lockPs[i] = mk_LockP_from_LockN( (Lock*)lockNs[i],
                                        allowed_to_be_invalid );
    }
+   /* Sort the locks by increasing Lock::guestaddr to avoid jitters
+      in the output. */
+   VG_(ssort)(lockPs, nLockNs, sizeof lockPs[0], sort_by_guestaddr);
+
    return lockPs;
 }
 
@@ -375,7 +389,7 @@ typedef
 
 
 /* Updates the copy with address info if necessary. */
-UInt HG_(update_extra) ( Error* err )
+UInt HG_(update_extra) ( const Error* err )
 {
    XError* xe = (XError*)VG_(get_error_extra)(err);
    tl_assert(xe);
@@ -468,7 +482,7 @@ void HG_(record_error_Race) ( Thread* thr,
       linked routine, into the table (or whatever) when it is called
       for the first time. */
    {
-     VgSectKind sect = VG_(DebugInfo_sect_kind)( NULL, 0, data_addr );
+     VgSectKind sect = VG_(DebugInfo_sect_kind)( NULL, data_addr );
      if (0) VG_(printf)("XXXXXXXXX RACE on %#lx %s\n",
                         data_addr, VG_(pp_SectKind)(sect));
      /* SectPLT is required on ???-linux */
@@ -641,7 +655,7 @@ void HG_(record_error_Misc) ( Thread* thr, const HChar* errstr )
    HG_(record_error_Misc_w_aux)(thr, errstr, NULL, NULL);
 }
 
-Bool HG_(eq_Error) ( VgRes not_used, Error* e1, Error* e2 )
+Bool HG_(eq_Error) ( VgRes not_used, const Error* e1, const Error* e2 )
 {
    XError *xe1, *xe2;
 
@@ -847,7 +861,7 @@ static void show_LockP_summary_textmode ( Lock** locks, const HChar* pre )
    announce any previously un-announced threads in the upcoming error
    message.
 */
-void HG_(before_pp_Error) ( Error* err )
+void HG_(before_pp_Error) ( const Error* err )
 {
    XError* xe;
    tl_assert(err);
@@ -897,7 +911,7 @@ void HG_(before_pp_Error) ( Error* err )
    }
 }
 
-void HG_(pp_Error) ( Error* err )
+void HG_(pp_Error) ( const Error* err )
 {
    const Bool xml = VG_(clo_xml); /* a shorthand, that's all */
 
@@ -1198,7 +1212,7 @@ void HG_(pp_Error) ( Error* err )
             if (xe->XE.Race.h1_ct_mbsegendEC) {
                VG_(pp_ExeContext)( xe->XE.Race.h1_ct_mbsegendEC );
             } else {
-               emit( "  <auxwhat>(the end of the the thread)</auxwhat>\n" );
+               emit( "  <auxwhat>(the end of the thread)</auxwhat>\n" );
             }
          }
 
@@ -1242,7 +1256,7 @@ void HG_(pp_Error) ( Error* err )
             if (xe->XE.Race.h1_ct_mbsegendEC) {
                VG_(pp_ExeContext)( xe->XE.Race.h1_ct_mbsegendEC );
             } else {
-               emit( "   (the end of the the thread)\n" );
+               emit( "   (the end of the thread)\n" );
             }
          }
 
@@ -1256,7 +1270,48 @@ void HG_(pp_Error) ( Error* err )
    } /* switch (VG_(get_error_kind)(err)) */
 }
 
-const HChar* HG_(get_error_name) ( Error* err )
+void HG_(print_access) (StackTrace ips, UInt n_ips,
+                        Thr* thr_a,
+                        Addr  ga,
+                        SizeT SzB,
+                        Bool  isW,
+                        WordSetID locksHeldW )
+{
+   Thread* threadp;
+
+   threadp = libhb_get_Thr_hgthread( thr_a );
+   tl_assert(threadp);
+   if (!threadp->announced) {
+      /* This is for interactive use. We announce the thread if needed,
+         but reset it to not announced afterwards, because we want
+         the thread to be announced on the error output/log if needed. */
+      announce_one_thread (threadp);
+      threadp->announced = False;
+   }
+
+   announce_one_thread (threadp);
+   VG_(printf) ("%s of size %d at %p by thread #%d",
+                isW ? "write" : "read",
+                (int)SzB, (void*)ga, threadp->errmsg_index);
+   if (threadp->coretid == VG_INVALID_THREADID) 
+      VG_(printf)(" tid (exited)\n");
+   else
+      VG_(printf)(" tid %u\n", threadp->coretid);
+   {
+      Lock** locksHeldW_P;
+      locksHeldW_P = enumerate_WordSet_into_LockP_vector(
+                       HG_(get_univ_lsets)(),
+                       locksHeldW,
+                       True/*allowed_to_be_invalid*/
+                    );
+      show_LockP_summary_textmode( locksHeldW_P, "" );
+      HG_(free) (locksHeldW_P);
+   }
+   VG_(pp_StackTrace) (ips, n_ips);
+   VG_(printf) ("\n");
+}
+
+const HChar* HG_(get_error_name) ( const Error* err )
 {
    switch (VG_(get_error_kind)(err)) {
       case XE_Race:           return "Race";
@@ -1297,7 +1352,7 @@ Bool HG_(read_extra_suppression_info) ( Int fd, HChar** bufpp, SizeT* nBufp,
    return True;
 }
 
-Bool HG_(error_matches_suppression) ( Error* err, Supp* su )
+Bool HG_(error_matches_suppression) ( const Error* err, const Supp* su )
 {
    switch (VG_(get_supp_kind)(su)) {
    case XS_Race:           return VG_(get_error_kind)(err) == XE_Race;
@@ -1312,21 +1367,25 @@ Bool HG_(error_matches_suppression) ( Error* err, Supp* su )
    }
 }
 
-Bool HG_(get_extra_suppression_info) ( Error* err,
+SizeT HG_(get_extra_suppression_info) ( const Error* err,
                                        /*OUT*/HChar* buf, Int nBuf )
 {
+   tl_assert(nBuf >= 1);
    /* Do nothing */
-   return False;
+   buf[0] = '\0';
+   return 0;
 }
 
-Bool HG_(print_extra_suppression_use) ( Supp* su,
+SizeT HG_(print_extra_suppression_use) ( const Supp* su,
                                         /*OUT*/HChar* buf, Int nBuf )
 {
+   tl_assert(nBuf >= 1);
    /* Do nothing */
-   return False;
+   buf[0] = '\0';
+   return 0;
 }
 
-void HG_(update_extra_suppression_use) ( Error* err, Supp* su )
+void HG_(update_extra_suppression_use) ( const Error* err, const Supp* su )
 {
    /* Do nothing */
    return;

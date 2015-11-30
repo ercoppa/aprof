@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2013 Julian Seward
+   Copyright (C) 2000-2015 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -47,7 +47,6 @@
 #include "pub_core_ume.h"
 #include "pub_core_options.h"
 #include "pub_core_tooliface.h"       /* VG_TRACK */
-#include "pub_core_libcsetjmp.h"      // to keep _threadstate.h happy
 #include "pub_core_threadstate.h"     /* ThreadArchState */
 #include "priv_initimg_pathscan.h"
 #include "pub_core_initimg.h"         /* self */
@@ -143,12 +142,10 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
                                          + sizeof(VG_PLATFORM) + 16;
    Int preload_string_len    = preload_core_path_len + preload_tool_path_len;
    HChar* preload_string     = VG_(malloc)("initimg-darwin.sce.1", preload_string_len);
-   vg_assert(preload_string);
 
    /* Determine if there's a vgpreload_<tool>_<platform>.so file, and setup
       preload_string. */
    preload_tool_path = VG_(malloc)("initimg-darwin.sce.2", preload_tool_path_len);
-   vg_assert(preload_tool_path);
    VG_(snprintf)(preload_tool_path, preload_tool_path_len,
                  "%s/vgpreload_%s-%s.so", VG_(libdir), toolname, VG_PLATFORM);
    if (VG_(access)(preload_tool_path, True/*r*/, False/*w*/, False/*x*/) == 0) {
@@ -171,7 +168,6 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
    /* Allocate a new space */
    ret = VG_(malloc) ("initimg-darwin.sce.3", 
                       sizeof(HChar *) * (envc+2+1)); /* 2 new entries + NULL */
-   vg_assert(ret);
 
    /* copy it over */
    for (cpp = ret; *origenv; )
@@ -185,7 +181,6 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
       if (VG_(memcmp)(*cpp, ld_preload, ld_preload_len) == 0) {
          Int len = VG_(strlen)(*cpp) + preload_string_len;
          HChar *cp = VG_(malloc)("initimg-darwin.sce.4", len);
-         vg_assert(cp);
 
          VG_(snprintf)(cp, len, "%s%s:%s",
                        ld_preload, preload_string, (*cpp)+ld_preload_len);
@@ -197,7 +192,6 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
       if (VG_(memcmp)(*cpp, dyld_cache, dyld_cache_len) == 0) {
          Int len = dyld_cache_len + VG_(strlen)(dyld_cache_value) + 1;
          HChar *cp = VG_(malloc)("initimg-darwin.sce.4.2", len);
-         vg_assert(cp);
 
          VG_(snprintf)(cp, len, "%s%s", dyld_cache, dyld_cache_value);
 
@@ -211,7 +205,6 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
    if (!ld_preload_done) {
       Int len = ld_preload_len + preload_string_len;
       HChar *cp = VG_(malloc) ("initimg-darwin.sce.5", len);
-      vg_assert(cp);
 
       VG_(snprintf)(cp, len, "%s%s", ld_preload, preload_string);
 
@@ -220,7 +213,6 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
    if (!dyld_cache_done) {
       Int len = dyld_cache_len + VG_(strlen)(dyld_cache_value) + 1;
       HChar *cp = VG_(malloc) ("initimg-darwin.sce.5.2", len);
-      vg_assert(cp);
 
       VG_(snprintf)(cp, len, "%s%s", dyld_cache, dyld_cache_value);
 
@@ -319,7 +311,8 @@ Addr setup_client_stack( void*  init_sp,
                          HChar** orig_envp, 
                          const ExeInfo* info,
                          Addr   clstack_end,
-                         SizeT  clstack_max_size )
+                         SizeT  clstack_max_size,
+                         const VexArchInfo* vex_archinfo )
 {
    HChar **cpp;
    HChar *strtab;		/* string table */
@@ -515,7 +508,8 @@ static void record_system_memory(void)
 /*====================================================================*/
 
 /* Create the client's initial memory image. */
-IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii )
+IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii,
+                                          const VexArchInfo* vex_archinfo )
 {
    ExeInfo info;
    VG_(memset)( &info, 0, sizeof(info) );
@@ -555,7 +549,8 @@ IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii )
    
    iifii.initial_client_SP = 
        setup_client_stack( iicii.argv - 1, env, &info, 
-                           iicii.clstack_end, iifii.clstack_max_size );
+                           iicii.clstack_end, iifii.clstack_max_size,
+                           vex_archinfo );
 
    VG_(free)(env);
 

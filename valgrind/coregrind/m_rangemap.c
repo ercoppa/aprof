@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2014-2014 Mozilla Foundation
+   Copyright (C) 2014-2015 Mozilla Foundation
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -48,18 +48,18 @@ typedef
 
 
 struct _RangeMap {
-   void* (*alloc) ( const HChar*, SizeT ); /* alloc fn (nofail) */
-   const HChar* cc;                 /* cost centre for alloc */
-   void  (*free) ( void* );         /* free fn */
+   void* (*alloc_fn) ( const HChar*, SizeT ); /* alloc fn (nofail) */
+   const HChar* cc;                    /* cost centre for alloc */
+   void  (*free_fn) ( void* );         /* free fn */
    XArray* ranges;
 };
 
 
 /* fwds */
 static void preen (/*MOD*/RangeMap* rm);
-static Word find ( RangeMap* rm, UWord key );
+static Word find ( const RangeMap* rm, UWord key );
 static void split_at ( /*MOD*/RangeMap* rm, UWord key );
-static void show ( RangeMap* rm );
+static void show ( const RangeMap* rm );
 
 
 RangeMap* VG_(newRangeMap) ( void*(*alloc_fn)(const HChar*,SizeT), 
@@ -71,12 +71,10 @@ RangeMap* VG_(newRangeMap) ( void*(*alloc_fn)(const HChar*,SizeT),
    vg_assert(alloc_fn);
    vg_assert(free_fn);
    RangeMap* rm = alloc_fn(cc, sizeof(RangeMap));
-   vg_assert(rm);
-   rm->alloc  = alloc_fn;
-   rm->cc     = cc;
-   rm->free   = free_fn;
+   rm->alloc_fn = alloc_fn;
+   rm->cc       = cc;
+   rm->free_fn  = free_fn;
    rm->ranges = VG_(newXA)( alloc_fn, cc, free_fn, sizeof(Range) );
-   vg_assert(rm->ranges);
    /* Add the initial range */
    Range r;
    r.key_min = UWORD_MIN;
@@ -92,10 +90,10 @@ RangeMap* VG_(newRangeMap) ( void*(*alloc_fn)(const HChar*,SizeT),
 void VG_(deleteRangeMap) ( RangeMap* rm )
 {
    vg_assert(rm);
-   vg_assert(rm->free);
+   vg_assert(rm->free_fn);
    vg_assert(rm->ranges);
    VG_(deleteXA)(rm->ranges);
-   rm->free(rm);
+   rm->free_fn(rm);
 }
 
 void VG_(bindRangeMap) ( RangeMap* rm,
@@ -116,7 +114,7 @@ void VG_(bindRangeMap) ( RangeMap* rm,
 }
 
 void VG_(lookupRangeMap) ( /*OUT*/UWord* key_min, /*OUT*/UWord* key_max,
-                           /*OUT*/UWord* val, RangeMap* rm, UWord key )
+                           /*OUT*/UWord* val, const RangeMap* rm, UWord key )
 {
    Word   i   = find(rm, key);
    Range* rng = (Range*)VG_(indexXA)(rm->ranges, i);
@@ -125,14 +123,16 @@ void VG_(lookupRangeMap) ( /*OUT*/UWord* key_min, /*OUT*/UWord* key_max,
    *val     = rng->val;
 }
 
-Word VG_(sizeRangeMap) ( RangeMap* rm )
+UInt VG_(sizeRangeMap) ( const RangeMap* rm )
 {
    vg_assert(rm && rm->ranges);
-   return VG_(sizeXA)(rm->ranges);
+   Word size = VG_(sizeXA)(rm->ranges);
+   vg_assert(size >= 0);
+   return size;
 }
 
 void VG_(indexRangeMap) ( /*OUT*/UWord* key_min, /*OUT*/UWord* key_max,
-                          /*OUT*/UWord* val, RangeMap* rm, Word ix )
+                          /*OUT*/UWord* val, const RangeMap* rm, Word ix )
 {
    vg_assert(rm && rm->ranges);
    Range* rng = (Range*)VG_(indexXA)(rm->ranges, ix);
@@ -160,7 +160,7 @@ static void preen (/*MOD*/RangeMap* rm)
    }
 }
 
-static Word find ( RangeMap* rm, UWord key )
+static Word find ( const RangeMap* rm, UWord key )
 {
    XArray* ranges = rm->ranges;
    Word    lo     = 0;
@@ -200,7 +200,7 @@ static void split_at ( /*MOD*/RangeMap* rm, UWord key )
 }
 
 __attribute__((unused))
-static void show ( RangeMap* rm )
+static void show ( const RangeMap* rm )
 {
    Word i;
    VG_(printf)("<< %ld entries:\n", VG_(sizeXA)(rm->ranges) );

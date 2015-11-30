@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2005-2013 Nicholas Nethercote
+   Copyright (C) 2005-2015 Nicholas Nethercote
       njn@valgrind.org
 
    This program is free software; you can redistribute it and/or
@@ -54,7 +54,7 @@ struct _VgHashTable {
 
 #define N_HASH_PRIMES 20
 
-static SizeT primes[N_HASH_PRIMES] = {
+static const SizeT primes[N_HASH_PRIMES] = {
          769UL,         1543UL,         3079UL,          6151UL,
        12289UL,        24593UL,        49157UL,         98317UL,
       196613UL,       393241UL,       786433UL,       1572869UL,
@@ -66,12 +66,12 @@ static SizeT primes[N_HASH_PRIMES] = {
 /*--- Functions                                                    ---*/
 /*--------------------------------------------------------------------*/
 
-VgHashTable VG_(HT_construct) ( const HChar* name )
+VgHashTable *VG_(HT_construct) ( const HChar* name )
 {
    /* Initialises to zero, ie. all entries NULL */
    SizeT       n_chains = primes[0];
    SizeT       sz       = n_chains * sizeof(VgHashNode*);
-   VgHashTable table    = VG_(calloc)("hashtable.Hc.1",
+   VgHashTable *table   = VG_(calloc)("hashtable.Hc.1",
                                       1, sizeof(struct _VgHashTable));
    table->chains        = VG_(calloc)("hashtable.Hc.2", 1, sz);
    table->n_chains      = n_chains;
@@ -82,12 +82,12 @@ VgHashTable VG_(HT_construct) ( const HChar* name )
    return table;
 }
 
-Int VG_(HT_count_nodes) ( VgHashTable table )
+UInt VG_(HT_count_nodes) ( const VgHashTable *table )
 {
    return table->n_elements;
 }
 
-static void resize ( VgHashTable table )
+static void resize ( VgHashTable *table )
 {
    Int          i;
    SizeT        sz;
@@ -141,7 +141,7 @@ static void resize ( VgHashTable table )
 
 /* Puts a new, heap allocated VgHashNode, into the VgHashTable.  Prepends
    the node to the appropriate chain.  No duplicate key detection is done. */
-void VG_(HT_add_node) ( VgHashTable table, void* vnode )
+void VG_(HT_add_node) ( VgHashTable *table, void* vnode )
 {
    VgHashNode* node     = (VgHashNode*)vnode;
    UWord chain          = CHAIN_NO(node->key, table);
@@ -157,7 +157,7 @@ void VG_(HT_add_node) ( VgHashTable table, void* vnode )
 }
 
 /* Looks up a VgHashNode by key in the table.  Returns NULL if not found. */
-void* VG_(HT_lookup) ( VgHashTable table, UWord key )
+void* VG_(HT_lookup) ( const VgHashTable *table, UWord key )
 {
    VgHashNode* curr = table->chains[ CHAIN_NO(key, table) ];
 
@@ -172,13 +172,14 @@ void* VG_(HT_lookup) ( VgHashTable table, UWord key )
 
 /* Looks up a VgHashNode by node in the table.  Returns NULL if not found.
    GEN!!! marks the lines that differs from VG_(HT_lookup). */
-void* VG_(HT_gen_lookup) ( VgHashTable table, void* node, HT_Cmp_t cmp )
+void* VG_(HT_gen_lookup) ( const VgHashTable *table, const void* node,
+                           HT_Cmp_t cmp )
 {
-   VgHashNode* hnode = (VgHashNode*) node; // GEN!!!
+   const VgHashNode* hnode = node; // GEN!!!
    VgHashNode* curr = table->chains[ CHAIN_NO(hnode->key, table) ]; // GEN!!!
 
    while (curr) {
-      if (cmp (hnode, curr) == 0) { // GEN!!!
+      if (hnode->key == curr->key && cmp (hnode, curr) == 0) { // GEN!!!
          return curr;
       }
       curr = curr->next;
@@ -187,7 +188,7 @@ void* VG_(HT_gen_lookup) ( VgHashTable table, void* node, HT_Cmp_t cmp )
 }
 
 /* Removes a VgHashNode from the table.  Returns NULL if not found. */
-void* VG_(HT_remove) ( VgHashTable table, UWord key )
+void* VG_(HT_remove) ( VgHashTable *table, UWord key )
 {
    UWord        chain         = CHAIN_NO(key, table);
    VgHashNode*  curr          =   table->chains[chain];
@@ -210,9 +211,9 @@ void* VG_(HT_remove) ( VgHashTable table, UWord key )
 
 /* Removes a VgHashNode by node from the table.  Returns NULL if not found.
    GEN!!! marks the lines that differs from VG_(HT_remove). */
-void* VG_(HT_gen_remove) ( VgHashTable table, void* node, HT_Cmp_t cmp  )
+void* VG_(HT_gen_remove) ( VgHashTable *table, const void* node, HT_Cmp_t cmp  )
 {
-   VgHashNode* hnode = (VgHashNode*) node; // GEN!!!
+   const VgHashNode* hnode    = node; // GEN!!!
    UWord        chain         = CHAIN_NO(hnode->key, table); // GEN!!!
    VgHashNode*  curr          =   table->chains[chain];
    VgHashNode** prev_next_ptr = &(table->chains[chain]);
@@ -221,7 +222,7 @@ void* VG_(HT_gen_remove) ( VgHashTable table, void* node, HT_Cmp_t cmp  )
    table->iterOK = False;
 
    while (curr) {
-      if (cmp(hnode, curr) == 0) { // GEN!!!
+      if (hnode->key == curr->key && cmp(hnode, curr) == 0) { // GEN!!!
          *prev_next_ptr = curr->next;
          table->n_elements--;
          return curr;
@@ -232,7 +233,7 @@ void* VG_(HT_gen_remove) ( VgHashTable table, void* node, HT_Cmp_t cmp  )
    return NULL;
 }
 
-void VG_(HT_print_stats) ( VgHashTable table, HT_Cmp_t cmp )
+void VG_(HT_print_stats) ( const VgHashTable *table, HT_Cmp_t cmp )
 {
    #define MAXOCCUR 20
    UInt elt_occurences[MAXOCCUR+1];
@@ -277,22 +278,18 @@ void VG_(HT_print_stats) ( VgHashTable table, HT_Cmp_t cmp )
          nelt = 0;
          // Is the same cnode element existing before cnode ?
          for (node = table->chains[i]; node != cnode; node = node->next) {
-            if (cmp) {
-               if ((*cmp)(node, cnode) == 0)
-                  nelt++;
-            } else 
-               if (node->key == cnode->key)
-                  nelt++;
+            if (node->key == cnode->key
+                && (cmp == NULL || cmp (node, cnode) == 0)) {
+               nelt++;
+            }
          }
          // If cnode element not in a previous node, count occurences of elt.
          if (nelt == 0) {
             for (node = cnode; node != NULL; node = node->next) {
-               if (cmp) {
-                  if ((*cmp)(node, cnode) == 0)
-                     nelt++;
-               } else 
-                  if (node->key == cnode->key)
-                     nelt++;
+               if (node->key == cnode->key
+                   && (cmp == NULL || cmp (node, cnode) == 0)) {
+                  nelt++;
+               }
             }
             INCOCCUR(elt_occurences, nelt);
          }
@@ -311,7 +308,7 @@ void VG_(HT_print_stats) ( VgHashTable table, HT_Cmp_t cmp )
           || key_occurences[i] > 0 
           || cno_occurences[i] > 0)
          VG_(message)(Vg_DebugMsg,
-                      "%s=%2d : nr chain %6d, nr keys %6d, nr elts %6d\n",
+                      "%s=%2u : nr chain %6u, nr keys %6u, nr elts %6u\n",
                       i == MAXOCCUR ? ">" : "N", i,
                       cno_occurences[i], key_occurences[i], elt_occurences[i]);
       nkey += key_occurences[i];
@@ -319,8 +316,11 @@ void VG_(HT_print_stats) ( VgHashTable table, HT_Cmp_t cmp )
       ncno += cno_occurences[i];
    }
    VG_(message)(Vg_DebugMsg, 
-                "total nr of unique   chains: %6d, keys %6d, elts %6d\n",
-                ncno, nkey, nelt);
+                "total nr of unique   slots: %6u, keys %6u, elts %6u."
+                " Avg chain len %3.1f\n",
+                ncno, nkey, nelt,
+                (Double)nelt/(Double)(ncno == cno_occurences[0] ?
+                                      1 : ncno - cno_occurences[0]));
 }
 
 
@@ -328,7 +328,7 @@ void VG_(HT_print_stats) ( VgHashTable table, HT_Cmp_t cmp )
    elements into it, then returns both the array and the size of it.  The
    array must be freed with VG_(free).
 */
-VgHashNode** VG_(HT_to_array) ( VgHashTable table, /*OUT*/ UInt* n_elems )
+VgHashNode** VG_(HT_to_array) (const VgHashTable *table, /*OUT*/ UInt* n_elems)
 {
    UInt       i, j;
    VgHashNode** arr;
@@ -351,7 +351,7 @@ VgHashNode** VG_(HT_to_array) ( VgHashTable table, /*OUT*/ UInt* n_elems )
    return arr;
 }
 
-void VG_(HT_ResetIter)(VgHashTable table)
+void VG_(HT_ResetIter)(VgHashTable *table)
 {
    vg_assert(table);
    table->iterNode  = NULL;
@@ -359,7 +359,7 @@ void VG_(HT_ResetIter)(VgHashTable table)
    table->iterOK    = True;
 }
 
-void* VG_(HT_Next)(VgHashTable table)
+void* VG_(HT_Next)(VgHashTable *table)
 {
    Int i;
    vg_assert(table);
@@ -383,7 +383,7 @@ void* VG_(HT_Next)(VgHashTable table)
    return NULL;
 }
 
-void VG_(HT_destruct)(VgHashTable table, void(*freenode_fn)(void*))
+void VG_(HT_destruct)(VgHashTable *table, void(*freenode_fn)(void*))
 {
    UInt       i;
    VgHashNode *node, *node_next;

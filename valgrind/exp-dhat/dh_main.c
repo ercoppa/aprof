@@ -7,7 +7,7 @@
    This file is part of DHAT, a Valgrind tool for profiling the
    heap usage of programs.
 
-   Copyright (C) 2010-2013 Mozilla Inc
+   Copyright (C) 2010-2015 Mozilla Inc
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -466,7 +466,7 @@ void* new_block ( ThreadId tid, void* p, SizeT req_szB, SizeT req_alignB,
          return NULL;
       }
       if (is_zeroed) VG_(memset)(p, 0, req_szB);
-      actual_szB = VG_(malloc_usable_size)(p);
+      actual_szB = VG_(cli_malloc_usable_size)(p);
       tl_assert(actual_szB >= req_szB);
       /* slop_szB = actual_szB - req_szB; */
    } else {
@@ -494,7 +494,7 @@ void* new_block ( ThreadId tid, void* p, SizeT req_szB, SizeT req_alignB,
 
    intro_Block(bk);
 
-   if (0) VG_(printf)("ALLOC %ld -> %p\n", req_szB, p);
+   if (0) VG_(printf)("ALLOC %lu -> %p\n", req_szB, p);
 
    return p;
 }
@@ -537,7 +537,7 @@ void die_block ( void* p, Bool custom_free )
 static
 void* renew_block ( ThreadId tid, void* p_old, SizeT new_req_szB )
 {
-   if (0) VG_(printf)("REALL %p %ld\n", p_old, new_req_szB);
+   if (0) VG_(printf)("REALL %p %lu\n", p_old, new_req_szB);
    void* p_new = NULL;
 
    tl_assert(new_req_szB > 0); // map 0 to 1
@@ -871,9 +871,9 @@ void addMemEvent(IRSB* sbOut, Bool isWrite, Int szB, IRExpr* addr,
 static
 IRSB* dh_instrument ( VgCallbackClosure* closure,
                       IRSB* sbIn,
-                      VexGuestLayout* layout,
-                      VexGuestExtents* vge,
-                      VexArchInfo* archinfo_host,
+                      const VexGuestLayout* layout,
+                      const VexGuestExtents* vge,
+                      const VexArchInfo* archinfo_host,
                       IRType gWordTy, IRType hWordTy )
 {
    Int   i, n = 0;
@@ -1093,7 +1093,7 @@ static void show_N_div_100( /*OUT*/HChar* buf, ULong n )
 
 static void show_APInfo ( APInfo* api )
 {
-   HChar bufA[80];
+   HChar bufA[80];   // large enough
    VG_(memset)(bufA, 0, sizeof(bufA));
    if (api->tot_blocks > 0) {
       show_N_div_100( bufA, ((ULong)api->tot_bytes * 100ULL)
@@ -1120,7 +1120,7 @@ static void show_APInfo ( APInfo* api )
       ULong aad_frac_10k
          = g_guest_instrs_executed == 0
            ? 0 : (10000ULL * aad) / g_guest_instrs_executed;
-      HChar buf[16];
+      HChar buf[80];  // large enough
       show_N_div_100(buf, aad_frac_10k);
       VG_(umsg)("deaths:      %'llu, at avg age %'llu "
                 "(%s%% of prog lifetime)\n",
@@ -1129,7 +1129,7 @@ static void show_APInfo ( APInfo* api )
       VG_(umsg)("deaths:      none (none of these blocks were freed)\n");
    }
 
-   HChar bufR[80], bufW[80];
+   HChar bufR[80], bufW[80];   // large enough
    VG_(memset)(bufR, 0, sizeof(bufR));
    VG_(memset)(bufW, 0, sizeof(bufW));
    if (api->tot_bytes > 0) {
@@ -1348,7 +1348,7 @@ static void dh_pre_clo_init(void)
    VG_(details_version)         (NULL);
    VG_(details_description)     ("a dynamic heap analysis tool");
    VG_(details_copyright_author)(
-      "Copyright (C) 2010-2013, and GNU GPL'd, by Mozilla Inc");
+      "Copyright (C) 2010-2015, and GNU GPL'd, by Mozilla Inc");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
 
    // Basic functions.

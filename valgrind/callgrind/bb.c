@@ -6,7 +6,7 @@
 /*
    This file is part of Callgrind, a Valgrind tool for call tracing.
 
-   Copyright (C) 2002-2013, Josef Weidendorfer (Josef.Weidendorfer@gmx.de)
+   Copyright (C) 2002-2015, Josef Weidendorfer (Josef.Weidendorfer@gmx.de)
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -74,8 +74,6 @@ void resize_bb_table(void)
     new_table = (BB**) CLG_MALLOC("cl.bb.rbt.1",
                                   new_size * sizeof(BB*));
  
-    if (!new_table) return;
- 
     for (i = 0; i < new_size; i++)
       new_table[i] = NULL;
  
@@ -103,7 +101,7 @@ void resize_bb_table(void)
     VG_(free)(bbs.table);
 
 
-    CLG_DEBUG(0, "Resize BB Hash: %d => %d (entries %d, conflicts %d/%d)\n",
+    CLG_DEBUG(0, "Resize BB Hash: %u => %d (entries %u, conflicts %d/%d)\n",
 	     bbs.size, new_size,
 	     bbs.entries, conflicts1, conflicts2);
 
@@ -143,7 +141,7 @@ static BB* new_bb(obj_node* obj, PtrdiffT offset,
    bb->jmp         = (CJmpInfo*) &(bb->instr[instr_count]);
    bb->instr_len   = 0;
    bb->cost_count  = 0;
-   bb->sect_kind   = VG_(DebugInfo_sect_kind)(NULL, 0, offset + obj->offset);
+   bb->sect_kind   = VG_(DebugInfo_sect_kind)(NULL, offset + obj->offset);
    bb->fn          = 0;
    bb->line        = 0;
    bb->is_entry    = 0;
@@ -159,7 +157,7 @@ static BB* new_bb(obj_node* obj, PtrdiffT offset,
 
 #if CLG_ENABLE_DEBUG
    CLG_DEBUGIF(3) {
-     VG_(printf)("  new_bb (instr %d, jmps %d, inv %s) [now %d]: ",
+     VG_(printf)("  new_bb (instr %u, jmps %u, inv %s) [now %d]: ",
 		 instr_count, cjmp_count,
 		 cjmp_inverted ? "yes":"no",
 		 CLG_(stat).distinct_bbs);
@@ -190,7 +188,7 @@ BB* lookup_bb(obj_node* obj, PtrdiffT offset)
     }
 
     CLG_DEBUG(5, "  lookup_bb (Obj %s, off %#lx): %p\n",
-	     obj->name, offset, bb);
+              obj->name, (UWord)offset, bb);
     return bb;
 }
 
@@ -236,7 +234,7 @@ obj_node* obj_of_address(Addr addr)
  *   This involves a possibly different address, but is handled by
  *   looking up a BB keyed by (obj_node, file offset).
  *
- * bbIn==0 is possible for artifical BB without real code.
+ * bbIn==0 is possible for artificial BB without real code.
  * Such a BB is created when returning to an unknown function.
  */
 BB* CLG_(get_bb)(Addr addr, IRSB* bbIn, /*OUT*/ Bool *seen_before)
@@ -262,12 +260,12 @@ BB* CLG_(get_bb)(Addr addr, IRSB* bbIn, /*OUT*/ Bool *seen_before)
 		   "ERROR: BB Retranslation Mismatch at BB %#lx\n", addr);
       VG_(message)(Vg_DebugMsg,
 		   "  new: Obj %s, Off %#lx, BBOff %#lx, Instrs %u\n",
-		   obj->name, obj->offset,
+		   obj->name, (UWord)obj->offset,
 		   addr - obj->offset, n_instrs);
       VG_(message)(Vg_DebugMsg,
 		   "  old: Obj %s, Off %#lx, BBOff %#lx, Instrs %u\n",
-		   bb->obj->name, bb->obj->offset,
-		   bb->offset, bb->instr_count);
+		   bb->obj->name, (UWord)bb->obj->offset,
+		   (UWord)bb->offset, bb->instr_count);
       CLG_ASSERT(bb->instr_count == n_instrs );
     }
     CLG_ASSERT(bb->cjmp_count == n_jmps );
@@ -308,7 +306,7 @@ void CLG_(delete_bb)(Addr addr)
 
     if (bb == NULL) {
 	CLG_DEBUG(3, "  delete_bb (Obj %s, off %#lx): NOT FOUND\n",
-		  obj->name, offset);
+		  obj->name, (UWord)offset);
 
 	/* we didn't find it.
 	 * this happens when callgrinds instrumentation mode
@@ -329,7 +327,7 @@ void CLG_(delete_bb)(Addr addr)
     }
 
     CLG_DEBUG(3, "  delete_bb (Obj %s, off %#lx): %p, BBCC head: %p\n",
-	      obj->name, offset, bb, bb->bbcc_list);
+	      obj->name, (UWord)offset, bb, bb->bbcc_list);
 
     if (bb->bbcc_list == 0) {
 	/* can be safely deleted */

@@ -7,7 +7,7 @@
    This file is part of Ptrcheck, a Valgrind tool for checking pointer
    use in programs.
 
-   Copyright (C) 2003-2013 Nicholas Nethercote
+   Copyright (C) 2003-2015 Nicholas Nethercote
       njn@valgrind.org
 
    This program is free software; you can redistribute it and/or
@@ -54,7 +54,7 @@
       const HChar* last = NULL; \
       while (True) { \
          if (*p == ch) last = p; \
-         if (*p == 0) return (HChar *)last;     \
+         if (*p == 0) return CONST_CAST(HChar *,last);    \
          p++; \
       } \
    }
@@ -68,6 +68,8 @@ STRRCHR(VG_Z_LD_LINUX_SO_2, rindex)
 #elif defined(VGO_darwin)
 STRRCHR(VG_Z_DYLD,          strrchr)
 STRRCHR(VG_Z_DYLD,          rindex)
+#elif defined(VGO_solaris)
+STRRCHR(VG_Z_LD_SO_1,       strrchr)
 #endif
 
 
@@ -78,7 +80,7 @@ STRRCHR(VG_Z_DYLD,          rindex)
       HChar  ch = (HChar)c ; \
       const HChar* p  = s;   \
       while (True) { \
-         if (*p == ch) return (HChar *)p; \
+         if (*p == ch) return CONST_CAST(HChar *,p);       \
          if (*p == 0) return NULL; \
          p++; \
       } \
@@ -96,6 +98,8 @@ STRCHR(VG_Z_LD_LINUX_X86_64_SO_2, index)
 #elif defined(VGO_darwin)
 STRCHR(VG_Z_DYLD,                 strchr)
 STRCHR(VG_Z_DYLD,                 index)
+#elif defined(VGO_solaris)
+STRCHR(VG_Z_LD_SO_1,              strchr)
 #endif
 
 
@@ -130,6 +134,8 @@ STRLEN(VG_Z_LIBC_SONAME,          __GI_strlen)
 STRLEN(VG_Z_LD_LINUX_SO_2,        strlen)
 STRLEN(VG_Z_LD_LINUX_X86_64_SO_2, strlen)
 STRLEN(VG_Z_LD_SO_1,              strlen)
+#elif defined(VGO_solaris)
+STRLEN(VG_Z_LD_SO_1,              strlen)
 #endif
 
 
@@ -150,6 +156,8 @@ STRCPY(VG_Z_LIBC_SONAME, strcpy)
 STRCPY(VG_Z_LIBC_SONAME, __GI_strcpy)
 #elif defined(VGO_darwin)
 STRCPY(VG_Z_DYLD,        strcpy)
+#elif defined(VGO_solaris)
+STRCPY(VG_Z_LD_SO_1,     strcpy)
 #endif
 
 
@@ -206,6 +214,8 @@ STRCMP(VG_Z_LIBC_SONAME,          strcmp)
 STRCMP(VG_Z_LIBC_SONAME,          __GI_strcmp)
 STRCMP(VG_Z_LD_LINUX_X86_64_SO_2, strcmp)
 STRCMP(VG_Z_LD64_SO_1,            strcmp)
+#elif defined(VGO_solaris)
+STRCMP(VG_Z_LD_SO_1,              strcmp)
 #endif
 
 
@@ -215,9 +225,9 @@ STRCMP(VG_Z_LD64_SO_1,            strcmp)
    { \
       SizeT i; \
       UChar c0 = (UChar)c; \
-      const UChar* p = (const UChar*)s; \
+      const UChar* p = s; \
       for (i = 0; i < n; i++) \
-         if (p[i] == c0) return (void*)(&p[i]); \
+         if (p[i] == c0) return CONST_CAST(void *,&p[i]);  \
       return NULL; \
    }
 
@@ -301,6 +311,8 @@ MEMCPY(VG_Z_LIBC_SONAME, memcpy)
 #if defined(VGO_linux)
 MEMCPY(VG_Z_LD_SO_1,     memcpy) /* ld.so.1 */
 MEMCPY(VG_Z_LD64_SO_1,   memcpy) /* ld64.so.1 */
+#elif defined(VGO_solaris)
+MEMCPY(VG_Z_LD_SO_1,      memcpy)
 #endif
 
 
@@ -331,7 +343,7 @@ STPCPY(VG_Z_LD_LINUX_X86_64_SO_2, stpcpy)
       UChar c = (UChar)c_in; \
       const UChar* char_ptr = s; \
       while (1) { \
-        if (*char_ptr == c) return (void *)char_ptr;    \
+         if (*char_ptr == c) return CONST_CAST(void *,char_ptr);   \
          char_ptr++; \
       } \
    }
@@ -356,7 +368,7 @@ GLIBC232_RAWMEMCHR(VG_Z_LIBC_SONAME, __GI___rawmemchr)
       while (n[nlen]) nlen++; \
       \
       /* if n is the empty string, match immediately. */ \
-      if (nlen == 0) return (HChar *)h;                  \
+      if (nlen == 0) return CONST_CAST(HChar *,h);         \
       \
       /* assert(nlen >= 1); */ \
       HChar n0 = n[0]; \
@@ -373,13 +385,15 @@ GLIBC232_RAWMEMCHR(VG_Z_LIBC_SONAME, __GI___rawmemchr)
          } \
          /* assert(i >= 0 && i <= nlen); */ \
          if (i == nlen) \
-           return (HChar *)h;                   \
+            return CONST_CAST(HChar *,h);          \
          \
          h++; \
       } \
    }
 
 #if defined(VGO_linux)
+STRSTR(VG_Z_LIBC_SONAME,          strstr)
+#elif defined(VGO_solaris)
 STRSTR(VG_Z_LIBC_SONAME,          strstr)
 #endif
 
@@ -408,7 +422,7 @@ STRSTR(VG_Z_LIBC_SONAME,          strstr)
             break; \
          for (i = 0; i < nacc; i++) { \
             if (sc == accept[i]) \
-              return (HChar *)s; \
+               return CONST_CAST(HChar *,s);       \
          } \
          s++; \
       } \
@@ -417,6 +431,8 @@ STRSTR(VG_Z_LIBC_SONAME,          strstr)
    }
 
 #if defined(VGO_linux)
+STRPBRK(VG_Z_LIBC_SONAME,          strpbrk)
+#elif defined(VGO_solaris)
 STRPBRK(VG_Z_LIBC_SONAME,          strpbrk)
 #endif
 

@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2013 Julian Seward 
+   Copyright (C) 2000-2015 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -38,6 +38,7 @@
    Assert machinery for use in this file. vg_assert cannot be called
    here due to cyclic dependencies.
    ------------------------------------------------------------------ */
+#if 0
 #define libcbase_assert(expr)                             \
   ((void) (LIKELY(expr) ? 0 :                             \
            (ML_(libcbase_assert_fail)(#expr,              \
@@ -56,6 +57,7 @@ static void ML_(libcbase_assert_fail)( const HChar *expr,
    VG_(debugLog)(0, "libcbase", "Exiting now.\n");
    VG_(exit_now)(1);
 }
+#endif
 
 /* ---------------------------------------------------------------------
    HChar functions.
@@ -111,7 +113,8 @@ Long VG_(strtoll10) ( const HChar* str, HChar** endptr )
 
    if (!converted) str = str0;   // If nothing converted, endptr points to
    if (neg) n = -n;              //   the start of the string.
-   if (endptr) *endptr = (HChar *)str;    // Record first failing character.
+   if (endptr)
+      *endptr = CONST_CAST(HChar *,str); // Record first failing character.
    return n;
 }
 
@@ -136,7 +139,8 @@ ULong VG_(strtoull10) ( const HChar* str, HChar** endptr )
 
    if (!converted) str = str0;   // If nothing converted, endptr points to
    //   the start of the string.
-   if (endptr) *endptr = (HChar *)str;    // Record first failing character.
+   if (endptr)
+      *endptr = CONST_CAST(HChar *,str); // Record first failing character.
    return n;
 }
 
@@ -169,7 +173,8 @@ Long VG_(strtoll16) ( const HChar* str, HChar** endptr )
 
    if (!converted) str = str0;   // If nothing converted, endptr points to
    if (neg) n = -n;              //   the start of the string.
-   if (endptr) *endptr = (HChar *)str;    // Record first failing character.
+   if (endptr)
+      *endptr = CONST_CAST(HChar *,str); // Record first failing character.
    return n;
 }
 
@@ -202,7 +207,8 @@ ULong VG_(strtoull16) ( const HChar* str, HChar** endptr )
 
    if (!converted) str = str0;   // If nothing converted, endptr points to
    //   the start of the string.
-   if (endptr) *endptr = (HChar *)str;    // Record first failing character.
+   if (endptr)
+      *endptr = CONST_CAST(HChar *,str); // Record first failing character.
    return n;
 }
 
@@ -235,7 +241,8 @@ double VG_(strtod) ( const HChar* str, HChar** endptr )
 
    n += frac;
    if (neg) n = -n;
-   if (endptr) *endptr = (HChar *)str;    // Record first failing character.
+   if (endptr)
+      *endptr = CONST_CAST(HChar *,str); // Record first failing character.
    return n;
 }
 
@@ -284,7 +291,7 @@ HChar* VG_(strpbrk) ( const HChar* s, const HChar* accpt )
       a = accpt;
       while (*a)
          if (*a++ == *s)
-           return (HChar *)s;
+            return CONST_CAST(HChar *,s);
       s++;
    }
    return NULL;
@@ -296,22 +303,6 @@ HChar* VG_(strcpy) ( HChar* dest, const HChar* src )
    while (*src) *dest++ = *src++;
    *dest = 0;
    return dest_orig;
-}
-
-/* Copy bytes, not overrunning the end of dest and always ensuring
-   zero termination. */
-void VG_(strncpy_safely) ( HChar* dest, const HChar* src, SizeT ndest )
-{
-   libcbase_assert(ndest > 0);
-
-   SizeT i = 0;
-   while (True) {
-      dest[i] = 0;
-      if (src[i] == 0) return;
-      if (i >= ndest-1) return;
-      dest[i] = src[i];
-      i++;
-   }
 }
 
 HChar* VG_(strncpy) ( HChar* dest, const HChar* src, SizeT ndest )
@@ -400,7 +391,7 @@ HChar* VG_(strstr) ( const HChar* haystack, const HChar* needle )
       if (haystack[0] == 0) 
          return NULL;
       if (VG_(strncmp)(haystack, needle, n) == 0) 
-         return (HChar*)haystack;
+         return CONST_CAST(HChar *,haystack);
       haystack++;
    }
 }
@@ -415,7 +406,7 @@ HChar* VG_(strcasestr) ( const HChar* haystack, const HChar* needle )
       if (haystack[0] == 0) 
          return NULL;
       if (VG_(strncasecmp)(haystack, needle, n) == 0) 
-         return (HChar*)haystack;
+         return CONST_CAST(HChar *,haystack);
       haystack++;
    }
 }
@@ -423,7 +414,7 @@ HChar* VG_(strcasestr) ( const HChar* haystack, const HChar* needle )
 HChar* VG_(strchr) ( const HChar* s, HChar c )
 {
    while (True) {
-     if (*s == c) return (HChar *)s;
+      if (*s == c) return CONST_CAST(HChar *,s);
       if (*s == 0) return NULL;
       s++;
    }
@@ -433,7 +424,7 @@ HChar* VG_(strrchr) ( const HChar* s, HChar c )
 {
    Int n = VG_(strlen)(s);
    while (--n > 0) {
-     if (s[n] == c) return (HChar *)s + n;
+      if (s[n] == c) return CONST_CAST(HChar *,s) + n;
    }
    return NULL;
 }
@@ -662,7 +653,7 @@ void* VG_(memcpy) ( void *dest, const void *src, SizeT sz )
    }
 
    /* If we're unlucky, the alignment constraints for the fast case
-      above won't apply, and we'll have to to it all here.  Hence the
+      above won't apply, and we'll have to do it all here.  Hence the
       unrolling. */
    while (sz >= 4) {
       d[0] = s[0];
@@ -703,28 +694,30 @@ void* VG_(memmove)(void *dest, const void *src, SizeT sz)
 
 void* VG_(memset) ( void *destV, Int c, SizeT sz )
 {
-   Int   c4;
-   HChar* d = (HChar*)destV;
+   UInt   c4;
+   UChar* d = destV;
+   UChar uc = c;
+
    while ((!VG_IS_4_ALIGNED(d)) && sz >= 1) {
-      d[0] = c;
+      d[0] = uc;
       d++;
       sz--;
    }
    if (sz == 0)
       return destV;
-   c4 = c & 0xFF;
+   c4 = uc;
    c4 |= (c4 << 8);
    c4 |= (c4 << 16);
    while (sz >= 16) {
-      ((Int*)d)[0] = c4;
-      ((Int*)d)[1] = c4;
-      ((Int*)d)[2] = c4;
-      ((Int*)d)[3] = c4;
+      ((UInt*)d)[0] = c4;
+      ((UInt*)d)[1] = c4;
+      ((UInt*)d)[2] = c4;
+      ((UInt*)d)[3] = c4;
       d += 16;
       sz -= 16;
    }
    while (sz >= 4) {
-      ((Int*)d)[0] = c4;
+      ((UInt*)d)[0] = c4;
       d += 4;
       sz -= 4;
    }

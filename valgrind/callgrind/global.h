@@ -6,7 +6,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2004-2014 Josef Weidendorfer
+   Copyright (C) 2004-2015 Josef Weidendorfer
       josef.weidendorfer@gmx.de
 
    This program is free software; you can redistribute it and/or
@@ -126,14 +126,6 @@ struct _CommandLineOptions {
 
 /* Minimum cache line size allowed */
 #define MIN_LINE_SIZE   16
-
-/* Size of various buffers used for storing strings */
-#define FILENAME_LEN                    VKI_PATH_MAX
-#define FN_NAME_LEN                    4096 /* for C++ code :-) */
-#define OBJ_NAME_LEN                    256
-#define COSTS_LEN                       512 /* at least 17x 64bit values */
-#define BUF_LEN                         512
-#define RESULTS_BUF_LEN                 256
 
 
 /*------------------------------------------------------------*/
@@ -635,7 +627,7 @@ struct cachesim_if
     Bool (*parse_opt)(const HChar* arg);
     void (*post_clo_init)(void);
     void (*clear)(void);
-    void (*getdesc)(HChar* buf);
+    void (*dump_desc)(VgFile *fp);
     void (*printstat)(Int,Int,Int);
     void (*add_icost)(SimCost, BBCC*, InstrInfo*, ULong);
     void (*finish)(void);
@@ -690,8 +682,9 @@ void CLG_(print_debug_usage)(void);
 void CLG_(init_eventsets)(void);
 
 /* from main.c */
-Bool CLG_(get_debug_info)(Addr, HChar filename[FILENAME_LEN],
-			 HChar fn_name[FN_NAME_LEN], UInt*, DebugInfo**);
+Bool CLG_(get_debug_info)(Addr, const HChar **dirname,
+                          const HChar **filename,
+                          const HChar **fn_name, UInt*, DebugInfo**);
 void CLG_(collectBlockInfo)(IRSB* bbIn, UInt*, UInt*, Bool*);
 void CLG_(set_instrument_state)(const HChar*,Bool);
 void CLG_(dump_profile)(const HChar* trigger,Bool only_current_thread);
@@ -720,7 +713,8 @@ UInt* CLG_(get_fn_entry)(Int n);
 
 void      CLG_(init_obj_table)(void);
 obj_node* CLG_(get_obj_node)(DebugInfo* si);
-file_node* CLG_(get_file_node)(obj_node*, HChar* filename);
+file_node* CLG_(get_file_node)(obj_node*, const HChar *dirname,
+                               const HChar* filename);
 fn_node*  CLG_(get_fn_node)(BB* bb);
 
 /* from bbcc.c */

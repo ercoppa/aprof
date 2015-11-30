@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2013 Julian Seward
+   Copyright (C) 2000-2015 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -37,15 +37,7 @@
 // other module imports this one, if only for VG_(clo_verbosity).
 //--------------------------------------------------------------------
 #include "pub_tool_options.h"
-
-/* The max number of suppression files. */
-#define VG_CLO_MAX_SFILES 100
-
-/* The max number of --require-text-symbol= specification strings. */
-#define VG_CLO_MAX_REQ_TSYMS 100
-
-/* The max number of --fullpath-after= parameters. */
-#define VG_CLO_MAX_FULLPATH_AFTER 100
+#include "pub_core_xarray.h"
 
 /* Should we stop collecting errors if too many appear?  default: YES */
 extern Bool  VG_(clo_error_limit);
@@ -53,6 +45,12 @@ extern Bool  VG_(clo_error_limit);
    default: 0 (no, return the application's exit code in the normal
    way. */
 extern Int   VG_(clo_error_exitcode);
+
+/* Markers used to mark the begin/end of an error, when errors are
+   printed in textual (non xml) format.
+   [0] is the error begin marker, [1] is the error end marker.
+   default: no markers. */
+extern HChar *VG_(clo_error_markers)[2];
 
 typedef 
    enum { 
@@ -90,10 +88,6 @@ extern const HChar *VG_(clo_vgdb_prefix);
    shadow registers */
 extern Bool  VG_(clo_vgdb_shadow_registers);
 
-/* Enquire about whether to attach to a debugger at errors?   default: NO */
-extern Bool  VG_(clo_db_attach);
-/* The debugger command?  default: whatever gdb ./configure found */
-extern const HChar* VG_(clo_db_command);
 /* Generating a suppression for each error?   default: 0 (NO)
    Other values: 1 (yes, but ask user), 2 (yes, don't ask user) */
 extern Int   VG_(clo_gen_suppressions);
@@ -101,11 +95,11 @@ extern Int   VG_(clo_gen_suppressions);
 extern Int   VG_(clo_sanity_level);
 /* Automatically attempt to demangle C++ names?  default: YES */
 extern Bool  VG_(clo_demangle);
-/* Simulate child processes? default: NO */
 /* Soname synonyms : a string containing a list of pairs
    xxxxx=yyyyy separated by commas.
    E.g. --soname-synonyms=somalloc=libtcmalloc*.so*,solibtruc=NONE */
 extern const HChar* VG_(clo_soname_synonyms);
+/* Valgrind-ise child processes (follow execve)? default : NO */
 extern Bool  VG_(clo_trace_children);
 /* String containing comma-separated patterns for executable names
    that should not be traced into even when --trace-children=yes */
@@ -124,8 +118,8 @@ extern Bool  VG_(clo_child_silent_after_fork);
 
 /* If the user specified --log-file=STR and/or --xml-file=STR, these
    hold STR after expansion of the %p and %q templates. */
-extern HChar* VG_(clo_log_fname_expanded);
-extern HChar* VG_(clo_xml_fname_expanded);
+extern const HChar* VG_(clo_log_fname_expanded);
+extern const HChar* VG_(clo_xml_fname_expanded);
 
 /* Add timestamps to log messages?  default: NO */
 extern Bool  VG_(clo_time_stamp);
@@ -135,14 +129,12 @@ extern Int   VG_(clo_input_fd);
 
 /* Whether or not to load the default suppressions. */
 extern Bool  VG_(clo_default_supp);
-/* The number of suppression files specified. */
-extern Int   VG_(clo_n_suppressions);
+
 /* The names of the suppression files. */
-extern const HChar* VG_(clo_suppressions)[VG_CLO_MAX_SFILES];
+extern XArray *VG_(clo_suppressions);
 
 /* An array of strings harvested from --fullpath-after= flags. */
-extern Int   VG_(clo_n_fullpath_after);
-extern const HChar* VG_(clo_fullpath_after)[VG_CLO_MAX_FULLPATH_AFTER];
+extern XArray *VG_(clo_fullpath_after);
 
 /* Full path to additional path to search for debug symbols */
 extern const HChar* VG_(clo_extra_debuginfo_path);
@@ -224,6 +216,7 @@ extern Int   VG_(clo_dump_error);
 typedef
    enum {
       SimHint_lax_ioctls,
+      SimHint_lax_doors,
       SimHint_fuse_compatible,
       SimHint_enable_outer,
       SimHint_no_inner_prefix,
@@ -276,8 +269,7 @@ extern const HChar* VG_(clo_prefix_to_strip);
    silently with the un-marked-up library.  Note that you should put
    the entire flag in quotes to stop shells messing up the * and ?
    wildcards. */
-extern Int    VG_(clo_n_req_tsyms);
-extern const HChar* VG_(clo_req_tsyms)[VG_CLO_MAX_REQ_TSYMS];
+extern XArray *VG_(clo_req_tsyms);
 
 /* Track open file descriptors? */
 extern Bool  VG_(clo_track_fds);
@@ -300,6 +292,10 @@ extern Word VG_(clo_max_stackframe);
    be? */
 extern Word VG_(clo_main_stacksize);
 
+/* The maximum number of threads we support. */
+#define MAX_THREADS_DEFAULT 500
+extern UInt VG_(clo_max_threads);
+
 /* If the same IP is found twice in a backtrace in a sequence of max
    VG_(clo_merge_recursive_frames) frames, then the recursive call
    is merged in the backtrace.
@@ -311,9 +307,17 @@ extern Int VG_(clo_merge_recursive_frames);
 /* Max number of sectors that will be used by the translation code cache. */
 extern UInt VG_(clo_num_transtab_sectors);
 
+/* Average size of a transtab code entry. 0 means to use the tool
+   provided default. */
+extern UInt VG_(clo_avg_transtab_entry_size);
+
 /* Only client requested fixed mapping can be done below 
    VG_(clo_aspacem_minAddr). */
 extern Addr VG_(clo_aspacem_minAddr);
+
+/* How large the Valgrind thread stacks should be. 
+   Will be rounded up to a page.. */
+extern Word VG_(clo_valgrind_stacksize);
 
 /* Delay startup to allow GDB to be attached?  Default: NO */
 extern Bool VG_(clo_wait_for_gdb);
@@ -362,8 +366,8 @@ extern Bool VG_(clo_dsymutil);
    of the executable.  'child_argv' must not include the name of the
    executable itself; iow child_argv[0] must be the first arg, if any,
    for the child. */
-extern Bool VG_(should_we_trace_this_child) ( HChar* child_exe_name,
-                                              HChar** child_argv );
+extern Bool VG_(should_we_trace_this_child) ( const HChar* child_exe_name,
+                                              const HChar** child_argv );
 
 /* Whether illegal instructions should be reported/diagnosed.
    Can be explicitly set through --sigill-diagnostics otherwise
@@ -382,6 +386,12 @@ extern UInt VG_(clo_unw_stack_scan_thresh);
    Since it tends to pick up a lot of junk, this value is set pretty
    low by default.  Default: 5 */
 extern UInt VG_(clo_unw_stack_scan_frames);
+
+/* Controls the resync-filter on MacOS.  Has no effect on Linux.
+   0=disabled [default on Linux]   "no"
+   1=enabled  [default on MacOS]   "yes"
+   2=enabled and verbose.          "verbose" */
+extern UInt VG_(clo_resync_filter);
 
 #endif   // __PUB_CORE_OPTIONS_H
 

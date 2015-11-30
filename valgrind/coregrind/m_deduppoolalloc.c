@@ -6,7 +6,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2014-2014 Philippe Waroquiers philippe.waroquiers@skynet.be
+   Copyright (C) 2014-2015 Philippe Waroquiers philippe.waroquiers@skynet.be
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -42,9 +42,9 @@ struct _DedupPoolAlloc {
    SizeT  poolSzB; /* Minimum size of a pool. */
    SizeT  fixedSzb; /* If using VG_(allocFixedEltDedupPA), size of elements */
    SizeT  eltAlign;
-   void*   (*alloc)(const HChar*, SizeT); /* pool allocator */
-   const HChar*  cc; /* pool allocator's cc */
-   void    (*free)(void*); /* pool allocator's free-er */
+   void*   (*alloc_fn)(const HChar*, SizeT); /* pool allocator */
+   const HChar*  cc; /* pool allocator's cost centre */
+   void    (*free_fn)(void*); /* pool allocator's deallocation function */
    /* XArray of void* (pointers to pools).  The pools themselves.
       Each element is a pointer to a block of size at least PoolSzB bytes.
       The last block might be smaller due to a call to shrink_block. */
@@ -52,7 +52,7 @@ struct _DedupPoolAlloc {
 
    /* hash table of pool elements, used to dedup.
       If NULL, it means the DedupPoolAlloc is frozen. */
-   VgHashTable ht_elements;
+   VgHashTable *ht_elements;
 
    /* Hash table nodes of pool_elements are allocated with a pool, to
       decrease memory overhead during insertion in the DedupPoolAlloc. */
@@ -76,44 +76,43 @@ typedef
       struct _ht_node *next; // Read/Write by hashtable (pub_tool_hashtable.h)
       UWord   key;           // Read by hashtable (pub_tool_hashtable.h)
       SizeT   eltSzB;
-      void    *elt;
+      const void *elt;
    }
    ht_node;
 
-extern DedupPoolAlloc* VG_(newDedupPA) ( SizeT  poolSzB,
-                                         SizeT  eltAlign,
-                                         void*  (*alloc)(const HChar*, SizeT),
-                                         const  HChar* cc,
-                                         void   (*free_fn)(void*) )
+DedupPoolAlloc* VG_(newDedupPA) ( SizeT  poolSzB,
+                                  SizeT  eltAlign,
+                                  void*  (*alloc_fn)(const HChar*, SizeT),
+                                  const  HChar* cc,
+                                  void   (*free_fn)(void*) )
 {
    DedupPoolAlloc* ddpa;
    vg_assert(poolSzB >= eltAlign);
    vg_assert(poolSzB >= 100); /* let's say */
    vg_assert(poolSzB >= 10*eltAlign); /* let's say */
-   vg_assert(alloc);
+   vg_assert(alloc_fn);
    vg_assert(cc);
    vg_assert(free_fn);
-   ddpa = alloc(cc, sizeof(*ddpa));
-   vg_assert(ddpa);
+   ddpa = alloc_fn(cc, sizeof(*ddpa));
    VG_(memset)(ddpa, 0, sizeof(*ddpa));
    ddpa->poolSzB  = poolSzB;
    ddpa->fixedSzb = 0;
    ddpa->eltAlign = eltAlign;
-   ddpa->alloc    = alloc;
+   ddpa->alloc_fn = alloc_fn;
    ddpa->cc       = cc;
-   ddpa->free     = free_fn;
-   ddpa->pools    = VG_(newXA)( alloc, cc, free_fn, sizeof(void*) );
+   ddpa->free_fn  = free_fn;
+   ddpa->pools    = VG_(newXA)( alloc_fn, cc, free_fn, sizeof(void*) );
 
    ddpa->ht_elements = VG_(HT_construct) (cc);
    ddpa->ht_node_pa = VG_(newPA) ( sizeof(ht_node),
                                    1000,
-                                   alloc,
+                                   alloc_fn,
                                    cc,
                                    free_fn);
    ddpa->curpool = NULL;
    ddpa->curpool_limit = NULL;
-   ddpa->curpool_free = ddpa->curpool_limit + 1;
-   vg_assert(ddpa->pools);
+   ddpa->curpool_free = NULL;
+
    return ddpa;
 }
 
@@ -124,9 +123,9 @@ void VG_(deleteDedupPA) ( DedupPoolAlloc* ddpa)
       // Free data structures used for insertion.
       VG_(freezeDedupPA) (ddpa, NULL);
    for (i = 0; i < VG_(sizeXA) (ddpa->pools); i++)
-      ddpa->free (*(UWord **)VG_(indexXA) ( ddpa->pools, i ));
+      ddpa->free_fn (*(UWord **)VG_(indexXA) ( ddpa->pools, i ));
    VG_(deleteXA) (ddpa->pools);
-   ddpa->free (ddpa);
+   ddpa->free_fn (ddpa);
 }
 
 static __inline__
@@ -146,13 +145,12 @@ static void ddpa_add_new_pool_or_grow ( DedupPoolAlloc* ddpa )
       UChar *curpool_align = ddpa_align(ddpa, ddpa->curpool);
       SizeT curpool_used = ddpa->curpool_free - curpool_align;
       SizeT curpool_size = ddpa->curpool_limit - ddpa->curpool + 1;
-      UChar *newpool = ddpa->alloc (ddpa->cc, 2 * curpool_size);
+      UChar *newpool = ddpa->alloc_fn (ddpa->cc, 2 * curpool_size);
       UChar *newpool_free = ddpa_align (ddpa, newpool);
       UChar *newpool_limit = newpool + 2 * curpool_size - 1;
       Word reloc_offset = (Addr)newpool_free - (Addr)curpool_align;
       ht_node *n;
 
-      vg_assert (newpool);
       VG_(memcpy) (newpool_free, curpool_align, curpool_used);
       /* We have reallocated the (only) pool. We need to relocate the pointers
          in the hash table nodes. */
@@ -163,7 +161,7 @@ static void ddpa_add_new_pool_or_grow ( DedupPoolAlloc* ddpa )
       newpool_free += curpool_used;
 
       VG_(dropHeadXA) (ddpa->pools, 1);
-      ddpa->free (ddpa->curpool);
+      ddpa->free_fn (ddpa->curpool);
       ddpa->curpool = newpool;
       ddpa->curpool_free = newpool_free;
       ddpa->curpool_limit = newpool_limit;
@@ -171,8 +169,7 @@ static void ddpa_add_new_pool_or_grow ( DedupPoolAlloc* ddpa )
    } else {
       /* Allocate a new pool, or allocate the first/only pool for a
          fixed size ddpa. */
-      ddpa->curpool = ddpa->alloc( ddpa->cc, ddpa->poolSzB);
-      vg_assert(ddpa->curpool);
+      ddpa->curpool = ddpa->alloc_fn( ddpa->cc, ddpa->poolSzB);
       ddpa->curpool_limit = ddpa->curpool + ddpa->poolSzB - 1;
       ddpa->curpool_free = ddpa_align (ddpa, ddpa->curpool);
       /* add to our collection of pools */
@@ -180,16 +177,19 @@ static void ddpa_add_new_pool_or_grow ( DedupPoolAlloc* ddpa )
    }
 }
 
+/* Compare function for 'gen' hash table. No need to compare the key
+   in this function, as the hash table already does it for us,
+   and that in any case, if the data is equal, the keys must also be
+   equal. */
 static Word cmp_pool_elt (const void* node1, const void* node2 )
 {
    const ht_node* hnode1 = node1;
    const ht_node* hnode2 = node2;
 
-   if (hnode1->key < hnode2->key)
-      return -1;
-   else if (hnode1->key > hnode2->key)
-      return 1;
-   else if (hnode1->eltSzB == hnode2->eltSzB)
+   /* As this function is called by hashtable, that has already checked
+      for key equality, it is likely that it is the 'good' element.
+      So, we handle the equal case first. */
+   if (hnode1->eltSzB == hnode2->eltSzB)
       return VG_(memcmp) (hnode1->elt, hnode2->elt, hnode1->eltSzB);
    else if (hnode1->eltSzB < hnode2->eltSzB)
       return -1;
@@ -201,13 +201,14 @@ static Word cmp_pool_elt (const void* node1, const void* node2 )
 static void print_stats (DedupPoolAlloc *ddpa)
 {
    VG_(message)(Vg_DebugMsg,
-                "dedupPA:%s %ld allocs (%d uniq)"
+                "dedupPA:%s %ld allocs (%u uniq)"
                 " %ld pools (%ld bytes free in last pool)\n",
                 ddpa->cc,
                 (long int) ddpa->nr_alloc_calls,
                 VG_(HT_count_nodes)(ddpa->ht_elements),
                 VG_(sizeXA)(ddpa->pools),
-                (long int) (ddpa->curpool_limit - ddpa->curpool_free + 1));
+                ddpa->curpool ?
+                (long int) (ddpa->curpool_limit - ddpa->curpool_free + 1) : 0);
    VG_(HT_print_stats) (ddpa->ht_elements, cmp_pool_elt);
 }
 
@@ -233,7 +234,21 @@ void VG_(freezeDedupPA) (DedupPoolAlloc *ddpa,
    ddpa->ht_node_pa = NULL;
 }
 
-void* VG_(allocEltDedupPA) (DedupPoolAlloc *ddpa, SizeT eltSzB, const void *elt)
+
+// hash function used by gawk and SDBM.
+static UInt sdbm_hash (const UChar* buf, UInt len )
+{
+  UInt h;
+  UInt i;
+
+  h = 0;
+  for (i = 0; i < len; i++)
+    h = *buf++ + (h<<6) + (h<<16) - h;
+  return h;
+}
+
+const void* VG_(allocEltDedupPA) (DedupPoolAlloc *ddpa, SizeT eltSzB,
+                                  const void *elt)
 {
    ht_node ht_elt;
    void* elt_ins;
@@ -244,17 +259,10 @@ void* VG_(allocEltDedupPA) (DedupPoolAlloc *ddpa, SizeT eltSzB, const void *elt)
 
    ddpa->nr_alloc_calls++;
 
-   // Currently using adler32 as hash function.
-   // Many references tells adler32 is bad as a hash function.
-   // And effectively, some tests on dwarf debug string shows
-   // a lot of collisions (at least for short elements).
-   // (A lot can be 10% of the elements colliding, even on
-   // small nr of elements such as 10_000).
-   ht_elt.key = VG_(adler32) (0, NULL, 0);
-   ht_elt.key = VG_(adler32) (ht_elt.key, (UChar*)elt, eltSzB);
+   ht_elt.key = sdbm_hash (elt, eltSzB);
 
    ht_elt.eltSzB = eltSzB;
-   ht_elt.elt = (UChar*) elt;
+   ht_elt.elt = elt;
 
    ht_ins = VG_(HT_gen_lookup) (ddpa->ht_elements, &ht_elt, cmp_pool_elt);
    if (ht_ins)
@@ -264,7 +272,8 @@ void* VG_(allocEltDedupPA) (DedupPoolAlloc *ddpa, SizeT eltSzB, const void *elt)
       and insert it in the hash table of inserted elements. */
 
    // Add a new pool or grow pool if not enough space in the current pool
-   if (UNLIKELY(ddpa->curpool_free + eltSzB - 1 > ddpa->curpool_limit)) {
+   if (UNLIKELY(ddpa->curpool_free == NULL
+                || ddpa->curpool_free + eltSzB - 1 > ddpa->curpool_limit)) {
       ddpa_add_new_pool_or_grow (ddpa);
    }
 
@@ -283,9 +292,9 @@ void* VG_(allocEltDedupPA) (DedupPoolAlloc *ddpa, SizeT eltSzB, const void *elt)
 static __inline__
 UInt elt2nr (DedupPoolAlloc *ddpa, const void *dedup_elt)
 {
-   vg_assert ((UChar*)dedup_elt >= ddpa->curpool
-              && (UChar*)dedup_elt < ddpa->curpool_free);
-   return 1 + ((UChar*)dedup_elt - ddpa->curpool)
+   vg_assert (dedup_elt >= (const void *)ddpa->curpool
+              && dedup_elt < (const void *)ddpa->curpool_free);
+   return 1 + ((const UChar*)dedup_elt - (const UChar *)ddpa->curpool)
       / VG_ROUNDUP(ddpa->fixedSzb, ddpa->eltAlign);
 }
 
@@ -299,7 +308,7 @@ UInt VG_(allocFixedEltDedupPA) (DedupPoolAlloc *ddpa,
       ddpa->fixedSzb = eltSzB;
    }
    vg_assert (ddpa->fixedSzb == eltSzB);
-   void *dedup_elt = VG_(allocEltDedupPA) (ddpa, eltSzB, elt);
+   const void *dedup_elt = VG_(allocEltDedupPA) (ddpa, eltSzB, elt);
    return elt2nr (ddpa, dedup_elt);
 }
 

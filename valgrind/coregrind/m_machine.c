@@ -6,7 +6,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2013 Julian Seward 
+   Copyright (C) 2000-2015 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -29,7 +29,6 @@
 
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
-#include "pub_core_libcsetjmp.h"   // setjmp facilities
 #include "pub_core_threadstate.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcbase.h"
@@ -106,9 +105,9 @@ void VG_(get_UnwindStartRegs) ( /*OUT*/UnwindStartRegs* regs,
    regs->r_pc = (ULong)VG_(threads)[tid].arch.vex.guest_IA;
    regs->r_sp = (ULong)VG_(threads)[tid].arch.vex.guest_SP;
    regs->misc.S390X.r_fp
-      = VG_(threads)[tid].arch.vex.guest_r11;
+      = VG_(threads)[tid].arch.vex.guest_FP;
    regs->misc.S390X.r_lr
-      = VG_(threads)[tid].arch.vex.guest_r14;
+      = VG_(threads)[tid].arch.vex.guest_LR;
 #  elif defined(VGA_mips32)
    regs->r_pc = VG_(threads)[tid].arch.vex.guest_PC;
    regs->r_sp = VG_(threads)[tid].arch.vex.guest_r29;
@@ -127,6 +126,13 @@ void VG_(get_UnwindStartRegs) ( /*OUT*/UnwindStartRegs* regs,
       = VG_(threads)[tid].arch.vex.guest_r31;
    regs->misc.MIPS64.r28
       = VG_(threads)[tid].arch.vex.guest_r28;
+#  elif defined(VGA_tilegx)
+   regs->r_pc = VG_(threads)[tid].arch.vex.guest_pc;
+   regs->r_sp = VG_(threads)[tid].arch.vex.guest_r54;
+   regs->misc.TILEGX.r52
+      = VG_(threads)[tid].arch.vex.guest_r52;
+   regs->misc.TILEGX.r55
+      = VG_(threads)[tid].arch.vex.guest_r55;
 #  else
 #    error "Unknown arch"
 #  endif
@@ -152,7 +158,7 @@ VG_(get_shadow_regs_area) ( ThreadId tid,
       case 1: src = (void*)(((Addr)&(tst->arch.vex_shadow1)) + offset); break;
       case 2: src = (void*)(((Addr)&(tst->arch.vex_shadow2)) + offset); break;
    }
-   tl_assert(src != NULL);
+   vg_assert(src != NULL);
    VG_(memcpy)( dst, src, size);
 }
 
@@ -176,7 +182,7 @@ VG_(set_shadow_regs_area) ( ThreadId tid,
       case 1: dst = (void*)(((Addr)&(tst->arch.vex_shadow1)) + offset); break;
       case 2: dst = (void*)(((Addr)&(tst->arch.vex_shadow2)) + offset); break;
    }
-   tl_assert(dst != NULL);
+   vg_assert(dst != NULL);
    VG_(memcpy)( dst, src, size);
 }
 
@@ -185,7 +191,7 @@ static void apply_to_GPs_of_tid(ThreadId tid, void (*f)(ThreadId,
                                                         const HChar*, Addr))
 {
    VexGuestArchState* vex = &(VG_(get_ThreadState)(tid)->arch.vex);
-   VG_(debugLog)(2, "machine", "apply_to_GPs_of_tid %d\n", tid);
+   VG_(debugLog)(2, "machine", "apply_to_GPs_of_tid %u\n", tid);
 #if defined(VGA_x86)
    (*f)(tid, "EAX", vex->guest_EAX);
    (*f)(tid, "ECX", vex->guest_ECX);
@@ -344,6 +350,63 @@ static void apply_to_GPs_of_tid(ThreadId tid, void (*f)(ThreadId,
    (*f)(tid, "x28", vex->guest_X28);
    (*f)(tid, "x29", vex->guest_X29);
    (*f)(tid, "x30", vex->guest_X30);
+#elif defined(VGA_tilegx)
+   (*f)(tid, "r0",  vex->guest_r0 );
+   (*f)(tid, "r1",  vex->guest_r1 );
+   (*f)(tid, "r2",  vex->guest_r2 );
+   (*f)(tid, "r3",  vex->guest_r3 );
+   (*f)(tid, "r4",  vex->guest_r4 );
+   (*f)(tid, "r5",  vex->guest_r5 );
+   (*f)(tid, "r6",  vex->guest_r6 );
+   (*f)(tid, "r7",  vex->guest_r7 );
+   (*f)(tid, "r8",  vex->guest_r8 );
+   (*f)(tid, "r9",  vex->guest_r9 );
+   (*f)(tid, "r10", vex->guest_r10);
+   (*f)(tid, "r11", vex->guest_r11);
+   (*f)(tid, "r12", vex->guest_r12);
+   (*f)(tid, "r13", vex->guest_r13);
+   (*f)(tid, "r14", vex->guest_r14);
+   (*f)(tid, "r15", vex->guest_r15);
+   (*f)(tid, "r16", vex->guest_r16);
+   (*f)(tid, "r17", vex->guest_r17);
+   (*f)(tid, "r18", vex->guest_r18);
+   (*f)(tid, "r19", vex->guest_r19);
+   (*f)(tid, "r20", vex->guest_r20);
+   (*f)(tid, "r21", vex->guest_r21);
+   (*f)(tid, "r22", vex->guest_r22);
+   (*f)(tid, "r23", vex->guest_r23);
+   (*f)(tid, "r24", vex->guest_r24);
+   (*f)(tid, "r25", vex->guest_r25);
+   (*f)(tid, "r26", vex->guest_r26);
+   (*f)(tid, "r27", vex->guest_r27);
+   (*f)(tid, "r28", vex->guest_r28);
+   (*f)(tid, "r29", vex->guest_r29);
+   (*f)(tid, "r30", vex->guest_r30);
+   (*f)(tid, "r31", vex->guest_r31);
+   (*f)(tid, "r32", vex->guest_r32);
+   (*f)(tid, "r33", vex->guest_r33);
+   (*f)(tid, "r34", vex->guest_r34);
+   (*f)(tid, "r35", vex->guest_r35);
+   (*f)(tid, "r36", vex->guest_r36);
+   (*f)(tid, "r37", vex->guest_r37);
+   (*f)(tid, "r38", vex->guest_r38);
+   (*f)(tid, "r39", vex->guest_r39);
+   (*f)(tid, "r40", vex->guest_r40);
+   (*f)(tid, "r41", vex->guest_r41);
+   (*f)(tid, "r42", vex->guest_r42);
+   (*f)(tid, "r43", vex->guest_r43);
+   (*f)(tid, "r44", vex->guest_r44);
+   (*f)(tid, "r45", vex->guest_r45);
+   (*f)(tid, "r46", vex->guest_r46);
+   (*f)(tid, "r47", vex->guest_r47);
+   (*f)(tid, "r48", vex->guest_r48);
+   (*f)(tid, "r49", vex->guest_r49);
+   (*f)(tid, "r50", vex->guest_r50);
+   (*f)(tid, "r51", vex->guest_r51);
+   (*f)(tid, "r52", vex->guest_r52);
+   (*f)(tid, "r53", vex->guest_r53);
+   (*f)(tid, "r54", vex->guest_r54);
+   (*f)(tid, "r55", vex->guest_r55);
 #else
 #  error Unknown arch
 #endif
@@ -463,7 +526,7 @@ static void handler_unsup_insn ( Int x ) {
 
 
 /* Helper function for VG_(machine_get_hwcaps), assumes the SIGILL/etc
- * handlers are installed.  Determines the the sizes affected by dcbz
+ * handlers are installed.  Determines the sizes affected by dcbz
  * and dcbzl instructions and updates the given VexArchInfo structure
  * accordingly.
  *
@@ -537,7 +600,7 @@ static void find_ppc_dcbz_sz(VexArchInfo *arch_info)
 static UInt VG_(get_machine_model)(void)
 {
    static struct model_map {
-      HChar name[5];
+      const HChar name[5];
       UInt  id;
    } model_map[] = {
       { "2064", VEX_S390X_MODEL_Z900 },
@@ -552,6 +615,7 @@ static UInt VG_(get_machine_model)(void)
       { "2818", VEX_S390X_MODEL_Z114 },
       { "2827", VEX_S390X_MODEL_ZEC12 },
       { "2828", VEX_S390X_MODEL_ZBC12 },
+      { "2964", VEX_S390X_MODEL_Z13 },
    };
 
    Int    model, n, fh;
@@ -713,7 +777,7 @@ Bool VG_(machine_get_hwcaps)( void )
    LibVEX_default_VexArchInfo(&vai);
 
 #if defined(VGA_x86)
-   { Bool have_sse1, have_sse2, have_cx8, have_lzcnt, have_mmxext;
+   { Bool have_sse1, have_sse2, have_sse3, have_cx8, have_lzcnt, have_mmxext;
      UInt eax, ebx, ecx, edx, max_extended;
      HChar vstr[13];
      vstr[0] = 0;
@@ -742,6 +806,7 @@ Bool VG_(machine_get_hwcaps)( void )
 
      have_sse1 = (edx & (1<<25)) != 0; /* True => have sse insns */
      have_sse2 = (edx & (1<<26)) != 0; /* True => have sse2 insns */
+     have_sse3 = (ecx & (1<<0)) != 0;  /* True => have sse3 insns */
 
      /* cmpxchg8b is a minimum requirement now; if we don't have it we
         must simply give up.  But all CPUs since Pentium-I have it, so
@@ -775,7 +840,16 @@ Bool VG_(machine_get_hwcaps)( void )
 
      va = VexArchX86;
      vai.endness = VexEndnessLE;
-     if (have_sse2 && have_sse1 && have_mmxext) {
+
+     if (have_sse3 && have_sse2 && have_sse1 && have_mmxext) {
+        vai.hwcaps  = VEX_HWCAPS_X86_MMXEXT;
+        vai.hwcaps |= VEX_HWCAPS_X86_SSE1;
+        vai.hwcaps |= VEX_HWCAPS_X86_SSE2;
+        vai.hwcaps |= VEX_HWCAPS_X86_SSE3;
+        if (have_lzcnt)
+           vai.hwcaps |= VEX_HWCAPS_X86_LZCNT;
+        VG_(machine_x86_have_mxcsr) = 1;
+     } else if (have_sse2 && have_sse1 && have_mmxext) {
         vai.hwcaps  = VEX_HWCAPS_X86_MMXEXT;
         vai.hwcaps |= VEX_HWCAPS_X86_SSE1;
         vai.hwcaps |= VEX_HWCAPS_X86_SSE2;
@@ -804,6 +878,7 @@ Bool VG_(machine_get_hwcaps)( void )
      Bool have_lzcnt, have_avx, have_bmi, have_avx2;
      Bool have_rdtscp;
      UInt eax, ebx, ecx, edx, max_basic, max_extended;
+     ULong xgetbv_0 = 0;
      HChar vstr[13];
      vstr[0] = 0;
 
@@ -836,26 +911,41 @@ Bool VG_(machine_get_hwcaps)( void )
      // sse41   is ecx:19
      // sse42   is ecx:20
 
+     // xsave   is ecx:26
      // osxsave is ecx:27
      // avx     is ecx:28
      // fma     is ecx:12
      have_avx = False;
      /* have_fma = False; */
-     if ( (ecx & ((1<<27)|(1<<28))) == ((1<<27)|(1<<28)) ) {
-        /* processor supports AVX instructions and XGETBV is enabled
-           by OS */
+     if ( (ecx & ((1<<28)|(1<<27)|(1<<26))) == ((1<<28)|(1<<27)|(1<<26)) ) {
+        /* Processor supports AVX instructions and XGETBV is enabled
+           by OS and AVX instructions are enabled by the OS. */
         ULong w;
         __asm__ __volatile__("movq $0,%%rcx ; "
                              ".byte 0x0F,0x01,0xD0 ; " /* xgetbv */
                              "movq %%rax,%0"
                              :/*OUT*/"=r"(w) :/*IN*/
-                             :/*TRASH*/"rdx","rcx");
-        if ((w & 6) == 6) {
-           /* OS has enabled both XMM and YMM state support */
-           have_avx = True;
+                             :/*TRASH*/"rdx","rcx","rax");
+        xgetbv_0 = w;
+        if ((xgetbv_0 & 7) == 7) {
+           /* Only say we have AVX if the XSAVE-allowable
+              bitfield-mask allows x87, SSE and AVX state.  We could
+              actually run with a more restrictive XGETBV(0) value,
+              but VEX's implementation of XSAVE and XRSTOR assumes
+              that all 3 bits are enabled.
+
+              Also, the VEX implementation of XSAVE/XRSTOR assumes that
+              state component [2] (the YMM high halves) are located in
+              the XSAVE image at offsets 576 .. 831.  So we have to
+              check that here before declaring AVX to be supported. */
+           UInt eax2, ebx2, ecx2, edx2;
+           VG_(cpuid)(0xD, 2, &eax2, &ebx2, &ecx2, &edx2);
+           if (ebx2 == 576 && eax2 == 256) {
+              have_avx = True;
+           }
            /* have_fma = (ecx & (1<<12)) != 0; */
            /* have_fma: Probably correct, but gcc complains due to
-              unusedness. &*/
+              unusedness. */
         }
      }
 
@@ -883,12 +973,12 @@ Bool VG_(machine_get_hwcaps)( void )
         have_rdtscp = (edx & (1<<27)) != 0; /* True => have RDTSVCP */
      }
 
-     /* Check for BMI1 and AVX2. If we have AVX1 (plus OS support). */
-     have_bmi = False;
+     /* Check for BMI1 and AVX2.  If we have AVX1 (plus OS support). */
+     have_bmi  = False;
      have_avx2 = False;
      if (have_avx && max_basic >= 7) {
         VG_(cpuid)(7, 0, &eax, &ebx, &ecx, &edx);
-        have_bmi = (ebx & (1<<3)) != 0; /* True => have BMI1 */
+        have_bmi  = (ebx & (1<<3)) != 0; /* True => have BMI1 */
         have_avx2 = (ebx & (1<<5)) != 0; /* True => have AVX2 */
      }
 
@@ -1263,7 +1353,7 @@ Bool VG_(machine_get_hwcaps)( void )
                              ".short 0x0057" : : : "r0", "r1", "cc", "memory");
      }
 
-     /* Check availability og STFLE. If available store facility bits
+     /* Check availability of STFLE. If available store facility bits
         in hoststfle. */
      ULong hoststfle[S390_NUM_FACILITY_DW];
 
@@ -1337,7 +1427,7 @@ Bool VG_(machine_get_hwcaps)( void )
      HChar *p = fac_str;
      p += VG_(sprintf)(p, "machine %4d  ", model);
      for (i=0; i < sizeof fac_hwcaps / sizeof fac_hwcaps[0]; ++i) {
-        p += VG_(sprintf)(p, " %s %1d", fac_hwcaps[i].name,
+        p += VG_(sprintf)(p, " %s %1u", fac_hwcaps[i].name,
                           fac_hwcaps[i].installed);
      }
      *p++ = '\0';
@@ -1604,6 +1694,17 @@ Bool VG_(machine_get_hwcaps)( void )
      return True;
    }
 
+#elif defined(VGA_tilegx)
+   {
+     va = VexArchTILEGX;
+     vai.hwcaps = VEX_HWCAPS_TILEGX_BASE;
+     vai.endness = VexEndnessLE;
+
+     VG_(machine_get_cache_info)(&vai);
+
+     return True;
+   }
+
 #else
 #  error "Unknown arch"
 #endif
@@ -1737,6 +1838,9 @@ Int VG_(machine_get_size_of_largest_guest_register) ( void )
 #  elif defined(VGA_mips64)
    return 8;
 
+#  elif defined(VGA_tilegx)
+   return 8;
+
 #  else
 #    error "Unknown arch"
 #  endif
@@ -1751,7 +1855,9 @@ void* VG_(fnptr_to_fnentry)( void* f )
       || defined(VGP_arm_linux) || defined(VGO_darwin)          \
       || defined(VGP_ppc32_linux) || defined(VGP_ppc64le_linux) \
       || defined(VGP_s390x_linux) || defined(VGP_mips32_linux) \
-      || defined(VGP_mips64_linux) || defined(VGP_arm64_linux)
+      || defined(VGP_mips64_linux) || defined(VGP_arm64_linux) \
+      || defined(VGP_tilegx_linux) || defined(VGP_x86_solaris) \
+      || defined(VGP_amd64_solaris)
    return f;
 #  elif defined(VGP_ppc64be_linux)
    /* ppc64-linux uses the AIX scheme, in which f is a pointer to a

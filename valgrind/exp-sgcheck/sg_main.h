@@ -9,7 +9,7 @@
    This file is part of Ptrcheck, a Valgrind tool for checking pointer
    use in programs.
 
-   Copyright (C) 2008-2013 OpenWorks Ltd
+   Copyright (C) 2008-2015 OpenWorks Ltd
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
@@ -62,14 +62,14 @@ void sg_instrument_fini ( struct _SGEnv * env );
 void sg_instrument_IRStmt ( /*MOD*/struct _SGEnv * env, 
                             /*MOD*/IRSB* sbOut,
                             IRStmt* st,
-                            VexGuestLayout* layout,
+                            const VexGuestLayout* layout,
                             IRType gWordTy, IRType hWordTy );
 
 void sg_instrument_final_jump ( /*MOD*/struct _SGEnv * env, 
                                 /*MOD*/IRSB* sbOut,
                                 IRExpr* next,
                                 IRJumpKind jumpkind,
-                                VexGuestLayout* layout,
+                                const VexGuestLayout* layout,
                                 IRType gWordTy, IRType hWordTy );
 #endif
 

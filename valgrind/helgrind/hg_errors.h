@@ -8,7 +8,7 @@
    This file is part of Helgrind, a Valgrind tool for detecting errors
    in threaded programs.
 
-   Copyright (C) 2007-2013 OpenWorks Ltd
+   Copyright (C) 2007-2015 OpenWorks Ltd
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
@@ -35,20 +35,20 @@
 
 /* The standard bundle of error management functions that we are
 required to present to the core/tool interface at startup. */
-Bool  HG_(eq_Error)        ( VgRes not_used, Error* e1, Error* e2 );
-void  HG_(before_pp_Error) ( Error* err );
-void  HG_(pp_Error)        ( Error* err );
-UInt  HG_(update_extra)    ( Error* err );
+Bool  HG_(eq_Error)        ( VgRes not_used, const Error* e1, const Error* e2 );
+void  HG_(before_pp_Error) ( const Error* err );
+void  HG_(pp_Error)        ( const Error* err );
+UInt  HG_(update_extra)    ( const Error* err );
 Bool  HG_(recognised_suppression) ( const HChar* name, Supp *su );
 Bool  HG_(read_extra_suppression_info) ( Int fd, HChar** bufpp, SizeT* nBufp,
                                          Int* lineno, Supp* su );
-Bool  HG_(error_matches_suppression) ( Error* err, Supp* su );
-const HChar* HG_(get_error_name) ( Error* err );
-Bool  HG_(get_extra_suppression_info) ( Error* err,
+Bool  HG_(error_matches_suppression) ( const Error* err, const Supp* su );
+const HChar* HG_(get_error_name) ( const Error* err );
+SizeT HG_(get_extra_suppression_info) ( const Error* err,
                                         /*OUT*/HChar* buf, Int nBuf );
-Bool  HG_(print_extra_suppression_use) ( Supp* su,
+SizeT HG_(print_extra_suppression_use) ( const Supp* su,
                                          /*OUT*/HChar* buf, Int nBuf );
-void  HG_(update_extra_suppression_use) ( Error* err, Supp* su );
+void  HG_(update_extra_suppression_use) ( const Error* err, const Supp* su );
 
 /* Functions for recording various kinds of errors. */
 void HG_(record_error_Race) ( Thread* thr, 
@@ -61,6 +61,14 @@ void HG_(record_error_UnlockForeign)  ( Thread*, Thread*, Lock* );
 void HG_(record_error_UnlockBogus)    ( Thread*, Addr );
 void HG_(record_error_PthAPIerror)    ( Thread*, const HChar*, Word,
                                         const HChar* );
+
+/* Function for printing the details about an access */
+void HG_(print_access) (StackTrace ips, UInt n_ips,
+                        Thr*  thr_a,
+                        Addr  ga,
+                        SizeT SzB,
+                        Bool  isW,
+                        WordSetID locksHeldW );
 
 /* see the implementation for meaning of these params */
 void HG_(record_error_LockOrder)      ( Thread*, Lock*, Lock*,

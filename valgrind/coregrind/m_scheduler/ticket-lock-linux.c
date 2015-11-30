@@ -14,7 +14,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2011-2013 Bart Van Assche <bvanassche@acm.org>.
+   Copyright (C) 2011-2015 Bart Van Assche <bvanassche@acm.org>.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -78,15 +78,12 @@ static struct sched_lock *create_sched_lock(void)
    struct sched_lock *p;
 
    p = VG_(malloc)("sched_lock", sizeof(*p));
-   if (p) {
-      // The futex syscall requires that a futex takes four bytes.
-      vg_assert(sizeof(p->futex[0]) == 4);
 
-      p->head = 0;
-      p->tail = 0;
-      VG_(memset)((void*)p->futex, 0, sizeof(p->futex));
-      p->owner = 0;
-   }
+   // The futex syscall requires that a futex takes four bytes.
+   vg_assert(sizeof(p->futex[0]) == 4);
+
+   VG_(memset)(p, 0, sizeof(*p));
+
    INNER_REQUEST(ANNOTATE_RWLOCK_CREATE(p));
    INNER_REQUEST(ANNOTATE_BENIGN_RACE_SIZED(&p->futex, sizeof(p->futex), ""));
    return p;
@@ -123,7 +120,7 @@ static void acquire_sched_lock(struct sched_lock *p)
    ticket = __sync_fetch_and_add(&p->tail, 1);
    futex = &p->futex[ticket & TL_FUTEX_MASK];
    if (s_debug)
-      VG_(printf)("[%d/%d] acquire: ticket %d\n", VG_(getpid)(),
+      VG_(printf)("[%d/%d] acquire: ticket %u\n", VG_(getpid)(),
                   VG_(gettid)(), ticket);
    for (;;) {
       futex_value = *futex;
@@ -131,15 +128,15 @@ static void acquire_sched_lock(struct sched_lock *p)
       if (ticket == p->head)
          break;
       if (s_debug)
-         VG_(printf)("[%d/%d] acquire: ticket %d - waiting until"
-                     " futex[%ld] != %d\n", VG_(getpid)(),
+         VG_(printf)("[%d/%d] acquire: ticket %u - waiting until"
+                     " futex[%ld] != %u\n", VG_(getpid)(),
                      VG_(gettid)(), ticket, (long)(futex - p->futex),
                      futex_value);
       sres = VG_(do_syscall3)(__NR_futex, (UWord)futex,
                               VKI_FUTEX_WAIT | VKI_FUTEX_PRIVATE_FLAG,
                               futex_value);
-      if (sr_isError(sres) && sres._val != VKI_EAGAIN) {
-         VG_(printf)("futex_wait() returned error code %ld\n", sres._val);
+      if (sr_isError(sres) && sr_Err(sres) != VKI_EAGAIN) {
+         VG_(printf)("futex_wait() returned error code %lu\n", sr_Err(sres));
          vg_assert(False);
       }
    }
@@ -172,7 +169,7 @@ static void release_sched_lock(struct sched_lock *p)
       futex = &p->futex[wakeup_ticket & TL_FUTEX_MASK];
       futex_value = __sync_fetch_and_add(futex, 1);
       if (s_debug)
-         VG_(printf)("[%d/%d] release: waking up ticket %d (futex[%ld] = %d)"
+         VG_(printf)("[%d/%d] release: waking up ticket %u (futex[%ld] = %u)"
                      "\n", VG_(getpid)(), VG_(gettid)(), wakeup_ticket,
                      (long)(futex - p->futex), futex_value);
       sres = VG_(do_syscall3)(__NR_futex, (UWord)futex,
@@ -181,7 +178,7 @@ static void release_sched_lock(struct sched_lock *p)
       vg_assert(!sr_isError(sres));
    } else {
       if (s_debug)
-         VG_(printf)("[%d/%d] release: no thread is waiting for ticket %d\n",
+         VG_(printf)("[%d/%d] release: no thread is waiting for ticket %u\n",
                      VG_(getpid)(), VG_(gettid)(), wakeup_ticket);
    }
 }

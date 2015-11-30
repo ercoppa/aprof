@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2013 Julian Seward
+   Copyright (C) 2000-2015 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -64,7 +64,7 @@
 __attribute__ ((__noreturn__))
 extern void  VG_(core_panic)      ( const HChar* str );
 __attribute__ ((__noreturn__))
-extern void  VG_(core_panic_at)   ( const HChar* str, UnwindStartRegs* );
+extern void  VG_(core_panic_at)   ( const HChar* str, const UnwindStartRegs* );
 
 /* Exits with status as client exit code. */
 extern void VG_(client_exit)( Int status );
@@ -75,8 +75,9 @@ extern void VG_(exit_now)( Int status );
 
 /* Called when some unhandleable client behaviour is detected.
    Prints a msg and aborts. */
-extern void VG_(unimplemented) ( const HChar* msg )
-            __attribute__((__noreturn__));
+extern void VG_(unimplemented) ( const HChar* format, ... )
+            __attribute__((__noreturn__))
+            PRINTF_CHECK(1, 2);
 
 /* Show the state of various threads related information, such
    as the guest stacktrace for each thread.

@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2013 Julian Seward
+   Copyright (C) 2000-2015 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -91,9 +91,9 @@ extern Int    VG_(unlink) ( const HChar* file_name );
 
 extern SysRes VG_(poll) (struct vki_pollfd *fds, Int nfds, Int timeout);
 
-extern Int    VG_(readlink)( const HChar* path, HChar* buf, UInt bufsize );
+extern SSizeT VG_(readlink)( const HChar* path, HChar* buf, SizeT bufsiz);
 
-#if defined(VGO_linux)
+#if defined(VGO_linux) || defined(VGO_solaris)
 extern Int    VG_(getdents64)( Int fd, struct vki_dirent64 *dirp, UInt count );
 #endif
 
@@ -103,9 +103,9 @@ extern const HChar* VG_(dirname) ( const HChar* path );
 /* Return the name of a directory for temporary files. */
 extern const HChar* VG_(tmpdir)(void);
 
-/* Copy the working directory at startup into buf[0 .. size-1], or return
-   False if buf is too small. */
-extern Bool VG_(get_startup_wd) ( HChar* buf, SizeT size );
+/* Return the working directory at startup. The returned string is
+   persistent. */
+extern const HChar *VG_(get_startup_wd) ( void );
 
 #endif   // __PUB_TOOL_LIBCFILE_H
 

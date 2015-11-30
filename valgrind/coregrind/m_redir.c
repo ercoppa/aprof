@@ -7,9 +7,9 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2013 Julian Seward 
+   Copyright (C) 2000-2015 Julian Seward 
       jseward@acm.org
-   Copyright (C) 2003-2013 Jeremy Fitzhardinge
+   Copyright (C) 2003-2015 Jeremy Fitzhardinge
       jeremy@goop.org
 
    This program is free software; you can redistribute it and/or
@@ -53,7 +53,7 @@
 #include "pub_core_demangle.h"     // VG_(maybe_Z_demangle)
 #include "pub_core_libcproc.h"     // VG_(libdir)
 
-#include "config.h" /* GLIBC_2_* */
+#include "config.h" /* GLIBC_MANDATORY_*_REDIRECT */
 
 
 /* This module is a critical part of the redirection/intercept system.
@@ -256,7 +256,7 @@ typedef
 typedef
    struct _TopSpec {
       struct _TopSpec* next; /* linked list */
-      DebugInfo* seginfo;    /* symbols etc */
+      const DebugInfo* seginfo;    /* symbols etc */
       Spec*      specs;      /* specs pulled out of seginfo */
       Bool       mark; /* transient temporary used during deletion */
    }
@@ -308,12 +308,12 @@ static HChar* dinfo_strdup(const HChar* ec, const HChar*);
 static Bool   is_plausible_guest_addr(Addr);
 
 static void   show_redir_state ( const HChar* who );
-static void   show_active ( const HChar* left, Active* act );
+static void   show_active ( const HChar* left, const Active* act );
 
 static void   handle_maybe_load_notifier( const HChar* soname, 
-                                                HChar* symbol, Addr addr );
+                                          const HChar* symbol, Addr addr );
 
-static void   handle_require_text_symbols ( DebugInfo* );
+static void   handle_require_text_symbols ( const DebugInfo* );
 
 /*------------------------------------------------------------*/
 /*--- NOTIFICATIONS                                        ---*/
@@ -325,7 +325,7 @@ void generate_and_add_actives (
         Spec*    specs, 
         TopSpec* parent_spec,
 	/* debuginfo and the owning TopSpec */
-        DebugInfo* di,
+        const DebugInfo* di,
         TopSpec* parent_sym 
      );
 
@@ -334,8 +334,9 @@ void generate_and_add_actives (
    NULL terminated array, for easy iteration.  Caller must pass also
    the address of a 2-entry array which can be used in the common case
    to avoid dynamic allocation. */
-static HChar** alloc_symname_array ( HChar* pri_name, HChar** sec_names,
-                                     HChar** twoslots )
+static const HChar** alloc_symname_array ( const HChar* pri_name,
+                                           const HChar** sec_names,
+                                           const HChar** twoslots )
 {
    /* Special-case the common case: only one name.  We expect the
       caller to supply a stack-allocated 2-entry array for this. */
@@ -346,22 +347,22 @@ static HChar** alloc_symname_array ( HChar* pri_name, HChar** sec_names,
    }
    /* Else must use dynamic allocation.  Figure out size .. */
    Word    n_req = 1;
-   HChar** pp    = sec_names;
+   const HChar** pp = sec_names;
    while (*pp) { n_req++; pp++; }
    /* .. allocate and copy in. */
-   HChar** arr = dinfo_zalloc( "redir.asa.1", (n_req+1) * sizeof(HChar*) );
+   const HChar** arr = dinfo_zalloc("redir.asa.1", (n_req+1) * sizeof(HChar*));
    Word    i   = 0;
    arr[i++] = pri_name;
    pp = sec_names;
    while (*pp) { arr[i++] = *pp; pp++; }
-   tl_assert(i == n_req);
-   tl_assert(arr[n_req] == NULL);
+   vg_assert(i == n_req);
+   vg_assert(arr[n_req] == NULL);
    return arr;
 }
 
 
 /* Free the array allocated by alloc_symname_array, if any. */
-static void free_symname_array ( HChar** names, HChar** twoslots )
+static void free_symname_array ( const HChar** names, const HChar** twoslots )
 {
    if (names != twoslots)
       dinfo_free(names);
@@ -385,9 +386,7 @@ static HChar const* advance_to_comma ( HChar const* c ) {
    topspecs list, and (2) figure out what new binding are now active,
    and, as a result, add them to the actives mapping. */
 
-#define N_DEMANGLED 256
-
-void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
+void VG_(redir_notify_new_DebugInfo)( const DebugInfo* newdi )
 {
    Bool         ok, isWrap;
    Int          i, nsyms, becTag, becPrio;
@@ -395,11 +394,11 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
    Spec*        spec;
    TopSpec*     ts;
    TopSpec*     newts;
-   HChar*       sym_name_pri;
-   HChar**      sym_names_sec;
+   const HChar*  sym_name_pri;
+   const HChar** sym_names_sec;
    SymAVMAs     sym_avmas;
-   HChar        demangled_sopatt[N_DEMANGLED];
-   HChar        demangled_fnpatt[N_DEMANGLED];
+   const HChar* demangled_sopatt;
+   const HChar* demangled_fnpatt;
    Bool         check_ppcTOCs = False;
    Bool         isText;
    const HChar* newdi_soname;
@@ -407,6 +406,11 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
    const HChar* const pthread_soname = "libpthread.so.0";
    const HChar* const pthread_stack_cache_actsize_varname
       = "stack_cache_actsize";
+#if defined(VGO_solaris)
+   Bool         vg_vfork_fildes_var_search = False;
+   const HChar* const vg_preload_core_soname = "vgpreload_core.so.0";
+   const HChar* const vg_vfork_fildes_varname = "vg_vfork_fildes";
+#endif
 
 #  if defined(VG_PLAT_USES_PPCTOC)
    check_ppcTOCs = True;
@@ -451,15 +455,15 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
             pointing to files inside the valgrind build directories. */
          struct vg_stat newdi_stat;
          SysRes newdi_res;
-         HChar in_vglib_filename[VKI_PATH_MAX];
          struct vg_stat in_vglib_stat;
          SysRes in_vglib_res;
 
          newdi_res = VG_(stat)(newdi_filename, &newdi_stat);
-         
-         VG_(strncpy) (in_vglib_filename, VG_(libdir), VKI_PATH_MAX);
-         VG_(strncat) (in_vglib_filename, "/", VKI_PATH_MAX);
-         VG_(strncat) (in_vglib_filename, newdi_basename, VKI_PATH_MAX);
+
+         HChar in_vglib_filename[VG_(strlen)(VG_(libdir)) + 1 +
+                                 VG_(strlen)(newdi_basename) + 1];
+         VG_(sprintf)(in_vglib_filename, "%s/%s", VG_(libdir), newdi_basename);
+
          in_vglib_res = VG_(stat)(in_vglib_filename, &in_vglib_stat);
 
          /* If we find newdi_basename in inner VALGRIND_LIB
@@ -505,20 +509,25 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
       SimHintiS(SimHint_no_nptl_pthread_stackcache, VG_(clo_sim_hints))
       && 0 == VG_(strcmp)(newdi_soname, pthread_soname);
 
+#if defined(VGO_solaris)
+   vg_vfork_fildes_var_search =
+      0 == VG_(strcmp)(newdi_soname, vg_preload_core_soname);
+#endif
+
    nsyms = VG_(DebugInfo_syms_howmany)( newdi );
    for (i = 0; i < nsyms; i++) {
       VG_(DebugInfo_syms_getidx)( newdi, i, &sym_avmas,
                                   NULL, &sym_name_pri, &sym_names_sec,
                                   &isText, NULL );
       /* Set up to conveniently iterate over all names for this symbol. */
-      HChar*  twoslots[2];
-      HChar** names_init = alloc_symname_array(sym_name_pri, sym_names_sec,
-                                               &twoslots[0]);
-      HChar** names;
+      const HChar*  twoslots[2];
+      const HChar** names_init =
+         alloc_symname_array(sym_name_pri, sym_names_sec, &twoslots[0]);
+      const HChar** names;
       for (names = names_init; *names; names++) {
          ok = VG_(maybe_Z_demangle)( *names,
-                                     demangled_sopatt, N_DEMANGLED,
-                                     demangled_fnpatt, N_DEMANGLED,
+                                     &demangled_sopatt,
+                                     &demangled_fnpatt,
                                      &isWrap, &becTag, &becPrio );
          /* ignore data symbols */
          if (!isText) {
@@ -535,6 +544,18 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
                VG_(client__stack_cache_actsize__addr) = (SizeT*) sym_avmas.main;
                dehacktivate_pthread_stack_cache_var_search = False;
             }
+#if defined(VGO_solaris)
+            if (vg_vfork_fildes_var_search
+                && 0 == VG_(strcmp)(*names, vg_vfork_fildes_varname)) {
+               if ( VG_(clo_verbosity) > 1 ) {
+                  VG_(message)( Vg_DebugMsg,
+                                "vfork kludge: found symbol %s at addr %p\n",
+                                *names, (void*) sym_avmas.main);
+               }
+               VG_(vfork_fildes_addr) = (Int*) sym_avmas.main;
+               vg_vfork_fildes_var_search = False;
+            }
+#endif
             continue;
          }
          if (!ok) {
@@ -551,6 +572,7 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
             continue;
          }
 
+         HChar *replaced_sopatt = NULL;
          if (0 == VG_(strncmp) (demangled_sopatt, 
                                 VG_SO_SYN_PREFIX, VG_SO_SYN_PREFIX_LEN)) {
             /* This is a redirection for handling lib so synonyms. If we
@@ -576,8 +598,11 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
                   // Found the demangle_sopatt synonym => replace it
                   first = last + 1;
                   last = advance_to_comma(first);
-                  VG_(strncpy)(demangled_sopatt, first, last - first);
-                  demangled_sopatt[last - first] = '\0';
+                  replaced_sopatt = dinfo_zalloc("redir.rnnD.5",
+                                                 last - first + 1);
+                  VG_(strncpy)(replaced_sopatt, first, last - first);
+                  replaced_sopatt[last - first] = '\0';
+                  demangled_sopatt = replaced_sopatt;
                   break;
                }
 
@@ -587,17 +612,13 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
             }
             
             // If we have not replaced the sopatt, then skip the redir.
-            if (0 == VG_(strncmp) (demangled_sopatt, 
-                                   VG_SO_SYN_PREFIX, VG_SO_SYN_PREFIX_LEN))
+            if (replaced_sopatt == NULL)
                continue;
          }
 
          spec = dinfo_zalloc("redir.rnnD.1", sizeof(Spec));
-         vg_assert(spec);
          spec->from_sopatt = dinfo_strdup("redir.rnnD.2", demangled_sopatt);
          spec->from_fnpatt = dinfo_strdup("redir.rnnD.3", demangled_fnpatt);
-         vg_assert(spec->from_sopatt);
-         vg_assert(spec->from_fnpatt);
          spec->to_addr = sym_avmas.main;
          spec->isWrap = isWrap;
          spec->becTag = becTag;
@@ -618,21 +639,30 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
       VG_(message)(Vg_DebugMsg,
                    "=> pthread stack cache cannot be disabled!\n");
    }
+#if defined(VGO_solaris)
+   if (vg_vfork_fildes_var_search) {
+      VG_(message)(Vg_DebugMsg,
+                   "WARNING: could not find symbol for var %s in %s\n",
+                   vg_vfork_fildes_varname, vg_preload_core_soname);
+      VG_(message)(Vg_DebugMsg,
+                   "=> posix_spawn() will not work correctly!\n");
+   }
+#endif
 
    if (check_ppcTOCs) {
       for (i = 0; i < nsyms; i++) {
          VG_(DebugInfo_syms_getidx)( newdi, i, &sym_avmas,
                                      NULL, &sym_name_pri, &sym_names_sec,
                                      &isText, NULL );
-         HChar*  twoslots[2];
-         HChar** names_init = alloc_symname_array(sym_name_pri, sym_names_sec,
-                                                  &twoslots[0]);
-         HChar** names;
+         const HChar*  twoslots[2];
+         const HChar** names_init =
+            alloc_symname_array(sym_name_pri, sym_names_sec, &twoslots[0]);
+         const HChar** names;
          for (names = names_init; *names; names++) {
             ok = isText
                  && VG_(maybe_Z_demangle)( 
-                       *names, demangled_sopatt, N_DEMANGLED,
-                       demangled_fnpatt, N_DEMANGLED, &isWrap, NULL, NULL );
+                       *names, &demangled_sopatt,
+                       &demangled_fnpatt, &isWrap, NULL, NULL );
             if (!ok)
                /* not a redirect.  Ignore. */
                continue;
@@ -661,7 +691,6 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
    /* Ok.  Now specList holds the list of specs from the DebugInfo.
       Build a new TopSpec, but don't add it to topSpecs yet. */
    newts = dinfo_zalloc("redir.rnnD.4", sizeof(TopSpec));
-   vg_assert(newts);
    newts->next    = NULL; /* not significant */
    newts->seginfo = newdi;
    newts->specs   = specList;
@@ -714,8 +743,6 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
    handle_require_text_symbols(newdi);
 }
 
-#undef N_DEMANGLED
-
 /* Add a new target for an indirect function. Adds a new redirection
    for the indirection function with address old_from that redirects
    the ordinary function with address new_from to the target address
@@ -737,8 +764,8 @@ void VG_(redir_add_ifunc_target)( Addr old_from, Addr new_from )
     if (VG_(clo_trace_redir)) {
        VG_(message)( Vg_DebugMsg,
                      "Adding redirect for indirect function "
-                     "0x%llx from 0x%llx -> 0x%llx\n",
-                     (ULong)old_from, (ULong)new_from, (ULong)new.to_addr );
+                     "0x%lx from 0x%lx -> 0x%lx\n",
+                     old_from, new_from, new.to_addr );
     }
 }
 
@@ -753,7 +780,7 @@ void generate_and_add_actives (
         Spec*    specs, 
         TopSpec* parent_spec,
 	/* seginfo and the owning TopSpec */
-        DebugInfo* di,
+        const DebugInfo* di,
         TopSpec* parent_sym 
      )
 {
@@ -762,8 +789,8 @@ void generate_and_add_actives (
    Active  act;
    Int     nsyms, i;
    SymAVMAs  sym_avmas;
-   HChar*  sym_name_pri;
-   HChar** sym_names_sec;
+   const HChar*  sym_name_pri;
+   const HChar** sym_names_sec;
 
    /* First figure out which of the specs match the seginfo's soname.
       Also clear the 'done' bits, so that after the main loop below
@@ -787,10 +814,10 @@ void generate_and_add_actives (
       VG_(DebugInfo_syms_getidx)( di, i, &sym_avmas,
                                   NULL, &sym_name_pri, &sym_names_sec,
                                   &isText, &isIFunc );
-      HChar*  twoslots[2];
-      HChar** names_init = alloc_symname_array(sym_name_pri, sym_names_sec,
-                                               &twoslots[0]);
-      HChar** names;
+      const HChar*  twoslots[2];
+      const HChar** names_init =
+         alloc_symname_array(sym_name_pri, sym_names_sec, &twoslots[0]);
+      const HChar** names;
       for (names = names_init; *names; names++) {
 
          /* ignore data symbols */
@@ -992,9 +1019,9 @@ static void maybe_add_active ( Active act )
          they get redirected to 'to'.  So discard them.  Just for
          paranoia (but, I believe, unnecessarily), discard 'to' as
          well. */
-      VG_(discard_translations)( (Addr64)act.from_addr, 1,
+      VG_(discard_translations)( act.from_addr, 1,
                                  "redir_new_DebugInfo(from_addr)");
-      VG_(discard_translations)( (Addr64)act.to_addr, 1,
+      VG_(discard_translations)( act.to_addr, 1,
                                  "redir_new_DebugInfo(to_addr)");
       if (VG_(clo_verbosity) > 2) {
          VG_(message)(Vg_UserMsg, "Adding active redirection:\n");
@@ -1020,7 +1047,7 @@ static void maybe_add_active ( Active act )
    simple -- just get rid of all actives derived from it, and free up
    the associated list elements. */
 
-void VG_(redir_notify_delete_DebugInfo)( DebugInfo* delsi )
+void VG_(redir_notify_delete_DebugInfo)( const DebugInfo* delsi )
 {
    TopSpec* ts;
    TopSpec* tsPrev;
@@ -1078,9 +1105,9 @@ void VG_(redir_notify_delete_DebugInfo)( DebugInfo* delsi )
          VG_(OSetWord_Insert)( tmpSet, act->from_addr );
          /* While we have our hands on both the 'from' and 'to'
             of this Active, do paranoid stuff with tt/tc. */
-         VG_(discard_translations)( (Addr64)act->from_addr, 1,
+         VG_(discard_translations)( act->from_addr, 1,
                                     "redir_del_DebugInfo(from_addr)");
-         VG_(discard_translations)( (Addr64)act->to_addr, 1,
+         VG_(discard_translations)( act->to_addr, 1,
                                     "redir_del_DebugInfo(to_addr)");
       }
    }
@@ -1175,11 +1202,9 @@ static void add_hardwired_spec (const  HChar* sopatt, const HChar* fnpatt,
                                 const HChar** mandatory )
 {
    Spec* spec = dinfo_zalloc("redir.ahs.1", sizeof(Spec));
-   vg_assert(spec);
 
    if (topSpecs == NULL) {
       topSpecs = dinfo_zalloc("redir.ahs.2", sizeof(TopSpec));
-      vg_assert(topSpecs);
       /* symtab_zalloc sets all fields to zero */
    }
 
@@ -1187,8 +1212,12 @@ static void add_hardwired_spec (const  HChar* sopatt, const HChar* fnpatt,
    vg_assert(topSpecs->next == NULL);
    vg_assert(topSpecs->seginfo == NULL);
    /* FIXED PARTS */
-   spec->from_sopatt = (HChar *)sopatt;
-   spec->from_fnpatt = (HChar *)fnpatt;
+   /* Note, that these CONST_CAST will not cause a problem, in the sense
+      that VG_(redir_notify_delete_DebugInfo) will delete them. The reason
+      is that the TopSpec here has seginfo == NULL and such a TopSpec will
+      never be freed. See the asserts at the beginning of said function. */
+   spec->from_sopatt = CONST_CAST(HChar *,sopatt);
+   spec->from_fnpatt = CONST_CAST(HChar *,fnpatt);
    spec->to_addr     = to_addr;
    spec->isWrap      = False;
    spec->mandatory   = mandatory;
@@ -1242,10 +1271,7 @@ void VG_(redir_initialise) ( void )
       start, otherwise ld.so (glibc-2.3.5) makes a lot of noise. */
    if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
       const HChar** mandatory;
-#     if defined(GLIBC_2_2) || defined(GLIBC_2_3) || defined(GLIBC_2_4) \
-         || defined(GLIBC_2_5) || defined(GLIBC_2_6) || defined(GLIBC_2_7) \
-         || defined(GLIBC_2_8) || defined(GLIBC_2_9) \
-         || defined(GLIBC_2_10) || defined(GLIBC_2_11)
+#     ifndef GLIBC_MANDATORY_INDEX_AND_STRLEN_REDIRECT
       mandatory = NULL;
 #     else
       /* for glibc-2.12 and later, this is mandatory - can't sanely
@@ -1282,9 +1308,7 @@ void VG_(redir_initialise) ( void )
       add_hardwired_spec(
          "ld-linux-x86-64.so.2", "strlen",
          (Addr)&VG_(amd64_linux_REDIR_FOR_strlen),
-#        if defined(GLIBC_2_2) || defined(GLIBC_2_3) || defined(GLIBC_2_4) \
-            || defined(GLIBC_2_5) || defined(GLIBC_2_6) || defined(GLIBC_2_7) \
-            || defined(GLIBC_2_8) || defined(GLIBC_2_9)
+#        ifndef GLIBC_MANDATORY_STRLEN_REDIRECT
          NULL
 #        else
          /* for glibc-2.10 and later, this is mandatory - can't sanely
@@ -1420,11 +1444,13 @@ void VG_(redir_initialise) ( void )
          (Addr)&VG_(arm64_linux_REDIR_FOR_strcmp),
          NULL 
       );
-      //add_hardwired_spec(
-      //   "ld-linux.so.3", "memcpy",
-      //   (Addr)&VG_(arm_linux_REDIR_FOR_memcpy),
-      //   complain_about_stripped_glibc_ldso
-      //);
+#     if defined(VGPV_arm64_linux_android)
+      add_hardwired_spec(
+         "NONE", "__dl_strlen", // in /system/bin/linker64
+         (Addr)&VG_(arm64_linux_REDIR_FOR_strlen),
+         NULL
+      );
+#     endif
    }
 
 #  elif defined(VGP_x86_darwin)
@@ -1496,6 +1522,49 @@ void VG_(redir_initialise) ( void )
       );
    }
 
+#  elif defined(VGP_tilegx_linux)
+   if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
+
+      add_hardwired_spec(
+         "ld.so.1", "strlen",
+         (Addr)&VG_(tilegx_linux_REDIR_FOR_strlen), NULL
+      );
+   }
+
+#  elif defined(VGP_x86_solaris)
+   /* If we're using memcheck, use these intercepts right from
+      the start, otherwise ld.so makes a lot of noise. */
+   if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
+      add_hardwired_spec("/lib/ld.so.1", "strcmp",
+                         (Addr)&VG_(x86_solaris_REDIR_FOR_strcmp), NULL);
+   }
+   if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
+      add_hardwired_spec("/lib/ld.so.1", "strlen",
+                         (Addr)&VG_(x86_solaris_REDIR_FOR_strlen), NULL);
+   }
+
+#  elif defined(VGP_amd64_solaris)
+   if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
+      add_hardwired_spec("/lib/amd64/ld.so.1", "strcpy",
+                         (Addr)&VG_(amd64_solaris_REDIR_FOR_strcpy), NULL);
+   }
+   if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
+      add_hardwired_spec("/lib/amd64/ld.so.1", "strncpy",
+                         (Addr)&VG_(amd64_solaris_REDIR_FOR_strncpy), NULL);
+   }
+   if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
+      add_hardwired_spec("/lib/amd64/ld.so.1", "strcmp",
+                         (Addr)&VG_(amd64_solaris_REDIR_FOR_strcmp), NULL);
+   }
+   if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
+      add_hardwired_spec("/lib/amd64/ld.so.1", "strcat",
+                         (Addr)&VG_(amd64_solaris_REDIR_FOR_strcat), NULL);
+   }
+   if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
+      add_hardwired_spec("/lib/amd64/ld.so.1", "strlen",
+                         (Addr)&VG_(amd64_solaris_REDIR_FOR_strlen), NULL);
+   }
+
 #  else
 #    error Unknown platform
 #  endif
@@ -1513,13 +1582,12 @@ static void* dinfo_zalloc(const HChar* ec, SizeT n) {
    void* p;
    vg_assert(n > 0);
    p = VG_(arena_malloc)(VG_AR_DINFO, ec, n);
-   tl_assert(p);
    VG_(memset)(p, 0, n);
    return p;
 }
 
 static void dinfo_free(void* p) {
-   tl_assert(p);
+   vg_assert(p);
    return VG_(arena_free)(VG_AR_DINFO, p);
 }
 
@@ -1534,7 +1602,8 @@ static Bool is_plausible_guest_addr(Addr a)
 {
    NSegment const* seg = VG_(am_find_nsegment)(a);
    return seg != NULL
-          && (seg->kind == SkAnonC || seg->kind == SkFileC)
+          && (seg->kind == SkAnonC || seg->kind == SkFileC ||
+              seg->kind == SkShmC)
           && (seg->hasX || seg->hasR); /* crude x86-specific hack */
 }
 
@@ -1545,7 +1614,7 @@ static Bool is_plausible_guest_addr(Addr a)
 
 static 
 void handle_maybe_load_notifier( const HChar* soname, 
-                                       HChar* symbol, Addr addr )
+                                 const HChar* symbol, Addr addr )
 {
 #  if defined(VGP_x86_linux)
    /* x86-linux only: if we see _dl_sysinfo_int80, note its address.
@@ -1586,7 +1655,7 @@ void handle_maybe_load_notifier( const HChar* soname,
    symbols that satisfy any --require-text-symbol= specifications that
    apply to it, and abort the run with an error message if not.
 */
-static void handle_require_text_symbols ( DebugInfo* di )
+static void handle_require_text_symbols ( const DebugInfo* di )
 {
    /* First thing to do is figure out which, if any,
       --require-text-symbol specification strings apply to this
@@ -1594,18 +1663,15 @@ static void handle_require_text_symbols ( DebugInfo* di )
       frequently be used.  Work through the list of specs and
       accumulate in fnpatts[] the fn patterns that pertain to this
       object. */
-   HChar* fnpatts[VG_CLO_MAX_REQ_TSYMS];
-   Int    fnpatts_used = 0;
+   XArray *fnpatts = VG_(newXA)( VG_(malloc), "m_redir.hrts.5",
+                                 VG_(free), sizeof(HChar*) );
+
    Int    i, j;
    const HChar* di_soname = VG_(DebugInfo_get_soname)(di);
    vg_assert(di_soname); // must be present
 
-   VG_(memset)(&fnpatts, 0, sizeof(fnpatts));
-
-   vg_assert(VG_(clo_n_req_tsyms) >= 0);
-   vg_assert(VG_(clo_n_req_tsyms) <= VG_CLO_MAX_REQ_TSYMS);
-   for (i = 0; i < VG_(clo_n_req_tsyms); i++) {
-      const HChar* clo_spec = VG_(clo_req_tsyms)[i];
+   for (i = 0; i < VG_(sizeXA)(VG_(clo_req_tsyms)); i++) {
+      const HChar* clo_spec = *(HChar**) VG_(indexXA)(VG_(clo_req_tsyms), i);
       vg_assert(clo_spec && VG_(strlen)(clo_spec) >= 4);
       // clone the spec, so we can stick a zero at the end of the sopatt
       HChar *spec = VG_(strdup)("m_redir.hrts.1", clo_spec);
@@ -1617,43 +1683,47 @@ static void handle_require_text_symbols ( DebugInfo* di )
       vg_assert(fnpatt && *fnpatt == sep);
       *fnpatt = 0;
       fnpatt++;
-      if (VG_(string_match)(sopatt, di_soname))
-         fnpatts[fnpatts_used++]
-            = VG_(strdup)("m_redir.hrts.2", fnpatt);
+      if (VG_(string_match)(sopatt, di_soname)) {
+         HChar *pattern = VG_(strdup)("m_redir.hrts.2", fnpatt);
+         VG_(addToXA)(fnpatts, &pattern);
+      }
       VG_(free)(spec);
    }
 
-   if (fnpatts_used == 0)
+   if (VG_(sizeXA)(fnpatts) == 0) {
+      VG_(deleteXA)(fnpatts);
       return;  /* no applicable spec strings */
+   }
 
-   /* So finally, fnpatts[0 .. fnpatts_used - 1] contains the set of
+   /* So finally, fnpatts contains the set of
       (patterns for) text symbol names that must be found in this
       object, in order to continue.  That is, we must find at least
       one text symbol name that matches each pattern, else we must
       abort the run. */
 
    if (0) VG_(printf)("for %s\n", di_soname);
-   for (i = 0; i < fnpatts_used; i++)
-      if (0) VG_(printf)("   fnpatt: %s\n", fnpatts[i]);
+   for (i = 0; i < VG_(sizeXA)(fnpatts); i++)
+      if (0) VG_(printf)("   fnpatt: %s\n",
+                         *(HChar**) VG_(indexXA)(fnpatts, i));
 
    /* For each spec, look through the syms to find one that matches.
       This isn't terribly efficient but it happens rarely, so no big
       deal. */
-   for (i = 0; i < fnpatts_used; i++) {
+   for (i = 0; i < VG_(sizeXA)(fnpatts); i++) {
       Bool   found  = False;
-      HChar* fnpatt = fnpatts[i];
+      const HChar* fnpatt = *(HChar**) VG_(indexXA)(fnpatts, i);
       Int    nsyms  = VG_(DebugInfo_syms_howmany)(di);
       for (j = 0; j < nsyms; j++) {
          Bool    isText        = False;
-         HChar*  sym_name_pri  = NULL;
-         HChar** sym_names_sec = NULL;
+         const HChar*  sym_name_pri  = NULL;
+         const HChar** sym_names_sec = NULL;
          VG_(DebugInfo_syms_getidx)( di, j, NULL,
                                      NULL, &sym_name_pri, &sym_names_sec,
                                      &isText, NULL );
-         HChar*  twoslots[2];
-         HChar** names_init = alloc_symname_array(sym_name_pri, sym_names_sec,
-                                                  &twoslots[0]);
-         HChar** names;
+         const HChar*  twoslots[2];
+         const HChar** names_init =
+            alloc_symname_array(sym_name_pri, sym_names_sec, &twoslots[0]);
+         const HChar** names;
          for (names = names_init; *names; names++) {
             /* ignore data symbols */
             if (0) VG_(printf)("QQQ %s\n", *names);
@@ -1692,8 +1762,7 @@ static void handle_require_text_symbols ( DebugInfo* di )
    }
 
    /* All required specs were found.  Just free memory and return. */
-   for (i = 0; i < fnpatts_used; i++)
-      VG_(free)(fnpatts[i]);
+   VG_(deleteXA)(fnpatts);
 }
 
 
@@ -1701,34 +1770,38 @@ static void handle_require_text_symbols ( DebugInfo* di )
 /*--- SANITY/DEBUG                                         ---*/
 /*------------------------------------------------------------*/
 
-static void show_spec ( const HChar* left, Spec* spec )
+static void show_spec ( const HChar* left, const Spec* spec )
 {
    VG_(message)( Vg_DebugMsg, 
-                 "%s%25s %30s %s-> (%04d.%d) 0x%08llx\n",
+                 "%s%-25s %-30s %s-> (%04d.%d) 0x%08lx\n",
                  left,
                  spec->from_sopatt, spec->from_fnpatt,
                  spec->isWrap ? "W" : "R",
                  spec->becTag, spec->becPrio,
-                 (ULong)spec->to_addr );
+                 spec->to_addr );
 }
 
-static void show_active ( const HChar* left, Active* act )
+static void show_active ( const HChar* left, const Active* act )
 {
    Bool ok;
-   HChar name1[64] = "";
-   HChar name2[64] = "";
-   name1[0] = name2[0] = 0;
-   ok = VG_(get_fnname_w_offset)(act->from_addr, name1, 64);
-   if (!ok) VG_(strcpy)(name1, "???");
-   ok = VG_(get_fnname_w_offset)(act->to_addr, name2, 64);
-   if (!ok) VG_(strcpy)(name2, "???");
+   const HChar *buf;
+ 
+   ok = VG_(get_fnname_w_offset)(act->from_addr, &buf);
+   if (!ok) buf = "???";
+   // Stash away name1
+   HChar name1[VG_(strlen)(buf) + 1];
+   VG_(strcpy)(name1, buf);
 
-   VG_(message)(Vg_DebugMsg, "%s0x%08llx (%20s) %s-> (%04d.%d) 0x%08llx %s\n", 
+   const HChar *name2;
+   ok = VG_(get_fnname_w_offset)(act->to_addr, &name2);
+   if (!ok) name2 = "???";
+
+   VG_(message)(Vg_DebugMsg, "%s0x%08lx (%-20s) %s-> (%04d.%d) 0x%08lx %s\n", 
                              left, 
-                             (ULong)act->from_addr, name1,
+                             act->from_addr, name1,
                              act->isWrap ? "W" : "R",
                              act->becTag, act->becPrio,
-                             (ULong)act->to_addr, name2 );
+                             act->to_addr, name2 );
 }
 
 static void show_redir_state ( const HChar* who )

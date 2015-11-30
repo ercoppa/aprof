@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2008-2013 OpenWorks Ltd
+   Copyright (C) 2008-2015 OpenWorks Ltd
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
@@ -30,6 +30,7 @@
 */
 
 #include "pub_core_basics.h"
+#include "pub_core_clientstate.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcprint.h"
@@ -99,7 +100,7 @@ void VG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai )
 
    (void) VG_(get_data_description)( ai->Addr.Variable.descr1,
                                      ai->Addr.Variable.descr2, a );
-   /* If there's nothing in descr1/2, free them.  Why is it safe to to
+   /* If there's nothing in descr1/2, free them.  Why is it safe to
       VG_(indexXA) at zero here?  Because VG_(get_data_description)
       guarantees to zero terminate descr1/2 regardless of the outcome
       of the call.  So there's always at least one element in each XA
@@ -124,15 +125,12 @@ void VG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai )
    }
    /* -- Have a look at the low level data symbols - perhaps it's in
       there. -- */
-   VG_(memset)( &ai->Addr.DataSym.name,
-                0, sizeof(ai->Addr.DataSym.name));
+   const HChar *name;
    if (VG_(get_datasym_and_offset)(
-             a, &ai->Addr.DataSym.name[0],
-             sizeof(ai->Addr.DataSym.name)-1,
+             a, &name,
              &ai->Addr.DataSym.offset )) {
+      ai->Addr.DataSym.name = VG_(strdup)("mc.da.dsname", name);
       ai->tag = Addr_DataSym;
-      vg_assert( ai->Addr.DataSym.name
-                    [ sizeof(ai->Addr.DataSym.name)-1 ] == 0);
       return;
    }
    /* -- Perhaps it's on a thread's stack? -- */
@@ -206,17 +204,11 @@ void VG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai )
    }
 
    /* -- last ditch attempt at classification -- */
-   vg_assert( sizeof(ai->Addr.SectKind.objname) > 4 );
-   VG_(memset)( &ai->Addr.SectKind.objname, 
-                0, sizeof(ai->Addr.SectKind.objname));
-   VG_(strcpy)( ai->Addr.SectKind.objname, "???" );
-   sect = VG_(DebugInfo_sect_kind)( &ai->Addr.SectKind.objname[0],
-                                    sizeof(ai->Addr.SectKind.objname)-1, a);
+   sect = VG_(DebugInfo_sect_kind)( &name, a);
    if (sect != Vg_SectUnknown) {
       ai->tag = Addr_SectKind;
+      ai->Addr.SectKind.objname = VG_(strdup)("mc.da.dsname", name);
       ai->Addr.SectKind.kind = sect;
-      vg_assert( ai->Addr.SectKind.objname
-                    [ sizeof(ai->Addr.SectKind.objname)-1 ] == 0);
       return;
    }
 
@@ -266,6 +258,52 @@ void VG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai )
       }
    }
 
+   /* -- and yet another last ditch attempt at classification -- */
+   /* Try to find a segment belonging to the client. */
+   {
+      const NSegment *seg = VG_(am_find_nsegment) (a);
+
+      /* Special case to detect the brk data segment. */
+      if (seg != NULL
+#if defined(VGO_solaris)
+          && (seg->kind == SkAnonC || seg->kind == SkFileC)
+#else
+          && seg->kind == SkAnonC
+#endif /* VGO_solaris */
+          && VG_(brk_limit) >= seg->start
+          && VG_(brk_limit) <= seg->end+1) {
+         /* Address a is in a Anon Client segment which contains
+            VG_(brk_limit). So, this segment is the brk data segment
+            as initimg-linux.c:setup_client_dataseg maps an anonymous
+            segment followed by a reservation, with one reservation
+            page that will never be used by syswrap-generic.c:do_brk,
+            when increasing VG_(brk_limit).
+            So, the brk data segment will never be merged with the
+            next segment, and so an address in that area will
+            either be in the brk data segment, or in the unmapped
+            part of the brk data segment reservation. */
+         ai->tag = Addr_BrkSegment;
+         ai->Addr.BrkSegment.brk_limit = VG_(brk_limit);
+         return;
+      }
+
+      if (seg != NULL 
+          && (seg->kind == SkAnonC 
+              || seg->kind == SkFileC
+              || seg->kind == SkShmC)) {
+         ai->tag = Addr_SegmentKind;
+         ai->Addr.SegmentKind.segkind = seg->kind;
+         ai->Addr.SegmentKind.filename = NULL;
+         if (seg->kind == SkFileC)
+            ai->Addr.SegmentKind.filename
+               = VG_(strdup)("mc.da.skfname", VG_(am_get_filename)(seg));
+         ai->Addr.SegmentKind.hasR = seg->hasR;
+         ai->Addr.SegmentKind.hasW = seg->hasW;
+         ai->Addr.SegmentKind.hasX = seg->hasX;
+         return;
+      }
+   }
+
    /* -- Clueless ... -- */
    ai->tag = Addr_Unknown;
    return;
@@ -280,16 +318,20 @@ void VG_(initThreadInfo) (ThreadInfo *tinfo)
 void VG_(clear_addrinfo) ( AddrInfo* ai)
 {
    switch (ai->tag) {
+      case Addr_Undescribed:
+         break;
+
       case Addr_Unknown:
-          break;
+         break;
 
       case Addr_Stack: 
-          break;
+         break;
 
       case Addr_Block:
          break;
 
       case Addr_DataSym:
+         VG_(free)(ai->Addr.DataSym.name);
          break;
 
       case Addr_Variable:
@@ -304,6 +346,14 @@ void VG_(clear_addrinfo) ( AddrInfo* ai)
          break;
 
       case Addr_SectKind:
+         VG_(free)(ai->Addr.SectKind.objname);
+         break;
+
+      case Addr_BrkSegment:
+         break;
+
+      case Addr_SegmentKind:
+         VG_(free)(ai->Addr.SegmentKind.filename);
          break;
 
       default:
@@ -346,7 +396,18 @@ static UInt tnr_else_tid (ThreadInfo tinfo)
       return tinfo.tid;
 }
 
-static void pp_addrinfo_WRK ( Addr a, AddrInfo* ai, Bool mc, Bool maybe_gcc )
+static const HChar* pp_SegKind ( SegKind sk )
+{
+   switch (sk) {
+      case SkAnonC: return "anonymous";
+      case SkFileC: return "mapped file";
+      case SkShmC:  return "shared memory";
+      default:      vg_assert(0);
+   }
+}
+
+static void pp_addrinfo_WRK ( Addr a, const AddrInfo* ai, Bool mc,
+                              Bool maybe_gcc )
 {
    const HChar* xpre  = VG_(clo_xml) ? "  <auxwhat>" : " ";
    const HChar* xpost = VG_(clo_xml) ? "</auxwhat>"  : "";
@@ -354,38 +415,38 @@ static void pp_addrinfo_WRK ( Addr a, AddrInfo* ai, Bool mc, Bool maybe_gcc )
    vg_assert (!maybe_gcc || mc); // maybe_gcc can only be given in mc mode.
 
    switch (ai->tag) {
+      case Addr_Undescribed:
+         VG_(core_panic)("mc_pp_AddrInfo Addr_Undescribed");
+
       case Addr_Unknown:
          if (maybe_gcc) {
-            VG_(emit)( "%sAddress 0x%llx is just below the stack ptr.  "
+            VG_(emit)( "%sAddress 0x%lx is just below the stack ptr.  "
                        "To suppress, use: --workaround-gcc296-bugs=yes%s\n",
-                       xpre, (ULong)a, xpost );
+                       xpre, a, xpost );
 	 } else {
-            VG_(emit)( "%sAddress 0x%llx "
+            VG_(emit)( "%sAddress 0x%lx "
                        "is not stack'd, malloc'd or %s%s\n",
-                       xpre, 
-                       (ULong)a, 
+                       xpre, a,
                        mc ? "(recently) free'd" : "on a free list",
                        xpost );
          }
          break;
 
       case Addr_Stack: 
-         VG_(emit)( "%sAddress 0x%llx is on thread %s%d's stack%s\n", 
-                    xpre, (ULong)a, 
+         VG_(emit)( "%sAddress 0x%lx is on thread %s%u's stack%s\n", 
+                    xpre, a, 
                     opt_tnr_prefix (ai->Addr.Stack.tinfo), 
                     tnr_else_tid (ai->Addr.Stack.tinfo), 
                     xpost );
          if (ai->Addr.Stack.frameNo != -1 && ai->Addr.Stack.IP != 0) {
-#define     FLEN                256
-            HChar fn[FLEN];
+            const HChar *fn;
             Bool  hasfn;
-            HChar file[FLEN];
+            const HChar *file;
             Bool  hasfile;
             UInt linenum;
             Bool haslinenum;
             PtrdiffT offset;
 
-            hasfn = VG_(get_fnname)(ai->Addr.Stack.IP, fn, FLEN);
             if (VG_(get_inst_offset_in_function)( ai->Addr.Stack.IP,
                                                   &offset))
                haslinenum = VG_(get_linenum) (ai->Addr.Stack.IP - offset,
@@ -393,22 +454,21 @@ static void pp_addrinfo_WRK ( Addr a, AddrInfo* ai, Bool mc, Bool maybe_gcc )
             else
                haslinenum = False;
 
-            hasfile = VG_(get_filename)(ai->Addr.Stack.IP, file, FLEN);
-            if (hasfile && haslinenum) {
-               HChar strlinenum[10];
-               VG_(snprintf) (strlinenum, 10, ":%d", linenum);
-               VG_(strncat) (file, strlinenum, 
-                             FLEN - VG_(strlen)(file) - 1);
-            }
+            hasfile = VG_(get_filename)(ai->Addr.Stack.IP, &file);
+
+            HChar strlinenum[16] = "";   // large enough
+            if (hasfile && haslinenum)
+               VG_(sprintf)(strlinenum, "%u", linenum);
+
+            hasfn = VG_(get_fnname)(ai->Addr.Stack.IP, &fn);
 
             if (hasfn || hasfile)
-               VG_(emit)( "%sin frame #%d, created by %s (%s)%s\n",
+               VG_(emit)( "%sin frame #%d, created by %s (%s:%s)%s\n",
                           xpre,
                           ai->Addr.Stack.frameNo, 
                           hasfn ? fn : "???", 
-                          hasfile ? file : "???", 
+                          hasfile ? file : "???", strlinenum,
                           xpost );
-#undef      FLEN
          }
          switch (ai->Addr.Stack.stackPos) {
             case StackPos_stacked: break; // nothing more to say
@@ -474,7 +534,7 @@ static void pp_addrinfo_WRK ( Addr a, AddrInfo* ai, Bool mc, Bool maybe_gcc )
             );
          if (ai->Addr.Block.block_kind==Block_Mallocd) {
             VG_(pp_ExeContext)(ai->Addr.Block.allocated_at);
-            tl_assert (ai->Addr.Block.freed_at == VG_(null_ExeContext)());
+            vg_assert (ai->Addr.Block.freed_at == VG_(null_ExeContext)());
          }
          else if (ai->Addr.Block.block_kind==Block_Freed) {
             VG_(pp_ExeContext)(ai->Addr.Block.freed_at);
@@ -491,18 +551,18 @@ static void pp_addrinfo_WRK ( Addr a, AddrInfo* ai, Bool mc, Bool maybe_gcc )
                   || ai->Addr.Block.block_kind==Block_UserG) {
             // client-defined
             VG_(pp_ExeContext)(ai->Addr.Block.allocated_at);
-            tl_assert (ai->Addr.Block.freed_at == VG_(null_ExeContext)());
+            vg_assert (ai->Addr.Block.freed_at == VG_(null_ExeContext)());
             /* Nb: cannot have a freed_at, as a freed client-defined block
                has a Block_Freed block_kind. */
          } else {
             // Client or Valgrind arena. At least currently, we never
             // have stacktraces for these.
-            tl_assert (ai->Addr.Block.allocated_at == VG_(null_ExeContext)());
-            tl_assert (ai->Addr.Block.freed_at == VG_(null_ExeContext)());
+            vg_assert (ai->Addr.Block.allocated_at == VG_(null_ExeContext)());
+            vg_assert (ai->Addr.Block.freed_at == VG_(null_ExeContext)());
          }
          if (ai->Addr.Block.alloc_tinfo.tnr || ai->Addr.Block.alloc_tinfo.tid)
             VG_(emit)(
-               "%sBlock was alloc'd by thread %s%d%s\n",
+               "%sBlock was alloc'd by thread %s%u%s\n",
                xpre,
                opt_tnr_prefix (ai->Addr.Block.alloc_tinfo),
                tnr_else_tid (ai->Addr.Block.alloc_tinfo),
@@ -512,10 +572,9 @@ static void pp_addrinfo_WRK ( Addr a, AddrInfo* ai, Bool mc, Bool maybe_gcc )
       }
 
       case Addr_DataSym:
-         VG_(emit)( "%sAddress 0x%llx is %llu bytes "
+         VG_(emit)( "%sAddress 0x%lx is %llu bytes "
                     "inside data symbol \"%pS\"%s\n",
-                    xpre,
-                    (ULong)a,
+                    xpre, a,
                     (ULong)ai->Addr.DataSym.offset,
                     ai->Addr.DataSym.name,
                     xpost );
@@ -536,9 +595,8 @@ static void pp_addrinfo_WRK ( Addr a, AddrInfo* ai, Bool mc, Bool maybe_gcc )
          break;
 
       case Addr_SectKind:
-         VG_(emit)( "%sAddress 0x%llx is in the %pS segment of %pS%s\n",
-                    xpre,
-                    (ULong)a,
+         VG_(emit)( "%sAddress 0x%lx is in the %pS segment of %pS%s\n",
+                    xpre, a,
                     VG_(pp_SectKind)(ai->Addr.SectKind.kind),
                     ai->Addr.SectKind.objname,
                     xpost );
@@ -549,17 +607,51 @@ static void pp_addrinfo_WRK ( Addr a, AddrInfo* ai, Bool mc, Bool maybe_gcc )
          }
          break;
 
+      case Addr_BrkSegment:
+         if (a < ai->Addr.BrkSegment.brk_limit)
+            VG_(emit)( "%sAddress 0x%lx is in the brk data segment"
+                       " 0x%lx-0x%lx%s\n",
+                       xpre, a,
+                       VG_(brk_base),
+                       ai->Addr.BrkSegment.brk_limit - 1,
+                       xpost );
+         else
+            VG_(emit)( "%sAddress 0x%lx is %lu bytes after "
+                       "the brk data segment limit"
+                       " 0x%lx%s\n",
+                       xpre, a,
+                       a - ai->Addr.BrkSegment.brk_limit,
+                       ai->Addr.BrkSegment.brk_limit,
+                       xpost );
+         break;
+
+      case Addr_SegmentKind:
+         VG_(emit)( "%sAddress 0x%lx is in "
+                    "a %s%s%s %s%s%pS segment%s\n",
+                    xpre,
+                    a,
+                    ai->Addr.SegmentKind.hasR ? "r" : "-",
+                    ai->Addr.SegmentKind.hasW ? "w" : "-",
+                    ai->Addr.SegmentKind.hasX ? "x" : "-",
+                    pp_SegKind(ai->Addr.SegmentKind.segkind),
+                    ai->Addr.SegmentKind.filename ? 
+                    " " : "",
+                    ai->Addr.SegmentKind.filename ? 
+                    ai->Addr.SegmentKind.filename : "",
+                    xpost );
+         break;
+
       default:
-         VG_(tool_panic)("mc_pp_AddrInfo");
+         VG_(core_panic)("mc_pp_AddrInfo");
    }
 }
 
-void VG_(pp_addrinfo) ( Addr a, AddrInfo* ai )
+void VG_(pp_addrinfo) ( Addr a, const AddrInfo* ai )
 {
    pp_addrinfo_WRK (a, ai, False /*mc*/, False /*maybe_gcc*/);
 }
 
-void VG_(pp_addrinfo_mc) ( Addr a, AddrInfo* ai, Bool maybe_gcc )
+void VG_(pp_addrinfo_mc) ( Addr a, const AddrInfo* ai, Bool maybe_gcc )
 {
    pp_addrinfo_WRK (a, ai, True /*mc*/, maybe_gcc);
 }

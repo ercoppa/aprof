@@ -9,9 +9,9 @@
    This file is part of Ptrcheck, a Valgrind tool for checking pointer
    use in programs.
 
-   Copyright (C) 2003-2013 Nicholas Nethercote
+   Copyright (C) 2003-2015 Nicholas Nethercote
       njn@valgrind.org
-   Copyright (C) 2008-2013 OpenWorks Ltd
+   Copyright (C) 2008-2015 OpenWorks Ltd
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
@@ -70,9 +70,9 @@ SizeT h_replace_malloc_usable_size ( ThreadId tid, void* p );
 /* Note that this also does the sg_ instrumentation. */
 IRSB* h_instrument ( VgCallbackClosure* closure,
                      IRSB* sbIn,
-                     VexGuestLayout* layout,
-                     VexGuestExtents* vge,
-                     VexArchInfo* archinfo_host,
+                     const VexGuestLayout* layout,
+                     const VexGuestExtents* vge,
+                     const VexArchInfo* archinfo_host,
                      IRType gWordTy, IRType hWordTy );
 
 #endif

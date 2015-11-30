@@ -1,7 +1,7 @@
 /*
   This file is part of drd, a thread error detector.
 
-  Copyright (C) 2006-2013 Bart Van Assche <bvanassche@acm.org>.
+  Copyright (C) 2006-2015 Bart Van Assche <bvanassche@acm.org>.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
@@ -60,7 +60,6 @@ void DRD_(clientobj_init)(void)
    tl_assert(s_clientobj_set == 0);
    s_clientobj_set = VG_(OSetGen_Create)(0, 0, VG_(malloc),
                                          "drd.clientobj.ci.1", VG_(free));
-   tl_assert(s_clientobj_set);
 }
 
 /**
@@ -133,7 +132,7 @@ DrdClientobj* DRD_(clientobj_add)(const Addr a1, const ObjType t)
    tl_assert(VG_(OSetGen_Lookup)(s_clientobj_set, &a1) == 0);
 
    if (s_trace_clientobj)
-      DRD_(trace_msg)("Adding client object 0x%lx of type %d", a1, t);
+     DRD_(trace_msg)("Adding client object 0x%lx of type %d", a1, (Int)t);
 
    p = VG_(OSetGen_AllocNode)(s_clientobj_set, sizeof(*p));
    VG_(memset)(p, 0, sizeof(*p));
@@ -180,7 +179,7 @@ static Bool clientobj_remove_obj(DrdClientobj* const p)
 
    if (s_trace_clientobj) {
       DRD_(trace_msg)("Removing client object 0x%lx of type %d", p->any.a1,
-                      p->any.type);
+                      (Int)p->any.type);
 #if 0
       VG_(get_and_pp_StackTrace)(VG_(get_running_tid)(),
                                  VG_(clo_backtrace_size));

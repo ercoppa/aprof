@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2013 Julian Seward
+   Copyright (C) 2000-2015 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -32,6 +32,7 @@
 #define __PUB_TOOL_ADDRINFO_H
 
 #include "pub_tool_basics.h"   // VG_ macro
+#include "pub_tool_aspacemgr.h"  // SegKind
 
 /*====================================================================*/
 /*=== Obtaining information about an address                       ===*/
@@ -71,7 +72,9 @@ typedef
       Addr_Stack,       // on a thread's stack       
       Addr_DataSym,     // in a global data sym
       Addr_Variable,    // variable described by the debug info
-      Addr_SectKind     // last-ditch classification attempt
+      Addr_SectKind,    // Section from a mmap-ed object file
+      Addr_BrkSegment,  // address in brk data segment
+      Addr_SegmentKind  // Client segment (mapped memory)
    }
    AddrTag;
 
@@ -153,10 +156,10 @@ struct _AddrInfo {
          ExeContext* freed_at;      // might be null_ExeContext.
       } Block;
 
-      // In a global .data symbol.  This holds the first 127 chars of
+      // In a global .data symbol.  This holds
       // the variable's name (zero terminated), plus a (memory) offset.
       struct {
-         HChar    name[128];
+         HChar   *name;
          PtrdiffT offset;
       } DataSym;
 
@@ -169,9 +172,26 @@ struct _AddrInfo {
       // Could only narrow it down to be the PLT/GOT/etc of a given
       // object.  Better than nothing, perhaps.
       struct {
-         HChar      objname[128];
+         HChar      *objname;
          VgSectKind kind;
       } SectKind;
+
+      // Described address is or was in the brk data segment.
+      // brk_limit is the limit that was in force
+      // at the time address was described. 
+      // If address is >= brk_limit, it means address is in a zone
+      // of the data segment that was shrinked.
+      struct {
+         Addr brk_limit; // limit in force when address was described.
+      } BrkSegment;
+
+      struct {
+         SegKind segkind;   // SkAnonC, SkFileC or SkShmC.
+         HChar   *filename; // NULL if segkind != SkFileC
+         Bool    hasR;
+         Bool    hasW;
+         Bool    hasX;
+      } SegmentKind;
 
       // Classification yielded nothing useful.
       struct { } Unknown;
@@ -188,15 +208,16 @@ extern void VG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai );
 
 extern void VG_(clear_addrinfo) ( AddrInfo* ai);
 
-/* Prints the AddrInfo ai describing a. */
-extern void VG_(pp_addrinfo) ( Addr a, AddrInfo* ai );
+/* Prints the AddrInfo ai describing a.
+   Note that an ai with tag Addr_Undescribed will cause an assert.*/
+extern void VG_(pp_addrinfo) ( Addr a, const AddrInfo* ai );
 
 /* Same as VG_(pp_addrinfo) but provides some memcheck specific behaviour:
    * maybe_gcc indicates Addr a was just below the stack ptr when the error
      with a was encountered.
    * the message for Unknown tag is slightly different, as memcheck
      has a recently freed list. */
-extern void VG_(pp_addrinfo_mc) ( Addr a, AddrInfo* ai, Bool maybe_gcc );
+extern void VG_(pp_addrinfo_mc) ( Addr a, const AddrInfo* ai, Bool maybe_gcc );
 
 #endif   // __PUB_TOOL_ADDRINFO_H
 

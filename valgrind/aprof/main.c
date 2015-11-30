@@ -39,9 +39,9 @@ Runtime APROF_(runtime);
 static IRSB* APROF_(instrument) (   
                                     VgCallbackClosure * closure, 
                                     IRSB * sbIn,
-                                    VexGuestLayout * layout, 
-                                    VexGuestExtents * vge,
-                                    VexArchInfo * archinfo_host,
+                                    const VexGuestLayout * layout, 
+                                    const VexGuestExtents * vge,
+                                    const VexArchInfo * archinfo_host,
                                     IRType gWordTy, 
                                     IRType hWordTy
                                 ) {

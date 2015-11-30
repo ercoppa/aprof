@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2013 Julian Seward
+   Copyright (C) 2000-2015 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -29,7 +29,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#if defined(VGO_linux) || defined(VGO_darwin)
+#if defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_solaris)
 
 #include "pub_core_basics.h"
 #include "pub_core_debuginfo.h"
@@ -71,7 +71,7 @@ static UInt safe_fndn_ix (XArray* fndn_ix_xa, Int xa_ix)
 /* if xa_ix is a valid index in dirname_xa,
     return the element (i.e. the HChar*).
    If xa_ix is invalid, return NULL. */
-static HChar* safe_dirname_ix (XArray* dirname_xa, Int xa_ix)
+static const HChar* safe_dirname_ix (XArray* dirname_xa, Int xa_ix)
 {
    if (xa_ix < 0) return NULL;
    if (xa_ix >= VG_(sizeXA) (dirname_xa)) return NULL;
@@ -269,7 +269,8 @@ void process_extended_line_op( struct _DebugInfo* di,
    switch (op_code) {
       case DW_LNE_end_sequence:
          if (0) VG_(printf)("1001: si->o %#lx, smr.a %#lx\n",
-                            di->text_debug_bias, state_machine_regs.address );
+                            (UWord)di->text_debug_bias,
+                            state_machine_regs.address );
          /* JRS: added for compliance with spec; is pointless due to
             reset_state_machine below */
          state_machine_regs.end_sequence = 1; 
@@ -339,7 +340,7 @@ void process_extended_line_op( struct _DebugInfo* di,
  */
 static 
 void read_dwarf2_lineblock ( struct _DebugInfo* di,
-                             UnitInfo* ui, 
+                             const UnitInfo* ui, 
                              DiCursor  theBlock, /* IMAGE */
                              Int       noLargerThan )
 {
@@ -348,8 +349,8 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
    Bool           is64;
    XArray*        fndn_ix_xa; /* xarray of UInt fndn_ix */
    UInt           fndn_ix;
-   XArray*        dirname_xa;   /* xarray of HChar* dirname */
-   HChar*         dirname;
+   XArray*        dirname_xa;   /* xarray of const HChar* dirname */
+   const HChar*   dirname;
 
    DiCursor       external = theBlock;
    DiCursor       data = theBlock;
@@ -454,9 +455,9 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
 
       It seems to me that the Intel Fortran compiler generates bad
       DWARF2 line info code: It sets "is_stmt" of the state machine in
-      the the line info reader to be always false. Thus, there is
-      never a statement boundary generated and therefore never a
-      instruction range/line number mapping generated for valgrind.
+      the line info reader to be always false. Thus, there is never
+      a statement boundary generated and therefore never an instruction
+      range/line number mapping generated for valgrind.
 
       Please have a look at the DWARF2 specification, Ch. 6.2
       (x86.ddj.com/ftp/manuals/tools/dwarf.pdf).  Perhaps I understand
@@ -464,7 +465,7 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
 
       I just had a look at the GDB DWARF2 reader...  They completely
       ignore "is_stmt" when recording line info ;-) That's the reason
-      "objdump -S" works on files from the the intel fortran compiler.
+      "objdump -S" works on files from the intel fortran compiler.
 
       Therefore: */
    info.li_default_is_stmt = True; 
@@ -518,35 +519,33 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
 
    while (ML_(cur_read_UChar)(data) != 0) {
 
-#     define NBUF 4096
-      static HChar buf[NBUF];
-
       HChar* data_str = ML_(cur_read_strdup)(data, "di.rd2l.1");
       if (di->ddump_line)
          VG_(printf)("  %s\n", data_str);
 
       /* If data[0] is '/', then 'data' is an absolute path and we
-         don't mess with it.  Otherwise, if we can, construct the
+         don't mess with it.  Otherwise, construct the
          path 'ui->compdir' ++ "/" ++ 'data'. */
 
       if (data_str[0] != '/' 
           /* not an absolute path */
           && ML_(cur_is_valid)(ui->compdir)
           /* actually got something sensible for compdir */
-          && ML_(cur_strlen)(ui->compdir)
-             + VG_(strlen)(data_str) + 5/*paranoia*/ < NBUF
-          /* it's short enough to concatenate */) 
+          && ML_(cur_strlen)(ui->compdir))
       {
-         buf[0] = 0;
          HChar* compdir_str = ML_(cur_read_strdup)(ui->compdir, "di.rd2l.1b");
-         VG_(strcat)(buf, compdir_str);
+         SizeT  len = VG_(strlen)(compdir_str) + 1 + VG_(strlen)(data_str);
+         HChar *buf = ML_(dinfo_zalloc)("di.rd2l.1c", len + 1);
+
+         VG_(strcpy)(buf, compdir_str);
          VG_(strcat)(buf, "/");
          VG_(strcat)(buf, data_str);
-         vg_assert(VG_(strlen)(buf) < NBUF);
-         dirname = ML_(addStr)(di,buf,-1);
+
+         dirname = ML_(addStr)(di, buf, len);
          VG_(addToXA) (dirname_xa, &dirname);
          if (0) VG_(printf)("rel path  %s\n", buf);
          ML_(dinfo_free)(compdir_str);
+         ML_(dinfo_free)(buf);
       } else {
          /* just use 'data'. */
          dirname = ML_(addStr)(di,data_str,-1);
@@ -556,8 +555,6 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
 
       data = ML_(cur_plus)(data, VG_(strlen)(data_str) + 1);
       ML_(dinfo_free)(data_str);
-
-#     undef NBUF
    }
 
    if (di->ddump_line)
@@ -622,10 +619,11 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
          Int advAddr = adv;
          state_machine_regs.address += adv;
 
-         if (0) VG_(printf)("smr.a += %#lx\n", adv );
+         if (0) VG_(printf)("smr.a += %#lx\n", (UWord)adv );
          adv = (op_code % info.li_line_range) + info.li_line_base;
          if (0) VG_(printf)("1002: di->o %#lx, smr.a %#lx\n",
-                            di->text_debug_bias, state_machine_regs.address );
+                            (UWord)di->text_debug_bias,
+                            state_machine_regs.address );
          state_machine_regs.line += adv;
 
          if (di->ddump_line)
@@ -664,7 +662,8 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
 
          case DW_LNS_copy:
             if (0) VG_(printf)("1002: di->o %#lx, smr.a %#lx\n",
-                               di->text_debug_bias, state_machine_regs.address );
+                               (UWord)di->text_debug_bias,
+                               state_machine_regs.address );
             if (state_machine_regs.is_stmt) {
                /* only add a statement if there was a previous boundary */
                if (state_machine_regs.last_address) {
@@ -688,11 +687,11 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
             break;
 
          case DW_LNS_advance_pc: {
-            Word adv = info.li_min_insn_length * step_leb128U(&data);
+            UWord adv = info.li_min_insn_length * step_leb128U(&data);
             state_machine_regs.address += adv;
             if (0) VG_(printf)("smr.a += %#lx\n", adv );
             if (di->ddump_line)
-               VG_(printf)("  Advance PC by %ld to 0x%lx\n", 
+               VG_(printf)("  Advance PC by %lu to 0x%lx\n", 
                            adv, state_machine_regs.address);
             break;
          }
@@ -737,7 +736,7 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
             Word adv = (((255 - info.li_opcode_base) / info.li_line_range)
                           * info.li_min_insn_length);
             state_machine_regs.address += adv;
-            if (0) VG_(printf)("smr.a += %#lx\n", adv );
+            if (0) VG_(printf)("smr.a += %#lx\n", (UWord)adv );
             if (di->ddump_line)
                VG_(printf)("  Advance PC by constant %ld to 0x%lx\n", 
                            adv, (Addr)state_machine_regs.address);
@@ -745,7 +744,7 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
          }
          case DW_LNS_fixed_advance_pc: {
             /* XXX: Need something to get 2 bytes */
-            Word adv = ML_(cur_step_UShort)(&data);
+            UWord adv = ML_(cur_step_UShort)(&data);
             state_machine_regs.address += adv;
             if (0) VG_(printf)("smr.a += %#lx\n", adv );
             if (di->ddump_line)
@@ -1135,7 +1134,7 @@ void ML_(read_debuginfo_dwarf3)
       
       if (0) {
          HChar* str_name = ML_(cur_read_strdup)(ui.name, "di.rdd3.3");
-         VG_(printf)("debug_line_sz %lld, ui.stmt_list %lld  %s\n",
+         VG_(printf)("debug_line_sz %llu, ui.stmt_list %llu  %s\n",
                      escn_debug_line.szB, ui.stmt_list, str_name );
          ML_(dinfo_free)(str_name);
       }
@@ -1441,7 +1440,7 @@ void ML_(read_debuginfo_dwarf1) (
 	 }        
       }  
 
-      /* Move on the the next DIE. */
+      /* Move on the next DIE. */
       die_offset += die_szb;
 
    } /* Looping over DIEs */
@@ -1723,11 +1722,11 @@ void ML_(read_debuginfo_dwarf1) (
 
 /* --------------- Decls --------------- */
 
-#if defined(VGP_x86_linux)
+#if defined(VGP_x86_linux) || defined(VGP_x86_solaris)
 #  define FP_REG         5
 #  define SP_REG         4
 #  define RA_REG_DEFAULT 8
-#elif defined(VGP_amd64_linux)
+#elif defined(VGP_amd64_linux) || defined(VGP_amd64_solaris)
 #  define FP_REG         6
 #  define SP_REG         7
 #  define RA_REG_DEFAULT 16
@@ -1767,6 +1766,10 @@ void ML_(read_debuginfo_dwarf1) (
 #  define FP_REG         30
 #  define SP_REG         29
 #  define RA_REG_DEFAULT 31
+#elif defined(VGP_tilegx_linux)
+#  define FP_REG         52
+#  define SP_REG         54
+#  define RA_REG_DEFAULT 55
 #else
 #  error "Unknown platform"
 #endif
@@ -1779,7 +1782,7 @@ void ML_(read_debuginfo_dwarf1) (
      || defined(VGP_ppc64le_linux) || defined(VGP_mips32_linux) \
      || defined(VGP_mips64_linux)
 # define N_CFI_REGS 72
-#elif defined(VGP_arm_linux)
+#elif defined(VGP_arm_linux) || defined(VGP_tilegx_linux)
 # define N_CFI_REGS 320
 #elif defined(VGP_arm64_linux)
 # define N_CFI_REGS 128
@@ -1825,6 +1828,7 @@ enum dwarf_cfa_secondary_ops
     DW_CFA_GNU_window_save    = 0x2d, /* GNU extension */
     DW_CFA_GNU_args_size      = 0x2e, /* GNU extension */
     DW_CFA_GNU_negative_offset_extended = 0x2f, /* GNU extension */
+    DW_CFA_ORCL_arg_loc       = 0x30, /* Oracle extension */
     DW_CFA_hi_user            = 0x3f
   };
 
@@ -1898,7 +1902,7 @@ typedef
    }
    RegRule;
 
-static void ppRegRule ( XArray* exprs, RegRule* rrule )
+static void ppRegRule ( const XArray* exprs, const RegRule* rrule )
 {
    vg_assert(exprs);
    switch (rrule->tag) {
@@ -1952,12 +1956,12 @@ typedef
    }
    UnwindContext;
 
-static void ppUnwindContext ( UnwindContext* ctx )
+static void ppUnwindContext ( const UnwindContext* ctx )
 {
    Int j, i;
    VG_(printf)("0x%llx: ", (ULong)ctx->loc);
    for (j = 0; j <= ctx->state_sp; j++) {
-      struct UnwindContextState* ctxs = &ctx->state[j];
+      const struct UnwindContextState* ctxs = &ctx->state[j];
       VG_(printf)("%s[%d]={ ", j > 0 ? " " : "", j);
       if (ctxs->cfa_is_regoff) {
          VG_(printf)("%d(r%d) ", ctxs->cfa_off, ctxs->cfa_reg);
@@ -2023,6 +2027,7 @@ typedef
       DiCursor ehframe_image;
       Addr     ehframe_avma;
       Addr     text_bias;
+      Addr     got_avma;
    }
    AddressDecodingInfo;
 
@@ -2033,9 +2038,8 @@ typedef
 
 /* Forward */
 static 
-Int copy_convert_CfiExpr_tree ( XArray*        dst,
-                                UnwindContext* srcuc, 
-                                Int            nd );
+Int copy_convert_CfiExpr_tree ( XArray* dst, const UnwindContext* srcuc, 
+                                Int nd );
 
 /* Summarise ctx into si, if possible.  Returns True if successful.
    This is taken to be just after ctx's loc advances; hence the
@@ -2046,11 +2050,11 @@ static Bool summarise_context(/*OUT*/Addr* base,
                               /*OUT*/UInt* len,
                               /*OUT*/DiCfSI_m* si_m,
                                Addr loc_start,
-	                       UnwindContext* ctx,
-                               struct _DebugInfo* debuginfo )
+	                       const UnwindContext* ctx,
+                               DebugInfo* debuginfo )
 {
    Int why = 0;
-   struct UnwindContextState* ctxs;
+   const struct UnwindContextState* ctxs;
 
    *base = 0;
    *len = 0;
@@ -2073,7 +2077,6 @@ static Bool summarise_context(/*OUT*/Addr* base,
       if (src && (VG_(sizeXA)(src) > 0) && (!dst)) {
          dst = VG_(newXA)( ML_(dinfo_zalloc), "di.ccCt.1", ML_(dinfo_free),
                            sizeof(CfiExpr) );
-         vg_assert(dst);
          debuginfo->cfsi_exprs = dst;
       }
       conv = copy_convert_CfiExpr_tree
@@ -2089,7 +2092,8 @@ static Bool summarise_context(/*OUT*/Addr* base,
    if (ctxs->cfa_is_regoff && ctxs->cfa_reg == SP_REG) {
       si_m->cfa_off = ctxs->cfa_off;
 #     if defined(VGA_x86) || defined(VGA_amd64) || defined(VGA_s390x) \
-         || defined(VGA_mips32) || defined(VGA_mips64)
+         || defined(VGA_mips32) || defined(VGA_mips64) \
+         || defined(VGA_tilegx)
       si_m->cfa_how = CFIC_IA_SPREL;
 #     elif defined(VGA_arm)
       si_m->cfa_how = CFIC_ARM_R13REL;
@@ -2103,7 +2107,8 @@ static Bool summarise_context(/*OUT*/Addr* base,
    if (ctxs->cfa_is_regoff && ctxs->cfa_reg == FP_REG) {
       si_m->cfa_off = ctxs->cfa_off;
 #     if defined(VGA_x86) || defined(VGA_amd64) || defined(VGA_s390x) \
-         || defined(VGA_mips32) || defined(VGA_mips64)
+         || defined(VGA_mips32) || defined(VGA_mips64) \
+         || defined(VGA_tilegx)
       si_m->cfa_how = CFIC_IA_BPREL;
 #     elif defined(VGA_arm)
       si_m->cfa_how = CFIC_ARM_R12REL;
@@ -2152,7 +2157,6 @@ static Bool summarise_context(/*OUT*/Addr* base,
                               "di.ccCt.2",                    \
                               ML_(dinfo_free),                \
                               sizeof(CfiExpr) );              \
-            vg_assert(dst);                                   \
             debuginfo->cfsi_exprs = dst;                      \
          }                                                    \
          conv = copy_convert_CfiExpr_tree                     \
@@ -2332,7 +2336,7 @@ static Bool summarise_context(/*OUT*/Addr* base,
                                              sizeof(CfiExpr) );
       si_m->ra_how = CFIR_EXPR;
       si_m->ra_off = ML_(CfiExpr_CfiReg)( debuginfo->cfsi_exprs,
-                                          Creg_S390_R14);
+                                          Creg_S390_LR);
    }
 
    /* knock out some obviously stupid cases */
@@ -2352,9 +2356,9 @@ static Bool summarise_context(/*OUT*/Addr* base,
    return True;
 
 #  elif defined(VGA_mips32) || defined(VGA_mips64)
- 
+
    /* --- entire tail of this fn specialised for mips --- */
- 
+
    SUMMARISE_HOW(si_m->ra_how, si_m->ra_off,
                                ctxs->reg[ctx->ra_reg] );
    SUMMARISE_HOW(si_m->fp_how, si_m->fp_off,
@@ -2393,7 +2397,48 @@ static Bool summarise_context(/*OUT*/Addr* base,
    *len  = (UInt)(ctx->loc - loc_start);
 
    return True;
+#  elif defined(VGA_tilegx)
 
+   /* --- entire tail of this fn specialised for tilegx --- */
+
+   SUMMARISE_HOW(si_m->ra_how, si_m->ra_off,
+                               ctxs->reg[ctx->ra_reg] );
+   SUMMARISE_HOW(si_m->fp_how, si_m->fp_off,
+                               ctxs->reg[FP_REG] );
+   SUMMARISE_HOW(si_m->sp_how, si_m->sp_off,
+                               ctxs->reg[SP_REG] );
+   si_m->sp_how = CFIR_CFAREL;
+   si_m->sp_off = 0;
+
+   if (si_m->fp_how == CFIR_UNKNOWN)
+       si_m->fp_how = CFIR_SAME;
+   if (si_m->cfa_how == CFIR_UNKNOWN) {
+      si_m->cfa_how = CFIC_IA_SPREL;
+      si_m->cfa_off = 160;
+   }
+   if (si_m->ra_how == CFIR_UNKNOWN) {
+      if (!debuginfo->cfsi_exprs)
+         debuginfo->cfsi_exprs = VG_(newXA)( ML_(dinfo_zalloc),
+                                             "di.ccCt.2a",
+                                             ML_(dinfo_free),
+                                             sizeof(CfiExpr) );
+      si_m->ra_how = CFIR_EXPR;
+      si_m->ra_off = ML_(CfiExpr_CfiReg)( debuginfo->cfsi_exprs,
+                                          Creg_TILEGX_LR);
+   }
+
+   if (si_m->ra_how == CFIR_SAME)
+      { why = 3; goto failed; }
+
+   if (loc_start >= ctx->loc) 
+      { why = 4; goto failed; }
+   if (ctx->loc - loc_start > 10000000 /* let's say */)
+      { why = 5; goto failed; }
+
+   *base = loc_start + ctx->initloc;
+   *len  = (UInt)(ctx->loc - loc_start);
+
+   return True;
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
    /* These don't use CFI based unwinding (is that really true?) */
 
@@ -2422,7 +2467,7 @@ static Bool summarise_context(/*OUT*/Addr* base,
    there is no equivalent register, return -1.  This has the
    undesirable side effect of de-dagifying the input; oh well. */
 static Int copy_convert_CfiExpr_tree ( XArray*        dstxa,
-                                       UnwindContext* srcuc, 
+                                       const UnwindContext* srcuc, 
                                        Int            srcix )
 {
    CfiExpr* src;
@@ -2474,11 +2519,11 @@ static Int copy_convert_CfiExpr_tree ( XArray*        dstxa,
            return ML_(CfiExpr_CfiReg)( dstxa, Creg_ARM_R15 ); /* correct? */
 #        elif defined(VGA_s390x)
          if (dwreg == SP_REG)
-            return ML_(CfiExpr_CfiReg)( dstxa, Creg_IA_SP );
+            return ML_(CfiExpr_CfiReg)( dstxa, Creg_S390_SP );
          if (dwreg == FP_REG)
-            return ML_(CfiExpr_CfiReg)( dstxa, Creg_IA_BP );
+            return ML_(CfiExpr_CfiReg)( dstxa, Creg_S390_FP );
          if (dwreg == srcuc->ra_reg)
-            return ML_(CfiExpr_CfiReg)( dstxa, Creg_IA_IP ); /* correct? */
+            return ML_(CfiExpr_CfiReg)( dstxa, Creg_S390_IA );
 #        elif defined(VGA_mips32) || defined(VGA_mips64)
          if (dwreg == SP_REG)
             return ML_(CfiExpr_CfiReg)( dstxa, Creg_IA_SP );
@@ -2490,6 +2535,13 @@ static Int copy_convert_CfiExpr_tree ( XArray*        dstxa,
          I_die_here;
 #        elif defined(VGA_ppc32) || defined(VGA_ppc64be) \
             || defined(VGA_ppc64le)
+#        elif defined(VGA_tilegx)
+         if (dwreg == SP_REG)
+            return ML_(CfiExpr_CfiReg)( dstxa, Creg_TILEGX_SP );
+         if (dwreg == FP_REG)
+            return ML_(CfiExpr_CfiReg)( dstxa, Creg_TILEGX_BP );
+         if (dwreg == srcuc->ra_reg)
+            return ML_(CfiExpr_CfiReg)( dstxa, Creg_TILEGX_IP );
 #        else
 #           error "Unknown arch"
 #        endif
@@ -2502,9 +2554,9 @@ static Int copy_convert_CfiExpr_tree ( XArray*        dstxa,
 }
 
 
-static void ppUnwindContext_summary ( UnwindContext* ctx )
+static void ppUnwindContext_summary ( const UnwindContext* ctx )
 {
-   struct UnwindContextState* ctxs = &ctx->state[ctx->state_sp];
+   const struct UnwindContextState* ctxs = &ctx->state[ctx->state_sp];
 
    VG_(printf)("0x%llx-1: ", (ULong)ctx->loc);
 
@@ -2541,12 +2593,13 @@ static ULong step_le_u_encoded_literal ( DiCursor* data, UInt size )
 
 static Long step_le_s_encoded_literal ( DiCursor* data, UInt size )
 {
-   Long s64 = step_le_u_encoded_literal( data, size );
+   ULong u64 = step_le_u_encoded_literal( data, size );
+   Long s64;
    switch (size) {
-      case 8:  break;
-      case 4:  s64 <<= 32; s64 >>= 32; break;
-      case 2:  s64 <<= 48; s64 >>= 48; break;
-      case 1:  s64 <<= 56; s64 >>= 56; break;
+      case 8:  s64 = u64; break;
+      case 4:  s64 = u64 << 32; s64 >>= 32; break;
+      case 2:  s64 = u64 << 48; s64 >>= 48; break;
+      case 1:  s64 = u64 << 56; s64 >>= 56; break;
       default: vg_assert(0); /*NOTREACHED*/ return 0;
    }
    return s64;
@@ -2575,7 +2628,7 @@ static UInt size_of_encoded_Addr ( UChar encoding )
    }
 }
 
-static Addr step_encoded_Addr ( AddressDecodingInfo* adi,
+static Addr step_encoded_Addr ( const AddressDecodingInfo* adi,
                                 /*MOD*/DiCursor* data )
 {
    /* Regarding the handling of DW_EH_PE_absptr.  DWARF3 says this
@@ -2602,6 +2655,7 @@ static Addr step_encoded_Addr ( AddressDecodingInfo* adi,
    UChar    encoding      = adi->encoding;
    DiCursor ehframe_image = adi->ehframe_image;
    Addr     ehframe_avma  = adi->ehframe_avma;
+   Addr     got_avma      = adi->got_avma;
 
    vg_assert((encoding & DW_EH_PE_indirect) == 0);
 
@@ -2613,8 +2667,7 @@ static Addr step_encoded_Addr ( AddressDecodingInfo* adi,
          base = ehframe_avma + ML_(cur_minus)(*data, ehframe_image);
          break;
       case DW_EH_PE_datarel:
-         vg_assert(0);
-         base = /* data base address */ 0;
+         base = got_avma;
          break;
       case DW_EH_PE_textrel:
          vg_assert(0);
@@ -2664,7 +2717,7 @@ static Addr step_encoded_Addr ( AddressDecodingInfo* adi,
    ctx->exprs of the root node.  Or fail in which case return -1. */
 /* IMPORTANT: when adding expression forms here, also remember to
    add suitable evaluation code in evalCfiExpr in debuginfo.c. */
-static Int dwarfexpr_to_dag ( UnwindContext* ctx, 
+static Int dwarfexpr_to_dag ( const UnwindContext* ctx, 
                               DiCursor expr, Int exprlen, 
                               Bool push_cfa_at_start,
                               Bool ddump_frames )
@@ -2699,7 +2752,7 @@ static Int dwarfexpr_to_dag ( UnwindContext* ctx,
 
    Int sp; /* # of top element: valid is -1 .. N_EXPR_STACK-1 */
    Int stack[N_EXPR_STACK];  /* indices into ctx->exprs */
-   struct UnwindContextState* ctxs = &ctx->state[ctx->state_sp];
+   const struct UnwindContextState* ctxs = &ctx->state[ctx->state_sp];
 
    XArray*  dst   = ctx->exprs;
    DiCursor limit = ML_(cur_plus)(expr, exprlen);
@@ -2923,9 +2976,9 @@ static Int dwarfexpr_to_dag ( UnwindContext* ctx,
 */
 static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx, 
                                 DiCursor instrIN,
-                                UnwindContext* restore_ctx,
-                                AddressDecodingInfo* adi,
-                                struct _DebugInfo* di )
+                                const UnwindContext* restore_ctx,
+                                const AddressDecodingInfo* adi,
+                                const DebugInfo* di )
 {
    Int      off, reg, reg2, len, j;
    UInt     delta;
@@ -3263,7 +3316,7 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
             VG_(printf)("  DW_CFA_def_cfa_expression (");
          /* Convert the expression into a dag rooted at ctx->exprs index j,
             or fail. */
-         j = dwarfexpr_to_dag ( ctx, expr, len, True/*push CFA at start*/, 
+         j = dwarfexpr_to_dag ( ctx, expr, len, False/*!push CFA at start*/, 
                                 di->ddump_frames);
          if (di->ddump_frames)
             VG_(printf)(")\n");
@@ -3313,6 +3366,11 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
          }
          break;
 
+      case DW_CFA_ORCL_arg_loc:
+         if (di->ddump_frames)
+            VG_(printf)("  DW_CFA_ORCL_arg_loc\n");
+         break;
+
       default: 
          VG_(message)(Vg_DebugMsg, "DWARF2 CFI reader: unhandled CFI "
                                    "instruction 0:%d\n", (Int)lo6); 
@@ -3331,7 +3389,7 @@ static Int run_CF_instruction ( /*MOD*/UnwindContext* ctx,
    readelf --debug-dump=frames would. */
 
 static Int show_CF_instruction ( DiCursor instrIN,
-                                 AddressDecodingInfo* adi,
+                                 const AddressDecodingInfo* adi,
                                  Int code_a_f, Int data_a_f )
 {
    Int      off, coff, reg, reg2, len;
@@ -3391,30 +3449,30 @@ static Int show_CF_instruction ( DiCursor instrIN,
 
       case DW_CFA_advance_loc1:
          delta = (UInt)ML_(cur_step_UChar)(&instr);
-         VG_(printf)("  sci:DW_CFA_advance_loc1(%d)\n", delta); 
+         VG_(printf)("  sci:DW_CFA_advance_loc1(%u)\n", delta); 
          break;
 
       case DW_CFA_advance_loc2:
          delta = (UInt)ML_(cur_step_UShort)(&instr);
-         VG_(printf)("  sci:DW_CFA_advance_loc2(%d)\n", delta); 
+         VG_(printf)("  sci:DW_CFA_advance_loc2(%u)\n", delta); 
          break;
 
       case DW_CFA_advance_loc4:
          delta = (UInt)ML_(cur_step_UInt)(&instr);
-         VG_(printf)("  DW_CFA_advance_loc4(%d)\n", delta); 
+         VG_(printf)("  DW_CFA_advance_loc4(%u)\n", delta); 
          break;
 
       case DW_CFA_def_cfa:
          reg = step_leb128( &instr, 0 );
          off = step_leb128( &instr, 0 );
-         VG_(printf)("  DW_CFA_def_cfa: r%d ofs %d\n", (Int)reg, (Int)off); 
+         VG_(printf)("  DW_CFA_def_cfa: r%d ofs %d\n", reg, off); 
          break;
 
       case DW_CFA_def_cfa_sf:
          reg = step_leb128( &instr, 0 );
          off = step_leb128( &instr, 1 );
          VG_(printf)("  DW_CFA_def_cfa_sf: r%d ofs %d\n", 
-                     (Int)reg, (Int)(off * data_a_f));
+                     reg, off * data_a_f);
          break;
 
       case DW_CFA_register:
@@ -3526,6 +3584,11 @@ static Int show_CF_instruction ( DiCursor instrIN,
          VG_(printf)("  sci:DW_CFA_GNU_window_save\n");
          break;
 
+      case DW_CFA_ORCL_arg_loc:
+         /* :TODO: Print all arguments when implemented in libdwarf. */
+         VG_(printf)("  sci:DW_CFA_ORCL_arg_loc\n");
+         break;
+
       default: 
          VG_(printf)("  sci:0:%d\n", (Int)lo6); 
          break;
@@ -3537,7 +3600,7 @@ static Int show_CF_instruction ( DiCursor instrIN,
 
 /* Show the instructions in instrs[0 .. ilen-1]. */
 static void show_CF_instructions ( DiCursor instrs, Int ilen,
-                                   AddressDecodingInfo* adi,
+                                   const AddressDecodingInfo* adi,
                                    Int code_a_f, Int data_a_f )
 {
    Int i = 0;
@@ -3553,12 +3616,12 @@ static void show_CF_instructions ( DiCursor instrs, Int ilen,
    reached, or until there is a failure.  Return True iff success. 
 */
 static 
-Bool run_CF_instructions ( struct _DebugInfo* di,
+Bool run_CF_instructions ( DebugInfo* di,
                            Bool record,
                            UnwindContext* ctx, DiCursor instrs, Int ilen,
                            UWord fde_arange,
-                           UnwindContext* restore_ctx,
-                           AddressDecodingInfo* adi )
+                           const UnwindContext* restore_ctx,
+                           const AddressDecodingInfo* adi )
 {
    Addr base;
    UInt len;
@@ -3638,9 +3701,8 @@ static void init_CIE ( CIE* cie )
    cie->saw_z_augmentation = False;
 }
 
-#define N_CIEs 8000
-static CIE the_CIEs[N_CIEs];
-
+static CIE *the_CIEs = NULL;
+static SizeT N_CIEs = 0;
 
 /* Read, summarise and store CFA unwind info from .eh_frame and
    .debug_frame sections.  is_ehframe tells us which kind we are
@@ -3681,7 +3743,7 @@ void ML_(read_callframe_info_dwarf3)
 
    if (di->trace_cfi) {
       VG_(printf)("\n-----------------------------------------------\n");
-      VG_(printf)("CFI info: szB %lld, _avma %#lx\n",
+      VG_(printf)("CFI info: szB %llu, _avma %#lx\n",
                   escn_frame.szB, frame_avma );
       VG_(printf)("CFI info: name %s\n", di->fsm.filename );
    }
@@ -3729,11 +3791,11 @@ void ML_(read_callframe_info_dwarf3)
       ciefde_start = data;
       if (di->trace_cfi) 
          VG_(printf)("\ncie/fde.start   = (frame_image + 0x%llx)\n", 
-                     ML_(cur_minus)(ciefde_start, frame_image));
+                     (ULong)ML_(cur_minus)(ciefde_start, frame_image));
 
       ciefde_len = (ULong)ML_(cur_step_UInt)(&data);
       if (di->trace_cfi) 
-         VG_(printf)("cie/fde.length  = %lld\n", ciefde_len);
+         VG_(printf)("cie/fde.length  = %llu\n", ciefde_len);
 
       /* Apparently, if the .length field is zero, we are at the end
          of the sequence.  This is stated in the Generic Elf
@@ -3742,7 +3804,7 @@ void ML_(read_callframe_info_dwarf3)
       if (ciefde_len == 0) {
          if (di->ddump_frames)
             VG_(printf)("%08llx ZERO terminator\n\n",
-                        ML_(cur_minus)(ciefde_start, frame_image));
+                        (ULong)ML_(cur_minus)(ciefde_start, frame_image));
          return;
       }
 
@@ -3766,7 +3828,7 @@ void ML_(read_callframe_info_dwarf3)
       }
 
       if (di->trace_cfi) 
-         VG_(printf)("cie.pointer     = %lld\n", cie_pointer);
+         VG_(printf)("cie.pointer     = %llu\n", cie_pointer);
 
       /* If cie_pointer is zero for .eh_frame or all ones for .debug_frame,
          we've got a CIE; else it's an FDE. */
@@ -3779,14 +3841,14 @@ void ML_(read_callframe_info_dwarf3)
 
          /* --------- CIE --------- */
 	 if (di->trace_cfi) 
-            VG_(printf)("------ new CIE (#%d of 0 .. %d) ------\n", 
-                        n_CIEs, N_CIEs - 1);
+            VG_(printf)("------ new CIE #%d ------\n", n_CIEs);
 
 	 /* Allocate a new CIE record. */
-         vg_assert(n_CIEs >= 0 && n_CIEs <= N_CIEs);
+         vg_assert(n_CIEs >= 0);
          if (n_CIEs == N_CIEs) {
-            how = "N_CIEs is too low.  Increase and recompile.";
-            goto bad;
+            N_CIEs += 1000;
+            the_CIEs = ML_(dinfo_realloc)("di.rcid3.2", the_CIEs,
+                                          N_CIEs * sizeof the_CIEs[0]);
          }
 
          this_CIE = n_CIEs;
@@ -3961,6 +4023,7 @@ void ML_(read_callframe_info_dwarf3)
             adi.ehframe_image = frame_image;
             adi.ehframe_avma  = frame_avma;
             adi.text_bias     = di->text_debug_bias;
+            adi.got_avma      = di->got_avma;
             show_CF_instructions( the_CIEs[this_CIE].instrs, 
                                   the_CIEs[this_CIE].ilen, &adi,
                                   the_CIEs[this_CIE].code_a_f,
@@ -3996,7 +4059,7 @@ void ML_(read_callframe_info_dwarf3)
             look_for = cie_pointer;
 
          for (cie = 0; cie < n_CIEs; cie++) {
-            if (0) VG_(printf)("look for %lld   %lld\n",
+            if (0) VG_(printf)("look for %llu   %llu\n",
                                look_for, the_CIEs[cie].offset );
             if (the_CIEs[cie].offset == look_for)
                break;
@@ -4011,6 +4074,7 @@ void ML_(read_callframe_info_dwarf3)
          adi.ehframe_image = frame_image;
          adi.ehframe_avma  = frame_avma;
          adi.text_bias     = di->text_debug_bias;
+         adi.got_avma      = di->got_avma;
          fde_initloc = step_encoded_Addr(&adi, &data);
          if (di->trace_cfi) 
             VG_(printf)("fde.initloc     = %#lx\n", fde_initloc);
@@ -4019,6 +4083,7 @@ void ML_(read_callframe_info_dwarf3)
          adi.ehframe_image = frame_image;
          adi.ehframe_avma  = frame_avma;
          adi.text_bias     = di->text_debug_bias;
+         adi.got_avma      = di->got_avma;
 
          /* WAS (incorrectly):
             fde_arange = read_encoded_Addr(&nbytes, &adi, data);
@@ -4111,6 +4176,7 @@ void ML_(read_callframe_info_dwarf3)
          adi.ehframe_image = frame_image;
          adi.ehframe_avma  = frame_avma;
          adi.text_bias     = di->text_debug_bias;
+         adi.got_avma      = di->got_avma;
 
          if (di->trace_cfi)
             show_CF_instructions( fde_instrs, fde_ilen, &adi,
@@ -4125,7 +4191,6 @@ void ML_(read_callframe_info_dwarf3)
          ctx.exprs    = VG_(newXA)( ML_(dinfo_zalloc), "di.rcid.1",
                                     ML_(dinfo_free), 
                                     sizeof(CfiExpr) );
-         vg_assert(ctx.exprs);
 
 	 /* Run the CIE's instructions.  Ugly hack: if
             --debug-dump=frames is in effect, suppress output for
@@ -4168,7 +4233,7 @@ void ML_(read_callframe_info_dwarf3)
     return;
 }
 
-#endif // defined(VGO_linux) || defined(VGO_darwin)
+#endif // defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_solaris)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

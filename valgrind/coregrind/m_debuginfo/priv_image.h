@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2013-2013 Mozilla Foundation
+   Copyright (C) 2013-2015 Mozilla Foundation
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -75,10 +75,10 @@ DiImage* ML_(img_from_di_server)(const HChar* filename,
 void ML_(img_done)(DiImage*);
 
 /* How big is the image? */
-DiOffT ML_(img_size)(DiImage* img);
+DiOffT ML_(img_size)(const DiImage* img);
 
 /* Does the section [offset, +size) exist in the image? */
-Bool ML_(img_valid)(DiImage* img, DiOffT offset, SizeT size);
+Bool ML_(img_valid)(const DiImage* img, DiOffT offset, SizeT size);
 
 /* Get info out of an image.  If any part of the section denoted by
    [offset, +size) is invalid, does not return. */

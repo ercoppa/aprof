@@ -9,7 +9,7 @@
    This file is part of Ptrcheck, a Valgrind tool for checking pointer
    use in programs.
 
-   Copyright (C) 2008-2013 OpenWorks Ltd
+   Copyright (C) 2008-2015 OpenWorks Ltd
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
@@ -134,7 +134,7 @@ typedef
             Seg*     vseg;
             XArray*  descr1; /* XArray* of HChar */
             XArray*  descr2; /* XArray* of HChar */
-            HChar    datasym[96];
+            const HChar* datasym;
             PtrdiffT datasymoff;
          } Heap;
          struct {
@@ -216,7 +216,7 @@ void h_record_sysparam_error( ThreadId tid, CorePart part, const HChar* s,
 }
 
 
-Bool pc_eq_Error ( VgRes res, Error* e1, Error* e2 )
+Bool pc_eq_Error ( VgRes res, const Error* e1, const Error* e2 )
 {
    XError *xe1, *xe2;
    tl_assert(VG_(get_error_kind)(e1) == VG_(get_error_kind)(e2));
@@ -262,7 +262,7 @@ Bool pc_eq_Error ( VgRes res, Error* e1, Error* e2 )
    look at it any print any preamble you want" function.  Which, in
    Ptrcheck, we don't use.  Hence a no-op.
 */
-void pc_before_pp_Error ( Error* err ) {
+void pc_before_pp_Error ( const Error* err ) {
 }
 
 /* Do a printf-style operation on either the XML or normal output
@@ -302,7 +302,7 @@ static Word Word__abs ( Word w ) {
    return w < 0 ? -w : w;
 }
 
-void pc_pp_Error ( Error* err )
+void pc_pp_Error ( const Error* err )
 {
    const Bool xml = VG_(clo_xml); /* a shorthand, that's all */
 
@@ -564,8 +564,8 @@ void pc_pp_Error ( Error* err )
                   what, s );
             VG_(pp_ExeContext)( VG_(get_error_where)(err) );
    
-            emit( "  <auxwhat>Address %#lx is %ld bytes inside a "
-                  "%ld-byte block free'd</auxwhat>\n",
+            emit( "  <auxwhat>Address %#lx is %lu bytes inside a "
+                  "%lu-byte block free'd</auxwhat>\n",
                   lo, lo-Seg__addr(seglo), Seg__size(seglo) );
             VG_(pp_ExeContext)(Seg__where(seglo));
 
@@ -575,8 +575,8 @@ void pc_pp_Error ( Error* err )
                   what, s );
             VG_(pp_ExeContext)( VG_(get_error_where)(err) );
    
-            emit( " Address %#lx is %ld bytes inside a "
-                  "%ld-byte block free'd\n",
+            emit( " Address %#lx is %lu bytes inside a "
+                  "%lu-byte block free'd\n",
                   lo, lo-Seg__addr(seglo), Seg__size(seglo) );
             VG_(pp_ExeContext)(Seg__where(seglo));
 
@@ -595,8 +595,8 @@ void pc_pp_Error ( Error* err )
                emit( "  <auxwhat>First byte is "
                         "not inside a known block</auxwhat>\n" );
             } else {
-               emit( "  <auxwhat>First byte (%#lx) is %ld bytes inside a "
-                     "%ld-byte block alloc'd</auxwhat>\n",
+               emit( "  <auxwhat>First byte (%#lx) is %lu bytes inside a "
+                     "%lu-byte block alloc'd</auxwhat>\n",
                      lo, lo-Seg__addr(seglo), Seg__size(seglo) );
                VG_(pp_ExeContext)(Seg__where(seglo));
             }
@@ -605,8 +605,8 @@ void pc_pp_Error ( Error* err )
                emit( "  <auxwhat>Last byte is "
                         "not inside a known block</auxwhat>\n" );
             } else {
-               emit( "  <auxwhat>Last byte (%#lx) is %ld bytes inside a "
-                     "%ld-byte block alloc'd</auxwhat>\n",
+               emit( "  <auxwhat>Last byte (%#lx) is %lu bytes inside a "
+                     "%lu-byte block alloc'd</auxwhat>\n",
                      hi, hi-Seg__addr(seghi), Seg__size(seghi) );
                VG_(pp_ExeContext)(Seg__where(seghi));
             }
@@ -620,8 +620,8 @@ void pc_pp_Error ( Error* err )
             if (UNKNOWN == seglo) {
                emit( " First byte is not inside a known block\n" );
             } else {
-               emit( " First byte (%#lx) is %ld bytes inside a "
-                     "%ld-byte block alloc'd\n",
+               emit( " First byte (%#lx) is %lu bytes inside a "
+                     "%lu-byte block alloc'd\n",
                      lo, lo-Seg__addr(seglo), Seg__size(seglo) );
                VG_(pp_ExeContext)(Seg__where(seglo));
             }
@@ -629,8 +629,8 @@ void pc_pp_Error ( Error* err )
             if (UNKNOWN == seghi) {
                emit( " Last byte is not inside a known block\n" );
             } else {
-               emit( " Last byte (%#lx) is %ld bytes inside a "
-                     "%ld-byte block alloc'd\n",
+               emit( " Last byte (%#lx) is %lu bytes inside a "
+                     "%lu-byte block alloc'd\n",
                      hi, hi-Seg__addr(seghi), Seg__size(seghi) );
                VG_(pp_ExeContext)(Seg__where(seghi));
             }
@@ -647,7 +647,7 @@ void pc_pp_Error ( Error* err )
 }
 
 
-UInt pc_update_Error_extra ( Error* err )
+UInt pc_update_Error_extra ( const Error* err )
 {
    XError *xe = (XError*)VG_(get_error_extra)(err);
    tl_assert(xe);
@@ -657,9 +657,8 @@ UInt pc_update_Error_extra ( Error* err )
       case XE_Heap: {
          Bool have_descr;
 
-         tl_assert(sizeof(xe->XE.Heap.datasym) > 0);
          xe->XE.Heap.datasymoff = 0;
-         xe->XE.Heap.datasym[0] = 0;
+         xe->XE.Heap.datasym    = NULL;
 
          tl_assert(!xe->XE.Heap.descr1);
          tl_assert(!xe->XE.Heap.descr2);
@@ -671,7 +670,6 @@ UInt pc_update_Error_extra ( Error* err )
             = VG_(newXA)( VG_(malloc), "pc.update_extra.Heap.descr1",
                           VG_(free), sizeof(HChar) );
 
-         VG_(memset)(&xe->XE.Heap.datasym, 0, sizeof(xe->XE.Heap.datasym));
          xe->XE.Heap.datasymoff = 0;
 
          have_descr
@@ -699,13 +697,13 @@ UInt pc_update_Error_extra ( Error* err )
          /* If Dwarf3 info produced nothing useful, see at least if
             we can fish something useful out of the ELF symbol info. */
          if (!have_descr) {
+            const HChar *name;
             if (VG_(get_datasym_and_offset)(
-                   xe->XE.Heap.addr, &xe->XE.Heap.datasym[0],
-                   sizeof(xe->XE.Heap.datasym)-1,
+                   xe->XE.Heap.addr, &name,
                    &xe->XE.Heap.datasymoff )
                ) {
-               tl_assert(xe->XE.Heap.datasym[sizeof(xe->XE.Heap.datasym)-1] 
-                         == 0);
+              xe->XE.Heap.datasym =
+                 VG_(strdup)("pc.update_extra.Heap.datasym", name);
             }
          }
          break;
@@ -736,7 +734,8 @@ Bool pc_is_recognised_suppression ( const HChar* name, Supp *su )
 }
 
 Bool pc_read_extra_suppression_info ( Int fd, HChar** bufpp, 
-                                      SizeT* nBufp, Int* lineno, Supp* su )
+                                      SizeT* nBufp, Int* lineno,
+                                      Supp* su )
 {
    Bool eof;
    if (VG_(get_supp_kind)(su) == XS_SysParam) {
@@ -747,7 +746,7 @@ Bool pc_read_extra_suppression_info ( Int fd, HChar** bufpp,
    return True;
 }
 
-Bool pc_error_matches_suppression (Error* err, Supp* su)
+Bool pc_error_matches_suppression (const Error* err, const Supp* su)
 {
    ErrorKind ekind = VG_(get_error_kind)(err);
    switch (VG_(get_supp_kind)(su)) {
@@ -764,7 +763,7 @@ Bool pc_error_matches_suppression (Error* err, Supp* su)
    }
 }
 
-const HChar* pc_get_error_name ( Error* err )
+const HChar* pc_get_error_name ( const Error* err )
 {
    XError *xe = (XError*)VG_(get_error_extra)(err);
    tl_assert(xe);
@@ -777,29 +776,32 @@ const HChar* pc_get_error_name ( Error* err )
    }
 }
 
-Bool pc_get_extra_suppression_info ( Error* err,
-                                     /*OUT*/HChar* buf, Int nBuf )
+SizeT pc_get_extra_suppression_info ( const Error* err,
+                                      /*OUT*/HChar* buf, Int nBuf )
 {
    ErrorKind ekind = VG_(get_error_kind )(err);
    tl_assert(buf);
-   tl_assert(nBuf >= 16); // stay sane
+   tl_assert(nBuf >= 1);
+
    if (XE_SysParam == ekind) {
       const HChar* errstr = VG_(get_error_string)(err);
       tl_assert(errstr);
-      VG_(snprintf)(buf, nBuf-1, "%s", errstr);
-      return True;
+      return VG_(snprintf)(buf, nBuf, "%s", errstr);
    } else {
-      return False;
+      buf[0] = '\0';
+      return 0;
    }
 }
 
-Bool pc_print_extra_suppression_use ( Supp* su,
-                                      /*OUT*/HChar* buf, Int nBuf )
+SizeT pc_print_extra_suppression_use ( const Supp* su,
+                                       /*OUT*/HChar* buf, Int nBuf )
 {
-   return False;
+   tl_assert(nBuf >= 1);
+   buf[0] = '\0';
+   return 0;
 }
 
-void pc_update_extra_suppression_use (Error* err, Supp* su)
+void pc_update_extra_suppression_use (const Error* err, const Supp* su)
 {
    return;
 }

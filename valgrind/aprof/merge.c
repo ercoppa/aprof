@@ -117,11 +117,11 @@ UInt APROF_(search_reports)(HChar *** reports, const HChar * path) {
 
 static Int APROF_(get_memory_resolution_report)(HChar * report) {
     
-    HChar * rep = (HChar *) VG_(basename)(report);
+    const HChar * rep = VG_(basename)(report);
     if (rep == NULL) return -1;
     
     // start from the end
-    HChar * p = rep + VG_(strlen)(rep) - 1;
+    const HChar * p = rep + VG_(strlen)(rep) - 1;
     
     // skip ".aprof"
     if (!(*p == 'f' && --p > rep)) return -1;

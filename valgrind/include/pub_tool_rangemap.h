@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2014-2014 Mozilla Foundation
+   Copyright (C) 2014-2015 Mozilla Foundation
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -43,9 +43,10 @@
 typedef  struct _RangeMap  RangeMap;
 
 /* Create a new RangeMap, using given allocation and free functions.
-   Alloc fn must not fail (that is, if it returns it must have
+   alloc_fn must not return NULL (that is, if it returns it must have
    succeeded.)  The new array will contain a single range covering the
-   entire key space, which will be bound to the value |initialVal|. */
+   entire key space, which will be bound to the value |initialVal|.
+   This function never returns NULL. */
 RangeMap* VG_(newRangeMap) ( void*(*alloc_fn)(const HChar*,SizeT), 
                              const HChar* cc,
                              void(*free_fn)(void*),
@@ -67,14 +68,14 @@ void VG_(bindRangeMap) ( RangeMap* rm,
    entire key space.  This is fast: O(log N) in the number of
    ranges. */
 void VG_(lookupRangeMap) ( /*OUT*/UWord* key_min, /*OUT*/UWord* key_max,
-                           /*OUT*/UWord* val, RangeMap* rm, UWord key );
+                           /*OUT*/UWord* val, const RangeMap* rm, UWord key );
 
 /* How many elements are there in the map? */
-Word VG_(sizeRangeMap) ( RangeMap* rm );
+UInt VG_(sizeRangeMap) ( const RangeMap* rm );
 
 /* Get the i'th component */
 void VG_(indexRangeMap) ( /*OUT*/UWord* key_min, /*OUT*/UWord* key_max,
-                          /*OUT*/UWord* val, RangeMap* rm, Word ix );
+                          /*OUT*/UWord* val, const RangeMap* rm, Word ix );
 
 #endif   // __PUB_TOOL_RANGEMAP_H
 

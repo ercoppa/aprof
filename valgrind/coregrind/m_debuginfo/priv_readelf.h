@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2013 Julian Seward 
+   Copyright (C) 2000-2015 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -43,7 +43,8 @@
 
 /* Identify an ELF object file by peering at the first few bytes of
    it. */
-extern Bool ML_(is_elf_object_file)( void* image, SizeT n_image, Bool rel_ok );
+extern Bool ML_(is_elf_object_file)( const void* image, SizeT n_image,
+                                     Bool rel_ok );
 
 /* The central function for reading ELF debug info.  For the
    object/exe specified by the SegInfo, find ELF sections, then read

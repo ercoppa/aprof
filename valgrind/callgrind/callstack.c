@@ -6,7 +6,7 @@
 /*
    This file is part of Callgrind, a Valgrind tool for call tracing.
 
-   Copyright (C) 2002-2013, Josef Weidendorfer (Josef.Weidendorfer@gmx.de)
+   Copyright (C) 2002-2015, Josef Weidendorfer (Josef.Weidendorfer@gmx.de)
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -107,7 +107,7 @@ void ensure_stack_size(Int i)
   CLG_(stat).call_stack_resizes++;
  
   CLG_DEBUGIF(2)
-    VG_(printf)("        call stack enlarged to %d entries\n",
+    VG_(printf)("        call stack enlarged to %u entries\n",
 		CLG_(current_call_stack).size);
 }
 
@@ -130,7 +130,7 @@ static void function_entered(fn_node* fn)
 #endif		
 	    
   if (fn->dump_before) {
-    HChar trigger[FN_NAME_LEN];
+    HChar trigger[VG_(strlen)(fn->name) + 20];
     VG_(sprintf)(trigger, "--dump-before=%s", fn->name);
     CLG_(dump_profile)(trigger, True);
   }
@@ -152,7 +152,7 @@ static void function_left(fn_node* fn)
   CLG_ASSERT(fn != 0);
 
   if (fn->dump_after) {
-    HChar trigger[FN_NAME_LEN];
+    HChar trigger[VG_(strlen)(fn->name) + 20];
     VG_(sprintf)(trigger, "--dump-after=%s", fn->name);
     CLG_(dump_profile)(trigger, True);
   }
@@ -280,7 +280,7 @@ void CLG_(push_call_stack)(BBCC* from, UInt jmp, BBCC* to, Addr sp, Bool skip)
 				  ".   .   .   .   .   .   .   .   .   .   " };
 
 	    int s = CLG_(current_call_stack).sp;
-	    Int* pars = (Int*) sp;
+	    UInt* pars = (UInt*) sp;
 
 	    BB* bb = jcc->to->bb;
 	    if (s>40) s=40;
@@ -288,7 +288,7 @@ void CLG_(push_call_stack)(BBCC* from, UInt jmp, BBCC* to, Addr sp, Bool skip)
                         pars ? pars[1]:0,
 			pars ? pars[2]:0,
 			bb->obj->name + bb->obj->last_slash_pos,
-			bb->offset);
+			(UWord)bb->offset);
 	  }
 	}
 	else if (CLG_(clo).verbose<4) {

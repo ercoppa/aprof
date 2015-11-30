@@ -8,7 +8,7 @@
    This file is part of Helgrind, a Valgrind tool for detecting errors
    in threaded programs.
 
-   Copyright (C) 2007-2012 OpenWorks Ltd
+   Copyright (C) 2007-2015 OpenWorks Ltd
       info@open-works.co.uk
 
    This program is free software; you can redistribute it and/or
@@ -37,6 +37,7 @@
 #include "pub_tool_execontext.h"
 #include "pub_tool_debuginfo.h"
 #include "pub_tool_threadstate.h"
+#include "pub_tool_aspacemgr.h"
 #include "pub_tool_addrinfo.h"
 
 #include "hg_basics.h"

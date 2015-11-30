@@ -9,7 +9,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2013 Julian Seward 
+   Copyright (C) 2000-2015 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -73,8 +73,8 @@ typedef
       SymAVMAs avmas;    /* Symbol Actual VMAs: lowest address of entity,
                             + platform specific fields, to access with
                             the macros defined in pub_core_debuginfo.h */
-      HChar*  pri_name;  /* primary name, never NULL */
-      HChar** sec_names; /* NULL, or a NULL term'd array of other names */
+      const HChar*  pri_name;  /* primary name, never NULL */
+      const HChar** sec_names; /* NULL, or a NULL term'd array of other names */
       // XXX: this could be shrunk (on 32-bit platforms) by using 30
       // bits for the size and 1 bit each for isText and isIFunc.  If you
       // do this, make sure that all assignments to the latter two use
@@ -333,6 +333,19 @@ typedef
       Int   fp_off;
    }
    DiCfSI_m;
+#elif defined(VGA_tilegx)
+typedef
+   struct {
+      UChar cfa_how; /* a CFIC_IA value */
+      UChar ra_how;  /* a CFIR_ value */
+      UChar sp_how;  /* a CFIR_ value */
+      UChar fp_how;  /* a CFIR_ value */
+      Int   cfa_off;
+      Int   ra_off;
+      Int   sp_off;
+      Int   fp_off;
+   }
+   DiCfSI_m;
 #else
 #  error "Unknown arch"
 #endif
@@ -382,8 +395,15 @@ typedef
       Creg_ARM_R14,
       Creg_ARM_R7,
       Creg_ARM64_X30,
-      Creg_S390_R14,
-      Creg_MIPS_RA
+      Creg_S390_IA,
+      Creg_S390_SP,
+      Creg_S390_FP,
+      Creg_S390_LR,
+      Creg_MIPS_RA,
+      Creg_TILEGX_IP,
+      Creg_TILEGX_SP,
+      Creg_TILEGX_BP,
+      Creg_TILEGX_LR
    }
    CfiReg;
 
@@ -439,7 +459,7 @@ extern Int ML_(CfiExpr_Binop) ( XArray* dst, CfiBinop op, Int ixL, Int ixR );
 extern Int ML_(CfiExpr_CfiReg)( XArray* dst, CfiReg reg );
 extern Int ML_(CfiExpr_DwReg) ( XArray* dst, Int reg );
 
-extern void ML_(ppCfiExpr)( XArray* src, Int ix );
+extern void ML_(ppCfiExpr)( const XArray* src, Int ix );
 
 /* ---------------- FPO INFO (Windows PE) -------------- */
 
@@ -476,10 +496,10 @@ typedef
 
 typedef
    struct {
-      HChar* name;  /* in DebugInfo.strpool */
+      const  HChar* name;  /* in DebugInfo.strpool */
       UWord  typeR; /* a cuOff */
-      GExpr* gexpr; /* on DebugInfo.gexprs list */
-      GExpr* fbGX;  /* SHARED. */
+      const GExpr* gexpr; /* on DebugInfo.gexprs list */
+      const GExpr* fbGX;  /* SHARED. */
       UInt   fndn_ix; /* where declared; may be zero. index
                          in DebugInfo.fndnpool */
       Int    lineNo;   /* where declared; may be zero. */
@@ -532,19 +552,19 @@ ML_(cmp_for_DiAddrRange_range) ( const void* keyV, const void* elemV );
    relocation, which only appears to be the case for 32 bit objects.
 */
 
-struct _DebugInfoMapping
+typedef struct
 {
    Addr  avma; /* these fields record the file offset, length */
    SizeT size; /* and map address of each mapping             */
    OffT  foff;
    Bool  rx, rw, ro;  /* memory access flags for this mapping */
-};
+} DebugInfoMapping;
 
 struct _DebugInfoFSM
 {
    HChar*  filename;  /* in mallocville (VG_AR_DINFO)               */
    HChar*  dbgname;   /* in mallocville (VG_AR_DINFO)               */
-   XArray* maps;      /* XArray of _DebugInfoMapping structs        */
+   XArray* maps;      /* XArray of DebugInfoMapping structs         */
    Bool  have_rx_map; /* did we see a r?x mapping yet for the file? */
    Bool  have_rw_map; /* did we see a rw? mapping yet for the file? */
    Bool  have_ro_map; /* did we see a r-- mapping yet for the file? */
@@ -975,7 +995,7 @@ struct _DebugInfo {
    /* Cached last rx mapping matched and returned by ML_(find_rx_mapping).
       This helps performance a lot during ML_(addLineInfo) etc., which can
       easily be invoked hundreds of thousands of times. */
-   struct _DebugInfoMapping* last_rx_map;
+   DebugInfoMapping* last_rx_map;
 };
 
 /* --------------------- functions --------------------- */
@@ -997,17 +1017,17 @@ extern UInt ML_(addFnDn) (struct _DebugInfo* di,
 
 /* Returns the filename of the fndn pair identified by fndn_ix.
    Returns "???" if fndn_ix is 0. */
-extern const HChar* ML_(fndn_ix2filename) (struct _DebugInfo* di,
+extern const HChar* ML_(fndn_ix2filename) (const DebugInfo* di,
                                            UInt fndn_ix);
 
 /* Returns the dirname of the fndn pair identified by fndn_ix.
    Returns "" if fndn_ix is 0 or fndn->dirname is NULL. */
-extern const HChar* ML_(fndn_ix2dirname) (struct _DebugInfo* di,
+extern const HChar* ML_(fndn_ix2dirname) (const DebugInfo* di,
                                           UInt fndn_ix);
 
 /* Returns the fndn_ix for the LineInfo locno in di->loctab.
    0 if filename/dirname are unknown. */
-extern UInt ML_(fndn_ix) (struct _DebugInfo* di, Word locno);
+extern UInt ML_(fndn_ix) (const DebugInfo* di, Word locno);
 
 /* Add a line-number record to a DebugInfo.
    fndn_ix is an index in di->fndnpool, allocated using  ML_(addFnDn).
@@ -1041,25 +1061,25 @@ extern void ML_(addDiCfSI) ( struct _DebugInfo* di,
 /* Given a position in the di->cfsi_base/cfsi_m_ix arrays, return
    the corresponding cfsi_m*. Return NULL if the position corresponds
    to a cfsi hole. */
-DiCfSI_m* ML_(get_cfsi_m) (struct _DebugInfo* di, UInt pos);
+DiCfSI_m* ML_(get_cfsi_m) (const DebugInfo* di, UInt pos);
 
 /* Add a string to the string table of a DebugInfo.  If len==-1,
    ML_(addStr) will itself measure the length of the string. */
-extern HChar* ML_(addStr) ( struct _DebugInfo* di, const HChar* str, Int len );
+extern const HChar* ML_(addStr) ( DebugInfo* di, const HChar* str, Int len );
 
 /* Add a string to the string table of a DebugInfo, by copying the
    string from the given DiCursor.  Measures the length of the string
    itself. */
-extern HChar* ML_(addStrFromCursor)( struct _DebugInfo* di, DiCursor c );
+extern const HChar* ML_(addStrFromCursor)( DebugInfo* di, DiCursor c );
 
 extern void ML_(addVar)( struct _DebugInfo* di,
                          Int    level,
                          Addr   aMin,
                          Addr   aMax,
-                         HChar* name,
+                         const  HChar* name,
                          UWord  typeR, /* a cuOff */
-                         GExpr* gexpr,
-                         GExpr* fbGX, /* SHARED. */
+                         const GExpr* gexpr,
+                         const GExpr* fbGX, /* SHARED. */
                          UInt   fndn_ix, /* where decl'd - may be zero */
                          Int    lineNo, /* where decl'd - may be zero */
                          Bool   show );
@@ -1083,44 +1103,44 @@ extern void ML_(finish_CFSI_arrays) ( struct _DebugInfo* di );
 
 /* Find a symbol-table index containing the specified pointer, or -1
    if not found.  Binary search.  */
-extern Word ML_(search_one_symtab) ( struct _DebugInfo* di, Addr ptr,
+extern Word ML_(search_one_symtab) ( const DebugInfo* di, Addr ptr,
                                      Bool match_anywhere_in_sym,
                                      Bool findText );
 
 /* Find a location-table index containing the specified pointer, or -1
    if not found.  Binary search.  */
-extern Word ML_(search_one_loctab) ( struct _DebugInfo* di, Addr ptr );
+extern Word ML_(search_one_loctab) ( const DebugInfo* di, Addr ptr );
 
 /* Find a CFI-table index containing the specified pointer, or -1 if
    not found.  Binary search.  */
-extern Word ML_(search_one_cfitab) ( struct _DebugInfo* di, Addr ptr );
+extern Word ML_(search_one_cfitab) ( const DebugInfo* di, Addr ptr );
 
 /* Find a FPO-table index containing the specified pointer, or -1
    if not found.  Binary search.  */
-extern Word ML_(search_one_fpotab) ( struct _DebugInfo* di, Addr ptr );
+extern Word ML_(search_one_fpotab) ( const DebugInfo* di, Addr ptr );
 
 /* Helper function for the most often needed searching for an rx
    mapping containing the specified address range.  The range must
    fall entirely within the mapping to be considered to be within it.
    Asserts if lo > hi; caller must ensure this doesn't happen. */
-extern struct _DebugInfoMapping* ML_(find_rx_mapping) ( struct _DebugInfo* di,
-                                                        Addr lo, Addr hi );
+extern DebugInfoMapping* ML_(find_rx_mapping) ( DebugInfo* di,
+                                                Addr lo, Addr hi );
 
 /* ------ Misc ------ */
 
-/* Show a non-fatal debug info reading error.  Use vg_panic if
-   terminal.  'serious' errors are always shown, not 'serious' ones
+/* Show a non-fatal debug info reading error.  Use VG_(core_panic) for
+   fatal errors.  'serious' errors are always shown, not 'serious' ones
    are shown only at verbosity level 2 and above. */
 extern 
-void ML_(symerr) ( struct _DebugInfo* di, Bool serious, const HChar* msg );
+void ML_(symerr) ( const DebugInfo* di, Bool serious, const HChar* msg );
 
 /* Print a symbol. */
-extern void ML_(ppSym) ( Int idx, DiSym* sym );
+extern void ML_(ppSym) ( Int idx, const DiSym* sym );
 
 /* Print a call-frame-info summary. */
-extern void ML_(ppDiCfSI) ( XArray* /* of CfiExpr */ exprs,
+extern void ML_(ppDiCfSI) ( const XArray* /* of CfiExpr */ exprs,
                             Addr base, UInt len,
-                            DiCfSI_m* si_m );
+                            const DiCfSI_m* si_m );
 
 
 #define TRACE_SYMTAB_ENABLED (di->trace_symtab)

@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2014-2014 Philippe Waroquiers philippe.waroquiers@skynet.be
+   Copyright (C) 2014-2015 Philippe Waroquiers philippe.waroquiers@skynet.be
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -80,23 +80,33 @@
 typedef  struct _DedupPoolAlloc  DedupPoolAlloc;
 
 /* Create new DedupPoolAlloc, using given allocation and free function.
-   Alloc fn must not fail (that is, if it returns it must have succeeded.)
+   alloc_fn must not return NULL (that is, if it returns it must have
+   succeeded.)
    poolSzB is the (minimum) size in bytes of the pool of elements allocated
    with alloc. 
    eltAlign is the minimum required alignement for the elements allocated
-   from the DedupPoolAlloc. */
+   from the DedupPoolAlloc.
+   This function never returns NULL. */
 extern DedupPoolAlloc* VG_(newDedupPA) ( SizeT  poolSzB,
                                          SizeT  eltAlign,
                                          void*  (*alloc)(const HChar*, SizeT),
                                          const  HChar* cc,
                                          void   (*free_fn)(void*) );
 
-/* Allocates a new element from ddpa with eltSzB bytes to store elt. */
-extern void* VG_(allocEltDedupPA) (DedupPoolAlloc *ddpa,
-                                   SizeT eltSzB, const void *elt);
+/* Allocates a new element from ddpa with eltSzB bytes to store elt.
+   This function never returns NULL.
+   If ddpa already contains an element equal to elt, then the address of
+   the already existing element is returned.
+   Equality between elements is done by comparing all bytes.
+   So, if void *elt points to a struct, be sure to initialise all components
+   and the holes between components. */
+extern const void* VG_(allocEltDedupPA) (DedupPoolAlloc *ddpa,
+                                         SizeT eltSzB, const void *elt);
 
 /* Allocates a new (fixed size) element from ddpa. Returns the
-   unique number identifying this element. */
+   unique number identifying this element. This function never returns NULL.
+   Similarly to VG_(allocEltDedupPA), this will return the unique number
+   of an already existing identical element to elt. */
 extern UInt VG_(allocFixedEltDedupPA) (DedupPoolAlloc *ddpa,
                                        SizeT eltSzB, const void *elt);
 

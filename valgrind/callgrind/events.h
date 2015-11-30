@@ -6,7 +6,7 @@
 /*
    This file is part of Callgrind, a Valgrind tool for call tracing.
 
-   Copyright (C) 2002-2013, Josef Weidendorfer (Josef.Weidendorfer@gmx.de)
+   Copyright (C) 2002-2015, Josef Weidendorfer (Josef.Weidendorfer@gmx.de)
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -121,9 +121,13 @@ struct _EventMapping {
 /* Allocate space for an event mapping */
 EventMapping* CLG_(get_eventmapping)(EventSet*);
 void CLG_(append_event)(EventMapping*, const HChar*);
-/* Returns number of characters written */
-Int CLG_(sprint_eventmapping)(HChar* buf, EventMapping*);
-/* Returns number of characters written */
-Int CLG_(sprint_mappingcost)(HChar* buf, EventMapping*, ULong*);
+/* Returns event mapping as a character string. That string is dynamically
+   allocated and it is the caller's responsibility to free it.
+   The function never returns NULL. */
+HChar *CLG_(eventmapping_as_string)(const EventMapping*);
+/* Returns mapping cost as a character string. That string is dynamically
+   allocated and it is the caller's responsibility to free it.
+   The function never returns NULL. */
+HChar *CLG_(mappingcost_as_string)(const EventMapping*, const ULong*);
 
 #endif /* CLG_EVENTS */

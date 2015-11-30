@@ -270,7 +270,7 @@ typedef struct Runtime {
     ThreadId        current_TID;            // Thread ID of the current active thread
     ThreadData *    current_tdata;          // Thread info of current active thread
     UInt            running_threads;        // # of active threads
-    ThreadData *    threads[VG_N_THREADS];  // Thread data
+    ThreadData *    threads[MAX_THREADS_DEFAULT];  // Thread data
     HashTable *     bb_ht;                  // BB hash table
     jump_t          last_exit;              // Last BB jump seen
     BB *            last_bb;                // last BB seen
