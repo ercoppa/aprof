@@ -37,5 +37,4 @@ AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 # Special needs
 pthread_stack_LDADD = -lpthread
 
-stack_overflow_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@ \
-			@FLAG_W_NO_INFINITE_RECURSION@
+stack_overflow_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@

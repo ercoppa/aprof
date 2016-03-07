@@ -3785,10 +3785,6 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          /* I32(rm) x D128 -> D128 */
          return mkLazy2(mce, Ity_I128, vatom1, vatom2);
 
-      case Iop_RoundF128toInt:
-         /* I32(rm) x F128 -> F128 */
-         return mkLazy2(mce, Ity_I128, vatom1, vatom2);
-
       case Iop_D64toI64S:
       case Iop_D64toI64U:
       case Iop_I64StoD64:
@@ -6317,35 +6313,29 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
    }
    tl_assert( VG_(sizeXA)( mce.tmpMap ) == sb_in->tyenv->types_used );
 
-   if (MC_(clo_expensive_definedness_checks)) {
-      /* For expensive definedness checking skip looking for bogus
-         literals. */
-      mce.bogusLiterals = True;
-   } else {
-      /* Make a preliminary inspection of the statements, to see if there
-         are any dodgy-looking literals.  If there are, we generate
-         extra-detailed (hence extra-expensive) instrumentation in
-         places.  Scan the whole bb even if dodgyness is found earlier,
-         so that the flatness assertion is applied to all stmts. */
-      Bool bogus = False;
+   /* Make a preliminary inspection of the statements, to see if there
+      are any dodgy-looking literals.  If there are, we generate
+      extra-detailed (hence extra-expensive) instrumentation in
+      places.  Scan the whole bb even if dodgyness is found earlier,
+      so that the flatness assertion is applied to all stmts. */
+   Bool bogus = False;
 
-      for (i = 0; i < sb_in->stmts_used; i++) {
-         st = sb_in->stmts[i];
-         tl_assert(st);
-         tl_assert(isFlatIRStmt(st));
+   for (i = 0; i < sb_in->stmts_used; i++) {
+      st = sb_in->stmts[i];
+      tl_assert(st);
+      tl_assert(isFlatIRStmt(st));
 
-         if (!bogus) {
-            bogus = checkForBogusLiterals(st);
-            if (0 && bogus) {
-               VG_(printf)("bogus: ");
-               ppIRStmt(st);
-               VG_(printf)("\n");
-            }
-            if (bogus) break;
+      if (!bogus) {
+         bogus = checkForBogusLiterals(st);
+         if (0 && bogus) {
+            VG_(printf)("bogus: ");
+            ppIRStmt(st);
+            VG_(printf)("\n");
          }
+         if (bogus) break;
       }
-      mce.bogusLiterals = bogus;
    }
+   mce.bogusLiterals = bogus;
 
    /* Copy verbatim any IR preamble preceding the first IMark */
 

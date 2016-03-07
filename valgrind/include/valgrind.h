@@ -89,7 +89,7 @@
         || (__VALGRIND_MAJOR__ == 3 && __VALGRIND_MINOR__ >= 6))
 */
 #define __VALGRIND_MAJOR__    3
-#define __VALGRIND_MINOR__    11
+#define __VALGRIND_MINOR__    10
 
 
 #include <stdarg.h>
@@ -794,8 +794,7 @@ typedef
                      "orr x10, x10, x10\n\t"                      \
                      "mov %0, x3"     /*result*/                  \
                      : "=r" (_zzq_result)                         \
-                     : "r" ((unsigned long int)(_zzq_default)),   \
-                       "r" (&_zzq_args[0])                        \
+                     : "r" (_zzq_default), "r" (&_zzq_args[0])    \
                      : "cc","memory", "x3", "x4");                \
     _zzq_result;                                                  \
   })

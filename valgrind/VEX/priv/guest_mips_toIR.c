@@ -12228,28 +12228,39 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
    case 0x11: {  /* COP1 */
       if (fmt == 0x3 && fd == 0 && function == 0) {  /* MFHC1 */
          DIP("mfhc1 r%u, f%u", rt, fs);
-         if (fp_mode64) {
-            t0 = newTemp(Ity_I64);
-            t1 = newTemp(Ity_I32);
-            assign(t0, unop(Iop_ReinterpF64asI64, getDReg(fs)));
-            assign(t1, unop(Iop_64HIto32, mkexpr(t0)));
-            putIReg(rt, mkWidenFrom32(ty, mkexpr(t1), True));
-         } else {
-            ILLEGAL_INSTRUCTON;
+         if (VEX_MIPS_CPU_HAS_MIPS32R2(archinfo->hwcaps)) {
+            if (fp_mode64) {
+               t0 = newTemp(Ity_I64);
+               t1 = newTemp(Ity_I32);
+               assign(t0, unop(Iop_ReinterpF64asI64, getDReg(fs)));
+               assign(t1, unop(Iop_64HIto32, mkexpr(t0)));
+               putIReg(rt, mkWidenFrom32(ty, mkexpr(t1), True));
+               break;
+            } else if ((fs & 1) == 0) {
+               putIReg(rt, mkWidenFrom32(ty, unop(Iop_ReinterpF32asI32,
+                                                  getFReg(fs | 1)), True));
+               break;
+            }
          }
+         ILLEGAL_INSTRUCTON;
          break;
       } else if (fmt == 0x7 && fd == 0 && function == 0) {  /* MTHC1 */
          DIP("mthc1 r%u, f%u", rt, fs);
-         if (fp_mode64) {
-            t0 = newTemp(Ity_I64);
-            assign(t0, binop(Iop_32HLto64, getIReg(rt),
-                             unop(Iop_ReinterpF32asI32,
-                                  getLoFromF64(Ity_F64 /* 32FPR mode. */,
-                                               getDReg(fs)))));
-            putDReg(fs, unop(Iop_ReinterpI64asF64, mkexpr(t0)));
-         } else {
-            ILLEGAL_INSTRUCTON;
+         if (VEX_MIPS_CPU_HAS_MIPS32R2(archinfo->hwcaps)) {
+            if (fp_mode64) {
+               t0 = newTemp(Ity_I64);
+               assign(t0, binop(Iop_32HLto64, mkNarrowTo32(ty, getIReg(rt)),
+                                unop(Iop_ReinterpF32asI32,
+                                     getLoFromF64(Ity_F64, getDReg(fs)))));
+               putDReg(fs, unop(Iop_ReinterpI64asF64, mkexpr(t0)));
+               break;
+            } else if ((fs & 1) == 0) {
+               putFReg(fs | 1, unop(Iop_ReinterpI32asF32,
+                                    mkNarrowTo32(ty, getIReg(rt))));
+               break;
+            }
          }
+         ILLEGAL_INSTRUCTON;
          break;
       } else if (fmt == 0x8) {  /* BC */
          /* FcConditionalCode(bc1_cc) */
@@ -17290,7 +17301,7 @@ DisResult disInstr_MIPS( IRSB*        irsb_IN,
 
    mode64 = guest_arch != VexArchMIPS32;
 #if (__mips_fpr==64)
-   fp_mode64 = ((VEX_MIPS_REV(archinfo->hwcaps) == VEX_PRID_CPU_32FPR)
+   fp_mode64 = (VEX_MIPS_HAS_32_64BIT_FPRS(archinfo->hwcaps)
                 || guest_arch == VexArchMIPS64);
 #endif
 

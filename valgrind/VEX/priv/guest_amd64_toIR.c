@@ -6401,19 +6401,20 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                fp_do_op_mem_ST_0 ( addr, "mul", dis_buf, Iop_MulF64, True );
                break;
 
-//..             case 2: /* FCOM double-real */
-//..                DIP("fcoml %s\n", dis_buf);
-//..                /* This forces C1 to zero, which isn't right. */
-//..                put_C3210( 
-//..                    binop( Iop_And32,
-//..                           binop(Iop_Shl32, 
-//..                                 binop(Iop_CmpF64, 
-//..                                       get_ST(0),
-//..                                       loadLE(Ity_F64,mkexpr(addr))),
-//..                                 mkU8(8)),
-//..                           mkU32(0x4500)
-//..                    ));
-//..                break;  
+            case 2: /* FCOM double-real */
+               DIP("fcoml %s\n", dis_buf);
+               /* This forces C1 to zero, which isn't right. */
+               put_C3210(
+                   unop(Iop_32Uto64,
+                   binop( Iop_And32,
+                          binop(Iop_Shl32,
+                                binop(Iop_CmpF64,
+                                      get_ST(0),
+                                      loadLE(Ity_F64,mkexpr(addr))),
+                                mkU8(8)),
+                          mkU32(0x4500)
+                   )));
+               break;
 
             case 3: /* FCOMP double-real */
                DIP("fcompl %s\n", dis_buf);
@@ -13396,7 +13397,8 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
    case 0x5A:
       /* 0F 5A = CVTPS2PD -- convert 2 x F32 in low half mem/xmm to 2 x
          F64 in xmm(G). */
-      if (haveNo66noF2noF3(pfx) && sz == 4) {
+      if (haveNo66noF2noF3(pfx)
+          && (sz == 4 || /* ignore redundant REX.W */ sz == 8)) {
          delta = dis_CVTPS2PD_128( vbi, pfx, delta, False/*!isAvx*/ );
          goto decode_success;
       }

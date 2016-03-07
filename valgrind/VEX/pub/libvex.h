@@ -141,7 +141,8 @@ typedef
 #define VEX_S390X_MODEL_ZEC12    10
 #define VEX_S390X_MODEL_ZBC12    11
 #define VEX_S390X_MODEL_Z13      12
-#define VEX_S390X_MODEL_UNKNOWN  13     /* always last in list */
+#define VEX_S390X_MODEL_Z13S     13
+#define VEX_S390X_MODEL_UNKNOWN  14     /* always last in list */
 #define VEX_S390X_MODEL_MASK     0x3F
 
 #define VEX_HWCAPS_S390X_LDISP (1<<6)   /* Long-displacement facility */
@@ -204,26 +205,50 @@ typedef
 
 */
 
-#define VEX_PRID_COMP_MIPS      0x00010000
-#define VEX_PRID_COMP_BROADCOM  0x00020000
-#define VEX_PRID_COMP_NETLOGIC  0x000C0000
-#define VEX_PRID_COMP_CAVIUM    0x000D0000
+#define VEX_PRID_COMP_LEGACY      0x00000000
+#define VEX_PRID_COMP_MIPS        0x00010000
+#define VEX_PRID_COMP_BROADCOM    0x00020000
+#define VEX_PRID_COMP_NETLOGIC    0x000C0000
+#define VEX_PRID_COMP_CAVIUM      0x000D0000
+#define VEX_PRID_COMP_INGENIC_E1  0x00E10000        /* JZ4780 */
+
+/*
+ * These are valid when 23:16 == PRID_COMP_LEGACY
+ */
+#define VEX_PRID_IMP_LOONGSON_64        0x6300  /* Loongson-2/3 */
 
 /*
  * These are the PRID's for when 23:16 == PRID_COMP_MIPS
  */
-#define VEX_PRID_IMP_34K        0x9500
-#define VEX_PRID_IMP_74K        0x9700
+#define VEX_PRID_IMP_34K                0x9500
+#define VEX_PRID_IMP_74K                0x9700
 
+/*
+ * Instead of Company Options values, bits 31:24 will be packed with
+ * additional information, such as isa level and presence of FPU unit
+ * with 32 64-bit registers.
+ */
+#define VEX_MIPS_CPU_ISA_M32R1      0x01000000
+#define VEX_MIPS_CPU_ISA_M32R2      0x02000000
+#define VEX_MIPS_CPU_ISA_M64R1      0x04000000
+#define VEX_MIPS_CPU_ISA_M64R2      0x08000000
+#define VEX_MIPS_CPU_ISA_M32R6      0x10000000
+#define VEX_MIPS_CPU_ISA_M64R6      0x20000000
 /* CPU has FPU and 32 dbl. prec. FP registers */
-#define VEX_PRID_CPU_32FPR      0x00000040
-
+#define VEX_MIPS_CPU_32FPR          0x40000000
+/* Get MIPS Extended Information */
+#define VEX_MIPS_EX_INFO(x) ((x) & 0xFF000000)
 /* Get MIPS Company ID from HWCAPS */
 #define VEX_MIPS_COMP_ID(x) ((x) & 0x00FF0000)
 /* Get MIPS Processor ID from HWCAPS */
 #define VEX_MIPS_PROC_ID(x) ((x) & 0x0000FF00)
 /* Get MIPS Revision from HWCAPS */
 #define VEX_MIPS_REV(x) ((x) & 0x000000FF)
+/* Check if the processor has 32 64-bit FP registers */
+#define VEX_MIPS_HAS_32_64BIT_FPRS(x) (VEX_MIPS_EX_INFO(x) | VEX_MIPS_CPU_32FPR)
+/* Check if the processor supports MIPS32R2. */
+#define VEX_MIPS_CPU_HAS_MIPS32R2(x) (VEX_MIPS_EX_INFO(x) | \
+                                      VEX_MIPS_CPU_ISA_M32R2)
 /* Check if the processor supports DSP ASE Rev 2. */
 #define VEX_MIPS_PROC_DSP2(x) ((VEX_MIPS_COMP_ID(x) == VEX_PRID_COMP_MIPS) && \
                                (VEX_MIPS_PROC_ID(x) == VEX_PRID_IMP_74K))
@@ -847,7 +872,14 @@ typedef
       IRType t_opnd4;  // type of 4th operand
       UInt  rounding_mode;
       UInt  num_operands; // excluding rounding mode, if any
-      Bool  shift_amount_is_immediate;
+      /* The following two members describe if this operand has immediate
+       *  operands. There are a few restrictions:
+       *    (1) An operator can have at most one immediate operand.
+       * (2) If there is an immediate operand, it is the right-most operand
+       *  An immediate_index of 0 means there is no immediate operand.
+       */
+      UInt immediate_type;  // size of immediate Ity_I8, Ity_16
+      UInt immediate_index; // operand number: 1, 2
    }
    IRICB;
 
