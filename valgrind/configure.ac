@@ -8,7 +8,7 @@
 ##------------------------------------------------------------##
 
 # Process this file with autoconf to produce a configure script.
-AC_INIT([Valgrind],[3.11.0.SVN],[valgrind-users@lists.sourceforge.net])
+AC_INIT([Valgrind],[3.11.0],[valgrind-users@lists.sourceforge.net])
 AC_CONFIG_SRCDIR(coregrind/m_main.c)
 AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
@@ -1847,6 +1847,25 @@ CFLAGS=$safe_CFLAGS
 AC_SUBST(PREFERRED_STACK_BOUNDARY_2)
 
 
+# does this compiler support -mlong-double-128 ?
+AC_MSG_CHECKING([if gcc accepts -mlong-double-128])
+safe_CFLAGS=$CFLAGS
+CFLAGS="-mlong-double-128 -Werror"
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  return 0;
+]])], [
+ac_compiler_supports_mlong_double_128=yes
+AC_MSG_RESULT([yes])
+], [
+ac_compiler_supports_mlong_double_128=no
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+AM_CONDITIONAL(HAS_MLONG_DOUBLE_128, test x$ac_compiler_supports_mlong_double_128 = xyes)
+FLAG_MLONG_DOUBLE_128="-mlong-double-128"
+AC_SUBST(FLAG_MLONG_DOUBLE_128)
+
+
 # Convenience function to check whether GCC supports a particular
 # warning option. Takes two arguments,
 # first the warning flag name to check (without -W), then the
@@ -1887,6 +1906,8 @@ AC_GCC_WARNING_SUBST_NO([pointer-sign], [FLAG_W_NO_POINTER_SIGN])
 AC_GCC_WARNING_SUBST_NO([uninitialized], [FLAG_W_NO_UNINITIALIZED])
 AC_GCC_WARNING_SUBST_NO([unused-function], [FLAG_W_NO_UNUSED_FUNCTION])
 AC_GCC_WARNING_SUBST_NO([static-local-in-inline], [FLAG_W_NO_STATIC_LOCAL_IN_INLINE])
+AC_GCC_WARNING_SUBST_NO([mismatched-new-delete], [FLAG_W_NO_MISMATCHED_NEW_DELETE])
+AC_GCC_WARNING_SUBST_NO([infinite-recursion], [FLAG_W_NO_INFINITE_RECURSION])
 AC_GCC_WARNING_SUBST([write-strings], [FLAG_W_WRITE_STRINGS])
 AC_GCC_WARNING_SUBST([empty-body], [FLAG_W_EMPTY_BODY])
 AC_GCC_WARNING_SUBST([format], [FLAG_W_FORMAT])
@@ -1945,6 +1966,15 @@ AC_MSG_RESULT([-Wextra])
   ])
 ])
 CFLAGS=$safe_CFLAGS
+
+# On ARM we do not want to pass -Wcast-align as that produces loads
+# of warnings. GCC is just being conservative. See here:
+# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=65459#c4
+if test "X$VGCONF_ARCH_PRI" = "Xarm"; then
+  AC_SUBST([FLAG_W_CAST_ALIGN], [""])
+else
+  AC_SUBST([FLAG_W_CAST_ALIGN], [-Wcast-align])
+fi
 
 # does this compiler support -fno-stack-protector ?
 AC_MSG_CHECKING([if gcc accepts -fno-stack-protector])
@@ -2209,6 +2239,24 @@ if test x$ac_have_as_ppc_fpPO = xyes ; then
   AC_DEFINE(HAVE_AS_PPC_FPPO, 1, [Define to 1 if as supports floating point phased out category.])
 fi
 
+
+# does the amd64 assembler understand "fxsave64" and "fxrstor64"?
+AC_MSG_CHECKING([if amd64 assembler supports fxsave64/fxrstor64])
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+void* p;
+asm __volatile__("fxsave64 (%0)" : : "r" (p) : "memory" );
+asm __volatile__("fxrstor64 (%0)" : : "r" (p) : "memory" );
+]])], [
+ac_have_as_amd64_fxsave64=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_as_amd64_fxsave64=no
+AC_MSG_RESULT([no])
+])
+if test x$ac_have_as_amd64_fxsave64 = xyes ; then
+  AC_DEFINE(HAVE_AS_AMD64_FXSAVE64, 1, [Define to 1 if as supports fxsave64/fxrstor64.])
+fi
 
 # does the x86/amd64 assembler understand SSE3 instructions?
 # Note, this doesn't generate a C-level symbol.  It generates a
@@ -2514,6 +2562,10 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   do {
     asm ("bndmov %bnd0,(%rsp)");
     asm ("bndldx 3(%rbx,%rdx), %bnd2");
+    asm ("bnd call foo\n"
+          bnd jmp  end\n"
+          foo: bnd ret\n"
+          end: nop");
   } while (0)
 ]])], [
 ac_have_as_mpx=yes

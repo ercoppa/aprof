@@ -241,8 +241,9 @@ static irop_t irops[] = {
   { DEFOP(Iop_CosF64,        UNDEF_ALL), .s390x = 0, .amd64 = 1, .x86 = 1, .arm = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0, .mips64 = 0, .tilegx = 0 },
   { DEFOP(Iop_TanF64,        UNDEF_ALL), .s390x = 0, .amd64 = 1, .x86 = 1, .arm = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0, .mips64 = 0, .tilegx = 0 },
   { DEFOP(Iop_2xm1F64,       UNDEF_ALL), .s390x = 0, .amd64 = 1, .x86 = 1, .arm = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0, .mips64 = 0, .tilegx = 0 },
-  { DEFOP(Iop_RoundF64toInt, UNDEF_ALL), .s390x = 0, .amd64 = 1, .x86 = 1, .arm = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0, .mips64 = 1, .tilegx = 0 },
-  { DEFOP(Iop_RoundF32toInt, UNDEF_ALL), .s390x = 0, .amd64 = 1, .x86 = 1, .arm = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 1, .mips64 = 1, .tilegx = 0 },
+  { DEFOP(Iop_RoundF128toInt, UNDEF_ALL), .s390x = 1, .amd64 = 0, .x86 = 0, .arm = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0, .mips64 = 0, .tilegx = 0 },
+  { DEFOP(Iop_RoundF64toInt, UNDEF_ALL), .s390x = 1, .amd64 = 1, .x86 = 1, .arm = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0, .mips64 = 1, .tilegx = 0 },
+  { DEFOP(Iop_RoundF32toInt, UNDEF_ALL), .s390x = 1, .amd64 = 1, .x86 = 1, .arm = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 1, .mips64 = 1, .tilegx = 0 },
   { DEFOP(Iop_MAddF32,       UNDEF_ALL), .s390x = 1, .amd64 = 0, .x86 = 0, .arm = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0, .mips64 = 1, .tilegx = 0 },
   { DEFOP(Iop_MSubF32,       UNDEF_ALL), .s390x = 1, .amd64 = 0, .x86 = 0, .arm = 0, .ppc64 = 0, .ppc32 = 0, .mips32 = 0, .mips64 = 1, .tilegx = 0 },
   { DEFOP(Iop_MAddF64,       UNDEF_ALL), .s390x = 1, .amd64 = 0, .x86 = 0, .arm = 0, .ppc64 = 1, .ppc32 = 1, .mips32 = 0, .mips64 = 1, .tilegx = 0 },
@@ -1142,6 +1143,38 @@ get_irop(IROp op)
          return p->amd64 ? p : NULL;
 #endif
 #ifdef __powerpc__
+#define  MIN_POWER_ISA  "../../../tests/min_power_isa"
+
+         switch (op) {
+         case Iop_DivS64E:
+         case Iop_DivU64E:
+         case Iop_DivU32E:
+         case Iop_DivS32E:
+         case Iop_F64toI64U:
+         case Iop_F64toI32U:
+         case Iop_I64UtoF64:
+         case Iop_I64UtoF32:
+         case Iop_I64StoD64: {
+            int rc;
+            /* IROps require a processor that supports ISA 2.06 or newer */
+            rc = system(MIN_POWER_ISA " 2.06 ");
+            rc /= 256;
+            /* MIN_POWER_ISA returns 0 if underlying HW supports the
+             * specified ISA or newer. Returns 1 if the HW does not support
+             * the specified ISA.  Returns 2 on error.
+             */
+            if (rc == 1) return NULL;
+            if (rc > 2) {
+               panic(" ERROR, min_power_isa() return code is invalid.\n");
+            }
+         }
+         break;
+
+         /* Other */
+         default:
+         break;
+         }
+
 #ifdef __powerpc64__
          return p->ppc64 ? p : NULL;
 #else

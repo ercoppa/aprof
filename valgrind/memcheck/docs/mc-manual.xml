@@ -811,7 +811,7 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
 
   <varlistentry id="opt.leak-check-heuristics" xreflabel="--leak-check-heuristics">
     <term>
-      <option><![CDATA[--leak-check-heuristics=<set> [default: none] ]]></option>
+      <option><![CDATA[--leak-check-heuristics=<set> [default: all] ]]></option>
     </term>
     <listitem>
       <para>Specifies the set of leak check heuristics to be used
@@ -947,7 +947,7 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
 
   <varlistentry id="opt.partial-loads-ok" xreflabel="--partial-loads-ok">
     <term>
-      <option><![CDATA[--partial-loads-ok=<yes|no> [default: no] ]]></option>
+      <option><![CDATA[--partial-loads-ok=<yes|no> [default: yes] ]]></option>
     </term>
     <listitem>
       <para>Controls how Memcheck handles 32-, 64-, 128- and 256-bit
@@ -965,14 +965,31 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
 
       <para>Note that code that behaves in this way is in violation of
       the ISO C/C++ standards, and should be considered broken.  If
-      at all possible, such code should be fixed.  This option should be
-      used only as a last resort.</para>
+      at all possible, such code should be fixed.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.expensive-definedness-checks" xreflabel="--expensive-definedness-checks">
+    <term>
+      <option><![CDATA[--expensive-definedness-checks=<yes|no> [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>Controls whether Memcheck should employ more precise but also more
+      expensive (time consuming) algorithms when checking the definedness of a
+      value. The default setting is not to do that and it is usually
+      sufficient. However, for highly optimised code valgrind may sometimes
+      incorrectly complain. 
+      Invoking valgrind with <option>--expensive-definedness-checks=yes</option> 
+      helps but comes at a performance cost. Runtime degradation of
+      25% have been observed but the extra cost depends a lot on the
+      application at hand.
+      </para>
     </listitem>
   </varlistentry>
 
   <varlistentry id="opt.keep-stacktraces" xreflabel="--keep-stacktraces">
     <term>
-      <option><![CDATA[--keep-stacktraces=alloc|free|alloc-and-free|alloc-then-free|none [default: alloc-then-free] ]]></option>
+      <option><![CDATA[--keep-stacktraces=alloc|free|alloc-and-free|alloc-then-free|none [default: alloc-and-free] ]]></option>
     </term>
     <listitem>
       <para>Controls which stack trace(s) to keep for malloc'd and/or
@@ -1886,12 +1903,19 @@ Address 0x8049E28 len 1 defined
   </listitem>
 
   <listitem>
-    <para><varname>block_list &lt;loss_record_nr&gt;
-                              [unlimited*|limited &lt;max_blocks&gt;]</varname>
-      shows the list of blocks belonging to &lt;loss_record_nr&gt;.
+    <para><varname>block_list &lt;loss_record_nr&gt;|&lt;loss_record_nr_from&gt;..&lt;loss_record_nr_to&gt;
+        [unlimited*|limited &lt;max_blocks&gt;]
+        [heuristics heur1,heur2,...]
+      </varname>
+      shows the list of blocks belonging to
+      <varname>&lt;loss_record_nr&gt;</varname> (or to the loss records range
+      <varname>&lt;loss_record_nr_from&gt;..&lt;loss_record_nr_to&gt;</varname>).
       The nr of blocks to print can be controlled using the
       <varname>limited</varname> argument followed by the maximum nr
       of blocks to output.
+      If one or more heuristics are given, only prints the loss records
+      and blocks found via one of the given <varname>heur1,heur2,...</varname>
+      heuristics.
     </para>
 
     <para> A leak search merges the allocated blocks in loss records :
@@ -1901,7 +1925,8 @@ Address 0x8049E28 len 1 defined
     by a loss record number.
     The <varname>block_list</varname> command shows the loss record information
     followed by the addresses and sizes of the blocks which have been
-    merged in the loss record.
+    merged in the loss record. If a block was found using an heuristic, the block size
+    is followed by the heuristic.
     </para>
 
     <para> If a directly lost block causes some other blocks to be indirectly

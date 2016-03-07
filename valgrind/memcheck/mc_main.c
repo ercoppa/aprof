@@ -5689,28 +5689,27 @@ static Bool mc_expensive_sanity_check ( void )
 /*--- Command line args                                    ---*/
 /*------------------------------------------------------------*/
 
-/* --partial-loads-ok: enable by default on MacOS.  The MacOS system
-   graphics libraries are heavily vectorised, and not enabling this by
-   default causes lots of false errors. */
-#if defined(VGO_darwin)
+/* 31 Aug 2015: Vectorised code is now so widespread that
+   --partial-loads-ok needs to be enabled by default on all platforms.
+   Not doing so causes lots of false errors. */
 Bool          MC_(clo_partial_loads_ok)       = True;
-#else
-Bool          MC_(clo_partial_loads_ok)       = False;
-#endif
-
 Long          MC_(clo_freelist_vol)           = 20*1000*1000LL;
 Long          MC_(clo_freelist_big_blocks)    =  1*1000*1000LL;
 LeakCheckMode MC_(clo_leak_check)             = LC_Summary;
 VgRes         MC_(clo_leak_resolution)        = Vg_HighRes;
 UInt          MC_(clo_show_leak_kinds)        = R2S(Possible) | R2S(Unreached);
 UInt          MC_(clo_error_for_leak_kinds)   = R2S(Possible) | R2S(Unreached);
-UInt          MC_(clo_leak_check_heuristics)  = 0;
+UInt          MC_(clo_leak_check_heuristics)  =   H2S(LchStdString)
+                                                | H2S( LchLength64)
+                                                | H2S( LchNewArray)
+                                                | H2S( LchMultipleInheritance);
 Bool          MC_(clo_workaround_gcc296_bugs) = False;
 Int           MC_(clo_malloc_fill)            = -1;
 Int           MC_(clo_free_fill)              = -1;
-KeepStacktraces MC_(clo_keep_stacktraces)     = KS_alloc_then_free;
+KeepStacktraces MC_(clo_keep_stacktraces)     = KS_alloc_and_free;
 Int           MC_(clo_mc_level)               = 2;
 Bool          MC_(clo_show_mismatched_frees)  = True;
+Bool          MC_(clo_expensive_definedness_checks) = False;
 
 static const HChar * MC_(parse_leak_heuristics_tokens) =
    "-,stdstring,length64,newarray,multipleinheritance";
@@ -5857,6 +5856,8 @@ static Bool mc_process_cmd_line_options(const HChar* arg)
 
    else if VG_BOOL_CLO(arg, "--show-mismatched-frees",
                        MC_(clo_show_mismatched_frees)) {}
+   else if VG_BOOL_CLO(arg, "--expensive-definedness-checks",
+                       MC_(clo_expensive_definedness_checks)) {}
 
    else
       return VG_(replacement_malloc_process_cmd_line_option)(arg);
@@ -5871,11 +5872,6 @@ static Bool mc_process_cmd_line_options(const HChar* arg)
 
 static void mc_print_usage(void)
 {
-   const HChar* plo_default = "no";
-#  if defined(VGO_darwin)
-   plo_default = "yes";
-#  endif
-
    VG_(printf)(
 "    --leak-check=no|summary|full     search for memory leaks at exit?  [summary]\n"
 "    --leak-resolution=low|med|high   differentiation of leak stack traces [high]\n"
@@ -5886,7 +5882,7 @@ static void mc_print_usage(void)
 "        where kind is one of:\n"
 "          definite indirect possible reachable all none\n"
 "    --leak-check-heuristics=heur1,heur2,... which heuristics to use for\n"
-"        improving leak search false positive [none]\n"
+"        improving leak search false positive [all]\n"
 "        where heur is one of:\n"
 "          stdstring length64 newarray multipleinheritance all none\n"
 "    --show-reachable=yes             same as --show-leak-kinds=all\n"
@@ -5896,7 +5892,9 @@ static void mc_print_usage(void)
 "                                     same as --show-leak-kinds=definite\n"
 "    --undef-value-errors=no|yes      check for undefined value errors [yes]\n"
 "    --track-origins=no|yes           show origins of undefined values? [no]\n"
-"    --partial-loads-ok=no|yes        too hard to explain here; see manual [%s]\n"
+"    --partial-loads-ok=no|yes        too hard to explain here; see manual [yes]\n"
+"    --expensive-definedness-checks=no|yes\n"
+"                                     Use extra-precise definedness tracking [no]\n"
 "    --freelist-vol=<number>          volume of freed blocks queue     [20000000]\n"
 "    --freelist-big-blocks=<number>   releases first blocks with size>= [1000000]\n"
 "    --workaround-gcc296-bugs=no|yes  self explanatory [no]\n"
@@ -5904,9 +5902,8 @@ static void mc_print_usage(void)
 "    --malloc-fill=<hexnumber>        fill malloc'd areas with given value\n"
 "    --free-fill=<hexnumber>          fill free'd areas with given value\n"
 "    --keep-stacktraces=alloc|free|alloc-and-free|alloc-then-free|none\n"
-"        stack trace(s) to keep for malloc'd/free'd areas       [alloc-then-free]\n"
+"        stack trace(s) to keep for malloc'd/free'd areas       [alloc-and-free]\n"
 "    --show-mismatched-frees=no|yes   show frees that don't match the allocator? [yes]\n"
-, plo_default
    );
 }
 
@@ -6038,8 +6035,12 @@ static void print_monitor_help ( void )
 "                 leak_check summary any\n"
 "                 leak_check full kinds indirect,possible\n"
 "                 leak_check full reachable any limited 100\n"
-"  block_list <loss_record_nr> [unlimited*|limited <max_blocks>]\n"
+"  block_list <loss_record_nr>|<loss_record_nr_from>..<loss_record_nr_to>\n"
+"                [unlimited*|limited <max_blocks>]\n"
+"                [heuristics heur1,heur2,...]\n"
 "        after a leak search, shows the list of blocks of <loss_record_nr>\n"
+"        (or of the range <loss_record_nr_from>..<loss_record_nr_to>).\n"
+"        With heuristics, only shows the blocks found via heur1,heur2,...\n"
 "            * = defaults\n"
 "  who_points_at <addr> [<len>]\n"
 "        shows places pointing inside <len> (default 1) bytes at <addr>\n"
@@ -6068,6 +6069,81 @@ static void gdb_xb (Addr address, SizeT szB, Int res[])
          VG_(printf) ("\t0x??");
    }
    VG_(printf) ("\n"); // Terminate previous line
+}
+
+
+/* Returns the address of the next non space character,
+   or address of the string terminator. */
+static HChar* next_non_space (HChar *s)
+{
+   while (*s && *s == ' ')
+      s++;
+   return s;
+}
+
+/* Parse an integer slice, i.e. a single integer or a range of integer.
+   Syntax is:
+       <integer>[..<integer> ]
+   (spaces are allowed before and/or after ..).
+   Return True if range correctly parsed, False otherwise. */
+static Bool VG_(parse_slice) (HChar* s, HChar** saveptr,
+                              UInt *from, UInt *to)
+{
+   HChar* wl;
+   HChar *endptr;
+   endptr = NULL;////
+   wl = VG_(strtok_r) (s, " ", saveptr);
+
+   /* slice must start with an integer. */
+   if (wl == NULL) {
+      VG_(gdb_printf) ("expecting integer or slice <from>..<to>\n");
+      return False;
+   }
+   *from = VG_(strtoull10) (wl, &endptr);
+   if (endptr == wl) {
+      VG_(gdb_printf) ("invalid integer or slice <from>..<to>\n");
+      return False;
+   }
+
+   if (*endptr == '\0' && *next_non_space(*saveptr) != '.') {
+      /* wl token is an integer terminating the string
+         or else next token does not start with .
+         In both cases, the slice is a single integer. */
+      *to = *from;
+      return True;
+   }
+
+   if (*endptr == '\0') {
+      // iii ..    => get the next token
+      wl =  VG_(strtok_r) (NULL, " .", saveptr);
+   } else {
+      // It must be iii..
+      if (*endptr != '.' && *(endptr+1) != '.') {
+         VG_(gdb_printf) ("expecting slice <from>..<to>\n");
+         return False;
+      }
+      if ( *(endptr+2) == ' ') {
+         // It must be iii.. jjj  => get the next token
+         wl =  VG_(strtok_r) (NULL, " .", saveptr);
+      } else {
+         // It must be iii..jjj
+         wl = endptr+2;
+      }
+   }
+
+   *to = VG_(strtoull10) (wl, &endptr);
+   if (*endptr != '\0') {
+      VG_(gdb_printf) ("missing/wrong 'to' of slice <from>..<to>\n");
+      return False;
+   }
+
+   if (*from > *to) {
+      VG_(gdb_printf) ("<from> cannot be bigger than <to> "
+                       "in slice <from>..<to>\n");
+      return False;
+   }
+
+   return True;
 }
 
 /* return True if request recognised, False otherwise */
@@ -6322,22 +6398,19 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
 
    case  5: { /* block_list */
       HChar* wl;
-      HChar *endptr;
       HChar *the_end;
-      UInt lr_nr = 0;
+      UInt lr_nr_from = 0;
+      UInt lr_nr_to = 0;
 
-      wl = VG_(strtok_r) (NULL, " ", &ssaveptr);
-      if (wl != NULL)
-         lr_nr = VG_(strtoull10) (wl, &endptr);
-      if (wl == NULL || *endptr != '\0') {
-         VG_(gdb_printf) ("malformed or missing integer\n");
-      } else {
-         UInt limit_blocks;
+      if (VG_(parse_slice) (NULL, &ssaveptr, &lr_nr_from, &lr_nr_to)) {
+         UInt limit_blocks = 999999999;
          Int int_value;
-
-         wl = VG_(strtok_r) (NULL, " ", &ssaveptr);
-         if (wl != NULL) {
-            switch (VG_(keyword_id) ("unlimited limited ", 
+         UInt heuristics = 0;
+         
+         for (wl = VG_(strtok_r) (NULL, " ", &ssaveptr);
+              wl != NULL;
+              wl = VG_(strtok_r) (NULL, " ", &ssaveptr)) {
+            switch (VG_(keyword_id) ("unlimited limited heuristics ", 
                                      wl,  kwd_report_all)) {
             case -2: return True;
             case -1: return True;
@@ -6361,15 +6434,27 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
                }
                limit_blocks = (UInt) int_value;
                break;
+            case  2: /* heuristics */
+               wcmd = VG_(strtok_r) (NULL, " ", &ssaveptr);
+               if (wcmd == NULL 
+                   || !VG_(parse_enum_set)(MC_(parse_leak_heuristics_tokens),
+                                           True,/*allow_all*/
+                                           wcmd,
+                                           &heuristics)) {
+                  VG_(gdb_printf) ("missing or malformed heuristics set\n");
+                  return True;
+               }
+               break;
             default:
                tl_assert (0);
             }
-         } else {
-            limit_blocks = 999999999;
          }
-         /* lr_nr-1 as what is shown to the user is 1 more than the index
-            in lr_array. */
-         if (lr_nr == 0 || ! MC_(print_block_list) (lr_nr-1, limit_blocks))
+         /* substract 1 from lr_nr_from/lr_nr_to  as what is shown to the user
+            is 1 more than the index in lr_array. */
+         if (lr_nr_from == 0 || ! MC_(print_block_list) (lr_nr_from-1,
+                                                         lr_nr_to-1,
+                                                         limit_blocks,
+                                                         heuristics))
             VG_(gdb_printf) ("invalid loss record nr\n");
       }
       return True;

@@ -1,5 +1,5 @@
 
-Release 3.11.0 (?? September 2015)
+Release 3.11.0 (22 September 2015)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 3.11.0 is a feature release with many improvements and the usual
@@ -7,17 +7,18 @@ collection of bug fixes.
 
 This release supports X86/Linux, AMD64/Linux, ARM32/Linux,
 ARM64/Linux, PPC32/Linux, PPC64BE/Linux, PPC64LE/Linux, S390X/Linux,
-MIPS32/Linux, MIPS64/Linux, TILEGX/Linux, ARM/Android, ARM64/Android,
-MIPS32/Android, X86/Android, X86/Solaris, AMD64/Solaris,
-X86/MacOSX 10.10 and 10.11 and AMD64/MacOSX 10.10 and 10.11.
+MIPS32/Linux, MIPS64/Linux, ARM/Android, ARM64/Android,
+MIPS32/Android, X86/Android, X86/Solaris, AMD64/Solaris, X86/MacOSX
+10.10 and AMD64/MacOSX 10.10.  There is also preliminary support for
+X86/MacOSX 10.11, AMD64/MacOSX 10.11 and TILEGX/Linux.
 
 * ================== PLATFORM CHANGES =================
-
-* Support for the Tilera TileGX architecture has been added.
 
 * Support for Solaris/x86 and Solaris/amd64 has been added.
 
 * Preliminary support for Mac OS X 10.11 (El Capitan) has been added.
+
+* Preliminary support for the Tilera TileGX architecture has been added.
 
 * s390x: It is now required for the host to have the "long displacement"
   facility.  The oldest supported machine model is z990.
@@ -26,30 +27,62 @@ X86/MacOSX 10.10 and 10.11 and AMD64/MacOSX 10.10 and 10.11.
   Pentium 4.  3.10.1 wrongly claimed to be a Core 2, which is SSSE3.
 
 * The JIT's register allocator is significantly faster, making the JIT
-  as a whole somewhat faster, so JIT-intensive activities (like
-  program startup) are modestly faster, around 5%.
+  as a whole somewhat faster, so JIT-intensive activities, for example
+  program startup, are modestly faster, around 5%.
+
+* There have been changes to the default settings of several command
+  line flags, as detailed below.
+
+* Intel AVX2 support is more complete (64 bit targets only).  On AVX2
+  capable hosts, the simulated CPUID will now indicate AVX2 support.
 
 * ==================== TOOL CHANGES ====================
 
 * Memcheck:
+
+  - The default value for --leak-check-heuristics has been changed from
+    "none" to "all". This helps to reduce the number of possibly
+    lost blocks, in particular for C++ applications.
+
+  - The default value for --keep-stacktraces has been changed from
+    "malloc-then-free" to "malloc-and-free".  This has a small cost in
+    memory (one word per malloc-ed block) but allows Memcheck to show the
+    3 stacktraces of a dangling reference: where the block was allocated,
+    where it was freed, and where it is acccessed after being freed.
+
+  - The default value for --partial-loads-ok has been changed from "no" to 
+    "yes", so as to avoid false positive errors resulting from some kinds
+    of vectorised loops.
 
   - A new monitor command 'xb <addr> <len>' shows the validity bits of
     <len> bytes at <addr>.  The monitor command 'xb' is easier to use
     than get_vbits when you need to associate byte data value with
     their corresponding validity bits.
 
-  - The 'block_list' monitor command now accepts an optional argument
-    'limited <max_blocks>' to control the nr of block addresses
-    printed.
+  - The 'block_list' monitor command has been enhanced:
+      o it can print a range of loss records
+      o it now accepts an optional argument 'limited <max_blocks>'
+        to control the number of blocks printed.
+      o if a block has been found using a heuristic, then
+        'block_list' now shows the heuristic after the block size.
+      o the loss records/blocks to print can be limited to the blocks
+        found via specified heuristics.
 
-  - The C helper functions used to instrument loads on x86-linux and
-    arm-linux (both 32-bit only) have been replaced by handwritten
-    assembly sequences.  This gives speedups in the region of 0% to 7%
-    for those targets only.
+  - The C helper functions used to instrument loads on
+    x86-{linux,solaris} and arm-linux (both 32-bit only) have been
+    replaced by handwritten assembly sequences.  This gives speedups
+    in the region of 0% to 7% for those targets only.
+
+  - A new command line option, --expensive-definedness-checks=yes|no,
+    has been added.  This is useful for avoiding occasional invalid
+    uninitialised-value errors in optimised code.  Watch out for
+    runtime degradation, as this can be up to 25%.  As always, though,
+    the slowdown is highly application specific.  The default setting
+    is "no".
 
 * Massif:
 
-  - New monitor command 'all_snapshots <filename>' that dumps all
+  - A new monitor command 'all_snapshots <filename>' dumps all
     snapshots taken so far.
 
 * Helgrind:
@@ -77,33 +110,43 @@ X86/MacOSX 10.10 and 10.11 and AMD64/MacOSX 10.10 and 10.11.
 
 * ==================== OTHER CHANGES ====================
 
+* The default value for the --smc-check option has been changed from
+  "stack" to "all-non-file" on targets that provide automatic D-I
+  cache coherence (x86, amd64 and s390x).  The result is to provide,
+  by default, transparent support for JIT generated and self-modifying
+  code on all targets.
+
+* Mac OS X only: the default value for the --dsymutil option has been
+  changed from "no" to "yes", since any serious usage on Mac OS X
+  always required it to be "yes".
+
 * The command line options --db-attach and --db-command have been removed.
-  They were deprecated in 3.10.0
+  They were deprecated in 3.10.0.
 
 * When a process dies due to a signal, Valgrind now shows the signal
   and the stacktrace at default verbosity (i.e. verbosity 1).
 
-* Address description logic (used by memcheck and helgrind)
-  now describes addresses in anonymous segments, file mmap-ed
-  segments, shared memory segments and the brk data segment.
+* The address description logic used by Memcheck and Helgrind now
+  describes addresses in anonymous segments, file mmap-ed segments,
+  shared memory segments and the brk data segment.
 
-* Option --error-markers=<begin>,<end> can be used to mark
-  the begin/end of errors in textual output mode, to facilitate
-  searching/extracting errors in output files mixing valgrind
-  errors with program output.
+* The new option --error-markers=<begin>,<end> can be used to mark the
+  begin/end of errors in textual output mode, to facilitate
+  searching/extracting errors in output files that mix valgrind errors
+  with program output.
 
-* New option --max-threads=<number> can be used to change the number
+* The new option --max-threads=<number> can be used to change the number
   of threads valgrind can handle.  The default is 500 threads which
   should be more than enough for most applications.
 
-* New option --valgrind-stacksize=<number> can be used to change the
+* The new option --valgrind-stacksize=<number> can be used to change the
   size of the private thread stacks used by Valgrind.  This is useful
   for reducing memory use or increasing the stack size if Valgrind
   segfaults due to stack overflow.
 
-* New option --avg-transtab-entry-size=<number> can be used to specify
+* The new option --avg-transtab-entry-size=<number> can be used to specify
   the expected instrumented block size, either to reduce memory use or
-  to avoid excess retranslations.
+  to avoid excessive retranslation.
 
 * Valgrind can be built with Intel's ICC compiler, version 14.0 or later.
 
@@ -117,7 +160,7 @@ X86/MacOSX 10.10 and 10.11 and AMD64/MacOSX 10.10 and 10.11.
     with SIGNAL instead of the signal reported to GDB. Use 'signal 0' to
     continue without passing the signal to the process.
 
-  - With recent GDB (>= 7.9.50.20150514-cvs), the command 'target remote'
+  - With GDB >= 7.10, the command 'target remote'
     will automatically load the executable file of the process running
     under Valgrind. This means you do not need to specify the executable
     file yourself, GDB will discover it itself.  See GDB documentation about
@@ -158,6 +201,7 @@ where XXXXXX is the bug number as listed below.
 319274  Fix unhandled syscall: unix:410 (sigsuspend_nocancel) on OS X
 324181  mmap does not handle MAP_32BIT (handle it now, rather than fail it)
 327745  Fix valgrind 3.9.0 build fails on Mac OS X 10.6.8
+330147  libmpiwrap PMPI_Get_count returns undefined value
 333051  mmap of huge pages fails due to incorrect alignment
         == 339163
 334802  valgrind does not always explain why a given option is bad
@@ -177,11 +221,10 @@ where XXXXXX is the bug number as listed below.
 339156  gdbsrv not called for fatal signal
 339215  Valgrind 3.10.0 contain 2013 in copyrights notice
 339288  support Cavium Octeon MIPS specific BBIT*32 instructions
-339636  Use fxsave64 and fxrstor64 mnemonics instead of rex64 prefix
+339636  Use fxsave64 and fxrstor64 mnemonics instead of old-school rex64 prefix
 339442  Fix testsuite build failure on OS X 10.9
 339542  Enable compilation with Intel's ICC compiler
 339563  The DVB demux DMX_STOP ioctl doesn't have a wrapper
-339636  Use fxsave64 and fxrstor64 mnemonics instead of old-school rex64 prefix 
 339688  Mac-specific ASM does not support .version directive (cpuid,
         tronical and pushfpopf tests)
 339745  Valgrind crash when check Marmalade app (partial fix)
@@ -192,6 +235,8 @@ where XXXXXX is the bug number as listed below.
 339808  Fix none/tests/rlimit64_nofile test on Mac OS X 10.9
 339820  vex amd64->IR: 0x66 0xF 0x3A 0x63 0xA 0x42 0x74 0x9 (pcmpistri $0x42)
 340115  Fix none/tests/cmdline[1|2] tests on systems which define TMPDIR
+340392  Allow user to select more accurate definedness checking in memcheck
+        to avoid invalid complaints on optimised code
 340430  Fix some grammatical weirdness in the manual.
 341238  Recognize GCC5/DWARFv5 DW_LANG constants (Go, C11, C++11, C++14)
 341419  Signal handler ucontext_t not filled out correctly on OS X
@@ -202,6 +247,7 @@ where XXXXXX is the bug number as listed below.
 341698  Valgrind's AESKEYGENASSIST gives wrong result in words 0 and 2 [..]
 341789  aarch64: shmat fails with valgrind on ARMv8
 341997  MIPS64: Cavium OCTEON insns - immediate operand handled incorrectly
+342008  valgrind.h needs type cast [..] for clang/llvm in 64-bit mode
 342038  Unhandled syscalls on aarch64 (mbind/get/set_mempolicy)
 342063  wrong format specifier for test mcblocklistsearch in gdbserver_tests
 342117  Hang when loading PDB file for MSVC compiled Firefox under Wine
@@ -292,7 +338,7 @@ where XXXXXX is the bug number as listed below.
 347151  Fix suppression for pthread_rwlock_init on OS X 10.8
 347233  Fix memcheck/tests/strchr on OS X 10.10 (Haswell) 
 347322  Power PC regression test cleanup
-347379  valgrind --leak-check=full leak errors from system libraries on OS X 10.8
+347379  valgrind --leak-check=full leak errors from system libs on OS X 10.8
         == 217236
 347389  unhandled syscall: 373 (Linux ARM syncfs)
 347686  Patch set to cleanup PPC64 regtests
@@ -316,7 +362,7 @@ where XXXXXX is the bug number as listed below.
 349086  Fix UNKNOWN task message [id 3406, to mach_task_self(), [..]
 349087  Fix UNKNOWN task message [id 3410, to mach_task_self(), [..]
 349626  Implemented additional Xen hypercalls
-349769  Fix clang/osx: ld: warning: -read_only_relocs cannot be used with x86_64
+349769  Clang/osx: ld: warning: -read_only_relocs cannot be used with x86_64
 349790  Clean up of the hardware capability checking utilities.
 349828  memcpy intercepts memmove causing src/dst overlap error (ppc64 ld.so)
 349874  Fix typos in source code
@@ -324,6 +370,8 @@ where XXXXXX is the bug number as listed below.
 349941  di_notify_mmap might create wrong start/size DebugInfoMapping
 350062  vex x86->IR: 0x66 0xF 0x3A 0xB (ROUNDSD) on OS X
 350202  Add limited param to 'monitor block_list'
+350290  s390x: Support instructions fixbr(a)
+350359  memcheck/tests/x86/fxsave hangs indefinetely on OS X
 350809  Fix none/tests/async-sigs for Solaris
 350811  Remove reference to --db-attach which has been removed.
 350813  Memcheck/x86: enable handwritten assembly helpers for x86/Solaris too
@@ -332,6 +380,16 @@ where XXXXXX is the bug number as listed below.
 351386  Solaris: Cannot run ld.so.1 under Valgrind
 351474  Fix VG_(iseqsigset) as obvious
 351534  Fix incorrect header guard
+351632  Fix UNKNOWN fcntl 97 on OS X 10.11
+351756  Intercept platform_memchr$VARIANT$Haswell on OS X
+351858  ldsoexec support on Solaris
+351873  Newer gcc doesn't allow __builtin_tabortdc[i] in ppc32 mode
+352130  helgrind reports false races for printfs using mempcpy on FILE* state
+352284  s390: Conditional jump depends on uninitialised value(s) in vfprintf 
+352320  arm64 crash on none/tests/nestedfs
+352765  Vbit test fails on Power 6
+352768  The mbar instruction is missing from the Power PC support
+352769  Power PC program priority register (PPR) is not supported
 n-i-bz  Provide implementations of certain compiler builtins to support
         compilers that may not provide those
 n-i-bz  Old STABS code is still being compiled, but never used. Remove it.
@@ -342,7 +400,9 @@ n-i-bz  mremap did not work properly on shared memory
 n-i-bz  Fix incorrect sizeof expression in syswrap-xen.c reported by Coverity
 n-i-bz  In VALGRIND_PRINTF write out thread name, if any, to xml
 
-(3.10.1.BETA?: ?? September 2015, vex r????, valgrind r?????)
+(3.11.0.TEST1:  8 September 2015, vex r3187, valgrind r15646)
+(3.11.0.TEST2: 21 September 2015, vex r3193, valgrind r15667)
+(3.11.0:       22 September 2015, vex r3195, valgrind r15674)
 
 
 

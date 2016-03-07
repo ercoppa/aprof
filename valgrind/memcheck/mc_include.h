@@ -460,11 +460,16 @@ extern UInt MC_(leak_search_gen);
 // maintains the lcp.deltamode given in the last call to detect_memory_leaks
 extern LeakCheckDeltaMode MC_(detect_memory_leaks_last_delta_mode);
 
-// prints the list of blocks corresponding to the given loss_record_nr.
-// (up to maximum max_blocks)
-// Returns True if loss_record_nr identifies a correct loss record from last
-// leak search, returns False otherwise.
-Bool MC_(print_block_list) ( UInt loss_record_nr, UInt max_blocks);
+// prints the list of blocks corresponding to the given loss_record_nr slice
+// (from/to) (up to maximum max_blocks)
+// Returns True if loss_record_nr_from identifies a correct loss record
+// from last leak search, returns False otherwise.
+// Note that loss_record_nr_to can be bigger than the nr of loss records. All
+// loss records after from will then be examined and maybe printed.
+// If heuristics != 0, print only the loss records/blocks found via
+// one of the heuristics in the set.
+Bool MC_(print_block_list) ( UInt loss_record_nr_from, UInt loss_record_nr_to,
+                             UInt max_blocks, UInt heuristics);
 
 // Prints the addresses/registers/... at which a pointer to
 // the given range [address, address+szB[ is found.
@@ -637,7 +642,7 @@ typedef
 #define HiS(h,s) ((s) & H2S(h))
 
 /* Heuristics set to use for the leak search.
-   Default : no heuristic. */
+   Default : all heuristics. */
 extern UInt MC_(clo_leak_check_heuristics);
 
 /* Assume accesses immediately below %esp are due to gcc-2.96 bugs.
@@ -695,6 +700,9 @@ extern Int MC_(clo_mc_level);
 /* Should we show mismatched frees?  Default: YES */
 extern Bool MC_(clo_show_mismatched_frees);
 
+/* Should we use expensive definedness checking for add/sub and compare
+   operations? Default: NO */
+extern Bool MC_(clo_expensive_definedness_checks);
 
 /*------------------------------------------------------------*/
 /*--- Instrumentation                                      ---*/
