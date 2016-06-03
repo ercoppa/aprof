@@ -213,8 +213,8 @@ am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/config.h.in \
 	$(srcdir)/glibc-2.X.supp.in $(srcdir)/valgrind.pc.in \
 	$(srcdir)/valgrind.spec.in $(top_srcdir)/Makefile.all.am \
 	$(top_srcdir)/drd/scripts/download-and-build-splash2.in \
-	AUTHORS COPYING NEWS README compile config.guess config.sub \
-	depcomp install-sh missing
+	AUTHORS COPYING ChangeLog NEWS README compile config.guess \
+	config.sub depcomp install-sh missing
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)

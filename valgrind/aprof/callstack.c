@@ -71,7 +71,7 @@ BB * APROF_(get_BB)(UWord target) {
 
 /* 
  * search_runtime_resolve() and check_code are 
- * completly taken from callgrind!
+ * Completely taken from callgrind!
  */
 
 /* 
@@ -341,10 +341,9 @@ VG_REGPARM(2) void APROF_(BB_start)(UWord target, BB * bb) {
 
         if (info_fn && VG_(strcmp)(fn, "(below main)") == 0) {
 			fn = "below_main";
-			//VG_(sprintf)(fn, "below_main");
         }
         
-        if (info_fn && VG_(strcmp)(fn, "_dl_runtime_resolve") == 0) {
+        else if (info_fn && VG_(strcmp)(fn, "_dl_runtime_resolve") == 0) {
             
             bb->is_dl_runtime_resolve = True;
             // this only means that ld is not stripped 
